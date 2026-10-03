@@ -39,8 +39,21 @@ export const Route = createFileRoute("/api/auth/instagram/authorize")({
         }
 
         const { userWhoManagesBrand } = await import("@/lib/instagram-oauth-store.server");
-        const user = await userWhoManagesBrand(accessToken, brandId);
-        if (!user) return json({ error: "Forbidden", code: "forbidden" }, 403);
+        const access = await userWhoManagesBrand(accessToken, brandId);
+        if (!access.ok) {
+          const detail = access.detail ? `: ${access.detail}` : "";
+          const reason = `${access.reason}${detail}`;
+          if (access.reason === "invalid_session") {
+            return json({ error: "Your session is not valid", code: "unauthorized", reason }, 401);
+          }
+          // Only a real answer from the database is a refusal; a check that could
+          // not run is a server problem, and is reported as one.
+          if (access.reason === "no_access" || access.reason === "no_permission") {
+            return json({ error: "Forbidden", code: "forbidden", reason }, 403);
+          }
+          return json({ error: "Could not verify your access", code: "server_error", reason }, 503);
+        }
+        const user = { userId: access.userId };
 
         const oauth = await import("@/lib/instagram-oauth.server");
         const origin = oauth.allowedReturnOrigin(url.origin);

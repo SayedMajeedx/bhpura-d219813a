@@ -364,11 +364,18 @@ export async function startInstagramOAuth(brandId: string): Promise<string> {
     url?: string;
     code?: string;
     error?: string;
+    reason?: string;
   } | null;
   if (!response.ok || typeof body?.url !== "string") {
     throw new GiveawayApiError(
       typeof body?.code === "string" ? body.code : "server_error",
-      typeof body?.error === "string" ? body.error : "Could not start the connection",
+      // The server's reason (for example "no_permission" or "check_failed: PGRST301")
+      // says which part failed; the plain message is the fallback.
+      typeof body?.reason === "string"
+        ? body.reason
+        : typeof body?.error === "string"
+          ? body.error
+          : "Could not start the connection",
     );
   }
   return body.url;

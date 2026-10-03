@@ -31,7 +31,7 @@ const callback = handlerOf((await import("../src/routes/api.auth.instagram.callb
 beforeEach(() => {
   vi.clearAllMocks();
   env.values = { INSTAGRAM_APP_ID: "1234567890", INSTAGRAM_APP_SECRET: APP_SECRET };
-  store.userWhoManagesBrand.mockResolvedValue({ userId: "user-1" });
+  store.userWhoManagesBrand.mockResolvedValue({ ok: true, userId: "user-1" });
   store.brandSlug.mockResolvedValue("pura");
 });
 
@@ -70,14 +70,14 @@ describe("starting the connection", () => {
   it("refuses without a session, without access, with a bad store id, or without setup", async () => {
     expect((await authorize({ request: authorizeRequest() })).status).toBe(401);
 
-    store.userWhoManagesBrand.mockResolvedValue(null);
+    store.userWhoManagesBrand.mockResolvedValue({ ok: false, reason: "no_permission" });
     const forbidden = await authorize({
       request: authorizeRequest({ authorization: "Bearer session-token" }),
     });
     expect(forbidden.status).toBe(403);
     expect(forbidden.headers.get("set-cookie")).toBeNull();
 
-    store.userWhoManagesBrand.mockResolvedValue({ userId: "user-1" });
+    store.userWhoManagesBrand.mockResolvedValue({ ok: true, userId: "user-1" });
     expect(
       (await authorize({ request: authorizeRequest({ authorization: "Bearer t" }, "not-an-id") }))
         .status,
@@ -87,6 +87,51 @@ describe("starting the connection", () => {
     const unset = await authorize({ request: authorizeRequest({ authorization: "Bearer t" }) });
     expect(unset.status).toBe(503);
     expect(((await unset.json()) as { code: string }).code).toBe("not_configured");
+  });
+});
+
+describe("what the access check's answer means", () => {
+  const ask = () =>
+    authorize({ request: authorizeRequest({ authorization: "Bearer session-token" }) });
+
+  it("refuses with 403 only when the database said no", async () => {
+    for (const reason of ["no_access", "no_permission"] as const) {
+      store.userWhoManagesBrand.mockResolvedValue({ ok: false, reason });
+      const response = await ask();
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ code: "forbidden", reason });
+      expect(response.headers.get("set-cookie")).toBeNull();
+    }
+  });
+
+  it("reports a check that could not run as a server problem, not a refusal", async () => {
+    store.userWhoManagesBrand.mockResolvedValue({
+      ok: false,
+      reason: "check_failed",
+      detail: "PGRST301",
+    });
+    const failed = await ask();
+    expect(failed.status).toBe(503);
+    expect(await failed.json()).toMatchObject({
+      code: "server_error",
+      reason: "check_failed: PGRST301",
+    });
+
+    store.userWhoManagesBrand.mockResolvedValue({
+      ok: false,
+      reason: "server_config",
+      detail: "SUPABASE_PUBLISHABLE_KEY",
+    });
+    const config = await ask();
+    expect(config.status).toBe(503);
+    expect(((await config.json()) as { code: string }).code).toBe("server_error");
+  });
+
+  it("answers 401 for a session that is not accepted", async () => {
+    store.userWhoManagesBrand.mockResolvedValue({ ok: false, reason: "invalid_session" });
+    const response = await ask();
+    expect(response.status).toBe(401);
+    expect(((await response.json()) as { code: string }).code).toBe("unauthorized");
   });
 });
 
