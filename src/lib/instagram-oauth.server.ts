@@ -54,7 +54,7 @@ export class OAuthError extends Error {
 
 type Fetcher = (
   url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
+  init?: { method?: string; headers?: Record<string, string>; body?: string | FormData },
 ) => Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }>;
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -207,20 +207,24 @@ export function allowedReturnOrigin(origin: string): string | null {
 
 // ── Authorization and token exchange ────────────────────────────────────────
 
-export function buildAuthorizeUrl(appId: string, state: string): string {
+export function buildAuthorizeUrl(
+  appId: string,
+  state: string,
+  options: { forceReauth?: boolean } = {},
+): string {
   // Written the way Meta's own "embed URL" for the app is: the redirect address is
-  // NOT percent-encoded (Instagram has been seen to compare it as text against the
-  // address sent in the token request), the permissions are joined with an encoded
-  // comma, and force_reauth always shows the consent screen so a reconnect can grant
-  // the comment permission. The state is ours: a random hex value.
+  // NOT percent-encoded, and the permissions are joined with an encoded comma. The
+  // state is ours: a random hex value. force_reauth is off unless asked for: it
+  // makes Instagram ask for the account's password even when it is signed in, which
+  // sends the redirect address through Instagram's login pages first.
   const scope = REQUIRED_SCOPES.map(encodeURIComponent).join("%2C");
   return (
-    `${AUTHORIZE_URL}?force_reauth=true` +
-    `&client_id=${encodeURIComponent(appId)}` +
+    `${AUTHORIZE_URL}?client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${INSTAGRAM_REDIRECT_URI}` +
     `&response_type=code` +
     `&scope=${scope}` +
-    `&state=${encodeURIComponent(state)}`
+    `&state=${encodeURIComponent(state)}` +
+    (options.forceReauth ? "&force_reauth=true" : "")
   );
 }
 
@@ -274,18 +278,14 @@ export async function exchangeCodeForToken(
   input: { appId: string; appSecret: string; code: string },
   fetcher: Fetcher,
 ): Promise<CodeExchange> {
-  const form = new URLSearchParams({
-    client_id: input.appId,
-    client_secret: input.appSecret,
-    grant_type: "authorization_code",
-    redirect_uri: INSTAGRAM_REDIRECT_URI,
-    code: input.code,
-  });
-  const response = await fetcher(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
-  });
+  // Sent as multipart form data, the way Meta's documentation shows it (curl -F).
+  const form = new FormData();
+  form.append("client_id", input.appId);
+  form.append("client_secret", input.appSecret);
+  form.append("grant_type", "authorization_code");
+  form.append("redirect_uri", INSTAGRAM_REDIRECT_URI);
+  form.append("code", input.code);
+  const response = await fetcher(TOKEN_URL, { method: "POST", body: form });
   const body = asRecord(await response.json().catch(() => ({})));
   // Instagram answers either { data: [{ ... }] } or the fields at the top level.
   const first = Array.isArray(body.data) ? asRecord(body.data[0]) : body;

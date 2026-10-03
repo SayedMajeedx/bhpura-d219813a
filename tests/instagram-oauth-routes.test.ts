@@ -158,10 +158,10 @@ describe("the callback address", () => {
   });
 
   it("exchanges the code on the server, stores the token and returns to the screen", async () => {
-    const requests: Array<{ url: string; method: string; body?: string }> = [];
+    const requests: Array<{ url: string; method: string; body?: string | FormData }> = [];
     vi.stubGlobal(
       "fetch",
-      vi.fn(async (url: string, init?: { method?: string; body?: string }) => {
+      vi.fn(async (url: string, init?: { method?: string; body?: string | FormData }) => {
         requests.push({ url, method: init?.method ?? "GET", body: init?.body });
         const body = url.includes("api.instagram.com")
           ? {
@@ -193,7 +193,9 @@ describe("the callback address", () => {
       "https://boutq.store/admin/b/pura/giveaways?instagram=connected",
     );
     expect(response.headers.get("set-cookie")).toContain("Max-Age=0");
-    expect(new URLSearchParams(requests[0].body).get("client_secret")).toBe(APP_SECRET);
+    const exchange = requests[0].body;
+    expect(exchange).toBeInstanceOf(FormData);
+    expect((exchange as FormData).get("client_secret")).toBe(APP_SECRET);
     expect(store.storeInstagramToken).toHaveBeenCalledWith(
       expect.objectContaining({ brandId: BRAND, accessToken: LONG_TOKEN, username: "puraline.bh" }),
     );
