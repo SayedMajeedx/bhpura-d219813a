@@ -51,6 +51,15 @@ function renderFailedCheckout(methods: string[]) {
         availableMethods={methods.map((id) => all[id as keyof typeof all])}
         benefitReceipt={null}
         brand={storefront.brand as never}
+        advance={{
+          applies: false,
+          percent: 30,
+          scope: "all",
+          dueNow: 0,
+          balance: 0,
+          partial: false,
+        }}
+        currency="BHD"
         fulfillment="pickup"
         lang="en"
         method="card"

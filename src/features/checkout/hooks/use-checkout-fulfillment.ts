@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Banknote, CreditCard, Download, MapPin, QrCode, Store, Truck } from "lucide-react";
 import type { ShippingZone } from "@/lib/shipping";
 import type { Fulfillment, Storefront } from "@/features/checkout/types";
-import { advanceRuleFrom, methodsUnderAdvance } from "@/lib/payments/advance-payment";
 
 /**
  * Delivery / pickup / digital, the delivery destination (Bahrain or a
@@ -112,7 +111,7 @@ export function useCheckoutFulfillment({
     }
   }, [selectedDestination, selectedZone]);
 
-  const allowedMethods = useMemo(() => {
+  const availableMethods = useMemo(() => {
     const base: Array<{
       id: "cod" | "card" | "benefit";
       ar: string;
@@ -157,18 +156,6 @@ export function useCheckoutFulfillment({
     selectedDestination,
     selectedZone,
   ]);
-
-  // Under the store's advance-payment rule cash on delivery is not offered: the order is
-  // completed by paying the advance by card or BenefitPay (the database refuses cod too).
-  const advanceEnabled = settings.advance_payment_enabled;
-  const availableMethods = useMemo(
-    () =>
-      methodsUnderAdvance(
-        allowedMethods,
-        advanceRuleFrom({ advance_payment_enabled: advanceEnabled }),
-      ),
-    [allowedMethods, advanceEnabled],
-  );
 
   const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(() => {
     if (typeof window !== "undefined") {

@@ -2,25 +2,40 @@ import { useState } from "react";
 import { Wallet } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import {
+  ADVANCE_SCOPES,
+  ADVANCE_SCOPE_LABELS,
   DEFAULT_ADVANCE_PERCENT,
+  advanceForOrder,
   advanceLines,
   advancePercentError,
   advanceRuleFrom,
-  advanceSplit,
+  type AdvanceOrder,
 } from "@/lib/payments/advance-payment";
 
-/** What the example order for the preview costs. */
-const EXAMPLE_TOTAL = 100;
+/** A sample order for the preview: a tailored item and a ready-made one, with a delivery fee. */
+const SAMPLE_LINES = [
+  { amount: 60, madeToOrder: true },
+  { amount: 40, madeToOrder: false },
+];
+const sample = (fulfillment: AdvanceOrder["fulfillment"]): AdvanceOrder => ({
+  total: fulfillment === "delivery" ? 105 : 100,
+  shipping: fulfillment === "delivery" ? 5 : 0,
+  fulfillment,
+  lines: SAMPLE_LINES,
+});
 
 /**
- * The store's advance-payment rule: a switch and the share of an order to pay
- * online before it is complete. While it is on, checkout hides cash on delivery
- * and the database refuses it; the balance is collected on delivery or at the event.
+ * The store's advance-payment rule: a switch, which orders it covers, and the share of
+ * the covered part to pay online before the order is complete. Where it applies,
+ * checkout hides cash on delivery and the database refuses it; the balance is collected
+ * on delivery or at the event.
  */
 export function AdvancePaymentCard() {
   const { lang } = useI18n();
@@ -35,10 +50,12 @@ export function AdvancePaymentCard() {
   const error = enabled ? advancePercentError(text, isAr) : null;
   const canPayOnline = bs.card_enabled === true || bs.benefit_enabled === true;
   const currency = bs.currency || "BHD";
-  const preview = advanceLines(advanceSplit(EXAMPLE_TOTAL, advanceRuleFrom(bs)), {
-    isAr,
-    money: (n) => formatMoney(n, currency),
-  });
+  const rule = advanceRuleFrom(bs);
+  const money = (n: number) => formatMoney(n, currency);
+  const previews = (["delivery", "pickup"] as const).map((fulfillment) => ({
+    fulfillment,
+    lines: advanceLines(advanceForOrder(sample(fulfillment), rule), { isAr, money }),
+  }));
 
   return (
     <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
@@ -62,10 +79,41 @@ export function AdvancePaymentCard() {
       </div>
 
       {enabled && (
-        <div className="space-y-3">
+        <div className="space-y-4">
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-medium">{isAr ? "تنطبق على" : "Applies to"}</legend>
+            <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
+              {ADVANCE_SCOPES.map((scope) => {
+                const label = ADVANCE_SCOPE_LABELS[scope];
+                const active = rule.scope === scope;
+                return (
+                  <Button
+                    key={scope}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    variant="outline"
+                    onClick={() => setBs({ advance_payment_scope: scope })}
+                    className={cn(
+                      "h-auto flex-col items-start gap-1 whitespace-normal rounded-xl p-3 text-start font-normal",
+                      active && "border-primary bg-primary/5 ring-1 ring-primary/40",
+                    )}
+                  >
+                    <span className="text-sm font-semibold text-foreground">
+                      {isAr ? label.ar : label.en}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {isAr ? label.hintAr : label.hintEn}
+                    </span>
+                  </Button>
+                );
+              })}
+            </div>
+          </fieldset>
+
           <div className="space-y-1.5">
             <Label htmlFor="advance-payment-percent" className="text-xs font-medium">
-              {isAr ? "نسبة الدفعة المقدمة (%)" : "Advance share of the order (%)"}
+              {isAr ? "نسبة الدفعة المقدمة (%)" : "Advance share (%)"}
             </Label>
             <Input
               id="advance-payment-percent"
@@ -91,15 +139,36 @@ export function AdvancePaymentCard() {
             )}
           </div>
 
-          {!error && preview.length > 0 && (
-            <div className="rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
-              <p className="mb-1 font-semibold">
+          {!error && (
+            <div className="space-y-2 rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
+              <p className="font-semibold">
                 {isAr
-                  ? `مثال: طلب بقيمة ${formatMoney(EXAMPLE_TOTAL, currency)}`
-                  : `Example: an order of ${formatMoney(EXAMPLE_TOTAL, currency)}`}
+                  ? "مثال: قطعة مفصّلة 60 وقطعة جاهزة 40"
+                  : "Example: a made-to-order item of 60 and a ready-made one of 40"}
               </p>
-              {preview.map((line) => (
-                <p key={line}>{line}</p>
+              {previews.map(({ fulfillment, lines }) => (
+                <div key={fulfillment}>
+                  <p className="font-medium">
+                    {fulfillment === "delivery"
+                      ? isAr
+                        ? `توصيل (رسوم ${money(5)})`
+                        : `Delivered (fee ${money(5)})`
+                      : isAr
+                        ? "استلام من الفرع"
+                        : "Pickup"}
+                  </p>
+                  {lines.length > 0 ? (
+                    lines.map((line) => (
+                      <p key={line} className="text-muted-foreground">
+                        {line}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground">
+                      {isAr ? "بدون دفعة مقدمة؛ الدفع كما هو." : "No advance; payment as usual."}
+                    </p>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -107,8 +176,8 @@ export function AdvancePaymentCard() {
           <ul className="list-disc space-y-1 ps-5 text-xs text-muted-foreground">
             <li>
               {isAr
-                ? "يُخفى خيار الدفع عند الاستلام في صفحة الدفع، ويرفضه النظام."
-                : "Cash on delivery is hidden at checkout and refused by the system."}
+                ? "حيث تنطبق الدفعة، يُخفى خيار الدفع عند الاستلام في صفحة الدفع ويرفضه النظام."
+                : "Where the advance applies, cash on delivery is hidden at checkout and refused by the system."}
             </li>
             <li>
               {isAr

@@ -46,6 +46,23 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     },
   },
   {
+    key: "advance_payment_scope",
+    table: "business_settings",
+    tab: "orders",
+    group: "payments",
+    level: "advanced",
+    owner: "settings",
+    type: "select",
+    label: {
+      ar: "الطلبات التي تنطبق عليها الدفعة المقدمة",
+      en: "Orders the advance payment applies to",
+    },
+    keywords: {
+      ar: ["نطاق الدفعة المقدمة", "تفصيل فقط", "توصيل فقط", "حسب الطلب"],
+      en: ["advance scope", "made to order only", "delivery only", "tailoring"],
+    },
+  },
+  {
     key: "advance_payment_percent",
     table: "business_settings",
     tab: "orders",

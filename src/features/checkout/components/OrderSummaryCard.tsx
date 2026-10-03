@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Coins, Sparkles, Share2 } from "lucide-react";
+import type { AdvanceSplit } from "@/lib/payments/advance-payment";
 import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -38,6 +39,7 @@ export function OrderSummaryCard({
   estimatedPointsToEarn,
   fulfillment,
   fulfillmentOptions,
+  advance,
   grandTotal,
   handleApplyPoints,
   handleRemovePoints,
@@ -80,6 +82,8 @@ export function OrderSummaryCard({
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
   fulfillmentOptions: ReturnType<typeof useCheckoutFulfillment>["fulfillmentOptions"];
   grandTotal: number;
+  /** What the store's advance-payment rule asks of this order. */
+  advance: AdvanceSplit;
   handleApplyPoints: ReturnType<typeof useCheckoutLoyalty>["handleApplyPoints"];
   handleRemovePoints: ReturnType<typeof useCheckoutLoyalty>["handleRemovePoints"];
   lang: Storefront["lang"];
@@ -380,7 +384,7 @@ export function OrderSummaryCard({
         <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
       </div>
       <AdvancePaymentNotice
-        total={grandTotal}
+        split={advance}
         currency={currency}
         appointment={Boolean(appointment)}
       />

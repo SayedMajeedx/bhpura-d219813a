@@ -103,6 +103,33 @@ export async function fetchLiveProducts(): Promise<LiveProduct[]> {
 }
 
 /**
+ * The live store's advance-payment rule (a store setting the merchant can turn on at any time):
+ * where it applies, cash on delivery is not offered, so the specs that place a cash-on-delivery
+ * order cannot run against that store while it is on.
+ */
+export async function liveAdvanceRule(): Promise<{
+  enabled: boolean;
+  percent: number;
+  scope: string;
+}> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_storefront_page_data`, {
+    method: "POST",
+    headers: {
+      apikey: ANON_KEY!,
+      Authorization: `Bearer ${ANON_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_brand_slug: SLUG }),
+  });
+  const settings = ((await res.json()) as { settings?: Record<string, unknown> } | null)?.settings;
+  return {
+    enabled: settings?.advance_payment_enabled === true,
+    percent: Number(settings?.advance_payment_percent ?? 30),
+    scope: String(settings?.advance_payment_scope ?? "all"),
+  };
+}
+
+/**
  * Wait until React has hydrated this element. Storefront pages are
  * server-rendered, so buttons are visible before they respond; a click on a
  * cold dev server can land before hydration and do nothing.

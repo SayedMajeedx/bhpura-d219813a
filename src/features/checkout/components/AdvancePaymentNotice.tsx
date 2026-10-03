@@ -1,30 +1,26 @@
 import { Wallet } from "lucide-react";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
-import { advanceLines, advanceRuleFrom, advanceSplit } from "@/lib/payments/advance-payment";
+import { advanceLines, type AdvanceSplit } from "@/lib/payments/advance-payment";
 
 /**
  * What the store's advance-payment rule asks of this order: the share to pay now
  * and the balance that stays due on delivery or at the event. Nothing when the
- * store has no such rule.
+ * rule does not reach the order.
  */
 export function AdvancePaymentNotice({
-  total,
+  split,
   currency,
   appointment = false,
   className,
 }: {
-  total: number;
+  split: AdvanceSplit;
   currency: string;
   /** A booking's balance is due on the day of the event, not on delivery. */
   appointment?: boolean;
   className?: string;
 }) {
-  const { settings, lang } = useStorefront();
-  const rule = advanceRuleFrom({
-    advance_payment_enabled: settings.advance_payment_enabled,
-    advance_payment_percent: settings.advance_payment_percent,
-  });
-  const lines = advanceLines(advanceSplit(total, rule), {
+  const { lang } = useStorefront();
+  const lines = advanceLines(split, {
     isAr: lang === "ar",
     money: (n) => formatPrice(n, currency, lang),
     balanceWhen: appointment ? "event" : "delivery",
