@@ -19,6 +19,7 @@ import { SecondaryBannerParallax } from "@/components/storefront/secondary-banne
 import { JsonLd } from "@/components/storefront/seo/JsonLd";
 import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 import { CategoryFilters } from "@/components/storefront/CategoryFilters";
+import { replaceUrlQuietly } from "@/lib/quiet-url";
 import {
   catalogFacets,
   filterProducts,
@@ -113,7 +114,8 @@ function CategoryPage() {
     if (typeof window === "undefined") return;
     const newSearch = filtersToSearch(window.location.search, filters);
     const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
-    window.history.replaceState(null, "", newUrl);
+    // Not window.history.replaceState: the router would take it for a navigation and scroll to top.
+    replaceUrlQuietly(newUrl);
   }, [filters]);
 
   const navigate = useNavigate();
