@@ -32,7 +32,9 @@ export function ProductMediaTab({
             ? "ارفع صوراً ومقاطع فيديو عالية الجودة لعرض منتجك بأفضل شكل. يدعم صيغ الصور والفيديو الشائعة."
             : "Upload rich, high-resolution visual assets to show off your products in premium style."}
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {/* Columns follow the room the editor has (not the screen's width): a card never gets
+            narrower than its action row needs. */}
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-4">
           {form.media.map((m, i) => (
             <div
               key={i}
@@ -78,7 +80,7 @@ export function ProductMediaTab({
                   </span>
                 )}
               </div>
-              <div className="p-2 bg-muted/30 border-t border-border flex items-center justify-between gap-1">
+              <div className="p-2 bg-muted/30 border-t border-border flex flex-wrap items-center justify-between gap-1.5">
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
@@ -90,9 +92,10 @@ export function ProductMediaTab({
                       moveMedia(i, -1);
                     }}
                     className="h-7 w-7 rounded-md p-0 text-muted-foreground hover:text-foreground"
-                    title={isAr ? "تحريك لليسار" : "Move left"}
+                    title={isAr ? "تقديم" : "Move earlier"}
+                    aria-label={isAr ? "تقديم" : "Move earlier"}
                   >
-                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
                   </Button>
                   <Button
                     type="button"
@@ -104,9 +107,10 @@ export function ProductMediaTab({
                       moveMedia(i, 1);
                     }}
                     className="h-7 w-7 rounded-md p-0 text-muted-foreground hover:text-foreground"
-                    title={isAr ? "تحريك لليمين" : "Move right"}
+                    title={isAr ? "تأخير" : "Move later"}
+                    aria-label={isAr ? "تأخير" : "Move later"}
                   >
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
                   </Button>
                 </div>
                 <Button

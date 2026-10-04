@@ -1,5 +1,19 @@
 import React from "react";
 import type { AddonManifest } from "@/lib/addons/addon-types";
+import { FASHION_CUSTOMIZER_PRESETS } from "@/addons/fashion-core/presets";
+
+/**
+ * The ready-made Fit Passport field sets (`passport_*`): measurements a customer saves once and
+ * applies to any product that asks for them. The product editor lists only what the installed
+ * add-ons contribute, so they must be contributed here or they never appear.
+ */
+const PASSPORT_PRESETS = Object.entries(FASHION_CUSTOMIZER_PRESETS)
+  .filter(([key]) => key.startsWith("passport_"))
+  .map(([key, preset]) => ({
+    key,
+    label: { ar: preset.label_ar, en: preset.label_en },
+    fields: preset.fields,
+  }));
 
 export const fitPassportManifest: AddonManifest = {
   id: "fit-passport",
@@ -92,6 +106,7 @@ export const fitPassportManifest: AddonManifest = {
           },
         ],
       },
+      ...PASSPORT_PRESETS,
     ],
   },
 };
