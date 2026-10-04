@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront } from "@/lib/storefront-context";
 import { storefrontQueries } from "@/lib/data/storefront";
+import { advanceRulesQueries } from "@/lib/data/advance-rules";
+import { ruleDefFromRow } from "@/lib/payments/advance-rule-form";
 import {
   advanceForOrder,
   advanceRuleFrom,
@@ -222,6 +224,15 @@ function Checkout() {
       ),
     [catalog],
   );
+  const categoryById = useMemo(
+    () => new Map((catalog ?? []).map((p) => [p.id, p.category ?? null])),
+    [catalog],
+  );
+  // The store's own rules, tried before its general rule (only read while the rule is on).
+  const ownRules = useQuery(
+    advanceRulesQueries.public(brand.id, settings.advance_payment_enabled),
+  ).data;
+  const ownRuleDefs = useMemo(() => (ownRules ?? []).map(ruleDefFromRow), [ownRules]);
   const advance = useMemo(
     () =>
       advanceForOrder(
@@ -232,11 +243,23 @@ function Checkout() {
           lines: cart.map((item) => ({
             amount: item.price * item.qty,
             madeToOrder: Boolean(item.booking) || madeToOrderIds.has(item.product_id),
+            productId: item.product_id,
+            category: categoryById.get(item.product_id) ?? null,
           })),
         },
-        advanceRuleFrom(settings),
+        advanceRuleFrom(settings, ownRuleDefs),
       ),
-    [grandTotal, shipping, appointment, fulfillment, cart, madeToOrderIds, settings],
+    [
+      grandTotal,
+      shipping,
+      appointment,
+      fulfillment,
+      cart,
+      madeToOrderIds,
+      categoryById,
+      ownRuleDefs,
+      settings,
+    ],
   );
   // Where it applies, cash on delivery is not offered: the order is completed by paying the
   // advance by card or BenefitPay (the database refuses cod too).
