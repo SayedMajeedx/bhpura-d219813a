@@ -4,6 +4,8 @@ import enforcement from "../supabase/migrations/20261003120000_advance_payment_e
 import scopeRule from "../supabase/migrations/20261003140000_advance_payment_scope_rule.sql?raw";
 import rulesTable from "../supabase/migrations/20261003150000_advance_payment_rules.sql?raw";
 import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
+import conditions from "../supabase/migrations/20261004100000_advance_payment_conditions.sql?raw";
+import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
 
 // The advance-payment rule as the database decides it (PGlite): the two enforcement
 // migrations applied, in order, to a small copy of the order tables they touch.
@@ -25,7 +27,8 @@ const SCHEMA = `
   CREATE FUNCTION public.is_admin() RETURNS boolean LANGUAGE sql AS $$ SELECT on_ FROM public.admin_flag $$;
   CREATE FUNCTION public.can_access_brand(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
   CREATE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
-  CREATE TABLE public.brands (id uuid PRIMARY KEY);
+  CREATE TABLE public.brands (id uuid PRIMARY KEY, slug text);
+  CREATE TABLE public.customers (id uuid PRIMARY KEY, brand_id uuid, user_id uuid);
   CREATE TABLE public.products (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), category text);
   CREATE TABLE public.business_settings (
     brand_id uuid PRIMARY KEY,
@@ -35,7 +38,7 @@ const SCHEMA = `
     advance_payment_scope text NOT NULL DEFAULT 'all'
   );
   CREATE TABLE public.orders (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, channel text NOT NULL DEFAULT 'admin',
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, customer_id uuid, channel text NOT NULL DEFAULT 'admin',
     payment_method text, total numeric NOT NULL DEFAULT 0, shipping numeric NOT NULL DEFAULT 0,
     fulfillment_method text NOT NULL DEFAULT 'delivery', advance_scope text,
     payment_status text NOT NULL DEFAULT 'unpaid',
@@ -62,6 +65,8 @@ beforeAll(async () => {
   await db.exec(scopeRule);
   await db.exec(rulesTable);
   await db.exec(rulesEngine);
+  await db.exec(conditions);
+  await db.exec(conditionsEngine);
 });
 
 const setAdmin = (on: boolean) => db.query("UPDATE public.admin_flag SET on_ = $1", [on]);

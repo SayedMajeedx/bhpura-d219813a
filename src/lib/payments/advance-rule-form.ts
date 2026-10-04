@@ -24,6 +24,9 @@ export type AdvanceRuleForm = {
   min: string;
   max: string;
   include_fee: boolean;
+  min_total: string;
+  max_total: string;
+  customer: "any" | "new" | "returning";
 };
 
 export const EMPTY_RULE_FORM: AdvanceRuleForm = {
@@ -39,6 +42,9 @@ export const EMPTY_RULE_FORM: AdvanceRuleForm = {
   min: "",
   max: "",
   include_fee: false,
+  min_total: "",
+  max_total: "",
+  customer: "any",
 };
 
 /** The row of advance_payment_rules this module reads and writes. */
@@ -57,6 +63,9 @@ export type AdvanceRuleRow = {
   min_amount: number | string | null;
   max_amount: number | string | null;
   include_delivery_fee: boolean;
+  min_order_total: number | string | null;
+  max_order_total: number | string | null;
+  customer_kind: string;
 };
 
 const textOf = (n: number | string | null) =>
@@ -78,6 +87,10 @@ export function ruleFormFrom(row: AdvanceRuleRow): AdvanceRuleForm {
     min: textOf(row.min_amount),
     max: textOf(row.max_amount),
     include_fee: row.include_delivery_fee,
+    min_total: textOf(row.min_order_total),
+    max_total: textOf(row.max_order_total),
+    customer:
+      row.customer_kind === "new" || row.customer_kind === "returning" ? row.customer_kind : "any",
   };
 }
 
@@ -98,6 +111,10 @@ export function ruleDefFromRow(row: AdvanceRuleRow): AdvanceRuleDef {
     min: row.min_amount === null ? null : Number(row.min_amount),
     max: row.max_amount === null ? null : Number(row.max_amount),
     includeFee: row.include_delivery_fee,
+    minTotal: row.min_order_total === null ? null : Number(row.min_order_total),
+    maxTotal: row.max_order_total === null ? null : Number(row.max_order_total),
+    customer:
+      row.customer_kind === "new" || row.customer_kind === "returning" ? row.customer_kind : "any",
   };
 }
 
@@ -132,6 +149,19 @@ export function ruleFormError(form: AdvanceRuleForm, isAr: boolean): string | nu
   if (min !== null && max !== null && max < min) {
     return isAr ? "الحد الأعلى أقل من الأدنى." : "The most is below the least.";
   }
+  const minTotal = numberOrNull(form.min_total);
+  const maxTotal = numberOrNull(form.max_total);
+  if (
+    Number.isNaN(minTotal) ||
+    Number.isNaN(maxTotal) ||
+    (minTotal !== null && minTotal < 0) ||
+    (maxTotal !== null && maxTotal <= 0)
+  ) {
+    return isAr ? "قيمة الطلب أرقام موجبة." : "The order value limits are positive numbers.";
+  }
+  if (minTotal !== null && maxTotal !== null && maxTotal < minTotal) {
+    return isAr ? "أعلى قيمة للطلب أقل من أدناها." : "The highest order value is below the lowest.";
+  }
   return null;
 }
 
@@ -150,6 +180,9 @@ export function ruleColumns(form: AdvanceRuleForm) {
     min_amount: numberOrNull(form.min) as number | null,
     max_amount: numberOrNull(form.max) as number | null,
     include_delivery_fee: form.include_fee,
+    min_order_total: numberOrNull(form.min_total) as number | null,
+    max_order_total: numberOrNull(form.max_total) as number | null,
+    customer_kind: form.customer,
   };
 }
 
@@ -165,6 +198,9 @@ export function ruleDefFromForm(form: AdvanceRuleForm): AdvanceRuleDef {
     min: (numberOrNull(form.min) as number | null) ?? null,
     max: (numberOrNull(form.max) as number | null) ?? null,
     includeFee: form.include_fee,
+    minTotal: (numberOrNull(form.min_total) as number | null) ?? null,
+    maxTotal: (numberOrNull(form.max_total) as number | null) ?? null,
+    customer: form.customer,
   };
 }
 
@@ -203,6 +239,21 @@ export function describeRule(
   if (rule.madeToOrder === true) parts.push(isAr ? "المنتجات حسب الطلب" : "made-to-order items");
   if (rule.madeToOrder === false) parts.push(isAr ? "المنتجات الجاهزة" : "ready-made items");
   if (what.length > 0) parts.push(what.join(isAr ? "، " : ", "));
+  if (rule.minTotal !== null && rule.maxTotal !== null) {
+    parts.push(
+      isAr
+        ? `طلبات من ${money(rule.minTotal)} إلى ${money(rule.maxTotal)}`
+        : `orders from ${money(rule.minTotal)} to ${money(rule.maxTotal)}`,
+    );
+  } else if (rule.minTotal !== null) {
+    parts.push(
+      isAr ? `طلبات ${money(rule.minTotal)} فأكثر` : `orders of ${money(rule.minTotal)} or more`,
+    );
+  } else if (rule.maxTotal !== null) {
+    parts.push(isAr ? `طلبات حتى ${money(rule.maxTotal)}` : `orders up to ${money(rule.maxTotal)}`);
+  }
+  if (rule.customer === "new") parts.push(isAr ? "العملاء الجدد" : "new customers");
+  if (rule.customer === "returning") parts.push(isAr ? "العملاء السابقون" : "returning customers");
   if (rule.fulfillment.length > 0) {
     parts.push(
       (isAr ? "عند " : "for ") +
@@ -238,6 +289,16 @@ export const RULE_PRESETS: Array<{
       value: "30",
       include_fee: true,
     },
+  },
+  {
+    id: "new-customers",
+    label: { ar: "العملاء الجدد 50%", en: "New customers 50%" },
+    form: { name_en: "New customers", name_ar: "العملاء الجدد", customer: "new", value: "50" },
+  },
+  {
+    id: "big-orders",
+    label: { ar: "الطلبات الكبيرة (100 فأكثر)", en: "Big orders (100 or more)" },
+    form: { name_en: "Big orders", name_ar: "الطلبات الكبيرة", min_total: "100", value: "50" },
   },
   {
     id: "fixed",

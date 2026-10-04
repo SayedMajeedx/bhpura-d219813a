@@ -37,6 +37,11 @@ export type AdvanceRuleDef = {
   min: number | null;
   max: number | null;
   includeFee: boolean;
+  /** The order's total must be at least / at most this (null: no limit). */
+  minTotal: number | null;
+  maxTotal: number | null;
+  /** A new customer has no earlier order with the store; a returning one has. */
+  customer: "any" | "new" | "returning";
 };
 
 export type AdvanceLine = {
@@ -53,6 +58,8 @@ export type AdvanceOrder = {
   shipping: number;
   fulfillment: AdvanceFulfillment;
   lines: readonly AdvanceLine[];
+  /** Whether the customer already has an order with the store (unknown counts as new). */
+  returning?: boolean;
 };
 
 const wholeFils = (n: number) => Math.round(n * 1e6) / 1e6;
@@ -68,6 +75,9 @@ const everything = (over: Partial<AdvanceRuleDef>): AdvanceRuleDef => ({
   min: null,
   max: null,
   includeFee: false,
+  minTotal: null,
+  maxTotal: null,
+  customer: "any",
   ...over,
 });
 
@@ -90,6 +100,9 @@ export function defaultAdvanceRules(percent: number, scope: string): AdvanceRule
 
 const reaches = (rule: AdvanceRuleDef, order: AdvanceOrder, line: AdvanceLine): boolean =>
   (rule.fulfillment.length === 0 || rule.fulfillment.includes(order.fulfillment)) &&
+  (rule.minTotal === null || order.total >= rule.minTotal) &&
+  (rule.maxTotal === null || order.total <= rule.maxTotal) &&
+  (rule.customer === "any" || (rule.customer === "returning") === (order.returning === true)) &&
   (rule.madeToOrder === null || rule.madeToOrder === line.madeToOrder) &&
   (rule.productIds.length === 0 ||
     (line.productId != null && rule.productIds.includes(line.productId))) &&
@@ -155,6 +168,9 @@ type RuleJson = {
   min?: number | string | null;
   max?: number | string | null;
   include_fee?: boolean | null;
+  min_total?: number | string | null;
+  max_total?: number | string | null;
+  customer?: string | null;
 };
 
 /** A rule as the database's JSON (keys as advance_rules_for_brand writes them). */
@@ -170,6 +186,9 @@ export function advanceRuleToJson(rule: AdvanceRuleDef): RuleJson {
     min: rule.min,
     max: rule.max,
     include_fee: rule.includeFee,
+    min_total: rule.minTotal,
+    max_total: rule.maxTotal,
+    customer: rule.customer,
   };
 }
 
@@ -189,5 +208,8 @@ export function advanceRuleFromJson(json: RuleJson): AdvanceRuleDef {
     min: asNumberOrNull(json.min),
     max: asNumberOrNull(json.max),
     includeFee: json.include_fee === true,
+    minTotal: asNumberOrNull(json.min_total),
+    maxTotal: asNumberOrNull(json.max_total),
+    customer: json.customer === "new" || json.customer === "returning" ? json.customer : "any",
   };
 }

@@ -16,7 +16,7 @@ export const advanceRulesKeys = {
 };
 
 const COLUMNS =
-  "id, name_en, name_ar, is_active, sort_order, fulfillment, made_to_order, product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee" as const;
+  "id, name_en, name_ar, is_active, sort_order, fulfillment, made_to_order, product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, min_order_total, max_order_total, customer_kind" as const;
 
 /** The store's rules in the order they are tried, switched-off ones too. */
 export async function fetchAdvanceRules(brandId: string): Promise<AdvanceRuleRow[]> {
@@ -43,12 +43,32 @@ export async function fetchPublicAdvanceRules(brandId: string): Promise<AdvanceR
   return data ?? [];
 }
 
+/**
+ * Whether the signed-in customer already has an order with the store (for the checkout's
+ * preview of a rule that tells new customers from returning ones). A guest gets false; the
+ * database decides when the order is placed.
+ */
+export async function fetchCustomerIsReturning(brandSlug: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("advance_customer_is_returning_rpc", {
+    p_brand_slug: brandSlug,
+  });
+  if (error) throw error;
+  return data === true;
+}
+
 export const advanceRulesQueries = {
   list: (brandId: string) =>
     queryOptions({
       queryKey: advanceRulesKeys.list(brandId),
       queryFn: () => fetchAdvanceRules(brandId),
       enabled: Boolean(brandId),
+    }),
+  returning: (brandSlug: string, enabled: boolean) =>
+    queryOptions({
+      queryKey: ["advance-rules-returning", brandSlug] as const,
+      queryFn: () => fetchCustomerIsReturning(brandSlug),
+      enabled: Boolean(brandSlug) && enabled,
+      staleTime: 5 * 60_000,
     }),
   public: (brandId: string, enabled = true) =>
     queryOptions({

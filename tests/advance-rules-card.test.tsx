@@ -77,6 +77,9 @@ const rule = (over: Record<string, unknown>) => ({
   min_amount: null,
   max_amount: null,
   include_delivery_fee: false,
+  min_order_total: null,
+  max_order_total: null,
+  customer_kind: "any",
   ...over,
 });
 
@@ -229,5 +232,67 @@ describe("the advance rules card", () => {
     renderCard();
     expect(await screen.findByText("قواعد خاصة بالدفعة المقدمة")).toBeInTheDocument();
     expect(await screen.findByText(/50%.*المنتجات حسب الطلب/)).toBeInTheDocument();
+  });
+});
+
+describe("the order value and the customer in a rule", () => {
+  it("saves a rule for big orders from new customers", async () => {
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Add a rule" }));
+    fireEvent.change(screen.getByLabelText("Value"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "100" } });
+    fireEvent.change(screen.getByLabelText("Up to"), { target: { value: "300" } });
+    fireEvent.click(screen.getByRole("radio", { name: "New customers" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save rule" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalled());
+    expect(state.save).toHaveBeenCalledWith(
+      "b1",
+      null,
+      expect.objectContaining({
+        min_order_total: 100,
+        max_order_total: 300,
+        customer_kind: "new",
+        amount_value: 50,
+      }),
+      0,
+    );
+  });
+
+  it("starts from the new-customers quick start", async () => {
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Add a rule" }));
+    fireEvent.click(screen.getByRole("button", { name: /New customers 50%/ }));
+    expect(screen.getByRole("radio", { name: "New customers" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByLabelText("Value")).toHaveValue(50);
+    fireEvent.click(screen.getByRole("button", { name: /Big orders/ }));
+    expect(screen.getByLabelText("From")).toHaveValue(100);
+  });
+
+  it("will not save order value limits the wrong way round", async () => {
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Add a rule" }));
+    fireEvent.change(screen.getByLabelText("Value"), { target: { value: "30" } });
+    fireEvent.change(screen.getByLabelText("From"), { target: { value: "300" } });
+    fireEvent.change(screen.getByLabelText("Up to"), { target: { value: "200" } });
+    expect(screen.getByRole("alert")).toHaveTextContent(/below the lowest/);
+    expect(screen.getByRole("button", { name: "Save rule" })).toBeDisabled();
+  });
+
+  it("lists a rule with its order value and customer in words", async () => {
+    state.rules = [
+      rule({
+        made_to_order: null,
+        min_order_total: 100,
+        customer_kind: "returning",
+        amount_value: 10,
+      }),
+    ];
+    renderCard();
+    expect(
+      await screen.findByText("10% · orders of BHD 100.000 or more · returning customers"),
+    ).toBeInTheDocument();
   });
 });

@@ -233,6 +233,12 @@ function Checkout() {
     advanceRulesQueries.public(brand.id, settings.advance_payment_enabled),
   ).data;
   const ownRuleDefs = useMemo(() => (ownRules ?? []).map(ruleDefFromRow), [ownRules]);
+  // Only a signed-in customer can be asked about, and only a rule that tells new customers
+  // from returning ones needs it (a guest shows as new; the database decides at placement).
+  const needsCustomerKind = ownRuleDefs.some((rule) => rule.customer !== "any");
+  const returning =
+    useQuery(advanceRulesQueries.returning(brand.slug, needsCustomerKind && Boolean(session?.user)))
+      .data === true;
   const advance = useMemo(
     () =>
       advanceForOrder(
@@ -240,6 +246,7 @@ function Checkout() {
           total: grandTotal,
           shipping,
           fulfillment: appointment ? "appointment" : fulfillment,
+          returning,
           lines: cart.map((item) => ({
             amount: item.price * item.qty,
             madeToOrder: Boolean(item.booking) || madeToOrderIds.has(item.product_id),
@@ -258,6 +265,7 @@ function Checkout() {
       madeToOrderIds,
       categoryById,
       ownRuleDefs,
+      returning,
       settings,
     ],
   );
