@@ -386,6 +386,8 @@ export type Database = {
           category_slugs: string[];
           created_at: string;
           customer_kind: string;
+          destination_countries: string[];
+          destination_kind: string;
           fulfillment: string[];
           id: string;
           include_delivery_fee: boolean;
@@ -407,6 +409,8 @@ export type Database = {
           category_slugs?: string[];
           created_at?: string;
           customer_kind?: string;
+          destination_countries?: string[];
+          destination_kind?: string;
           fulfillment?: string[];
           id?: string;
           include_delivery_fee?: boolean;
@@ -428,6 +432,8 @@ export type Database = {
           category_slugs?: string[];
           created_at?: string;
           customer_kind?: string;
+          destination_countries?: string[];
+          destination_kind?: string;
           fulfillment?: string[];
           id?: string;
           include_delivery_fee?: boolean;
@@ -5312,6 +5318,7 @@ export type Database = {
           delivery_notes: string | null;
           delivery_status_updated_at: string | null;
           delivery_status_updated_by: string | null;
+          destination_country: string | null;
           digital_delivery_channel: string | null;
           digital_delivery_contact: string | null;
           discount: number;
@@ -5387,6 +5394,7 @@ export type Database = {
           delivery_notes?: string | null;
           delivery_status_updated_at?: string | null;
           delivery_status_updated_by?: string | null;
+          destination_country?: string | null;
           digital_delivery_channel?: string | null;
           digital_delivery_contact?: string | null;
           discount?: number;
@@ -5462,6 +5470,7 @@ export type Database = {
           delivery_notes?: string | null;
           delivery_status_updated_at?: string | null;
           delivery_status_updated_by?: string | null;
+          destination_country?: string | null;
           digital_delivery_channel?: string | null;
           digital_delivery_contact?: string | null;
           discount?: number;
