@@ -76,7 +76,9 @@ export function RecentlyViewed({ excludeProductId, className = "" }: RecentlyVie
         </span>
       </div>
 
-      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:px-0 [scrollbar-width:thin]">
+      {/* scroll-px: the snap point keeps the rail's padding, or the first card snaps flush to the
+          edge (and past it in RTL) and its text is cut off. */}
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-4 sm:mx-0 sm:scroll-px-0 sm:px-0 [scrollbar-width:thin]">
         {products.map((p) => (
           <div key={p.id} className="w-[180px] sm:w-[220px] md:w-[240px] shrink-0 snap-start">
             <ProductCard product={p} />
