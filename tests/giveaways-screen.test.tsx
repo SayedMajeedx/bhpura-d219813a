@@ -298,6 +298,22 @@ describe("checking the winners", () => {
     expect(screen.getByText(/Draw seed/).textContent).toContain("abc123");
   });
 
+  it("opens the winner reveal for the winner standing, and not for one disqualified", async () => {
+    HTMLCanvasElement.prototype.getContext = (() =>
+      null) as typeof HTMLCanvasElement.prototype.getContext;
+    state.winners = [winner(1, { status: "disqualified" }), winner(2), winner(3)];
+    renderScreen();
+    await screen.findByText("@user2");
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Play reveal" }));
+    const dialog = await screen.findByRole("dialog", { name: "Winner reveal" });
+    expect(within(dialog).getByText("1 to reveal · countdown, shuffle, winner")).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
   it("confirms a win only after the follow is ticked", async () => {
     renderScreen();
     await screen.findByText("@user1");

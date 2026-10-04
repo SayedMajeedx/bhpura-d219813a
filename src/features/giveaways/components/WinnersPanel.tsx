@@ -1,4 +1,5 @@
-import { Check, Copy, ExternalLink, UserX } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Clapperboard, Copy, ExternalLink, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { GiveawayWinner } from "@/lib/data/giveaways";
 import type { GiveawayDetail } from "../hooks/use-giveaway-detail";
+import type { RevealWinner } from "../lib/reveal";
 import { checksComplete, profileUrl } from "../lib/winners";
+import { WinnerReveal } from "./WinnerReveal";
 
 function WinnerCard({
   row,
@@ -142,6 +145,22 @@ function WinnerCard({
 /** Winners and backups: check each one on their profile, disqualify, and the next backup steps up. */
 export function WinnersPanel({ detail }: { detail: GiveawayDetail }) {
   const { isAr, resolved, giveaway } = detail;
+  const [revealOpen, setRevealOpen] = useState(false);
+  // Who the reveal announces (the winners standing now) and whose names flash by.
+  const revealWinners = useMemo<RevealWinner[]>(
+    () =>
+      resolved.active.map((row) => ({
+        id: row.id,
+        position: row.position,
+        username: row.username,
+        comment: row.comment_body ?? "",
+      })),
+    [resolved.active],
+  );
+  const pool = useMemo(
+    () => detail.result.entries.map((entry) => entry.username),
+    [detail.result.entries],
+  );
   if (!detail.hasDraw || !giveaway) return null;
 
   const copyList = async () => {
@@ -158,10 +177,21 @@ export function WinnersPanel({ detail }: { detail: GiveawayDetail }) {
     <section className="space-y-4 rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold text-foreground">{isAr ? "الفائزون" : "Winners"}</h2>
-        <Button type="button" variant="outline" size="sm" onClick={() => void copyList()}>
-          <Copy className="size-4" />
-          {isAr ? "نسخ القائمة" : "Copy list"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            size="sm"
+            disabled={revealWinners.length === 0}
+            onClick={() => setRevealOpen(true)}
+          >
+            <Clapperboard className="size-4" />
+            {isAr ? "عرض إعلان الفائز" : "Play reveal"}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => void copyList()}>
+            <Copy className="size-4" />
+            {isAr ? "نسخ القائمة" : "Copy list"}
+          </Button>
+        </div>
       </div>
 
       {resolved.vacancies > 0 && (
@@ -209,6 +239,16 @@ export function WinnersPanel({ detail }: { detail: GiveawayDetail }) {
           {isAr ? "بذرة السحب" : "Draw seed"}: {giveaway.draw_seed}
         </p>
       )}
+
+      <WinnerReveal
+        open={revealOpen}
+        onClose={() => setRevealOpen(false)}
+        isAr={isAr}
+        title={giveaway.title}
+        winners={revealWinners}
+        pool={pool}
+        seed={giveaway.draw_seed ?? giveaway.id}
+      />
     </section>
   );
 }
