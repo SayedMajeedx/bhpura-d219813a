@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Package,
+  CalendarCheck,
   AlertTriangle,
   RotateCcw,
   CheckCircle2,
@@ -17,6 +18,8 @@ export interface DashboardActionStripProps {
   unfulfilledOrdersCount: number;
   lowStockCount: number;
   pendingReturnsCount: number;
+  /** Appointments whose time has come (a store that takes bookings). */
+  appointmentsToCompleteCount?: number;
   className?: string;
 }
 
@@ -26,12 +29,30 @@ export function DashboardActionStrip({
   unfulfilledOrdersCount,
   lowStockCount,
   pendingReturnsCount,
+  appointmentsToCompleteCount = 0,
   className,
 }: DashboardActionStripProps) {
-  const totalActionItems = unfulfilledOrdersCount + lowStockCount + pendingReturnsCount;
+  const totalActionItems =
+    unfulfilledOrdersCount + lowStockCount + pendingReturnsCount + appointmentsToCompleteCount;
   const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
 
   const actionCards = [
+    {
+      id: "appointments_to_complete",
+      count: appointmentsToCompleteCount,
+      title: isAr ? "مواعيد حان وقتها" : "Appointments to Complete",
+      description: isAr
+        ? `${appointmentsToCompleteCount} موعد حان وقته: أنجز الخدمة وحصّل المتبقي إن وُجد`
+        : `${appointmentsToCompleteCount} appointment(s) whose time has come: carry out the service and collect any balance`,
+      to: "/admin/b/$slug/orders" as const,
+      search: { tab: "action_required" },
+      actionLabel: isAr ? "فتح الطلبات" : "Open Orders",
+      icon: CalendarCheck,
+      badgeText: isAr ? "حان الوقت" : "Due Now",
+      badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      accentBorder: "hover:border-amber-500/40",
+      iconBg: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+    },
     {
       id: "unfulfilled_orders",
       count: unfulfilledOrdersCount,
@@ -122,6 +143,19 @@ export function DashboardActionStrip({
       {/* Task Breakdown Pills */}
       {totalActionItems > 0 && (
         <div className="flex flex-wrap items-center gap-2 pb-3 mb-1">
+          {appointmentsToCompleteCount > 0 && (
+            <Link
+              to="/admin/b/$slug/orders"
+              params={{ slug }}
+              search={{ tab: "action_required" }}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 transition-colors"
+            >
+              <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
+              <span>{isAr ? "مواعيد حان وقتها" : "Appointments Due"}</span>
+              <span className="font-mono font-bold">({appointmentsToCompleteCount})</span>
+            </Link>
+          )}
+
           {unfulfilledOrdersCount > 0 && (
             <Link
               to="/admin/b/$slug/orders"

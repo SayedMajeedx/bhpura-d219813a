@@ -8,6 +8,8 @@ interface DashboardScopeSwitcherProps {
   activeScope: DashboardViewScope;
   onScopeChange: (scope: DashboardViewScope) => void;
   lowStockCount: number;
+  /** The store keeps stock; without it the alerts are about customers only. */
+  tracksStock?: boolean;
 }
 
 export function DashboardScopeSwitcher({
@@ -15,6 +17,7 @@ export function DashboardScopeSwitcher({
   activeScope,
   onScopeChange,
   lowStockCount,
+  tracksStock = true,
 }: DashboardScopeSwitcherProps) {
   const isAr = lang === "ar";
 
@@ -46,8 +49,8 @@ export function DashboardScopeSwitcher({
     {
       id: "diagnostics",
       icon: ShieldAlert,
-      labelAr: "تنبيهات تحتاج متابعة",
-      labelEn: "Stock & Customer Alerts",
+      labelAr: tracksStock ? "تنبيهات تحتاج متابعة" : "تنبيهات العملاء",
+      labelEn: tracksStock ? "Stock & Customer Alerts" : "Customer Alerts",
       shortLabelAr: "التنبيهات",
       shortLabelEn: "Alerts",
       badge: lowStockCount > 0 ? lowStockCount : undefined,

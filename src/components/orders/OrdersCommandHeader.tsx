@@ -14,6 +14,8 @@ interface OrdersCommandHeaderProps {
   isCourier: boolean;
   onCreateNew: () => void;
   renderImporter?: React.ReactNode;
+  /** A services store: its orders are bookings, not parcels to pack and dispatch. */
+  isServices?: boolean;
 }
 
 export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
@@ -22,6 +24,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
   isCourier,
   onCreateNew,
   renderImporter,
+  isServices = false,
 }) => {
   const isAr = lang === "ar";
 
@@ -46,9 +49,13 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "متابعة الطلبات، حالة الدفع والتسليم والتوصيل"
-              : "Focus on the next order requiring payment, packing, or courier dispatch."}
+            {isServices
+              ? isAr
+                ? "متابعة الحجوزات والدفعات، والمواعيد التي حان وقت إنجازها"
+                : "Follow bookings and payments, and the appointments that are due."
+              : isAr
+                ? "متابعة الطلبات، حالة الدفع والتسليم والتوصيل"
+                : "Focus on the next order requiring payment, packing, or courier dispatch."}
           </p>
         </div>
       </div>

@@ -125,6 +125,35 @@ describe("VerticalChangeDialog", () => {
     expect(onChanged).not.toHaveBeenCalled();
   });
 
+  it("lists what stays behind and no longer fits, and says nothing is deleted", async () => {
+    data.preview.mockImplementation(async () => ({
+      ...plan,
+      leftovers: [
+        {
+          id: "products-not-services",
+          count: 12,
+          text: {
+            ar: "١٢ منتجاً ما زال في الكتالوج",
+            en: "12 goods product(s) stay in the catalog",
+          },
+          advice: { ar: "أخفِها", en: "Hide or delete them from the Services page." },
+        },
+      ],
+    }));
+    renderDialog();
+    expect(
+      await screen.findByText("What stays behind and no longer fits (nothing is deleted)"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("12 goods product(s) stay in the catalog")).toBeInTheDocument();
+    expect(screen.getByText("Hide or delete them from the Services page.")).toBeInTheDocument();
+  });
+
+  it("shows no such section when nothing stays behind", async () => {
+    renderDialog();
+    await screen.findByText("Add-ons to install");
+    expect(screen.queryByText(/What stays behind/)).not.toBeInTheDocument();
+  });
+
   it("reads right to left in Arabic", async () => {
     renderDialog({ isAr: true });
     expect(await screen.findByText("إضافات ستُثبَّت")).toBeInTheDocument();

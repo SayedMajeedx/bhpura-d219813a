@@ -1,9 +1,16 @@
 import { CheckCircle2, CircleDollarSign, Clock3, Package, ReceiptText, Truck } from "lucide-react";
 import type { orderTabCounts } from "@/features/orders/lib/order-queue";
 
-/** The orders list quick tabs, in display order, with their counts. */
-export function orderQueueTabs(counts: ReturnType<typeof orderTabCounts>) {
-  return [
+/**
+ * The orders list quick tabs, in display order, with their counts. A services store has no
+ * parcels to prepare or hand to a courier, so those two tabs are left out while they are empty
+ * (an order that is still there stays reachable).
+ */
+export function orderQueueTabs(
+  counts: ReturnType<typeof orderTabCounts>,
+  options: { services?: boolean } = {},
+) {
+  const tabs = [
     {
       id: "action_required",
       label_en: "Needs attention",
@@ -47,4 +54,8 @@ export function orderQueueTabs(counts: ReturnType<typeof orderTabCounts>) {
       icon: ReceiptText,
     },
   ] as const;
+  return tabs.filter(
+    (tab) =>
+      !(options.services && (tab.id === "to_prepare" || tab.id === "shipped") && tab.count === 0),
+  );
 }

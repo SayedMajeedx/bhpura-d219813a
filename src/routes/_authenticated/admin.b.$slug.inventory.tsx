@@ -9,6 +9,7 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
+import { isServicesProfile } from "@/lib/store-profile";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
 import {
@@ -98,6 +99,7 @@ function Inventory() {
         <InventoryCommandHeader
           lang={lang === "ar" ? "ar" : "en"}
           productCount={0}
+          isServices={isServicesProfile(storeProfile.modules)}
           isCourier={false}
           onCreateNew={() => {}}
         />

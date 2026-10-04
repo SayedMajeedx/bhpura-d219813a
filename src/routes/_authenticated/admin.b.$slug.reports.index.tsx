@@ -30,14 +30,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { reportingQueries } from "@/lib/data/reporting";
+import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
   component: ReportsOverview,
 });
 
+/**
+ * A row for something the store does not use (incubators, packaging, shipping) is left out, unless
+ * it holds a figure: data from before a change of vertical stays visible.
+ */
+const shows = (enabled: boolean, value: unknown) => enabled || Number(value || 0) !== 0;
+
 function ReportsOverview() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
+  const { modules } = useAdminStoreProfile(useBrand().id).profile;
   const [date, setDate] = useState<DateRange | undefined>(defaultReportRange);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
@@ -196,12 +205,16 @@ function ReportsOverview() {
               accent="amber"
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            <KpiCard
-              title={lang === "ar" ? "الشحن المحصل" : "Shipping collected"}
-              value={money(data.shipping_collected)}
-              icon={<ReceiptText />}
-            />
+          <div
+            className={`grid gap-4 ${shows(modules.shipping, data.shipping_collected) ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+          >
+            {shows(modules.shipping, data.shipping_collected) && (
+              <KpiCard
+                title={lang === "ar" ? "الشحن المحصل" : "Shipping collected"}
+                value={money(data.shipping_collected)}
+                icon={<ReceiptText />}
+              />
+            )}
             <KpiCard
               title={lang === "ar" ? "ضريبة القيمة المضافة" : "VAT collected"}
               value={money(data.vat_collected)}
@@ -214,9 +227,13 @@ function ReportsOverview() {
               icon={<WalletCards />}
               accent="amber"
               description={
-                lang === "ar"
-                  ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)} + عمولات ${money(data.incubator_commissions)}`
-                  : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)} + commissions ${money(data.incubator_commissions)}`
+                shows(modules.incubators, data.incubator_commissions)
+                  ? lang === "ar"
+                    ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)} + عمولات ${money(data.incubator_commissions)}`
+                    : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)} + commissions ${money(data.incubator_commissions)}`
+                  : lang === "ar"
+                    ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)}`
+                    : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)}`
               }
             />
           </div>
@@ -256,18 +273,25 @@ function ReportsOverview() {
               rows={[
                 [lang === "ar" ? "المبالغ الجزئية" : "Partial amounts", money(data.partial_amount)],
                 [lang === "ar" ? "المبالغ المستردة" : "Refunded total", money(data.refunded_total)],
-                [
-                  lang === "ar" ? "مبيعات الحاضنات" : "Incubator sales",
-                  money(data.incubator_sales),
-                ],
-                [
-                  lang === "ar" ? "عمولات الحاضنات" : "Incubator commissions",
-                  money(data.incubator_commissions),
-                ],
-                [
-                  lang === "ar" ? "مستحقات الحاضنات" : "Incubator receivables",
-                  money(data.incubator_receivables),
-                ],
+                ...(shows(
+                  modules.incubators,
+                  data.incubator_sales || data.incubator_commissions || data.incubator_receivables,
+                )
+                  ? ([
+                      [
+                        lang === "ar" ? "مبيعات الحاضنات" : "Incubator sales",
+                        money(data.incubator_sales),
+                      ],
+                      [
+                        lang === "ar" ? "عمولات الحاضنات" : "Incubator commissions",
+                        money(data.incubator_commissions),
+                      ],
+                      [
+                        lang === "ar" ? "مستحقات الحاضنات" : "Incubator receivables",
+                        money(data.incubator_receivables),
+                      ],
+                    ] as Array<[string, string | number]>)
+                  : []),
                 [
                   lang === "ar" ? "طلبات مجانية مكتملة" : "Free completed orders",
                   Number(data.free_completed_order_count || 0),
@@ -282,14 +306,22 @@ function ReportsOverview() {
                   lang === "ar" ? "تكلفة طلبات المتجر" : "Store orders COGS",
                   money(data.product_cogs),
                 ],
-                [
-                  lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Incubator sales COGS",
-                  money(data.incubator_cogs),
-                ],
-                [
-                  lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging COGS",
-                  money(data.packaging_cogs),
-                ],
+                ...(shows(modules.incubators, data.incubator_cogs)
+                  ? ([
+                      [
+                        lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Incubator sales COGS",
+                        money(data.incubator_cogs),
+                      ],
+                    ] as Array<[string, string | number]>)
+                  : []),
+                ...(shows(modules.packaging, data.packaging_cogs)
+                  ? ([
+                      [
+                        lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging COGS",
+                        money(data.packaging_cogs),
+                      ],
+                    ] as Array<[string, string | number]>)
+                  : []),
                 [
                   lang === "ar" ? "عناصر بلا تكلفة مسجلة" : "Items missing cost",
                   Number(data.missing_cost_item_count || 0),
@@ -298,12 +330,16 @@ function ReportsOverview() {
                   lang === "ar" ? "عناصر يدوية (طلبات مخصصة)" : "Manual / bespoke items",
                   Number(data.missing_product_link_count || 0),
                 ],
-                [
-                  lang === "ar"
-                    ? "عناصر مكتملة بتغليف صفري"
-                    : "Completed items with zero packaging",
-                  Number(data.zero_packaging_item_count || 0),
-                ],
+                ...(shows(modules.packaging, data.zero_packaging_item_count)
+                  ? ([
+                      [
+                        lang === "ar"
+                          ? "عناصر مكتملة بتغليف صفري"
+                          : "Completed items with zero packaging",
+                        Number(data.zero_packaging_item_count || 0),
+                      ],
+                    ] as Array<[string, string | number]>)
+                  : []),
                 [
                   lang === "ar" ? "قيمة المبيعات غير المحددة التكلفة" : "Sales value missing cost",
                   money(data.missing_cost_exposure),

@@ -39,6 +39,21 @@ export function ordersNeedingAction(orders: DashboardOrders, hasMadeToOrder: boo
 }
 
 /**
+ * Appointments whose time has come: the service is to be carried out and any balance collected
+ * (the orders page's "needs attention" holds them too). Needs each order's `fulfillment_method`
+ * and booking start, which the finance rows carry.
+ */
+export function appointmentsToCompleteCount(orders: DashboardOrders): number {
+  return orders.filter((o) => {
+    const wf = getOrderWorkflow(o);
+    return (
+      !wf.terminal &&
+      (wf.nextAction === "complete_service" || wf.nextAction === "collect_and_complete_service")
+    );
+  }).length;
+}
+
+/**
  * Revenue, COGS (product, packaging BOM, incubator), OpEx (expenses, payment
  * fees, incubator commissions), profit and margin for the last 30 days, the
  * change against the 30 days before, and the daily sales series.

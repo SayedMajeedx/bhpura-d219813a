@@ -27,6 +27,8 @@ import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { brandQueries } from "@/lib/data/brands";
 import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
 import { catalogInsightQueries } from "@/lib/data/catalog";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { isServicesProfile } from "@/lib/store-profile";
 
 /** Whether the policy has written terms in either language (counts as a policy page). */
 const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
@@ -58,6 +60,8 @@ export interface ReadinessEvaluationInput {
   storeVertical?: string | null;
   lang?: "ar" | "en";
   hasReturnPolicy?: boolean;
+  /** A services store: it has no shipping to set up and no goods to take back. */
+  services?: boolean;
 }
 
 export interface ReadinessItem {
@@ -399,9 +403,30 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
         },
       ];
 
-  const visibleItems = includeDesignChecks
+  const forStore = input.services
     ? items
-    : items.filter((it) => it.id !== "palette" && it.id !== "vertical");
+        .filter((it) => it.id !== "fulfillment")
+        .map((it) =>
+          it.id === "policies"
+            ? {
+                ...it,
+                title: isAr
+                  ? "نشر صفحة الشروط وسياسة الإلغاء"
+                  : "Publish your terms and cancellation policy",
+                description: isAr
+                  ? hasPolicies
+                    ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+                    : "توضيح شروط الحجز والإلغاء والدفعة المقدمة يبني الثقة في خدماتك"
+                  : hasPolicies
+                    ? `${validPages.length} published page(s) with your terms`
+                    : "Clear booking, cancellation and deposit terms build trust in your services",
+              }
+            : it,
+        )
+    : items;
+  const visibleItems = includeDesignChecks
+    ? forStore
+    : forStore.filter((it) => it.id !== "palette" && it.id !== "vertical");
   const completedCount = visibleItems.filter((it) => it.isComplete).length;
   const totalCount = visibleItems.length;
   const progressPercent = Math.round((completedCount / totalCount) * 100);
@@ -461,6 +486,7 @@ export function StoreReadinessChecklist({
   // 4. The brand's profile (logo), shared with the settings form
   const brandQ = useQuery(brandQueries.profile(brandId));
 
+  const { profile } = useAdminStoreProfile(brandId);
   const { addons } = useAddons();
   const addonChecks = React.useMemo(() => readinessChecksFrom(addons), [addons]);
 
@@ -498,6 +524,7 @@ export function StoreReadinessChecklist({
     storeVertical: storeVertical ?? businessSettingsQ.data?.store_vertical,
     lang,
     hasReturnPolicy: Boolean(returnPolicyQ.data),
+    services: isServicesProfile(profile.modules),
   });
 
   const checklistItems = evaluation.items.map((item) => {
