@@ -93,6 +93,8 @@ export function placeStorefrontOrderArgs({
       },
       custom_fields: c.custom_fields ?? [],
       custom_field_values: c.custom_fields ?? [],
+      // A ready size on a made-to-order product: the database keeps the line ready-made.
+      ...(c.tailored === undefined ? {} : { tailored: c.tailored }),
     })),
     p_payment_method: method,
     p_notes: (() => {

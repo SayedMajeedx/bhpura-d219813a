@@ -291,6 +291,8 @@ export function productCartLine({
       ? 999
       : Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0) || 999,
     custom_fields: custom,
+    // What the shopper chose on a made-to-order product: made to order, or a ready size.
+    ...(product.is_made_to_order ? { tailored: isTailoringActive } : {}),
     selected_customizations,
   };
 }
