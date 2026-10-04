@@ -27,6 +27,7 @@ import {
   type AdvanceRuleForm,
 } from "@/lib/payments/advance-rule-form";
 import { AdvanceRuleEditor } from "@/features/settings/tabs/orders/AdvanceRuleEditor";
+import { AdvanceTemplates } from "@/features/settings/tabs/orders/AdvanceTemplates";
 
 /** The rule after which a new rule is placed (the end of the list). */
 const nextOrder = (rules: ReadonlyArray<{ sort_order: number }>) =>
@@ -43,7 +44,8 @@ export function AdvanceRulesCard() {
   const { form, brandId } = useBrandSettingsFormContext();
   const currency = form.bs.currency || "BHD";
   const qc = useQueryClient();
-  const rules = useQuery(advanceRulesQueries.list(brandId)).data ?? [];
+  const rulesQuery = useQuery(advanceRulesQueries.list(brandId));
+  const rules = rulesQuery.data ?? [];
   const products = useQuery(catalogQueries.products(brandId)).data ?? [];
   const categories = useQuery(categoriesQueries.active(brandId)).data ?? [];
   const [editing, setEditing] = useState<{ id: string | null; form: AdvanceRuleForm } | null>(null);
@@ -221,6 +223,14 @@ export function AdvanceRulesCard() {
               </li>
             ))}
           </ol>
+          <AdvanceTemplates
+            brandId={brandId}
+            vertical={form.bs.store_vertical}
+            currency={currency}
+            isAr={isAr}
+            firstOrder={nextOrder(rules)}
+            ready={rulesQuery.isSuccess}
+          />
           <Button
             type="button"
             className="gap-1.5"
