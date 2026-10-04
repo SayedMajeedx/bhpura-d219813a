@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import enforcement from "../supabase/migrations/20261003120000_advance_payment_enforcement.sql?raw";
 import scopeRule from "../supabase/migrations/20261003140000_advance_payment_scope_rule.sql?raw";
+import rulesTable from "../supabase/migrations/20261003150000_advance_payment_rules.sql?raw";
+import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
 
 // The advance-payment rule as the database decides it (PGlite): the two enforcement
 // migrations applied, in order, to a small copy of the order tables they touch.
@@ -22,6 +24,9 @@ const SCHEMA = `
   INSERT INTO public.admin_flag VALUES (false);
   CREATE FUNCTION public.is_admin() RETURNS boolean LANGUAGE sql AS $$ SELECT on_ FROM public.admin_flag $$;
   CREATE FUNCTION public.can_access_brand(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+  CREATE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+  CREATE TABLE public.brands (id uuid PRIMARY KEY);
+  CREATE TABLE public.products (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), category text);
   CREATE TABLE public.business_settings (
     brand_id uuid PRIMARY KEY,
     advance_payment_enabled boolean NOT NULL DEFAULT false,
@@ -41,6 +46,7 @@ const SCHEMA = `
   CREATE TABLE public.order_items (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    product_id uuid,
     line_total numeric NOT NULL DEFAULT 0, location text NOT NULL DEFAULT 'main'
   );
   INSERT INTO public.business_settings (brand_id, advance_payment_enabled, advance_payment_percent, advance_payment_scope)
@@ -54,6 +60,8 @@ beforeAll(async () => {
   await db.exec(SCHEMA);
   await db.exec(enforcement);
   await db.exec(scopeRule);
+  await db.exec(rulesTable);
+  await db.exec(rulesEngine);
 });
 
 const setAdmin = (on: boolean) => db.query("UPDATE public.admin_flag SET on_ = $1", [on]);

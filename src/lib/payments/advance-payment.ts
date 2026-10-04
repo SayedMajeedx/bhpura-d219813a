@@ -19,6 +19,16 @@
  * runs the two against each other.
  */
 
+import {
+  advanceParts,
+  advanceRulesDue,
+  defaultAdvanceRules,
+  type AdvanceOrder,
+  type AdvanceRuleDef,
+} from "@/lib/payments/advance-rules";
+
+export type { AdvanceOrder } from "@/lib/payments/advance-rules";
+
 export const ADVANCE_MIN_PERCENT = 1;
 export const ADVANCE_MAX_PERCENT = 100;
 export const DEFAULT_ADVANCE_PERCENT = 30;
@@ -70,7 +80,19 @@ export const ADVANCE_SCOPE_LABELS: Record<
   },
 };
 
-export type AdvanceRule = { enabled: boolean; percent: number; scope: AdvanceScope };
+export type AdvanceRule = {
+  enabled: boolean;
+  percent: number;
+  scope: AdvanceScope;
+  /** The store's own rules, in order; the general rule (percent and scope) takes what they leave. */
+  rules: readonly AdvanceRuleDef[];
+};
+
+/** Every rule an order is worked out under: the store's own, then its general rule. */
+export const advanceRulesOf = (rule: AdvanceRule): AdvanceRuleDef[] => [
+  ...rule.rules,
+  ...defaultAdvanceRules(rule.percent, rule.scope),
+];
 
 /** The rule from a store's settings: off unless switched on, a percentage kept within 1 to 100. */
 export function advanceRuleFrom(
@@ -82,6 +104,7 @@ export function advanceRuleFrom(
       }
     | null
     | undefined,
+  ownRules: readonly AdvanceRuleDef[] = [],
 ): AdvanceRule {
   const percent = Number(settings?.advance_payment_percent);
   return {
@@ -91,95 +114,54 @@ export function advanceRuleFrom(
         ? percent
         : DEFAULT_ADVANCE_PERCENT,
     scope: advanceScopeFrom(settings?.advance_payment_scope),
+    rules: ownRules,
   };
 }
 
-export type AdvanceOrder = {
-  /** The order's total (lines after discounts, tax and delivery fee). */
-  total: number;
-  /** The delivery fee inside the total. */
-  shipping: number;
-  fulfillment: "delivery" | "pickup" | "digital" | "appointment";
-  /** The lines, each with its amount and whether it is made to order. */
-  lines: ReadonlyArray<{ amount: number; madeToOrder: boolean }>;
-};
-
-const wholeFils = (n: number) => Math.round(n * 1e6) / 1e6;
-
 /**
- * What the order owes in advance, or null when nothing is asked of it. The same
- * arithmetic as order_advance_due: the part of the order the scope reaches, the
- * percentage of it rounded up to the fils, never more than the total.
+ * What the order owes in advance, or null when nothing is asked of it: the arithmetic of the
+ * database's order_advance_due, under the store's own rules and then its general rule.
  */
 export function advanceDue(order: AdvanceOrder, rule: AdvanceRule): number | null {
-  const total = Number(order.total) || 0;
-  if (!rule.enabled || total <= 0) return null;
-  const delivered = order.fulfillment === "delivery";
-  const linesSum = order.lines.reduce((sum, line) => sum + line.amount, 0);
-  const madeSum = order.lines.reduce((sum, line) => sum + (line.madeToOrder ? line.amount : 0), 0);
-  // The order without its delivery fee: discounts and tax are spread over the lines.
-  const items = Math.max(total - (Number(order.shipping) || 0), 0);
-  const madeShare = linesSum > 0 ? (items * madeSum) / linesSum : 0;
-  let basis: number;
-  switch (rule.scope) {
-    case "delivery":
-      basis = delivered ? total : 0;
-      break;
-    case "made_to_order":
-      basis = madeShare;
-      break;
-    case "made_to_order_or_delivery":
-      basis = delivered ? total : madeShare;
-      break;
-    default:
-      basis = total;
-  }
-  basis = wholeFils(basis);
-  if (basis <= 0) return null;
-  const amount =
-    rule.percent >= 100
-      ? Math.round(basis * 1000) / 1000
-      : Math.ceil(wholeFils(basis * rule.percent * 10 - 1e-9)) / 1000;
-  return Math.min(total, amount);
+  if (!rule.enabled) return null;
+  return advanceRulesDue(order, advanceRulesOf(rule));
 }
 
 export type AdvanceSplit = {
-  /** Whether the rule asks for anything of this order. */
+  /** Whether the rules ask for anything of this order. */
   applies: boolean;
-  percent: number;
-  scope: AdvanceScope;
-  /** What to pay now (the whole total when the rule does not apply). */
+  /** The percentage asked, when one percentage rule is all that applies (else null). */
+  percent: number | null;
+  /** What the advance is of: the whole order, its made-to-order lines, or some other part of it. */
+  of: "order" | "made_to_order" | "part";
+  /** What to pay now (the whole total when nothing applies). */
   dueNow: number;
   /** What stays due after the advance. */
   balance: number;
-  /** The advance is on the made-to-order items only, not the whole order. */
-  partial: boolean;
 };
 
 /** How an order divides into the advance and the balance. */
 export function advanceForOrder(order: AdvanceOrder, rule: AdvanceRule): AdvanceSplit {
   const total = Number(order.total) || 0;
+  const parts = rule.enabled ? advanceParts(order, advanceRulesOf(rule)) : [];
   const due = advanceDue(order, rule);
-  const delivered = order.fulfillment === "delivery";
-  const partial =
-    rule.scope === "made_to_order" || (rule.scope === "made_to_order_or_delivery" && !delivered);
   if (due === null) {
-    return {
-      applies: false,
-      percent: rule.percent,
-      scope: rule.scope,
-      dueNow: total,
-      balance: 0,
-      partial,
-    };
+    return { applies: false, percent: null, of: "order", dueNow: total, balance: 0 };
   }
+  const sole = parts.length === 1 ? parts[0] : null;
+  const covered = parts.reduce((sum, part) => sum + part.basis, 0);
+  const plainMadeToOrder =
+    sole !== null &&
+    sole.rule.madeToOrder === true &&
+    sole.rule.fulfillment.length === 0 &&
+    sole.rule.productIds.length === 0 &&
+    sole.rule.categorySlugs.length === 0;
   return {
     applies: true,
-    percent: rule.percent,
-    scope: rule.scope,
+    percent: sole !== null && sole.rule.kind === "percent" ? sole.rule.value : null,
+    of: covered >= total - 1e-6 ? "order" : plainMadeToOrder ? "made_to_order" : "part",
     dueNow: due,
     balance: Math.round((total - due) * 1000) / 1000,
-    partial,
   };
 }
 
@@ -210,9 +192,6 @@ export function advanceLines(
 ): string[] {
   if (!split.applies) return [];
   const { isAr, money } = options;
-  const percent = Number.isInteger(split.percent)
-    ? String(split.percent)
-    : split.percent.toFixed(2);
   if (split.balance <= 0) {
     return [
       isAr
@@ -228,11 +207,27 @@ export function advanceLines(
       : isAr
         ? "عند الاستلام"
         : "on delivery";
-  const of = split.partial ? (isAr ? ` من المنتجات حسب الطلب` : ` of the made-to-order items`) : "";
+  let qualifier = "";
+  if (split.percent !== null) {
+    const percent = Number.isInteger(split.percent)
+      ? String(split.percent)
+      : split.percent.toFixed(2);
+    const of =
+      split.of === "made_to_order"
+        ? isAr
+          ? " من المنتجات حسب الطلب"
+          : " of the made-to-order items"
+        : split.of === "part"
+          ? isAr
+            ? " من المنتجات المشمولة"
+            : " of the covered items"
+          : "";
+    qualifier = ` (${percent}%${of})`;
+  }
   return [
     isAr
-      ? `الدفعة المقدمة (${percent}%${of}) تُدفع الآن: ${money(split.dueNow)}`
-      : `Advance payment (${percent}%${of}) due now: ${money(split.dueNow)}`,
+      ? `الدفعة المقدمة${qualifier} تُدفع الآن: ${money(split.dueNow)}`
+      : `Advance payment${qualifier} due now: ${money(split.dueNow)}`,
     isAr ? `المتبقي ${money(split.balance)} ${when}` : `Balance ${money(split.balance)} ${when}`,
   ];
 }

@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
 import { AdvancePaymentCard } from "@/features/settings/tabs/orders/AdvancePaymentCard";
+import { AdvanceRulesCard } from "@/features/settings/tabs/orders/AdvanceRulesCard";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -299,6 +300,7 @@ export function PaymentsGroup() {
 
       {/* 2. Advance payment */}
       <AdvancePaymentCard />
+      {bs.advance_payment_enabled && <AdvanceRulesCard />}
     </div>
   );
 }

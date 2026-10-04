@@ -378,6 +378,71 @@ export type Database = {
           },
         ];
       };
+      advance_payment_rules: {
+        Row: {
+          amount_kind: string;
+          amount_value: number;
+          brand_id: string;
+          category_slugs: string[];
+          created_at: string;
+          fulfillment: string[];
+          id: string;
+          include_delivery_fee: boolean;
+          is_active: boolean;
+          made_to_order: boolean | null;
+          max_amount: number | null;
+          min_amount: number | null;
+          name_ar: string | null;
+          name_en: string | null;
+          product_ids: string[];
+          sort_order: number;
+        };
+        Insert: {
+          amount_kind?: string;
+          amount_value: number;
+          brand_id: string;
+          category_slugs?: string[];
+          created_at?: string;
+          fulfillment?: string[];
+          id?: string;
+          include_delivery_fee?: boolean;
+          is_active?: boolean;
+          made_to_order?: boolean | null;
+          max_amount?: number | null;
+          min_amount?: number | null;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_ids?: string[];
+          sort_order?: number;
+        };
+        Update: {
+          amount_kind?: string;
+          amount_value?: number;
+          brand_id?: string;
+          category_slugs?: string[];
+          created_at?: string;
+          fulfillment?: string[];
+          id?: string;
+          include_delivery_fee?: boolean;
+          is_active?: boolean;
+          made_to_order?: boolean | null;
+          max_amount?: number | null;
+          min_amount?: number | null;
+          name_ar?: string | null;
+          name_en?: string | null;
+          product_ids?: string[];
+          sort_order?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "advance_payment_rules_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       answers: {
         Row: {
           answered_at: string;
@@ -5199,6 +5264,7 @@ export type Database = {
         Row: {
           advance_paid: number;
           advance_percent: number | null;
+          advance_rules: Json | null;
           advance_scope: string | null;
           assigned_at: string | null;
           assigned_by: string | null;
@@ -5272,6 +5338,7 @@ export type Database = {
         Insert: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_rules?: Json | null;
           advance_scope?: string | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
@@ -5345,6 +5412,7 @@ export type Database = {
         Update: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_rules?: Json | null;
           advance_scope?: string | null;
           assigned_at?: string | null;
           assigned_by?: string | null;
@@ -8941,6 +9009,10 @@ export type Database = {
         Args: { p_build_id: string };
         Returns: undefined;
       };
+      advance_default_rules: {
+        Args: { p_percent: number; p_scope: string };
+        Returns: Json;
+      };
       advance_room: {
         Args: {
           p_expect_index: number;
@@ -8970,6 +9042,11 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      advance_rules_due: {
+        Args: { p_order_id: string; p_rules: Json };
+        Returns: number;
+      };
+      advance_rules_for_brand: { Args: { p_brand_id: string }; Returns: Json };
       apply_bom_to_all_products: {
         Args: {
           p_brand_id: string;
