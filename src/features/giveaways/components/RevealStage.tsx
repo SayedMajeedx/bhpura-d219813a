@@ -1,5 +1,7 @@
+import { useState, type CSSProperties } from "react";
 import { Trophy } from "lucide-react";
 import { nameFontSize, type RevealConfig, type RevealPlan, type RevealState } from "../lib/reveal";
+import type { StageColors } from "../lib/reveal-colors";
 import { ConfettiCanvas } from "./ConfettiCanvas";
 
 /** A username, big and on one line; its size shrinks with its length (see nameFontSize). */
@@ -200,6 +202,37 @@ function Scene({
  * everything. In "story" format it is a 9:16 frame, so a recording of it fits
  * Reels and Stories; in "wide" format it fills the screen.
  */
+/** How tall the logo is on the stage: big, but never taller than the frame can spare. */
+const LOGO_HEIGHT = "min(24cqw, 15cqh)";
+
+/**
+ * The store's mark at the top. A logo is shown by itself and large (a wordmark
+ * already says the name, so the name is not repeated); without one, or if it fails
+ * to load, the store's name stands in.
+ */
+function BrandMark({ logoUrl, name }: { logoUrl: string | null; name: string }) {
+  const [failed, setFailed] = useState(false);
+  if (logoUrl && !failed) {
+    return (
+      <img
+        src={logoUrl}
+        alt={name}
+        onError={() => setFailed(true)}
+        className="w-auto max-w-[72cqw] object-contain"
+        style={{ height: LOGO_HEIGHT }}
+      />
+    );
+  }
+  return (
+    <span
+      className="truncate font-display font-semibold tracking-wide"
+      style={{ fontSize: "min(5.5cqw, 7cqh)" }}
+    >
+      {name}
+    </span>
+  );
+}
+
 export function RevealStage({
   state,
   plan,
@@ -208,6 +241,7 @@ export function RevealStage({
   title,
   brandName,
   logoUrl,
+  colors,
   burst,
   seed,
   reducedMotion,
@@ -219,14 +253,25 @@ export function RevealStage({
   title: string;
   brandName: string;
   logoUrl: string | null;
+  /** The store's colours; without them the theme's own are used. */
+  colors?: StageColors | null;
   burst: number;
   seed: string;
   reducedMotion: boolean;
 }) {
+  // The stage re-points the theme's primary colours at the store's, so everything
+  // drawn with them (text, rings, glows, confetti) follows.
+  const palette = colors
+    ? ({
+        "--primary": colors.background,
+        "--primary-foreground": colors.foreground,
+      } as CSSProperties)
+    : undefined;
   return (
     <div
       data-format={config.format}
       data-phase={state.phase}
+      style={palette}
       className={`relative h-full overflow-hidden bg-primary text-primary-foreground [container-type:size] ${
         config.format === "story" ? "aspect-[9/16] max-w-full" : "w-full"
       }`}
@@ -235,28 +280,34 @@ export function RevealStage({
         aria-hidden="true"
         className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,color-mix(in_oklch,var(--primary-foreground)_16%,transparent),transparent_62%)]"
       />
-      <header className="absolute inset-x-0 top-0 flex items-center justify-center gap-[2cqw] px-[4cqw] pt-[5cqh]">
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt=""
-            className="size-[7cqw] rounded-full object-cover"
-            style={{ width: "min(7cqw, 9cqh)", height: "min(7cqw, 9cqh)" }}
-          />
-        ) : null}
-        <span
-          className="truncate font-display font-semibold tracking-wide"
-          style={{ fontSize: "min(3.8cqw, 5.4cqh)" }}
-        >
-          {brandName}
-        </span>
+      <header className="absolute inset-x-0 top-0 flex items-center justify-center px-[4cqw] pt-[5cqh]">
+        <BrandMark logoUrl={logoUrl} name={brandName} />
       </header>
 
-      <div className="absolute inset-0 flex items-center justify-center px-[4cqw] pb-[3cqh] pt-[12cqh]">
-        <Scene state={state} plan={plan} isAr={isAr} title={title} />
+      <div
+        className="absolute inset-0 flex items-center justify-center px-[4cqw] pb-[3cqh]"
+        style={{ paddingTop: `calc(${logoUrl ? LOGO_HEIGHT : "7cqh"} + 9cqh)` }}
+      >
+        {/*
+          The scene is laid out in a story-shaped column: as wide as the frame in a
+          story, and no wider than the frame can hold tall in a wide format. Its
+          own width is the unit (cqw) everything inside is sized in, so the same
+          layout fits both and nothing runs into the logo or off the bottom.
+        */}
+        <div
+          className="flex items-center justify-center [container-type:inline-size]"
+          style={{ width: "min(100cqw, 96cqh)" }}
+        >
+          <Scene state={state} plan={plan} isAr={isAr} title={title} />
+        </div>
       </div>
 
-      <ConfettiCanvas burst={burst} seed={seed} disabled={reducedMotion} />
+      <ConfettiCanvas
+        burst={burst}
+        seed={seed}
+        disabled={reducedMotion}
+        base={colors?.foreground}
+      />
     </div>
   );
 }

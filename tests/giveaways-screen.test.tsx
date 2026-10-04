@@ -72,6 +72,18 @@ vi.mock("@/lib/data/giveaways", () => giveawaysData);
 const brandContext = { useBrand: () => ({ id: "b1", slug: "pura", name_en: "Pura" }) };
 vi.mock("../src/lib/brand-context", () => brandContext);
 vi.mock("@/lib/brand-context", () => brandContext);
+// The store's logo and colour, kept in its settings, which the reveal reads.
+const settingsData = {
+  businessSettingsQueries: {
+    detail: () =>
+      fixture("business-settings", () => ({
+        logo_url: "https://media.test/pura-logo.svg",
+        primary_color: "#330a0a",
+      })),
+  },
+};
+vi.mock("../src/lib/data/business-settings", () => settingsData);
+vi.mock("@/lib/data/business-settings", () => settingsData);
 
 const { GiveawayDetailView } =
   await import("../src/features/giveaways/components/GiveawayDetailView");
@@ -309,6 +321,12 @@ describe("checking the winners", () => {
     fireEvent.click(screen.getByRole("button", { name: "Play reveal" }));
     const dialog = await screen.findByRole("dialog", { name: "Winner reveal" });
     expect(within(dialog).getByText("1 to reveal · countdown, shuffle, winner")).toBeTruthy();
+
+    // The store's own logo from its settings is what the stage shows.
+    fireEvent.click(within(dialog).getByRole("button", { name: "Start" }));
+    expect(within(dialog).getByRole("img", { name: "Pura" }).getAttribute("src")).toBe(
+      "https://media.test/pura-logo.svg",
+    );
 
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
