@@ -4,6 +4,8 @@ import enforcement from "../supabase/migrations/20261003120000_advance_payment_e
 import scopeRule from "../supabase/migrations/20261003140000_advance_payment_scope_rule.sql?raw";
 import rulesTable from "../supabase/migrations/20261003150000_advance_payment_rules.sql?raw";
 import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
+import conditions from "../supabase/migrations/20261004100000_advance_payment_conditions.sql?raw";
+import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
 
 // A store's own advance-payment rules, as the database decides them (PGlite): ordered rules
 // that reach lines by fulfillment, made-to-order or ready-made, product and category, then the
@@ -23,18 +25,19 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec(`
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE SCHEMA auth;
-    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
+    CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT nullif(current_setting('test.uid', true), '')::uuid $$;
     CREATE FUNCTION public.is_admin() RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION public.can_access_brand(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
-    CREATE TABLE public.brands (id uuid PRIMARY KEY);
+    CREATE TABLE public.brands (id uuid PRIMARY KEY, slug text);
+    CREATE TABLE public.customers (id uuid PRIMARY KEY, brand_id uuid, user_id uuid);
     CREATE TABLE public.products (id uuid PRIMARY KEY, category text);
     CREATE TABLE public.business_settings (brand_id uuid PRIMARY KEY,
       advance_payment_enabled boolean NOT NULL DEFAULT false,
       advance_payment_percent numeric(5, 2) NOT NULL DEFAULT 30,
       advance_payment_scope text NOT NULL DEFAULT 'all');
     CREATE TABLE public.orders (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, channel text NOT NULL DEFAULT 'admin',
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, customer_id uuid, channel text NOT NULL DEFAULT 'admin',
       payment_method text, total numeric NOT NULL DEFAULT 0, shipping numeric NOT NULL DEFAULT 0,
       fulfillment_method text NOT NULL DEFAULT 'delivery', advance_scope text,
       payment_status text NOT NULL DEFAULT 'unpaid', status text NOT NULL DEFAULT 'draft',
@@ -43,7 +46,7 @@ beforeAll(async () => {
     CREATE TABLE public.order_items (id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE, product_id uuid,
       line_total numeric NOT NULL DEFAULT 0, location text NOT NULL DEFAULT 'main');
-    INSERT INTO public.brands VALUES ('${SHOP}'), ('${OTHER}'), ('${OFF}');
+    INSERT INTO public.brands VALUES ('${SHOP}', 'shop'), ('${OTHER}', 'other'), ('${OFF}', 'off');
     INSERT INTO public.products VALUES ('${ABAYA}', 'abayas'), ('${SCARF}', 'scarves'), ('${BAG}', 'bags');
     INSERT INTO public.business_settings (brand_id, advance_payment_enabled, advance_payment_percent, advance_payment_scope)
       VALUES ('${SHOP}', true, 30, 'all'), ('${OTHER}', true, 30, 'all'), ('${OFF}', false, 30, 'all');
@@ -52,6 +55,8 @@ beforeAll(async () => {
   await db.exec(scopeRule);
   await db.exec(rulesTable);
   await db.exec(rulesEngine);
+  await db.exec(conditions);
+  await db.exec(conditionsEngine);
 });
 
 type RuleInput = {
@@ -67,6 +72,9 @@ type RuleInput = {
   max?: number | null;
   fee?: boolean;
   active?: boolean;
+  minTotal?: number | null;
+  maxTotal?: number | null;
+  customer?: "any" | "new" | "returning";
 };
 
 const arr = (values: string[] | undefined) => (values?.length ? `{${values.join(",")}}` : "{}");
@@ -74,8 +82,8 @@ const arr = (values: string[] | undefined) => (values?.length ? `{${values.join(
 async function addRule(brand: string, r: RuleInput) {
   const row = await db.query<{ id: string }>(
     `INSERT INTO public.advance_payment_rules (brand_id, name_en, sort_order, fulfillment, made_to_order,
-       product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, is_active)
-     VALUES ($1, $2, $3, $4::text[], $5, $6::uuid[], $7::text[], $8, $9, $10, $11, $12, $13) RETURNING id`,
+       product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, is_active, min_order_total, max_order_total, customer_kind)
+     VALUES ($1, $2, $3, $4::text[], $5, $6::uuid[], $7::text[], $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
     [
       brand,
       r.name ?? "Rule",
@@ -90,6 +98,9 @@ async function addRule(brand: string, r: RuleInput) {
       r.max ?? null,
       r.fee ?? false,
       r.active ?? true,
+      r.minTotal ?? null,
+      r.maxTotal ?? null,
+      r.customer ?? "any",
     ],
   );
   return row.rows[0].id;
@@ -106,6 +117,8 @@ type Placed = {
   fulfillment?: string;
   shipping?: number;
   total?: number;
+  customer?: string | null;
+  status?: string;
   lines: Line[];
 };
 
@@ -116,8 +129,8 @@ async function place(order: Placed) {
   try {
     const row = (
       await db.query<{ id: string }>(
-        `INSERT INTO public.orders (brand_id, channel, payment_method, fulfillment_method, total, shipping)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        `INSERT INTO public.orders (brand_id, channel, payment_method, fulfillment_method, total, shipping, customer_id, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
         [
           order.brand ?? SHOP,
           order.channel ?? "storefront",
@@ -125,6 +138,8 @@ async function place(order: Placed) {
           order.fulfillment ?? "delivery",
           order.total ?? sum + shipping,
           shipping,
+          order.customer ?? null,
+          order.status ?? "draft",
         ],
       )
     ).rows[0];
@@ -316,5 +331,112 @@ describe("the rule table's own checks", () => {
     await expect(addRule(SHOP, { value: 10, min: 9, max: 5 })).rejects.toThrow();
     await expect(addRule(SHOP, { value: 10, fulfillment: ["teleport"] })).rejects.toThrow();
     await expect(addRule(SHOP, { value: 0 })).rejects.toThrow();
+  });
+});
+
+describe("a rule that looks at the order's total", () => {
+  it("reaches an order only within its least and most", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { minTotal: 100, value: 50, order: 1 });
+    // At 100 or more the rule takes the lines at 50%; below it the general 30% does.
+    expect(await owed({ lines: [{ amount: 100 }] })).toBe(50);
+    expect(await owed({ lines: [{ amount: 99.5 }] })).toBe(29.85);
+    await clearRules(SHOP);
+    await addRule(SHOP, { minTotal: 50, maxTotal: 150, value: 10, order: 1 });
+    expect(await owed({ lines: [{ amount: 150 }] })).toBe(15);
+    expect(await owed({ lines: [{ amount: 151 }] })).toBe(45.3);
+    expect(await owed({ lines: [{ amount: 49 }] })).toBe(14.7);
+  });
+
+  it("counts the order's total with its delivery fee", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { minTotal: 105, value: 50, fee: true, order: 1 });
+    expect(await owed({ lines: [{ amount: 100 }], shipping: 5 })).toBe(52.5);
+    expect(await owed({ lines: [{ amount: 100 }], shipping: 4 })).toBe(31.2);
+  });
+});
+
+describe("a rule that looks at the customer", () => {
+  const CUSTOMER = "00000000-0000-4000-8000-0000000000f1";
+  const STRANGER = "00000000-0000-4000-8000-0000000000f2";
+
+  it("asks a new customer one thing and a returning customer another", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { customer: "new", value: 50, order: 1 });
+    await addRule(SHOP, { customer: "returning", value: 10, order: 2 });
+    // A first order: new. Once it is confirmed, the next order is returning.
+    const first = await place({ customer: CUSTOMER, lines: [{ amount: 100 }] });
+    expect(await due(first)).toBe(50);
+    await db.query("UPDATE public.orders SET status = 'confirmed' WHERE id = $1", [first]);
+    expect(await owed({ customer: CUSTOMER, lines: [{ amount: 100 }] })).toBe(10);
+    // Another customer, or a guest with no customer record, is new.
+    expect(await owed({ customer: STRANGER, lines: [{ amount: 100 }] })).toBe(50);
+    expect(await owed({ customer: null, lines: [{ amount: 100 }] })).toBe(50);
+  });
+
+  it("does not count an order that is still pending, cancelled or a draft", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { customer: "returning", value: 10, order: 1 });
+    const buyer = "00000000-0000-4000-8000-0000000000f3";
+    for (const status of ["pending", "cancelled", "draft"]) {
+      await place({ customer: buyer, status, lines: [{ amount: 10 }] });
+    }
+    expect(await owed({ customer: buyer, lines: [{ amount: 100 }] })).toBe(30);
+    await place({ customer: buyer, status: "completed", lines: [{ amount: 10 }] });
+    expect(await owed({ customer: buyer, lines: [{ amount: 100 }] })).toBe(10);
+  });
+
+  it("keeps the answer on the order: later orders do not turn an earlier one returning", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { customer: "new", value: 50, order: 1 });
+    const buyer = "00000000-0000-4000-8000-0000000000f4";
+    const first = await place({ customer: buyer, status: "confirmed", lines: [{ amount: 100 }] });
+    await place({ customer: buyer, status: "confirmed", lines: [{ amount: 100 }] });
+    expect(await due(first)).toBe(50);
+  });
+
+  it("is only about the same store's orders", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { customer: "returning", value: 10, order: 1 });
+    const buyer = "00000000-0000-4000-8000-0000000000f5";
+    await place({ brand: OTHER, customer: buyer, status: "completed", lines: [{ amount: 10 }] });
+    expect(await owed({ customer: buyer, lines: [{ amount: 100 }] })).toBe(30);
+  });
+});
+
+describe("what the checkout may ask about the signed-in customer", () => {
+  const USER = "00000000-0000-4000-8000-0000000000a9";
+  const OTHER_USER = "00000000-0000-4000-8000-0000000000aa";
+  const CUSTOMER_ID = "00000000-0000-4000-8000-0000000000b9";
+  const ask = async (uid: string | null, slug = "shop") => {
+    await db.exec(`SET test.uid = '${uid ?? ""}'`);
+    return (
+      await db.query<{ r: boolean }>("SELECT public.advance_customer_is_returning_rpc($1) AS r", [
+        slug,
+      ])
+    ).rows[0].r;
+  };
+
+  it("is true for a customer with a confirmed order, about themselves only", async () => {
+    await db.query("INSERT INTO public.customers VALUES ($1, $2, $3)", [CUSTOMER_ID, SHOP, USER]);
+    expect(await ask(USER)).toBe(false);
+    await place({ customer: CUSTOMER_ID, status: "pending", lines: [{ amount: 10 }] });
+    expect(await ask(USER)).toBe(false);
+    await place({ customer: CUSTOMER_ID, status: "confirmed", lines: [{ amount: 10 }] });
+    expect(await ask(USER)).toBe(true);
+    expect(await ask(OTHER_USER)).toBe(false);
+    expect(await ask(null)).toBe(false);
+    expect(await ask(USER, "other")).toBe(false);
+    await db.exec("SET test.uid = ''");
+  });
+});
+
+describe("the new columns' own checks", () => {
+  it("refuses a most below the least order total, and an unknown kind of customer", async () => {
+    await expect(addRule(SHOP, { value: 10, minTotal: 50, maxTotal: 20 })).rejects.toThrow();
+    await expect(
+      addRule(SHOP, { value: 10, customer: "vip" as unknown as "any" }),
+    ).rejects.toThrow();
+    await expect(addRule(SHOP, { value: 10, maxTotal: 0 })).rejects.toThrow();
   });
 });
