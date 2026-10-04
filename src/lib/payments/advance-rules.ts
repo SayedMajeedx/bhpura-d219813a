@@ -42,7 +42,14 @@ export type AdvanceRuleDef = {
   maxTotal: number | null;
   /** A new customer has no earlier order with the store; a returning one has. */
   customer: "any" | "new" | "returning";
+  /** Where the order goes: the store's own country, or abroad (one of `countries`, if listed). */
+  destination: "any" | "local" | "abroad";
+  /** For abroad: only these countries (ISO codes); empty means any country abroad. */
+  countries: readonly string[];
 };
+
+/** The store's own country: an order going anywhere else is going abroad. */
+export const ADVANCE_HOME_COUNTRY = "BH";
 
 export type AdvanceLine = {
   amount: number;
@@ -60,6 +67,8 @@ export type AdvanceOrder = {
   lines: readonly AdvanceLine[];
   /** Whether the customer already has an order with the store (unknown counts as new). */
   returning?: boolean;
+  /** The country a delivery goes to (ISO code); none, as for a pickup, counts as local. */
+  country?: string | null;
 };
 
 const wholeFils = (n: number) => Math.round(n * 1e6) / 1e6;
@@ -78,6 +87,8 @@ const everything = (over: Partial<AdvanceRuleDef>): AdvanceRuleDef => ({
   minTotal: null,
   maxTotal: null,
   customer: "any",
+  destination: "any",
+  countries: [],
   ...over,
 });
 
@@ -98,11 +109,22 @@ export function defaultAdvanceRules(percent: number, scope: string): AdvanceRule
   }
 }
 
+const reachesDestination = (rule: AdvanceRuleDef, country: string | null | undefined): boolean => {
+  if (rule.destination === "any") return true;
+  const where = country || ADVANCE_HOME_COUNTRY;
+  if (rule.destination === "local") return where === ADVANCE_HOME_COUNTRY;
+  return (
+    where !== ADVANCE_HOME_COUNTRY &&
+    (rule.countries.length === 0 || rule.countries.includes(where))
+  );
+};
+
 const reaches = (rule: AdvanceRuleDef, order: AdvanceOrder, line: AdvanceLine): boolean =>
   (rule.fulfillment.length === 0 || rule.fulfillment.includes(order.fulfillment)) &&
   (rule.minTotal === null || order.total >= rule.minTotal) &&
   (rule.maxTotal === null || order.total <= rule.maxTotal) &&
   (rule.customer === "any" || (rule.customer === "returning") === (order.returning === true)) &&
+  reachesDestination(rule, order.country) &&
   (rule.madeToOrder === null || rule.madeToOrder === line.madeToOrder) &&
   (rule.productIds.length === 0 ||
     (line.productId != null && rule.productIds.includes(line.productId))) &&
@@ -171,6 +193,8 @@ type RuleJson = {
   min_total?: number | string | null;
   max_total?: number | string | null;
   customer?: string | null;
+  destination?: string | null;
+  countries?: string[] | null;
 };
 
 /** A rule as the database's JSON (keys as advance_rules_for_brand writes them). */
@@ -189,6 +213,8 @@ export function advanceRuleToJson(rule: AdvanceRuleDef): RuleJson {
     min_total: rule.minTotal,
     max_total: rule.maxTotal,
     customer: rule.customer,
+    destination: rule.destination,
+    countries: [...rule.countries],
   };
 }
 
@@ -211,5 +237,8 @@ export function advanceRuleFromJson(json: RuleJson): AdvanceRuleDef {
     minTotal: asNumberOrNull(json.min_total),
     maxTotal: asNumberOrNull(json.max_total),
     customer: json.customer === "new" || json.customer === "returning" ? json.customer : "any",
+    destination:
+      json.destination === "local" || json.destination === "abroad" ? json.destination : "any",
+    countries: json.countries ?? [],
   };
 }

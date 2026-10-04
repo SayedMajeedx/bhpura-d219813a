@@ -39,6 +39,8 @@ const row = (over: Partial<AdvanceRuleRow> = {}): AdvanceRuleRow => ({
   min_order_total: null,
   max_order_total: null,
   customer_kind: "any",
+  destination_kind: "any",
+  destination_countries: [],
   ...over,
 });
 
@@ -65,6 +67,8 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       min_total: "",
       max_total: "",
       customer: "any",
+      destination: "any",
+      countries: [],
     });
     expect(ruleColumns(form)).toEqual({
       name_en: "Made to order",
@@ -82,6 +86,8 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       min_order_total: null,
       max_order_total: null,
       customer_kind: "any",
+      destination_kind: "any",
+      destination_countries: [],
     });
     expect(ruleFormFrom(row({ made_to_order: false })).made_to_order).toBe("not");
     expect(ruleFormFrom(row({ made_to_order: null })).made_to_order).toBe("any");
@@ -175,6 +181,8 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       min_total: null,
       max_total: 90,
       customer: "any",
+      destination: "any",
+      countries: [],
     });
   });
 
@@ -201,6 +209,66 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       "50% · orders from BHD 40.000 to BHD 90.000 · new customers",
     );
     expect(words({ customer_kind: "returning" })).toBe("50% · returning customers");
+  });
+
+  it("reads and writes where an order is going", () => {
+    const form = ruleFormFrom(
+      row({ destination_kind: "abroad", destination_countries: ["SA", "KW"] }),
+    );
+    expect(form).toMatchObject({ destination: "abroad", countries: ["SA", "KW"] });
+    expect(ruleColumns(form)).toMatchObject({
+      destination_kind: "abroad",
+      destination_countries: ["SA", "KW"],
+    });
+    expect(ruleDefFromRow(row({ destination_kind: "local" }))).toMatchObject({
+      destination: "local",
+      countries: [],
+    });
+    // Countries are kept only with abroad, and an unknown kind reads as anywhere.
+    expect(ruleColumns({ ...form, destination: "local" })).toMatchObject({
+      destination_kind: "local",
+      destination_countries: [],
+    });
+    expect(ruleFormFrom(row({ destination_kind: "moon" })).destination).toBe("any");
+    expect(
+      advanceRuleFromJson({ kind: "percent", value: 10, destination: "abroad", countries: ["AE"] }),
+    ).toMatchObject({ destination: "abroad", countries: ["AE"] });
+    expect(advanceRuleFromJson({ kind: "percent", value: 10 })).toMatchObject({
+      destination: "any",
+      countries: [],
+    });
+    expect(advanceRuleToJson(ruleDefFromForm(form))).toMatchObject({
+      destination: "abroad",
+      countries: ["SA", "KW"],
+    });
+  });
+
+  it("refuses countries without abroad, the home country, and a code that is not one", () => {
+    const form = { ...EMPTY_RULE_FORM, value: "30" };
+    expect(ruleFormError({ ...form, destination: "abroad", countries: ["SA"] }, false)).toBeNull();
+    expect(ruleFormError({ ...form, destination: "local", countries: ["SA"] }, false)).toMatch(
+      /abroad only/,
+    );
+    expect(ruleFormError({ ...form, destination: "abroad", countries: ["BH"] }, false)).toMatch(
+      /from the list/,
+    );
+    expect(ruleFormError({ ...form, destination: "abroad", countries: ["sa"] }, true)).toBe(
+      "اختر دولاً من القائمة.",
+    );
+  });
+
+  it("puts the destination in words", () => {
+    const words = (over: Partial<AdvanceRuleRow>) =>
+      describeRule(ruleDefFromRow(row({ made_to_order: null, ...over })), {
+        isAr: false,
+        money,
+        ...names,
+      });
+    expect(words({ destination_kind: "local" })).toBe("50% · inside Bahrain");
+    expect(words({ destination_kind: "abroad" })).toBe("50% · orders abroad");
+    expect(words({ destination_kind: "abroad", destination_countries: ["SA", "KW"] })).toBe(
+      "50% · to Saudi Arabia, Kuwait",
+    );
   });
 
   it("offers quick starts that are valid rules as they are", () => {

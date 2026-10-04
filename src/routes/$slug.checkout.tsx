@@ -247,6 +247,13 @@ function Checkout() {
           shipping,
           fulfillment: appointment ? "appointment" : fulfillment,
           returning,
+          // Where a delivery goes, as the order will carry it (none for a pickup or a booking).
+          country:
+            fulfillment === "delivery" && !appointment
+              ? selectedDestination === "BH"
+                ? "BH"
+                : selectedCountryCode
+              : null,
           lines: cart.map((item) => ({
             amount: item.price * item.qty,
             madeToOrder: Boolean(item.booking) || madeToOrderIds.has(item.product_id),
@@ -266,6 +273,8 @@ function Checkout() {
       categoryById,
       ownRuleDefs,
       returning,
+      selectedDestination,
+      selectedCountryCode,
       settings,
     ],
   );

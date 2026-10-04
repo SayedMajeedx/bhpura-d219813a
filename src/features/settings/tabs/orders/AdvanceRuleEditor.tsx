@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { AdvanceDestinationField } from "@/features/settings/tabs/orders/AdvanceDestinationField";
 import { formatMoney } from "@/lib/format";
 import { catalogQueries } from "@/lib/data/catalog";
 import { categoriesQueries } from "@/lib/data/categories";
@@ -56,6 +57,11 @@ function sampleOrder(
     shipping: fulfillment === "delivery" ? 5 : 0,
     fulfillment,
     lines,
+    // Abroad rules are tried on a delivery to one of their countries (or Saudi Arabia).
+    country:
+      fulfillment === "delivery" && form.destination === "abroad"
+        ? (form.countries[0] ?? "SA")
+        : null,
   };
 }
 
@@ -279,6 +285,8 @@ export function AdvanceRuleEditor({
               : "A returning customer already has a confirmed order with the store."}
           </p>
         </div>
+
+        <AdvanceDestinationField form={form} isAr={isAr} onChange={patch} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <fieldset className="space-y-1.5">

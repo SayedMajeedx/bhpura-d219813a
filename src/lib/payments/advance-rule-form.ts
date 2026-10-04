@@ -1,5 +1,7 @@
+import { getCountryByCode } from "@/lib/shipping";
 import {
   ADVANCE_FULFILLMENTS,
+  ADVANCE_HOME_COUNTRY,
   type AdvanceFulfillment,
   type AdvanceRuleDef,
 } from "@/lib/payments/advance-rules";
@@ -27,6 +29,9 @@ export type AdvanceRuleForm = {
   min_total: string;
   max_total: string;
   customer: "any" | "new" | "returning";
+  destination: "any" | "local" | "abroad";
+  /** ISO codes; only with abroad. */
+  countries: string[];
 };
 
 export const EMPTY_RULE_FORM: AdvanceRuleForm = {
@@ -45,6 +50,8 @@ export const EMPTY_RULE_FORM: AdvanceRuleForm = {
   min_total: "",
   max_total: "",
   customer: "any",
+  destination: "any",
+  countries: [],
 };
 
 /** The row of advance_payment_rules this module reads and writes. */
@@ -66,10 +73,15 @@ export type AdvanceRuleRow = {
   min_order_total: number | string | null;
   max_order_total: number | string | null;
   customer_kind: string;
+  destination_kind: string;
+  destination_countries: string[];
 };
 
 const textOf = (n: number | string | null) =>
   n === null || n === undefined ? "" : String(Number(n));
+
+const destinationOf = (kind: string | null | undefined): "any" | "local" | "abroad" =>
+  kind === "local" || kind === "abroad" ? kind : "any";
 
 export function ruleFormFrom(row: AdvanceRuleRow): AdvanceRuleForm {
   return {
@@ -91,6 +103,8 @@ export function ruleFormFrom(row: AdvanceRuleRow): AdvanceRuleForm {
     max_total: textOf(row.max_order_total),
     customer:
       row.customer_kind === "new" || row.customer_kind === "returning" ? row.customer_kind : "any",
+    destination: destinationOf(row.destination_kind),
+    countries: row.destination_countries ?? [],
   };
 }
 
@@ -115,6 +129,8 @@ export function ruleDefFromRow(row: AdvanceRuleRow): AdvanceRuleDef {
     maxTotal: row.max_order_total === null ? null : Number(row.max_order_total),
     customer:
       row.customer_kind === "new" || row.customer_kind === "returning" ? row.customer_kind : "any",
+    destination: destinationOf(row.destination_kind),
+    countries: row.destination_countries ?? [],
   };
 }
 
@@ -162,6 +178,12 @@ export function ruleFormError(form: AdvanceRuleForm, isAr: boolean): string | nu
   if (minTotal !== null && maxTotal !== null && maxTotal < minTotal) {
     return isAr ? "أعلى قيمة للطلب أقل من أدناها." : "The highest order value is below the lowest.";
   }
+  if (form.countries.length > 0 && form.destination !== "abroad") {
+    return isAr ? "الدول تُحدَّد مع الطلبات للخارج فقط." : "Countries go with orders abroad only.";
+  }
+  if (form.countries.some((code) => !/^[A-Z]{2}$/.test(code) || code === ADVANCE_HOME_COUNTRY)) {
+    return isAr ? "اختر دولاً من القائمة." : "Pick countries from the list.";
+  }
   return null;
 }
 
@@ -183,6 +205,8 @@ export function ruleColumns(form: AdvanceRuleForm) {
     min_order_total: numberOrNull(form.min_total) as number | null,
     max_order_total: numberOrNull(form.max_total) as number | null,
     customer_kind: form.customer,
+    destination_kind: form.destination,
+    destination_countries: form.destination === "abroad" ? form.countries : [],
   };
 }
 
@@ -201,6 +225,8 @@ export function ruleDefFromForm(form: AdvanceRuleForm): AdvanceRuleDef {
     minTotal: (numberOrNull(form.min_total) as number | null) ?? null,
     maxTotal: (numberOrNull(form.max_total) as number | null) ?? null,
     customer: form.customer,
+    destination: form.destination,
+    countries: form.destination === "abroad" ? form.countries : [],
   };
 }
 
@@ -252,6 +278,24 @@ export function describeRule(
   } else if (rule.maxTotal !== null) {
     parts.push(isAr ? `طلبات حتى ${money(rule.maxTotal)}` : `orders up to ${money(rule.maxTotal)}`);
   }
+  if (rule.destination === "local") {
+    const home = getCountryByCode(ADVANCE_HOME_COUNTRY);
+    parts.push(
+      isAr ? `داخل ${home?.name_ar ?? ""}`.trim() : `inside ${home?.name_en ?? "the home country"}`,
+    );
+  } else if (rule.destination === "abroad") {
+    const names = rule.countries.map((code) => {
+      const info = getCountryByCode(code);
+      return (isAr ? info?.name_ar : info?.name_en) ?? code;
+    });
+    parts.push(
+      names.length === 0
+        ? isAr
+          ? "طلبات للخارج"
+          : "orders abroad"
+        : (isAr ? "إلى " : "to ") + names.join(isAr ? "، " : ", "),
+    );
+  }
   if (rule.customer === "new") parts.push(isAr ? "العملاء الجدد" : "new customers");
   if (rule.customer === "returning") parts.push(isAr ? "العملاء السابقون" : "returning customers");
   if (rule.fulfillment.length > 0) {
@@ -287,6 +331,18 @@ export const RULE_PRESETS: Array<{
       name_ar: "التوصيل",
       fulfillment: ["delivery"],
       value: "30",
+      include_fee: true,
+    },
+  },
+  {
+    id: "abroad",
+    label: { ar: "الطلبات للخارج تُدفع كاملة", en: "Orders abroad paid in full" },
+    form: {
+      name_en: "Orders abroad",
+      name_ar: "الطلبات للخارج",
+      destination: "abroad",
+      fulfillment: ["delivery"],
+      value: "100",
       include_fee: true,
     },
   },

@@ -16,7 +16,7 @@ export const advanceRulesKeys = {
 };
 
 const COLUMNS =
-  "id, name_en, name_ar, is_active, sort_order, fulfillment, made_to_order, product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, min_order_total, max_order_total, customer_kind" as const;
+  "id, name_en, name_ar, is_active, sort_order, fulfillment, made_to_order, product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, min_order_total, max_order_total, customer_kind, destination_kind, destination_countries" as const;
 
 /** The store's rules in the order they are tried, switched-off ones too. */
 export async function fetchAdvanceRules(brandId: string): Promise<AdvanceRuleRow[]> {
