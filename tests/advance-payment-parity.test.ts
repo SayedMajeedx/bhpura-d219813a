@@ -4,6 +4,8 @@ import enforcement from "../supabase/migrations/20261003120000_advance_payment_e
 import scopeRule from "../supabase/migrations/20261003140000_advance_payment_scope_rule.sql?raw";
 import rulesTable from "../supabase/migrations/20261003150000_advance_payment_rules.sql?raw";
 import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
+import conditions from "../supabase/migrations/20261004100000_advance_payment_conditions.sql?raw";
+import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
 import {
   ADVANCE_SCOPES,
   advanceDue,
@@ -35,13 +37,14 @@ beforeAll(async () => {
     CREATE FUNCTION public.is_admin() RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION public.can_access_brand(uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
     CREATE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
-    CREATE TABLE public.brands (id uuid PRIMARY KEY);
+    CREATE TABLE public.brands (id uuid PRIMARY KEY, slug text);
+    CREATE TABLE public.customers (id uuid PRIMARY KEY, brand_id uuid, user_id uuid);
     CREATE TABLE public.products (id uuid PRIMARY KEY, category text);
     INSERT INTO public.products VALUES ('${ABAYA}', 'abayas'), ('${SCARF}', 'scarves'), ('${BAG}', 'bags');
     CREATE TABLE public.business_settings (brand_id uuid PRIMARY KEY,
       advance_payment_enabled boolean, advance_payment_percent numeric, advance_payment_scope text);
     CREATE TABLE public.orders (
-      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, channel text DEFAULT 'admin',
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid, customer_id uuid, channel text DEFAULT 'admin',
       payment_method text, total numeric NOT NULL DEFAULT 0, shipping numeric NOT NULL DEFAULT 0,
       fulfillment_method text NOT NULL DEFAULT 'delivery', advance_scope text,
       payment_status text, status text, advance_paid numeric DEFAULT 0, benefit_receipt_key text,
@@ -55,6 +58,8 @@ beforeAll(async () => {
   await db.exec(scopeRule);
   await db.exec(rulesTable);
   await db.exec(rulesEngine);
+  await db.exec(conditions);
+  await db.exec(conditionsEngine);
 });
 
 const FULFILLMENTS: AdvanceOrder["fulfillment"][] = [
@@ -126,12 +131,13 @@ async function sqlDue(
   shape: Shape,
   fulfillment: string,
   call: (id: string) => Promise<string | null>,
+  returning = false,
 ) {
   const row = (
     await db.query<{ id: string }>(
-      `INSERT INTO public.orders (total, shipping, fulfillment_method, advance_percent, advance_scope)
-       VALUES ($1, $2, $3, 10, 'all') RETURNING id`,
-      [shape.total, shape.shipping, fulfillment],
+      `INSERT INTO public.orders (total, shipping, fulfillment_method, advance_percent, advance_scope, advance_returning)
+       VALUES ($1, $2, $3, 10, 'all', $4) RETURNING id`,
+      [shape.total, shape.shipping, fulfillment, returning],
     )
   ).rows[0];
   for (const l of shape.lines) {
@@ -199,6 +205,9 @@ describe("the checkout's preview and the database agree on the advance", () => {
     min: null,
     max: null,
     includeFee: false,
+    minTotal: null,
+    maxTotal: null,
+    customer: "any",
     ...over,
   });
   const RULE_SETS: Array<{ name: string; rules: AdvanceRuleDef[] }> = [
@@ -241,6 +250,30 @@ describe("the checkout's preview and the database agree on the advance", () => {
       ],
     },
     {
+      name: "orders from 100 to 120 at 50%, then the rest",
+      rules: [rule({ minTotal: 100, maxTotal: 120, value: 50 }), ...defaultAdvanceRules(20, "all")],
+    },
+    {
+      name: "a new customer and a returning one",
+      rules: [
+        rule({ customer: "new", value: 50, includeFee: true }),
+        rule({ customer: "returning", value: 10 }),
+      ],
+    },
+    {
+      name: "big orders from a returning customer, by category",
+      rules: [
+        rule({
+          customer: "returning",
+          minTotal: 90,
+          categorySlugs: ["bags"],
+          kind: "fixed",
+          value: 7,
+        }),
+        rule({ minTotal: 90, madeToOrder: true, value: 25, min: 3 }),
+      ],
+    },
+    {
       name: "a rule that reaches nothing, then a fixed one above the total",
       rules: [
         rule({ productIds: ["00000000-0000-4000-8000-0000000000ff"], value: 90 }),
@@ -249,29 +282,32 @@ describe("the checkout's preview and the database agree on the advance", () => {
     },
   ];
 
-  it("under a store's own rules: every rule set, fulfillment and order shape", async () => {
+  it("under a store's own rules: every rule set, fulfillment, kind of customer and order shape", async () => {
     let compared = 0;
     for (const set of RULE_SETS) {
       for (const fulfillment of FULFILLMENTS) {
-        for (const shape of SHAPES) {
-          const json = JSON.stringify(set.rules.map(advanceRuleToJson));
-          const sql = await sqlDue(
-            shape,
-            fulfillment,
-            async (id) =>
-              (
-                await db.query<{ d: string | null }>(
-                  "SELECT public.advance_rules_due($1, $2::jsonb) AS d",
-                  [id, json],
-                )
-              ).rows[0].d,
-          );
-          const ts = advanceRulesDue(asOrder(shape, fulfillment), set.rules);
-          expect(ts, `${set.name} / ${fulfillment} / ${shape.name}`).toBe(sql);
-          compared += 1;
+        for (const returning of [false, true]) {
+          for (const shape of SHAPES) {
+            const json = JSON.stringify(set.rules.map(advanceRuleToJson));
+            const sql = await sqlDue(
+              shape,
+              fulfillment,
+              async (id) =>
+                (
+                  await db.query<{ d: string | null }>(
+                    "SELECT public.advance_rules_due($1, $2::jsonb) AS d",
+                    [id, json],
+                  )
+                ).rows[0].d,
+              returning,
+            );
+            const ts = advanceRulesDue({ ...asOrder(shape, fulfillment), returning }, set.rules);
+            expect(ts, `${set.name} / ${fulfillment} / ${returning} / ${shape.name}`).toBe(sql);
+            compared += 1;
+          }
         }
       }
     }
-    expect(compared).toBe(RULE_SETS.length * 4 * SHAPES.length);
+    expect(compared).toBe(RULE_SETS.length * 4 * 2 * SHAPES.length);
   });
 });

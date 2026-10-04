@@ -172,6 +172,9 @@ describe("a store's own rules in the checkout's preview", () => {
     min: null,
     max: null,
     includeFee: false,
+    minTotal: null,
+    maxTotal: null,
+    customer: "any",
     ...over,
   });
 
@@ -211,5 +214,49 @@ describe("a store's own rules in the checkout's preview", () => {
 
   it("does nothing while the rule is switched off, however many rules the store has", () => {
     expect(advanceDue(order(), rule({ enabled: false, rules: [own()] }))).toBeNull();
+  });
+});
+
+describe("rules that look at the order's total and at the customer", () => {
+  const big = (over: Partial<AdvanceRuleDef> = {}): AdvanceRuleDef => ({
+    fulfillment: [],
+    madeToOrder: null,
+    productIds: [],
+    categorySlugs: [],
+    kind: "percent",
+    value: 50,
+    min: null,
+    max: null,
+    includeFee: false,
+    minTotal: null,
+    maxTotal: null,
+    customer: "any",
+    ...over,
+  });
+
+  it("reaches an order within its least and most total", () => {
+    const r = rule({ rules: [big({ minTotal: 100, maxTotal: 200 })] });
+    expect(advanceDue(order({ total: 100, lines: [{ amount: 100, madeToOrder: false }] }), r)).toBe(
+      50,
+    );
+    expect(advanceDue(order({ total: 200, lines: [{ amount: 200, madeToOrder: false }] }), r)).toBe(
+      100,
+    );
+    // Outside the range the general 30% takes the order.
+    expect(advanceDue(order({ total: 99, lines: [{ amount: 99, madeToOrder: false }] }), r)).toBe(
+      29.7,
+    );
+    expect(advanceDue(order({ total: 201, lines: [{ amount: 201, madeToOrder: false }] }), r)).toBe(
+      60.3,
+    );
+  });
+
+  it("reaches a new or a returning customer, and reads an unknown customer as new", () => {
+    const r = rule({
+      rules: [big({ customer: "new" }), big({ customer: "returning", value: 10 })],
+    });
+    expect(advanceDue(order({ returning: false }), r)).toBe(50);
+    expect(advanceDue(order({}), r)).toBe(50);
+    expect(advanceDue(order({ returning: true }), r)).toBe(10);
   });
 });

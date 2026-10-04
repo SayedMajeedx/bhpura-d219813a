@@ -36,6 +36,9 @@ const row = (over: Partial<AdvanceRuleRow> = {}): AdvanceRuleRow => ({
   min_amount: null,
   max_amount: null,
   include_delivery_fee: false,
+  min_order_total: null,
+  max_order_total: null,
+  customer_kind: "any",
   ...over,
 });
 
@@ -59,6 +62,9 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       min: "5",
       max: "",
       include_fee: true,
+      min_total: "",
+      max_total: "",
+      customer: "any",
     });
     expect(ruleColumns(form)).toEqual({
       name_en: "Made to order",
@@ -73,6 +79,9 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       min_amount: 5,
       max_amount: null,
       include_delivery_fee: true,
+      min_order_total: null,
+      max_order_total: null,
+      customer_kind: "any",
     });
     expect(ruleFormFrom(row({ made_to_order: false })).made_to_order).toBe("not");
     expect(ruleFormFrom(row({ made_to_order: null })).made_to_order).toBe("any");
@@ -140,6 +149,58 @@ describe("a store's own advance rule, as the merchant edits it", () => {
       "a fixed BHD 20.000 · Abaya, Scarves · for delivery or pickup · at least BHD 5.000 · at most BHD 15.000 · with the delivery fee",
     );
     expect(describeRule(base, { isAr: true, money, ...names })).toBe("50% · المنتجات حسب الطلب");
+  });
+
+  it("reads and writes an order total and a kind of customer", () => {
+    const form = ruleFormFrom(
+      row({ min_order_total: "100", max_order_total: 250, customer_kind: "returning" }),
+    );
+    expect(form).toMatchObject({ min_total: "100", max_total: "250", customer: "returning" });
+    expect(ruleColumns(form)).toMatchObject({
+      min_order_total: 100,
+      max_order_total: 250,
+      customer_kind: "returning",
+    });
+    expect(ruleDefFromRow(row({ min_order_total: 100, customer_kind: "new" }))).toMatchObject({
+      minTotal: 100,
+      maxTotal: null,
+      customer: "new",
+    });
+    // An unknown kind of customer reads as any.
+    expect(ruleFormFrom(row({ customer_kind: "vip" })).customer).toBe("any");
+    expect(
+      advanceRuleFromJson({ kind: "percent", value: 10, min_total: "50", customer: "new" }),
+    ).toMatchObject({ minTotal: 50, maxTotal: null, customer: "new" });
+    expect(advanceRuleToJson(ruleDefFromRow(row({ max_order_total: 90 })))).toMatchObject({
+      min_total: null,
+      max_total: 90,
+      customer: "any",
+    });
+  });
+
+  it("refuses order value limits that are not positive or are the wrong way round", () => {
+    const form = { ...EMPTY_RULE_FORM, value: "30" };
+    expect(ruleFormError({ ...form, min_total: "100", max_total: "250" }, false)).toBeNull();
+    expect(ruleFormError({ ...form, min_total: "x" }, false)).toMatch(/order value limits/);
+    expect(ruleFormError({ ...form, max_total: "0" }, true)).toBe("قيمة الطلب أرقام موجبة.");
+    expect(ruleFormError({ ...form, min_total: "300", max_total: "200" }, false)).toMatch(
+      /below the lowest/,
+    );
+  });
+
+  it("puts the order total and the customer in words", () => {
+    const words = (over: Partial<AdvanceRuleRow>) =>
+      describeRule(ruleDefFromRow(row({ made_to_order: null, ...over })), {
+        isAr: false,
+        money,
+        ...names,
+      });
+    expect(words({ min_order_total: 100 })).toBe("50% · orders of BHD 100.000 or more");
+    expect(words({ max_order_total: 40 })).toBe("50% · orders up to BHD 40.000");
+    expect(words({ min_order_total: 40, max_order_total: 90, customer_kind: "new" })).toBe(
+      "50% · orders from BHD 40.000 to BHD 90.000 · new customers",
+    );
+    expect(words({ customer_kind: "returning" })).toBe("50% · returning customers");
   });
 
   it("offers quick starts that are valid rules as they are", () => {
