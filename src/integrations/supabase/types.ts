@@ -385,13 +385,16 @@ export type Database = {
           brand_id: string;
           category_slugs: string[];
           created_at: string;
+          customer_kind: string;
           fulfillment: string[];
           id: string;
           include_delivery_fee: boolean;
           is_active: boolean;
           made_to_order: boolean | null;
           max_amount: number | null;
+          max_order_total: number | null;
           min_amount: number | null;
+          min_order_total: number | null;
           name_ar: string | null;
           name_en: string | null;
           product_ids: string[];
@@ -403,13 +406,16 @@ export type Database = {
           brand_id: string;
           category_slugs?: string[];
           created_at?: string;
+          customer_kind?: string;
           fulfillment?: string[];
           id?: string;
           include_delivery_fee?: boolean;
           is_active?: boolean;
           made_to_order?: boolean | null;
           max_amount?: number | null;
+          max_order_total?: number | null;
           min_amount?: number | null;
+          min_order_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
           product_ids?: string[];
@@ -421,13 +427,16 @@ export type Database = {
           brand_id?: string;
           category_slugs?: string[];
           created_at?: string;
+          customer_kind?: string;
           fulfillment?: string[];
           id?: string;
           include_delivery_fee?: boolean;
           is_active?: boolean;
           made_to_order?: boolean | null;
           max_amount?: number | null;
+          max_order_total?: number | null;
           min_amount?: number | null;
+          min_order_total?: number | null;
           name_ar?: string | null;
           name_en?: string | null;
           product_ids?: string[];
@@ -5264,6 +5273,7 @@ export type Database = {
         Row: {
           advance_paid: number;
           advance_percent: number | null;
+          advance_returning: boolean | null;
           advance_rules: Json | null;
           advance_scope: string | null;
           assigned_at: string | null;
@@ -5338,6 +5348,7 @@ export type Database = {
         Insert: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_returning?: boolean | null;
           advance_rules?: Json | null;
           advance_scope?: string | null;
           assigned_at?: string | null;
@@ -5412,6 +5423,7 @@ export type Database = {
         Update: {
           advance_paid?: number;
           advance_percent?: number | null;
+          advance_returning?: boolean | null;
           advance_rules?: Json | null;
           advance_scope?: string | null;
           assigned_at?: string | null;
@@ -9008,6 +9020,14 @@ export type Database = {
       activate_white_label_build: {
         Args: { p_build_id: string };
         Returns: undefined;
+      };
+      advance_customer_is_returning: {
+        Args: { p_brand_id: string; p_customer_id: string };
+        Returns: boolean;
+      };
+      advance_customer_is_returning_rpc: {
+        Args: { p_brand_slug: string };
+        Returns: boolean;
       };
       advance_default_rules: {
         Args: { p_percent: number; p_scope: string };

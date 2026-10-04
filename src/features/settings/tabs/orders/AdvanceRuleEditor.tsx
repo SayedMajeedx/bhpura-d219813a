@@ -212,6 +212,74 @@ export function AdvanceRuleEditor({
           </div>
         </div>
 
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium">
+            {isAr ? "قيمة الطلب (اختياري)" : "Order value (optional)"}
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            {(
+              [
+                ["min_total", isAr ? "من" : "From", "advance-rule-min-total"],
+                ["max_total", isAr ? "إلى" : "Up to", "advance-rule-max-total"],
+              ] as const
+            ).map(([key, label, id]) => (
+              <div key={key} className="space-y-1.5">
+                <Label htmlFor={id}>{label}</Label>
+                <Input
+                  id={id}
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.001"
+                  dir="ltr"
+                  className="w-28"
+                  value={form[key]}
+                  onChange={(event) => patch({ [key]: event.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "مجموع الطلب بعد الخصم ومع الضريبة ورسوم التوصيل."
+              : "The order's total after discounts, with tax and the delivery fee."}
+          </p>
+        </div>
+
+        <div className="space-y-1.5" role="radiogroup" aria-label={isAr ? "العميل" : "Customer"}>
+          <p className="text-xs font-medium">{isAr ? "العميل" : "Customer"}</p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["any", isAr ? "الكل" : "Any"],
+                ["new", isAr ? "عميل جديد" : "New customers"],
+                ["returning", isAr ? "عميل سابق" : "Returning customers"],
+              ] as Array<[AdvanceRuleForm["customer"], string]>
+            ).map(([choice, label]) => (
+              <Button
+                key={choice}
+                type="button"
+                size="xs"
+                variant="chip"
+                role="radio"
+                aria-checked={form.customer === choice}
+                className={cn(
+                  "border border-border",
+                  form.customer === choice && "border-primary bg-primary/10 text-foreground",
+                )}
+                onClick={() => patch({ customer: choice })}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "العميل السابق من لديه طلب مؤكد سابق في المتجر."
+              : "A returning customer already has a confirmed order with the store."}
+          </p>
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-2">
           <fieldset className="space-y-1.5">
             <legend className="text-xs font-medium">
