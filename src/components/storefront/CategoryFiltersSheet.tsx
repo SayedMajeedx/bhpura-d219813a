@@ -1,42 +1,29 @@
 import React, { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { CategoryFilters, type FilterState } from "@/components/storefront/CategoryFilters";
+import { CategoryFilters } from "@/components/storefront/CategoryFilters";
+import { activeFilterCount, type CatalogFacets, type FilterState } from "@/lib/category-filters";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { SlidersHorizontal } from "lucide-react";
 
 interface CategoryFiltersSheetProps {
   filters: FilterState;
   onChange: (updater: (prev: FilterState) => FilterState) => void;
-  availableSizes: string[];
-  sizeUnits?: Record<string, string>;
-  availableColors: Array<{ name: string; hex: string | null }>;
-  minCatalogPrice: number;
-  maxCatalogPrice: number;
+  facets: CatalogFacets;
   totalFilteredCount: number;
 }
 
 export function CategoryFiltersSheet({
   filters,
   onChange,
-  availableSizes,
-  sizeUnits,
-  availableColors,
-  minCatalogPrice,
-  maxCatalogPrice,
+  facets,
   totalFilteredCount,
 }: CategoryFiltersSheetProps) {
   const { t } = useStorefront();
   const servicesStore = useIsServicesStore();
   const [open, setOpen] = useState(false);
 
-  const activeCount = [
-    Boolean(filters.size),
-    Boolean(filters.color),
-    filters.minPrice !== null,
-    filters.maxPrice !== null,
-    filters.inStockOnly,
-  ].filter(Boolean).length;
+  const activeCount = activeFilterCount(filters);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -73,11 +60,7 @@ export function CategoryFiltersSheet({
           <CategoryFilters
             filters={filters}
             onChange={onChange}
-            availableSizes={availableSizes}
-            sizeUnits={sizeUnits}
-            availableColors={availableColors}
-            minCatalogPrice={minCatalogPrice}
-            maxCatalogPrice={maxCatalogPrice}
+            facets={facets}
             totalFilteredCount={totalFilteredCount}
           />
         </div>

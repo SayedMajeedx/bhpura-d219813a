@@ -1,51 +1,86 @@
 import React from "react";
+import { Check, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { resolveColorHex } from "@/lib/color-names";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { formatSizeWithUnit } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
-import { RotateCcw } from "lucide-react";
+import { activeFilterCount, type CatalogFacets, type FilterState } from "@/lib/category-filters";
+import { cn } from "@/lib/utils";
 
-export interface FilterState {
-  size: string | null;
-  color: string | null;
-  minPrice: number | null;
-  maxPrice: number | null;
-  inStockOnly: boolean;
-  sort: "new" | "old" | "price-low" | "price-high" | "best";
-}
+export type { FilterState } from "@/lib/category-filters";
 
 interface CategoryFiltersProps {
   filters: FilterState;
   onChange: (updater: (prev: FilterState) => FilterState) => void;
-  availableSizes: string[];
-  /** Unit per size value (e.g. "g"), so chips read "250 g" rather than "250". */
-  sizeUnits?: Record<string, string>;
-  availableColors: Array<{ name: string; hex: string | null }>;
-  minCatalogPrice: number;
-  maxCatalogPrice: number;
+  /** What can be picked on this page, each with how many products it would show. */
+  facets: CatalogFacets;
   totalFilteredCount: number;
   className?: string;
 }
 
+const toggled = (list: string[], value: string) =>
+  list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+
+/** One filter group: its name, a way to clear it, and its options. */
+function Group({
+  label,
+  onClear,
+  clearLabel,
+  children,
+}: {
+  label: string;
+  onClear?: () => void;
+  clearLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-3" aria-label={label}>
+      <div className="flex min-h-6 items-center justify-between gap-2">
+        <h4 className="text-xs font-semibold text-foreground">{label}</h4>
+        {onClear && (
+          <Button
+            type="button"
+            variant="link"
+            size="xs"
+            onClick={onClear}
+            className="h-6 px-0 text-xs font-normal text-muted-foreground hover:text-foreground"
+          >
+            {clearLabel}
+          </Button>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+const chipClass = (active: boolean, empty: boolean) =>
+  cn(
+    "min-h-11 min-w-10 rounded-lg border px-2.5 text-sm font-medium tabular-nums transition-colors sm:min-h-9",
+    active
+      ? "border-primary bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
+      : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-card",
+    // An option that would leave nothing: still readable, plainly out of play.
+    empty && !active && "text-muted-foreground line-through opacity-50 hover:border-border",
+  );
+
 export function CategoryFilters({
   filters,
   onChange,
-  availableSizes,
-  sizeUnits,
-  availableColors,
-  minCatalogPrice,
-  maxCatalogPrice,
+  facets,
   totalFilteredCount,
   className = "",
 }: CategoryFiltersProps) {
-  const { lang, t } = useStorefront();
+  const { lang, t, settings } = useStorefront();
   const servicesStore = useIsServicesStore();
   const isAr = lang === "ar";
   const axisLang = isAr ? "ar" : "en";
+  const currency = settings?.currency ?? "";
 
   // Filter headings follow the store's own option names (a roastery's "size"
   // is the bag weight and its "color" is the grind), not the column names.
@@ -57,55 +92,85 @@ export function CategoryFilters({
         axis: "size",
         addonDefaults: axisDefaults,
         lang: axisLang,
-        hasValues: availableSizes.length > 0,
+        hasValues: facets.sizes.length > 0,
       }).label;
   const colorLabel = resolveVariantAxis({
     axis: "color",
     addonDefaults: axisDefaults,
     lang: axisLang,
-    hasValues: availableColors.length > 0,
+    hasValues: facets.colors.length > 0,
   }).label;
   const colorSwatches = isColorSwatchAxis(
     colorLabel,
-    availableColors.map((c) => c.name),
+    facets.colors.map((c) => c.name),
   );
 
-  const hasActiveFilters = Boolean(
-    filters.size ||
-    filters.color ||
-    filters.minPrice !== null ||
-    filters.maxPrice !== null ||
-    filters.inStockOnly,
+  const activeCount = activeFilterCount(filters);
+  const clear = t("مسح", "Clear");
+  const countWord = (count: number) =>
+    t(`${count} منتج`, count === 1 ? "1 item" : `${count} items`);
+
+  // A range typed the wrong way round is put right when the shopper leaves the field.
+  const settlePrice = () =>
+    onChange((prev) =>
+      prev.minPrice !== null && prev.maxPrice !== null && prev.minPrice > prev.maxPrice
+        ? { ...prev, minPrice: prev.maxPrice, maxPrice: prev.minPrice }
+        : prev,
+    );
+  const priceInput = (key: "minPrice" | "maxPrice", id: string, placeholder: number) => (
+    <div className="relative">
+      <Input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        placeholder={String(placeholder)}
+        value={filters[key] ?? ""}
+        onChange={(e) => {
+          const value = e.target.value.trim() === "" ? null : Math.max(0, Number(e.target.value));
+          onChange((prev) => ({ ...prev, [key]: value }));
+        }}
+        onBlur={settlePrice}
+        className={cn("h-10 bg-card text-sm tabular-nums", currency ? "pe-12" : "")}
+      />
+      {currency && (
+        <span className="pointer-events-none absolute inset-y-0 end-3 flex items-center text-xs text-muted-foreground">
+          {currency}
+        </span>
+      )}
+    </div>
   );
 
-  const handleReset = () => {
-    onChange((prev) => ({
-      ...prev,
-      size: null,
-      color: null,
-      minPrice: null,
-      maxPrice: null,
-      inStockOnly: false,
-    }));
-  };
+  const selectedColors = filters.colors.map((name) => translateOptionValue(name, axisLang) || name);
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={cn("space-y-6", className)}>
       {/* Header & Reset */}
-      <div className="flex items-center justify-between pb-3 border-b border-border">
+      <div className="flex items-center justify-between border-b border-border pb-3">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-foreground">
             {servicesStore ? t("تصفية الخدمات", "Filter services") : t("تصفية المنتجات", "Filters")}
           </h3>
-          <span className="text-xs text-muted-foreground">({totalFilteredCount})</span>
+          <span className="text-xs tabular-nums text-muted-foreground" aria-live="polite">
+            ({totalFilteredCount})
+          </span>
         </div>
-        {hasActiveFilters && (
+        {activeCount > 0 && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            onClick={handleReset}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+            onClick={() =>
+              onChange((prev) => ({
+                ...prev,
+                sizes: [],
+                colors: [],
+                minPrice: null,
+                maxPrice: null,
+                inStockOnly: false,
+              }))
+            }
+            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="h-3 w-3" />
             <span>{t("إعادة ضبط", "Reset")}</span>
@@ -115,160 +180,167 @@ export function CategoryFilters({
 
       {/* In-Stock Only Switch (a service is booked, never out of stock) */}
       {!servicesStore && (
-        <div className="flex items-center justify-between">
-          <label htmlFor="filter-instock" className="text-xs font-medium cursor-pointer">
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="filter-instock" className="cursor-pointer text-xs font-medium">
             {t("المتوفر في المخزون فقط", "In-stock items only")}
-          </label>
-          <input
+          </Label>
+          <Switch
             id="filter-instock"
-            type="checkbox"
             checked={filters.inStockOnly}
-            onChange={(e) => onChange((prev) => ({ ...prev, inStockOnly: e.target.checked }))}
-            className="h-4 w-4 rounded border-border text-primary focus:ring-primary cursor-pointer"
+            onCheckedChange={(checked) => onChange((prev) => ({ ...prev, inStockOnly: checked }))}
           />
         </div>
       )}
 
-      {/* Sizes Section */}
-      {availableSizes.length > 0 && (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {sizeLabel}
-            </span>
-            {filters.size && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange((prev) => ({ ...prev, size: null }))}
-                className="h-auto rounded-md text-xs text-muted-foreground hover:text-foreground"
-              >
-                {t("مسح", "Clear")}
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {availableSizes.map((s) => {
-              const active = filters.size === s;
+      {/* Sizes */}
+      {facets.sizes.length > 0 && (
+        <Group
+          label={sizeLabel}
+          clearLabel={clear}
+          onClear={
+            filters.sizes.length > 0
+              ? () => onChange((prev) => ({ ...prev, sizes: [] }))
+              : undefined
+          }
+        >
+          {/* Equal columns, so the chips line up row after row instead of wrapping ragged. */}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1.5">
+            {facets.sizes.map((size) => {
+              const active = filters.sizes.includes(size.value);
+              const empty = size.count === 0;
               return (
                 <Button
-                  key={s}
+                  key={size.value}
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  onClick={() => onChange((prev) => ({ ...prev, size: active ? null : s }))}
-                  className={`h-auto rounded-md px-2.5 py-1 text-xs rounded-md border font-medium transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                      : "bg-card text-foreground border-border hover:border-primary/50"
-                  }`}
+                  aria-pressed={active}
+                  aria-disabled={empty && !active ? true : undefined}
+                  title={countWord(size.count)}
+                  onClick={() => {
+                    if (empty && !active) return;
+                    onChange((prev) => ({ ...prev, sizes: toggled(prev.sizes, size.value) }));
+                  }}
+                  className={chipClass(active, empty)}
                 >
-                  {formatSizeWithUnit(s, sizeUnits?.[s], axisLang) || s}
+                  {formatSizeWithUnit(size.value, size.unit ?? undefined, axisLang) || size.value}
                 </Button>
               );
             })}
           </div>
-        </div>
+        </Group>
       )}
 
-      {/* Colors Section */}
-      {availableColors.length > 0 && (
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {colorLabel}
-            </span>
-            {filters.color && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onChange((prev) => ({ ...prev, color: null }))}
-                className="h-auto rounded-md text-xs text-muted-foreground hover:text-foreground"
-              >
-                {t("مسح", "Clear")}
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {availableColors.map((c) => {
-              const hex = c.hex || resolveColorHex(c.name) || "#94a3b8";
-              const active = filters.color === c.name;
+      {/* Colors */}
+      {facets.colors.length > 0 && (
+        <Group
+          label={colorLabel}
+          clearLabel={clear}
+          onClear={
+            filters.colors.length > 0
+              ? () => onChange((prev) => ({ ...prev, colors: [] }))
+              : undefined
+          }
+        >
+          <div className="flex flex-wrap gap-2.5">
+            {facets.colors.map((color) => {
+              const active = filters.colors.some(
+                (c) => c.toLowerCase() === color.name.toLowerCase(),
+              );
+              const empty = color.count === 0;
+              const pick = () => {
+                if (empty && !active) return;
+                onChange((prev) => ({
+                  ...prev,
+                  colors: active
+                    ? prev.colors.filter((c) => c.toLowerCase() !== color.name.toLowerCase())
+                    : toggled(prev.colors, color.name),
+                }));
+              };
               if (!colorSwatches) {
                 return (
                   <Button
-                    key={c.name}
+                    key={color.name}
                     type="button"
                     variant="ghost"
-                    size="sm"
                     aria-pressed={active}
-                    onClick={() => onChange((prev) => ({ ...prev, color: active ? null : c.name }))}
-                    className={`h-auto rounded-md border px-2.5 py-1 text-xs font-medium transition-all ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary shadow-xs"
-                        : "bg-card text-foreground border-border hover:border-primary/50"
-                    }`}
+                    aria-disabled={empty && !active ? true : undefined}
+                    title={countWord(color.count)}
+                    onClick={pick}
+                    className={chipClass(active, empty)}
                   >
-                    {translateOptionValue(c.name, axisLang) || c.name}
+                    {translateOptionValue(color.name, axisLang) || color.name}
                   </Button>
                 );
               }
               return (
                 <Button
-                  key={c.name}
+                  key={color.name}
                   type="button"
                   variant="ghost"
-                  size="sm"
-                  onClick={() => onChange((prev) => ({ ...prev, color: active ? null : c.name }))}
-                  title={c.name}
-                  aria-label={c.name}
-                  className={`h-auto rounded-md h-6 w-6 rounded-full hover:bg-transparent border border-border shadow-xs transition-transform hover:scale-110 flex items-center justify-center ${
-                    active ? "ring-2 ring-primary ring-offset-2 scale-110" : ""
-                  }`}
-                  style={{ backgroundColor: hex }}
+                  size="icon"
+                  aria-label={color.name}
+                  aria-pressed={active}
+                  aria-disabled={empty && !active ? true : undefined}
+                  title={`${translateOptionValue(color.name, axisLang) || color.name} · ${countWord(color.count)}`}
+                  onClick={pick}
+                  className={cn(
+                    // The extra hit area keeps the touch target at 44px without a bigger swatch.
+                    "relative size-8 rounded-full border border-border p-0 shadow-xs after:absolute after:-inset-1.5 after:content-[''] hover:bg-transparent",
+                    active && "ring-2 ring-primary ring-offset-2",
+                    empty && !active && "opacity-40",
+                  )}
+                  style={{ backgroundColor: color.hex ?? "var(--muted-foreground)" }}
                 >
-                  {active && <span className="h-1.5 w-1.5 rounded-full bg-white shadow-xs" />}
+                  {active && (
+                    <Check className="size-3.5 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]" />
+                  )}
                 </Button>
               );
             })}
           </div>
-        </div>
+          {colorSwatches && (
+            <p className="min-h-4 text-xs text-muted-foreground">
+              {selectedColors.length > 0
+                ? selectedColors.join(isAr ? "، " : ", ")
+                : t("كل الألوان", "All colours")}
+            </p>
+          )}
+        </Group>
       )}
 
-      {/* Price Range Section */}
-      <div className="space-y-2.5">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("نطاق السعر", "Price Range")}
-        </span>
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Input
-              type="number"
-              placeholder={String(minCatalogPrice || 0)}
-              value={filters.minPrice ?? ""}
-              onChange={(e) => {
-                const val = e.target.value ? Number(e.target.value) : null;
-                onChange((prev) => ({ ...prev, minPrice: val }));
-              }}
-              className="h-8 text-xs ps-2 pe-1 bg-card border-border"
-            />
+      {/* Price range */}
+      {facets.price.max > 0 && (
+        <Group
+          label={t("نطاق السعر", "Price range")}
+          clearLabel={clear}
+          onClear={
+            filters.minPrice !== null || filters.maxPrice !== null
+              ? () => onChange((prev) => ({ ...prev, minPrice: null, maxPrice: null }))
+              : undefined
+          }
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="filter-min-price"
+                className="text-xs font-normal text-muted-foreground"
+              >
+                {t("من", "From")}
+              </Label>
+              {priceInput("minPrice", "filter-min-price", facets.price.min)}
+            </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="filter-max-price"
+                className="text-xs font-normal text-muted-foreground"
+              >
+                {t("إلى", "To")}
+              </Label>
+              {priceInput("maxPrice", "filter-max-price", facets.price.max)}
+            </div>
           </div>
-          <span className="text-xs text-muted-foreground">–</span>
-          <div className="relative flex-1">
-            <Input
-              type="number"
-              placeholder={String(maxCatalogPrice || 100)}
-              value={filters.maxPrice ?? ""}
-              onChange={(e) => {
-                const val = e.target.value ? Number(e.target.value) : null;
-                onChange((prev) => ({ ...prev, maxPrice: val }));
-              }}
-              className="h-8 text-xs ps-2 pe-1 bg-card border-border"
-            />
-          </div>
-        </div>
-      </div>
+        </Group>
+      )}
     </div>
   );
 }

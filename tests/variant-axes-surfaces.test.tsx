@@ -122,25 +122,23 @@ describe("storefront surfaces use the store's option axes", () => {
   it("category filters: headings follow the store, roasts are text chips", () => {
     const props = {
       filters: {
-        size: null,
-        color: null,
+        sizes: [],
+        colors: [],
         minPrice: null,
         maxPrice: null,
         inStockOnly: false,
         sort: "new" as const,
       },
       onChange: vi.fn(),
-      minCatalogPrice: 0,
-      maxCatalogPrice: 100,
       totalFilteredCount: 1,
     };
+    const facets = (sizes: Array<[string, string | null]>, colors: string[]) => ({
+      sizes: sizes.map(([value, unit]) => ({ value, unit, count: 1 })),
+      colors: colors.map((name) => ({ name, hex: null, count: 1 })),
+      price: { min: 0, max: 100 },
+    });
     const coffee = render(
-      <CategoryFilters
-        {...props}
-        availableSizes={["250"]}
-        sizeUnits={{ "250": "g" }}
-        availableColors={[{ name: "medium", hex: null }]}
-      />,
+      <CategoryFilters {...props} facets={facets([["250", "g"]], ["medium"])} />,
     );
     expect(screen.getByText("درجة التحميص")).toBeInTheDocument();
     expect(screen.getByText("الوزن / الحجم")).toBeInTheDocument();
@@ -149,13 +147,7 @@ describe("storefront surfaces use the store's option axes", () => {
     coffee.unmount();
 
     fashionStore();
-    render(
-      <CategoryFilters
-        {...props}
-        availableSizes={["M"]}
-        availableColors={[{ name: "Black", hex: null }]}
-      />,
-    );
+    render(<CategoryFilters {...props} facets={facets([["M", null]], ["Black"])} />);
     // A swatch: named by the colour, painted with it, no text.
     const swatch = screen.getByRole("button", { name: "Black" });
     expect(swatch.style.backgroundColor).not.toBe("");
