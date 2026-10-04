@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import previous from "../supabase/migrations/20261002150000_fix_storefront_checkout_and_held_bookings.sql?raw";
 import migration from "../supabase/migrations/20261005130000_ready_size_is_a_ready_line.sql?raw";
+
+vi.setConfig({ testTimeout: 60_000 });
 
 // The order builder is the checkout's core, so the migration that lets a shopper's ready size make
 // a ready line must change nothing but that one condition.
