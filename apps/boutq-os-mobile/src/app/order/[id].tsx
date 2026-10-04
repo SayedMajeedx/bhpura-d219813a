@@ -189,6 +189,8 @@ export default function OrderDetailScreen() {
   const grandTotal = Number(order.total || order.total_amount || 0);
   const balanceDue = Math.max(0, grandTotal - Number(order.paid_amount || 0));
   const isPaid = balanceDue <= 0.001 || order.payment_status === "paid";
+  // An appointment is not packed, shipped or handed to a courier: it is carried out.
+  const isAppointment = order.fulfillment_method === "appointment";
   const storeName = isAr
     ? activeBrand?.name_ar || activeBrand?.name_en || "متجرنا"
     : activeBrand?.name_en || activeBrand?.name_ar || "Our Store";
@@ -436,10 +438,12 @@ export default function OrderDetailScreen() {
 
         {/* Action Triggers Bar */}
         <View style={styles.actionTriggers}>
-          <PrimaryButton
-            title={isAr ? "إرسال للمندوب عبر واتساب" : "Dispatch Courier via WhatsApp"}
-            onPress={() => setCourierDispatchModal(true)}
-          />
+          {isAppointment ? null : (
+            <PrimaryButton
+              title={isAr ? "إرسال للمندوب عبر واتساب" : "Dispatch Courier via WhatsApp"}
+              onPress={() => setCourierDispatchModal(true)}
+            />
+          )}
           <View style={styles.dualActionRow}>
             <SecondaryButton
               title={isAr ? "تعديل حالة الطلب" : "Update Status"}
@@ -447,7 +451,15 @@ export default function OrderDetailScreen() {
               style={{ flex: 1 }}
             />
             <SecondaryButton
-              title={isAr ? "تعديل مرحلة التجهيز" : "Update Fulfillment"}
+              title={
+                isAppointment
+                  ? isAr
+                    ? "إنجاز الموعد"
+                    : "Complete Appointment"
+                  : isAr
+                    ? "تعديل مرحلة التجهيز"
+                    : "Update Fulfillment"
+              }
               onPress={() => setFulfillmentStatusModal(true)}
               style={{ flex: 1 }}
             />
@@ -561,40 +573,51 @@ export default function OrderDetailScreen() {
       <ModalSheet
         visible={fulfillmentStatusModal}
         onClose={() => setFulfillmentStatusModal(false)}
-        title={isAr ? "تحديث مرحلة التجهيز والشحن" : "Update Fulfillment Stage"}
+        title={
+          isAppointment
+            ? isAr
+              ? "إنجاز الموعد"
+              : "Complete Appointment"
+            : isAr
+              ? "تحديث مرحلة التجهيز والشحن"
+              : "Update Fulfillment Stage"
+        }
       >
         <View style={styles.modalOptionList}>
-          {[
-            { key: "pending", label: isAr ? "بانتظار التجهيز" : "Pending Preparation" },
-            { key: "packing", label: isAr ? "جاري التجهيز والتغليف" : "Packing" },
-            ...(isAddonInstalled("made-to-order") ||
-            order.fulfillment_status === "sent_to_tailor" ||
-            order.fulfillment_status === "received_from_tailor"
-              ? [
-                  {
-                    key: "sent_to_tailor",
-                    label: isAr
-                      ? vocabulary?.sent_to_workshop?.ar || "عند الخياط للتفصيل"
-                      : vocabulary?.sent_to_workshop?.en || "Sent to Tailor",
-                  },
-                  {
-                    key: "received_from_tailor",
-                    label: isAr
-                      ? vocabulary?.received_from_workshop?.ar || "مستلم من الخياط"
-                      : vocabulary?.received_from_workshop?.en || "Received from Tailor",
-                  },
-                ]
-              : []),
-            {
-              key: "ready_for_pickup",
-              label: isAr ? "جاهز للاستلام من الفرع" : "Ready for Pickup",
-            },
-            {
-              key: "out_for_delivery",
-              label: isAr ? "خرج مع المندوب للتوصيل" : "Out for Delivery",
-            },
-            { key: "delivered", label: isAr ? "تم تسليم الشحنة للعميل" : "Delivered" },
-          ].map((opt) => (
+          {(isAppointment
+            ? [{ key: "delivered", label: isAr ? "تم إنجاز الموعد" : "Appointment done" }]
+            : [
+                { key: "pending", label: isAr ? "بانتظار التجهيز" : "Pending Preparation" },
+                { key: "packing", label: isAr ? "جاري التجهيز والتغليف" : "Packing" },
+                ...(isAddonInstalled("made-to-order") ||
+                order.fulfillment_status === "sent_to_tailor" ||
+                order.fulfillment_status === "received_from_tailor"
+                  ? [
+                      {
+                        key: "sent_to_tailor",
+                        label: isAr
+                          ? vocabulary?.sent_to_workshop?.ar || "عند الخياط للتفصيل"
+                          : vocabulary?.sent_to_workshop?.en || "Sent to Tailor",
+                      },
+                      {
+                        key: "received_from_tailor",
+                        label: isAr
+                          ? vocabulary?.received_from_workshop?.ar || "مستلم من الخياط"
+                          : vocabulary?.received_from_workshop?.en || "Received from Tailor",
+                      },
+                    ]
+                  : []),
+                {
+                  key: "ready_for_pickup",
+                  label: isAr ? "جاهز للاستلام من الفرع" : "Ready for Pickup",
+                },
+                {
+                  key: "out_for_delivery",
+                  label: isAr ? "خرج مع المندوب للتوصيل" : "Out for Delivery",
+                },
+                { key: "delivered", label: isAr ? "تم تسليم الشحنة للعميل" : "Delivered" },
+              ]
+          ).map((opt) => (
             <Pressable
               key={opt.key}
               onPress={() => {

@@ -216,6 +216,7 @@ function Dashboard() {
     canViewFinancials,
     currency,
     locale,
+    isServices: isServicesProfile(storeProfile.modules),
   });
 
   return (

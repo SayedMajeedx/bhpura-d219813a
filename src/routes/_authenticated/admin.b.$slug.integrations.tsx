@@ -41,8 +41,8 @@ import {
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
-
 import { IntegrationsCommandHeader } from "@/components/integrations/IntegrationsCommandHeader";
 import {
   IntegrationsScopeSwitcher,
@@ -62,7 +62,6 @@ import {
   type IntegrationCredential,
 } from "@/lib/data/integrations";
 import { getAccessToken } from "@/lib/auth/session";
-
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -119,6 +118,7 @@ function IntegrationsPage() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const qc = useQueryClient();
   const { isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
   const canRotateKeys = isSuperAdmin || isAdmin || isBrandAdmin;
@@ -199,8 +199,8 @@ function IntegrationsPage() {
 
   return (
     <div className="space-y-3.5">
-      {/* 1. Command Header */}
       <IntegrationsCommandHeader
+        shipping={storeProfile.modules.shipping}
         lang={isAr ? "ar" : "en"}
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         integrationCount={integrationsList.length}
@@ -210,8 +210,8 @@ function IntegrationsPage() {
         }}
       />
 
-      {/* 2. Scope Switcher */}
       <IntegrationsScopeSwitcher
+        shipping={storeProfile.modules.shipping}
         lang={isAr ? "ar" : "en"}
         activeScope={categoryScope}
         onScopeChange={(scope) => setCategoryScope(scope)}

@@ -25,9 +25,11 @@ export interface OsQuickActionsProps {
   slug: string | null;
   lang: "en" | "ar";
   className?: string;
+  /** A services store adds services, not products and stock. */
+  services?: boolean;
 }
 
-export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
+export function OsQuickActions({ slug, lang, className, services = false }: OsQuickActionsProps) {
   const navigate = useNavigate();
   const isAr = lang === "ar";
 
@@ -36,8 +38,20 @@ export function OsQuickActions({ slug, lang, className }: OsQuickActionsProps) {
   const actions = [
     {
       id: "product",
-      label: isAr ? "إضافة منتج جديد" : "New Product",
-      description: isAr ? "إدراج صنف ومخزون جديد" : "Add item & inventory",
+      label: services
+        ? isAr
+          ? "إضافة خدمة جديدة"
+          : "New Service"
+        : isAr
+          ? "إضافة منتج جديد"
+          : "New Product",
+      description: services
+        ? isAr
+          ? "إدراج خدمة بمدتها وسعرها"
+          : "Add a service with its length & price"
+        : isAr
+          ? "إدراج صنف ومخزون جديد"
+          : "Add item & inventory",
       icon: Package,
       onClick: () =>
         navigate({

@@ -29,6 +29,7 @@ import {
 import { catalogKeys } from "@/lib/data/catalog";
 import { accountingQueries } from "@/lib/data/accounting";
 import { getCurrentUser } from "@/lib/auth/session";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -40,6 +41,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   const brand = useBrand();
   const brandId = brand.id;
   const qc = useQueryClient();
+  const { modules } = useAdminStoreProfile(brandId).profile;
 
   const [filterByDateRange, setFilterByDateRange] = useState(true);
   const [activeTypeFilter, setActiveTypeFilter] = useState<"all" | "cogs" | "opex">("all");
@@ -90,6 +92,13 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     .filter((e) => e.expense_type === "cogs")
     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
+  // Direct costs (bulk packaging and materials bought as stock) are for a store that keeps stock or
+  // packaging; a services store records overheads only, unless it already has such an entry.
+  const showCogs =
+    modules.packaging ||
+    modules.stock ||
+    (expensesQ.data as any[] | undefined)?.some((e) => e.expense_type === "cogs") === true;
+
   const totalOpexAmount = rangeFilteredExpenses
     .filter((e) => (e.expense_type || "opex") === "opex")
     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
@@ -98,7 +107,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     setEditingExpense(null);
     setDescription("");
     setAmount(0);
-    setCategory("Packaging");
+    setCategory(showCogs ? "Packaging" : "Operations");
     setExpenseType("opex");
     setQuantity(100);
     setUnitType(isAr ? "أكياس" : "Bags");
@@ -278,7 +287,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
       )}
 
       {/* Overview Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 gap-4 ${showCogs ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <span className="text-xs font-bold text-muted-foreground block">
             {isAr ? "إجمالي المصاريف والمشتريات المسجلة" : "Total Logged Purchases & Expenses"}
@@ -288,27 +297,29 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           </span>
         </Card>
 
-        <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-muted-foreground">
-              {isAr ? "مشتريات مخزون التغليف والمواد (Asset)" : "Packaging Inventory Asset"}
+        {showCogs && (
+          <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-muted-foreground">
+                {isAr ? "مشتريات مخزون التغليف والمواد (Asset)" : "Packaging Inventory Asset"}
+              </span>
+              <Badge
+                variant="outline"
+                className="bg-primary/10 text-primary border-primary/20 text-xs"
+              >
+                {isAr ? "أصل / مخزون" : "Asset COGS"}
+              </Badge>
+            </div>
+            <span className="text-xl font-extrabold text-primary mt-1">
+              {formatMoney(totalCogsAmount, "BHD")}
             </span>
-            <Badge
-              variant="outline"
-              className="bg-primary/10 text-primary border-primary/20 text-xs"
-            >
-              {isAr ? "أصل / مخزون" : "Asset COGS"}
-            </Badge>
-          </div>
-          <span className="text-xl font-extrabold text-primary mt-1">
-            {formatMoney(totalCogsAmount, "BHD")}
-          </span>
-          <p className="text-xs text-muted-foreground mt-1">
-            {isAr
-              ? "تضاف إلى أصول المخزون وتستقطع تكلفة القطعة منها عند إتمام كل طلب"
-              : "Added to inventory asset & deducted per fulfilled order unit cost"}
-          </p>
-        </Card>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isAr
+                ? "تضاف إلى أصول المخزون وتستقطع تكلفة القطعة منها عند إتمام كل طلب"
+                : "Added to inventory asset & deducted per fulfilled order unit cost"}
+            </p>
+          </Card>
+        )}
 
         <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -341,14 +352,16 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           >
             {isAr ? "الكل" : "All"}
           </Button>
-          <Button
-            variant={activeTypeFilter === "cogs" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTypeFilter("cogs")}
-            className="h-8 text-xs font-bold"
-          >
-            {isAr ? "تكاليف مباشرة (COGS)" : "Direct COGS"}
-          </Button>
+          {showCogs && (
+            <Button
+              variant={activeTypeFilter === "cogs" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setActiveTypeFilter("cogs")}
+              className="h-8 text-xs font-bold"
+            >
+              {isAr ? "تكاليف مباشرة (COGS)" : "Direct COGS"}
+            </Button>
+          )}
           <Button
             variant={activeTypeFilter === "opex" ? "default" : "ghost"}
             size="sm"
@@ -490,27 +503,29 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
           <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
             {/* Expense Classification Toggle */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">
-                {isAr ? "نوع المصروف (تصنيف القوائم المالية)" : "Expense Type"}
-              </Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setExpenseType("opex")}
-                  className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "opex" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
-                >
-                  {isAr ? "مصاريف تشغيلية (OpEx)" : "OpEx / Overhead"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setExpenseType("cogs")}
-                  className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "cogs" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
-                >
-                  {isAr ? "تكاليف إنتاج مباشرة (COGS)" : "Direct COGS"}
-                </button>
+            {(showCogs || expenseType === "cogs") && (
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">
+                  {isAr ? "نوع المصروف (تصنيف القوائم المالية)" : "Expense Type"}
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpenseType("opex")}
+                    className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "opex" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
+                  >
+                    {isAr ? "مصاريف تشغيلية (OpEx)" : "OpEx / Overhead"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpenseType("cogs")}
+                    className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "cogs" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
+                  >
+                    {isAr ? "تكاليف إنتاج مباشرة (COGS)" : "Direct COGS"}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">
@@ -621,9 +636,19 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                   onChange={(e) => setCategory(e.target.value)}
                   className="h-9 text-xs w-full rounded-md border border-input bg-background px-2"
                 >
-                  <option value="Packaging">{isAr ? "تغليف ومواد" : "Packaging"}</option>
+                  {(showCogs || category === "Packaging") && (
+                    <option value="Packaging">{isAr ? "تغليف ومواد" : "Packaging"}</option>
+                  )}
                   <option value="Operations">{isAr ? "تشغيل ومرافق" : "Operations"}</option>
-                  <option value="Rent">{isAr ? "إيجار وحاضنة" : "Rent & Incubator"}</option>
+                  <option value="Rent">
+                    {modules.incubators
+                      ? isAr
+                        ? "إيجار وحاضنة"
+                        : "Rent & Incubator"
+                      : isAr
+                        ? "إيجار"
+                        : "Rent"}
+                  </option>
                   <option value="Marketing">{isAr ? "تسويق وإعلانات" : "Marketing"}</option>
                   <option value="Salaries">{isAr ? "رواتب وأجور" : "Salaries"}</option>
                   <option value="Other">{isAr ? "أخرى" : "Other"}</option>

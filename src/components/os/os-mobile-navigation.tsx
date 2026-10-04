@@ -44,6 +44,8 @@ export interface OsMobileNavigationProps {
   onSignOut: () => void;
   mobileOpen: boolean;
   onOpenChangeMobile: (open: boolean) => void;
+  /** A services store (see isServicesProfile). */
+  services?: boolean;
 }
 
 export function OsMobileNavigation({
@@ -58,6 +60,7 @@ export function OsMobileNavigation({
   onSignOut,
   mobileOpen,
   onOpenChangeMobile,
+  services = false,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
   const bottomBarClaimed = useBottomBarClaimed();
@@ -566,7 +569,12 @@ export function OsMobileNavigation({
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <OsQuickActions slug={activeSlug} lang={lang} className="h-8.5 px-2 text-xs" />
+          <OsQuickActions
+            slug={activeSlug}
+            lang={lang}
+            services={services}
+            className="h-8.5 px-2 text-xs"
+          />
           <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
           <Button
             variant="ghost"

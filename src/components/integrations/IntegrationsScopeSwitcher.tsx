@@ -36,6 +36,8 @@ interface IntegrationsScopeSwitcherProps {
   activeScope: IntegrationsCategoryScope;
   onScopeChange: (scope: IntegrationsCategoryScope) => void;
   integrationCount: number;
+  /** The store ships goods; without it the couriers tab has nothing to connect. */
+  shipping?: boolean;
 }
 
 export function IntegrationsScopeSwitcher({
@@ -43,9 +45,10 @@ export function IntegrationsScopeSwitcher({
   activeScope,
   onScopeChange,
   integrationCount,
+  shipping = true,
 }: IntegrationsScopeSwitcherProps) {
   const isAr = lang === "ar";
-  const scopes = [
+  const allScopes = [
     {
       id: "all",
       icon: Plug,
@@ -70,6 +73,10 @@ export function IntegrationsScopeSwitcher({
     badge?: number;
   }>;
 
+  // The couriers tab goes for a store that does not ship (unless it is the one open).
+  const scopes = allScopes.filter(
+    (scope) => shipping || scope.id !== "shipping" || activeScope === "shipping",
+  );
   const primary = scopes.slice(0, 2);
   const secondary = scopes.slice(2);
   const activeSecondary = secondary.find((scope) => scope.id === activeScope);
