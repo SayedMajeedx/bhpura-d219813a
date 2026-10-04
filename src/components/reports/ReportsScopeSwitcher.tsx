@@ -1,5 +1,13 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { BarChart3, TrendingUp, Package, Users, Download, MoreHorizontal } from "lucide-react";
+import {
+  BarChart3,
+  TrendingUp,
+  Package,
+  Users,
+  Wallet,
+  Download,
+  MoreHorizontal,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -41,6 +49,13 @@ const navItems = [
     icon: Users,
     en: "Customers",
     ar: "العملاء",
+  },
+  {
+    id: "advance",
+    path: "/admin/b/$slug/reports/advance",
+    icon: Wallet,
+    en: "Advance payments",
+    ar: "الدفعات المقدمة",
   },
   {
     id: "export",

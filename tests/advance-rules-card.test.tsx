@@ -12,12 +12,16 @@ const state = vi.hoisted(() => ({
   reorder: vi.fn(async () => undefined),
   setActive: vi.fn(async () => undefined),
   lang: "en" as "en" | "ar",
+  vertical: "general" as string,
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("../src/lib/i18n", () => ({ useI18n: () => ({ lang: state.lang }) }));
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: state.lang }) }));
 const settingsForm = vi.hoisted(() => () => ({
-  useBrandSettingsFormContext: () => ({ form: { bs: { currency: "BHD" } }, brandId: "b1" }),
+  useBrandSettingsFormContext: () => ({
+    form: { bs: { currency: "BHD", store_vertical: state.vertical } },
+    brandId: "b1",
+  }),
 }));
 vi.mock("../src/features/settings/use-brand-settings-form", settingsForm);
 vi.mock("@/features/settings/use-brand-settings-form", settingsForm);
@@ -95,6 +99,7 @@ const renderCard = () =>
 beforeEach(() => {
   state.rules = [];
   state.lang = "en";
+  state.vertical = "general";
   vi.clearAllMocks();
 });
 
@@ -294,5 +299,45 @@ describe("the order value and the customer in a rule", () => {
     expect(
       await screen.findByText("10% · orders of BHD 100.000 or more · returning customers"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("suggestions for the kind of store", () => {
+  it("offers the vertical's templates and saves its rules, after the ones already there", async () => {
+    state.vertical = "abayas";
+    state.rules = [rule({ id: "r1", sort_order: 4 })];
+    renderCard();
+    expect(await screen.findByText("Suggested for your store")).toBeInTheDocument();
+    const item = screen.getByText("A deposit on made-to-order items").closest("li")!;
+    // Not before the store's rules are known, or the new rule could land ahead of them.
+    const add = within(item).getByRole("button", { name: "Add" });
+    await waitFor(() => expect(add).toBeEnabled());
+    fireEvent.click(add);
+    await waitFor(() => expect(state.save).toHaveBeenCalledTimes(1));
+    expect(state.save).toHaveBeenCalledWith(
+      "b1",
+      null,
+      expect.objectContaining({
+        made_to_order: true,
+        amount_kind: "percent",
+        amount_value: 50,
+        name_en: "Made to order",
+      }),
+      5,
+    );
+  });
+
+  it("does not offer a template that does not suit the store", async () => {
+    state.vertical = "jewelry";
+    renderCard();
+    expect(await screen.findByText("High-value orders")).toBeInTheDocument();
+    expect(screen.queryByText("A deposit on made-to-order items")).not.toBeInTheDocument();
+  });
+
+  it("offers nothing to a store that only sells files", async () => {
+    state.vertical = "digital";
+    renderCard();
+    await screen.findByText(/the general rule covers everything/);
+    expect(screen.queryByText("Suggested for your store")).not.toBeInTheDocument();
   });
 });
