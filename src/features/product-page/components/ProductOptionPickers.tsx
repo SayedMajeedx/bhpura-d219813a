@@ -214,8 +214,10 @@ export function ProductOptionPickers({
                       setSelectedColor(color);
                       setErrorMsg(null);
                     }}
+                    // The chosen swatch is shown by its border, inside the 44px box: scaling it up
+                    // pushed its edge past the column, which clips it (the first swatch lost a side).
                     className={`h-11 w-11 rounded-full border-2 p-0 relative ${
-                      active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                      active ? "shadow-sm" : "border-transparent hover:border-border"
                     } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                     style={ringStyle}
                     title={
