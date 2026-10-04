@@ -12,13 +12,20 @@ export function ProductGrid({
   loading,
   categoryEmpty,
   onViewAll,
+  withSidebar = false,
 }: {
   products: ProductRow[];
   loading: boolean;
   categoryEmpty: boolean;
   onViewAll: () => void;
+  /**
+   * The page has a filter sidebar beside the grid. The grid then has about 1,000px, and four
+   * columns would make cards a marketplace's size (235px); three keep them a boutique's.
+   */
+  withSidebar?: boolean;
 }) {
   const { t } = useStorefront();
+  const wide = withSidebar ? "lg:grid-cols-3" : "lg:grid-cols-4";
   // A services store lists services, not products.
   const services = useIsServicesStore();
 
@@ -56,7 +63,7 @@ export function ProductGrid({
         <div
           className={`grid ${
             mobileCols === "1" ? "grid-cols-1" : "grid-cols-2"
-          } md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6`}
+          } md:grid-cols-3 ${wide} gap-4 sm:gap-6`}
         >
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
@@ -160,7 +167,7 @@ export function ProductGrid({
         id="products"
         className={`grid ${
           mobileCols === "1" ? "grid-cols-1" : "grid-cols-2"
-        } md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6`}
+        } md:grid-cols-3 ${wide} gap-4 sm:gap-6`}
       >
         {products.map((p, i) => (
           <ProductCard key={p.id} product={p} index={i} />

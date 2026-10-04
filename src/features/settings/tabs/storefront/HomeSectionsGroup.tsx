@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { EditorialSectionsEditor } from "./EditorialSectionsEditor";
+import { BannerSizeControl } from "./BannerSizeControl";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { toast } from "sonner";
 import { Image, Loader2, Sparkles, Trash2, Upload } from "lucide-react";
@@ -100,6 +101,8 @@ export function HomeSectionsGroup() {
 
   return (
     <div className="space-y-6">
+      <BannerSizeControl />
+
       {/* 1. Core Section Toggles & Badges */}
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
         <div>

@@ -1,4 +1,5 @@
 import type { Brand, PublicSettings } from "@/lib/storefront-context";
+import { resolveBannerSize } from "@/lib/banner-size";
 import { resolveStorefrontTypography } from "@/lib/typography";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile";
@@ -273,6 +274,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     hero_show_arrows: s?.hero_show_arrows ?? true,
     pdp_gallery_aspect_ratio: s?.pdp_gallery_aspect_ratio ?? "3:4",
     hero_video_fit: s?.hero_video_fit ?? "contain_ambient",
+    storefront_banner_size: resolveBannerSize(s?.storefront_banner_size),
   };
   return safeSettings;
 }

@@ -20,6 +20,7 @@ import { JsonLd } from "@/components/storefront/seo/JsonLd";
 import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 import { CategoryFilters } from "@/components/storefront/CategoryFilters";
 import { replaceUrlQuietly } from "@/lib/quiet-url";
+import { CATEGORY_BANNER, resolveBannerSize } from "@/lib/banner-size";
 import {
   catalogFacets,
   filterProducts,
@@ -98,6 +99,7 @@ export const Route = createFileRoute("/$slug/$category")({
 
 function CategoryPage() {
   const { brand, lang, t, settings } = useStorefront();
+  const banner = CATEGORY_BANNER[resolveBannerSize(settings.storefront_banner_size)];
   const servicesStore = useIsServicesStore();
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
@@ -392,7 +394,7 @@ function CategoryPage() {
         }
         mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
         desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
-        className="min-h-[clamp(16rem,32vw,24rem)] border-b"
+        className={`${banner.height} border-b`}
         style={{
           color: settings.category_banner_background_url
             ? "#ffffff"
@@ -418,9 +420,11 @@ function CategoryPage() {
           ) : undefined
         }
       >
-        <div className="mx-auto min-h-[clamp(16rem,32vw,24rem)] max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className={`mx-auto ${banner.height} max-w-7xl px-4 sm:px-6 ${banner.padding}`}>
           {breadcrumbs ? (
-            <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs font-semibold opacity-70">
+            <nav
+              className={`${banner.gap} flex flex-wrap items-center gap-1.5 text-xs font-semibold opacity-70`}
+            >
               {breadcrumbs.map((crumb, idx) => {
                 const isLast = idx === breadcrumbs.length - 1;
                 return (
@@ -445,7 +449,7 @@ function CategoryPage() {
             <Link
               to="/$slug"
               params={{ slug: brand.slug }}
-              className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"
+              className={`${banner.gap} inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100`}
             >
               <BackIcon className="h-4 w-4" />
               {t("العودة للمتجر", "Back to store")}
@@ -467,7 +471,7 @@ function CategoryPage() {
                 <p className="text-xs uppercase tracking-[0.2em] opacity-60">
                   {t("القسم", "Category")}
                 </p>
-                <h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "inherit" }}>
+                <h1 className={`mt-1 font-display ${banner.title}`} style={{ color: "inherit" }}>
                   {title}
                 </h1>
               </div>
@@ -610,6 +614,7 @@ function CategoryPage() {
 
               <div className="flex-1 min-w-0">
                 <ProductGrid
+                  withSidebar={settings?.category_filters_enabled !== false}
                   products={filteredProducts}
                   loading={
                     categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading

@@ -105,6 +105,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
   - Components: `HeroBanner` in `src/features/storefront-home/components/` (V1), `src/components/storefront/HeroV2.tsx` (V2). Home page rules: `src/features/storefront-home/lib/home-products.ts`; storefront shell (settings normaliser, head, theme, footer): `src/features/storefront-shell/`
   - Resolvers & aspect logic: `src/lib/hero-media.ts`, `src/lib/media-aspect.ts`
   - Admin banner configuration: `src/features/settings/` (storefront tab, group `home_hero`)
+  - Section and category banners: how tall they are is the store's `storefront_banner_size` (compact by default, medium, large = the original band; migration `20261005140000`, picker `BannerSizeControl` in the home sections group, classes in `src/lib/banner-size.ts`, used by `MerchandisingSection` and the category page); the merchant's pictures and titles are never touched. A home section with three products or fewer centres them at a grid column's width (`src/lib/rail-layout.ts`) instead of leaving a grid half empty; a category grid beside the filter sidebar has three columns, four without it. Banner settings live in `registry-banners.ts`.
 - **Store Settings & Identity**:
   - Single Source of Truth: `src/features/settings/registry.ts` (`SETTINGS_REGISTRY`)
   - Settings UI: `src/routes/_authenticated/admin.b.$slug.settings.tsx`, `src/features/settings/`

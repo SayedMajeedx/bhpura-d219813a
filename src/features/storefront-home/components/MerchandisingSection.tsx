@@ -4,6 +4,8 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { type ProductRow } from "@/lib/data/storefront";
+import { SECTION_BANNER, resolveBannerSize } from "@/lib/banner-size";
+import { RAIL_CARD, RAIL_CONTAINER, railLayout } from "@/lib/rail-layout";
 
 /** A home page section heading with bilingual fallbacks. */
 export function SectionHeading({
@@ -89,16 +91,19 @@ export function MerchandisingSection({
           ? ["تنزيلات", "Sale"]
           : ["الرائج الآن", "Trending now"];
 
+  const banner = SECTION_BANNER[resolveBannerSize(settings.storefront_banner_size)];
+  const layout = railLayout(products.length);
+
   const productGrid = (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="flex overflow-x-auto flex-nowrap gap-4 pb-4 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0 lg:grid-cols-4"
+      className={`flex overflow-x-auto flex-nowrap gap-4 pb-4 ${RAIL_CONTAINER[layout]}`}
     >
       {products.map((product) => (
         <ProductCard
           key={`${kind}-${product.id}`}
           product={product}
-          className="min-w-[240px] w-[72vw] flex-shrink-0 snap-start sm:w-[45vw] md:w-auto md:min-w-0 md:shrink"
+          className={`min-w-[240px] w-[72vw] flex-shrink-0 snap-start sm:w-[45vw] ${RAIL_CARD[layout]}`}
           badge={
             kind === "trending"
               ? bestSellerIds.has(product.id)
@@ -138,7 +143,7 @@ export function MerchandisingSection({
           enabled={settings.secondary_banner_parallax_enabled}
           mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
           desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
-          className="min-h-[clamp(14rem,30vw,24rem)] rounded-none"
+          className={`${banner.height} rounded-none`}
           backgroundClassName="bg-muted"
           background={
             <ResponsiveImage
@@ -151,8 +156,12 @@ export function MerchandisingSection({
             />
           }
         >
-          <div className="mx-auto flex min-h-[clamp(14rem,30vw,24rem)] max-w-7xl items-end px-4 py-10 sm:px-6 sm:py-14">
-            <h2 className="max-w-[18ch] font-display text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.05] tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]">
+          <div
+            className={`mx-auto flex ${banner.height} max-w-7xl items-end px-4 sm:px-6 ${banner.padding}`}
+          >
+            <h2
+              className={`max-w-[18ch] font-display ${banner.title} font-semibold leading-[1.05] tracking-tight text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.7)]`}
+            >
               {lang === "ar" ? label[0] : label[1]}
             </h2>
           </div>
@@ -167,7 +176,7 @@ export function MerchandisingSection({
           </h2>
         </div>
       )}
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">{productGrid}</div>
+      <div className={`mx-auto max-w-7xl px-4 sm:px-6 ${banner.body}`}>{productGrid}</div>
     </section>
   );
 }
