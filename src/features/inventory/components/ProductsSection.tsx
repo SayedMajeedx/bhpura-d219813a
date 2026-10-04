@@ -37,6 +37,7 @@ import { inventoryScopeTabs } from "@/features/inventory/lib/inventory-scope-tab
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
 import { useProductBulkActions } from "@/features/inventory/hooks/use-product-bulk-actions";
 import { InventoryImportMenu } from "@/features/inventory/components/InventoryImportMenu";
+import { isServicesProfile } from "@/lib/store-profile";
 import {
   BulkCategoryDialog,
   BulkDeleteProductsDialog,
@@ -300,6 +301,7 @@ export function ProductsSection({
         productCount={products.length}
         pendingNotifyCount={pendingNotifyCount}
         isCourier={false}
+        isServices={isServicesProfile(storeProfile.modules)}
         onCreateNew={openNewProduct}
         renderImporters={
           <InventoryImportMenu
@@ -309,6 +311,8 @@ export function ProductsSection({
             onImportCatalog={() => setIsProductImporterOpen(true)}
             onPrintAll={printAll}
             onTransferSelected={transferSelectedToIncubators}
+            barcodes={storeProfile.modules.stock}
+            incubators={storeProfile.modules.incubators}
           />
         }
       />

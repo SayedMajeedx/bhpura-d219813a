@@ -6,6 +6,8 @@ interface IntegrationsCommandHeaderProps {
   brandName: string;
   integrationCount: number;
   onNewIntegration: () => void;
+  /** The store ships goods (couriers can be connected). */
+  shipping?: boolean;
 }
 
 export function IntegrationsCommandHeader({
@@ -13,6 +15,7 @@ export function IntegrationsCommandHeader({
   brandName,
   integrationCount,
   onNewIntegration,
+  shipping = true,
 }: IntegrationsCommandHeaderProps) {
   const isAr = lang === "ar";
 
@@ -42,8 +45,12 @@ export function IntegrationsCommandHeader({
 
           <p className="text-xs text-muted-foreground max-w-xl">
             {isAr
-              ? "ربط بوابات الدفع الإلكتروني (بينفت، Tap، Stripe)، شركات الشحن (أرامكس)، الذكاء الاصطناعي، وبيكسلات التتبع."
-              : "Connect payment gateways (BenefitPay, Tap, Stripe), shipping couriers (Aramex), AI models, and tracking pixels."}
+              ? shipping
+                ? "ربط بوابات الدفع الإلكتروني (بينفت، Tap، Stripe)، شركات الشحن (أرامكس)، الذكاء الاصطناعي، وبيكسلات التتبع."
+                : "ربط بوابات الدفع الإلكتروني (بينفت، Tap، Stripe)، الذكاء الاصطناعي، وبيكسلات التتبع."
+              : shipping
+                ? "Connect payment gateways (BenefitPay, Tap, Stripe), shipping couriers (Aramex), AI models, and tracking pixels."
+                : "Connect payment gateways (BenefitPay, Tap, Stripe), AI models, and tracking pixels."}
           </p>
         </div>
 

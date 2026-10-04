@@ -156,7 +156,7 @@ export function ProductCard({
 
         <div className="mt-2 text-start">
           <div
-            className="product-title text-sm font-medium truncate"
+            className="product-title text-sm font-medium leading-[1.8] truncate"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}

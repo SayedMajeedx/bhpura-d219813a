@@ -268,7 +268,8 @@ export function ProductCardV2({
 
           {/* Product Title */}
           <h3
-            className="product-title text-sm font-medium line-clamp-1 transition-colors duration-200 group-hover:text-primary"
+            // The line is clipped to one row (line-clamp), so its height must hold Arabic marks below the baseline: a tight line-height cuts them off.
+            className="product-title text-sm font-medium leading-[1.8] line-clamp-1 transition-colors duration-200 group-hover:text-primary"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}

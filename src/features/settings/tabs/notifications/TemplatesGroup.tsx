@@ -5,12 +5,18 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Sparkles, Truck } from "lucide-react";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
 export function TemplatesGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { form, setBs } = useBrandSettingsFormContext();
+  const { form, setBs, brandId } = useBrandSettingsFormContext();
+  const { modules } = useAdminStoreProfile(brandId).profile;
   const bs = form.bs;
+  // The delivery message is for a store that delivers; one that already wrote it keeps seeing it.
+  const showCourierMessage =
+    modules.shipping ||
+    Boolean(bs.courier_out_for_delivery_message_ar || bs.courier_out_for_delivery_message_en);
   const brand = form.brand;
 
   const brandDisplayName =
@@ -124,56 +130,60 @@ export function TemplatesGroup() {
         </AdvancedOnly>
       </div>
 
-      {/* 2. Courier Out For Delivery Notification */}
-      <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
-        <div>
-          <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <Truck className="size-4 text-primary" />
-            <span>
-              {isAr ? "رسائل السائق: الطلب خرج للتوصيل" : "Courier Out for Delivery Dispatch"}
-            </span>
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "نص رسالة SMS أو الواتساب التي يرسلها السائق للعميل عند خروج الشحنة في طريقها للتوصيل."
-              : "WhatsApp / SMS template sent to customer when the courier begins transit."}
-          </p>
-        </div>
+      {showCourierMessage && (
+        <>
+          {/* 2. Courier Out For Delivery Notification */}
+          <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Truck className="size-4 text-primary" />
+                <span>
+                  {isAr ? "رسائل السائق: الطلب خرج للتوصيل" : "Courier Out for Delivery Dispatch"}
+                </span>
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAr
+                  ? "نص رسالة SMS أو الواتساب التي يرسلها السائق للعميل عند خروج الشحنة في طريقها للتوصيل."
+                  : "WhatsApp / SMS template sent to customer when the courier begins transit."}
+              </p>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div dir="rtl">
-            <Label className="text-xs font-medium">
-              {isAr ? "رسالة التوصيل (عربي)" : "Delivery Dispatch Message (Arabic)"}
-            </Label>
-            <Textarea
-              className="mt-1.5 text-end text-xs min-h-[64px]"
-              value={bs.courier_out_for_delivery_message_ar ?? ""}
-              placeholder={
-                isAr
-                  ? "طلبكم في الطريق إليكم الآن مع السائق، يرجى التكرم بالرد على الاتصال."
-                  : "Message in Arabic..."
-              }
-              onChange={(e) =>
-                setBs({ courier_out_for_delivery_message_ar: e.target.value || null })
-              }
-            />
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div dir="rtl">
+                <Label className="text-xs font-medium">
+                  {isAr ? "رسالة التوصيل (عربي)" : "Delivery Dispatch Message (Arabic)"}
+                </Label>
+                <Textarea
+                  className="mt-1.5 text-end text-xs min-h-[64px]"
+                  value={bs.courier_out_for_delivery_message_ar ?? ""}
+                  placeholder={
+                    isAr
+                      ? "طلبكم في الطريق إليكم الآن مع السائق، يرجى التكرم بالرد على الاتصال."
+                      : "Message in Arabic..."
+                  }
+                  onChange={(e) =>
+                    setBs({ courier_out_for_delivery_message_ar: e.target.value || null })
+                  }
+                />
+              </div>
 
-          <div dir="ltr">
-            <Label className="text-xs font-medium">
-              {isAr ? "رسالة التوصيل (إنجليزي)" : "Delivery Dispatch Message (English)"}
-            </Label>
-            <Textarea
-              className="mt-1.5 text-start text-xs min-h-[64px]"
-              value={bs.courier_out_for_delivery_message_en ?? ""}
-              placeholder="Your order is currently out for delivery with our driver. Please be available to receive."
-              onChange={(e) =>
-                setBs({ courier_out_for_delivery_message_en: e.target.value || null })
-              }
-            />
+              <div dir="ltr">
+                <Label className="text-xs font-medium">
+                  {isAr ? "رسالة التوصيل (إنجليزي)" : "Delivery Dispatch Message (English)"}
+                </Label>
+                <Textarea
+                  className="mt-1.5 text-start text-xs min-h-[64px]"
+                  value={bs.courier_out_for_delivery_message_en ?? ""}
+                  placeholder="Your order is currently out for delivery with our driver. Please be available to receive."
+                  onChange={(e) =>
+                    setBs({ courier_out_for_delivery_message_en: e.target.value || null })
+                  }
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

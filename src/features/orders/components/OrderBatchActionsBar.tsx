@@ -40,6 +40,13 @@ export function OrderBatchActionsBar({
   setSelectedOrderIds: Dispatch<SetStateAction<Set<string>>>;
   sortedOrders: Order[];
 }) {
+  // Appointments are not packed, shipped or handed to a courier: when everything selected is one,
+  // the only thing to do in bulk is to mark it done.
+  const appointmentsOnly =
+    selectedOrderIds.size > 0 &&
+    sortedOrders
+      .filter((order) => selectedOrderIds.has(order.id))
+      .every((order) => String(order.fulfillment_method ?? "").toLowerCase() === "appointment");
   return (
     <div
       className={cn(
@@ -91,39 +98,55 @@ export function OrderBatchActionsBar({
                   className="h-8 gap-1.5 text-xs font-semibold"
                 >
                   <Package className="h-3.5 w-3.5 text-primary" />
-                  {lang === "ar" ? "تحديث حالة التجهيز" : "Update fulfillment"}
+                  {appointmentsOnly
+                    ? lang === "ar"
+                      ? "إنجاز المواعيد"
+                      : "Complete appointments"
+                    : lang === "ar"
+                      ? "تحديث حالة التجهيز"
+                      : "Update fulfillment"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem
-                  onClick={() => handleBatchFulfillmentUpdate("PACKING")}
-                  className="text-xs cursor-pointer"
-                >
-                  {lang === "ar" ? "قيد التجهيز والتغليف" : "Mark as Packing"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleBatchFulfillmentUpdate("READY_FOR_PICKUP")}
-                  className="text-xs cursor-pointer"
-                >
-                  {lang === "ar" ? "جاهز للتسليم / للشحن" : "Ready for pickup / dispatch"}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handleBatchFulfillmentUpdate("OUT_FOR_DELIVERY")}
-                  className="text-xs cursor-pointer"
-                >
-                  {lang === "ar" ? "خرج مع المندوب للتوصيل" : "Out for delivery"}
-                </DropdownMenuItem>
+                {!appointmentsOnly && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("PACKING")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "قيد التجهيز والتغليف" : "Mark as Packing"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("READY_FOR_PICKUP")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "جاهز للتسليم / للشحن" : "Ready for pickup / dispatch"}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleBatchFulfillmentUpdate("OUT_FOR_DELIVERY")}
+                      className="text-xs cursor-pointer"
+                    >
+                      {lang === "ar" ? "خرج مع المندوب للتوصيل" : "Out for delivery"}
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuItem
                   onClick={() => handleBatchFulfillmentUpdate("COMPLETED", "completed")}
                   className="text-xs cursor-pointer font-semibold text-emerald-600 dark:text-emerald-400"
                 >
-                  {lang === "ar" ? "اكتمال وتسليم الطلب" : "Mark as Completed"}
+                  {appointmentsOnly
+                    ? lang === "ar"
+                      ? "تم إنجاز الموعد"
+                      : "Mark as Done"
+                    : lang === "ar"
+                      ? "اكتمال وتسليم الطلب"
+                      : "Mark as Completed"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
             {/* Batch Assign Courier Dropdown */}
-            {(couriersQ.data?.length ?? 0) > 0 && (
+            {(couriersQ.data?.length ?? 0) > 0 && !appointmentsOnly && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

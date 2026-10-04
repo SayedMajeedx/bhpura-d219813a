@@ -37,6 +37,8 @@ export interface OsMenuBarProps {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   className?: string;
+  /** A services store (see isServicesProfile). */
+  services?: boolean;
 }
 
 export function OsMenuBar({
@@ -52,6 +54,7 @@ export function OsMenuBar({
   isFocusMode = false,
   onToggleFocusMode,
   className,
+  services = false,
 }: OsMenuBarProps) {
   const shortcutLabel = useCommandShortcutLabel();
 
@@ -119,7 +122,7 @@ export function OsMenuBar({
         {actions}
 
         {/* Global Quick Action Trigger (+ جديد) */}
-        <OsQuickActions slug={activeSlug ?? null} lang={lang} />
+        <OsQuickActions slug={activeSlug ?? null} lang={lang} services={services} />
 
         {/* Spotlight Command Center Trigger */}
         <button

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function FinancialReportsTab() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const { modules } = useAdminStoreProfile(brandId).profile;
 
   const [reportType, setActiveReportType] = useState<"pnl" | "cash_flow">("pnl");
 
@@ -200,12 +202,16 @@ export function FinancialReportsTab() {
                   <span>{isAr ? "• تكلفة المنتجات المباعة (Product Cost)" : "• Product COGS"}</span>
                   <span className="font-mono">{formatMoney(pnl.productCogs, "BHD")}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>
-                    {isAr ? "• تكلفة مواد التغليف والعلب (Packaging BOM)" : "• Packaging BOM COGS"}
-                  </span>
-                  <span className="font-mono">{formatMoney(pnl.packagingBomCogs, "BHD")}</span>
-                </div>
+                {(modules.packaging || pnl.packagingBomCogs !== 0) && (
+                  <div className="flex justify-between">
+                    <span>
+                      {isAr
+                        ? "• تكلفة مواد التغليف والعلب (Packaging BOM)"
+                        : "• Packaging BOM COGS"}
+                    </span>
+                    <span className="font-mono">{formatMoney(pnl.packagingBomCogs, "BHD")}</span>
+                  </div>
+                )}
               </div>
 
               {/* Total COGS */}

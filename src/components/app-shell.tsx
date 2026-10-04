@@ -1,5 +1,6 @@
 import { useRouterState, useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import { LogOut, Shield, Store } from "lucide-react";
+import { isServicesProfile } from "@/lib/store-profile";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -278,6 +279,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     isPlatformMode ? undefined : activeBrand?.id,
   );
 
+  const servicesStore = isServicesProfile(storeProfile.modules);
+
   // Build navigation items
   const navItems = useMemo(() => {
     return getAdminNavItems({
@@ -515,6 +518,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           onSignOut={signOut}
           mobileOpen={mobileOpen}
           onOpenChangeMobile={setMobileOpen}
+          services={servicesStore}
         />
 
         {/* Level 2: Active Application Window Frame */}
@@ -535,6 +539,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               onSignOut={signOut}
               activeSlug={activeSlug}
               userEmail={profile?.email}
+              services={servicesStore}
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
               actions={
@@ -582,7 +587,12 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Level 3: Spotlight Command Palette */}
-      <SpotlightCommandPalette open={spotlightOpen} onOpenChange={setSpotlightOpen} />
+      <SpotlightCommandPalette
+        open={spotlightOpen}
+        onOpenChange={setSpotlightOpen}
+        services={servicesStore}
+        hasReturns={storeProfile.modules.returns}
+      />
     </div>
   );
 }

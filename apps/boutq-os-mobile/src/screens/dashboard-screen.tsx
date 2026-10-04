@@ -14,6 +14,11 @@ import {
   StatusPill,
 } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import {
+  dashboardCards,
+  PENDING_ORDER_STATUSES,
+  type DashboardCardId,
+} from "@/lib/dashboard-cards";
 import { formatMoney, formatTimeAgo } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -38,10 +43,12 @@ type DashboardMetrics = {
   pendingActionCount: number;
   readyForDeliveryCount: number;
   lowStockCount: number;
+  upcomingBookingsCount: number;
 };
 
 export function DashboardScreen() {
-  const { brands, activeBrandId, setActiveBrandId, currency, canViewFinancials } = useAuth();
+  const { brands, activeBrandId, setActiveBrandId, currency, canViewFinancials, modules } =
+    useAuth();
   const { t, isAr } = useI18n();
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
@@ -51,7 +58,9 @@ export function DashboardScreen() {
     pendingActionCount: 0,
     readyForDeliveryCount: 0,
     lowStockCount: 0,
+    upcomingBookingsCount: 0,
   });
+  const cards = dashboardCards(modules);
   const [scope, setScope] = useState<"overview" | "operations" | "financials">("overview");
   const [brandModalVisible, setBrandModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -94,26 +103,44 @@ export function DashboardScreen() {
         )
         .reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-      // 3. Count Pending Action orders
-      const { count: pendingActionCount } = await supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", activeBrandId)
-        .in("status", ["draft", "confirmed", "processing", "in_tailoring", "pending"]);
+      // 3. Count Pending Action orders (an appointment is not prepared)
+      const { count: pendingActionCount } = cards.includes("pending")
+        ? await supabase
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .eq("brand_id", activeBrandId)
+            .neq("fulfillment_method", "appointment")
+            .in("status", [...PENDING_ORDER_STATUSES])
+        : { count: 0 };
 
       // 4. Count Ready For Delivery orders
-      const { count: readyForDeliveryCount } = await supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", activeBrandId)
-        .or("fulfillment_status.eq.ready_for_delivery,status.eq.ready_for_delivery");
+      const { count: readyForDeliveryCount } = cards.includes("ready")
+        ? await supabase
+            .from("orders")
+            .select("id", { count: "exact", head: true })
+            .eq("brand_id", activeBrandId)
+            .neq("fulfillment_method", "appointment")
+            .or("fulfillment_status.eq.ready_for_delivery,status.eq.ready_for_delivery")
+        : { count: 0 };
 
-      // 5. Count Low Stock variants (stock <= 5)
-      const { count: lowStockCount } = await supabase
-        .from("product_variants")
-        .select("id", { count: "exact", head: true })
-        .eq("brand_id", activeBrandId)
-        .lte("stock", 5);
+      // 5. Count Low Stock variants (stock <= 5): only a store that keeps stock
+      const { count: lowStockCount } = cards.includes("lowStock")
+        ? await supabase
+            .from("product_variants")
+            .select("id", { count: "exact", head: true })
+            .eq("brand_id", activeBrandId)
+            .lte("stock", 5)
+        : { count: 0 };
+
+      // 6. Count the bookings still to come: only a store that takes bookings
+      const { count: upcomingBookingsCount } = cards.includes("upcomingBookings")
+        ? await supabase
+            .from("bookings")
+            .select("id", { count: "exact", head: true })
+            .eq("brand_id", activeBrandId)
+            .in("status", ["requested", "confirmed"])
+            .gte("event_date", new Date().toISOString().slice(0, 10))
+        : { count: 0 };
 
       setMetrics({
         todaySales,
@@ -121,6 +148,7 @@ export function DashboardScreen() {
         pendingActionCount: pendingActionCount ?? 0,
         readyForDeliveryCount: readyForDeliveryCount ?? 0,
         lowStockCount: lowStockCount ?? 0,
+        upcomingBookingsCount: upcomingBookingsCount ?? 0,
       });
     } catch (err: any) {
       console.error("Failed to load dashboard data:", err);
@@ -128,7 +156,85 @@ export function DashboardScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [activeBrandId, isAr]);
+  }, [activeBrandId, isAr, cards]);
+
+  const metricCard = (id: DashboardCardId, kind: "overview" | "operations") => {
+    const overview = kind === "overview";
+    switch (id) {
+      case "pending":
+        return (
+          <MetricCard
+            key={id}
+            label={t("dashboard.pendingFulfillment")}
+            value={String(metrics.pendingActionCount)}
+            tone="warning"
+            subtext={
+              overview
+                ? isAr
+                  ? "تتطلب تجهيز وخياطة"
+                  : "Needs tailoring / preparation"
+                : isAr
+                  ? "تتطلب تجهيز أو تفصيل"
+                  : "Requires preparation"
+            }
+          />
+        );
+      case "ready":
+        return (
+          <MetricCard
+            key={id}
+            label={
+              overview
+                ? isAr
+                  ? "جاهزة للتوصيل والتسليم"
+                  : "Ready for Delivery"
+                : isAr
+                  ? "جاهزة للشحن مع المندوب"
+                  : "Ready for Delivery"
+            }
+            value={String(metrics.readyForDeliveryCount)}
+            tone="info"
+            subtext={
+              overview
+                ? isAr
+                  ? "بانتظار المندوب أو الاستلام"
+                  : "Awaiting courier pickup"
+                : isAr
+                  ? "جاهزة للتسليم"
+                  : "Ready for dispatch"
+            }
+          />
+        );
+      case "lowStock":
+        return (
+          <MetricCard
+            key={id}
+            label={t("dashboard.lowStock")}
+            value={String(metrics.lowStockCount)}
+            tone="danger"
+            subtext={
+              overview
+                ? isAr
+                  ? "قطع متبقية ≤ 5"
+                  : "Units remaining ≤ 5"
+                : isAr
+                  ? "تتطلب إعادة طلب وتوريد"
+                  : "Reorder required"
+            }
+          />
+        );
+      case "upcomingBookings":
+        return (
+          <MetricCard
+            key={id}
+            label={isAr ? "حجوزات قادمة" : "Upcoming Bookings"}
+            value={String(metrics.upcomingBookingsCount)}
+            tone="info"
+            subtext={isAr ? "طلبات حجز ومواعيد مؤكدة" : "Requests and confirmed appointments"}
+          />
+        );
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -183,49 +289,13 @@ export function DashboardScreen() {
                 subtext={`${metrics.todayOrdersCount} ${isAr ? "طلبات اليوم" : "orders today"}`}
               />
             ) : null}
-            <MetricCard
-              label={t("dashboard.pendingFulfillment")}
-              value={String(metrics.pendingActionCount)}
-              tone="warning"
-              subtext={isAr ? "تتطلب تجهيز وخياطة" : "Needs tailoring / preparation"}
-            />
-            <MetricCard
-              label={isAr ? "جاهزة للتوصيل والتسليم" : "Ready for Delivery"}
-              value={String(metrics.readyForDeliveryCount)}
-              tone="info"
-              subtext={isAr ? "بانتظار المندوب أو الاستلام" : "Awaiting courier pickup"}
-            />
-            <MetricCard
-              label={t("dashboard.lowStock")}
-              value={String(metrics.lowStockCount)}
-              tone="danger"
-              subtext={isAr ? "قطع متبقية ≤ 5" : "Units remaining ≤ 5"}
-            />
+            {cards.map((id) => metricCard(id, "overview"))}
           </View>
         )}
 
         {/* 2. Operations KPIs */}
         {scope === "operations" && (
-          <View style={styles.kpiGrid}>
-            <MetricCard
-              label={t("dashboard.pendingFulfillment")}
-              value={String(metrics.pendingActionCount)}
-              tone="warning"
-              subtext={isAr ? "تتطلب تجهيز أو تفصيل" : "Requires preparation"}
-            />
-            <MetricCard
-              label={isAr ? "جاهزة للشحن مع المندوب" : "Ready for Delivery"}
-              value={String(metrics.readyForDeliveryCount)}
-              tone="info"
-              subtext={isAr ? "جاهزة للتسليم" : "Ready for dispatch"}
-            />
-            <MetricCard
-              label={t("dashboard.lowStock")}
-              value={String(metrics.lowStockCount)}
-              tone="danger"
-              subtext={isAr ? "تتطلب إعادة طلب وتوريد" : "Reorder required"}
-            />
-          </View>
+          <View style={styles.kpiGrid}>{cards.map((id) => metricCard(id, "operations"))}</View>
         )}
 
         {/* 3. Financials KPIs */}
@@ -267,7 +337,9 @@ export function DashboardScreen() {
               <View style={[styles.quickActionIcon, { backgroundColor: colors.brandSoft }]}>
                 <AppIcon name="cube" size={20} color={colors.primary} />
               </View>
-              <Text style={styles.quickActionLabel}>{t("nav.inventory")}</Text>
+              <Text style={styles.quickActionLabel}>
+                {modules.stock ? t("nav.inventory") : t("nav.services")}
+              </Text>
             </Pressable>
 
             <Pressable

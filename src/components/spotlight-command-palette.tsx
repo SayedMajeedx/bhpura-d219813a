@@ -38,9 +38,15 @@ import { searchProducts } from "@/lib/data/catalog";
 export function SpotlightCommandPalette({
   open,
   onOpenChange,
+  services = false,
+  hasReturns = true,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** A services store: it adds services and has no stock. */
+  services?: boolean;
+  /** The store takes returns (the Returns page is in its menu). */
+  hasReturns?: boolean;
 }) {
   const navigate = useNavigate();
   const routeParams = useParams({ strict: false }) as { slug?: string };
@@ -101,13 +107,23 @@ export function SpotlightCommandPalette({
       icon: ReceiptText,
       to: "/admin/b/$slug/orders",
     },
+    ...(hasReturns
+      ? [
+          {
+            label: isAr ? "المرتجعات والاستبدال" : "Returns & Exchanges",
+            icon: RotateCcw,
+            to: "/admin/b/$slug/returns",
+          },
+        ]
+      : []),
     {
-      label: isAr ? "المرتجعات والاستبدال" : "Returns & Exchanges",
-      icon: RotateCcw,
-      to: "/admin/b/$slug/returns",
-    },
-    {
-      label: isAr ? "إدارة المخزون والمنتجات" : "Products & Inventory",
+      label: services
+        ? isAr
+          ? "إدارة الخدمات"
+          : "Services"
+        : isAr
+          ? "إدارة المخزون والمنتجات"
+          : "Products & Inventory",
       icon: Package,
       to: "/admin/b/$slug/inventory",
     },
@@ -287,7 +303,15 @@ export function SpotlightCommandPalette({
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Plus className="h-4 w-4 text-emerald-500" />
-                <span>{isAr ? "إضافة منتج جديد" : "Create New Product"}</span>
+                <span>
+                  {services
+                    ? isAr
+                      ? "إضافة خدمة جديدة"
+                      : "Create New Service"
+                    : isAr
+                      ? "إضافة منتج جديد"
+                      : "Create New Product"}
+                </span>
               </CommandItem>
               <CommandItem
                 onSelect={() =>

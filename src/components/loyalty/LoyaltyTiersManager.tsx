@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { Award, Sparkles, Check, Edit2, Truck, Loader2 } from "lucide-react";
 import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { DEFAULT_LOYALTY_TIERS } from "@/lib/loyalty.types";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
 interface LoyaltyTiersManagerProps {
   brandId: string;
@@ -26,6 +27,7 @@ interface LoyaltyTiersManagerProps {
 }
 
 export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps) {
+  const { modules } = useAdminStoreProfile(brandId).profile;
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const queryClient = useQueryClient();
@@ -293,20 +295,25 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl border border-border">
-                <div className="space-y-0.5">
-                  <Label>{isAr ? "شحن مجاني دائم لأعضاء هذا المستوى" : "Free Shipping Perk"}</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {isAr
-                      ? "إعفاء أعضاء هذا المستوى من رسوم التوصيل عند الطلب"
-                      : "Waive shipping fees on checkout for members of this tier"}
-                  </p>
+              {/* Free shipping is a perk of a store that ships (one that already gave it keeps it). */}
+              {(modules.shipping || editingTier.free_shipping) && (
+                <div className="flex items-center justify-between p-3 rounded-xl border border-border">
+                  <div className="space-y-0.5">
+                    <Label>
+                      {isAr ? "شحن مجاني دائم لأعضاء هذا المستوى" : "Free Shipping Perk"}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr
+                        ? "إعفاء أعضاء هذا المستوى من رسوم التوصيل عند الطلب"
+                        : "Waive shipping fees on checkout for members of this tier"}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={editingTier.free_shipping}
+                    onCheckedChange={(c) => setEditingTier({ ...editingTier, free_shipping: c })}
+                  />
                 </div>
-                <Switch
-                  checked={editingTier.free_shipping}
-                  onCheckedChange={(c) => setEditingTier({ ...editingTier, free_shipping: c })}
-                />
-              </div>
+              )}
             </div>
 
             <DialogFooter className="gap-2">

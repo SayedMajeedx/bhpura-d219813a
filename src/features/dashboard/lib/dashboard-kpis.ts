@@ -16,6 +16,7 @@ export function primaryKpisFor({
   canViewFinancials,
   currency,
   locale,
+  isServices = false,
 }: {
   isCatalog: boolean;
   isAr: boolean;
@@ -24,7 +25,14 @@ export function primaryKpisFor({
   canViewFinancials: boolean;
   currency: string;
   locale: string;
+  /**
+   * A services store sells time, not goods: its bookings are not "orders", and a gross margin over
+   * a cost of goods it does not have would read 100%. The margin card is kept only if some cost
+   * was recorded.
+   */
+  isServices?: boolean;
 }) {
+  const showMargin = !isServices || financials.cogs > 0;
   return isCatalog
     ? [
         {
@@ -92,26 +100,42 @@ export function primaryKpisFor({
                 border: "hover:border-emerald-500/20",
               },
               {
-                label: isAr ? "متوسط قيمة الطلب" : "Average Order Value (AOV)",
+                label: isServices
+                  ? isAr
+                    ? "متوسط قيمة الحجز"
+                    : "Average Booking Value"
+                  : isAr
+                    ? "متوسط قيمة الطلب"
+                    : "Average Order Value (AOV)",
                 value: formatMoney(financials.aovCurrent, currency, locale),
-                subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
+                subValue: `${isServices ? (isAr ? "إجمالي الحجوزات" : "Total Bookings") : isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
                 deltaPct: financials.aovDeltaPct,
                 icon: Wallet,
                 color: "text-sky-500",
                 border: "hover:border-sky-500/20",
               },
-              {
-                label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
-                value: `${financials.grossMarginPercent.toFixed(1)}%`,
-                subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
-                icon: PiggyBank,
-                color: "text-blue-500",
-                border: "hover:border-blue-500/20",
-              },
+              ...(showMargin
+                ? [
+                    {
+                      label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
+                      value: `${financials.grossMarginPercent.toFixed(1)}%`,
+                      subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
+                      icon: PiggyBank,
+                      color: "text-blue-500",
+                      border: "hover:border-blue-500/20",
+                    },
+                  ]
+                : []),
             ]
           : []),
         {
-          label: isAr ? "إجمالي عمليات البيع" : "Total Sales Transactions",
+          label: isServices
+            ? isAr
+              ? "إجمالي الحجوزات المدفوعة"
+              : "Total Paid Bookings"
+            : isAr
+              ? "إجمالي عمليات البيع"
+              : "Total Sales Transactions",
           value: `${financials.ordersCurrent}`,
           subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
           deltaPct: financials.ordersDeltaPct,

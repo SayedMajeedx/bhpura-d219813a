@@ -10,6 +10,8 @@ export function InventoryImportMenu({
   onImportCatalog,
   onPrintAll,
   onTransferSelected,
+  barcodes = true,
+  incubators = true,
 }: {
   slug: string;
   isAr: boolean;
@@ -17,6 +19,10 @@ export function InventoryImportMenu({
   onImportCatalog: () => void;
   onPrintAll: () => void;
   onTransferSelected: () => void;
+  /** The store keeps stock, so its items carry barcodes. */
+  barcodes?: boolean;
+  /** The store places goods with other shops (incubators). */
+  incubators?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-1 p-1 min-w-[210px]">
@@ -48,31 +54,39 @@ export function InventoryImportMenu({
         </Button>
       </Link>
 
-      <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
-        {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onPrintAll}
-        className="justify-start text-xs font-medium h-9"
-      >
-        <Printer className="h-4 w-4 me-2 text-muted-foreground" />
-        {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
-      </Button>
+      {barcodes && (
+        <>
+          <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
+            {isAr ? "الباركود والطباعة" : "Barcodes & Print"}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onPrintAll}
+            className="justify-start text-xs font-medium h-9"
+          >
+            <Printer className="h-4 w-4 me-2 text-muted-foreground" />
+            {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
+          </Button>
+        </>
+      )}
 
-      <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
-        {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
-      </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onTransferSelected}
-        className="justify-start text-xs font-medium h-9"
-      >
-        <Boxes className="h-4 w-4 me-2 text-muted-foreground" />
-        {isAr ? "تحويل دفعي للحاضنات" : "Transfer to Incubators"}
-      </Button>
+      {incubators && (
+        <>
+          <div className="px-2.5 pt-2 py-1 text-xs font-bold text-muted-foreground border-b border-border-subtle">
+            {isAr ? "العمليات المتقدمة" : "Advanced Operations"}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onTransferSelected}
+            className="justify-start text-xs font-medium h-9"
+          >
+            <Boxes className="h-4 w-4 me-2 text-muted-foreground" />
+            {isAr ? "تحويل دفعي للحاضنات" : "Transfer to Incubators"}
+          </Button>
+        </>
+      )}
     </div>
   );
 }
