@@ -6,6 +6,8 @@ import rulesTable from "../supabase/migrations/20261003150000_advance_payment_ru
 import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
 import conditions from "../supabase/migrations/20261004100000_advance_payment_conditions.sql?raw";
 import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
+import destination from "../supabase/migrations/20261005100000_advance_payment_destination.sql?raw";
+import destinationEngine from "../supabase/migrations/20261005120000_advance_payment_destination_engine.sql?raw";
 import {
   ADVANCE_SCOPES,
   advanceDue,
@@ -60,6 +62,8 @@ beforeAll(async () => {
   await db.exec(rulesEngine);
   await db.exec(conditions);
   await db.exec(conditionsEngine);
+  await db.exec(destination);
+  await db.exec(destinationEngine);
 });
 
 const FULFILLMENTS: AdvanceOrder["fulfillment"][] = [
@@ -132,12 +136,13 @@ async function sqlDue(
   fulfillment: string,
   call: (id: string) => Promise<string | null>,
   returning = false,
+  country: string | null = null,
 ) {
   const row = (
     await db.query<{ id: string }>(
-      `INSERT INTO public.orders (total, shipping, fulfillment_method, advance_percent, advance_scope, advance_returning)
-       VALUES ($1, $2, $3, 10, 'all', $4) RETURNING id`,
-      [shape.total, shape.shipping, fulfillment, returning],
+      `INSERT INTO public.orders (total, shipping, fulfillment_method, advance_percent, advance_scope, advance_returning, destination_country)
+       VALUES ($1, $2, $3, 10, 'all', $4, $5) RETURNING id`,
+      [shape.total, shape.shipping, fulfillment, returning, country],
     )
   ).rows[0];
   for (const l of shape.lines) {
@@ -208,6 +213,8 @@ describe("the checkout's preview and the database agree on the advance", () => {
     minTotal: null,
     maxTotal: null,
     customer: "any",
+    destination: "any",
+    countries: [],
     ...over,
   });
   const RULE_SETS: Array<{ name: string; rules: AdvanceRuleDef[] }> = [
@@ -274,6 +281,33 @@ describe("the checkout's preview and the database agree on the advance", () => {
       ],
     },
     {
+      name: "abroad in full, with the fee, then local at a fifth",
+      rules: [
+        rule({ destination: "abroad", value: 100, includeFee: true }),
+        rule({ destination: "local", value: 20 }),
+      ],
+    },
+    {
+      name: "chosen countries abroad, for big orders, then the general rule",
+      rules: [
+        rule({ destination: "abroad", countries: ["SA", "AE"], minTotal: 90, value: 60 }),
+        rule({ destination: "abroad", kind: "fixed", value: 15 }),
+        ...defaultAdvanceRules(25, "all"),
+      ],
+    },
+    {
+      name: "a returning customer abroad, delivery only",
+      rules: [
+        rule({
+          destination: "abroad",
+          customer: "returning",
+          fulfillment: ["delivery"],
+          madeToOrder: true,
+          value: 40,
+        }),
+      ],
+    },
+    {
       name: "a rule that reaches nothing, then a fixed one above the total",
       rules: [
         rule({ productIds: ["00000000-0000-4000-8000-0000000000ff"], value: 90 }),
@@ -282,11 +316,19 @@ describe("the checkout's preview and the database agree on the advance", () => {
     },
   ];
 
-  it("under a store's own rules: every rule set, fulfillment, kind of customer and order shape", async () => {
+  // Who is ordering and where it is going, in four combinations that cover each side of both.
+  const WHO: Array<{ returning: boolean; country: string | null }> = [
+    { returning: false, country: null },
+    { returning: true, country: "BH" },
+    { returning: false, country: "SA" },
+    { returning: true, country: "KW" },
+  ];
+
+  it("under a store's own rules: every rule set, fulfillment, customer, destination and order shape", async () => {
     let compared = 0;
     for (const set of RULE_SETS) {
       for (const fulfillment of FULFILLMENTS) {
-        for (const returning of [false, true]) {
+        for (const { returning, country } of WHO) {
           for (const shape of SHAPES) {
             const json = JSON.stringify(set.rules.map(advanceRuleToJson));
             const sql = await sqlDue(
@@ -300,14 +342,21 @@ describe("the checkout's preview and the database agree on the advance", () => {
                   )
                 ).rows[0].d,
               returning,
+              country,
             );
-            const ts = advanceRulesDue({ ...asOrder(shape, fulfillment), returning }, set.rules);
-            expect(ts, `${set.name} / ${fulfillment} / ${returning} / ${shape.name}`).toBe(sql);
+            const ts = advanceRulesDue(
+              { ...asOrder(shape, fulfillment), returning, country },
+              set.rules,
+            );
+            expect(
+              ts,
+              `${set.name} / ${fulfillment} / ${returning} / ${country} / ${shape.name}`,
+            ).toBe(sql);
             compared += 1;
           }
         }
       }
     }
-    expect(compared).toBe(RULE_SETS.length * 4 * 2 * SHAPES.length);
+    expect(compared).toBe(RULE_SETS.length * 4 * WHO.length * SHAPES.length);
   });
 });

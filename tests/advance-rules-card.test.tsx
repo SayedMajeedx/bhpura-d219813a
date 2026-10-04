@@ -84,6 +84,8 @@ const rule = (over: Record<string, unknown>) => ({
   min_order_total: null,
   max_order_total: null,
   customer_kind: "any",
+  destination_kind: "any",
+  destination_countries: [],
   ...over,
 });
 
@@ -299,6 +301,60 @@ describe("the order value and the customer in a rule", () => {
     expect(
       await screen.findByText("10% · orders of BHD 100.000 or more · returning customers"),
     ).toBeInTheDocument();
+  });
+});
+
+describe("where the order goes, in a rule", () => {
+  it("saves a rule for orders abroad to chosen countries", async () => {
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Add a rule" }));
+    fireEvent.change(screen.getByLabelText("Value"), { target: { value: "100" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Abroad" }));
+    fireEvent.click(screen.getByRole("button", { name: /Saudi Arabia/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Kuwait/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save rule" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalled());
+    expect(state.save).toHaveBeenCalledWith(
+      "b1",
+      null,
+      expect.objectContaining({
+        destination_kind: "abroad",
+        destination_countries: ["SA", "KW"],
+        amount_value: 100,
+      }),
+      0,
+    );
+  });
+
+  it("offers countries only for abroad, and drops them when the choice changes", async () => {
+    renderCard();
+    fireEvent.click(await screen.findByRole("button", { name: "Add a rule" }));
+    expect(screen.queryByRole("button", { name: /Saudi Arabia/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Bahrain/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Abroad" }));
+    const saudi = screen.getByRole("button", { name: /Saudi Arabia/ });
+    fireEvent.click(saudi);
+    expect(saudi).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("radio", { name: "Inside Bahrain" }));
+    expect(screen.queryByRole("button", { name: /Saudi Arabia/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Abroad" }));
+    expect(screen.getByRole("button", { name: /Saudi Arabia/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+  });
+
+  it("lists a rule with its destination in words", async () => {
+    state.rules = [
+      rule({
+        made_to_order: null,
+        amount_value: 100,
+        destination_kind: "abroad",
+        destination_countries: ["AE"],
+      }),
+    ];
+    renderCard();
+    expect(await screen.findByText("100% · to United Arab Emirates")).toBeInTheDocument();
   });
 });
 

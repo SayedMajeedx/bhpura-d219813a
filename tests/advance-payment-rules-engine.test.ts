@@ -6,6 +6,8 @@ import rulesTable from "../supabase/migrations/20261003150000_advance_payment_ru
 import rulesEngine from "../supabase/migrations/20261003160000_advance_payment_rules_engine.sql?raw";
 import conditions from "../supabase/migrations/20261004100000_advance_payment_conditions.sql?raw";
 import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
+import destination from "../supabase/migrations/20261005100000_advance_payment_destination.sql?raw";
+import destinationEngine from "../supabase/migrations/20261005120000_advance_payment_destination_engine.sql?raw";
 
 // A store's own advance-payment rules, as the database decides them (PGlite): ordered rules
 // that reach lines by fulfillment, made-to-order or ready-made, product and category, then the
@@ -57,6 +59,8 @@ beforeAll(async () => {
   await db.exec(rulesEngine);
   await db.exec(conditions);
   await db.exec(conditionsEngine);
+  await db.exec(destination);
+  await db.exec(destinationEngine);
 });
 
 type RuleInput = {
@@ -75,6 +79,8 @@ type RuleInput = {
   minTotal?: number | null;
   maxTotal?: number | null;
   customer?: "any" | "new" | "returning";
+  destination?: "any" | "local" | "abroad";
+  countries?: string[];
 };
 
 const arr = (values: string[] | undefined) => (values?.length ? `{${values.join(",")}}` : "{}");
@@ -82,8 +88,8 @@ const arr = (values: string[] | undefined) => (values?.length ? `{${values.join(
 async function addRule(brand: string, r: RuleInput) {
   const row = await db.query<{ id: string }>(
     `INSERT INTO public.advance_payment_rules (brand_id, name_en, sort_order, fulfillment, made_to_order,
-       product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, is_active, min_order_total, max_order_total, customer_kind)
-     VALUES ($1, $2, $3, $4::text[], $5, $6::uuid[], $7::text[], $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
+       product_ids, category_slugs, amount_kind, amount_value, min_amount, max_amount, include_delivery_fee, is_active, min_order_total, max_order_total, customer_kind, destination_kind, destination_countries)
+     VALUES ($1, $2, $3, $4::text[], $5, $6::uuid[], $7::text[], $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18::text[]) RETURNING id`,
     [
       brand,
       r.name ?? "Rule",
@@ -101,6 +107,8 @@ async function addRule(brand: string, r: RuleInput) {
       r.minTotal ?? null,
       r.maxTotal ?? null,
       r.customer ?? "any",
+      r.destination ?? "any",
+      arr(r.countries),
     ],
   );
   return row.rows[0].id;
@@ -119,6 +127,7 @@ type Placed = {
   total?: number;
   customer?: string | null;
   status?: string;
+  country?: string | null;
   lines: Line[];
 };
 
@@ -129,8 +138,8 @@ async function place(order: Placed) {
   try {
     const row = (
       await db.query<{ id: string }>(
-        `INSERT INTO public.orders (brand_id, channel, payment_method, fulfillment_method, total, shipping, customer_id, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        `INSERT INTO public.orders (brand_id, channel, payment_method, fulfillment_method, total, shipping, customer_id, status, destination_country)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
         [
           order.brand ?? SHOP,
           order.channel ?? "storefront",
@@ -140,6 +149,7 @@ async function place(order: Placed) {
           shipping,
           order.customer ?? null,
           order.status ?? "draft",
+          order.country ?? null,
         ],
       )
     ).rows[0];
@@ -438,5 +448,68 @@ describe("the new columns' own checks", () => {
       addRule(SHOP, { value: 10, customer: "vip" as unknown as "any" }),
     ).rejects.toThrow();
     await expect(addRule(SHOP, { value: 10, maxTotal: 0 })).rejects.toThrow();
+  });
+});
+
+describe("a rule that looks at where the order is going", () => {
+  const place100 = (country: string | null, over: Partial<Placed> = {}) =>
+    owed({ country, lines: [{ amount: 100 }], ...over });
+
+  it("local reaches an order going to Bahrain, or to no country at all", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { destination: "local", value: 10, order: 1 });
+    expect(await place100("BH")).toBe(10);
+    expect(await place100(null)).toBe(10);
+    expect(await place100(null, { fulfillment: "pickup" })).toBe(10);
+    // Abroad goes to the general 30%.
+    expect(await place100("SA")).toBe(30);
+  });
+
+  it("abroad reaches an order going to another country, and only the listed ones", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { destination: "abroad", value: 100, order: 1 });
+    expect(await place100("SA")).toBe(100);
+    expect(await place100("AE")).toBe(100);
+    expect(await place100("BH")).toBe(30);
+    expect(await place100(null)).toBe(30);
+    await clearRules(SHOP);
+    await addRule(SHOP, { destination: "abroad", countries: ["SA", "KW"], value: 60, order: 1 });
+    expect(await place100("KW")).toBe(60);
+    expect(await place100("AE")).toBe(30);
+  });
+
+  it("works together with the delivery fee and the other conditions", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, {
+      destination: "abroad",
+      fulfillment: ["delivery"],
+      minTotal: 100,
+      value: 50,
+      fee: true,
+      order: 1,
+    });
+    expect(await place100("SA", { shipping: 10, total: 110 })).toBe(55);
+    expect(await place100("SA", { shipping: 10, total: 110, fulfillment: "pickup" })).toBe(33);
+    expect(await place100("BH", { shipping: 10, total: 110 })).toBe(33);
+  });
+
+  it("is kept in the rules an order was placed under", async () => {
+    await clearRules(SHOP);
+    await addRule(SHOP, { destination: "abroad", value: 100, order: 1 });
+    const id = await place({ country: "SA", lines: [{ amount: 100 }] });
+    await clearRules(SHOP);
+    await addRule(SHOP, { destination: "local", value: 10, order: 1 });
+    expect(await due(id)).toBe(100);
+  });
+
+  it("refuses a country written wrongly, countries without abroad, and a bad order country", async () => {
+    await expect(
+      addRule(SHOP, { value: 10, destination: "abroad", countries: ["sa"] }),
+    ).rejects.toThrow();
+    await expect(
+      addRule(SHOP, { value: 10, destination: "local", countries: ["SA"] }),
+    ).rejects.toThrow();
+    await expect(addRule(SHOP, { value: 10, destination: "elsewhere" as "any" })).rejects.toThrow();
+    await expect(place({ country: "Saudi", lines: [{ amount: 10 }] })).rejects.toThrow();
   });
 });

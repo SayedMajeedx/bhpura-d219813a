@@ -10,7 +10,7 @@ import {
   type AdvanceOrder,
   type AdvanceRule,
 } from "../src/lib/payments/advance-payment";
-import type { AdvanceRuleDef } from "../src/lib/payments/advance-rules";
+import { advanceRulesDue, type AdvanceRuleDef } from "../src/lib/payments/advance-rules";
 
 const money = (n: number) => `BHD ${n.toFixed(3)}`;
 const rule = (over: Partial<AdvanceRule> = {}): AdvanceRule => ({
@@ -175,6 +175,8 @@ describe("a store's own rules in the checkout's preview", () => {
     minTotal: null,
     maxTotal: null,
     customer: "any",
+    destination: "any",
+    countries: [],
     ...over,
   });
 
@@ -231,6 +233,8 @@ describe("rules that look at the order's total and at the customer", () => {
     minTotal: null,
     maxTotal: null,
     customer: "any",
+    destination: "any",
+    countries: [],
     ...over,
   });
 
@@ -258,5 +262,59 @@ describe("rules that look at the order's total and at the customer", () => {
     expect(advanceDue(order({ returning: false }), r)).toBe(50);
     expect(advanceDue(order({}), r)).toBe(50);
     expect(advanceDue(order({ returning: true }), r)).toBe(10);
+  });
+});
+
+describe("rules that look at where the order is going", () => {
+  const rule = (over: Partial<AdvanceRuleDef> = {}): AdvanceRuleDef => ({
+    fulfillment: [],
+    madeToOrder: null,
+    productIds: [],
+    categorySlugs: [],
+    kind: "percent",
+    value: 100,
+    min: null,
+    max: null,
+    includeFee: false,
+    minTotal: null,
+    maxTotal: null,
+    customer: "any",
+    destination: "any",
+    countries: [],
+    ...over,
+  });
+  const sent = (
+    country: string | null | undefined,
+    fulfillment: AdvanceOrder["fulfillment"] = "delivery",
+  ) => ({
+    total: 100,
+    shipping: 0,
+    fulfillment,
+    country,
+    lines: [{ amount: 100, madeToOrder: false }],
+  });
+  const due = (order: AdvanceOrder, rules: AdvanceRuleDef[]) => advanceRulesDue(order, rules);
+
+  it("abroad reaches any country but the home country; local reaches the home country and no country", () => {
+    const abroad = [rule({ destination: "abroad" })];
+    expect(due(sent("SA"), abroad)).toBe(100);
+    expect(due(sent("BH"), abroad)).toBeNull();
+    expect(due(sent(null), abroad)).toBeNull();
+    expect(due(sent(undefined, "pickup"), abroad)).toBeNull();
+    const local = [rule({ destination: "local", value: 10 })];
+    expect(due(sent("BH"), local)).toBe(10);
+    expect(due(sent(null, "pickup"), local)).toBe(10);
+    expect(due(sent("AE"), local)).toBeNull();
+  });
+
+  it("with countries listed, reaches only those", () => {
+    const rules = [rule({ destination: "abroad", countries: ["SA", "KW"], value: 60 })];
+    expect(due(sent("KW"), rules)).toBe(60);
+    expect(due(sent("AE"), rules)).toBeNull();
+  });
+
+  it("any ignores the country", () => {
+    expect(due(sent("US"), [rule({ value: 10 })])).toBe(10);
+    expect(due(sent(null), [rule({ value: 10 })])).toBe(10);
   });
 });
