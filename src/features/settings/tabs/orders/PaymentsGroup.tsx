@@ -150,26 +150,30 @@ export function PaymentsGroup() {
               </div>
 
               {/* QR Upload */}
-              <div className="space-y-1.5">
+              <div className="min-w-0 space-y-1.5">
                 <Label className="text-xs font-medium">
                   {isAr ? "رمز الاستجابة السريعة (QR Code)" : "QR Code Image"}
                 </Label>
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2">
                   {bs.benefit_qr_url ? (
-                    <div className="flex items-center gap-2 flex-1">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
                       <img
                         src={bs.benefit_qr_url}
                         alt="Benefit QR"
-                        className="size-9 rounded-md object-cover border border-border"
+                        className="size-9 shrink-0 rounded-md object-cover border border-border"
                       />
-                      <span className="text-xs text-muted-foreground truncate flex-1">
+                      <span
+                        className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+                        title={bs.benefit_qr_url}
+                      >
                         {bs.benefit_qr_url}
                       </span>
                       <Button
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                        className="h-8 shrink-0 text-xs text-destructive hover:bg-destructive/10"
+                        aria-label={isAr ? "حذف الباركود" : "Remove QR code"}
                         onClick={() => setBs({ benefit_qr_url: null })}
                       >
                         <Trash2 className="size-3.5" />

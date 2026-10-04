@@ -51,7 +51,11 @@ import {
   originalPriceFor,
 } from "@/features/product-page/lib/pdp-pricing";
 import type { CustomField } from "@/features/product-page/types";
-import { galleryRatioClass, productMediaList } from "@/features/product-page/lib/product-media";
+import {
+  galleryMaxWidth,
+  galleryRatioClass,
+  productMediaList,
+} from "@/features/product-page/lib/product-media";
 import {
   PDP_BEST_SELLER_LIMIT,
   useProductRecommendations,
@@ -676,6 +680,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         <ProductGallery
           displayName={displayName}
           galleryRatioClass={galleryRatioClass(settings?.pdp_gallery_aspect_ratio)}
+          galleryMaxWidth={galleryMaxWidth(settings?.pdp_gallery_aspect_ratio)}
           galleryTouchStartX={galleryTouchStartX}
           media={media}
           mediaIdx={mediaIdx}
