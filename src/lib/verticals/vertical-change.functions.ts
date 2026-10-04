@@ -7,6 +7,8 @@ import { installAddon } from "@/lib/addons/addons.functions";
 import type { PlatformAddonPolicy } from "@/lib/addons/addon-types";
 import { normalizeVertical, STORE_VERTICALS } from "@/lib/store-profile";
 import { planVerticalChange, type VerticalChangePlan } from "@/lib/verticals/vertical-change";
+import type { LeftoverFacts } from "@/lib/verticals/vertical-leftovers";
+import { normalizeModuleOverrides } from "@/lib/store-profile";
 
 /**
  * Changing a store's vertical, for a super admin: preview what the change
@@ -41,6 +43,92 @@ async function requireSuperAdmin(db: Db) {
   if (error || data !== true) throw new Error("STORE_VERTICAL_SUPER_ADMIN_ONLY");
 }
 
+const FINISHED_ORDERS =
+  "(completed,delivered,picked_up,cancelled,returned,archived_historical,draft)";
+
+/** Counts of what a change of vertical would leave behind, read as the store is now. */
+async function readLeftoverFacts(db: Db, brandId: string): Promise<LeftoverFacts> {
+  const count = async (query: PromiseLike<{ count: number | null; error: unknown }>) => {
+    const { count: n, error } = await query;
+    if (error)
+      throw new Error(`VERTICAL_PLAN_READ_FAILED: ${String((error as Error).message ?? error)}`);
+    return n ?? 0;
+  };
+  const head = { count: "exact", head: true } as const;
+  const openOrders = (method: string) =>
+    count(
+      db
+        .from("orders")
+        .select("id", head)
+        .eq("brand_id", brandId)
+        .eq("fulfillment_method", method)
+        .not("status", "in", FINISHED_ORDERS),
+    );
+  const today = new Date().toISOString().slice(0, 10);
+  const [
+    settings,
+    allProducts,
+    services,
+    delivery,
+    pickup,
+    digital,
+    appointment,
+    openBookings,
+    activeIncubators,
+    openReturns,
+  ] = await Promise.all([
+    db
+      .from("business_settings")
+      .select(
+        "store_modules, delivery_enabled, pickup_enabled, shipping_zones, advance_payment_enabled, advance_payment_scope",
+      )
+      .eq("brand_id", brandId)
+      .maybeSingle(),
+    count(db.from("products").select("id", head).eq("brand_id", brandId)),
+    count(
+      db.from("products").select("id", head).eq("brand_id", brandId).eq("item_kind", "service"),
+    ),
+    openOrders("delivery"),
+    openOrders("pickup"),
+    openOrders("digital"),
+    openOrders("appointment"),
+    count(
+      db
+        .from("bookings")
+        .select("id", head)
+        .eq("brand_id", brandId)
+        .in("status", ["requested", "hold", "confirmed"])
+        .gte("event_date", today),
+    ),
+    count(db.from("incubators").select("id", head).eq("brand_id", brandId).eq("is_active", true)),
+    count(
+      db
+        .from("return_requests")
+        .select("id", head)
+        .eq("brand_id", brandId)
+        .eq("status", "requested"),
+    ),
+  ]);
+  if (settings.error) throw new Error(`VERTICAL_PLAN_READ_FAILED: ${settings.error.message}`);
+  const row = settings.data;
+  return {
+    moduleOverrides: normalizeModuleOverrides(row?.store_modules),
+    products: Math.max(0, allProducts - services),
+    services,
+    openOrders: { delivery, pickup, digital, appointment },
+    openBookings,
+    activeIncubators,
+    openReturns,
+    deliveryEnabled: row?.delivery_enabled === true,
+    pickupEnabled: row?.pickup_enabled === true,
+    shippingZones: Array.isArray(row?.shipping_zones) ? row.shipping_zones.length : 0,
+    advancePayment: {
+      enabled: row?.advance_payment_enabled === true,
+      scope: String(row?.advance_payment_scope ?? "all"),
+    },
+  };
+}
+
 /** Everything the plan needs about the store, read as it is now. */
 async function planFor(
   db: Db,
@@ -48,12 +136,13 @@ async function planFor(
   vertical: (typeof STORE_VERTICALS)[number],
   syncCategories: boolean,
 ): Promise<VerticalChangePlan> {
-  const [settings, addons, categories, products, policies] = await Promise.all([
+  const [settings, addons, categories, products, policies, facts] = await Promise.all([
     db.from("business_settings").select("store_vertical").eq("brand_id", brandId).maybeSingle(),
     db.from("brand_addons").select("addon_id, status").eq("brand_id", brandId),
     db.from("categories").select("id, slug, name_ar, name_en").eq("brand_id", brandId),
     db.from("products").select("category").eq("brand_id", brandId).not("category", "is", null),
     db.from("platform_addon_policies").select("*"),
+    readLeftoverFacts(db, brandId),
   ]);
   for (const result of [settings, addons, categories, products, policies]) {
     if (result.error) throw new Error(`VERTICAL_PLAN_READ_FAILED: ${result.error.message}`);
@@ -77,6 +166,7 @@ async function planFor(
     usedKeys,
     syncCategories,
     policies: (policies.data ?? []) as unknown as PlatformAddonPolicy[],
+    facts,
   });
 }
 

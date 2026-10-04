@@ -49,6 +49,8 @@ import {
   sortQueueOrders,
 } from "@/features/orders/lib/order-queue";
 import { orderQueueTabs } from "@/features/orders/lib/order-queue-tabs";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { isServicesProfile } from "@/lib/store-profile";
 import { useCompleteDelivery } from "@/features/orders/hooks/use-complete-delivery";
 import { UrgentOrdersBanner } from "@/features/orders/components/UrgentOrdersBanner";
 import { OrderBatchActionsBar } from "@/features/orders/components/OrderBatchActionsBar";
@@ -89,6 +91,7 @@ function OrdersList() {
   const brand = useBrand();
   const { isCourier, isAdmin } = useProfile();
   const brandId = brand.id;
+  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const { vocabulary } = useVocabulary();
   const { isInstalled } = useAddons();
   const hasMadeToOrder = isInstalled("made-to-order");
@@ -447,7 +450,7 @@ function OrdersList() {
 
   const totalPages = Math.ceil(sortedOrders.length / pageSize) || 1;
 
-  const tabsList = orderQueueTabs(tabCounts);
+  const tabsList = orderQueueTabs(tabCounts, { services: isServicesProfile(storeProfile.modules) });
 
   const activeFilterCount = [
     paymentFilter !== "all",
@@ -506,6 +509,7 @@ function OrdersList() {
       <OrdersCommandHeader
         lang={lang}
         filteredCount={filteredOrders.length}
+        isServices={isServicesProfile(storeProfile.modules)}
         isCourier={isCourier}
         onCreateNew={create}
         renderImporter={

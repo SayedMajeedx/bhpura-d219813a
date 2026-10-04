@@ -191,7 +191,7 @@ export const CORE_NAV_IDS = [
 
 export const DEFAULT_PINNED_IDS = ["returns", "discounts", "campaigns"] as const;
 
-import type { StoreModules } from "@/lib/store-profile";
+import { isServicesProfile, type StoreModules } from "@/lib/store-profile";
 
 export interface GetNavItemsOptions {
   activeSlug: string | null;
@@ -650,7 +650,21 @@ export function getAdminNavItems({
     },
   ];
 
-  return allItems.filter((item) => {
+  // A services store sells services: its catalog is not "Inventory".
+  const services = storeModules ? isServicesProfile(storeModules) : false;
+  const named = allItems.map((item) =>
+    services && item.id === "inventory"
+      ? {
+          ...item,
+          labelEn: "Services",
+          labelAr: "الخدمات",
+          descriptionEn: "Manage services, lengths, packages and prices",
+          descriptionAr: "إدارة الخدمات والمدد والباقات والأسعار",
+        }
+      : item,
+  );
+
+  return named.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.id === "size-guides" && !storeModules?.size_guide) return false;

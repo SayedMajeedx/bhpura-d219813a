@@ -28,7 +28,9 @@ import {
   ordersNeedingAction,
   ordersToPrepareCount,
   paidRevenueOrders,
+  appointmentsToCompleteCount,
 } from "@/features/dashboard/lib/dashboard-metrics";
+import { isServicesProfile } from "@/lib/store-profile";
 import { primaryKpisFor } from "@/features/dashboard/lib/dashboard-kpis";
 import { OnboardingChecklist } from "@/features/dashboard/components/OnboardingChecklist";
 import { DashboardKpiCards } from "@/features/dashboard/components/DashboardKpiCards";
@@ -157,6 +159,12 @@ function Dashboard() {
     [ordersQ.data, hasMadeToOrder],
   );
 
+  // Appointments whose time has come (only a store that takes bookings has any).
+  const appointmentsToComplete = useMemo(
+    () => (storeProfile.modules.bookings ? appointmentsToCompleteCount(ordersQ.data ?? []) : 0),
+    [ordersQ.data, storeProfile.modules.bookings],
+  );
+
   // Loading skeleton placeholder
   if (isLoading) {
     return <RoutePendingSkeleton />;
@@ -221,6 +229,8 @@ function Dashboard() {
         periodLabel={reportingPeriodLabel}
         isCatalog={isCatalog}
         inquiryCount={catalogInquiriesQ.data?.totalInquiries ?? 0}
+        hasIncubators={storeProfile.modules.incubators}
+        isServices={isServicesProfile(storeProfile.modules)}
       />
 
       {/* 1.5 Merchant Action Strip: What Needs Attention Today */}
@@ -230,6 +240,7 @@ function Dashboard() {
         unfulfilledOrdersCount={unfulfilledOrdersCount}
         lowStockCount={storeProfile.modules.stock ? inventoryIntel.lowStockCount : 0}
         pendingReturnsCount={pendingReturnsQ.data ?? 0}
+        appointmentsToCompleteCount={appointmentsToComplete}
       />
 
       {storeProfile.modules.bookings && (
@@ -250,6 +261,7 @@ function Dashboard() {
         activeScope={activeScope}
         onScopeChange={(scope) => setActiveScope(scope)}
         lowStockCount={inventoryIntel.lowStockCount}
+        tracksStock={storeProfile.modules.stock}
       />
 
       {/* Dynamic View 1: Financial Telemetry (Default / "financials") */}

@@ -241,6 +241,27 @@ export function VerticalChangeDialog({
               </section>
             )}
 
+            {(plan.leftovers ?? []).length > 0 && (
+              <section
+                className="space-y-1.5 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3"
+                aria-label={isAr ? "ما سيبقى ولا يناسب النشاط الجديد" : "What stays behind"}
+              >
+                <h3 className="font-semibold text-foreground">
+                  {isAr
+                    ? "ما سيبقى ولا يناسب النشاط الجديد (لا يُحذف شيء)"
+                    : "What stays behind and no longer fits (nothing is deleted)"}
+                </h3>
+                <ul className="space-y-2">
+                  {(plan.leftovers ?? []).map((leftover) => (
+                    <li key={leftover.id} className="space-y-0.5">
+                      <p className="text-foreground">{leftover.text[lang]}</p>
+                      <p className="text-muted-foreground">{leftover.advice[lang]}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             <section className="space-y-1.5">
               <Label htmlFor="vertical-change-reason" className="font-semibold text-foreground">
                 {isAr ? "سبب التغيير (يُحفظ في السجل)" : "Reason (kept in the history)"}

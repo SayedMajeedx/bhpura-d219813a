@@ -17,6 +17,11 @@ import {
   type VocabularyEntry,
 } from "@/lib/store-vocabulary";
 import { verticalFits } from "@/lib/verticals/registry";
+import {
+  planLeftovers,
+  type Leftover,
+  type LeftoverFacts,
+} from "@/lib/verticals/vertical-leftovers";
 
 export type { CategoryRow };
 
@@ -58,6 +63,8 @@ export type VerticalChangePlan = {
   categories: { add: DefaultCategorySpec[]; remove: CategoryRow[] } | null;
   modules: { before: StoreModules; after: StoreModules };
   wording: WordingChange[];
+  /** What stays behind and no longer fits the new vertical (never deleted; see vertical-leftovers). */
+  leftovers: Leftover[];
 };
 
 export function planVerticalChange({
@@ -69,6 +76,7 @@ export function planVerticalChange({
   usedKeys,
   syncCategories,
   policies,
+  facts,
 }: {
   brandId: string;
   from: StoreVertical;
@@ -78,6 +86,8 @@ export function planVerticalChange({
   usedKeys: ReadonlySet<string>;
   syncCategories: boolean;
   policies?: PlatformAddonPolicy[] | null;
+  /** Counts read off the store; without them no leftovers are listed. */
+  facts?: LeftoverFacts;
 }): VerticalChangePlan {
   const pack = starterPackFor(to, policies);
   const installedIds = installed
@@ -119,5 +129,6 @@ export function planVerticalChange({
       after: resolveStoreModules({ store_vertical: to }),
     },
     wording: wordingChanges(from, to),
+    leftovers: facts ? planLeftovers({ from, to, facts }) : [],
   };
 }

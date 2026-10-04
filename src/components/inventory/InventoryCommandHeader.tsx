@@ -14,6 +14,8 @@ interface InventoryCommandHeaderProps {
   isCourier: boolean;
   onCreateNew: () => void;
   renderImporters?: React.ReactNode;
+  /** A services store lists services, not products and stock. */
+  isServices?: boolean;
 }
 
 export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
@@ -23,6 +25,7 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
   isCourier,
   onCreateNew,
   renderImporters,
+  isServices = false,
 }) => {
   const isAr = lang === "ar";
 
@@ -40,10 +43,17 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
               tabIndex={-1}
               className="min-w-0 text-2xl font-bold tracking-tight text-foreground"
             >
-              {isAr ? "المخزون والمنتجات" : "Inventory & Products"}
+              {isServices
+                ? isAr
+                  ? "الخدمات"
+                  : "Services"
+                : isAr
+                  ? "المخزون والمنتجات"
+                  : "Inventory & Products"}
             </h1>
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-              {productCount} {isAr ? "منتج" : "products"}
+              {productCount}{" "}
+              {isServices ? (isAr ? "خدمة" : "services") : isAr ? "منتج" : "products"}
             </span>
             {Boolean(pendingNotifyCount && pendingNotifyCount > 0) && (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
@@ -55,9 +65,13 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
             )}
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            {isAr
-              ? "تابع المنتجات والكميات والأسعار، واطبع الباركود بسهولة"
-              : "Manage product catalog, stock levels, variants, and barcode printing."}
+            {isServices
+              ? isAr
+                ? "أدر خدماتك ومددها وباقاتها وأسعارها"
+                : "Manage your services, their lengths, packages and prices."
+              : isAr
+                ? "تابع المنتجات والكميات والأسعار، واطبع الباركود بسهولة"
+                : "Manage product catalog, stock levels, variants, and barcode printing."}
           </p>
         </div>
       </div>
@@ -70,7 +84,13 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
             className="h-9 min-w-0 flex-1 gap-1.5 px-3.5 text-xs font-bold shadow-2xs sm:flex-none"
           >
             <Plus className="h-4 w-4" />
-            {isAr ? "إضافة منتج" : "Add Product"}
+            {isServices
+              ? isAr
+                ? "إضافة خدمة"
+                : "Add Service"
+              : isAr
+                ? "إضافة منتج"
+                : "Add Product"}
           </Button>
 
           {renderImporters && (
