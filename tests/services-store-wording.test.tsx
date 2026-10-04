@@ -99,18 +99,22 @@ describe("a services store's footer", () => {
 describe("the listing filters", () => {
   const props = {
     filters: {
-      size: null,
-      color: null,
+      sizes: [],
+      colors: [],
       minPrice: null,
       maxPrice: null,
       inStockOnly: false,
       sort: "new" as const,
     },
     onChange: vi.fn(),
-    availableSizes: ["3 hours", "4 hours"],
-    availableColors: [],
-    minCatalogPrice: 40,
-    maxCatalogPrice: 185,
+    facets: {
+      sizes: [
+        { value: "3 hours", unit: null, count: 2 },
+        { value: "4 hours", unit: null, count: 1 },
+      ],
+      colors: [],
+      price: { min: 40, max: 185 },
+    },
     totalFilteredCount: 3,
   };
 

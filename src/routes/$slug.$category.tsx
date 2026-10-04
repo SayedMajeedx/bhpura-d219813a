@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
   fetchStorefrontPageMeta,
-  hasAvailableStock,
   storefrontQueries,
   type CategoryProductsScope,
   type StorefrontCategory,
@@ -19,9 +18,16 @@ import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { JsonLd } from "@/components/storefront/seo/JsonLd";
 import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
-import { CategoryFilters, type FilterState } from "@/components/storefront/CategoryFilters";
+import { CategoryFilters } from "@/components/storefront/CategoryFilters";
+import {
+  catalogFacets,
+  filterProducts,
+  filtersFromSearch,
+  filtersToSearch,
+  type FilterState,
+  EMPTY_FILTERS,
+} from "@/lib/category-filters";
 import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
-import { extractUniqueVariantColors } from "@/lib/color-names";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -94,27 +100,9 @@ function CategoryPage() {
   const servicesStore = useIsServicesStore();
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
-  const [filters, setFilters] = useState<FilterState>(() => {
-    if (typeof window === "undefined") {
-      return {
-        size: null,
-        color: null,
-        minPrice: null,
-        maxPrice: null,
-        inStockOnly: false,
-        sort: "new",
-      };
-    }
-    const sp = new URLSearchParams(window.location.search);
-    return {
-      size: sp.get("size") || null,
-      color: sp.get("color") || null,
-      minPrice: sp.get("min") ? Number(sp.get("min")) : null,
-      maxPrice: sp.get("max") ? Number(sp.get("max")) : null,
-      inStockOnly: sp.get("stock") === "1",
-      sort: (sp.get("sort") as any) || "new",
-    };
-  });
+  const [filters, setFilters] = useState<FilterState>(() =>
+    typeof window === "undefined" ? EMPTY_FILTERS : filtersFromSearch(window.location.search),
+  );
 
   const sort = filters.sort;
   const setSort = (newSort: FilterState["sort"]) => {
@@ -123,21 +111,7 @@ function CategoryPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const sp = new URLSearchParams(window.location.search);
-    if (filters.size) sp.set("size", filters.size);
-    else sp.delete("size");
-    if (filters.color) sp.set("color", filters.color);
-    else sp.delete("color");
-    if (filters.minPrice !== null) sp.set("min", String(filters.minPrice));
-    else sp.delete("min");
-    if (filters.maxPrice !== null) sp.set("max", String(filters.maxPrice));
-    else sp.delete("max");
-    if (filters.inStockOnly) sp.set("stock", "1");
-    else sp.delete("stock");
-    if (filters.sort && filters.sort !== "new") sp.set("sort", filters.sort);
-    else sp.delete("sort");
-
-    const newSearch = sp.toString();
+    const newSearch = filtersToSearch(window.location.search, filters);
     const newUrl = `${window.location.pathname}${newSearch ? `?${newSearch}` : ""}`;
     window.history.replaceState(null, "", newUrl);
   }, [filters]);
@@ -288,7 +262,8 @@ function CategoryPage() {
     activeCategory,
   ]);
 
-  const filteredProducts = useMemo(() => {
+  // The products of this page (its category and sub-category), before the shopper's filters.
+  const categoryProducts = useMemo(() => {
     let list = productsQuery.data ?? [];
     const leafSlug = selectedSubCategorySlugs[selectedSubCategorySlugs.length - 1] || null;
     if (leafSlug) {
@@ -312,77 +287,20 @@ function CategoryPage() {
       }
     }
 
-    if (filters.size) {
-      list = list.filter((p) => p.product_variants?.some((v) => v.size === filters.size));
-    }
-    if (filters.color) {
-      list = list.filter((p) => p.product_variants?.some((v) => v.color === filters.color));
-    }
-    if (filters.minPrice !== null) {
-      const minVal = filters.minPrice;
-      list = list.filter((p) =>
-        p.product_variants?.some((v) => Number(v.selling_price || 0) >= minVal),
-      );
-    }
-    if (filters.maxPrice !== null) {
-      const maxVal = filters.maxPrice;
-      list = list.filter((p) =>
-        p.product_variants?.some((v) => Number(v.selling_price || 0) <= maxVal),
-      );
-    }
-    if (filters.inStockOnly) {
-      list = list.filter((p) => hasAvailableStock(p));
-    }
+    return list;
+  }, [productsQuery.data, selectedSubCategorySlugs, categoriesQuery.data]);
 
+  // What can be picked here, each option counted against the other filters.
+  const facets = useMemo(
+    () => catalogFacets(categoryProducts, filters),
+    [categoryProducts, filters],
+  );
+
+  const filteredProducts = useMemo(() => {
+    const list = filterProducts(categoryProducts, filters);
     if (smartKind === "best" && sort === "new") return [...list];
     return sortCatalogProducts(list, sort);
-  }, [
-    productsQuery.data,
-    selectedSubCategorySlugs,
-    sort,
-    smartKind,
-    categoriesQuery.data,
-    filters.size,
-    filters.color,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.inStockOnly,
-  ]);
-
-  const allVariants = useMemo(() => {
-    const list = productsQuery.data ?? [];
-    return list.flatMap((p) => p.product_variants || []);
-  }, [productsQuery.data]);
-
-  const availableSizes = useMemo(() => {
-    const set = new Set<string>();
-    allVariants.forEach((v) => {
-      if (v.size && v.size.trim()) set.add(v.size.trim());
-    });
-    return Array.from(set).sort();
-  }, [allVariants]);
-
-  const availableColors = useMemo(() => {
-    return extractUniqueVariantColors(allVariants);
-  }, [allVariants]);
-
-  const sizeUnits = useMemo(() => {
-    const units: Record<string, string> = {};
-    allVariants.forEach((v) => {
-      const size = v.size?.trim();
-      if (size && v.size_unit && !units[size]) units[size] = v.size_unit;
-    });
-    return units;
-  }, [allVariants]);
-
-  const { minCatalogPrice, maxCatalogPrice } = useMemo(() => {
-    const prices = allVariants.map((v) => Number(v.selling_price || 0)).filter((p) => p > 0);
-    if (prices.length === 0) return { minCatalogPrice: 0, maxCatalogPrice: 100 };
-    return {
-      minCatalogPrice: Math.floor(Math.min(...prices)),
-      maxCatalogPrice: Math.ceil(Math.max(...prices)),
-    };
-  }, [allVariants]);
+  }, [categoryProducts, filters, sort, smartKind]);
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
@@ -633,12 +551,12 @@ function CategoryPage() {
                 <span className="text-xs font-medium text-muted-foreground">
                   {servicesStore
                     ? t(
-                        `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} خدمة`,
-                        `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} services`,
+                        `عرض ${filteredProducts.length} من أصل ${categoryProducts.length} خدمة`,
+                        `Showing ${filteredProducts.length} of ${categoryProducts.length} services`,
                       )
                     : t(
-                        `عرض ${filteredProducts.length} من أصل ${productsQuery.data?.length ?? 0} منتج`,
-                        `Showing ${filteredProducts.length} of ${productsQuery.data?.length ?? 0} products`,
+                        `عرض ${filteredProducts.length} من أصل ${categoryProducts.length} منتج`,
+                        `Showing ${filteredProducts.length} of ${categoryProducts.length} products`,
                       )}
                 </span>
               </div>
@@ -648,11 +566,7 @@ function CategoryPage() {
                   <CategoryFiltersSheet
                     filters={filters}
                     onChange={setFilters}
-                    availableSizes={availableSizes}
-                    sizeUnits={sizeUnits}
-                    availableColors={availableColors}
-                    minCatalogPrice={minCatalogPrice}
-                    maxCatalogPrice={maxCatalogPrice}
+                    facets={facets}
                     totalFilteredCount={filteredProducts.length}
                   />
                 )}
@@ -686,11 +600,7 @@ function CategoryPage() {
                   <CategoryFilters
                     filters={filters}
                     onChange={setFilters}
-                    availableSizes={availableSizes}
-                    sizeUnits={sizeUnits}
-                    availableColors={availableColors}
-                    minCatalogPrice={minCatalogPrice}
-                    maxCatalogPrice={maxCatalogPrice}
+                    facets={facets}
                     totalFilteredCount={filteredProducts.length}
                   />
                 </aside>

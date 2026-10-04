@@ -1,6 +1,6 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play } from "lucide-react";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { isLikelyImageUrl } from "@/lib/media-delivery";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
@@ -33,7 +33,7 @@ export function ProductGallery({
   t: ReturnType<typeof useStorefront>["t"];
 }) {
   return (
-    <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0">
+    <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0 [overflow-anchor:none]">
       <div
         className={`relative ${galleryRatioClass} max-h-[520px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border-subtle mx-auto w-full max-w-full select-none`}
         onTouchStart={(e) => {
@@ -129,47 +129,71 @@ export function ProductGallery({
         )}
       </div>
       {media.length > 1 && (
-        <div className="mt-3 flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
-          {media.map((m, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setMediaIdx(i)}
-              className={`relative h-18 w-18 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
-                i === mediaIdx % media.length
-                  ? "ring-2 ring-primary border-primary shadow-sm opacity-100"
-                  : "border-border-subtle hover:border-primary/50 opacity-75 hover:opacity-100"
-              }`}
-              style={i === mediaIdx % media.length ? { borderColor: primary } : undefined}
-            >
-              {m.type === "video" ? (
-                <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
-                  {m.poster_url || isLikelyImageUrl(m.url) ? (
-                    <img
-                      src={m.poster_url || m.url}
-                      alt={`${displayName} - preview ${i + 1}`}
-                      className="w-full h-full object-cover opacity-60"
-                    />
-                  ) : (
-                    <div className="size-full bg-muted/60" />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                    <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-xs font-bold shadow-md">
-                      ▶
+        // Padding keeps the focus ring inside the scroll area; the negative margin gives the
+        // first thumbnail back the edge it shares with the main picture.
+        <div className="-mx-1 mt-2 flex gap-2.5 overflow-x-auto p-1 scrollbar-thin">
+          {media.map((m, i) => {
+            const selected = i === mediaIdx % media.length;
+            return (
+              <button
+                key={i}
+                type="button"
+                aria-label={
+                  m.type === "video"
+                    ? t(`عرض الفيديو ${i + 1}`, `Show video ${i + 1}`)
+                    : t(`عرض الصورة ${i + 1}`, `Show image ${i + 1}`)
+                }
+                aria-current={selected ? "true" : undefined}
+                // Picking a thumbnail must never move the page: no focus jump on press.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => setMediaIdx(i)}
+                // Every thumbnail is the same size: the selection is a border, not an outer ring
+                // (a ring is clipped by the scroll area and makes the chosen one look larger).
+                className={`relative size-18 shrink-0 overflow-hidden rounded-xl border-2 transition-[opacity,border-color] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                  selected
+                    ? "border-primary opacity-100"
+                    : "border-border-subtle opacity-75 hover:border-primary/50 hover:opacity-100"
+                }`}
+                style={selected ? { borderColor: primary } : undefined}
+              >
+                {m.type === "video" ? (
+                  <div className="relative size-full bg-black/90">
+                    {m.poster_url || isLikelyImageUrl(m.url) ? (
+                      <img
+                        src={m.poster_url || m.url}
+                        alt=""
+                        className="size-full object-cover opacity-70"
+                      />
+                    ) : (
+                      // No poster: the first frame of the video itself.
+                      <video
+                        src={`${m.url}#t=0.1`}
+                        preload="metadata"
+                        muted
+                        playsInline
+                        tabIndex={-1}
+                        aria-hidden="true"
+                        className="pointer-events-none size-full object-cover opacity-70"
+                      />
+                    )}
+                    <div className="absolute inset-0 grid place-items-center bg-black/25">
+                      <span className="grid size-7 place-items-center rounded-full bg-white/90 text-black shadow-md">
+                        <Play className="size-3.5 translate-x-px fill-current" />
+                      </span>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <ResponsiveImage
-                  src={m.url}
-                  preset="thumb"
-                  sizes="80px"
-                  alt={displayName}
-                  className="w-full h-full object-cover"
-                />
-              )}
-            </button>
-          ))}
+                ) : (
+                  <ResponsiveImage
+                    src={m.url}
+                    preset="thumb"
+                    sizes="80px"
+                    alt={displayName}
+                    className="size-full object-cover"
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
