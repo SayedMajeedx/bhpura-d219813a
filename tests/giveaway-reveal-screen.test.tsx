@@ -241,6 +241,69 @@ describe("playing the reveal", () => {
   });
 });
 
+describe("the store's logo and colours", () => {
+  const LOGO = "https://media.test/pura-logo.svg";
+
+  it("shows the logo by itself, without repeating the name", () => {
+    renderReveal({ logoUrl: LOGO });
+    start();
+    const logo = screen.getByRole("img", { name: "Pura Line" });
+    expect(logo.getAttribute("src")).toBe(LOGO);
+    // The logo is not cropped into a circle: it keeps its own shape.
+    expect(logo.className).toContain("object-contain");
+    expect(logo.className).not.toContain("rounded-full");
+    expect(screen.queryByText("Pura Line")).toBeNull();
+  });
+
+  it("shows the name when there is no logo", () => {
+    renderReveal({ logoUrl: null });
+    start();
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByText("Pura Line")).toBeTruthy();
+  });
+
+  it("falls back to the name when the logo fails to load", () => {
+    renderReveal({ logoUrl: LOGO });
+    start();
+    fireEvent.error(screen.getByRole("img", { name: "Pura Line" }));
+    expect(screen.queryByRole("img")).toBeNull();
+    expect(screen.getByText("Pura Line")).toBeTruthy();
+  });
+
+  it("uses the Arabic name as the logo's text in Arabic", () => {
+    renderReveal({ logoUrl: LOGO, isAr: true });
+    start("ابدأ");
+    expect(screen.getByRole("img", { name: "بيورا لاين" })).toBeTruthy();
+  });
+
+  it("paints the stage in the store's colour with text that reads on it", () => {
+    const { container } = renderReveal({ color: "#330a0a" });
+    start();
+    const stage = container.querySelector("[data-phase]") as HTMLElement;
+    expect(stage.style.getPropertyValue("--primary")).toBe("#330a0a");
+    expect(stage.style.getPropertyValue("--primary-foreground")).toBe("white");
+  });
+
+  it("switches to dark text on a light brand colour, and leaves the theme alone without one", () => {
+    const light = renderReveal({ color: "#fde7c9" });
+    start();
+    expect(
+      (light.container.querySelector("[data-phase]") as HTMLElement).style.getPropertyValue(
+        "--primary-foreground",
+      ),
+    ).toBe("black");
+    light.unmount();
+
+    const plain = renderReveal({ color: null });
+    start();
+    expect(
+      (plain.container.querySelector("[data-phase]") as HTMLElement).style.getPropertyValue(
+        "--primary",
+      ),
+    ).toBe("");
+  });
+});
+
 describe("less motion", () => {
   it("skips the shuffle and goes straight to the winner", async () => {
     window.matchMedia = ((query: string) => ({

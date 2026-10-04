@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { GiveawayWinner } from "@/lib/data/giveaways";
 import type { GiveawayDetail } from "../hooks/use-giveaway-detail";
+import { useStoreLook } from "../hooks/use-store-look";
 import type { RevealWinner } from "../lib/reveal";
 import { checksComplete, profileUrl } from "../lib/winners";
 import { WinnerReveal } from "./WinnerReveal";
@@ -146,6 +147,7 @@ function WinnerCard({
 export function WinnersPanel({ detail }: { detail: GiveawayDetail }) {
   const { isAr, resolved, giveaway } = detail;
   const [revealOpen, setRevealOpen] = useState(false);
+  const look = useStoreLook();
   // Who the reveal announces (the winners standing now) and whose names flash by.
   const revealWinners = useMemo<RevealWinner[]>(
     () =>
@@ -248,6 +250,8 @@ export function WinnersPanel({ detail }: { detail: GiveawayDetail }) {
         winners={revealWinners}
         pool={pool}
         seed={giveaway.draw_seed ?? giveaway.id}
+        logoUrl={look.logoUrl}
+        color={look.color}
       />
     </section>
   );

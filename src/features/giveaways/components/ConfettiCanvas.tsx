@@ -3,12 +3,13 @@ import { seededRandom } from "../lib/draw";
 import { spawnBurst, stepParticles, type Particle } from "../lib/confetti";
 
 /** The theme's own colours, so the confetti matches the store's look in light and dark. */
-function themeColors(): string[] {
-  if (typeof document === "undefined") return ["white"];
+function themeColors(base?: string): string[] {
+  if (typeof document === "undefined") return [base ?? "white"];
   const style = getComputedStyle(document.documentElement);
-  const names = ["--primary-foreground", "--warning", "--success", "--accent", "--foreground"];
+  const names = ["--warning", "--success", "--accent"];
   const colors = names.map((name) => style.getPropertyValue(name).trim()).filter(Boolean);
-  return colors.length > 0 ? colors : ["white"];
+  // The stage's own text colour leads, so the confetti reads against its background.
+  return [base ?? (style.getPropertyValue("--primary-foreground").trim() || "white"), ...colors];
 }
 
 /**
@@ -20,10 +21,13 @@ export function ConfettiCanvas({
   burst,
   seed,
   disabled,
+  base,
 }: {
   burst: number;
   seed: string;
   disabled?: boolean;
+  /** The stage's text colour, used as the main confetti colour. */
+  base?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particles = useRef<Particle[]>([]);
@@ -44,7 +48,7 @@ export function ConfettiCanvas({
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
     const random = seededRandom(`${seed}:confetti:${burst}`);
-    const colors = themeColors();
+    const colors = themeColors(base);
     particles.current.push(
       ...spawnBurst(110, { x: width * 0.12, y: height }, colors, random, Math.PI * 0.55),
       ...spawnBurst(110, { x: width * 0.88, y: height }, colors, random, Math.PI * 0.55),
@@ -79,7 +83,7 @@ export function ConfettiCanvas({
       }
     };
     if (frame.current === null) frame.current = requestAnimationFrame(draw);
-  }, [burst, seed, disabled]);
+  }, [burst, seed, disabled, base]);
 
   useEffect(
     () => () => {

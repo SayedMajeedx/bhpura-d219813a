@@ -10,6 +10,7 @@ import {
   type RevealConfig,
   type RevealWinner,
 } from "../lib/reveal";
+import { stageColors } from "../lib/reveal-colors";
 import { createRevealAudio, type RevealAudio } from "../lib/reveal-audio";
 import { RevealSetup } from "./RevealSetup";
 import { RevealStage } from "./RevealStage";
@@ -50,6 +51,8 @@ export function WinnerReveal({
   winners,
   pool,
   seed,
+  logoUrl = null,
+  color = null,
 }: {
   open: boolean;
   onClose: () => void;
@@ -59,6 +62,10 @@ export function WinnerReveal({
   /** The people in the draw: their names flash by during the shuffle. */
   pool: string[];
   seed: string;
+  /** The store's logo, shown by itself at the top; without one the store's name is. */
+  logoUrl?: string | null;
+  /** The store's brand colour (a hex colour): the stage's background. */
+  color?: string | null;
 }) {
   const brand = useBrand();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -66,6 +73,7 @@ export function WinnerReveal({
   const [config, setConfig] = useState<RevealConfig>(loadConfig);
   const [burst, setBurst] = useState(0);
   const reducedMotion = useMemo(prefersLessMotion, []);
+  const colors = useMemo(() => stageColors(color), [color]);
 
   const plan = useMemo(
     () => buildPlan({ winners, pool, seed, config, reducedMotion }),
@@ -167,7 +175,10 @@ export function WinnerReveal({
       aria-label={isAr ? "عرض إعلان الفائز" : "Winner reveal"}
       tabIndex={-1}
       dir={isAr ? "rtl" : "ltr"}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-[color-mix(in_oklch,var(--primary),black_72%)] outline-none"
+      className="fixed inset-0 z-[60] flex items-center justify-center outline-none"
+      style={{
+        backgroundColor: `color-mix(in oklch, ${colors?.background ?? "var(--primary)"}, black 72%)`,
+      }}
     >
       <RevealStyles />
 
@@ -190,7 +201,8 @@ export function WinnerReveal({
             isAr={isAr}
             title={title}
             brandName={brandName}
-            logoUrl={brand.logo_url}
+            logoUrl={logoUrl}
+            colors={colors}
             burst={burst}
             seed={seed}
             reducedMotion={reducedMotion}
