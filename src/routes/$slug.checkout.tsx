@@ -19,6 +19,7 @@ import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
 import { bookingOfCart } from "@/lib/bookings/cart";
+import { advanceLinesOfCart } from "@/features/checkout/lib/advance-cart-lines";
 import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
 import { useCheckoutForm } from "@/features/checkout/hooks/use-checkout-form";
 import { useCustomerPrefill } from "@/features/checkout/hooks/use-customer-prefill";
@@ -254,12 +255,7 @@ function Checkout() {
                 ? "BH"
                 : selectedCountryCode
               : null,
-          lines: cart.map((item) => ({
-            amount: item.price * item.qty,
-            madeToOrder: Boolean(item.booking) || madeToOrderIds.has(item.product_id),
-            productId: item.product_id,
-            category: categoryById.get(item.product_id) ?? null,
-          })),
+          lines: advanceLinesOfCart(cart, madeToOrderIds, categoryById),
         },
         advanceRuleFrom(settings, ownRuleDefs),
       ),

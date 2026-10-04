@@ -245,6 +245,37 @@ describe("productCartLine", () => {
   });
 });
 
+describe("what the shopper chose on a made-to-order product", () => {
+  const madeToOrder = { ...product, is_made_to_order: true } as StorefrontProductDetail;
+
+  it("marks a ready size as not tailored, and custom sizing as tailored", () => {
+    const ready = productCartLine(
+      lineInput({ product: madeToOrder, showSizeModeToggle: true, isTailoringActive: false }),
+    );
+    expect(ready.tailored).toBe(false);
+    expect(ready.size).toBe("52");
+    const custom = productCartLine(
+      lineInput({
+        product: madeToOrder,
+        showSizeModeToggle: true,
+        sizeMode: "custom",
+        isTailoringActive: true,
+      }),
+    );
+    expect(custom.tailored).toBe(true);
+  });
+
+  it("is tailored when the product can only be made to order", () => {
+    expect(
+      productCartLine(lineInput({ product: madeToOrder, isTailoringActive: true })).tailored,
+    ).toBe(true);
+  });
+
+  it("says nothing on a product that is not made to order", () => {
+    expect("tailored" in productCartLine(lineInput())).toBe(false);
+  });
+});
+
 describe("withOfferedAxes", () => {
   const hidden = { visible: false, label: "x" };
   const base = { size: hidden, color: hidden, fabric: hidden, four: hidden, five: hidden };

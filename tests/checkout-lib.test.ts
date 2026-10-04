@@ -209,6 +209,17 @@ describe("placeStorefrontOrderArgs", () => {
     ]);
   });
 
+  it("tells the database when a ready size was chosen on a made-to-order product", () => {
+    const args = placeStorefrontOrderArgs(
+      argsInput({
+        cart: [{ ...cartLine, tailored: false }, { ...cartLine, tailored: true }, cartLine],
+      }),
+    );
+    const items = args.p_items as Array<Record<string, unknown>>;
+    expect(items.map((item) => item.tailored)).toEqual([false, true, undefined]);
+    expect("tailored" in items[2]).toBe(false);
+  });
+
   it("puts the country in the label and zone for international delivery", () => {
     const args = placeStorefrontOrderArgs(
       argsInput({ selectedDestination: "gcc", selectedCountryCode: "KW", selectedZone: zone }),

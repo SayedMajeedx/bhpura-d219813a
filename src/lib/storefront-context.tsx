@@ -1,3 +1,4 @@
+import { cartLineId } from "@/lib/cart-line-id";
 import {
   createContext,
   useContext,
@@ -330,6 +331,12 @@ export type CartItem = {
   qty: number;
   max_stock: number;
   custom_fields?: CustomFieldValue[];
+  /**
+   * On a made-to-order product: whether the shopper chose made-to-order (true) or a ready size
+   * (false). Left out on any other product, and on a cart saved before this existed (read as
+   * made to order, as before). The order builder keeps a line made to order unless this is false.
+   */
+  tailored?: boolean;
   /** Set on the services of a booking being checked out (see lib/bookings/cart). */
   booking?: CartBooking;
 };
@@ -386,21 +393,6 @@ type StoreCtx = {
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
-
-function cartLineId(
-  item: Pick<CartItem, "variant_id" | "size" | "color" | "fabric" | "custom_fields">,
-): string {
-  const fields = [...(item.custom_fields ?? [])]
-    .map((field) => ({ key: field.key, value: field.value }))
-    .sort((a, b) => a.key.localeCompare(b.key));
-  return JSON.stringify({
-    variant: item.variant_id,
-    size: item.size ?? "",
-    color: item.color ?? "",
-    fabric: item.fabric ?? "",
-    fields,
-  });
-}
 
 export function StorefrontProvider({
   brand,
