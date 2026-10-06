@@ -180,7 +180,9 @@ describe("the checkout of a booking", () => {
       ["pickup", "At your place", 0],
     ]);
     expect(result.current.fulfillment).toBe("delivery");
-    expect(result.current.estimatedDeliveryText).toBe("At your booked time");
+    expect(result.current.estimatedDeliveryLines).toEqual([
+      { kind: "all", label: null, text: "At your booked time" },
+    ]);
     expect(result.current.availableMethods.find((m) => m.id === "cod")?.en).toBe("Pay on the day");
   });
 
@@ -334,7 +336,7 @@ describe("the checkout of a booking, as the customer reads it", () => {
       <FulfillmentMethodCard
         appointment
         currency="BHD"
-        estimatedDeliveryText="At your booked time"
+        estimatedDeliveryLines={[{ kind: "all", label: null, text: "At your booked time" }]}
         fulfillment="delivery"
         fulfillmentOptions={options as unknown as FulfillmentOptions}
         lang="en"
@@ -375,7 +377,9 @@ describe("the checkout of a booking, as the customer reads it", () => {
           cartTotal: 50,
           checkingPromo: false,
           currency: "BHD",
-          estimatedDeliveryText: "Within 24 - 48 hours in Bahrain",
+          estimatedDeliveryLines: [
+            { kind: "all", label: null, text: "Within 24 - 48 hours in Bahrain" },
+          ],
           estimatedPointsToEarn: 0,
           fulfillment: "delivery",
           fulfillmentOptions: [],

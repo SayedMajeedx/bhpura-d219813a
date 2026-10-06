@@ -125,6 +125,8 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     delivery_estimate_enabled: Boolean(s?.delivery_estimate_enabled ?? true),
     delivery_estimate_ar: s?.delivery_estimate_ar ?? null,
     delivery_estimate_en: s?.delivery_estimate_en ?? null,
+    delivery_estimate_tailored_ar: s?.delivery_estimate_tailored_ar ?? null,
+    delivery_estimate_tailored_en: s?.delivery_estimate_tailored_en ?? null,
     vat_inclusive: Boolean(s?.vat_inclusive ?? false),
     shipping_zones: (() => {
       try {

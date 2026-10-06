@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Truck } from "lucide-react";
+import { DeliveryEstimateLines } from "@/features/checkout/components/DeliveryEstimateLines";
 import { getCountryByCode, calculateShippingFee } from "@/lib/shipping";
 import { CountryFlag } from "@/components/ui/country-flag";
 import type { CheckoutForm, SetCheckoutForm, Storefront } from "@/features/checkout/types";
@@ -22,6 +23,7 @@ export function DeliveryAddressCard({
   currency,
   form,
   handleAddressChange,
+  homeEstimateLines,
   lang,
   savedAddresses,
   selectedAddressId,
@@ -41,6 +43,7 @@ export function DeliveryAddressCard({
   currency: Storefront["currency"];
   form: CheckoutForm;
   handleAddressChange: ReturnType<typeof useCustomerPrefill>["handleAddressChange"];
+  homeEstimateLines: ReturnType<typeof useCheckoutFulfillment>["homeEstimateLines"];
   lang: Storefront["lang"];
   savedAddresses: ReturnType<typeof useCustomerPrefill>["savedAddresses"];
   selectedAddressId: ReturnType<typeof useCustomerPrefill>["selectedAddressId"];
@@ -163,17 +166,14 @@ export function DeliveryAddressCard({
                   </div>
                 </div>
 
-                {settings.delivery_estimate_enabled &&
-                  (settings.delivery_estimate_ar || settings.delivery_estimate_en) && (
-                    <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <span>
-                        {lang === "ar"
-                          ? settings.delivery_estimate_ar
-                          : settings.delivery_estimate_en}
-                      </span>
-                    </div>
-                  )}
+                {settings.delivery_estimate_enabled && homeEstimateLines.length > 0 && (
+                  <div className="mt-2.5 pt-2 border-t border-border-subtle text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Truck className="h-3.5 w-3.5 text-primary shrink-0" />
+                    <span>
+                      <DeliveryEstimateLines lines={homeEstimateLines} />
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* 2. International Zones */}

@@ -20,6 +20,7 @@ import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
 import { bookingOfCart } from "@/lib/bookings/cart";
 import { advanceLinesOfCart } from "@/features/checkout/lib/advance-cart-lines";
+import { cartEstimateKinds } from "@/lib/delivery-estimate";
 import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
 import { useCheckoutForm } from "@/features/checkout/hooks/use-checkout-form";
 import { useCustomerPrefill } from "@/features/checkout/hooks/use-customer-prefill";
@@ -102,6 +103,21 @@ function Checkout() {
     if (!appointment || appointmentFormApplied(form, appointment)) return;
     setForm((current) => appointmentCheckoutForm(current, appointment));
   }, [appointment, form, setForm]);
+  // Which products are made to order: the advance rule reads it, and so does the delivery estimate.
+  const catalog = useQuery(storefrontQueries.products(brand)).data;
+  const madeToOrderIds = useMemo(
+    () =>
+      new Set(
+        (catalog ?? [])
+          .filter((p) => p.is_made_to_order || p.item_kind === "service")
+          .map((p) => p.id),
+      ),
+    [catalog],
+  );
+  const estimateKinds = useMemo(
+    () => cartEstimateKinds(cart, madeToOrderIds),
+    [cart, madeToOrderIds],
+  );
   const {
     fulfillmentOptions,
     fulfillment,
@@ -115,8 +131,9 @@ function Checkout() {
     availableMethods: allMethods,
     method,
     setMethod,
-    estimatedDeliveryText,
-  } = useCheckoutFulfillment({ settings, lang, appointment });
+    estimatedDeliveryLines,
+    homeEstimateLines,
+  } = useCheckoutFulfillment({ settings, lang, appointment, kinds: estimateKinds });
 
   // A booking happens at its own place: not picked up, not delivered, not digital.
   useEffect(() => {
@@ -215,16 +232,6 @@ function Checkout() {
 
   // The store's advance-payment rule, worked out for this cart: which lines are made to order
   // (the catalog says; a booked service always is), how the order is fulfilled and what it costs.
-  const catalog = useQuery(storefrontQueries.products(brand)).data;
-  const madeToOrderIds = useMemo(
-    () =>
-      new Set(
-        (catalog ?? [])
-          .filter((p) => p.is_made_to_order || p.item_kind === "service")
-          .map((p) => p.id),
-      ),
-    [catalog],
-  );
   const categoryById = useMemo(
     () => new Map((catalog ?? []).map((p) => [p.id, p.category ?? null])),
     [catalog],
@@ -425,7 +432,7 @@ function Checkout() {
           <FulfillmentMethodCard
             appointment={Boolean(appointment)}
             currency={currency}
-            estimatedDeliveryText={estimatedDeliveryText}
+            estimatedDeliveryLines={estimatedDeliveryLines}
             fulfillment={fulfillment}
             fulfillmentOptions={fulfillmentOptions}
             lang={lang}
@@ -463,6 +470,7 @@ function Checkout() {
             currency={currency}
             form={form}
             handleAddressChange={handleAddressChange}
+            homeEstimateLines={homeEstimateLines}
             lang={lang}
             savedAddresses={savedAddresses}
             selectedAddressId={selectedAddressId}
@@ -510,7 +518,7 @@ function Checkout() {
           cartTotal={cartTotal}
           checkingPromo={checkingPromo}
           currency={currency}
-          estimatedDeliveryText={estimatedDeliveryText}
+          estimatedDeliveryLines={estimatedDeliveryLines}
           estimatedPointsToEarn={estimatedPointsToEarn}
           fulfillment={fulfillment}
           fulfillmentOptions={fulfillmentOptions}

@@ -2108,6 +2108,8 @@ export type Database = {
           delivery_estimate_ar: string | null;
           delivery_estimate_en: string | null;
           delivery_estimate_enabled: boolean | null;
+          delivery_estimate_tailored_ar: string | null;
+          delivery_estimate_tailored_en: string | null;
           delivery_fee: number;
           digital_delivery_enabled: boolean;
           email: string | null;
@@ -2310,6 +2312,8 @@ export type Database = {
           delivery_estimate_ar?: string | null;
           delivery_estimate_en?: string | null;
           delivery_estimate_enabled?: boolean | null;
+          delivery_estimate_tailored_ar?: string | null;
+          delivery_estimate_tailored_en?: string | null;
           delivery_fee?: number;
           digital_delivery_enabled?: boolean;
           email?: string | null;
@@ -2512,6 +2516,8 @@ export type Database = {
           delivery_estimate_ar?: string | null;
           delivery_estimate_en?: string | null;
           delivery_estimate_enabled?: boolean | null;
+          delivery_estimate_tailored_ar?: string | null;
+          delivery_estimate_tailored_en?: string | null;
           delivery_fee?: number;
           digital_delivery_enabled?: boolean;
           email?: string | null;
@@ -8713,6 +8719,8 @@ export type Database = {
           delivery_estimate_ar: string | null;
           delivery_estimate_en: string | null;
           delivery_estimate_enabled: boolean | null;
+          delivery_estimate_tailored_ar: string | null;
+          delivery_estimate_tailored_en: string | null;
           delivery_fee: number | null;
           digital_delivery_enabled: boolean | null;
           fabric_care_ar: string | null;
@@ -9546,6 +9554,8 @@ export type Database = {
           delivery_estimate_ar: string | null;
           delivery_estimate_en: string | null;
           delivery_estimate_enabled: boolean | null;
+          delivery_estimate_tailored_ar: string | null;
+          delivery_estimate_tailored_en: string | null;
           delivery_fee: number;
           digital_delivery_enabled: boolean;
           email: string | null;
