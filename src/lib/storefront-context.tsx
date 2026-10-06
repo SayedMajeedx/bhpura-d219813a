@@ -153,6 +153,8 @@ export type PublicSettings = {
   delivery_estimate_enabled?: boolean;
   delivery_estimate_ar?: string | null;
   delivery_estimate_en?: string | null;
+  delivery_estimate_tailored_ar?: string | null;
+  delivery_estimate_tailored_en?: string | null;
   // Theme customizer
   logo_size: number;
   footer_logo_size?: number;

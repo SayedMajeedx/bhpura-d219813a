@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Coins, Sparkles, Share2 } from "lucide-react";
+import { DeliveryEstimateLines } from "@/features/checkout/components/DeliveryEstimateLines";
 import type { AdvanceSplit } from "@/lib/payments/advance-payment";
 import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
@@ -34,7 +35,7 @@ export function OrderSummaryCard({
   cartTotal,
   checkingPromo,
   currency,
-  estimatedDeliveryText,
+  estimatedDeliveryLines,
   appointment = null,
   estimatedPointsToEarn,
   fulfillment,
@@ -75,7 +76,7 @@ export function OrderSummaryCard({
   cartTotal: number;
   checkingPromo: ReturnType<typeof usePromoCode>["checkingPromo"];
   currency: Storefront["currency"];
-  estimatedDeliveryText: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryText"];
+  estimatedDeliveryLines: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryLines"];
   /** The booking the order is for: its day and time replace the delivery estimate. */
   appointment?: CartBooking | null;
   estimatedPointsToEarn: ReturnType<typeof useCheckoutLoyalty>["estimatedPointsToEarn"];
@@ -238,13 +239,17 @@ export function OrderSummaryCard({
             <span className="text-muted-foreground">
               {t("التوصيل المتوقع", "Estimated delivery")}
             </span>
-            <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
+            <span className="font-medium text-foreground text-end">
+              <DeliveryEstimateLines lines={estimatedDeliveryLines} />
+            </span>
           </div>
         )}
         {!appointment && fulfillment === "pickup" && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
-            <span className="font-medium text-foreground text-end">{estimatedDeliveryText}</span>
+            <span className="font-medium text-foreground text-end">
+              <DeliveryEstimateLines lines={estimatedDeliveryLines} />
+            </span>
           </div>
         )}
         <div className="flex justify-between">

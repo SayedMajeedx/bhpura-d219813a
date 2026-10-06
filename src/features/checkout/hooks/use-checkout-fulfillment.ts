@@ -2,6 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Banknote, CreditCard, Download, MapPin, QrCode, Store, Truck } from "lucide-react";
 import type { ShippingZone } from "@/lib/shipping";
 import type { Fulfillment, Storefront } from "@/features/checkout/types";
+import {
+  deliveryEstimateLines,
+  readyEstimate,
+  tailoredEstimate,
+  type EstimateKinds,
+  type EstimateLine,
+} from "@/lib/delivery-estimate";
+
+const READY_ONLY: EstimateKinds = { ready: true, tailored: false };
+const only = (text: string): EstimateLine[] => [{ kind: "all", label: null, text }];
 
 /**
  * Delivery / pickup / digital, the delivery destination (Bahrain or a
@@ -12,6 +22,7 @@ export function useCheckoutFulfillment({
   settings,
   lang,
   appointment = null,
+  kinds = READY_ONLY,
 }: {
   settings: Storefront["settings"];
   lang: Storefront["lang"];
@@ -21,6 +32,8 @@ export function useCheckoutFulfillment({
    * store has a pickup place, at the store's.
    */
   appointment?: { travelFee?: number | null } | null;
+  /** The kinds of piece in the cart, so a made-to-order piece gets its own delivery estimate. */
+  kinds?: EstimateKinds;
 }) {
   const isAppointment = Boolean(appointment);
   const travelFee = Number(appointment?.travelFee ?? 0);
@@ -173,36 +186,55 @@ export function useCheckoutFulfillment({
     }
   }, [method, availableMethods]);
 
-  const estimatedDeliveryText = useMemo(() => {
-    if (isAppointment) {
-      return lang === "ar" ? "في موعد حجزك" : "At your booked time";
-    }
+  const bahrainText =
+    readyEstimate(settings, lang) ||
+    (lang === "ar" ? "خلال 24 - 48 ساعة داخل البحرين" : "Within 24 - 48 hours in Bahrain");
+  const zoneText = selectedZone
+    ? (lang === "ar" ? selectedZone.estimate_ar : selectedZone.estimate_en) ||
+      (lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days")
+    : lang === "ar"
+      ? "خلال 3 - 5 أيام عمل"
+      : "3 - 5 business days";
+
+  /** What is said about delivery for this cart; a made-to-order piece keeps its own time. */
+  const estimatedDeliveryLines = useMemo((): EstimateLine[] => {
+    if (isAppointment) return only(lang === "ar" ? "في موعد حجزك" : "At your booked time");
     if (fulfillment === "pickup") {
-      return lang === "ar" ? "بعد إشعار جاهزية الطلب" : "After your ready notification";
+      return only(lang === "ar" ? "بعد إشعار جاهزية الطلب" : "After your ready notification");
     }
     if (fulfillment === "digital") {
-      return lang === "ar" ? "فوري بعد إتمام الطلب" : "Instant upon order completion";
+      return only(lang === "ar" ? "فوري بعد إتمام الطلب" : "Instant upon order completion");
     }
     if (selectedDestination === "BH") {
-      return lang === "ar"
-        ? settings.delivery_estimate_ar || "خلال 24 - 48 ساعة داخل البحرين"
-        : settings.delivery_estimate_en || "Within 24 - 48 hours in Bahrain";
+      return deliveryEstimateLines({ kinds, settings, lang, readyText: bahrainText });
     }
-    if (selectedZone) {
-      return lang === "ar"
-        ? selectedZone.estimate_ar || "خلال 3 - 5 أيام عمل"
-        : selectedZone.estimate_en || "3 - 5 business days";
-    }
-    return lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days";
+    // Outside Bahrain a made-to-order piece is made first and then shipped.
+    return deliveryEstimateLines({
+      kinds,
+      settings,
+      lang,
+      readyText: zoneText,
+      afterMaking: zoneText,
+    });
   }, [
     isAppointment,
     fulfillment,
     selectedDestination,
-    selectedZone,
-    settings.delivery_estimate_ar,
-    settings.delivery_estimate_en,
+    bahrainText,
+    zoneText,
+    kinds,
+    settings,
     lang,
   ]);
+
+  /** The same for the Bahrain card in the address step, shown only when the store wrote one. */
+  const homeEstimateLines = useMemo(
+    (): EstimateLine[] =>
+      readyEstimate(settings, lang) || tailoredEstimate(settings, lang)
+        ? deliveryEstimateLines({ kinds, settings, lang, readyText: bahrainText })
+        : [],
+    [kinds, settings, lang, bahrainText],
+  );
 
   return {
     fulfillmentOptions,
@@ -217,6 +249,7 @@ export function useCheckoutFulfillment({
     availableMethods,
     method,
     setMethod,
-    estimatedDeliveryText,
+    estimatedDeliveryLines,
+    homeEstimateLines,
   };
 }

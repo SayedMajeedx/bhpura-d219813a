@@ -605,7 +605,7 @@ export function FulfillmentGroup() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div dir="rtl">
                 <Label className="text-xs font-medium">
-                  {isAr ? "عبارة التوصيل (عربي)" : "Estimate Text (Arabic)"}
+                  {isAr ? "عبارة التوصيل للقطع الجاهزة (عربي)" : "Ready Pieces Estimate (Arabic)"}
                 </Label>
                 <Input
                   className="mt-1.5 text-end text-xs h-9"
@@ -617,7 +617,9 @@ export function FulfillmentGroup() {
 
               <div dir="ltr">
                 <Label className="text-xs font-medium">
-                  {isAr ? "عبارة التوصيل (إنجليزي)" : "Estimate Text (English)"}
+                  {isAr
+                    ? "عبارة التوصيل للقطع الجاهزة (إنجليزي)"
+                    : "Ready Pieces Estimate (English)"}
                 </Label>
                 <Input
                   className="mt-1.5 text-start text-xs h-9"
@@ -626,7 +628,36 @@ export function FulfillmentGroup() {
                   onChange={(e) => setBs({ delivery_estimate_en: e.target.value || null })}
                 />
               </div>
+
+              <div dir="rtl">
+                <Label className="text-xs font-medium">
+                  {isAr ? "عبارة التوصيل للتفصيل (عربي)" : "Made-to-order Estimate (Arabic)"}
+                </Label>
+                <Input
+                  className="mt-1.5 text-end text-xs h-9"
+                  value={bs.delivery_estimate_tailored_ar ?? ""}
+                  placeholder={isAr ? "التفصيل والتوصيل خلال 7 - 10 أيام" : "7-10 days"}
+                  onChange={(e) => setBs({ delivery_estimate_tailored_ar: e.target.value || null })}
+                />
+              </div>
+
+              <div dir="ltr">
+                <Label className="text-xs font-medium">
+                  {isAr ? "عبارة التوصيل للتفصيل (إنجليزي)" : "Made-to-order Estimate (English)"}
+                </Label>
+                <Input
+                  className="mt-1.5 text-start text-xs h-9"
+                  value={bs.delivery_estimate_tailored_en ?? ""}
+                  placeholder="Made to order and delivered within 7 - 10 days"
+                  onChange={(e) => setBs({ delivery_estimate_tailored_en: e.target.value || null })}
+                />
+              </div>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "اتركهما فارغتين إن كانت مدة التفصيل مثل الجاهز. تظهر عبارة التفصيل في صفحة المنتج للقطع التي تُفصَّل، وفي الدفع عند وجودها في السلة، وتظهر العبارتان معاً إن اجتمع النوعان."
+                : "Leave both empty if tailored pieces take no longer. The made-to-order text shows on a piece that is tailored and at checkout when one is in the cart, and both show when a cart holds both kinds."}
+            </p>
           </div>
         </AdvancedOnly>
       </div>

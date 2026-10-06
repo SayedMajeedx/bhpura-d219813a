@@ -1,6 +1,7 @@
 import type { SettingsScope } from "@/lib/storefront-engine";
 import { PAYMENTS_SETTINGS } from "@/features/settings/registry-payments";
 import { BANNER_SETTINGS } from "@/features/settings/registry-banners";
+import { DELIVERY_ESTIMATE_SETTINGS } from "@/features/settings/registry-delivery";
 
 export type SettingsTabId = "identity" | "storefront" | "orders" | "notifications" | "account";
 export type SettingsLevel = "basic" | "advanced";
@@ -1795,28 +1796,8 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     label: { ar: "عرض وقت التوصيل المتوقع للعميل", en: "Show Estimated Delivery Time" },
     keywords: { ar: ["وقت توصيل", "تقدير"], en: ["delivery estimate", "delivery time"] },
   },
-  {
-    key: "delivery_estimate_ar",
-    table: "business_settings",
-    tab: "orders",
-    group: "fulfillment",
-    level: "advanced",
-    owner: "settings",
-    type: "text",
-    label: { ar: "مدة التوصيل المتوقعة (عربي)", en: "Estimated Delivery Text (Arabic)" },
-    keywords: { ar: ["مدة التوصيل عربي"], en: ["delivery estimate ar"] },
-  },
-  {
-    key: "delivery_estimate_en",
-    table: "business_settings",
-    tab: "orders",
-    group: "fulfillment",
-    level: "advanced",
-    owner: "settings",
-    type: "text",
-    label: { ar: "مدة التوصيل المتوقعة (إنجليزي)", en: "Estimated Delivery Text (English)" },
-    keywords: { ar: ["مدة التوصيل إنجليزي"], en: ["delivery estimate en"] },
-  },
+  // orders.fulfillment estimates (registry-delivery.ts)
+  ...DELIVERY_ESTIMATE_SETTINGS,
   {
     key: "shipping_zones",
     table: "business_settings",

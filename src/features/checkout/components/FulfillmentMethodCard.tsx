@@ -2,13 +2,14 @@ import { formatPrice } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Truck } from "lucide-react";
+import { DeliveryEstimateLines } from "@/features/checkout/components/DeliveryEstimateLines";
 import type { Storefront } from "@/features/checkout/types";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 
 /** Delivery, pickup or digital delivery, with each option's fee. */
 export function FulfillmentMethodCard({
   currency,
-  estimatedDeliveryText,
+  estimatedDeliveryLines,
   fulfillment,
   fulfillmentOptions,
   lang,
@@ -20,7 +21,7 @@ export function FulfillmentMethodCard({
   /** The order is a booked service: where it happens, not how it ships. */
   appointment?: boolean;
   currency: Storefront["currency"];
-  estimatedDeliveryText: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryText"];
+  estimatedDeliveryLines: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryLines"];
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
   fulfillmentOptions: ReturnType<typeof useCheckoutFulfillment>["fulfillmentOptions"];
   lang: Storefront["lang"];
@@ -75,7 +76,7 @@ export function FulfillmentMethodCard({
               <strong className="text-foreground font-semibold">
                 {t("التوصيل المتوقع", "Estimated delivery")}:
               </strong>{" "}
-              {estimatedDeliveryText}
+              <DeliveryEstimateLines lines={estimatedDeliveryLines} />
             </span>
           </div>
         )}

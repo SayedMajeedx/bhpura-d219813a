@@ -2,6 +2,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag, AlertCircle, Sparkles, Truck, MessageCircle } from "lucide-react";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { deliveryEstimateLines, readyEstimate } from "@/lib/delivery-estimate";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -47,6 +48,18 @@ export function ProductPurchaseActions({
   variant: Variant | null | undefined;
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  // A piece the shopper is having made takes the made-to-order estimate; a ready size does not.
+  const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
+  const estimate = deliveryEstimateLines({
+    kinds: { ready: !tailored, tailored },
+    settings,
+    lang,
+    readyText:
+      readyEstimate(settings, lang) ||
+      (lang === "ar"
+        ? "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+        : "Estimated delivery within 24 - 48 hours"),
+  })[0].text;
   return (
     <>
       {!isCatalogMode(settings) && (variant || isTailoringActive) && (
@@ -186,11 +199,7 @@ export function ProductPurchaseActions({
       {settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
         <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
           <Truck className="h-4 w-4 text-primary shrink-0" />
-          <span className="font-medium text-foreground">
-            {lang === "ar"
-              ? settings.delivery_estimate_ar || "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-              : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
-          </span>
+          <span className="font-medium text-foreground">{estimate}</span>
         </div>
       )}
     </>
