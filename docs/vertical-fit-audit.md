@@ -32,15 +32,18 @@ A store's vertical decides its **modules** (`src/lib/verticals/registry.ts`: sto
 | Inventory menu                    | "Print All Barcodes" and "Transfer to Incubators"                                                                                         | Barcodes need stock, the transfer needs incubators                                                                                                                                                                           |
 | Merchant mobile app, dashboard    | Fulfillment queue, ready for delivery and low-stock cards for every store (a services store showed its stockless services as "low stock") | Cards by module (`dashboardCards`): a services store gets "Upcoming Bookings"; appointments are not counted as orders to prepare                                                                                             |
 | Merchant mobile app, order page   | "Dispatch Courier via WhatsApp" and the packing stages on an appointment                                                                  | "Complete Appointment" only                                                                                                                                                                                                  |
+| Import and export pages           | A stock column to map, a sample file with stock and cost columns, a stock-health filter and an inventory valuation preset for every store | Only with the stock module (`src/features/import-export/lib/store-columns.ts`); a store with no stock gets a sample file of services and a status filter                                                                     |
+| Merchant app, message presets     | "Out for delivery with our courier" and "Ready for pickup" for every store                                                                | Courier only with shipping, pickup only with goods, and an "Appointment Reminder" for a store that takes bookings (`store-copy.ts`)                                                                                          |
+| Merchant app, expenses            | "Fabric, tailoring, shipping" as the examples for every store                                                                             | Rent, salaries, marketing and equipment for a store that keeps no goods                                                                                                                                                      |
 | Change of vertical                | Silent about what stays                                                                                                                   | "What stays behind" in the dialog (module overrides, goods or services left in the catalog, open orders and bookings the new vertical has no screen for, incubators, returns, delivery settings, a goods-only advance scope) |
+
+## Audited and already neutral
+
+The web vendors and purchase-orders tab (vendors, purchase orders, payments) and the cash-flow tab (cash box, bank, reconciliation of paid orders, transfers) speak only of money and suppliers, so they fit any store. The merchant app's incubators screen is reachable only from the menu entry that already needs the incubators module.
 
 ## Still to do (found, not yet fixed)
 
-Each is a small change of the same kind; fix in its own PR with a test.
-
-- **Import and export pages**: their column lists carry stock and incubator columns for every store (the data is there either way; only a services-specific template is missing).
-- **Merchant mobile app**: the campaign message templates ("your parcel is out for delivery"), the expenses categories ("shipping") and the incubators screens' texts are not gated; the dashboard, the menu tabs and the order page are.
-- **Web accounting**: the vendors and purchase-orders tab speaks of stock; the cash-flow tab was not audited.
+Nothing is known to be open. Add what an audit finds here, each as a small change with a test.
 
 ## Adding a surface
 

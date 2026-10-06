@@ -3,6 +3,8 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invalidateCustomers } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { productImportFields, productSampleCsv } from "@/features/import-export/lib/store-columns";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,12 +57,7 @@ interface ImportRunRecord {
 }
 
 const SAMPLE_CSV_TEMPLATES: Record<ImportType, { filename: string; content: string }> = {
-  products: {
-    filename: "boutq_products_template.csv",
-    content: `name_ar,name_en,price,cost_price,sku,stock,category,description_ar,description_en,image_url
-قميص قطني مطرز,Embroidered Cotton Shirt,45.000,20.000,SKU-SHT-01,15,ملابس,قميص فاخر من القطن الطبيعي مع تطريز يدوي,Luxury natural cotton shirt with handcrafted embroidery,https://images.unsplash.com/photo-1584917865442-de89df76afd3
-فستان سهرة دانتيل,Lace Evening Dress,65.000,30.000,SKU-DRS-02,8,فساتين,فستان أنيق مناسب لجميع المناسبات,Elegant lace dress perfect for special occasions,https://images.unsplash.com/photo-1595777457583-95e059d581b8`,
-  },
+  products: { filename: "boutq_products_template.csv", content: productSampleCsv(true) },
   customers: {
     filename: "boutq_customers_template.csv",
     content: `name,phone,email,notes
@@ -76,9 +73,10 @@ ORD-1002,2026-02-16T14:30:00Z,فاطمة المحمود,97339000002,fatima@examp
   },
 };
 
-function downloadTemplate(type: ImportType) {
+function downloadTemplate(type: ImportType, stock = true) {
   const { filename, content } = SAMPLE_CSV_TEMPLATES[type];
-  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const text = type === "products" ? productSampleCsv(stock) : content;
+  const blob = new Blob(["\uFEFF" + text], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -319,6 +317,7 @@ function ProductImportSection({
   const [selectedPreset, setSelectedPreset] = useState<
     "shopify" | "salla" | "zid" | "woocommerce" | "custom"
   >("shopify");
+  const stock = useAdminStoreProfile(brandId).profile.modules.stock;
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMsg, setProgressMsg] = useState("");
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
@@ -497,7 +496,7 @@ function ProductImportSection({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => downloadTemplate("products")}
+            onClick={() => downloadTemplate("products", stock)}
             className="h-8 gap-1.5 text-xs self-start sm:self-center"
           >
             <Download className="h-3.5 w-3.5" />
@@ -589,13 +588,7 @@ function ProductImportSection({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-1">
-              {[
-                { field: "name", label: isAr ? "اسم المنتج" : "Product Name" },
-                { field: "price", label: isAr ? "سعر البيع" : "Selling Price" },
-                { field: "stock", label: isAr ? "الكمية بالمخزون" : "Stock Quantity" },
-                { field: "sku", label: isAr ? "رمز SKU" : "SKU" },
-                { field: "image", label: isAr ? "رابط الصورة" : "Image URL" },
-              ].map(({ field, label }) => (
+              {productImportFields(stock, isAr).map(({ field, label }) => (
                 <div
                   key={field}
                   className="p-2.5 rounded-lg border border-border bg-muted/30 flex items-center justify-between gap-2"
