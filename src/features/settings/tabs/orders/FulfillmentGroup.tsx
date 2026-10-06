@@ -653,7 +653,7 @@ export function FulfillmentGroup() {
                 />
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {isAr
                 ? "اتركهما فارغتين إن كانت مدة التفصيل مثل الجاهز. تظهر عبارة التفصيل في صفحة المنتج للقطع التي تُفصَّل، وفي الدفع عند وجودها في السلة، وتظهر العبارتان معاً إن اجتمع النوعان."
                 : "Leave both empty if tailored pieces take no longer. The made-to-order text shows on a piece that is tailored and at checkout when one is in the cart, and both show when a cart holds both kinds."}

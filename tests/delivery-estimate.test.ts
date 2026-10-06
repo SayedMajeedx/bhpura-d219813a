@@ -116,7 +116,7 @@ describe("what the shopper is told", () => {
     });
     expect(ar.map(estimateLineText)).toEqual([
       "القطع الجاهزة: خلال 24 ساعة",
-      "قطع التفصيل: خلال 7 - 10 أيام",
+      "القطع حسب الطلب: خلال 7 - 10 أيام",
     ]);
   });
 

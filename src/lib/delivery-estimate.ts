@@ -59,7 +59,7 @@ export function cartEstimateKinds(
 }
 
 const LABELS: Record<Lang, { ready: string; tailored: string; thenShipping: string }> = {
-  ar: { ready: "القطع الجاهزة", tailored: "قطع التفصيل", thenShipping: "ثم الشحن" },
+  ar: { ready: "القطع الجاهزة", tailored: "القطع حسب الطلب", thenShipping: "ثم الشحن" },
   en: { ready: "Ready pieces", tailored: "Made-to-order pieces", thenShipping: "then shipping" },
 };
 
