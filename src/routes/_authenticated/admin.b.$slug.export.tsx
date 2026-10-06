@@ -5,6 +5,12 @@ import { categoriesQueries } from "@/lib/data/categories";
 import { ordersQueries } from "@/lib/data/orders";
 import { customersQueries } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import {
+  productExportPresets,
+  productListFilterLabel,
+  productListFilterOptions,
+} from "@/features/import-export/lib/store-columns";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -365,12 +371,12 @@ function ProductExportSection({
   isAr: boolean;
   onExportSuccess: () => void;
 }) {
+  const stock = useAdminStoreProfile(brandId).profile.modules.stock;
   const [selectedPresetId, setSelectedPresetId] = useState("boutq_master");
   const [format, setFormat] = useState<ExportFormat>("xlsx");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [isExporting, setIsExporting] = useState(false);
-
   const preset = PRODUCT_PRESETS.find((p) => p.id === selectedPresetId) || PRODUCT_PRESETS[0];
 
   // Flatten products and variants based on filters
@@ -558,7 +564,7 @@ function ProductExportSection({
           {isAr ? "1. اختر قالب وتنسيق التصدير" : "1. Choose Export Preset & Schema"}
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {PRODUCT_PRESETS.map((p) => {
+          {productExportPresets(PRODUCT_PRESETS, stock).map((p) => {
             const isSelected = selectedPresetId === p.id;
             return (
               <Button
@@ -622,7 +628,7 @@ function ProductExportSection({
 
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">
-                  {isAr ? "حالة المخزون:" : "Stock Health:"}
+                  {productListFilterLabel(stock, isAr)}
                 </Label>
                 <select
                   value={stockFilter}
@@ -630,17 +636,11 @@ function ProductExportSection({
                   className="h-9 px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="all">{isAr ? "كل المنتجات" : "All Products"}</option>
-                  <option value="in_stock">{isAr ? "المتوفر بالمخزن فقط" : "In Stock Only"}</option>
-                  <option value="low_stock">
-                    {isAr ? "مخزون منخفض (≤ 5)" : "Low Stock (≤ 5)"}
-                  </option>
-                  <option value="out_of_stock">
-                    {isAr ? "المنتجات النافذة فقط" : "Out of Stock"}
-                  </option>
-                  <option value="active_only">
-                    {isAr ? "المنتجات النشطة فقط" : "Active Only"}
-                  </option>
-                  <option value="draft_only">{isAr ? "المسودات والمعطلة" : "Drafts Only"}</option>
+                  {productListFilterOptions(stock).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {isAr ? o.labelAr : o.labelEn}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

@@ -208,6 +208,7 @@ const en: Dict = {
   "campaigns.orderConfirmation": "Order Confirmation",
   "campaigns.deliveryDispatch": "Delivery Dispatch",
   "campaigns.readyPickup": "Ready for Pickup",
+  "campaigns.appointmentReminder": "Appointment Reminder",
   "campaigns.promotional": "Promotional Broadcast",
 
   "team.title": "Team & Roles Management",
@@ -439,6 +440,7 @@ const ar: Dict = {
   "campaigns.orderConfirmation": "تأكيد استلام الطلب",
   "campaigns.deliveryDispatch": "خروج الشحنة مع المندوب",
   "campaigns.readyPickup": "جاهز للاستلام من الفرع",
+  "campaigns.appointmentReminder": "تذكير بالموعد",
   "campaigns.promotional": "رسائل العروض الترويجية",
 
   "team.title": "إدارة الموظفين والصلاحيات",

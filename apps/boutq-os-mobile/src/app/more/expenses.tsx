@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppIcon } from "@/components/icons";
 import { Card, EmptyState, Field, MetricCard, ModalSheet, PrimaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
+import { expenseHints } from "@/lib/store-copy";
 import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -20,8 +21,9 @@ import { colors, radius } from "@/theme";
 
 export default function ExpensesScreen() {
   const insets = useSafeAreaInsets();
-  const { activeBrandId, currency } = useAuth();
+  const { activeBrandId, currency, modules } = useAuth();
   const { t, isAr } = useI18n();
+  const hints = expenseHints(modules, isAr);
 
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,11 +146,7 @@ export default function ExpensesScreen() {
           ) : (
             <EmptyState
               title={t("expenses.noExpenses")}
-              description={
-                isAr
-                  ? "سجّل تكاليف الخياطة والأقمشة والشحن لحساب صافي الأرباح بدقة."
-                  : "Track operational costs like fabric, tailoring, and delivery to calculate net profit."
-              }
+              description={hints.empty}
               actionLabel={t("expenses.addExpense")}
               onAction={() => setModalOpen(true)}
             />
@@ -184,9 +182,7 @@ export default function ExpensesScreen() {
             label={t("expenses.category")}
             value={category}
             onChangeText={setCategory}
-            placeholder={
-              isAr ? "مثال: أقمشة، خياطة، تسويق، شحن" : "e.g. Fabric, Tailoring, Marketing"
-            }
+            placeholder={hints.example}
           />
           <Field
             label={t("expenses.amount")}

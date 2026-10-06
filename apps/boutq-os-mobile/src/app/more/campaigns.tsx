@@ -6,10 +6,11 @@ import { AppIcon } from "@/components/icons";
 import { Card, Field, SecondaryButton } from "@/components/ui";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { campaignTemplateIds, type CampaignTemplateId } from "@/lib/store-copy";
 import { colors, radius } from "@/theme";
 
 type TemplateItem = {
-  id: string;
+  id: CampaignTemplateId;
   titleKey: string;
   defaultTextAr: string;
   defaultTextEn: string;
@@ -41,6 +42,14 @@ const TEMPLATES: TemplateItem[] = [
       "Hello {customer_name} 🛍️\nYour order #{order_number} is ready for pickup at our branch.\nWorking hours: 10 AM - 10 PM.\nWelcome anytime!",
   },
   {
+    id: "reminder",
+    titleKey: "campaigns.appointmentReminder",
+    defaultTextAr:
+      "مرحباً {اسم_العميل} 🗓️\nنذكّرك بموعدك لدى {اسم_المتجر}، رقم الحجز #{رقم_الطلب}.\nالمبلغ المتبقي: {المبلغ_المتبقي}.\nبانتظارك!",
+    defaultTextEn:
+      "Hello {customer_name} 🗓️\nA reminder of your appointment at {store_name}, booking #{order_number}.\nRemaining amount: {remaining_due}.\nWe look forward to seeing you!",
+  },
+  {
     id: "promo",
     titleKey: "campaigns.promotional",
     defaultTextAr:
@@ -52,7 +61,8 @@ const TEMPLATES: TemplateItem[] = [
 
 export default function CampaignsScreen() {
   const insets = useSafeAreaInsets();
-  const { activeBrand } = useAuth();
+  const { activeBrand, modules } = useAuth();
+  const shown = campaignTemplateIds(modules);
   const { t, isAr } = useI18n();
 
   const [testPhone, setTestPhone] = useState("");
@@ -125,7 +135,7 @@ export default function CampaignsScreen() {
 
       <Text style={styles.sectionHeader}>{t("campaigns.templates")}</Text>
 
-      {TEMPLATES.map((tmpl) => {
+      {TEMPLATES.filter((tmpl) => shown.includes(tmpl.id)).map((tmpl) => {
         const text = isAr ? tmpl.defaultTextAr : tmpl.defaultTextEn;
         return (
           <Card key={tmpl.id} style={styles.templateCard}>
