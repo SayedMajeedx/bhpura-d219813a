@@ -313,7 +313,6 @@ function Checkout() {
     brand,
     session,
     cart,
-    cartTotal,
     grandTotal,
     shipping,
     currency,

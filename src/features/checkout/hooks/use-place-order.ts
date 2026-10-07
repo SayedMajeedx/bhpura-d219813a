@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { awardOrderLoyaltyPoints, redeemLoyaltyPoints } from "@/lib/loyalty.functions";
+import { awardLoyaltyForOrder, redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
 import { markCartRecoveredOnOrder } from "@/lib/abandoned-carts.functions";
 import type { ShippingZone } from "@/lib/shipping";
 import type {
@@ -28,7 +28,6 @@ export function usePlaceOrder({
   brand,
   session,
   cart,
-  cartTotal,
   grandTotal,
   shipping,
   currency,
@@ -62,7 +61,6 @@ export function usePlaceOrder({
   brand: Pick<Storefront["brand"], "id" | "slug">;
   session: Storefront["session"];
   cart: Storefront["cart"];
-  cartTotal: number;
   grandTotal: number;
   shipping: number;
   currency: string;
@@ -165,30 +163,32 @@ export function usePlaceOrder({
           }
         }
 
-        // 1. Loyalty redemption
-        if (effectiveRedeemedPoints > 0 && customerId && orderId) {
+        // 1. Loyalty redemption: the server takes the points and lowers the order's own total
+        // before any payment is asked for. If it cannot, the shopper is told, because the order
+        // then costs what it did before the points.
+        if (effectiveRedeemedPoints > 0 && customerId && orderId && session) {
+          const notApplied = () =>
+            toast.warning(
+              t(
+                "تعذّر تطبيق خصم النقاط، وإجمالي الطلب بدونه.",
+                "Your points could not be applied: the order total does not include the points discount.",
+              ),
+            );
           try {
-            await redeemLoyaltyPoints({
-              brandId: brand.id,
-              customerId,
-              pointsToRedeem: effectiveRedeemedPoints,
-              orderSubtotal: cartTotal,
-              idempotencyKey: `${idempotencyKey}_redeem`,
-              orderId: String(orderId),
+            const redeemed = await redeemLoyaltyForOrder({
+              data: { orderId: String(orderId), points: effectiveRedeemedPoints },
             });
+            if (!redeemed.applied) notApplied();
           } catch (ptsErr) {
             console.warn("Points redemption error:", ptsErr);
+            notApplied();
           }
         }
 
-        // 2. Award points for order
-        if (orderId) {
+        // 2. Award points for the order (a signed-in shopper's; asking twice gives nothing more)
+        if (orderId && session) {
           try {
-            await awardOrderLoyaltyPoints({
-              brandId: brand.id,
-              orderId: String(orderId),
-              idempotencyKey: `${idempotencyKey}_award`,
-            });
+            await awardLoyaltyForOrder({ data: { orderId: String(orderId) } });
           } catch (ptsAwardErr) {
             console.warn("Points award error:", ptsAwardErr);
           }

@@ -1,4 +1,3 @@
-import { supabase } from "@/integrations/supabase/client";
 import type { BrandLoyaltyProgram } from "./loyalty.types";
 
 /**
@@ -142,57 +141,4 @@ export function calculateReturnLoyaltyAdjustment({
     pointsToRevoke,
     pointsToRefund,
   };
-}
-
-/**
- * Client RPC Wrapper: Redeem loyalty points at checkout
- */
-export async function redeemLoyaltyPoints({
-  brandId,
-  customerId,
-  pointsToRedeem,
-  orderSubtotal,
-  idempotencyKey,
-  orderId,
-}: {
-  brandId: string;
-  customerId: string;
-  pointsToRedeem: number;
-  orderSubtotal: number;
-  idempotencyKey: string;
-  orderId?: string;
-}) {
-  const { data, error } = await (supabase.rpc as any)("rpc_validate_and_redeem_loyalty_points", {
-    p_brand_id: brandId,
-    p_customer_id: customerId,
-    p_points_to_redeem: pointsToRedeem,
-    p_order_subtotal: orderSubtotal,
-    p_idempotency_key: idempotencyKey,
-    p_order_id: orderId ?? null,
-  });
-
-  if (error) throw error;
-  return data;
-}
-
-/**
- * Client RPC Wrapper: Award loyalty points for an order
- */
-export async function awardOrderLoyaltyPoints({
-  brandId,
-  orderId,
-  idempotencyKey,
-}: {
-  brandId: string;
-  orderId: string;
-  idempotencyKey: string;
-}) {
-  const { data, error } = await (supabase.rpc as any)("rpc_award_order_loyalty_points", {
-    p_brand_id: brandId,
-    p_order_id: orderId,
-    p_idempotency_key: idempotencyKey,
-  });
-
-  if (error) throw error;
-  return data;
 }
