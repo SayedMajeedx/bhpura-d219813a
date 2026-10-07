@@ -1,0 +1,695 @@
+{
+  "_comment": "Every SECURITY DEFINER function in public that a browser can call (anon or authenticated), and why. scripts/database/check-function-grants.mjs fails CI when the live database has one that is not listed here, or listed with fewer rights than it has. Adding a line is a security decision: say who may call it and what stops misuse.",
+  "functions": {
+    "activate_storefront_membership(p_brand_slug text, p_name text, p_phone text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "activate_white_label_build(p_build_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "advance_customer_is_returning_rpc(p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "advance_room(p_room_id uuid, p_expect_index integer, p_expect_phase text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "apply_brand_vertical_change(p_brand_id uuid, p_to_vertical text, p_reason text, p_installed_addons text[], p_disable_addons text[], p_remove_category_ids uuid[], p_add_categories jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "apply_inventory_movement(p_brand_id uuid, p_variant_id uuid, p_location text, p_delta integer, p_reason text, p_reference_type text, p_reference_id uuid, p_idempotency_key text, p_actor_id uuid, p_note text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "approve_benefit_payment(p_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "archive_room(p_room_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "assign_order_courier(p_order_id uuid, p_courier_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "bookings_enabled(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "can_access_brand(_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "check_registered_customer_exists(p_brand_id uuid, p_email text, p_phone text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "KNOWN RISK: tells a visitor whether an email or phone has an account with a store (enumeration); to be limited"
+    },
+    "check_user_hosting_eligibility()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "claim_daily_hosted_quiz()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "complete_first_sign_in_password_change()": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "consume_api_quota(p_action text, p_limit integer, p_window_minutes integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "courier_can_read_address(p_address_id uuid, p_customer_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "courier_can_read_customer(p_customer_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "courier_can_read_order(p_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "courier_complete_delivery(p_order_id uuid, p_collected_amount numeric, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "courier_update_delivery(p_order_id uuid, p_status text, p_notes text, p_cod_collected boolean, p_cod_amount numeric)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "create_booking_order(p_booking_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "create_customer_push_campaign(p_brand_id uuid, p_title text, p_body text, p_customer_id uuid, p_target_url text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "create_staff_booking(p_brand_id uuid, p_day date, p_start time without time zone, p_duration_minutes integer, p_customer jsonb, p_items jsonb, p_location jsonb, p_notes text, p_status text, p_source text, p_allow_overbook boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "create_tenant_with_defaults(p_slug text, p_name_en text, p_name_ar text, p_primary_color text, p_owner_id uuid, p_business_type text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "create_tenant_with_defaults_v2(p_slug text, p_name_en text, p_name_ar text, p_owner_id uuid, p_business_type text, p_store_vertical text, p_storefront_accent_color text, p_storefront_background_color text, p_brand_palette jsonb, p_storefront_font_ar text, p_storefront_font_en text, p_storefront_radius text, p_template_defaults jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "current_brand_id()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "delete_brand(p_brand_id uuid, p_hard boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "delete_brand_customers(p_brand_id uuid, p_customer_ids uuid[])": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "delete_category(p_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "delete_integration_credential(p_id uuid, p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "ensure_brand_business_settings(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "get_all_admin_quizzes()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "get_booking_availability(p_brand_id uuid, p_from date, p_to date)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_booking_discounts(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_brand_categories_with_counts(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "get_courier_delivery_message(p_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "get_instagram_connection_status(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "get_onboarding_active_price()": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_public_benefit_settings(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_public_booking_rules(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_public_branches(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_public_order_review(p_token uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_room_by_code(p_code text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "get_service_availability(p_brand_id uuid, p_product_ids uuid[], p_from date, p_to date, p_duration_minutes integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_service_free_starts(p_brand_id uuid, p_day date, p_product_ids uuid[], p_duration_minutes integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_shared_cart_by_code(_code text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_storefront_best_sellers(p_brand_slug text, p_limit integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_storefront_page_data(p_brand_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "get_storefront_trending(p_brand_slug text, p_limit integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "has_permission(p_permission text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "has_storefront_membership(p_brand_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "hold_booking(p_brand_id uuid, p_day date, p_start time without time zone, p_duration_minutes integer, p_items jsonb, p_customer jsonb, p_location jsonb, p_notes text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "is_active()": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "is_admin()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "is_brand_admin()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "is_super_admin()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "is_tenant_subdomain_available(p_subdomain text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public storefront read: no private data in the answer"
+    },
+    "join_room(p_code text, p_nickname text, p_avatar_color text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "link_storefront_customer(p_brand_slug text, p_name text, p_phone text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "list_brand_email_notifications(p_brand_id uuid, p_limit integer, p_offset integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "list_brand_order_reviews(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "list_integration_credentials(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "list_ready_order_review_requests(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "order_inventory_transition(p_order_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "place_booking_order(p_booking_id uuid, p_hold_token uuid, p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text, p_benefit_receipt_id uuid, p_shipping_fee numeric, p_shipping_zone text, p_idempotency_key text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text, p_benefit_receipt_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text, p_benefit_receipt_id uuid, p_shipping_fee numeric, p_shipping_zone text, p_idempotency_key text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order_core(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "place_storefront_order_internal_20260710(p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "reconcile_inventory(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "record_cash_account_entry(p_brand_id uuid, p_account_type text, p_direction text, p_amount numeric, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "record_incubator_payment(p_incubator_id uuid, p_amount numeric, p_payment_date date, p_payment_method text, p_reference text, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "record_incubator_sale(p_incubator_id uuid, p_variant_id uuid, p_quantity integer, p_unit_price numeric, p_sold_at timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "record_order_whatsapp_opt_in(p_order_id uuid, p_confirmation_token uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "record_storefront_product_engagement(p_brand_slug text, p_product_id uuid, p_event text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "register_customer_push_device(p_brand_slug text, p_token text, p_enabled boolean, p_order_updates boolean, p_marketing boolean, p_platform text, p_device_name text, p_token_provider text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "register_mobile_push_device(p_token text, p_enabled boolean, p_platform text, p_device_name text, p_preferences jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "reject_benefit_payment(p_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "reject_benefit_payment(p_order_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "replace_order_items(p_order_id uuid, p_items jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "reporting_brand_id(p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "request_booking(p_brand_id uuid, p_day date, p_start time without time zone, p_duration_minutes integer, p_items jsonb, p_customer jsonb, p_location jsonb, p_notes text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "request_white_label_rebuild(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "reschedule_booking(p_booking_id uuid, p_day date, p_start time without time zone, p_duration_minutes integer, p_allow_overbook boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "return_stock_from_incubator(p_incubator_id uuid, p_variant_id uuid, p_quantity integer, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "reverse_incubator_sale(p_sale_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "room_answers(p_room_id uuid, p_player_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "room_players(p_room_id uuid, p_player_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "room_questions(p_room_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "room_reveals(p_room_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "rpc_adjust_variant_stock(p_variant_id uuid, p_location text, p_mode text, p_value integer, p_reason text, p_note text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_close_storefront_cart_session(p_brand_id uuid, p_session_id text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "rpc_create_exchange_replacement_order(p_brand_id uuid, p_return_id uuid, p_replacement_items jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_create_return_request(p_brand_id uuid, p_order_id uuid, p_requested_by text, p_reason text, p_reason_details text, p_preferred_compensation text, p_items jsonb, p_pickup_address jsonb, p_images text[])": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_evaluate_brand_entitlements(_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "KNOWN RISK: any signed-in account can evaluate (and read the plan snapshot of) any brand; the function needs a can_access_brand check (planned)"
+    },
+    "rpc_generate_abandoned_cart_recovery_coupon(p_brand_id uuid, p_cart_id uuid, p_discount_type text, p_discount_value numeric, p_expiry_hours integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_inspect_and_restock_return_item(p_brand_id uuid, p_return_item_id uuid, p_condition text, p_restock_branch_id uuid, p_inspection_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_manual_adjust_loyalty_points(p_brand_id uuid, p_customer_id uuid, p_points_delta integer, p_reason_ar text, p_reason_en text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_mark_cart_recovered_on_order(p_brand_id uuid, p_order_id uuid, p_customer_id uuid, p_session_id text, p_guest_email text, p_guest_phone text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "rpc_process_return_refund(p_brand_id uuid, p_return_id uuid, p_refund_method text, p_refund_amount numeric, p_refund_reference text, p_notes text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "rpc_record_or_update_cart_activity(p_brand_id uuid, p_session_id text, p_customer_id uuid, p_guest_email text, p_guest_phone text, p_guest_name text, p_cart_items jsonb, p_subtotal numeric, p_currency text, p_marketing_consent boolean)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "rpc_reporting_customers(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_limit integer, p_offset integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_customers(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_limit integer, p_offset integer, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_expenses(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_export(p_report_type text, p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_incubator_sales(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_interval text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_order_cogs(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_include_historical boolean, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_overview(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_processed_returns(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_processing_fees(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_include_historical boolean, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_products_inventory(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_limit integer, p_offset integer, p_sort_by text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_products_inventory(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_limit integer, p_offset integer, p_sort_by text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_sales(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_interval text, p_tz text, p_include_historical boolean, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_sales(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_interval text, p_include_historical boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_sync_legacy_brands_to_subscriptions()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "KNOWN RISK: any signed-in account can run this idempotent seeding of missing subscription rows; to be limited to the server (planned)"
+    },
+    "rpc_validate_and_restore_abandoned_cart(p_brand_slug text, p_recovery_token text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "save_integration_credential(p_id uuid, p_brand_id uuid, p_provider text, p_base_url text, p_api_key text, p_webhook_secret text, p_is_active boolean, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "set_booking_discount(p_booking_id uuid, p_amount numeric, p_label text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "set_booking_status(p_booking_id uuid, p_status text, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "start_room_v2(p_room_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "storefront_user_owns_customer(p_customer_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "storefront_user_owns_order(p_order_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Signed-in shopper or session helper: checks the session inside"
+    },
+    "submit_grant_application(p_business_name text, p_instagram_handle text, p_whatsapp_number text, p_product_category text, p_readiness_status text, p_current_sales_channel text, p_biggest_challenge text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "submit_public_order_review(p_token uuid, p_rating integer, p_highlights text[], p_comment text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "sync_incubator_inventory_prices(p_incubator_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "transfer_cash_to_bank(p_brand_id uuid, p_amount numeric, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "transfer_stock_to_incubator(p_incubator_id uuid, p_variant_id uuid, p_quantity integer, p_external_code text, p_price numeric, p_commission_type text, p_commission_value numeric, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "update_incubator_inventory_item(p_inventory_id uuid, p_external_code text, p_consignment_price numeric, p_commission_type text, p_commission_value numeric)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "update_order_review_request_status(p_request_id uuid, p_status text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
+    },
+    "upsert_admin_quiz(p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "upsert_admin_quiz(p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean, p_questions jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "upsert_admin_quiz_by_id_or_title(p_quiz_id uuid, p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "use_fifty_fifty(p_player_id uuid, p_question_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
+    },
+    "validate_promo_code(p_brand_slug text, p_code text, p_subtotal numeric, p_items jsonb, p_customer_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "validate_promo_code_before_returning_customer_guard_20260825(p_brand_slug text, p_code text, p_subtotal numeric, p_items jsonb, p_customer_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    }
+  }
+}

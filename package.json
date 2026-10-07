@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "db:migrations:check": "node scripts/database/check-migration-integrity.mjs",
     "db:migrations:drift": "node scripts/database/check-migration-drift.mjs",
+    "db:function-grants:check": "node scripts/database/check-function-grants.mjs",
     "perf:lh:mobile": "npx --yes @lhci/cli autorun --config=lighthouserc.json",
     "perf:lh:desktop": "npx --yes @lhci/cli autorun --config=lighthouserc.desktop.json"
   },
