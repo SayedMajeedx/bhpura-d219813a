@@ -2,10 +2,19 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { catalogKeys } from "./keys";
+import {
+  fetchProductCosts,
+  fetchVariantCosts,
+  withProductCosts,
+  withVariantCosts,
+  type ProductCost,
+} from "./costs";
+import { ADMIN_PRODUCT_SELECT, ADMIN_VARIANT_SELECT } from "./selects";
 
 export * from "./keys";
 export * from "./mutations";
 export * from "./insights";
+export * from "./costs";
 
 /**
  * The admin catalog: a brand's products, variants, packaging BOM and
@@ -45,13 +54,19 @@ export type PackagingMaterial = Tables<"packaging_materials">;
 
 /** The brand's products, newest first. */
 export async function fetchAdminProducts(brandId: string): Promise<AdminProduct[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select("*")
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
+  const [{ data, error }, costs] = await Promise.all([
+    supabase
+      .from("products")
+      .select(ADMIN_PRODUCT_SELECT)
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false }),
+    fetchProductCosts(brandId),
+  ]);
   if (error) throw error;
-  return (data ?? []).map((p) => ({
+  // The column list is built from names, so the client cannot infer the row: it is the table's
+  // row without its cost columns (merged back in below).
+  const rows = (data ?? []) as unknown as Array<Omit<Tables<"products">, keyof ProductCost>>;
+  return withProductCosts(rows, costs).map((p) => ({
     ...p,
     media: (Array.isArray(p.media) ? p.media : []) as unknown as ProductMediaItem[],
     custom_fields: (Array.isArray(p.custom_fields)
@@ -62,13 +77,19 @@ export async function fetchAdminProducts(brandId: string): Promise<AdminProduct[
 
 /** The brand's variants, oldest first (the order they were added in). */
 export async function fetchAdminVariants(brandId: string): Promise<AdminVariant[]> {
-  const { data, error } = await supabase
-    .from("product_variants")
-    .select("*")
-    .eq("brand_id", brandId)
-    .order("created_at");
+  const [{ data, error }, costs] = await Promise.all([
+    supabase
+      .from("product_variants")
+      .select(ADMIN_VARIANT_SELECT)
+      .eq("brand_id", brandId)
+      .order("created_at"),
+    fetchVariantCosts(brandId),
+  ]);
   if (error) throw error;
-  return data ?? [];
+  return withVariantCosts(
+    (data ?? []) as unknown as Array<Omit<AdminVariant, "cost_price">>,
+    costs,
+  );
 }
 
 /**
@@ -166,7 +187,7 @@ export async function fetchProductExportRows(brandId: string) {
       category, image_url, is_active, created_at,
       product_variants (
         id, size, size_unit, color, fabric, sku, barcode,
-        cost_price, selling_price, stock_main, stock_incubator
+        selling_price, stock_main, stock_incubator
       )
     `,
     )
@@ -176,7 +197,18 @@ export async function fetchProductExportRows(brandId: string) {
     console.error("Failed to query products for export:", error);
     return [];
   }
-  return data ?? [];
+  // The cost column is read from the staff-only table; a failed read exports nothing.
+  let costs: Map<string, number>;
+  try {
+    costs = await fetchVariantCosts(brandId);
+  } catch (cause) {
+    console.error("Failed to query variant costs for export:", cause);
+    return [];
+  }
+  return (data ?? []).map((product) => ({
+    ...product,
+    product_variants: withVariantCosts(product.product_variants ?? [], costs),
+  }));
 }
 
 /** The brand's paid add-ons (customization options), by name. */

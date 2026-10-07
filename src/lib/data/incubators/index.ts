@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { fetchVariantCosts, withVariantCosts } from "@/lib/data/catalog/costs";
 
 /**
  * Incubators (consignment partners): the partners, the stock held at each,
@@ -105,12 +106,12 @@ export async function fetchBatchTransferVariants(brandId: string, productIds: re
   const { data, error } = await supabase
     .from("product_variants")
     .select(
-      "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, cost_price, incubator_inventory(quantity, incubator_id)",
+      "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, incubator_inventory(quantity, incubator_id)",
     )
     .eq("brand_id", brandId)
     .in("product_id", [...productIds]);
   if (error) throw error;
-  return data ?? [];
+  return withVariantCosts(data ?? [], await fetchVariantCosts(brandId));
 }
 
 export const incubatorsQueries = {
