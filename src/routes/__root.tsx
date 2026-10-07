@@ -16,6 +16,7 @@ import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 import { ProfileProvider } from "@/lib/profile-context";
 import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 import { Button } from "@/components/ui/button";
+import { jsonForScript } from "@/lib/seo/json-for-script";
 
 function NotFoundComponent() {
   return (
@@ -122,7 +123,7 @@ function RootShell({ children }: { children: ReactNode }) {
         {imageKitEndpoint && (
           <script
             dangerouslySetInnerHTML={{
-              __html: `window.__PUBLIC_ENV__ = { VITE_IMAGEKIT_URL_ENDPOINT: ${JSON.stringify(imageKitEndpoint)} };`,
+              __html: `window.__PUBLIC_ENV__ = { VITE_IMAGEKIT_URL_ENDPOINT: ${jsonForScript(imageKitEndpoint)} };`,
             }}
           />
         )}
