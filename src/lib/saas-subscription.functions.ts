@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireVerifiedOwner } from "@/lib/owner-email";
 
 const imageTypes: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -90,6 +91,7 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+    await requireVerifiedOwner(context);
 
     const { data: brand } = await context.supabase
       .from("brands")
@@ -124,6 +126,7 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+    await requireVerifiedOwner(context);
 
     const { data: brand } = await context.supabase
       .from("brands")

@@ -35,6 +35,8 @@ export type Profile = {
   brand?: BrandSummary | null;
   permissions?: string[] | null;
   must_change_password?: boolean | null;
+  /** Null until the owner proves they own the email (the instant trial only); see owner-email.ts. */
+  email_verified_at?: string | null;
   created_at: string;
   updated_at: string;
 };

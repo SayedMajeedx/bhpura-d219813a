@@ -14,6 +14,7 @@ import { getAdminNavItems } from "@/config/admin-navigation";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { OsAppDockRail } from "@/components/os/os-app-dock-rail";
 import { OsSidebar } from "@/components/os/os-sidebar";
+import { OwnerEmailVerificationBanner } from "@/components/onboarding/OwnerEmailVerificationBanner";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsWorkspaceTabs } from "@/components/os/os-workspace-tabs";
@@ -471,6 +472,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           </Button>
         </div>
       )}
+
+      <OwnerEmailVerificationBanner />
 
       {/* Main Boutq OS Workspace Frame */}
       <div className="flex-1 flex overflow-hidden">
