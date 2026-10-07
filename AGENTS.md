@@ -57,7 +57,7 @@ node scripts/maintainability-metrics.mjs # Architecture metrics & debt ratchet c
 | `src/addons/`           | Modular industry add-ons          | E.g. `size-guides`, `fit-passport`, `abaya-pack`. Must NOT be imported by core. |
 | `supabase/functions/`   | Deno Edge Functions               | `user-management`, `send-order-email`, `brand-ai-copilot`.                      |
 | `supabase/migrations/`  | Database SQL migrations           | Sequential, additive-only migration scripts.                                    |
-| `apps/boutq-os-mobile/` | React Native merchant app         | Expo mobile client for iOS and Android.                                         |
+| `apps/boutq-os-mobile/` | React Native merchant app         | Expo shell: the web admin in a WebView plus native tools (scanner, push, lock). |
 | `tests/`                | Vitest suites                     | Unit, regression, behavior, and architectural ratchet guardrails.               |
 | `docs/`                 | Engineering documentation         | Active architecture docs, runbooks, and roadmap. Index in `docs/README.md`.     |
 | `.agents/`              | Agent skills & guardrails         | Subagent definitions, domain skills, and design system rules.                   |

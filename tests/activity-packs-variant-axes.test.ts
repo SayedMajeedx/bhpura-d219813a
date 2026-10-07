@@ -4,7 +4,6 @@ import {
   variantAxisDefaultsFrom,
   resolveVariantAxis,
 } from "../src/lib/addons/addon-registry";
-import { resolveMobileVocabulary } from "../apps/boutq-os-mobile/src/lib/store-vocabulary";
 
 describe("Activity Packs & Variant Axes Resolution", () => {
   it("all 7 activity packs and extension manifests validate cleanly in registry", () => {
@@ -143,37 +142,6 @@ describe("Activity Packs & Variant Axes Resolution", () => {
       expect(resolved.visible).toBe(true);
       expect(resolved.isCustom).toBe(false);
       expect(resolved.label).toBe("المقاس / خيار");
-    });
-  });
-
-  describe("Mobile Vocabulary Resolution", () => {
-    it("provides vanilla generic vocabulary by default", () => {
-      const vocab = resolveMobileVocabulary([], "general");
-      expect(vocab.workshop.ar).toBe("الورشة");
-      expect(vocab.workshop.en).toBe("Workshop");
-      expect(vocab.sent_to_workshop.ar).toBe("تم الإرسال للورشة");
-      expect(vocab.sent_to_workshop.en).toBe("Sent to Workshop");
-    });
-
-    it("resolves tailor vocabulary when fashion-core or abaya-pack is installed or vertical is fashion", () => {
-      const vocabWithAddon = resolveMobileVocabulary(["fashion-core"]);
-      expect(vocabWithAddon.workshop.ar).toBe("الخياط");
-      expect(vocabWithAddon.workshop.en).toBe("Tailor");
-      expect(vocabWithAddon.sent_to_workshop.ar).toBe("تم الإرسال للخياط");
-      expect(vocabWithAddon.sent_to_workshop.en).toBe("Sent to Tailor");
-
-      const vocabWithVertical = resolveMobileVocabulary([], "abayas");
-      expect(vocabWithVertical.workshop.ar).toBe("الخياط");
-      expect(vocabWithVertical.workshop.en).toBe("Tailor");
-    });
-
-    it("applies brand custom vocabulary overrides over defaults", () => {
-      const vocab = resolveMobileVocabulary([], "general", {
-        workshop: { ar: "المعمل", en: "Lab" },
-      });
-      expect(vocab.workshop.ar).toBe("المعمل");
-      expect(vocab.workshop.en).toBe("Lab");
-      expect(vocab.sent_to_workshop.ar).toBe("تم الإرسال للورشة");
     });
   });
 });
