@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import React from "react";
@@ -70,22 +68,23 @@ describe("the storefront's structured data", () => {
 });
 
 describe("no script is written from plain JSON.stringify", () => {
-  const walk = (dir: string): string[] =>
-    readdirSync(dir).flatMap((name) => {
-      const path = join(dir, name);
-      return statSync(path).isDirectory() ? walk(path) : /\.(ts|tsx)$/.test(name) ? [path] : [];
-    });
+  // Every source file's text, read by the bundler (not the file system).
+  const sources = import.meta.glob("../src/**/*.{ts,tsx}", {
+    query: "?raw",
+    import: "default",
+    eager: true,
+  }) as Record<string, string>;
 
   it("keeps every script body behind jsonForScript", () => {
-    const offenders = walk("src")
-      .filter((file) => !file.replaceAll("\\", "/").endsWith("lib/seo/json-for-script.ts"))
-      .filter((file) => {
-        const text = readFileSync(file, "utf8");
-        return (
+    const offenders = Object.entries(sources)
+      .filter(([file]) => !file.endsWith("lib/seo/json-for-script.ts"))
+      .filter(
+        ([, text]) =>
           /__html:\s*JSON\.stringify\(/.test(text) ||
-          /type:\s*"application\/ld\+json",\s*children:\s*JSON\.stringify\(/.test(text)
-        );
-      });
+          /type:\s*"application\/ld\+json",\s*children:\s*JSON\.stringify\(/.test(text),
+      )
+      .map(([file]) => file);
+    expect(Object.keys(sources).length).toBeGreaterThan(500);
     expect(offenders).toEqual([]);
   });
 });
