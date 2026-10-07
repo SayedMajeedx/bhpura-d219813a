@@ -5665,6 +5665,48 @@ export type Database = {
           },
         ];
       };
+      product_costs: {
+        Row: {
+          brand_id: string;
+          cost_price: number;
+          direct_packaging_cost: number;
+          product_id: string;
+          updated_at: string;
+          vendor_id: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          cost_price?: number;
+          direct_packaging_cost?: number;
+          product_id: string;
+          updated_at?: string;
+          vendor_id?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          cost_price?: number;
+          direct_packaging_cost?: number;
+          product_id?: string;
+          updated_at?: string;
+          vendor_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_costs_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_costs_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: true;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       product_engagement_daily: {
         Row: {
           brand_id: string;
@@ -7829,6 +7871,42 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      variant_costs: {
+        Row: {
+          brand_id: string;
+          cost_price: number;
+          updated_at: string;
+          variant_id: string;
+        };
+        Insert: {
+          brand_id: string;
+          cost_price?: number;
+          updated_at?: string;
+          variant_id: string;
+        };
+        Update: {
+          brand_id?: string;
+          cost_price?: number;
+          updated_at?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "variant_costs_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "variant_costs_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: true;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       vendors: {
         Row: {
