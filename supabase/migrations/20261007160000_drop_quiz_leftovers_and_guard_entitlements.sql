@@ -40,6 +40,10 @@ DROP FUNCTION IF EXISTS public.upsert_admin_quiz(text, text, text, text, text, b
 DROP FUNCTION IF EXISTS public.upsert_admin_quiz_by_id_or_title(uuid, text, text, text, text, text, boolean);
 DROP FUNCTION IF EXISTS public.use_fifty_fifty(uuid, uuid);
 
+-- The public submit_answer is a thin wrapper around a function in the `private` schema, which
+-- takes the `answers` row type and so blocks dropping that table.
+DROP FUNCTION IF EXISTS private.submit_answer(uuid, uuid, integer, text);
+
 DROP TABLE IF EXISTS public.user_answers;
 DROP TABLE IF EXISTS public.answers;
 DROP TABLE IF EXISTS public.game_results;

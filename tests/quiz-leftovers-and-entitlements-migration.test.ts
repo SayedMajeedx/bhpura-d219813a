@@ -45,6 +45,8 @@ async function database() {
       LANGUAGE sql AS $$ SELECT jsonb_build_object('brand', _brand_id) $$;
     CREATE FUNCTION public.rpc_sync_legacy_brands_to_subscriptions() RETURNS integer
       LANGUAGE sql AS $$ SELECT 0 $$;
+    -- The live database's public.submit_answer wraps this one, which takes the answers row type.
+    CREATE SCHEMA private;
     CREATE SCHEMA storage;
     CREATE TABLE storage.objects (id int, bucket_id text);
     ${["public_read", "owner_insert", "owner_update", "owner_delete"]
@@ -55,6 +57,12 @@ async function database() {
       ('00000000-0000-4000-8000-0000000000a1', '${BRAND_A}');
   `);
   for (const t of QUIZ_TABLES) await db.exec(`CREATE TABLE public.${t} (id int);`);
+  // Returning the table's row type makes the function depend on it, as it does live: without the
+  // migration dropping it first, DROP TABLE answers fails.
+  await db.exec(`
+    CREATE FUNCTION private.submit_answer(p_player_id uuid, p_question_id uuid, p_choice integer, p_powerup text)
+      RETURNS public.answers LANGUAGE sql AS $$ SELECT NULL::public.answers $$;
+  `);
   for (const m of DROPS) {
     const args = m[2]
       .split(",")
@@ -100,6 +108,10 @@ describe("the quiz game leftovers", () => {
       )
     ).rows.map((r) => r.proname);
     for (const m of DROPS) expect(fns).not.toContain(m[1]);
+    const hidden = await db.query(
+      `SELECT 1 FROM pg_proc WHERE pronamespace = 'private'::regnamespace`,
+    );
+    expect(hidden.rows).toEqual([]);
     const policies = (
       await db.query<{ policyname: string }>(`SELECT policyname FROM pg_policies`)
     ).rows.map((r) => r.policyname);
