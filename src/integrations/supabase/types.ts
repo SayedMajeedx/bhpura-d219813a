@@ -5338,6 +5338,8 @@ export type Database = {
           inventory_revision: number;
           inventory_state: string;
           invoice_number: number;
+          loyalty_discount: number;
+          loyalty_points_redeemed: number;
           notes: string | null;
           order_date: string;
           payment_account: string | null;
@@ -5414,6 +5416,8 @@ export type Database = {
           inventory_revision?: number;
           inventory_state?: string;
           invoice_number: number;
+          loyalty_discount?: number;
+          loyalty_points_redeemed?: number;
           notes?: string | null;
           order_date?: string;
           payment_account?: string | null;
@@ -5490,6 +5494,8 @@ export type Database = {
           inventory_revision?: number;
           inventory_state?: string;
           invoice_number?: number;
+          loyalty_discount?: number;
+          loyalty_points_redeemed?: number;
           notes?: string | null;
           order_date?: string;
           payment_account?: string | null;
@@ -10298,6 +10304,10 @@ export type Database = {
       record_storefront_product_engagement: {
         Args: { p_brand_slug: string; p_event?: string; p_product_id: string };
         Returns: undefined;
+      };
+      redeem_loyalty_points_for_order: {
+        Args: { p_order_id: string; p_points: number };
+        Returns: Json;
       };
       register_customer_push_device: {
         Args: {
