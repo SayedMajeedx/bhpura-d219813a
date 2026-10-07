@@ -241,6 +241,7 @@ describe("onboarding SaaS catalog contract", () => {
       contactNumber: "39001122",
       email: "sara@example.com",
       password: "secret-123",
+      turnstileToken: "token",
     };
     const validate = (
       functions.registerInstantTrial as unknown as {

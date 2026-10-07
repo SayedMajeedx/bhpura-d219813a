@@ -634,15 +634,18 @@ const RegisterInstantTrialInput = z.object({
   ownerName: z.string().min(2),
   contactNumber: z.string().min(6),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8),
   businessType: z.string().optional(),
   storeVertical: z.enum(STORE_VERTICALS),
   selectedAddonIds: z.array(z.string()).optional(),
+  turnstileToken: z.string().min(1).max(2048),
 });
 
 export const registerInstantTrial = createServerFn({ method: "POST" })
   .validator((raw: unknown) => RegisterInstantTrialInput.parse(raw))
   .handler(async ({ data }) => {
+    // The one public call that makes a user and a brand: a person, not a script, before anything is created.
+    await requireValidTurnstile(data.turnstileToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const normalizedEmail = data.email.trim().toLowerCase();
     const normalizedSlug = data.slug.trim().toLowerCase();

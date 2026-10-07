@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,6 @@ import {
   Loader2,
   AlertCircle,
   Eye,
-  EyeOff,
   Smartphone,
   Lock,
   Puzzle,
@@ -30,6 +29,8 @@ import {
 } from "@/lib/onboarding.functions";
 import { StoreVertical, verticalToLegacyBusinessType } from "@/lib/store-profile";
 import { starterPackFor, getAddon } from "@/lib/addons/addon-registry";
+import { PasswordField } from "@/components/onboarding/PasswordField";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { isBrandSlugTaken } from "@/lib/data/brands";
 import { pickerVerticals } from "@/lib/verticals/registry";
 import { VerticalChoice } from "@/components/verticals/VerticalChoice";
@@ -123,7 +124,10 @@ function OnboardPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  // The "are you a person" check: a token is good for one try, so a failed try asks again.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileRound, setTurnstileRound] = useState(0);
+  const onTurnstile = useCallback((token: string | null) => setTurnstileToken(token), []);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [existingAccountWarning, setExistingAccountWarning] = useState<string | null>(null);
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -242,9 +246,18 @@ function OnboardPage() {
       return;
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       toast.error(
-        isAr ? "كلمة المرور يجب أن لا تقل عن 6 خانات." : "Password must be at least 6 characters.",
+        isAr ? "كلمة المرور يجب أن لا تقل عن 8 خانات." : "Password must be at least 8 characters.",
+      );
+      return;
+    }
+
+    if (!turnstileToken) {
+      toast.error(
+        isAr
+          ? "أكمل التحقق أدناه أنك لست روبوتاً ثم حاول مرة ثانية."
+          : "Complete the check below to show you are not a robot, then try again.",
       );
       return;
     }
@@ -284,11 +297,13 @@ function OnboardPage() {
           storeVertical: storeVertical!,
           businessType: verticalToLegacyBusinessType(storeVertical!),
           selectedAddonIds,
+          turnstileToken,
         },
       });
 
       // Handle re-login with existing email / expired trial
       if (res.alreadyRegistered) {
+        setTurnstileRound((round) => round + 1);
         setIsSubmitting(false);
         toast.dismiss(toastId);
         setExistingAccountWarning(res.message);
@@ -331,11 +346,16 @@ function OnboardPage() {
       });
     } catch (err: any) {
       console.error(err);
+      setTurnstileRound((round) => round + 1);
       const msg = err.message?.includes("SLUG_ALREADY_TAKEN")
         ? isAr
           ? "رابط المتجر محجوز مسبقاً، يرجى اختيار رابط آخر."
           : "Subdomain already taken."
-        : err.message || (isAr ? "حدث خطأ أثناء إنشاء المتجر." : "Failed to create store.");
+        : err.message?.includes("TURNSTILE")
+          ? isAr
+            ? "تعذّر التحقق من أنك لست روبوتاً. أعد المحاولة."
+            : "We could not confirm you are not a robot. Please try again."
+          : err.message || (isAr ? "حدث خطأ أثناء إنشاء المتجر." : "Failed to create store.");
       toast.error(msg, { id: toastId });
       setIsSubmitting(false);
     }
@@ -752,56 +772,20 @@ function OnboardPage() {
                       />
                     </div>
 
-                    {/* Password */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="password" className="text-xs font-semibold">
-                        {isAr ? "كلمة المرور" : "Password"} *
-                      </Label>
-                      <div className="relative" dir={isAr ? "rtl" : "ltr"}>
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          dir={isAr ? "rtl" : "ltr"}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className={cn(
-                            "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground placeholder:font-normal bg-background font-mono",
-                            isAr ? "text-end" : "text-start",
-                          )}
-                          autoComplete="new-password"
-                          required
-                          minLength={6}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 z-10 transition-colors"
-                          tabIndex={-1}
-                          aria-label={
-                            showPassword
-                              ? isAr
-                                ? "إخفاء كلمة المرور"
-                                : "Hide password"
-                              : isAr
-                                ? "إظهار كلمة المرور"
-                                : "Show password"
-                          }
-                        >
-                          {showPassword ? (
-                            <EyeOff className="size-4" />
-                          ) : (
-                            <Eye className="size-4" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
+                    <PasswordField value={password} onChange={setPassword} isAr={isAr} />
                   </div>
 
                   <div className="pt-2">
+                    <TurnstileWidget
+                      onVerify={onTurnstile}
+                      language={isAr ? "ar" : "en"}
+                      resetKey={turnstileRound}
+                    />
                     <Button
                       type="submit"
-                      disabled={!storeVertical || isSubmitting || slugStatus === "taken"}
+                      disabled={
+                        !storeVertical || isSubmitting || slugStatus === "taken" || !turnstileToken
+                      }
                       className="w-full font-bold text-xs min-h-[44px] shadow-sm gap-2"
                     >
                       {isSubmitting ? (
