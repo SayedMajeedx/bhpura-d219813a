@@ -181,9 +181,8 @@ optional`, flat price or `tiers {step, prices[]}`, `max_quantity`).
   `store_gallery_items`, `store_faq_items` (tables exist, **no screens yet**).
 - Modules: `business_settings.store_modules` over the vertical registry
   defaults (`src/lib/verticals/registry.ts`); services = bookings on, stock /
-  incubators / packaging / shipping / returns off. The merchant app keeps a
-  copy of the rules (`apps/boutq-os-mobile/src/lib/store-modules.ts`; a test
-  keeps it equal to the registry).
+  incubators / packaging / shipping / returns off. (The merchant app once kept a
+  copy of the rules; it is now a shell around the web admin, so there is none.)
 
 ### 4.2 The flows
 

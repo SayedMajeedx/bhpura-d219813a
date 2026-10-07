@@ -5,11 +5,6 @@ import { primaryKpisFor } from "../src/features/dashboard/lib/dashboard-kpis";
 import { InventoryImportMenu } from "../src/features/inventory/components/InventoryImportMenu";
 import { IntegrationsScopeSwitcher } from "../src/components/integrations/IntegrationsScopeSwitcher";
 import { IntegrationsCommandHeader } from "../src/components/integrations/IntegrationsCommandHeader";
-import {
-  PENDING_ORDER_STATUSES,
-  dashboardCards,
-} from "../apps/boutq-os-mobile/src/lib/dashboard-cards";
-import { resolveMobileModules } from "../apps/boutq-os-mobile/src/lib/store-modules";
 
 // The rest of the services-store audit (docs/vertical-fit-audit.md): what a store that does not
 // ship, keep stock or place goods with other shops is not shown, and what already holds data is.
@@ -145,37 +140,5 @@ describe("the integrations page", () => {
       );
     expect(header(true).container.textContent).toContain("shipping couriers (Aramex)");
     expect(header(false).container.textContent).not.toMatch(/courier|Aramex/i);
-  });
-});
-
-describe("the merchant app's dashboard cards", () => {
-  const cardsFor = (vertical: string, overrides?: unknown) =>
-    dashboardCards(resolveMobileModules(vertical, overrides));
-
-  it("give a shop its orders to prepare, parcels ready and stock alerts", () => {
-    expect(cardsFor("fashion")).toEqual(["pending", "ready", "lowStock"]);
-  });
-
-  it("give a services store its bookings, and no parcels or stock", () => {
-    expect(cardsFor("services")).toEqual(["upcomingBookings"]);
-  });
-
-  it("follow a module the store turned on, not the vertical's name", () => {
-    expect(cardsFor("services", { stock: true })).toEqual([
-      "pending",
-      "lowStock",
-      "upcomingBookings",
-    ]);
-    expect(cardsFor("fashion", { shipping: false })).toEqual(["pending", "lowStock"]);
-  });
-
-  it("never count an appointment among the orders still to be done", () => {
-    expect([...PENDING_ORDER_STATUSES]).toEqual([
-      "draft",
-      "confirmed",
-      "processing",
-      "in_tailoring",
-      "pending",
-    ]);
   });
 });

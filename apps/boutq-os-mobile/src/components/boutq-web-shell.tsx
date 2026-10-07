@@ -3,6 +3,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   BackHandler,
   Linking,
   Platform,
@@ -20,7 +21,7 @@ import type {
   WebViewOpenWindowEvent,
 } from "react-native-webview/lib/WebViewTypes";
 import { colors } from "../theme";
-import { authenticateAppIfEnabled, NativeTools } from "./native-tools";
+import { authenticateAppIfEnabled, isAppLockEnabled, NativeTools } from "./native-tools";
 import type { PushPreferences } from "../lib/notifications";
 import * as Notifications from "expo-notifications";
 
@@ -54,6 +55,10 @@ async function openOutsideApp(rawUrl: string) {
 }
 
 type FailureState = { title: string; message: string };
+type PushRegistration = { token: string; enabled: boolean; preferences: PushPreferences };
+
+/** How long the app can sit in the background before the biometric lock asks again. */
+const RELOCK_AFTER_MS = 2 * 60 * 1000;
 
 export function BoutqWebShell() {
   const webViewRef = useRef<WebView>(null);
@@ -67,12 +72,36 @@ export function BoutqWebShell() {
   const [unlocked, setUnlocked] = useState<boolean | null>(null);
   const [nativeToolsOpen, setNativeToolsOpen] = useState(false);
   const [nativeScannerOpen, setNativeScannerOpen] = useState(false);
+  const pushRegistration = useRef<PushRegistration | null>(null);
 
   const unlock = useCallback(() => {
     void authenticateAppIfEnabled().then(setUnlocked);
   }, []);
 
   useEffect(() => unlock(), [unlock]);
+
+  // Leaving the app for a while locks it again (when the owner turned the lock on): a phone picked
+  // up after lunch should not open straight onto the store's orders. A short trip to another app
+  // (a message, the camera) does not ask again.
+  useEffect(() => {
+    let leftAt: number | null = null;
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "background") {
+        leftAt = Date.now();
+      } else if (state === "active" && leftAt !== null) {
+        const away = Date.now() - leftAt;
+        leftAt = null;
+        if (away >= RELOCK_AFTER_MS) {
+          void isAppLockEnabled().then((enabled) => {
+            if (!enabled) return;
+            setUnlocked(null);
+            unlock();
+          });
+        }
+      }
+    });
+    return () => subscription.remove();
+  }, [unlock]);
 
   useEffect(() => {
     const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
@@ -175,15 +204,28 @@ export function BoutqWebShell() {
     `);
   }, []);
 
+  const sendPushRegistration = useCallback((registration: PushRegistration) => {
+    const detail = JSON.stringify({ ...registration, platform: Platform.OS });
+    webViewRef.current?.injectJavaScript(
+      `window.dispatchEvent(new CustomEvent('boutq:native-push',{detail:${detail}}));true;`,
+    );
+  }, []);
+
   const registerPushDevice = useCallback(
     (token: string, enabled: boolean, preferences: PushPreferences) => {
-      const detail = JSON.stringify({ token, enabled, preferences, platform: Platform.OS });
-      webViewRef.current?.injectJavaScript(
-        `window.dispatchEvent(new CustomEvent('boutq:native-push',{detail:${detail}}));true;`,
-      );
+      const registration = { token, enabled, preferences };
+      pushRegistration.current = registration;
+      sendPushRegistration(registration);
     },
-    [],
+    [sendPushRegistration],
   );
+
+  // The page only accepts a device once someone is signed in, so a registration sent while the
+  // sign-in page was showing (or before the page had loaded) is lost. Send it again when a page
+  // finishes loading and when the address changes (a sign-in ends in a new address).
+  useEffect(() => {
+    if (pushRegistration.current) sendPushRegistration(pushRegistration.current);
+  }, [currentUrl, sendPushRegistration]);
 
   if (unlocked !== true) {
     return (
@@ -253,7 +295,10 @@ export function BoutqWebShell() {
           setProgress(0.05);
         }}
         onLoadProgress={({ nativeEvent }) => setProgress(nativeEvent.progress)}
-        onLoadEnd={() => setProgress(1)}
+        onLoadEnd={() => {
+          setProgress(1);
+          if (pushRegistration.current) sendPushRegistration(pushRegistration.current);
+        }}
         onError={handleError}
         onHttpError={({ nativeEvent }) => {
           if (nativeEvent.statusCode >= 500)

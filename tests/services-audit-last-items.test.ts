@@ -5,11 +5,8 @@ import {
   productListFilterOptions,
   productSampleCsv,
 } from "../src/features/import-export/lib/store-columns";
-import { campaignTemplateIds, expenseHints } from "../apps/boutq-os-mobile/src/lib/store-copy";
-import { resolveMobileModules } from "../apps/boutq-os-mobile/src/lib/store-modules";
 
-// The last of the services-store audit (docs/vertical-fit-audit.md): import and export pages, and the
-// merchant app's message presets and expense hints follow the store's modules.
+// The last of the services-store audit (docs/vertical-fit-audit.md): import and export pages.
 
 describe("the import and export pages", () => {
   it("map a stock column and offer stock filters and the valuation only where there is stock", () => {
@@ -51,38 +48,5 @@ describe("the import and export pages", () => {
     for (const line of productSampleCsv(false).split("\n").slice(1)) {
       expect(line.replace(/"[^"]*"/g, "x").split(",")).toHaveLength(header(false).length);
     }
-  });
-});
-
-describe("the merchant app's message presets and expense hints", () => {
-  const modulesOf = (vertical: string, overrides?: unknown) =>
-    resolveMobileModules(vertical, overrides);
-
-  it("keep the courier message and the pickup message for a shop", () => {
-    expect(campaignTemplateIds(modulesOf("fashion"))).toEqual([
-      "confirm",
-      "dispatch",
-      "pickup",
-      "promo",
-    ]);
-  });
-
-  it("give a services store a reminder instead of a courier or a parcel pickup", () => {
-    expect(campaignTemplateIds(modulesOf("services"))).toEqual(["confirm", "reminder", "promo"]);
-  });
-
-  it("follow a module the store turned on, not the vertical's name", () => {
-    expect(campaignTemplateIds(modulesOf("services", { shipping: true }))).toContain("dispatch");
-    expect(campaignTemplateIds(modulesOf("fashion", { shipping: false, stock: false }))).toEqual([
-      "confirm",
-      "promo",
-    ]);
-  });
-
-  it("stop suggesting fabric and shipping to a store that keeps no goods", () => {
-    const services = expenseHints(modulesOf("services"), false);
-    expect(services.example).not.toMatch(/Fabric|Tailoring|shipping/i);
-    expect(services.empty).not.toMatch(/fabric|delivery/i);
-    expect(expenseHints(modulesOf("fashion"), true).example).toContain("شحن");
   });
 });

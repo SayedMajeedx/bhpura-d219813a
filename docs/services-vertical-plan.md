@@ -125,10 +125,9 @@ send-order-email`.
   service" (`ServiceBookingFields`); pure rules in
   `src/lib/bookings/service-capacity.ts`. Tested in a real Postgres
   (`tests/booking-engine-capacity.test.ts`, PGlite).
-- **S6: mobile app** (done). The merchant app reads the store's modules
-  (`apps/boutq-os-mobile/src/lib/store-modules.ts`, kept in step with the web
-  registry by `tests/mobile-store-modules.test.ts`; `bookings` comes from the
-  database's `bookings_enabled`). A store that takes bookings has a Bookings tab
+- **S6: mobile app** (done, later replaced). The merchant app read the store's modules
+  with its own native screens; those were removed when the app became a shell around the web
+  admin, which follows the registry directly. A store that takes bookings has a Bookings tab
   (requests to confirm or decline, upcoming bookings) and its Items tab is
   "Services": no stock filters, counts or steppers, each variant showing its
   length. The customers' tab moves into More to make room, and More hides

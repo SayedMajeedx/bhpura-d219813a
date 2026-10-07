@@ -1,6 +1,5 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as LocalAuthentication from "expo-local-authentication";
-import * as Clipboard from "expo-clipboard";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -31,9 +30,12 @@ const BIOMETRIC_KEY = "boutq.biometric.enabled";
 const FLOATING_HIDDEN_KEY = "boutq.floating_button.hidden";
 const BUTTON_SIZE = 46;
 
+export async function isAppLockEnabled() {
+  return (await SecureStore.getItemAsync(BIOMETRIC_KEY)) === "true";
+}
+
 export async function authenticateAppIfEnabled() {
-  const enabled = (await SecureStore.getItemAsync(BIOMETRIC_KEY)) === "true";
-  if (!enabled) return true;
+  if (!(await isAppLockEnabled())) return true;
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: "الدخول إلى Boutq OS",
     cancelLabel: "إلغاء",
@@ -216,8 +218,7 @@ export function NativeTools({
         setPushToken(token);
         setNotificationsEnabled(true);
         onPushRegistration(token, true, pushPreferences);
-        await Clipboard.setStringAsync(token);
-        Alert.alert("تم تشغيل الإشعارات", "تم تسجيل هذا الجهاز ونسخ رمز الاختبار تلقائياً.");
+        Alert.alert("تم تشغيل الإشعارات", "تم تسجيل هذا الجهاز لاستقبال التنبيهات.");
       } else {
         await disablePushNotifications();
         setNotificationsEnabled(false);
