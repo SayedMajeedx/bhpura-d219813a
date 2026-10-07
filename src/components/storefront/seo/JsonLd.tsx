@@ -1,4 +1,5 @@
 import React from "react";
+import { jsonForScript } from "@/lib/seo/json-for-script";
 
 export interface JsonLdProps {
   schema: Record<string, any> | Array<Record<string, any>>;
@@ -9,7 +10,7 @@ export function JsonLd({ schema }: JsonLdProps) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      dangerouslySetInnerHTML={{ __html: jsonForScript(schema) }}
     />
   );
 }

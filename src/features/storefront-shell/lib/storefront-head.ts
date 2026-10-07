@@ -6,6 +6,7 @@ import {
   selfHostedFontPreloads,
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
+import { jsonForScript } from "@/lib/seo/json-for-script";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
 
@@ -95,17 +96,17 @@ export function storefrontHead(loaderData: unknown) {
     ...(googleFontsUrl
       ? [
           {
-            children: `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href=${JSON.stringify(googleFontsUrl)};document.head.appendChild(l);})();`,
+            children: `(function(){var l=document.createElement("link");l.rel="stylesheet";l.href=${jsonForScript(googleFontsUrl)};document.head.appendChild(l);})();`,
           },
         ]
       : []),
     {
       type: "application/ld+json",
-      children: JSON.stringify(orgSchema),
+      children: jsonForScript(orgSchema),
     },
     {
       type: "application/ld+json",
-      children: JSON.stringify(webSiteSchema),
+      children: jsonForScript(webSiteSchema),
     },
   ];
 

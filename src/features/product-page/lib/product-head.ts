@@ -1,3 +1,4 @@
+import { jsonForScript } from "@/lib/seo/json-for-script";
 import {
   buildBreadcrumbsSchema,
   buildProductSchema,
@@ -102,11 +103,11 @@ export function productHead({
     scripts: [
       {
         type: "application/ld+json",
-        children: JSON.stringify(productSchema),
+        children: jsonForScript(productSchema),
       },
       {
         type: "application/ld+json",
-        children: JSON.stringify(breadcrumbsSchema),
+        children: jsonForScript(breadcrumbsSchema),
       },
     ],
   };
