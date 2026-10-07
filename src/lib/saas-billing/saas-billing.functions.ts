@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireVerifiedOwner } from "@/lib/owner-email";
 import { evaluateBrandEntitlements, getBrandUsageSummary } from "./entitlements-engine.server";
 import type {
   SaaSPlan,
@@ -824,6 +825,7 @@ export const subscribeAddon = createServerFn({ method: "POST" })
   .validator((raw: unknown) => SubscribeAddonInput.parse(raw))
   .handler(async ({ data, context }) => {
     await requireBrandAccess(context, data.brandId);
+    await requireVerifiedOwner(context);
     const db = context.supabase as any;
 
     const { data: sub } = await db

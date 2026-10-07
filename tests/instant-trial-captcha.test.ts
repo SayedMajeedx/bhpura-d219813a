@@ -81,6 +81,18 @@ describe("the instant trial", () => {
     expect(result).toMatchObject({ alreadyRegistered: false, brandSlug: "noor" });
   });
 
+  it("starts the owner unverified: the address is not proven until they enter a code", async () => {
+    const { fake } = server();
+    await registerInstantTrial({ data: trial, context: {} });
+    const profile = fake.writes.find(
+      (w) => w.table === "profiles" && (w.values as { values?: unknown }).values,
+    );
+    expect((profile!.values as { values: Record<string, unknown> }).values).toMatchObject({
+      role: "brand_admin",
+      email_verified_at: null,
+    });
+  });
+
   it("will not accept a call without the token", () => {
     const { turnstileToken: _omit, ...withoutToken } = trial;
     expect(() => registerInstantTrial.validate(withoutToken)).toThrow();

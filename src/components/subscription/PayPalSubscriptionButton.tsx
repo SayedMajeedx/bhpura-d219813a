@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { ownerEmailErrorMessage } from "@/lib/owner-email";
 import {
   PAYPAL_LIVE_CLIENT_ID,
   convertBhdToUsd,
@@ -83,7 +84,10 @@ export function PayPalSubscriptionButton({
               return res.orderId;
             } catch (err: any) {
               const msg = err.message || "Failed to create PayPal order";
-              toast.error(isAr ? "تعذر إنشاء جلسة الدفع في PayPal" : msg);
+              toast.error(
+                ownerEmailErrorMessage(err, isAr) ??
+                  (isAr ? "تعذر إنشاء جلسة الدفع في PayPal" : msg),
+              );
               throw err;
             }
           },

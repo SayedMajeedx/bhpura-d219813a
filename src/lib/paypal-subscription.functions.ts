@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireVerifiedOwner } from "@/lib/owner-email";
 import { getEnvVariable } from "@/lib/runtime-env";
 
 const PAYPAL_API_BASE = "https://api-m.paypal.com";
@@ -76,6 +77,7 @@ export const createPayPalSubscriptionOrder = createServerFn({ method: "POST" })
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+    await requireVerifiedOwner(context);
 
     // Fetch target plan and current version
     const { data: plan, error: planError } = await context.supabase
@@ -160,6 +162,7 @@ export const capturePayPalSubscriptionOrder = createServerFn({ method: "POST" })
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+    await requireVerifiedOwner(context);
 
     const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
     await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);

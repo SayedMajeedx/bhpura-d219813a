@@ -6240,6 +6240,7 @@ export type Database = {
           created_at: string | null;
           display_name: string | null;
           email: string | null;
+          email_verified_at: string | null;
           full_name: string | null;
           id: string;
           must_change_password: boolean;
@@ -6256,6 +6257,7 @@ export type Database = {
           created_at?: string | null;
           display_name?: string | null;
           email?: string | null;
+          email_verified_at?: string | null;
           full_name?: string | null;
           id: string;
           must_change_password?: boolean;
@@ -6272,6 +6274,7 @@ export type Database = {
           created_at?: string | null;
           display_name?: string | null;
           email?: string | null;
+          email_verified_at?: string | null;
           full_name?: string | null;
           id?: string;
           must_change_password?: boolean;

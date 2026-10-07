@@ -12,6 +12,7 @@ import {
 import { BrandSubscriptionHub } from "@/components/subscription/BrandSubscriptionHub";
 import { Copy, CreditCard, Loader2, QrCode, UploadCloud } from "lucide-react";
 import { fetchBillingDetails } from "@/lib/data/system-settings";
+import { ownerEmailErrorMessage } from "@/lib/owner-email";
 
 type SubscriptionCardProps = { brand: Brand };
 type PaymentSettings = {
@@ -142,9 +143,11 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
       );
     } catch (error) {
       console.error(error);
-      toast.error(isAr ? "فشل رفع الإيصال، حاول مجدداً." : "Failed to upload receipt.", {
-        id: toastId,
-      });
+      toast.error(
+        ownerEmailErrorMessage(error, isAr) ??
+          (isAr ? "فشل رفع الإيصال، حاول مجدداً." : "Failed to upload receipt."),
+        { id: toastId },
+      );
     } finally {
       setUploading(false);
       event.target.value = "";

@@ -65,6 +65,16 @@ export async function activateStorefrontMembership(
   return { error };
 }
 
+/** Emails a one-time code (and link) to an existing account; nothing is created for an unknown address. */
+export function sendEmailCode(email: string) {
+  return supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+}
+
+/** Signs in with the emailed code: the new session shows the person can read that mailbox. */
+export function verifyEmailCode(email: string, token: string) {
+  return supabase.auth.verifyOtp({ email, token, type: "email" });
+}
+
 export function sendPasswordResetEmail(email: string, redirectTo: string) {
   return supabase.auth.resetPasswordForEmail(email, { redirectTo });
 }

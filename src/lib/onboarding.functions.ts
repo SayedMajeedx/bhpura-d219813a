@@ -736,6 +736,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
         phone: data.contactNumber.trim(),
         role: "brand_admin",
         status: "active",
+        // Their address is not proven yet: they verify it from the banner (src/lib/owner-email.ts).
+        email_verified_at: null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" },

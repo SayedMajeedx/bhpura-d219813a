@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
     // not-yet-provisioned account, etc.) must NOT be treated as admin access.
     const { data: callerProfile, error: callerProfileError } = await supabase
       .from("profiles")
-      .select("role, status, email, brand_id")
+      .select("role, status, email, brand_id, email_verified_at")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -123,6 +123,20 @@ Deno.serve(async (req: Request) => {
       }
 
       case "create": {
+        // An instant-trial owner has not proved they own their email yet (profiles.email_verified_at
+        // is null): they cannot add people to the team until they have.
+        if (!isSuperAdmin && callerProfile.email_verified_at === null) {
+          return new Response(
+            JSON.stringify({
+              error:
+                "EMAIL_NOT_VERIFIED: verify your email first (the banner at the top of the page), then try again. | أكّد بريدك الإلكتروني أولاً (اللافتة أعلى الصفحة) ثم أعد المحاولة.",
+            }),
+            {
+              status: 403,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+          );
+        }
         const body = await req.json();
         return await handleCreate(supabase, body, callerCtx);
       }
