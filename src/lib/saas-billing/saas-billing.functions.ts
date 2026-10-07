@@ -734,7 +734,9 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
 
     // If subscription record doesn't exist yet, seed it from legacy brands
     if (!subscription) {
-      await db.rpc("rpc_sync_legacy_brands_to_subscriptions");
+      // Only the server may seed subscriptions (the caller's access to this brand is checked above).
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.rpc("rpc_sync_legacy_brands_to_subscriptions");
       const { data: syncedSub } = await db
         .from("brand_subscriptions")
         .select(subQuerySelect)
