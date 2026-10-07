@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5";
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       abandoned_cart_dispatch_logs: {
@@ -454,67 +429,6 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      answers: {
-        Row: {
-          answered_at: string;
-          choice_index: number;
-          id: string;
-          is_correct: boolean;
-          player_id: string;
-          points_awarded: number;
-          powerup: string | null;
-          question_id: string;
-          room_id: string;
-          streak_bonus: number;
-        };
-        Insert: {
-          answered_at?: string;
-          choice_index: number;
-          id?: string;
-          is_correct?: boolean;
-          player_id: string;
-          points_awarded?: number;
-          powerup?: string | null;
-          question_id: string;
-          room_id: string;
-          streak_bonus?: number;
-        };
-        Update: {
-          answered_at?: string;
-          choice_index?: number;
-          id?: string;
-          is_correct?: boolean;
-          player_id?: string;
-          points_awarded?: number;
-          powerup?: string | null;
-          question_id?: string;
-          room_id?: string;
-          streak_bonus?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "answers_player_id_fkey";
-            columns: ["player_id"];
-            isOneToOne: false;
-            referencedRelation: "players";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "answers_question_id_fkey";
-            columns: ["question_id"];
-            isOneToOne: false;
-            referencedRelation: "questions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "answers_room_id_fkey";
-            columns: ["room_id"];
-            isOneToOne: false;
-            referencedRelation: "rooms";
             referencedColumns: ["id"];
           },
         ];
@@ -3347,27 +3261,6 @@ export type Database = {
           },
         ];
       };
-      daily_hosted_quiz_usage: {
-        Row: {
-          hosted_count: number;
-          last_hosted_at: string;
-          usage_date: string;
-          user_id: string;
-        };
-        Insert: {
-          hosted_count?: number;
-          last_hosted_at?: string;
-          usage_date?: string;
-          user_id: string;
-        };
-        Update: {
-          hosted_count?: number;
-          last_hosted_at?: string;
-          usage_date?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       expenses: {
         Row: {
           amount: number;
@@ -3516,72 +3409,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
-      };
-      game_results: {
-        Row: {
-          host_id: string | null;
-          id: string;
-          played_at: string | null;
-          player_count: number | null;
-          question_count: number | null;
-          quiz_title: string | null;
-          room_code: string | null;
-          team_count: number | null;
-        };
-        Insert: {
-          host_id?: string | null;
-          id?: string;
-          played_at?: string | null;
-          player_count?: number | null;
-          question_count?: number | null;
-          quiz_title?: string | null;
-          room_code?: string | null;
-          team_count?: number | null;
-        };
-        Update: {
-          host_id?: string | null;
-          id?: string;
-          played_at?: string | null;
-          player_count?: number | null;
-          question_count?: number | null;
-          quiz_title?: string | null;
-          room_code?: string | null;
-          team_count?: number | null;
-        };
-        Relationships: [];
-      };
-      game_sessions: {
-        Row: {
-          host_id: string | null;
-          id: string;
-          played_at: string | null;
-          player_count: number | null;
-          quiz_id: string | null;
-          room_code: string | null;
-          score_summary: Json | null;
-          team_count: number | null;
-        };
-        Insert: {
-          host_id?: string | null;
-          id?: string;
-          played_at?: string | null;
-          player_count?: number | null;
-          quiz_id?: string | null;
-          room_code?: string | null;
-          score_summary?: Json | null;
-          team_count?: number | null;
-        };
-        Update: {
-          host_id?: string | null;
-          id?: string;
-          played_at?: string | null;
-          player_count?: number | null;
-          quiz_id?: string | null;
-          room_code?: string | null;
-          score_summary?: Json | null;
-          team_count?: number | null;
-        };
-        Relationships: [];
       };
       giveaway_comments: {
         Row: {
@@ -5709,53 +5536,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      players: {
-        Row: {
-          avatar_color: string;
-          fifty_hidden: number[] | null;
-          fifty_question_id: string | null;
-          id: string;
-          joined_at: string;
-          nickname: string;
-          room_id: string;
-          team_index: number | null;
-          used_double: boolean | null;
-          used_fifty: boolean | null;
-        };
-        Insert: {
-          avatar_color?: string;
-          fifty_hidden?: number[] | null;
-          fifty_question_id?: string | null;
-          id?: string;
-          joined_at?: string;
-          nickname: string;
-          room_id: string;
-          team_index?: number | null;
-          used_double?: boolean | null;
-          used_fifty?: boolean | null;
-        };
-        Update: {
-          avatar_color?: string;
-          fifty_hidden?: number[] | null;
-          fifty_question_id?: string | null;
-          id?: string;
-          joined_at?: string;
-          nickname?: string;
-          room_id?: string;
-          team_index?: number | null;
-          used_double?: boolean | null;
-          used_fifty?: boolean | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "players_room_id_fkey";
-            columns: ["room_id"];
-            isOneToOne: false;
-            referencedRelation: "rooms";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       product_attribute_definitions: {
         Row: {
           brand_id: string;
@@ -6621,101 +6401,6 @@ export type Database = {
           },
         ];
       };
-      questions: {
-        Row: {
-          correct_index: number | null;
-          created_at: string | null;
-          explanation: string | null;
-          id: string;
-          image_url: string | null;
-          options: Json;
-          order_index: number | null;
-          question_text: string;
-          question_type: string | null;
-          quiz_id: string | null;
-          subcategory: string | null;
-          time_limit_seconds: number | null;
-        };
-        Insert: {
-          correct_index?: number | null;
-          created_at?: string | null;
-          explanation?: string | null;
-          id?: string;
-          image_url?: string | null;
-          options?: Json;
-          order_index?: number | null;
-          question_text: string;
-          question_type?: string | null;
-          quiz_id?: string | null;
-          subcategory?: string | null;
-          time_limit_seconds?: number | null;
-        };
-        Update: {
-          correct_index?: number | null;
-          created_at?: string | null;
-          explanation?: string | null;
-          id?: string;
-          image_url?: string | null;
-          options?: Json;
-          order_index?: number | null;
-          question_text?: string;
-          question_type?: string | null;
-          quiz_id?: string | null;
-          subcategory?: string | null;
-          time_limit_seconds?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "questions_quiz_id_fkey";
-            columns: ["quiz_id"];
-            isOneToOne: false;
-            referencedRelation: "quizzes";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      quizzes: {
-        Row: {
-          category: string | null;
-          category_id: string | null;
-          created_at: string | null;
-          id: string;
-          is_public: boolean | null;
-          language: string | null;
-          quiz_difficulty: string | null;
-          subcategory: string | null;
-          subcategory_id: string | null;
-          title: string;
-          user_id: string | null;
-        };
-        Insert: {
-          category?: string | null;
-          category_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          is_public?: boolean | null;
-          language?: string | null;
-          quiz_difficulty?: string | null;
-          subcategory?: string | null;
-          subcategory_id?: string | null;
-          title: string;
-          user_id?: string | null;
-        };
-        Update: {
-          category?: string | null;
-          category_id?: string | null;
-          created_at?: string | null;
-          id?: string;
-          is_public?: boolean | null;
-          language?: string | null;
-          quiz_difficulty?: string | null;
-          subcategory?: string | null;
-          subcategory_id?: string | null;
-          title?: string;
-          user_id?: string | null;
-        };
-        Relationships: [];
-      };
       return_items: {
         Row: {
           action_type: string;
@@ -7065,65 +6750,6 @@ export type Database = {
             columns: ["replacement_order_id"];
             isOneToOne: false;
             referencedRelation: "orders";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      rooms: {
-        Row: {
-          advance_mode: string;
-          code: string;
-          created_at: string;
-          cursor_index: number;
-          cursor_phase: string;
-          id: string;
-          phase_started_at: string | null;
-          quiz_id: string;
-          started_at: string | null;
-          status: string;
-          team_colors: Json | null;
-          team_count: number;
-          team_mode: string;
-          team_names: Json | null;
-        };
-        Insert: {
-          advance_mode?: string;
-          code: string;
-          created_at?: string;
-          cursor_index?: number;
-          cursor_phase?: string;
-          id?: string;
-          phase_started_at?: string | null;
-          quiz_id: string;
-          started_at?: string | null;
-          status?: string;
-          team_colors?: Json | null;
-          team_count?: number;
-          team_mode?: string;
-          team_names?: Json | null;
-        };
-        Update: {
-          advance_mode?: string;
-          code?: string;
-          created_at?: string;
-          cursor_index?: number;
-          cursor_phase?: string;
-          id?: string;
-          phase_started_at?: string | null;
-          quiz_id?: string;
-          started_at?: string | null;
-          status?: string;
-          team_colors?: Json | null;
-          team_count?: number;
-          team_mode?: string;
-          team_names?: Json | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rooms_quiz_id_fkey";
-            columns: ["quiz_id"];
-            isOneToOne: false;
-            referencedRelation: "quizzes";
             referencedColumns: ["id"];
           },
         ];
@@ -8162,44 +7788,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      user_answers: {
-        Row: {
-          created_at: string | null;
-          game_session_id: string | null;
-          id: string;
-          is_correct: boolean;
-          player_id: string | null;
-          question_id: string | null;
-          response_time_ms: number | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          game_session_id?: string | null;
-          id?: string;
-          is_correct?: boolean;
-          player_id?: string | null;
-          question_id?: string | null;
-          response_time_ms?: number | null;
-        };
-        Update: {
-          created_at?: string | null;
-          game_session_id?: string | null;
-          id?: string;
-          is_correct?: boolean;
-          player_id?: string | null;
-          question_id?: string | null;
-          response_time_ms?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "user_answers_game_session_id_fkey";
-            columns: ["game_session_id"];
-            isOneToOne: false;
-            referencedRelation: "game_sessions";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       user_subscriptions: {
         Row: {
           created_at: string;
@@ -9063,35 +8651,6 @@ export type Database = {
         Args: { p_percent: number; p_scope: string };
         Returns: Json;
       };
-      advance_room: {
-        Args: {
-          p_expect_index: number;
-          p_expect_phase: string;
-          p_room_id: string;
-        };
-        Returns: {
-          advance_mode: string;
-          code: string;
-          created_at: string;
-          cursor_index: number;
-          cursor_phase: string;
-          id: string;
-          phase_started_at: string | null;
-          quiz_id: string;
-          started_at: string | null;
-          status: string;
-          team_colors: Json | null;
-          team_count: number;
-          team_mode: string;
-          team_names: Json | null;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "rooms";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
       advance_rules_due: {
         Args: { p_order_id: string; p_rules: Json };
         Returns: number;
@@ -9176,7 +8735,6 @@ export type Database = {
         Returns: string;
       };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
-      archive_room: { Args: { p_room_id: string }; Returns: boolean };
       assert_booking_items_notice: {
         Args: { p_brand_id: string; p_items: Json; p_starts_at: string };
         Returns: undefined;
@@ -9309,8 +8867,6 @@ export type Database = {
         Args: { p_brand_id: string; p_email: string; p_phone: string };
         Returns: boolean;
       };
-      check_user_hosting_eligibility: { Args: never; Returns: Json };
-      claim_daily_hosted_quiz: { Args: never; Returns: Json };
       claim_order_email_event: {
         Args: { p_event_id: string };
         Returns: {
@@ -9733,7 +9289,6 @@ export type Database = {
         };
         Returns: string;
       };
-      get_all_admin_quizzes: { Args: never; Returns: Json };
       get_booking_availability: {
         Args: { p_brand_id: string; p_from: string; p_to: string };
         Returns: {
@@ -9847,31 +9402,6 @@ export type Database = {
           state: string;
         }[];
       };
-      get_room_by_code: {
-        Args: { p_code: string };
-        Returns: {
-          advance_mode: string;
-          code: string;
-          created_at: string;
-          cursor_index: number;
-          cursor_phase: string;
-          id: string;
-          phase_started_at: string | null;
-          quiz_id: string;
-          started_at: string | null;
-          status: string;
-          team_colors: Json | null;
-          team_count: number;
-          team_mode: string;
-          team_names: Json | null;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "rooms";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
       get_service_availability: {
         Args: {
           p_brand_id: string;
@@ -9962,27 +9492,6 @@ export type Database = {
       is_tenant_subdomain_available: {
         Args: { p_subdomain: string };
         Returns: boolean;
-      };
-      join_room: {
-        Args: { p_avatar_color?: string; p_code: string; p_nickname: string };
-        Returns: {
-          avatar_color: string;
-          fifty_hidden: number[] | null;
-          fifty_question_id: string | null;
-          id: string;
-          joined_at: string;
-          nickname: string;
-          room_id: string;
-          team_index: number | null;
-          used_double: boolean | null;
-          used_fifty: boolean | null;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "players";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
       };
       link_storefront_customer: {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string };
@@ -10424,69 +9933,6 @@ export type Database = {
         Args: { p_reason: string; p_sale_id: string };
         Returns: undefined;
       };
-      room_answers: {
-        Args: { p_player_id?: string; p_room_id: string };
-        Returns: {
-          answered_at: string;
-          choice_index: number;
-          id: string;
-          is_correct: boolean;
-          player_id: string;
-          points_awarded: number;
-          powerup: string | null;
-          question_id: string;
-          room_id: string;
-          streak_bonus: number;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "answers";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      room_players: {
-        Args: { p_player_id?: string; p_room_id: string };
-        Returns: {
-          avatar_color: string;
-          fifty_hidden: number[] | null;
-          fifty_question_id: string | null;
-          id: string;
-          joined_at: string;
-          nickname: string;
-          room_id: string;
-          team_index: number | null;
-          used_double: boolean | null;
-          used_fifty: boolean | null;
-        }[];
-        SetofOptions: {
-          from: "*";
-          to: "players";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
-      };
-      room_questions: {
-        Args: { p_room_id: string };
-        Returns: {
-          explanation: string;
-          id: string;
-          image_url: string;
-          options: Json;
-          order_index: number;
-          question_text: string;
-          question_type: string;
-          quiz_id: string;
-          time_limit_seconds: number;
-        }[];
-      };
-      room_reveals: {
-        Args: { p_room_id: string };
-        Returns: {
-          correct_index: number;
-          question_id: string;
-        }[];
-      };
       rpc_adjust_variant_stock: {
         Args: {
           p_location: string;
@@ -10583,6 +10029,10 @@ export type Database = {
         Returns: Json;
       };
       rpc_evaluate_brand_entitlements: {
+        Args: { _brand_id: string };
+        Returns: Json;
+      };
+      rpc_evaluate_brand_entitlements_unchecked: {
         Args: { _brand_id: string };
         Returns: Json;
       };
@@ -10961,7 +10411,6 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
-      start_room_v2: { Args: { p_room_id: string }; Returns: Json };
       storefront_delivery_fee: {
         Args: {
           p_brand_id: string;
@@ -10978,32 +10427,6 @@ export type Database = {
       storefront_user_owns_order: {
         Args: { p_order_id: string };
         Returns: boolean;
-      };
-      submit_answer: {
-        Args: {
-          p_choice: number;
-          p_player_id: string;
-          p_powerup?: string;
-          p_question_id: string;
-        };
-        Returns: {
-          answered_at: string;
-          choice_index: number;
-          id: string;
-          is_correct: boolean;
-          player_id: string;
-          points_awarded: number;
-          powerup: string | null;
-          question_id: string;
-          room_id: string;
-          streak_bonus: number;
-        };
-        SetofOptions: {
-          from: "*";
-          to: "answers";
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
       };
       submit_grant_application: {
         Args: {
@@ -11078,46 +10501,6 @@ export type Database = {
       update_order_review_request_status: {
         Args: { p_request_id: string; p_status: string };
         Returns: boolean;
-      };
-      upsert_admin_quiz:
-        | {
-            Args: {
-              p_category?: string;
-              p_difficulty?: string;
-              p_is_public?: boolean;
-              p_language?: string;
-              p_subcategory?: string;
-              p_title: string;
-            };
-            Returns: string;
-          }
-        | {
-            Args: {
-              p_category: string;
-              p_difficulty: string;
-              p_is_public: boolean;
-              p_language: string;
-              p_questions?: Json;
-              p_subcategory: string;
-              p_title: string;
-            };
-            Returns: string;
-          };
-      upsert_admin_quiz_by_id_or_title: {
-        Args: {
-          p_category?: string;
-          p_difficulty?: string;
-          p_is_public?: boolean;
-          p_language?: string;
-          p_quiz_id?: string;
-          p_subcategory?: string;
-          p_title?: string;
-        };
-        Returns: string;
-      };
-      use_fifty_fifty: {
-        Args: { p_player_id: string; p_question_id: string };
-        Returns: number[];
       };
       validate_promo_code: {
         Args: {
@@ -11261,9 +10644,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },
