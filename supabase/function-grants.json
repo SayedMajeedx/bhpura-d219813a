@@ -16,11 +16,6 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
-    "advance_room(p_room_id uuid, p_expect_index integer, p_expect_phase text)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
     "apply_brand_vertical_change(p_brand_id uuid, p_to_vertical text, p_reason text, p_installed_addons text[], p_disable_addons text[], p_remove_category_ids uuid[], p_add_categories jsonb)": {
       "anon": false,
       "authenticated": true,
@@ -35,11 +30,6 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
-    },
-    "archive_room(p_room_id uuid)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
     },
     "assign_order_courier(p_order_id uuid, p_courier_id uuid)": {
       "anon": false,
@@ -60,16 +50,6 @@
       "anon": true,
       "authenticated": true,
       "reason": "KNOWN RISK: tells a visitor whether an email or phone has an account with a store (enumeration); to be limited"
-    },
-    "check_user_hosting_eligibility()": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
-    },
-    "claim_daily_hosted_quiz()": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
     "complete_first_sign_in_password_change()": {
       "anon": true,
@@ -161,11 +141,6 @@
       "authenticated": true,
       "reason": "Signed-in shopper or session helper: checks the session inside"
     },
-    "get_all_admin_quizzes()": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
     "get_booking_availability(p_brand_id uuid, p_from date, p_to date)": {
       "anon": true,
       "authenticated": true,
@@ -215,11 +190,6 @@
       "anon": true,
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
-    },
-    "get_room_by_code(p_code text)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
     },
     "get_service_availability(p_brand_id uuid, p_product_ids uuid[], p_from date, p_to date, p_duration_minutes integer)": {
       "anon": true,
@@ -290,11 +260,6 @@
       "anon": true,
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
-    },
-    "join_room(p_code text, p_nickname text, p_avatar_color text)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
     },
     "link_storefront_customer(p_brand_slug text, p_name text, p_phone text)": {
       "anon": true,
@@ -446,26 +411,6 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
-    "room_answers(p_room_id uuid, p_player_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "room_players(p_room_id uuid, p_player_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "room_questions(p_room_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "room_reveals(p_room_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
     "rpc_adjust_variant_stock(p_variant_id uuid, p_location text, p_mode text, p_value integer, p_reason text, p_note text)": {
       "anon": false,
       "authenticated": true,
@@ -489,7 +434,7 @@
     "rpc_evaluate_brand_entitlements(_brand_id uuid)": {
       "anon": false,
       "authenticated": true,
-      "reason": "KNOWN RISK: any signed-in account can evaluate (and read the plan snapshot of) any brand; the function needs a can_access_brand check (planned)"
+      "reason": "Signed-in staff: refused unless the caller is the server or can access the brand (the checked wrapper over rpc_evaluate_brand_entitlements_unchecked, which no browser can call)"
     },
     "rpc_generate_abandoned_cart_recovery_coupon(p_brand_id uuid, p_cart_id uuid, p_discount_type text, p_discount_value numeric, p_expiry_hours integer)": {
       "anon": false,
@@ -586,11 +531,6 @@
       "authenticated": true,
       "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
     },
-    "rpc_sync_legacy_brands_to_subscriptions()": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "KNOWN RISK: any signed-in account can run this idempotent seeding of missing subscription rows; to be limited to the server (planned)"
-    },
     "rpc_validate_and_restore_abandoned_cart(p_brand_slug text, p_recovery_token text)": {
       "anon": true,
       "authenticated": true,
@@ -610,11 +550,6 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
-    },
-    "start_room_v2(p_room_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
     },
     "storefront_user_owns_customer(p_customer_id uuid)": {
       "anon": true,
@@ -660,26 +595,6 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
-    },
-    "upsert_admin_quiz(p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "upsert_admin_quiz(p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean, p_questions jsonb)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "upsert_admin_quiz_by_id_or_title(p_quiz_id uuid, p_title text, p_category text, p_subcategory text, p_difficulty text, p_language text, p_is_public boolean)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
-    },
-    "use_fifty_fifty(p_player_id uuid, p_question_id uuid)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "LEFTOVER: the quiz game from an old project; to be dropped (it has no place in the commerce database)"
     },
     "validate_promo_code(p_brand_slug text, p_code text, p_subtotal numeric, p_items jsonb, p_customer_id uuid)": {
       "anon": true,
