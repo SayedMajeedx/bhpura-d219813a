@@ -4,7 +4,7 @@ import { StorefrontProvider, type Brand, type PublicSettings } from "@/lib/store
 import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
 import { useDynamicFavicon } from "@/lib/favicon";
 import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
-import { fetchStorefrontPageData } from "@/lib/data/storefront";
+import { fetchBrandCustomDomain, fetchStorefrontPageData } from "@/lib/data/storefront";
 import { resolveInitialLang } from "@/features/storefront-shell/lib/initial-lang";
 import {
   heroConfigFrom,
@@ -27,10 +27,13 @@ export const Route = createFileRoute("/$slug")({
 
     const initialLang = await resolveInitialLang(params.slug, location?.search);
 
-    const pageData = await fetchStorefrontPageData(params.slug).catch(() => null);
+    const [pageData, customDomain] = await Promise.all([
+      fetchStorefrontPageData(params.slug).catch(() => null),
+      fetchBrandCustomDomain(params.slug).catch(() => null),
+    ]);
     if (!pageData?.brand) throw notFound();
 
-    const brand = pageData.brand as unknown as Brand;
+    const brand = { ...pageData.brand, custom_domain: customDomain } as unknown as Brand;
     if (pageData.is_suspended) {
       return {
         brand: brand as unknown as Brand,
@@ -52,7 +55,10 @@ export const Route = createFileRoute("/$slug")({
       initialLang,
     };
   },
-  head: ({ loaderData }) => storefrontHead(loaderData),
+  head: ({ loaderData, matches }) =>
+    storefrontHead(loaderData, {
+      home: String(matches[matches.length - 1]?.routeId) === "/$slug/",
+    }),
   component: StorefrontLayout,
   errorComponent: StorefrontError,
   notFoundComponent: () => <StorefrontError />,

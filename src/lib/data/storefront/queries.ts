@@ -76,12 +76,24 @@ export async function fetchActiveBrandIdentity(slug: string) {
   return data;
 }
 
+/** The store's own domain, if it has one (the page-data function does not return it). */
+export async function fetchBrandCustomDomain(slug: string): Promise<string | null> {
+  const { data } = await supabase
+    .from("brands")
+    .select("custom_domain")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .maybeSingle();
+  return data?.custom_domain ?? null;
+}
+
 export type StorefrontPageMeta = {
   brand: {
     id: string;
     name_en: string;
     name_ar: string | null;
     logo_url: string | null;
+    custom_domain: string | null;
     meta_title: string | null;
     meta_description: string | null;
   };
@@ -97,7 +109,7 @@ export type StorefrontPageMeta = {
 export async function fetchStorefrontPageMeta(slug: string): Promise<StorefrontPageMeta | null> {
   const { data: baseBrand, error } = await supabase
     .from("brands")
-    .select("id, name_en, name_ar, logo_url")
+    .select("id, name_en, name_ar, logo_url, custom_domain")
     .eq("slug", slug)
     .eq("is_active", true)
     .maybeSingle();

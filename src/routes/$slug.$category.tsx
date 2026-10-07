@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
+  fetchCategoryBySlug,
   fetchStorefrontPageMeta,
   storefrontQueries,
   type CategoryProductsScope,
@@ -12,7 +13,8 @@ import { sortCatalogProducts } from "@/lib/catalog-sort";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
-import { faviconType } from "@/lib/favicon";
+import { resolveInitialLang } from "@/features/storefront-shell/lib/initial-lang";
+import { categoryHead, smartKindOf } from "@/features/storefront-shell/lib/category-head";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
@@ -47,9 +49,10 @@ export const Route = createFileRoute("/$slug/$category")({
   headers: () => ({
     "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
   }),
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
+    const initialLang = await resolveInitialLang(params.slug, location?.search);
     const meta = await fetchStorefrontPageMeta(params.slug);
-    if (!meta) return { page: null, brand: null, faviconUrl: null };
+    if (!meta) return { page: null, category: null, brand: null, faviconUrl: null, initialLang };
     const page =
       meta.pages.find(
         (item): item is { slug: string } =>
@@ -57,42 +60,21 @@ export const Route = createFileRoute("/$slug/$category")({
           item !== null &&
           (item as { slug?: unknown }).slug === params.category,
       ) ?? null;
-    return { page, brand: meta.brand, faviconUrl: meta.faviconUrl };
+    // A slug that is neither a page, a smart collection nor a category is a missing page: a 404 for
+    // search engines too, not an empty page that answers 200. A failed read is not "missing".
+    let category: StorefrontCategory | null = null;
+    if (!page && !smartKindOf(params.category)) {
+      try {
+        category = await fetchCategoryBySlug(meta.brand.id, params.category);
+      } catch {
+        return { page, category, brand: meta.brand, faviconUrl: meta.faviconUrl, initialLang };
+      }
+      if (!category) throw notFound();
+    }
+    return { page, category, brand: meta.brand, faviconUrl: meta.faviconUrl, initialLang };
   },
-  head: ({ loaderData }) => {
-    const page = loaderData?.page as any;
-    const brand = loaderData?.brand as any;
-    if (!page || !brand) return {};
-    const title =
-      page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
-    const description =
-      page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
-    const image = page.image_url || brand.logo_url || "https://boutq.store/og-placeholder.png";
-    const favicon = loaderData?.faviconUrl;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "website" },
-        { property: "og:image", content: image },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-        { name: "twitter:image", content: image },
-      ],
-      links: favicon
-        ? [
-            {
-              rel: "icon",
-              href: favicon,
-              ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
-            },
-          ]
-        : [],
-    };
-  },
+  head: ({ loaderData, params }) =>
+    categoryHead({ loaderData, slug: params.slug, category: params.category }),
   component: CategoryPage,
   notFoundComponent: CategoryUnavailable,
 });
@@ -121,13 +103,7 @@ function CategoryPage() {
   }, [filters]);
 
   const navigate = useNavigate();
-  const smartKind = ["new-arrivals", "new"].includes(categorySlug)
-    ? "new"
-    : ["most-selling", "best-sellers", "best-selling"].includes(categorySlug)
-      ? "best"
-      : ["offers", "sale", "discounts"].includes(categorySlug)
-        ? "offers"
-        : null;
+  const smartKind = smartKindOf(categorySlug);
 
   // All active categories: shared with the menus and home page (same key, same columns).
   const categoriesQuery = useQuery(storefrontQueries.categories(brand));
@@ -161,9 +137,12 @@ function CategoryPage() {
     };
   }, [smartKind, categorySlug]);
 
+  // The loader already read the category, so the heading is in the server-rendered page.
+  const loaded = Route.useLoaderData();
   const categoryQuery = useQuery({
     ...storefrontQueries.category(brand, categorySlug),
     enabled: !cmsPage && !smartKind,
+    initialData: loaded.category ?? undefined,
   });
 
   // null when the slug matches no active category: the page renders empty.
