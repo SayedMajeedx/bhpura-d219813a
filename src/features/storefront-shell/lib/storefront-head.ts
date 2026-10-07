@@ -7,6 +7,7 @@ import {
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import { jsonForScript } from "@/lib/seo/json-for-script";
+import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
 
@@ -16,7 +17,7 @@ import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
  * applied by a small script so they never block rendering) and the
  * Organization and WebSite structured data.
  */
-export function storefrontHead(loaderData: unknown) {
+export function storefrontHead(loaderData: unknown, options: { home?: boolean } = {}) {
   const typedLoaderData = loaderData as
     { brand?: Brand; settings?: PublicSettings; initialLang?: "ar" | "en" } | undefined;
   const b = typedLoaderData?.brand;
@@ -52,7 +53,7 @@ export function storefrontHead(loaderData: unknown) {
         (takesBookings
           ? `Book ${nameEn} online: see the free dates, our services and offers.`
           : `Shop ${b.name_en || b.name_ar} online.`);
-  const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
+  const img = socialImage(settings?.logo_url || b.logo_url);
   const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
   const typography = normalizeTypography(
     settings?.storefront_typography,
@@ -63,7 +64,13 @@ export function storefrontHead(loaderData: unknown) {
   const orgSchema = buildOrganizationSchema(b, settings);
   const webSiteSchema = buildWebSiteSchema(b, settings);
 
+  // The home page says which address is its own (each page below sets its own).
+  const homeUrl = storefrontCanonical({
+    slug: b.slug,
+    custom_domain: (b as { custom_domain?: string | null }).custom_domain,
+  });
   const links: Array<Record<string, any>> = [
+    ...(options.home ? [{ rel: "canonical", href: homeUrl }] : []),
     {
       rel: "icon",
       href: favicon,
@@ -121,6 +128,7 @@ export function storefrontHead(loaderData: unknown) {
       { property: "og:title", content: title },
       { property: "og:description", content: desc },
       { property: "og:type", content: "website" },
+      ...(options.home ? [{ property: "og:url", content: homeUrl }] : []),
       { property: "og:image", content: img },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },

@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   useStorefront,
@@ -116,14 +116,15 @@ export const Route = createFileRoute("/$slug/product/$id")({
     }
 
     const brand = await fetchActiveBrandIdentity(params.slug);
-    if (!brand)
-      return { product: null, recommendationCatalog: [], bestSellerRows: [], initialLang };
+    if (!brand) throw notFound();
 
     const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
       fetchProductDetail(brand.id, params.id),
       fetchRecommendationCatalog(brand.id),
       fetchBestSellerRows(brand.slug, PDP_BEST_SELLER_LIMIT),
     ]);
+    // A product that does not exist is a 404 (it used to be a 200 page that said "not found").
+    if (!product) throw notFound();
 
     return { brand, product, recommendationCatalog, bestSellerRows, initialLang };
   },

@@ -26,6 +26,8 @@ export const Route = createFileRoute("/$slug/search")({
       results: brand ? await fetchStorefrontSearch(brand.id, term) : [],
     };
   },
+  // Search results are not pages worth listing; the pages they point to are.
+  head: () => ({ meta: [{ name: "robots", content: "noindex, follow" }] }),
   component: SearchPage,
 });
 

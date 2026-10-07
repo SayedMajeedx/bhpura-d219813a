@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   createRootRouteWithContext,
+  useMatches,
   useRouter,
   HeadContent,
   Scripts,
@@ -17,6 +18,7 @@ import { ProfileProvider } from "@/lib/profile-context";
 import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 import { Button } from "@/components/ui/button";
 import { jsonForScript } from "@/lib/seo/json-for-script";
+import { documentLanguage } from "@/lib/seo/canonical";
 
 function NotFoundComponent() {
   return (
@@ -115,9 +117,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   const imageKitEndpoint = getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || "";
+  // The first HTML says the language and direction the page is really in (a page asked for in
+  // English used to arrive marked Arabic and right-to-left until the browser corrected it).
+  const { lang, dir } = documentLanguage(useMatches());
 
   return (
-    <html lang="ar" dir="rtl" className="lang-ar" suppressHydrationWarning>
+    <html
+      lang={lang}
+      dir={dir}
+      className={lang === "ar" ? "lang-ar" : undefined}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
         {imageKitEndpoint && (

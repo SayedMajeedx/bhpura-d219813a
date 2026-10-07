@@ -147,7 +147,6 @@ export async function handleSitemapRequest(
   const base = `${origin}/${brand.slug}`;
   const entries: Array<{ loc: string; lastmod?: string; priority: string; changefreq: string }> = [
     { loc: base, priority: "1.0", changefreq: "daily" },
-    { loc: `${base}/search`, priority: "0.3", changefreq: "weekly" },
   ];
   for (const c of (categories ?? []) as Array<{ slug: string; updated_at?: string }>) {
     entries.push({
