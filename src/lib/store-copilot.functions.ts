@@ -180,7 +180,7 @@ Be concise, practical, warm, and professional. Always answer in the merchant's l
               description_ar: fnArgs.description_ar || null,
               is_active: false,
             })
-            .select()
+            .select("id")
             .single();
 
           if (error) {

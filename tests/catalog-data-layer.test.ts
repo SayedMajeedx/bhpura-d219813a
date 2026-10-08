@@ -70,9 +70,13 @@ describe("one order per list (bug backlog #13)", () => {
     await catalog.fetchAdminProducts("b1");
     await catalog.fetchAdminVariants("b1");
     await catalog.fetchPackagingMaterials("b1");
-    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }]]);
-    expect(filters(requests[1], "order")).toEqual([["created_at"]]);
-    expect(filters(requests[2], "order")).toEqual([["created_at", { ascending: false }]]);
+    // Each list also reads its staff-only cost table beside it; the order is the list's own.
+    const of = (table: string) => requests.find((request) => request.table === table)!;
+    expect(filters(of("products"), "order")).toEqual([["created_at", { ascending: false }]]);
+    expect(filters(of("product_variants"), "order")).toEqual([["created_at"]]);
+    expect(filters(of("packaging_materials"), "order")).toEqual([
+      ["created_at", { ascending: false }],
+    ]);
     for (const request of requests) expect(filters(request, "eq")).toEqual([["brand_id", "b1"]]);
   });
 });
