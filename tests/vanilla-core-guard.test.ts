@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -16,6 +16,10 @@ function getAllFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
 
   return arrayOfFiles;
 }
+
+// Each test reads every source file of the core: on a busy machine (the full suite, CI) that can
+// pass the default 5 seconds, which made this guard fail now and then with nothing wrong in the code.
+vi.setConfig({ testTimeout: 60_000 });
 
 describe("Vanilla Core Guard Tests", () => {
   const rootDir = path.resolve(__dirname, "..");
