@@ -41,10 +41,18 @@ import {
   MergeToolbar,
   forSave,
   ImportCancelled,
+  ResumeBanner,
+  editDraftField,
   importApi,
   isDraftReady,
+  markImageRehosted,
   runImportPipeline,
+  selectAllDraftImages,
+  setDraftCover,
+  toggleDraftImage,
   useDraftMerge,
+  useImportSession,
+  type EditableField,
   type MergeableDraft,
 } from "@/features/instagram-import";
 
@@ -107,6 +115,15 @@ export function InstagramImporterModal({
   // Review & Drafts state
   const [drafts, setDrafts] = React.useState<MergeableDraft[]>([]);
   const merge = useDraftMerge(drafts, setDrafts, isAr);
+  const session = useImportSession({
+    brandId,
+    step,
+    username,
+    drafts,
+    setDrafts,
+    setUsername,
+    setStep,
+  });
   const [filterTab, setFilterTab] = React.useState<FilterTab>("all");
   const [importResult, setImportResult] = React.useState<{ success: number; skipped: number }>({
     success: 0,
@@ -224,120 +241,20 @@ export function InstagramImporterModal({
     }
   };
 
-  const handleFieldEdit = (
-    draftId: string,
-    field: "title" | "price" | "category" | "sizes" | "description",
-    value: any,
-  ) => {
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        if (draft.id !== draftId) return draft;
-
-        const updatedSources = {
-          ...draft.fieldSources,
-          [field]: "manual" as const,
-        };
-
-        const updatedConfidence = {
-          ...draft.fieldConfidence,
-          [field === "title" ? "name" : field]: 1.0, // Merchant manual review gives 100% confidence
-        };
-
-        const updatedIssues = draft.issues.filter((iss) => {
-          if (field === "price" && (iss === "missing_price" || iss === "price_conflict")) {
-            return false;
-          }
-          return true;
-        });
-
-        return {
-          ...draft,
-          [field]: value,
-          fieldSources: updatedSources,
-          fieldConfidence: updatedConfidence,
-          priceConflict: field === "price" ? undefined : draft.priceConflict,
-          issues: updatedIssues,
-        };
-      }),
-    );
-  };
+  const handleFieldEdit = (draftId: string, field: EditableField, value: unknown) =>
+    setDrafts((prev) => editDraftField(prev, draftId, field, value));
 
   // Switch Active Cover Image in Carousel
-  const handleSelectCover = (draftId: string, imageIndex: number) => {
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        if (draft.id !== draftId) return draft;
-        const updatedImages = draft.images.map((img, idx) => ({
-          ...img,
-          isCover: idx === imageIndex,
-          // Designating as cover automatically marks it as selected to be saved
-          selected: idx === imageIndex ? true : img.selected !== false,
-        }));
-        const cover = updatedImages[imageIndex];
-        return {
-          ...draft,
-          images: updatedImages,
-          coverImageUrl: cover?.r2Url || cover?.url || draft.coverImageUrl,
-        };
-      }),
-    );
-  };
+  const handleSelectCover = (draftId: string, imageIndex: number) =>
+    setDrafts((prev) => setDraftCover(prev, draftId, imageIndex));
 
   // Toggle single image selection
-  const handleToggleSelectImage = (draftId: string, imageIndex: number) => {
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        if (draft.id !== draftId) return draft;
-        const targetImage = draft.images[imageIndex];
-        const newSelected = targetImage.selected === false ? true : false;
-
-        let updatedImages = draft.images.map((img, idx) =>
-          idx === imageIndex ? { ...img, selected: newSelected } : img,
-        );
-
-        // If we deselected the current cover image, reassign cover to another selected image
-        if (!newSelected && targetImage.isCover) {
-          const nextCoverIndex = updatedImages.findIndex((img) => img.selected !== false);
-          updatedImages = updatedImages.map((img, idx) => ({
-            ...img,
-            isCover: idx === nextCoverIndex,
-          }));
-        }
-
-        const activeCover =
-          updatedImages.find((img) => img.isCover) ||
-          updatedImages.find((img) => img.selected !== false) ||
-          updatedImages[0];
-
-        return {
-          ...draft,
-          images: updatedImages,
-          coverImageUrl: activeCover?.r2Url || activeCover?.url || draft.coverImageUrl,
-        };
-      }),
-    );
-  };
+  const handleToggleSelectImage = (draftId: string, imageIndex: number) =>
+    setDrafts((prev) => toggleDraftImage(prev, draftId, imageIndex));
 
   // Select all or deselect all images in draft
-  const handleSelectAllImages = (draftId: string, selectAll: boolean) => {
-    setDrafts((prev) =>
-      prev.map((draft) => {
-        if (draft.id !== draftId) return draft;
-        const updatedImages = draft.images.map((img, idx) => ({
-          ...img,
-          selected: selectAll,
-          isCover: selectAll ? img.isCover || idx === 0 : false,
-        }));
-        const cover =
-          updatedImages.find((img) => img.isCover) || (selectAll ? updatedImages[0] : null);
-        return {
-          ...draft,
-          images: updatedImages,
-          coverImageUrl: cover?.r2Url || cover?.url || draft.coverImageUrl,
-        };
-      }),
-    );
-  };
+  const handleSelectAllImages = (draftId: string, selectAll: boolean) =>
+    setDrafts((prev) => selectAllDraftImages(prev, draftId, selectAll));
 
   // Retry Failed Image Upload
   const handleRetryImage = async (draftId: string, imgUrl: string) => {
@@ -351,31 +268,7 @@ export function InstagramImporterModal({
       });
 
       if (res.r2Url) {
-        setDrafts((prev) =>
-          prev.map((draft) => {
-            if (draft.id !== draftId) return draft;
-            const updatedImages = draft.images.map((img) =>
-              img.url === imgUrl
-                ? { ...img, r2Url: res.r2Url, status: "success" as const, errorMessage: undefined }
-                : img,
-            );
-            const allSuccess = updatedImages.every((i) => i.status === "success");
-            const anySuccess = updatedImages.some((i) => i.status === "success");
-            const imageUploadStatus = allSuccess
-              ? "all_success"
-              : anySuccess
-                ? "partial_success"
-                : ("failed" as const);
-
-            return {
-              ...draft,
-              images: updatedImages,
-              coverImageUrl: draft.coverImageUrl || res.r2Url || "",
-              imageUploadStatus,
-              issues: draft.issues.filter((i) => i !== "image_upload_failed"),
-            };
-          }),
-        );
+        setDrafts((prev) => markImageRehosted(prev, draftId, imgUrl, res.r2Url!));
         toast.success(isAr ? "تم إعادة رفع الصورة بنجاح!" : "Image re-uploaded successfully!");
       } else {
         toast.error(res.error || (isAr ? "فشل إعادة رفع الصورة" : "Image retry failed"));
@@ -414,6 +307,8 @@ export function InstagramImporterModal({
       });
 
       setImportResult({ success: res.successCount, skipped: res.skippedCount });
+      const done = new Set(readyDrafts.map((d) => d.id));
+      setDrafts((prev) => prev.filter((d) => !done.has(d.id)));
       setStep("success");
       onComplete();
     } catch (err: any) {
@@ -527,6 +422,16 @@ export function InstagramImporterModal({
             {/* STEP 1: Input Form */}
             {step === "input" && (
               <div className="max-w-2xl mx-auto space-y-6 py-2">
+                {session.resumable && (
+                  <ResumeBanner
+                    isAr={isAr}
+                    count={session.resumable.drafts.length}
+                    username={session.resumable.username}
+                    savedAt={session.resumable.savedAt}
+                    onResume={session.resume}
+                    onDiscard={session.discard}
+                  />
+                )}
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-bold text-foreground">

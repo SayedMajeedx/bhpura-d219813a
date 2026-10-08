@@ -83,6 +83,7 @@ const drafts = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   localStorage.setItem("lang", "en");
   stubs.fetchInstagramPosts.mockResolvedValue({ runId: "run1", datasetId: "ds1" });
   stubs.checkScraperStatus.mockResolvedValue({ status: "SUCCEEDED" });
@@ -203,5 +204,85 @@ describe("the Instagram importer's review screen", () => {
     expect(toast.warning).toHaveBeenCalledWith(
       "6 posts could not be read by the AI. Fill them in by hand.",
     );
+  });
+
+  const SESSION_KEY = "boutq.instagram-import.session.brand-1";
+  const openModal = () =>
+    render(
+      <I18nProvider>
+        <InstagramImporterModal
+          brandId="brand-1"
+          onComplete={vi.fn()}
+          open
+          onOpenChange={() => undefined}
+        />
+      </I18nProvider>,
+    );
+  const startImport = async () => {
+    fireEvent.change(screen.getByPlaceholderText("pura.line"), { target: { value: "abaya.zh" } });
+    fireEvent.click(screen.getByRole("button", { name: /Start Extraction Pipeline/ }));
+    await screen.findByText(/All \(6\)/, undefined, { timeout: 60_000 });
+  };
+
+  it("keeps the review when the window is closed, and offers it back, merged posts and all", async () => {
+    const first = openModal();
+    await startImport();
+    fireEvent.click(screen.getByRole("button", { name: "Merge" }));
+    await screen.findByText(/All \(2\)/);
+    await waitFor(() => expect(localStorage.getItem(SESSION_KEY)).not.toBeNull());
+    first.unmount();
+
+    // A new visit: the form offers the unfinished import.
+    openModal();
+    expect(await screen.findByText("You have an unfinished import")).toBeInTheDocument();
+    expect(screen.getByText(/2 drafts from @abaya\.zh/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await screen.findByText(/All \(2\)/);
+    expect(screen.getAllByRole("button", { name: /Merged from 3 posts/ })).toHaveLength(2);
+    // Nothing was fetched again.
+    expect(stubs.fetchInstagramPosts).toHaveBeenCalledTimes(1);
+  });
+
+  it("forgets a review the merchant discards", async () => {
+    const first = openModal();
+    await startImport();
+    await waitFor(() => expect(localStorage.getItem(SESSION_KEY)).not.toBeNull());
+    first.unmount();
+
+    openModal();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+    expect(screen.queryByText("You have an unfinished import")).toBeNull();
+    expect(localStorage.getItem(SESSION_KEY)).toBeNull();
+  });
+
+  it("keeps the drafts that were not saved when the ready ones are approved", async () => {
+    const first = openModal();
+    await startImport();
+    // Merged: two ready products. Unmerged: only the two caption posts are ready.
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(2\)/ }));
+    await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
+    const saved = stubs.bulkInsertProducts.mock.calls[0][0].data.products.map(
+      (p: { id: string }) => p.id,
+    );
+    expect(saved).toEqual(["a", "d"]);
+    // The four photo-only posts were left for the merchant: they are kept for later.
+    await waitFor(() => {
+      const kept = JSON.parse(localStorage.getItem(SESSION_KEY) ?? "null");
+      expect(kept?.drafts.map((d: { id: string }) => d.id)).toEqual(["b", "c", "e", "f"]);
+    });
+    first.unmount();
+  });
+
+  it("does not keep a review that was fully saved", async () => {
+    stubs.batchParseCaptionsWithAI.mockResolvedValue({
+      drafts: ["a", "b", "c", "d", "e", "f"].map((id) => lead(id, `منتج ${id}`, 20)),
+    });
+    const first = openModal();
+    await startImport();
+    await waitFor(() => expect(localStorage.getItem(SESSION_KEY)).not.toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(6\)/ }));
+    await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(localStorage.getItem(SESSION_KEY)).toBeNull());
+    first.unmount();
   });
 });

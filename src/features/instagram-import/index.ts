@@ -5,3 +5,13 @@ export { forSave, isDraftReady, type MergeableDraft } from "./lib/merge-drafts";
 export { importApi } from "./api";
 export { ImportCancelled } from "./lib/chunked";
 export { runImportPipeline } from "./lib/run-import";
+export { ResumeBanner } from "./components/ResumeBanner";
+export { useImportSession } from "./hooks/use-import-session";
+export {
+  editDraftField,
+  markImageRehosted,
+  selectAllDraftImages,
+  setDraftCover,
+  toggleDraftImage,
+  type EditableField,
+} from "./lib/draft-edits";
