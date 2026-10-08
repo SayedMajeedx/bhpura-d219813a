@@ -380,6 +380,15 @@ html.lang-ar .font-display {
     letter-spacing: var(--type-tracking, 0) !important;
   }
 
+  /* A product card's title is an <h3>, so the heading rule above gave it the tight heading
+     line-height with !important and beat the card's own `leading-[1.8]`. The card clips the title to
+     one line (line-clamp / truncate), and a tight line box cuts Arabic marks and letter tails below
+     the baseline (the bottom of مَرجان, طَيف, عِقد). This comes later in the same layer with the same
+     specificity, so it wins for the title only. */
+  .storefront-shell .product-title {
+    line-height: 1.8 !important;
+  }
+
   .storefront-shell {
     width: 100%;
     max-width: 100vw;
