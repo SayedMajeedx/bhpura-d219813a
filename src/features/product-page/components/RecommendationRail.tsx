@@ -15,7 +15,7 @@ export function RecommendationRail({
   const { brand, currency, lang, t, settings } = useStorefront();
 
   return (
-    <section aria-label={title} className="w-full overflow-hidden">
+    <section aria-label={title} className="w-full overflow-x-clip">
       <div className="mb-4 flex items-end justify-between gap-3">
         <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
         <span className="hidden text-xs text-muted-foreground sm:block">
