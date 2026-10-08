@@ -108,10 +108,10 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 | 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx`                | 1,448 |
 | 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx`             | 1,446 |
 | 13  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`            | 1,347 |
-| 14  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,325 |
+| 14  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,274 |
 | 15  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`              | 1,313 |
 | 16  | `src/lib/public-api/public-api-router.server.ts`                    | 1,271 |
-| 17  | `src/lib/instagram-ai-importer.ts`                                  | 1,216 |
+| 17  | `src/lib/instagram-ai-importer.ts`                                  | 1,212 |
 | 18  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`          | 1,188 |
 | 19  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                 | 1,058 |
 | 20  | `src/routes/onboard.tsx`                                            | 1,056 |
