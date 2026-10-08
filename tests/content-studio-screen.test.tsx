@@ -3,6 +3,10 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Each test renders the whole studio (about 0.7 s when idle), so under the full suite's load one
+// can pass the default 5 seconds with nothing wrong: a longer limit keeps it from failing at random.
+vi.setConfig({ testTimeout: 30_000 });
+
 // The content studio as merchants use it: the copy fills from the chosen
 // product, the PNG exports at the chosen format's size, the caption follows
 // the chosen variant, a product video switches to the video exports, and the

@@ -120,6 +120,9 @@ export const Route = createFileRoute("/$slug/product/$id")({
     // The "you may also like" products are in that layout call already (same columns, same order).
     const productRequest = fetchProductDetailByBrandSlug(params.slug, params.id);
     const bestSellersRequest = fetchBestSellerRows(params.slug, PDP_BEST_SELLER_LIMIT);
+    // The "Purchased N times" badge is part of the same round trip, so it is in the page that is
+    // sent and nothing moves when it would otherwise arrive later. It never rejects.
+    const socialProofRequest = getProductRecentPurchaseCount(params.slug, params.id);
     // Whichever way this loader ends, a request nobody awaits must not become an unhandled rejection.
     for (const request of [productRequest, bestSellersRequest]) request.catch(() => undefined);
     const layout = storeLayoutData((await parentMatchPromise).loaderData);
@@ -140,6 +143,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
       recommendationCatalog: (layout.bootstrapData?.products ??
         []) as unknown as RecommendationProduct[],
       bestSellerRows: await bestSellersRequest,
+      socialProofCount: await socialProofRequest,
       initialLang,
     };
   },
@@ -153,6 +157,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         product: Product | null;
         recommendationCatalog: RecommendationProduct[];
         bestSellerRows: Array<{ product_id: string; units_sold: number }>;
+        socialProofCount?: number | null;
       }
     | undefined;
   const params = Route.useParams() as any;
@@ -238,14 +243,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const socialProofQuery = useQuery({
     queryKey: storefrontKeys.socialProof(brand.slug, product?.id),
     queryFn: async () => {
-      if (!brand?.id || !product?.id) return null;
-      return getProductRecentPurchaseCount(
-        brand.id,
-        product.id,
-        7,
-        settings?.social_proof_threshold ?? 3,
-      );
+      if (!brand?.slug || !product?.id) return null;
+      return getProductRecentPurchaseCount(brand.slug, product.id);
     },
+    // The loader asked in the same round trip as the product: no second request after the page shows.
+    initialData: loaderData?.socialProofCount,
     enabled: Boolean(
       brand?.id &&
       product?.id &&

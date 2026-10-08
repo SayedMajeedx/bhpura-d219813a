@@ -13,6 +13,7 @@ const stubs = vi.hoisted(() => ({
   fetchProductDetail: vi.fn(),
   fetchProductDetailByBrandSlug: vi.fn(),
   fetchBestSellerRows: vi.fn(),
+  getProductRecentPurchaseCount: vi.fn(),
 }));
 const client = { supabase: {} };
 vi.mock("../src/integrations/supabase/client", () => client);
@@ -23,6 +24,9 @@ const storefrontData = async (importOriginal: () => Promise<object>) => ({
 });
 vi.mock("../src/lib/data/storefront", (io) => storefrontData(io));
 vi.mock("@/lib/data/storefront", (io) => storefrontData(io));
+const socialProof = { getProductRecentPurchaseCount: stubs.getProductRecentPurchaseCount };
+vi.mock("../src/lib/storefront-social-proof", () => socialProof);
+vi.mock("@/lib/storefront-social-proof", () => socialProof);
 
 type Loader = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 const loaderOf = async (path: string): Promise<Loader> => {
@@ -67,6 +71,7 @@ beforeEach(() => {
   stubs.fetchProductDetailByBrandSlug.mockResolvedValue({ id: "p1", name: "Abaya" });
   stubs.fetchProductDetail.mockResolvedValue(null);
   stubs.fetchBestSellerRows.mockResolvedValue(bestSellerRows);
+  stubs.getProductRecentPurchaseCount.mockResolvedValue(5);
 });
 
 const expectNoDatabaseCalls = () => {
@@ -147,8 +152,11 @@ describe("a product page", () => {
       product: { id: "p1" },
       recommendationCatalog: products,
       bestSellerRows,
+      socialProofCount: 5,
       initialLang: "en",
     });
+    // The badge's count is asked for in the same round trip, by the store's slug.
+    expect(stubs.getProductRecentPurchaseCount).toHaveBeenCalledWith("pura", "p1");
     expect(stubs.fetchActiveBrandIdentity).not.toHaveBeenCalled();
     expect(stubs.fetchRecommendationCatalog).not.toHaveBeenCalled();
     expect(stubs.fetchProductDetail).not.toHaveBeenCalled();
