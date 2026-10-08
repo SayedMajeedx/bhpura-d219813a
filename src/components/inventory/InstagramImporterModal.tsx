@@ -39,6 +39,7 @@ import {
   DraftImageStrip,
   DraftMergeControls,
   ReviewHeader,
+  PriceNotes,
   forSave,
   ImportCancelled,
   ResumeBanner,
@@ -804,12 +805,7 @@ export function InstagramImporterModal({
                               />
                             </div>
 
-                            {/* Price Conflict or Missing Alert */}
-                            {draft.priceConflict && (
-                              <p className="text-xs text-destructive leading-tight">
-                                {draft.priceConflict.reason}
-                              </p>
-                            )}
+                            <PriceNotes draft={draft} isAr={isAr} />
                           </div>
 
                           {/* Category and Sizes */}
