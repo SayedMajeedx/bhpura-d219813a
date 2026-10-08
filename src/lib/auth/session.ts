@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { releaseNativePushDevice } from "@/lib/native-push";
 
 /**
  * The signed-in session as screens and actions read it. Route guards that
@@ -30,7 +31,11 @@ export async function getAccessToken() {
   return (await getCurrentSession())?.access_token ?? null;
 }
 
-/** Signs out of this browser. */
+/**
+ * Signs out of this browser. Inside the merchant app, the phone's notifications for this person
+ * are turned off first (it needs the session, so it cannot come after).
+ */
 export async function signOut() {
+  await releaseNativePushDevice();
   await supabase.auth.signOut();
 }

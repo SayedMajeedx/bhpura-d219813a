@@ -18,6 +18,7 @@ import { ProfileProvider } from "@/lib/profile-context";
 import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 import { Button } from "@/components/ui/button";
 import { jsonForScript } from "@/lib/seo/json-for-script";
+import { rememberNativePushDevice } from "@/lib/native-push";
 import { documentLanguage } from "@/lib/seo/canonical";
 
 function NotFoundComponent() {
@@ -167,6 +168,7 @@ function RootComponent() {
     const handleNativePush = async (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (!detail?.token) return;
+      rememberNativePushDevice(detail);
       const { registerMobilePushDevice } = await import("@/lib/data/push");
       await registerMobilePushDevice({
         token: detail.token,
