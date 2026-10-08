@@ -30,16 +30,31 @@ export function editDraftField<T extends InstagramProductDraft>(
   // The title is tracked as the product's "name" (the old screen recorded it under "title" in the
   // sources, a key nothing reads, so a typed name still looked machine-read).
   const tracked = field === "title" ? "name" : field;
+  // Emptying the price is not a price the merchant vouches for.
+  const cleared = field === "price" && (value === null || Number.isNaN(value));
   return update(drafts, id, (draft) => ({
     ...draft,
     [field]: value,
-    fieldSources: { ...draft.fieldSources, [tracked]: "manual" as const },
+    fieldSources: cleared
+      ? draft.fieldSources
+      : { ...draft.fieldSources, [tracked]: "manual" as const },
     // Merchant manual review gives 100% confidence.
-    fieldConfidence: { ...draft.fieldConfidence, [tracked]: 1.0 },
+    fieldConfidence: { ...draft.fieldConfidence, [tracked]: cleared ? 0 : 1.0 },
     priceConflict: field === "price" ? undefined : draft.priceConflict,
+    // A typed price at or above the old crossed-out one makes that old price meaningless.
+    originalPrice:
+      field === "price" &&
+      (cleared || (typeof value === "number" && (draft.originalPrice ?? 0) <= value))
+        ? null
+        : draft.originalPrice,
     issues:
       field === "price"
-        ? draft.issues.filter((issue) => issue !== "missing_price" && issue !== "price_conflict")
+        ? [
+            ...draft.issues.filter(
+              (issue) => issue !== "missing_price" && issue !== "price_conflict",
+            ),
+            ...(cleared ? ["missing_price"] : []),
+          ]
         : draft.issues,
   }));
 }
