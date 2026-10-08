@@ -17,3 +17,8 @@ export {
   toggleDraftImage,
   type EditableField,
 } from "./lib/draft-edits";
+export { BulkEditBar } from "./components/BulkEditBar";
+export { DraftImageStrip } from "./components/DraftImageStrip";
+export { ReviewHeader } from "./components/ReviewHeader";
+export { useReviewActions } from "./hooks/use-review-actions";
+export { useReviewView } from "./hooks/use-review-view";

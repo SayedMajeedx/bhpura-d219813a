@@ -150,7 +150,7 @@ describe("MergeToolbar and the card controls", () => {
         onSplit={onSplit}
       />,
     );
-    fireEvent.click(screen.getByLabelText("Select to merge"));
+    fireEvent.click(screen.getByLabelText("Select"));
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: /Split/ })).toBeNull();
 
@@ -163,7 +163,7 @@ describe("MergeToolbar and the card controls", () => {
         onSplit={onSplit}
       />,
     );
-    expect(screen.getByLabelText("Select to merge")).toBeChecked();
+    expect(screen.getByLabelText("Select")).toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /Merged from 3 posts/ }));
     expect(onSplit).toHaveBeenCalledTimes(1);
   });

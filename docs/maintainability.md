@@ -86,37 +86,37 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                                                                                    |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel.                                                               |
 | `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                                                     |
-| Files over 1,000 lines    |        31        |     21      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
+| Files over 1,000 lines    |        31        |     20      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
 | Tests                     |      1,078       |    1,599    |                                                                                                                                                                        |
 
 \* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
 
 The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-showcase-data.ts` are data and stay):
 
-|  #  | File Path                                                           | Lines |
-| :-: | :------------------------------------------------------------------ | :---: |
-|  1  | `src/features/settings/registry.ts`                                 | 2,616 |
-|  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`        | 2,404 |
-|  3  | `src/components/subscription/BrandSubscriptionHub.tsx`              | 1,954 |
-|  4  | `src/lib/addons/addon-showcase-data.ts`                             | 1,893 |
-|  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                | 1,838 |
-|  6  | `src/components/super/SuperPlansManager.tsx`                        | 1,721 |
-|  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`   | 1,703 |
-|  8  | `src/routes/_authenticated/admin.b.$slug.team.tsx`                  | 1,703 |
-|  9  | `src/routes/_authenticated/admin.b.$slug.customers.tsx`             | 1,670 |
-| 10  | `src/routes/$slug.account.tsx`                                      | 1,477 |
-| 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx`                | 1,448 |
-| 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx`             | 1,446 |
-| 13  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`            | 1,347 |
-| 14  | `src/components/inventory/InstagramImporterModal.tsx`               | 1,174 |
-| 15  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`              | 1,313 |
-| 16  | `src/lib/public-api/public-api-router.server.ts`                    | 1,271 |
-| 17  | `src/lib/instagram-ai-importer.ts` (now 987: out of the list)       |  987  |
-| 18  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`          | 1,188 |
-| 19  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                 | 1,058 |
-| 20  | `src/routes/onboard.tsx`                                            | 1,056 |
-| 21  | `src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx` | 1,041 |
-| 22  | `src/routes/_authenticated/admin.brands.tsx`                        | 1,024 |
+|  #  | File Path                                                                        | Lines |
+| :-: | :------------------------------------------------------------------------------- | :---: |
+|  1  | `src/features/settings/registry.ts`                                              | 2,616 |
+|  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`                     | 2,404 |
+|  3  | `src/components/subscription/BrandSubscriptionHub.tsx`                           | 1,954 |
+|  4  | `src/lib/addons/addon-showcase-data.ts`                                          | 1,893 |
+|  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                             | 1,838 |
+|  6  | `src/components/super/SuperPlansManager.tsx`                                     | 1,721 |
+|  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`                | 1,703 |
+|  8  | `src/routes/_authenticated/admin.b.$slug.team.tsx`                               | 1,703 |
+|  9  | `src/routes/_authenticated/admin.b.$slug.customers.tsx`                          | 1,670 |
+| 10  | `src/routes/$slug.account.tsx`                                                   | 1,477 |
+| 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx`                             | 1,448 |
+| 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx`                          | 1,446 |
+| 13  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx`                         | 1,347 |
+| 14  | `src/components/inventory/InstagramImporterModal.tsx` (now 941: out of the list) |  941  |
+| 15  | `src/routes/_authenticated/admin.b.$slug.expenses.tsx`                           | 1,313 |
+| 16  | `src/lib/public-api/public-api-router.server.ts`                                 | 1,271 |
+| 17  | `src/lib/instagram-ai-importer.ts` (now 987: out of the list)                    |  987  |
+| 18  | `src/routes/_authenticated/admin.b.$slug.integrations.tsx`                       | 1,188 |
+| 19  | `src/routes/_authenticated/admin.b.$slug.pages.tsx`                              | 1,058 |
+| 20  | `src/routes/onboard.tsx`                                                         | 1,056 |
+| 21  | `src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx`              | 1,041 |
+| 22  | `src/routes/_authenticated/admin.brands.tsx`                                     | 1,024 |
 
 ---
 
