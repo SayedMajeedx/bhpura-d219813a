@@ -25,7 +25,6 @@ import {
   ExternalLink,
   Check,
   X,
-  Star,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -37,8 +36,9 @@ import {
   type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
 import {
+  DraftImageStrip,
   DraftMergeControls,
-  MergeToolbar,
+  ReviewHeader,
   forSave,
   ImportCancelled,
   ResumeBanner,
@@ -52,6 +52,8 @@ import {
   toggleDraftImage,
   useDraftMerge,
   useImportSession,
+  useReviewActions,
+  useReviewView,
   type EditableField,
   type MergeableDraft,
 } from "@/features/instagram-import";
@@ -65,7 +67,6 @@ export interface InstagramImporterModalProps {
 }
 
 type Step = "input" | "scraping" | "rehosting" | "analyzing" | "review" | "saving" | "success";
-type FilterTab = "all" | "ready" | "needs_review" | "image_failed";
 
 export function InstagramImporterModal({
   brandId,
@@ -115,6 +116,15 @@ export function InstagramImporterModal({
   // Review & Drafts state
   const [drafts, setDrafts] = React.useState<MergeableDraft[]>([]);
   const merge = useDraftMerge(drafts, setDrafts, isAr);
+  const view = useReviewView(drafts);
+  const actions = useReviewActions({
+    drafts,
+    setDrafts,
+    selected: merge.selected,
+    clearSelection: merge.clear,
+    isAr,
+  });
+  const readyDrafts = view.readyDrafts;
   const session = useImportSession({
     brandId,
     step,
@@ -124,7 +134,6 @@ export function InstagramImporterModal({
     setUsername,
     setStep,
   });
-  const [filterTab, setFilterTab] = React.useState<FilterTab>("all");
   const [importResult, setImportResult] = React.useState<{ success: number; skipped: number }>({
     success: 0,
     skipped: 0,
@@ -136,30 +145,6 @@ export function InstagramImporterModal({
     setStatusMessage("");
     setProgressPercent(0);
   };
-
-  const readyDrafts = React.useMemo(() => drafts.filter((d) => isDraftReady(d)), [drafts]);
-  const imageFailedDrafts = React.useMemo(
-    () => drafts.filter((d) => d.imageUploadStatus === "failed"),
-    [drafts],
-  );
-  const needsReviewDrafts = React.useMemo(
-    () => drafts.filter((d) => !isDraftReady(d) && d.imageUploadStatus !== "failed"),
-    [drafts],
-  );
-
-  const filteredDrafts = React.useMemo(() => {
-    switch (filterTab) {
-      case "ready":
-        return readyDrafts;
-      case "image_failed":
-        return imageFailedDrafts;
-      case "needs_review":
-        return needsReviewDrafts;
-      case "all":
-      default:
-        return drafts;
-    }
-  }, [drafts, filterTab, readyDrafts, imageFailedDrafts, needsReviewDrafts]);
 
   // Step 1 -> Run Import Pipeline: in small batches, with real progress and a cancel button
   // (see src/features/instagram-import/lib/run-import.ts).
@@ -603,96 +588,16 @@ export function InstagramImporterModal({
             {/* STEP 3: Visual Review Screen (Cards Grid) */}
             {step === "review" && (
               <div className="space-y-4">
-                {/* Top Summary Bar & Filter Tabs */}
-                <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-md pb-3 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Button
-                      type="button"
-                      variant={filterTab === "all" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterTab("all")}
-                      className="h-8 text-xs font-bold rounded-lg"
-                    >
-                      {isAr ? "الكل" : "All"} ({drafts.length})
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant={filterTab === "ready" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterTab("ready")}
-                      className={cn(
-                        "h-8 text-xs font-bold rounded-lg gap-1.5",
-                        filterTab !== "ready" &&
-                          "border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10",
-                      )}
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      {isAr ? "جاهز للاعتماد" : "Ready"} ({readyDrafts.length})
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant={filterTab === "needs_review" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterTab("needs_review")}
-                      className={cn(
-                        "h-8 text-xs font-bold rounded-lg gap-1.5",
-                        filterTab !== "needs_review" &&
-                          "border-amber-500/30 text-amber-600 hover:bg-amber-500/10",
-                      )}
-                    >
-                      <AlertTriangle className="h-3.5 w-3.5" />
-                      {isAr ? "يحتاج مراجعة" : "Needs Review"} ({needsReviewDrafts.length})
-                    </Button>
-
-                    {imageFailedDrafts.length > 0 && (
-                      <Button
-                        type="button"
-                        variant={filterTab === "image_failed" ? "destructive" : "outline"}
-                        size="sm"
-                        onClick={() => setFilterTab("image_failed")}
-                        className="h-8 text-xs font-bold rounded-lg gap-1.5"
-                      >
-                        <XCircle className="h-3.5 w-3.5" />
-                        {isAr ? "فشل تحميل الصور" : "Image Failed"} ({imageFailedDrafts.length})
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      onClick={handleBulkApprove}
-                      disabled={readyDrafts.length === 0}
-                      className="h-8 px-4 text-xs font-bold rounded-lg gap-2 shadow-sm"
-                      title={
-                        readyDrafts.length === 0
-                          ? isAr
-                            ? "لا يمكن الاعتماد الجماعي قبل استكمال الحقول الإلزامية والأسعار"
-                            : "Bulk approval requires all products to have valid prices and high confidence"
-                          : undefined
-                      }
-                    >
-                      <Check className="h-4 w-4" />
-                      {isAr
-                        ? `اعتماد المنتجات الجاهزة (${readyDrafts.length})`
-                        : `Approve Ready (${readyDrafts.length})`}
-                    </Button>
-                  </div>
-                </div>
-
-                <MergeToolbar
+                <ReviewHeader
                   isAr={isAr}
                   drafts={drafts}
-                  selectedCount={merge.selected.size}
-                  onGroup={merge.groupBy}
-                  onApplyGroups={merge.applyGroups}
-                  onMerge={merge.mergeSelected}
-                  onClear={merge.clear}
+                  view={view}
+                  merge={merge}
+                  actions={actions}
+                  onApprove={handleBulkApprove}
                 />
 
-                {filteredDrafts.length === 0 && (
+                {view.visible.length === 0 && (
                   <div className="py-12 text-center text-muted-foreground text-xs">
                     {isAr ? "لا توجد عناصر مطابقة لهذا الفلتر." : "No items match this filter."}
                   </div>
@@ -700,7 +605,7 @@ export function InstagramImporterModal({
 
                 {/* Cards Visual Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredDrafts.map((draft) => {
+                  {view.visible.map((draft) => {
                     const ready = isDraftReady(draft);
                     const selectedImages = draft.images.filter((img) => img.selected !== false);
                     const selectedCount = selectedImages.length;
@@ -712,6 +617,7 @@ export function InstagramImporterModal({
                     return (
                       <div
                         key={draft.id}
+                        data-draft-id={draft.id}
                         className={cn(
                           "flex flex-col rounded-xl border bg-card overflow-hidden shadow-2xs transition-all",
                           ready
@@ -771,6 +677,7 @@ export function InstagramImporterModal({
                           <DraftMergeControls
                             isAr={isAr}
                             selected={merge.selected.has(draft.id)}
+                            soldOut={draft.isSoldOut}
                             mergedCount={draft.mergedFrom?.length ?? 0}
                             onToggle={() => merge.toggle(draft.id)}
                             onSplit={() => merge.split(draft.id)}
@@ -804,159 +711,15 @@ export function InstagramImporterModal({
                           )}
                         </div>
 
-                        {/* Carousel Thumbnails Gallery (if multiple images) */}
                         {draft.images.length > 1 && (
-                          <div className="flex flex-col border-b border-border bg-muted/20">
-                            {/* Gallery Header Bar */}
-                            <div className="flex items-center justify-between px-2.5 py-1.5 bg-muted/40 border-b border-border-subtle text-xs">
-                              <div className="flex items-center gap-1.5 font-medium text-foreground">
-                                <Layers className="h-3.5 w-3.5 text-primary" />
-                                <span>
-                                  {isAr
-                                    ? `${selectedCount} من ${draft.images.length} صور محددة`
-                                    : `${selectedCount} of ${draft.images.length} selected`}
-                                </span>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                                onClick={() =>
-                                  handleSelectAllImages(
-                                    draft.id,
-                                    selectedCount < draft.images.length,
-                                  )
-                                }
-                              >
-                                {selectedCount === draft.images.length
-                                  ? isAr
-                                    ? "إلغاء التحديد"
-                                    : "Deselect All"
-                                  : isAr
-                                    ? "تحديد الكل"
-                                    : "Select All"}
-                              </Button>
-                            </div>
-
-                            {/* Thumbnails Row */}
-                            <div className="flex items-center gap-2 p-2 overflow-x-auto scrollbar-thin">
-                              {draft.images.map((img, idx) => {
-                                const isSelected = img.selected !== false;
-                                const isCover = img.isCover;
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={cn(
-                                      "relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border-2 transition-all select-none group/thumb",
-                                      isCover
-                                        ? "border-primary ring-2 ring-primary/40 shadow-xs"
-                                        : isSelected
-                                          ? "border-primary/60 hover:border-primary"
-                                          : "border-border opacity-40 grayscale hover:grayscale-0 hover:opacity-80",
-                                    )}
-                                  >
-                                    {/* Thumbnail Image Button */}
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (!isSelected) {
-                                          handleToggleSelectImage(draft.id, idx);
-                                        } else {
-                                          handleSelectCover(draft.id, idx);
-                                        }
-                                      }}
-                                      className="h-full w-full cursor-pointer focus:outline-hidden"
-                                      title={
-                                        isCover
-                                          ? isAr
-                                            ? "الغلاف الرئيسي الحالي"
-                                            : "Main Cover Photo"
-                                          : isSelected
-                                            ? isAr
-                                              ? "انقر لتعيينه كغلاف رئيسي"
-                                              : "Click to set as main cover"
-                                            : isAr
-                                              ? "انقر لتضمين الصورة وحفظها"
-                                              : "Click to include photo"
-                                      }
-                                    >
-                                      <img
-                                        src={img.r2Url || img.url}
-                                        alt={`thumb-${idx}`}
-                                        className="h-full w-full object-cover"
-                                      />
-                                    </button>
-
-                                    {/* Selection Checkbox (Top-Start) */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleToggleSelectImage(draft.id, idx);
-                                      }}
-                                      className={cn(
-                                        "absolute top-1 start-1 h-4 w-4 rounded flex items-center justify-center transition-transform hover:scale-110 cursor-pointer",
-                                        isSelected
-                                          ? "bg-primary text-primary-foreground shadow-xs"
-                                          : "bg-black/60 text-white border border-white/60 hover:border-white",
-                                      )}
-                                      title={
-                                        isSelected
-                                          ? isAr
-                                            ? "إلغاء حفظ هذه الصورة"
-                                            : "Exclude this photo"
-                                          : isAr
-                                            ? "حفظ هذه الصورة مع المنتج"
-                                            : "Save this photo with product"
-                                      }
-                                    >
-                                      {isSelected ? (
-                                        <Check className="h-3 w-3 stroke-[3]" />
-                                      ) : (
-                                        <div className="h-2 w-2" />
-                                      )}
-                                    </button>
-
-                                    {/* Cover Star Button (Top-End) */}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleSelectCover(draft.id, idx);
-                                      }}
-                                      className={cn(
-                                        "absolute top-1 end-1 h-4 w-4 rounded-full flex items-center justify-center transition-all cursor-pointer",
-                                        isCover
-                                          ? "bg-amber-500 text-white shadow-xs"
-                                          : "bg-black/50 text-white/80 opacity-0 group-hover/thumb:opacity-100 hover:bg-amber-500 hover:text-white",
-                                      )}
-                                      title={
-                                        isCover
-                                          ? isAr
-                                            ? "الغلاف الرئيسي"
-                                            : "Main Cover"
-                                          : isAr
-                                            ? "تعيين كغلاف رئيسي"
-                                            : "Set as main cover"
-                                      }
-                                    >
-                                      <Star
-                                        className={cn("h-2.5 w-2.5", isCover ? "fill-white" : "")}
-                                      />
-                                    </button>
-
-                                    {/* Bottom Cover Label Badge */}
-                                    {isCover && (
-                                      <div className="absolute inset-x-0 bottom-0 bg-primary text-primary-foreground text-xs font-bold py-0.5 text-center leading-none pointer-events-none">
-                                        {isAr ? "الغلاف" : "Cover"}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
+                          <DraftImageStrip
+                            draft={draft}
+                            isAr={isAr}
+                            onToggle={(index) => handleToggleSelectImage(draft.id, index)}
+                            onCover={(index) => handleSelectCover(draft.id, index)}
+                            onSelectAll={(all) => handleSelectAllImages(draft.id, all)}
+                            onMove={(from, to) => actions.moveImage(draft.id, from, to)}
+                          />
                         )}
 
                         {/* Card Content & Inline Editable Fields */}

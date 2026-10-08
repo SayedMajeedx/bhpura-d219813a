@@ -5,18 +5,25 @@ import { Button } from "@/components/ui/button";
 export function DraftMergeControls({
   isAr,
   selected,
+  soldOut = false,
   mergedCount,
   onToggle,
   onSplit,
 }: {
   isAr: boolean;
   selected: boolean;
+  soldOut?: boolean;
   mergedCount: number;
   onToggle: () => void;
   onSplit: () => void;
 }) {
   return (
     <>
+      {soldOut && (
+        <span className="absolute bottom-11 start-2 z-10 rounded-md bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground shadow-sm">
+          {isAr ? "مباع" : "Sold out"}
+        </span>
+      )}
       <label className="absolute bottom-2 start-2 z-10 flex cursor-pointer items-center gap-1.5 rounded-lg bg-background/90 px-2 py-1 text-xs font-semibold text-foreground shadow-sm backdrop-blur-xs">
         <input
           type="checkbox"
@@ -24,7 +31,7 @@ export function DraftMergeControls({
           onChange={onToggle}
           className="h-3.5 w-3.5 accent-primary"
         />
-        {isAr ? "تحديد للدمج" : "Select to merge"}
+        {isAr ? "تحديد" : "Select"}
       </label>
       {mergedCount > 1 && (
         <Button

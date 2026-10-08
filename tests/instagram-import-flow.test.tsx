@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InstagramProductDraft } from "../src/lib/instagram-ai-importer";
 
@@ -18,12 +18,10 @@ const stubs = vi.hoisted(() => ({
   retryImageRehostFn: vi.fn(),
   bulkInsertProducts: vi.fn(),
 }));
-const toast = vi.hoisted(() => ({
-  success: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warning: vi.fn(),
-}));
+// `toast(...)` itself is called too (for the Undo), so the mock is a function with the helpers on it.
+const toast = vi.hoisted(() =>
+  Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
+);
 vi.mock("sonner", () => ({ toast }));
 const importer = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
@@ -119,7 +117,7 @@ describe("the Instagram importer's review screen", () => {
 
     // Six drafts to review, none of them merged yet.
     await screen.findByText(/All \(6\)/, undefined, { timeout: 30_000 });
-    expect(screen.getAllByLabelText("Select to merge")).toHaveLength(6);
+    expect(screen.getAllByLabelText("Select")).toHaveLength(6);
 
     // Merge every three posts in a row (the toolbar's default).
     fireEvent.click(screen.getByRole("button", { name: "Merge" }));
@@ -318,5 +316,146 @@ describe("the Instagram importer's review screen", () => {
     ]);
     // What was only kept to suggest groups is not sent to be saved.
     expect(products.every((p) => !("caption" in p) && !("postedAt" in p))).toBe(true);
+  });
+
+  // ---- review tools ------------------------------------------------------------------------------
+  const cardIds = () =>
+    [...document.querySelectorAll("[data-draft-id]")].map((card) =>
+      card.getAttribute("data-draft-id"),
+    );
+  const priced = (
+    id: string,
+    title: string,
+    price: number,
+    over: Partial<InstagramProductDraft> = {},
+  ) => lead(id, title, price) && { ...lead(id, title, price), ...over };
+
+  it("searches the review and sorts it by price", async () => {
+    stubs.batchParseCaptionsWithAI.mockResolvedValue({
+      drafts: [
+        priced("a", "عباية مرجان", 28),
+        priced("b", "فستان طيف", 22),
+        priced("c", "عباية سحاب", 30),
+        priced("d", "حقيبة", 12),
+        priced("e", "وشاح", 9),
+        priced("f", "عباية عقد", 35),
+      ],
+    });
+    openModal();
+    await startImport();
+    expect(cardIds()).toEqual(["a", "b", "c", "d", "e", "f"]);
+
+    fireEvent.change(screen.getByLabelText("Search drafts"), { target: { value: "فستان" } });
+    expect(cardIds()).toEqual(["b"]);
+    fireEvent.change(screen.getByLabelText("Search drafts"), { target: { value: "حقيبة وشاح" } });
+    expect(cardIds()).toEqual([]);
+    fireEvent.change(screen.getByLabelText("Search drafts"), { target: { value: "حقيبة" } });
+    expect(cardIds()).toEqual(["d"]);
+    fireEvent.change(screen.getByLabelText("Search drafts"), { target: { value: "" } });
+
+    fireEvent.change(screen.getByLabelText("Sort drafts"), { target: { value: "price_desc" } });
+    expect(cardIds()).toEqual(["f", "c", "a", "b", "d", "e"]);
+    fireEvent.change(screen.getByLabelText("Sort drafts"), { target: { value: "price_asc" } });
+    expect(cardIds()).toEqual(["e", "d", "b", "a", "c", "f"]);
+  });
+
+  it("removes the sold-out posts, with an Undo that puts them back", async () => {
+    stubs.batchParseCaptionsWithAI.mockResolvedValue({
+      drafts: [
+        priced("a", "عباية مرجان", 28),
+        priced("b", "فستان طيف", 22, { isSoldOut: true }),
+        priced("c", "عباية سحاب", 30),
+        priced("d", "حقيبة", 12),
+        priced("e", "وشاح", 9, { isSoldOut: true }),
+        priced("f", "عباية عقد", 35),
+      ],
+    });
+    openModal();
+    await startImport();
+    expect(screen.getAllByText("Sold out").length).toBeGreaterThanOrEqual(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Sold out (2)" }));
+    expect(cardIds()).toEqual(["b", "e"]);
+    fireEvent.click(screen.getByRole("button", { name: "Remove sold out (2)" }));
+    await screen.findByText(/All \(4\)/);
+    // The tab with nothing left goes back to all.
+    expect(cardIds()).toEqual(["a", "c", "d", "f"]);
+
+    const [message, options] = toast.mock.calls.at(-1) as [
+      string,
+      { action: { label: string; onClick: () => void } },
+    ];
+    expect(message).toBe("Removed 2 from the review.");
+    expect(options.action.label).toBe("Undo");
+    act(() => options.action.onClick());
+    await screen.findByText(/All \(6\)/);
+    expect(cardIds()).toEqual(["a", "b", "c", "d", "e", "f"]);
+  });
+
+  it("sets the price of the ticked posts together", async () => {
+    stubs.batchParseCaptionsWithAI.mockResolvedValue({
+      drafts: ["a", "b", "c", "d", "e", "f"].map((id) => draftOf(id, { title: `منتج ${id}` })),
+    });
+    openModal();
+    await startImport();
+    // Nothing is ready: no price anywhere.
+    expect(screen.getByRole("button", { name: /Approve Ready \(0\)/ })).toBeDisabled();
+
+    const ticks = screen.getAllByLabelText("Select");
+    fireEvent.click(ticks[0]);
+    fireEvent.click(ticks[2]);
+    expect(await screen.findByText("2 selected: edit them together")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Price for all selected"), { target: { value: "25" } });
+    fireEvent.click(
+      within(screen.getByLabelText("Price for all selected").parentElement!).getByRole("button", {
+        name: "Apply",
+      }),
+    );
+
+    // Those two now have a price they trust: ready; the rest still are not.
+    expect(await screen.findByRole("button", { name: /Approve Ready \(2\)/ })).toBeEnabled();
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(2\)/ }));
+    await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
+    const { products } = stubs.bulkInsertProducts.mock.calls[0][0].data as {
+      products: Array<{ id: string; price: number }>;
+    };
+    expect(products.map((p) => [p.id, p.price])).toEqual([
+      ["a", 25],
+      ["c", 25],
+    ]);
+  });
+
+  it("puts a product's pictures in the order the merchant chose", async () => {
+    const picture = (n: number, cover = false) => ({
+      url: `${n}.jpg`,
+      r2Url: `r2/${n}.jpg`,
+      isCover: cover,
+      selected: true,
+      status: "success" as const,
+    });
+    stubs.batchParseCaptionsWithAI.mockResolvedValue({
+      drafts: [
+        priced("a", "عباية مرجان", 28, {
+          postType: "carousel",
+          images: [picture(1, true), picture(2), picture(3)],
+        }),
+        ...["b", "c", "d", "e", "f"].map((id) => priced(id, `منتج ${id}`, 10)),
+      ],
+    });
+    openModal();
+    await startImport();
+
+    const card = document.querySelector('[data-draft-id="a"]') as HTMLElement;
+    // The first picture cannot go earlier; moving the second one earlier puts it first.
+    expect(within(card).getAllByLabelText("Move photo earlier")[0]).toBeDisabled();
+    fireEvent.click(within(card).getAllByLabelText("Move photo earlier")[1]);
+    fireEvent.click(within(card).getAllByLabelText("Move photo later")[1]);
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(6\)/ }));
+    await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
+    const { products } = stubs.bulkInsertProducts.mock.calls[0][0].data as {
+      products: Array<{ id: string; images: Array<{ url: string }> }>;
+    };
+    // 2 moved before 1, then 1 (now second) moved later: 2, 3, 1.
+    expect(products[0].images.map((i) => i.url)).toEqual(["2.jpg", "3.jpg", "1.jpg"]);
   });
 });
