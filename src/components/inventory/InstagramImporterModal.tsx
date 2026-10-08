@@ -31,11 +31,6 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
-  fetchInstagramPosts,
-  checkScraperStatus,
-  fetchScraperDataset,
-  batchRehostAllMedia,
-  batchParseCaptionsWithAI,
   retryImageRehostFn,
   bulkInsertProducts,
   RATE_LIMIT_INFO,
@@ -45,7 +40,10 @@ import {
   DraftMergeControls,
   MergeToolbar,
   forSave,
+  ImportCancelled,
+  importApi,
   isDraftReady,
+  runImportPipeline,
   useDraftMerge,
   type MergeableDraft,
 } from "@/features/instagram-import";
@@ -146,7 +144,11 @@ export function InstagramImporterModal({
     }
   }, [drafts, filterTab, readyDrafts, imageFailedDrafts, needsReviewDrafts]);
 
-  // Step 1 -> Run Import Pipeline
+  // Step 1 -> Run Import Pipeline: in small batches, with real progress and a cancel button
+  // (see src/features/instagram-import/lib/run-import.ts).
+  const abortRef = React.useRef<AbortController | null>(null);
+  React.useEffect(() => () => abortRef.current?.abort(), []);
+
   const handleStartImport = async () => {
     const rawUrls = urlsText
       .split("\n")
@@ -171,118 +173,54 @@ export function InstagramImporterModal({
       return;
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      // 1. Apify Scraping Actor
-      setStep("scraping");
-      setStatusMessage(
-        isAr
-          ? `بدء سحب المنشورات عبر Apify (المطلوب: ${limit} منشور)...`
-          : `Starting Apify scraping run (requesting ${limit} posts)...`,
-      );
-      setProgressPercent(15);
-
-      const runInit = await fetchInstagramPosts({
-        data: {
-          username: cleanUsername || undefined,
-          urls: rawUrls.length > 0 ? rawUrls : undefined,
-          range: limit,
+      const outcome = await runImportPipeline({
+        username: cleanUsername || undefined,
+        urls: rawUrls,
+        limit,
+        brandId,
+        isAr,
+        api: importApi,
+        signal: controller.signal,
+        onStep: setStep,
+        onStatus: (message, percent) => {
+          setStatusMessage(message);
+          setProgressPercent(percent);
         },
       });
-
-      setStatusMessage(isAr ? "جاري استخراج بيانات الحساب..." : "Crawling Instagram posts...");
-      setProgressPercent(25);
-
-      // Poll until finished (up to 3 minutes)
-      let pollCount = 0;
-      const datasetId = runInit.datasetId;
-      let succeeded = false;
-      const maxPolls = 60;
-      while (pollCount < maxPolls) {
-        await new Promise((r) => setTimeout(r, 3000));
-        pollCount++;
-        const check = await checkScraperStatus({ data: { runId: runInit.runId } });
-        if (check.status === "SUCCEEDED") {
-          succeeded = true;
-          break;
-        }
-        if (
-          check.status === "FAILED" ||
-          check.status === "ABORTED" ||
-          check.status === "TIMED-OUT"
-        ) {
-          throw new Error(
-            isAr
-              ? `فشلت عملية السحب بحالة (${check.status}). تأكد من أن الحساب عام (Public).`
-              : `Scraping failed with status: ${check.status}. Make sure the account is public.`,
-          );
-        }
-        setProgressPercent(Math.min(48, 25 + Math.floor(pollCount * 0.38)));
-      }
-
-      if (!succeeded) {
-        throw new Error(
-          isAr
-            ? "استغرقت عملية سحب المنشورات وقتاً طويلاً. يرجى تجربة سحب 5 أو 10 منشورات أولاً أو التأكد من إتاحة الحساب."
-            : "Scraping timed out. Please try with fewer posts or verify account accessibility.",
-        );
-      }
-
-      setStatusMessage(isAr ? "قراءة الصور والمنشورات..." : "Loading post data...");
-      setProgressPercent(50);
-      const rawPosts = await fetchScraperDataset({ data: { datasetId } });
-
-      if (rawPosts.length === 0) {
-        throw new Error(
-          isAr
-            ? "لم يتم العثور على أي منشورات عامة في هذا الحساب."
-            : "No public posts found for this account.",
-        );
-      }
-
-      // 2. Cloudflare R2 Rehosting with Integrity Checks
-      setStep("rehosting");
-      setStatusMessage(
-        isAr
-          ? `رفع ${rawPosts.length} منشور وسائط إلى سحابة R2 مع فحص السلامة...`
-          : `Rehosting media to R2 with integrity checks (${rawPosts.length} posts)...`,
-      );
-      setProgressPercent(65);
-
-      const rehostRes = await batchRehostAllMedia({
-        data: {
-          brandId,
-          posts: rawPosts,
-        },
-      });
-
-      // 3. Gemini AI Analysis with Per-Field Confidence and Regex Reconciliation
-      setStep("analyzing");
-      setStatusMessage(
-        isAr
-          ? "تحليل الكابتشن والأسعار بدقة الذكاء الاصطناعي والتحقق المستقل..."
-          : "Analyzing titles, prices, and sizes with confidence gate...",
-      );
-      setProgressPercent(85);
-
-      const parseRes = await batchParseCaptionsWithAI({
-        data: {
-          posts: rehostRes.posts,
-          brandId,
-        },
-      });
-
-      setDrafts(parseRes.drafts);
-      setProgressPercent(100);
+      setDrafts(outcome.drafts);
       setStep("review");
       toast.success(
         isAr
-          ? `تم تجهيز ${parseRes.drafts.length} مسودة للمراجعة البصرية.`
-          : `Prepared ${parseRes.drafts.length} drafts for visual review.`,
+          ? `تم تجهيز ${outcome.drafts.length} مسودة للمراجعة البصرية.`
+          : `Prepared ${outcome.drafts.length} drafts for visual review.`,
       );
+      if (outcome.rehostFailedPosts > 0) {
+        toast.warning(
+          isAr
+            ? `تعذر نسخ صور ${outcome.rehostFailedPosts} منشور. أعد رفع الصور من بطاقاتها.`
+            : `Pictures of ${outcome.rehostFailedPosts} posts could not be copied. Retry them from their cards.`,
+        );
+      }
+      if (outcome.analysisFailedPosts > 0) {
+        toast.warning(
+          isAr
+            ? `تعذرت قراءة ${outcome.analysisFailedPosts} منشور بالذكاء الاصطناعي. أكمل بياناتها يدوياً.`
+            : `${outcome.analysisFailedPosts} posts could not be read by the AI. Fill them in by hand.`,
+        );
+      }
     } catch (err: any) {
-      console.error("Instagram import pipeline error:", err);
-      toast.error(err?.message || (isAr ? "فشل استيراد إنستغرام" : "Instagram import failed"));
+      if (err instanceof ImportCancelled) {
+        toast.info(isAr ? "تم إلغاء الاستيراد." : "Import cancelled.");
+      } else {
+        console.error("Instagram import pipeline error:", err);
+        toast.error(err?.message || (isAr ? "فشل استيراد إنستغرام" : "Instagram import failed"));
+      }
       setStep("input");
+    } finally {
+      abortRef.current = null;
     }
   };
 
@@ -745,6 +683,17 @@ export function InstagramImporterModal({
                       ? "جاري المعالجة والتحقق لضمان أعلى دقة وسلامة..."
                       : "Processing media and validating fields..."}
                   </p>
+                  {step !== "saving" && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => abortRef.current?.abort()}
+                    >
+                      {isAr ? "إلغاء" : "Cancel"}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

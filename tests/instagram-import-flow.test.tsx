@@ -18,7 +18,13 @@ const stubs = vi.hoisted(() => ({
   retryImageRehostFn: vi.fn(),
   bulkInsertProducts: vi.fn(),
 }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), info: vi.fn() } }));
+const toast = vi.hoisted(() => ({
+  success: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warning: vi.fn(),
+}));
+vi.mock("sonner", () => ({ toast }));
 const importer = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   ...stubs,
@@ -154,5 +160,48 @@ describe("the Instagram importer's review screen", () => {
     await screen.findByText(/All \(2\)/);
     fireEvent.click(screen.getAllByRole("button", { name: /Merged from 3 posts/ })[0]);
     await screen.findByText(/All \(4\)/);
+  });
+
+  it("shows real progress and can be cancelled while the posts are being pulled", async () => {
+    stubs.checkScraperStatus.mockResolvedValue({ status: "RUNNING" });
+    render(
+      <I18nProvider>
+        <InstagramImporterModal
+          brandId="brand-1"
+          onComplete={vi.fn()}
+          open
+          onOpenChange={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.change(screen.getByPlaceholderText("pura.line"), { target: { value: "abaya.zh" } });
+    fireEvent.click(screen.getByRole("button", { name: /Start Extraction Pipeline/ }));
+
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    // Back to the form, with a note, and nothing was copied or analysed.
+    await screen.findByPlaceholderText("pura.line", undefined, { timeout: 15_000 });
+    expect(toast.info).toHaveBeenCalledWith("Import cancelled.");
+    expect(stubs.batchRehostAllMedia).not.toHaveBeenCalled();
+    expect(stubs.batchParseCaptionsWithAI).not.toHaveBeenCalled();
+  });
+
+  it("tells the merchant about posts that could not be read, and still shows the rest", async () => {
+    stubs.batchParseCaptionsWithAI.mockRejectedValue(new Error("Gemini down"));
+    render(
+      <I18nProvider>
+        <InstagramImporterModal
+          brandId="brand-1"
+          onComplete={vi.fn()}
+          open
+          onOpenChange={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.change(screen.getByPlaceholderText("pura.line"), { target: { value: "abaya.zh" } });
+    fireEvent.click(screen.getByRole("button", { name: /Start Extraction Pipeline/ }));
+    await screen.findByText(/All \(6\)/, undefined, { timeout: 60_000 });
+    expect(toast.warning).toHaveBeenCalledWith(
+      "6 posts could not be read by the AI. Fill them in by hand.",
+    );
   });
 });

@@ -608,34 +608,30 @@ export const batchRehostAllMedia = createServerFn({ method: "POST" })
     const processedPosts: InstagramPostPreview[] = [];
 
     for (const post of posts) {
-      const updatedImages: PostImageItem[] = [];
+      // A post's pictures are copied together (a post has a handful); posts one after another.
+      const updatedImages: PostImageItem[] = await Promise.all(
+        post.images.map(async (img): Promise<PostImageItem> => {
+          // If already hosted on R2, skip re-uploading
+          if (img.r2Url && img.status === "success") return img;
 
-      for (const img of post.images) {
-        // If already hosted on R2, skip re-uploading
-        if (img.r2Url && img.status === "success") {
-          updatedImages.push(img);
-          continue;
-        }
-
-        const res = await rehostSingleImageWithIntegrity(brandId, img.url);
-        if (res.r2Url) {
-          updatedImages.push({
-            ...img,
-            r2Url: res.r2Url,
-            status: "success",
-            selected: img.selected !== false,
-            errorMessage: undefined,
-          });
-        } else {
-          updatedImages.push({
-            ...img,
-            r2Url: null,
-            status: "failed",
-            selected: false,
-            errorMessage: res.error || "فشل تحميل الصورة",
-          });
-        }
-      }
+          const res = await rehostSingleImageWithIntegrity(brandId, img.url);
+          return res.r2Url
+            ? {
+                ...img,
+                r2Url: res.r2Url,
+                status: "success",
+                selected: img.selected !== false,
+                errorMessage: undefined,
+              }
+            : {
+                ...img,
+                r2Url: null,
+                status: "failed",
+                selected: false,
+                errorMessage: res.error || "فشل تحميل الصورة",
+              };
+        }),
+      );
 
       // Determine active cover
       const cover = updatedImages.find((i) => i.isCover && i.r2Url) || updatedImages[0];
