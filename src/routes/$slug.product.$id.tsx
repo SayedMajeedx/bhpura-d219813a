@@ -20,12 +20,12 @@ import { useAddons } from "@/components/addons/AddonsProvider";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { toast } from "sonner";
+import { storeLayoutData } from "@/features/storefront-shell/lib/layout-data";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import {
-  fetchActiveBrandIdentity,
   fetchBestSellerRows,
   fetchProductDetail,
-  fetchRecommendationCatalog,
+  fetchProductDetailByBrandSlug,
   storefrontKeys,
   storefrontQueries,
   type RecommendationProduct,
@@ -86,7 +86,7 @@ import { ServiceMobileBookBar } from "@/features/product-page/components/Service
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
 import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
 export const Route = createFileRoute("/$slug/product/$id")({
-  loader: async ({ params, location }) => {
+  loader: async ({ params, location, parentMatchPromise }) => {
     let initialLang: "ar" | "en" = "ar";
     const searchParams = location?.search as any;
     const queryLang = searchParams?.lang;
@@ -115,18 +115,33 @@ export const Route = createFileRoute("/$slug/product/$id")({
       }
     }
 
-    const brand = await fetchActiveBrandIdentity(params.slug);
+    // One round trip, not two: the product (matched to the store by a join) and the best sellers are
+    // asked for at once, beside the store layout's own call, instead of after a lookup of the store.
+    // The "you may also like" products are in that layout call already (same columns, same order).
+    const productRequest = fetchProductDetailByBrandSlug(params.slug, params.id);
+    const bestSellersRequest = fetchBestSellerRows(params.slug, PDP_BEST_SELLER_LIMIT);
+    // Whichever way this loader ends, a request nobody awaits must not become an unhandled rejection.
+    for (const request of [productRequest, bestSellersRequest]) request.catch(() => undefined);
+    const layout = storeLayoutData((await parentMatchPromise).loaderData);
+    const brand = layout.brand;
     if (!brand) throw notFound();
 
-    const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
-      fetchProductDetail(brand.id, params.id),
-      fetchRecommendationCatalog(brand.id),
-      fetchBestSellerRows(brand.slug, PDP_BEST_SELLER_LIMIT),
-    ]);
+    let product = await productRequest;
+    if (!product && typeof brand.id === "string") {
+      // Not an id (an old name-style address) or not found by id: the slower name lookup.
+      product = await fetchProductDetail(brand.id, params.id);
+    }
     // A product that does not exist is a 404 (it used to be a 200 page that said "not found").
     if (!product) throw notFound();
 
-    return { brand, product, recommendationCatalog, bestSellerRows, initialLang };
+    return {
+      brand,
+      product,
+      recommendationCatalog: (layout.bootstrapData?.products ??
+        []) as unknown as RecommendationProduct[],
+      bestSellerRows: await bestSellersRequest,
+      initialLang,
+    };
   },
   head: productHead,
   component: ProductDetail,

@@ -2,12 +2,15 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useQuery } from "@tanstack/react-query";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
-  fetchCategoryBySlug,
-  fetchStorefrontPageMeta,
   storefrontQueries,
   type CategoryProductsScope,
   type StorefrontCategory,
 } from "@/lib/data/storefront";
+import {
+  layoutCategories,
+  layoutPage,
+  storeLayoutData,
+} from "@/features/storefront-shell/lib/layout-data";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { sortCatalogProducts } from "@/lib/catalog-sort";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -49,29 +52,30 @@ export const Route = createFileRoute("/$slug/$category")({
   headers: () => ({
     "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
   }),
-  loader: async ({ params, location }) => {
+  // Everything this page's head and 404 need (the store's pages and categories, its brand) was read
+  // by the store's layout in one call, so this loader asks the database for nothing: it used to make
+  // three more round trips, one after the other, before a category page could start.
+  loader: async ({ params, location, parentMatchPromise }) => {
     const initialLang = await resolveInitialLang(params.slug, location?.search);
-    const meta = await fetchStorefrontPageMeta(params.slug);
-    if (!meta) return { page: null, category: null, brand: null, faviconUrl: null, initialLang };
-    const page =
-      meta.pages.find(
-        (item): item is { slug: string } =>
-          typeof item === "object" &&
-          item !== null &&
-          (item as { slug?: unknown }).slug === params.category,
-      ) ?? null;
+    const layout = storeLayoutData((await parentMatchPromise).loaderData);
+    const brand = layout.brand;
+    if (!brand) return { page: null, category: null, brand: null, faviconUrl: null, initialLang };
+    const faviconUrl =
+      layout.settings?.favicon_url ||
+      layout.settings?.logo_url ||
+      (brand.logo_url as string) ||
+      null;
+    // A suspended store shows its own screen (its answer carries no catalog).
+    if (layout.isSuspended) return { page: null, category: null, brand, faviconUrl, initialLang };
+    const page = layoutPage(layout, params.category);
     // A slug that is neither a page, a smart collection nor a category is a missing page: a 404 for
-    // search engines too, not an empty page that answers 200. A failed read is not "missing".
+    // search engines too, not an empty page that answers 200.
     let category: StorefrontCategory | null = null;
     if (!page && !smartKindOf(params.category)) {
-      try {
-        category = await fetchCategoryBySlug(meta.brand.id, params.category);
-      } catch {
-        return { page, category, brand: meta.brand, faviconUrl: meta.faviconUrl, initialLang };
-      }
+      category = layoutCategories(layout).find((c) => c.slug === params.category) ?? null;
       if (!category) throw notFound();
     }
-    return { page, category, brand: meta.brand, faviconUrl: meta.faviconUrl, initialLang };
+    return { page, category, brand, faviconUrl, initialLang };
   },
   head: ({ loaderData, params }) =>
     categoryHead({ loaderData, slug: params.slug, category: params.category }),

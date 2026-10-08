@@ -7,11 +7,8 @@ import { ProductGrid } from "@/components/storefront/product-grid";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { BrandStorySection } from "@/components/storefront/BrandStorySection";
 import { RecentlyViewed } from "@/components/storefront/RecentlyViewed";
-import {
-  PAGE_DATA_RANKING_LIMIT,
-  fetchStorefrontPageData,
-  storefrontQueries,
-} from "@/lib/data/storefront";
+import { PAGE_DATA_RANKING_LIMIT, storefrontQueries } from "@/lib/data/storefront";
+import { storeLayoutData } from "@/features/storefront-shell/lib/layout-data";
 import {
   homeGridProducts,
   homeMerchandising,
@@ -30,8 +27,10 @@ import { ServicesHome } from "@/features/services-home/components/ServicesHome";
 import { isServicesStore } from "@/features/services-home/lib/services-home";
 
 export const Route = createFileRoute("/$slug/")({
-  loader: async ({ params }) => {
-    const pageData = await fetchStorefrontPageData(params.slug);
+  // The store's layout has just read this same page data; asking the database again doubled the
+  // work of every home page load and cost a second round trip when coming back to the home page.
+  loader: async ({ parentMatchPromise }) => {
+    const pageData = storeLayoutData((await parentMatchPromise).loaderData).bootstrapData;
     return {
       products: pageData?.products ?? [],
       categories: pageData?.categories ?? [],

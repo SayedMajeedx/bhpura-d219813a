@@ -196,6 +196,39 @@ async function fetchProductById(
   return (fallback as unknown as StorefrontProductDetail | null) ?? null;
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A product of the store with this slug, by id, in ONE request: the brand is matched by a join, so
+ * this does not wait for the store's own lookup and can run beside the layout's page-data call.
+ * Null when the id is not an id, or there is no such active product (the caller then falls back to
+ * the name lookup of `fetchProductDetail`).
+ */
+export async function fetchProductDetailByBrandSlug(
+  brandSlug: string,
+  productId: string,
+): Promise<StorefrontProductDetail | null> {
+  if (!UUID.test(productId)) return null;
+  const run = (columns: string) =>
+    supabase
+      .from("products")
+      .select(`${columns}, brands!inner(slug)`)
+      .eq("id", productId)
+      .eq("is_active", true)
+      .eq("brands.slug", brandSlug)
+      .eq("brands.is_active", true)
+      .maybeSingle();
+  const strip = (row: unknown) => {
+    const { brands: _brands, ...product } = row as Record<string, unknown>;
+    return product as unknown as StorefrontProductDetail;
+  };
+  const { data, error } = await run(PRODUCT_DETAIL_SELECT);
+  if (data) return strip(data);
+  if (!error) return null;
+  const { data: fallback } = await run(PRODUCT_DETAIL_BASE_SELECT);
+  return fallback ? strip(fallback) : null;
+}
+
 /**
  * Product page / quick view lookup. Tries the id, then any `alternateIds`
  * (the product page passes an id repaired from a corrupted URL), then treats
