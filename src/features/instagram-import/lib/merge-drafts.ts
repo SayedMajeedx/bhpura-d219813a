@@ -15,6 +15,9 @@ export type MergeableDraft = InstagramProductDraft & {
   mergedPostIds?: string[];
   /** The drafts as they were before merging, to split back. Never sent to the server. */
   mergedFrom?: InstagramProductDraft[];
+  /** From the post, to tell which posts belong together (see group-suggestions). Not sent either. */
+  postedAt?: string;
+  caption?: string;
 };
 
 /** Is this draft complete enough to save without a second look? */
@@ -37,7 +40,7 @@ export function postIdsOf(draft: { id: string; mergedPostIds?: string[] }): stri
 export function forSave(
   draft: MergeableDraft,
 ): InstagramProductDraft & { mergedPostIds?: string[] } {
-  const { mergedFrom: _kept, ...rest } = draft;
+  const { mergedFrom: _kept, caption: _caption, postedAt: _postedAt, ...rest } = draft;
   return rest;
 }
 

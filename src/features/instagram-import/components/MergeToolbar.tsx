@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SmartGrouping } from "@/features/instagram-import/components/SmartGrouping";
+import type { MergeableDraft } from "@/features/instagram-import/lib/merge-drafts";
 
 /**
  * Above the review cards: merge every N posts in a row into one product (a store that posts one
@@ -9,14 +11,18 @@ import { Input } from "@/components/ui/input";
  */
 export function MergeToolbar({
   isAr,
+  drafts,
   selectedCount,
   onGroup,
+  onApplyGroups,
   onMerge,
   onClear,
 }: {
   isAr: boolean;
+  drafts: MergeableDraft[];
   selectedCount: number;
   onGroup: (size: number) => void;
+  onApplyGroups: (groups: string[][]) => void;
   onMerge: () => void;
   onClear: () => void;
 }) {
@@ -52,6 +58,7 @@ export function MergeToolbar({
           {isAr ? "دمج" : "Merge"}
         </Button>
       </div>
+      <SmartGrouping isAr={isAr} drafts={drafts} onApply={onApplyGroups} />
       <div className="flex items-center gap-2 sm:ms-auto">
         <Button
           type="button"

@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { InstagramProductDraft } from "../src/lib/instagram-ai-importer";
 
@@ -39,7 +39,14 @@ const { InstagramImporterModal } =
   await import("../src/components/inventory/InstagramImporterModal");
 const { I18nProvider } = await import("../src/lib/i18n");
 
-const posts = ["a", "b", "c", "d", "e", "f"].map((id) => ({ id }));
+// Posted in two bursts: a, b, c a few minutes apart, then d, e, f hours later; the captions are on a and d.
+const BURST_START = Date.UTC(2026, 9, 3, 10, 0, 0);
+const minutesAt = [0, 2, 4, 200, 202, 204];
+const posts = ["a", "b", "c", "d", "e", "f"].map((id, index) => ({
+  id,
+  postedAt: new Date(BURST_START + minutesAt[index] * 60_000).toISOString(),
+  caption: id === "a" ? "عباية مرجان السعر 28 د.ب" : id === "d" ? "عباية سحاب السعر 30 د.ب" : "",
+}));
 
 function draftOf(id: string, over: Partial<InstagramProductDraft> = {}): InstagramProductDraft {
   return {
@@ -284,5 +291,32 @@ describe("the Instagram importer's review screen", () => {
     await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(localStorage.getItem(SESSION_KEY)).toBeNull());
     first.unmount();
+  });
+
+  it("suggests the groups from when the posts were put up, and merges the ones the merchant keeps", async () => {
+    openModal();
+    await startImport();
+
+    fireEvent.click(screen.getByRole("button", { name: "Suggest groups" }));
+    const dialog = await screen.findByRole("dialog");
+    // Two bursts, each with its caption on the first post: both sure, both ticked.
+    expect(within(dialog).getByText(/Found 2 groups \(2 sure\)/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Merge selected (2)" }));
+
+    await screen.findByText(/All \(2\)/);
+    expect(screen.getAllByRole("button", { name: /Merged from 3 posts/ })).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(2\)/ }));
+    await waitFor(() => expect(stubs.bulkInsertProducts).toHaveBeenCalledTimes(1));
+    const { products } = stubs.bulkInsertProducts.mock.calls[0][0].data as {
+      products: Array<
+        InstagramProductDraft & { mergedPostIds?: string[]; caption?: string; postedAt?: string }
+      >;
+    };
+    expect(products.map((p) => p.mergedPostIds)).toEqual([
+      ["b", "c"],
+      ["e", "f"],
+    ]);
+    // What was only kept to suggest groups is not sent to be saved.
+    expect(products.every((p) => !("caption" in p) && !("postedAt" in p))).toBe(true);
   });
 });

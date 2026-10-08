@@ -1,4 +1,5 @@
 import type { InstagramPostPreview, InstagramProductDraft } from "@/lib/instagram-ai-importer";
+import type { MergeableDraft } from "./merge-drafts";
 import { ImportCancelled, runChunked } from "./chunked";
 
 /**
@@ -40,7 +41,7 @@ export type ImportInput = {
 };
 
 export type ImportOutcome = {
-  drafts: InstagramProductDraft[];
+  drafts: MergeableDraft[];
   /** Posts whose pictures could not be copied (they can be retried picture by picture in review). */
   rehostFailedPosts: number;
   /** Posts the AI could not read (their details are left empty for the merchant). */
@@ -244,6 +245,13 @@ export async function runImportPipeline(input: ImportInput): Promise<ImportOutco
     }
   });
 
+  // Each draft remembers when and with what words its post was written, to suggest merges.
+  const source = new Map(hosted.map((post) => [post.id, post]));
+  const withSource = drafts.map((draft): MergeableDraft => {
+    const post = source.get(draft.id);
+    return { ...draft, postedAt: post?.postedAt, caption: post?.caption?.slice(0, 600) };
+  });
+
   onStatus(isAr ? "تم تجهيز المسودات" : "Drafts are ready", 100);
-  return { drafts, rehostFailedPosts, analysisFailedPosts };
+  return { drafts: withSource, rehostFailedPosts, analysisFailedPosts };
 }
