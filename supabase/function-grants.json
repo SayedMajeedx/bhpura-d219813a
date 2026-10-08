@@ -171,6 +171,11 @@
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
     },
+    "get_product_recent_purchase_count(p_brand_slug text, p_product_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public aggregate for the product page's social proof badge: returns a count only at or above 3 (otherwise NULL), only for an active product of an active store that keeps the badge on, nothing about who bought"
+    },
     "get_public_benefit_settings(p_brand_id uuid)": {
       "anon": true,
       "authenticated": true,
