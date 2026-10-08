@@ -7,6 +7,7 @@ import {
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
 import { productDraftItemSchema } from "@/features/instagram-import/lib/draft-schema";
+import { buildDraft, type AiReading } from "@/features/instagram-import/lib/build-draft";
 import {
   MAX_IMAGE_BYTES,
   isSafeRemoteImageUrl,
@@ -96,6 +97,8 @@ export type InstagramProductDraft = {
   imageUploadStatus: "all_success" | "partial_success" | "failed";
   title: string;
   price: number | null;
+  /** An old price the caption crossed out; shown struck through next to the price. */
+  originalPrice?: number | null;
   description: string;
   sizes: string[];
   colors: string[];
@@ -174,52 +177,6 @@ export async function rehostSingleImageWithIntegrity(
       error: err?.message || "فشل الاتصال بسحابة التخزين R2",
     };
   }
-}
-
-/**
- * Strict regex validation for currency prices in GCC context.
- * Normalizes Eastern Arabic numerals (٠-٩) and looks for explicit BHD/BD/د.ب/دينار.
- */
-export function extractPriceByRegex(caption: string): {
-  price: number | null;
-  rawMatch: string | null;
-  isExplicit: boolean;
-} {
-  if (!caption) return { price: null, rawMatch: null, isExplicit: false };
-
-  // Normalize Eastern Arabic numerals (٠-٩) to Western (0-9)
-  const normalized = caption.replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 1632));
-
-  // Regex patterns tailored for GCC / Bahraini Dinar and explicit pricing
-  const regexPatterns = [
-    // Pattern 1: Explicit keyword "السعر" or "Price" followed by number and optional currency
-    // e.g. "السعر: 35 د.ب", "Price: 35 BD", "السعر 35 دينار"
-    /(?:السعر|سعر|price|costs?)[\s:]*([0-9]+(?:\.[0-9]{1,3})?)\s*(?:bhd|bd|د\.ب|دينار|دب)?/i,
-    // Pattern 2: Number followed immediately by currency symbol
-    // e.g. "35 BHD", "35.500 BD", "35 د.ب", "35 دينار", "35دينار"
-    /([0-9]+(?:\.[0-9]{1,3})?)\s*(?:bhd|bd|د\.ب|دينار|ديناراً)/i,
-    // Pattern 3: Currency symbol followed by number
-    // e.g. "BD 35", "BHD 35", "دينار 35"
-    /(?:bhd|bd|د\.ب|دينار)\s*([0-9]+(?:\.[0-9]{1,3})?)/i,
-  ];
-
-  for (const pattern of regexPatterns) {
-    const match = normalized.match(pattern);
-    if (match && match[1]) {
-      let p = parseFloat(match[1]);
-      // Normalize 3-decimal fils notation if entered without decimal (e.g. 35000 -> 35 BHD)
-      if (p >= 1000 && p % 1000 === 0) {
-        p = p / 1000;
-      }
-      // Common boutique sense check: Price in BHD is typically between 1.0 and 1500.0 BHD
-      // Exclude common garment sizes if accidentally matched (like size 52, 54, 56, 58, 60 when no currency was around)
-      if (p > 0 && p < 2000) {
-        return { price: p, rawMatch: match[0], isExplicit: true };
-      }
-    }
-  }
-
-  return { price: null, rawMatch: null, isExplicit: false };
 }
 
 // Client and server sold-out scanning helper
@@ -761,134 +718,27 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       }
     }
 
-    // Map posts into validated drafts with independent regex price reconciliation
-    const drafts: InstagramProductDraft[] = posts.map((post) => {
-      const parsed = aiResults.find((p) => p.id === post.id) || {};
-      const regexCheck = extractPriceByRegex(post.caption);
-
-      const geminiPrice =
-        typeof parsed.price === "number" && !isNaN(parsed.price) ? parsed.price : null;
-      const regexPrice = regexCheck.price;
-
-      let finalPrice: number | null = null;
-      let priceConfidence = Number(parsed.confidence?.price) || 0.0;
-      let priceConflict: InstagramProductDraft["priceConflict"] = undefined;
-      const issues: string[] = Array.isArray(parsed.issues) ? [...parsed.issues] : [];
-
-      // RECONCILIATION LOGIC:
-      if (regexPrice !== null && geminiPrice !== null) {
-        if (Math.abs(regexPrice - geminiPrice) < 0.01) {
-          // Both agree! High confidence
-          finalPrice = regexPrice;
-          priceConfidence = Math.max(priceConfidence, 0.95);
-        } else {
-          // Conflict detected between regex and Gemini!
-          // Strictly downgrade confidence to LOW (< 0.4) and leave price empty or require manual confirmation
-          finalPrice = null; // Leave empty with red border
-          priceConfidence = 0.2;
-          priceConflict = {
-            geminiPrice,
-            regexPrice,
-            reason: `تعارض بين قراءة الذكاء الاصطناعي (${geminiPrice} د.ب) ونمط النص الصريح (${regexPrice} د.ب)`,
-          };
-          issues.push("price_conflict");
-        }
-      } else if (regexPrice !== null) {
-        // Regex found explicit currency pattern, Gemini missed it
-        finalPrice = regexPrice;
-        priceConfidence = 0.9;
-      } else if (geminiPrice !== null) {
-        // Gemini guessed a price but regex found NO explicit currency pattern!
-        // High risk of hallucination (phone number or size). Downgrade confidence!
-        finalPrice = null; // Do NOT set silent default!
-        priceConfidence = 0.3;
-        priceConflict = {
-          geminiPrice,
-          regexPrice: null,
-          reason: `استخرج الذكاء الاصطناعي سعراً (${geminiPrice}) بدون وجود رمز عملة صريح بالنص`,
-        };
-        issues.push("unverified_price");
-      } else {
-        // Neither found a price: price is null and confidence is 0.0
-        finalPrice = null;
-        priceConfidence = 0.0;
-        issues.push("missing_price");
+    // The store's currency, to tell a price in another currency from the store's own.
+    let storeCurrency: string | null = null;
+    if (data.brandId) {
+      try {
+        const { data: settings } = await context.supabase
+          .from("business_settings")
+          .select("currency")
+          .eq("brand_id", data.brandId)
+          .maybeSingle();
+        storeCurrency = settings?.currency ?? null;
+      } catch {
+        /* without it, no currency check */
       }
+    }
 
-      // Check image upload status across all images in post
-      const allSuccess =
-        post.images.length > 0 && post.images.every((img) => img.status === "success");
-      const anySuccess = post.images.some((img) => img.status === "success");
-      const imageUploadStatus: InstagramProductDraft["imageUploadStatus"] = allSuccess
-        ? "all_success"
-        : anySuccess
-          ? "partial_success"
-          : "failed";
-
-      if (imageUploadStatus === "failed") {
-        issues.push("image_upload_failed");
-      }
-
-      // Fallback clean title
-      let title = (parsed.title || "").trim();
-      if (!title || title.length < 3) {
-        title = post.postType === "reel" ? "فيديو إنستغرام جديد" : "منتج جديد";
-      }
-
-      const description = (parsed.description || post.caption || "").trim();
-      const sizes =
-        Array.isArray(parsed.sizes) && parsed.sizes.length > 0
-          ? parsed.sizes.map((s: string) => String(s).trim()).filter(Boolean)
-          : [];
-      const colors =
-        Array.isArray(parsed.colors) && parsed.colors.length > 0
-          ? parsed.colors.map((c: string) => String(c).trim()).filter(Boolean)
-          : [];
-      const category =
-        parsed.category && String(parsed.category).trim() !== ""
-          ? String(parsed.category).trim()
-          : null;
-
-      const nameConfidence = Math.max(0, Math.min(1, Number(parsed.confidence?.name) || 0.7));
-      const descConfidence = Math.max(
-        0,
-        Math.min(1, Number(parsed.confidence?.description) || 0.75),
-      );
-      const sizesConfidence =
-        sizes.length > 0 ? Math.max(0, Math.min(1, Number(parsed.confidence?.sizes) || 0.8)) : 1.0;
-
-      return {
-        id: post.id,
-        url: post.url,
-        isSoldOut: post.isSoldOut,
-        isVideo: post.isVideo,
-        postType: post.postType,
-        images: post.images,
-        coverImageUrl: post.coverImageUrl,
-        imageUploadStatus,
-        title,
-        price: finalPrice,
-        description,
-        sizes,
-        colors,
-        category,
-        fieldConfidence: {
-          name: nameConfidence,
-          price: priceConfidence,
-          description: descConfidence,
-          sizes: sizesConfidence,
-        },
-        fieldSources: {
-          name: "ai",
-          price: finalPrice !== null ? "ai" : "manual",
-          description: "ai",
-          sizes: "ai",
-          category: "ai",
-        },
-        priceConflict,
-        issues: [...new Set(issues)],
-      };
-    });
+    // Each post becomes a draft; its price is checked against what the caption itself states.
+    const drafts = posts.map((post) =>
+      buildDraft(post, (aiResults.find((p) => p.id === post.id) ?? {}) as AiReading, {
+        storeCurrency,
+      }),
+    );
 
     return { drafts };
   });
@@ -999,6 +849,8 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
 
         const price = typeof p.price === "number" && !isNaN(p.price) ? p.price : 0;
+        const originalPrice =
+          typeof p.originalPrice === "number" && p.originalPrice > price ? p.originalPrice : null;
 
         // Insert product: custom_fields MUST be empty [] so customer customization engine is clean
         const { data: prodData, error: prodErr } = await supabaseAdmin
@@ -1061,6 +913,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
               barcode: null,
               cost_price: 0,
               selling_price: price,
+              original_price: originalPrice,
               stock_main: 0,
               stock_incubator: 0,
               stock: 0,
@@ -1080,6 +933,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
               barcode: null,
               cost_price: 0,
               selling_price: price,
+              original_price: originalPrice,
               stock_main: 0,
               stock_incubator: 0,
               stock: 0,

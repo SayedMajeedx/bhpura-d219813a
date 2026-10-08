@@ -95,6 +95,7 @@ export function mergeDrafts(drafts: MergeableDraft[], ids: ReadonlySet<string>):
   const donorWithPrice = others.find((draft) => typeof draft.price === "number" && draft.price > 0);
   const needsPrice = !(typeof primary.price === "number" && primary.price > 0) && donorWithPrice;
   const price = needsPrice ? donorWithPrice.price : primary.price;
+  const originalPrice = needsPrice ? (donorWithPrice.originalPrice ?? null) : primary.originalPrice;
   const description =
     primary.description.trim() ||
     others.map((draft) => draft.description.trim()).sort((a, b) => b.length - a.length)[0] ||
@@ -114,6 +115,7 @@ export function mergeDrafts(drafts: MergeableDraft[], ids: ReadonlySet<string>):
     postType: images.length > 1 ? "carousel" : primary.postType,
     isSoldOut: units.some((draft) => draft.isSoldOut),
     price,
+    originalPrice,
     fieldConfidence:
       needsPrice && donorWithPrice
         ? { ...primary.fieldConfidence, price: donorWithPrice.fieldConfidence.price }

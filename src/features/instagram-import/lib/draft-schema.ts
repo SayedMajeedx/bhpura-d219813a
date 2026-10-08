@@ -22,6 +22,7 @@ export const productDraftItemSchema = z
     imageUploadStatus: z.enum(["all_success", "partial_success", "failed"]),
     title: z.string(),
     price: z.number().nullable(),
+    originalPrice: z.number().nullable().optional(),
     description: z.string(),
     sizes: z.array(z.string()),
     colors: z.array(z.string()).default([]),
