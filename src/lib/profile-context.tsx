@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { signOut } from "@/lib/auth/session";
 import { useNavigate } from "@tanstack/react-router";
 
 export type UserRole = "super_admin" | "admin" | "brand_admin" | "staff" | "courier";
@@ -112,7 +113,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   );
 
   const signOutAndRedirect = useCallback(async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate({ to: "/auth" });
   }, [navigate]);
 
