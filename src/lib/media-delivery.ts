@@ -12,8 +12,24 @@ export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
 }
 
+// A page builds the same few addresses over and over (every card asks for each width of its
+// picture on every render), and each build parses a URL; remembering the result is cheap and exact.
+const urlCache = new Map<string, string>();
+const URL_CACHE_LIMIT = 4000;
+
 export function cloudflareImageUrl(source: string, width: number, quality = 75): string {
   if (!source || source.startsWith("data:") || source.toLowerCase().includes(".svg")) return source;
+  const origin = typeof window === "undefined" ? "" : window.location.origin;
+  const key = `${origin}|${width}|${quality}|${source}`;
+  const known = urlCache.get(key);
+  if (known !== undefined) return known;
+  const built = buildCloudflareImageUrl(source, width, quality);
+  if (urlCache.size >= URL_CACHE_LIMIT) urlCache.clear();
+  urlCache.set(key, built);
+  return built;
+}
+
+function buildCloudflareImageUrl(source: string, width: number, quality: number): string {
   try {
     const url = new URL(
       source,

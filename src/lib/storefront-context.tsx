@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchOwnCustomer } from "@/lib/data/customers/own";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { westernNumeralLocale } from "@/lib/format";
+import { cachedNumberFormat, westernNumeralLocale } from "@/lib/intl-cache";
 import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharing";
 import { toast } from "sonner";
 import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
@@ -959,15 +959,12 @@ export function formatPrice(amount: number, currency: string, lang: StoreLang = 
   const normalizedCurrency = (currency || "").toUpperCase();
   const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
   const fractionDigits = isThreeDecimals ? 3 : 2;
-  const n = new Intl.NumberFormat(
-    westernNumeralLocale(lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH"),
-    {
-      style: "currency",
-      currency: normalizedCurrency,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    },
-  );
+  const n = cachedNumberFormat(westernNumeralLocale(lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH"), {
+    style: "currency",
+    currency: normalizedCurrency,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
   try {
     return n.format(amount);
   } catch {
