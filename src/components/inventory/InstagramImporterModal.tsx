@@ -41,6 +41,14 @@ import {
   RATE_LIMIT_INFO,
   type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
+import {
+  DraftMergeControls,
+  MergeToolbar,
+  forSave,
+  isDraftReady,
+  useDraftMerge,
+  type MergeableDraft,
+} from "@/features/instagram-import";
 
 export interface InstagramImporterModalProps {
   brandId: string;
@@ -99,7 +107,8 @@ export function InstagramImporterModal({
   const [retryingImageId, setRetryingImageId] = React.useState<string | null>(null);
 
   // Review & Drafts state
-  const [drafts, setDrafts] = React.useState<InstagramProductDraft[]>([]);
+  const [drafts, setDrafts] = React.useState<MergeableDraft[]>([]);
+  const merge = useDraftMerge(drafts, setDrafts, isAr);
   const [filterTab, setFilterTab] = React.useState<FilterTab>("all");
   const [importResult, setImportResult] = React.useState<{ success: number; skipped: number }>({
     success: 0,
@@ -113,31 +122,6 @@ export function InstagramImporterModal({
     setProgressPercent(0);
   };
 
-  // Helper to determine if a product draft is 100% ready for approval
-  const isDraftReady = (draft: InstagramProductDraft): boolean => {
-    // 1. Must have valid non-empty price > 0
-    if (typeof draft.price !== "number" || draft.price <= 0 || isNaN(draft.price)) {
-      return false;
-    }
-    // 2. Must have at least one successfully uploaded R2 image that is selected
-    const hasSelectedValidImage = draft.images.some(
-      (img) => img.selected !== false && img.r2Url && img.status === "success",
-    );
-    if (draft.imageUploadStatus === "failed" || !hasSelectedValidImage) {
-      return false;
-    }
-    // 3. Price confidence must be high (>= 0.8) or manually edited
-    if (draft.fieldSources.price !== "manual" && draft.fieldConfidence.price < 0.7) {
-      return false;
-    }
-    // 4. Title must be non-empty
-    if (!draft.title.trim()) {
-      return false;
-    }
-    return true;
-  };
-
-  // Computed counts
   const readyDrafts = React.useMemo(() => drafts.filter((d) => isDraftReady(d)), [drafts]);
   const imageFailedDrafts = React.useMemo(
     () => drafts.filter((d) => d.imageUploadStatus === "failed"),
@@ -487,7 +471,7 @@ export function InstagramImporterModal({
       const res = await bulkInsertProducts({
         data: {
           brandId,
-          products: readyDrafts,
+          products: readyDrafts.map(forSave),
         },
       });
 
@@ -516,7 +500,7 @@ export function InstagramImporterModal({
       await bulkInsertProducts({
         data: {
           brandId,
-          products: [draft],
+          products: [forSave(draft)],
         },
       });
 
@@ -770,7 +754,6 @@ export function InstagramImporterModal({
               <div className="space-y-4">
                 {/* Top Summary Bar & Filter Tabs */}
                 <div className="sticky top-0 z-20 bg-card/95 backdrop-blur-md pb-3 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  {/* Counters Tabs */}
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <Button
                       type="button"
@@ -826,7 +809,6 @@ export function InstagramImporterModal({
                     )}
                   </div>
 
-                  {/* Bulk Approve Action */}
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -849,7 +831,14 @@ export function InstagramImporterModal({
                   </div>
                 </div>
 
-                {/* Empty State */}
+                <MergeToolbar
+                  isAr={isAr}
+                  selectedCount={merge.selected.size}
+                  onGroup={merge.groupBy}
+                  onMerge={merge.mergeSelected}
+                  onClear={merge.clear}
+                />
+
                 {filteredDrafts.length === 0 && (
                   <div className="py-12 text-center text-muted-foreground text-xs">
                     {isAr ? "لا توجد عناصر مطابقة لهذا الفلتر." : "No items match this filter."}
@@ -925,6 +914,14 @@ export function InstagramImporterModal({
                           >
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
+
+                          <DraftMergeControls
+                            isAr={isAr}
+                            selected={merge.selected.has(draft.id)}
+                            mergedCount={draft.mergedFrom?.length ?? 0}
+                            onToggle={() => merge.toggle(draft.id)}
+                            onSplit={() => merge.split(draft.id)}
+                          />
 
                           {/* Image Failure Overlay */}
                           {draft.imageUploadStatus === "failed" && (

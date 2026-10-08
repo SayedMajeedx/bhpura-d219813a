@@ -6,6 +6,8 @@ import {
 } from "@/integrations/supabase/auth-middleware";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
+import { productDraftItemSchema } from "@/features/instagram-import/lib/draft-schema";
+import { postIdsOf } from "@/features/instagram-import/lib/merge-drafts";
 
 // Rate limits documentation constants for UI & error handling
 export const RATE_LIMIT_INFO = {
@@ -974,55 +976,6 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     return { drafts };
   });
 
-const productDraftItemSchema = z
-  .object({
-    id: z.string(),
-    url: z.string(),
-    isSoldOut: z.boolean(),
-    isVideo: z.boolean().optional(),
-    postType: z.enum(["image", "carousel", "reel"]).default("image"),
-    images: z.array(
-      z.object({
-        url: z.string(),
-        r2Url: z.string().nullable(),
-        isCover: z.boolean(),
-        selected: z.boolean().optional(),
-        status: z.enum(["pending", "success", "failed"]),
-        errorMessage: z.string().optional(),
-      }),
-    ),
-    coverImageUrl: z.string(),
-    imageUploadStatus: z.enum(["all_success", "partial_success", "failed"]),
-    title: z.string(),
-    price: z.number().nullable(),
-    description: z.string(),
-    sizes: z.array(z.string()),
-    colors: z.array(z.string()).default([]),
-    category: z.string().nullable().optional(),
-    fieldConfidence: z.object({
-      name: z.number(),
-      price: z.number(),
-      description: z.number(),
-      sizes: z.number(),
-    }),
-    fieldSources: z.object({
-      name: z.enum(["ai", "manual"]),
-      price: z.enum(["ai", "manual"]),
-      description: z.enum(["ai", "manual"]),
-      sizes: z.enum(["ai", "manual"]),
-      category: z.enum(["ai", "manual"]),
-    }),
-    priceConflict: z
-      .object({
-        geminiPrice: z.number().nullable().optional(),
-        regexPrice: z.number().nullable().optional(),
-        reason: z.string(),
-      })
-      .optional(),
-    issues: z.array(z.string()).default([]),
-  })
-  .passthrough();
-
 // 7. Bulk Database Insertion as DRAFTS (is_active: false)
 export const bulkInsertProducts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1089,7 +1042,10 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         console.warn("Could not query legacy custom_fields:", err);
       }
 
-      const newProducts = data.products.filter((product) => !existingPostIds.has(product.id));
+      // A product made of several posts is skipped when any of them was imported before.
+      const newProducts = data.products.filter(
+        (product) => !postIdsOf(product).some((id) => existingPostIds.has(id)),
+      );
       if (newProducts.length === 0) {
         return { successCount: 0, skippedCount: data.products.length };
       }
@@ -1160,7 +1116,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
 
         insertedCount++;
-        if (p.id) insertedPostIds.push(p.id);
+        insertedPostIds.push(...postIdsOf(p));
 
         const sizes = Array.isArray(p.sizes)
           ? p.sizes.map((s: string) => String(s).trim()).filter(Boolean)
