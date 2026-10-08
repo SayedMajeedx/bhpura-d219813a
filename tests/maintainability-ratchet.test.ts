@@ -57,7 +57,7 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1446,
   "src/routes/_authenticated/admin.b.$slug.import.tsx": 1448,
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1313,
-  "src/components/inventory/InstagramImporterModal.tsx": 1274,
+  "src/components/inventory/InstagramImporterModal.tsx": 1179,
   "src/lib/public-api/public-api-router.server.ts": 1271,
   "src/lib/instagram-ai-importer.ts": 1212,
   "src/routes/_authenticated/admin.brands.tsx": 1024,
