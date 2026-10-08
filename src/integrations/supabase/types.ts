@@ -9449,6 +9449,10 @@ export type Database = {
         }[];
       };
       get_onboarding_active_price: { Args: never; Returns: string };
+      get_product_recent_purchase_count: {
+        Args: { p_brand_slug: string; p_product_id: string };
+        Returns: number;
+      };
       get_public_benefit_settings: {
         Args: { p_brand_id: string };
         Returns: {

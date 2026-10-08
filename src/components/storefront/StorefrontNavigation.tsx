@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { storefrontQueries } from "@/lib/data/storefront";
+import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -143,10 +144,7 @@ function MobileStorefrontDropdown() {
   const menuText = settings.menu_fg || (isDarkMenu ? "#ffffff" : "#111111");
   const drawerBg = isGlass ? hexToRgba(menuBackground, 0.65) : menuBackground;
 
-  const { data: categories = [] } = useQuery({
-    ...storefrontQueries.categories(brand),
-    enabled: isOpen,
-  });
+  const { data: categories = [] } = useStorefrontCategories({ enabled: isOpen });
 
   const close = () => {
     setIsOpen(false);
@@ -573,7 +571,7 @@ function DesktopSubMenu({
 
 function DesktopStoreNavigation() {
   const { brand, lang, t } = useStorefront();
-  const { data = [] } = useQuery(storefrontQueries.categories(brand));
+  const { data = [] } = useStorefrontCategories();
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
@@ -719,10 +717,7 @@ function SearchBar() {
     enabled: modalOpen && debounced.length >= 2,
   });
 
-  const { data: categories = [] } = useQuery({
-    ...storefrontQueries.categories(brand),
-    enabled: modalOpen,
-  });
+  const { data: categories = [] } = useStorefrontCategories({ enabled: modalOpen });
 
   const topCategories = useMemo(() => {
     return categories.filter((c: any) => !c.parent_id).slice(0, 6);

@@ -82,6 +82,7 @@ function StorefrontLayout() {
       settings={settings}
       initialLang={initialLang}
       sizeGuides={bootstrapData?.size_guides ?? []}
+      categories={bootstrapData?.categories ?? undefined}
       addons={bootstrapData?.addons ?? []}
     >
       <StoreShell />

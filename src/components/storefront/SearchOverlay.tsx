@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { storefrontQueries } from "@/lib/data/storefront";
+import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
@@ -114,10 +115,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   }, [isOpen]);
 
   // Top-level categories for the empty state, from the shared categories cache.
-  const { data: categories = [] } = useQuery({
-    ...storefrontQueries.categories(brand),
-    enabled: isOpen,
-  });
+  const { data: categories = [] } = useStorefrontCategories({ enabled: isOpen });
   const topCategories = useMemo(
     () => categories.filter((category) => !category.parent_id).slice(0, 8),
     [categories],

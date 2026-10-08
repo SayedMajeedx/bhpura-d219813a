@@ -27,6 +27,7 @@ import {
   type StoreModuleOverrides,
 } from "@/lib/store-profile";
 import type { ShippingZone } from "@/lib/shipping";
+import type { StorefrontCategory } from "@/lib/data/storefront";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import {
   resolveFitProfiles,
@@ -392,6 +393,8 @@ type StoreCtx = {
   refreshMembership: () => Promise<boolean>;
   signOut: () => Promise<void>;
   sizeGuides: SizeGuide[];
+  /** The store's active categories as the layout loaded them (the menus start from these). */
+  initialCategories: StorefrontCategory[] | undefined;
   addons: Array<{ addon_id: string; status: string; public_settings: Record<string, unknown> }>;
   isAddonInstalled: (addonId: string) => boolean;
 };
@@ -402,6 +405,7 @@ export function StorefrontProvider({
   brand,
   settings,
   sizeGuides = [],
+  categories,
   addons = [],
   initialLang,
   children,
@@ -409,6 +413,7 @@ export function StorefrontProvider({
   brand: Brand;
   settings: PublicSettings;
   sizeGuides?: SizeGuide[];
+  categories?: StorefrontCategory[];
   addons?: Array<{ addon_id: string; status: string; public_settings: Record<string, unknown> }>;
   initialLang?: StoreLang;
   children: ReactNode;
@@ -896,6 +901,7 @@ export function StorefrontProvider({
     refreshMembership,
     signOut,
     sizeGuides,
+    initialCategories: categories,
     addons,
     isAddonInstalled,
   };

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
   storefrontQueries,
@@ -110,7 +111,7 @@ function CategoryPage() {
   const smartKind = smartKindOf(categorySlug);
 
   // All active categories: shared with the menus and home page (same key, same columns).
-  const categoriesQuery = useQuery(storefrontQueries.categories(brand));
+  const categoriesQuery = useStorefrontCategories();
 
   const activeCategory = useMemo(() => {
     if (smartKind) return null;

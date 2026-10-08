@@ -1,36 +1,24 @@
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * Fetches the real count of orders containing this product within the last 7 days.
- * To ensure trust and integrity, we only return a count if >= threshold (default 3).
+ * How many orders of the last 7 days contained this product, for the product page's "Purchased N
+ * times" badge. The database answers only at or above its threshold (3) and only for a store that
+ * keeps the badge on; otherwise this is null. It never rejects: no badge is better than a broken
+ * page.
  */
 export async function getProductRecentPurchaseCount(
-  brandId: string,
+  brandSlug: string,
   productId: string,
-  days = 7,
-  threshold = 3,
 ): Promise<number | null> {
+  if (!brandSlug || !UUID.test(productId)) return null;
   try {
-    const sinceDate = new Date();
-    sinceDate.setDate(sinceDate.getDate() - days);
-
-    const { count, error } = await supabase
-      .from("order_items")
-      .select("id, orders!inner(brand_id, created_at, status)", { count: "exact", head: true })
-      .eq("orders.brand_id", brandId)
-      .eq("product_id", productId)
-      .gte("orders.created_at", sinceDate.toISOString())
-      .not("orders.status", "eq", "cancelled");
-
-    if (error || typeof count !== "number") {
-      return null;
-    }
-
-    if (count >= threshold) {
-      return count;
-    }
-
-    return null;
+    const { data, error } = await supabase.rpc("get_product_recent_purchase_count", {
+      p_brand_slug: brandSlug,
+      p_product_id: productId,
+    });
+    return error || typeof data !== "number" ? null : data;
   } catch {
     return null;
   }
