@@ -58,10 +58,23 @@ export function useDraftMerge(
     [drafts, setDrafts, isAr],
   );
 
+  /** Merges each of these groups of posts (ids), as proposed by the smart grouping. */
+  const applyGroups = useCallback(
+    (groups: string[][]) => {
+      if (groups.length === 0) return;
+      setDrafts((current) =>
+        groups.reduce((list, ids) => mergeDrafts(list, new Set(ids)), current),
+      );
+      setTicked(new Set());
+      toast.success(isAr ? `تم دمج ${groups.length} مجموعة.` : `Merged ${groups.length} groups.`);
+    },
+    [setDrafts, isAr],
+  );
+
   const split = useCallback(
     (id: string) => setDrafts((current) => splitDraft(current, id)),
     [setDrafts],
   );
 
-  return { selected, toggle, clear, mergeSelected, groupBy, split };
+  return { selected, toggle, clear, mergeSelected, groupBy, applyGroups, split };
 }

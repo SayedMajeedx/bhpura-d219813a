@@ -244,15 +244,12 @@ export function InstagramImporterModal({
   const handleFieldEdit = (draftId: string, field: EditableField, value: unknown) =>
     setDrafts((prev) => editDraftField(prev, draftId, field, value));
 
-  // Switch Active Cover Image in Carousel
   const handleSelectCover = (draftId: string, imageIndex: number) =>
     setDrafts((prev) => setDraftCover(prev, draftId, imageIndex));
 
-  // Toggle single image selection
   const handleToggleSelectImage = (draftId: string, imageIndex: number) =>
     setDrafts((prev) => toggleDraftImage(prev, draftId, imageIndex));
 
-  // Select all or deselect all images in draft
   const handleSelectAllImages = (draftId: string, selectAll: boolean) =>
     setDrafts((prev) => selectAllDraftImages(prev, draftId, selectAll));
 
@@ -687,8 +684,10 @@ export function InstagramImporterModal({
 
                 <MergeToolbar
                   isAr={isAr}
+                  drafts={drafts}
                   selectedCount={merge.selected.size}
                   onGroup={merge.groupBy}
+                  onApplyGroups={merge.applyGroups}
                   onMerge={merge.mergeSelected}
                   onClear={merge.clear}
                 />

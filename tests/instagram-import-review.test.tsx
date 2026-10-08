@@ -101,6 +101,8 @@ describe("MergeToolbar and the card controls", () => {
     const onClear = vi.fn();
     const { rerender } = render(
       <MergeToolbar
+        drafts={[]}
+        onApplyGroups={() => undefined}
         isAr={false}
         selectedCount={0}
         onGroup={onGroup}
@@ -121,6 +123,8 @@ describe("MergeToolbar and the card controls", () => {
 
     rerender(
       <MergeToolbar
+        drafts={[]}
+        onApplyGroups={() => undefined}
         isAr={false}
         selectedCount={2}
         onGroup={onGroup}
