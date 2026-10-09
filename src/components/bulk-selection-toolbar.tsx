@@ -1,4 +1,13 @@
-import { Building2, CheckSquare, FolderEdit, Square, Trash2 } from "lucide-react";
+import {
+  Building2,
+  CheckSquare,
+  Eye,
+  EyeOff,
+  FolderEdit,
+  Sliders,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +23,9 @@ type BulkSelectionToolbarProps = {
   onDeleteSelected: () => void;
   onTransferToIncubator?: () => void;
   onUpdateCategory?: () => void;
+  onPublish?: () => void;
+  onHide?: () => void;
+  onApplyPreset?: () => void;
 };
 
 export function BulkSelectionToolbar({
@@ -28,6 +40,9 @@ export function BulkSelectionToolbar({
   onDeleteSelected,
   onTransferToIncubator,
   onUpdateCategory,
+  onPublish,
+  onHide,
+  onApplyPreset,
 }: BulkSelectionToolbarProps) {
   const isAr = lang === "ar";
   return (
@@ -77,6 +92,45 @@ export function BulkSelectionToolbar({
           >
             <FolderEdit className="h-4 w-4 text-primary" />
             {isAr ? "تغيير القسم" : "Change category"}
+          </Button>
+        )}
+        {selectedCount > 0 && onPublish && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={onPublish}
+            className="h-9 gap-1.5 text-xs"
+          >
+            <Eye className="h-4 w-4 text-primary" />
+            {isAr ? "نشر في المتجر" : "Publish"}
+          </Button>
+        )}
+        {selectedCount > 0 && onHide && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={onHide}
+            className="h-9 gap-1.5 text-xs"
+          >
+            <EyeOff className="h-4 w-4 text-primary" />
+            {isAr ? "إخفاء من المتجر" : "Hide"}
+          </Button>
+        )}
+        {selectedCount > 0 && onApplyPreset && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={onApplyPreset}
+            className="h-9 gap-1.5 text-xs"
+          >
+            <Sliders className="h-4 w-4 text-primary" />
+            {isAr ? "إضافة تخصيص" : "Add customization"}
           </Button>
         )}
         {selectedCount > 0 && onTransferToIncubator && (
