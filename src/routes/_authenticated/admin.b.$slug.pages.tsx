@@ -45,14 +45,12 @@ import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { RichTextEditor } from "@/components/rich-text-editor";
-import { normalizeRichTextValue, sanitizeRichTextHtml } from "@/lib/rich-text";
-import {
-  META_DESCRIPTION_LIMIT,
-  META_TITLE_LIMIT,
-  sanitizeMetaText,
-  uniquePageSlug,
-} from "@/lib/seo";
+import { normalizeRichTextValue } from "@/lib/rich-text";
+import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT } from "@/lib/seo";
 
+import { buildPagesPayload } from "@/components/pages/pages-payload";
+import { FooterGroupTitlesCard, type FooterTitles } from "@/components/pages/FooterGroupTitlesCard";
+import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
 import { PagesScopeSwitcher, type PagesScope } from "@/components/pages/PagesScopeSwitcher";
 import { CropUploadButton } from "@/components/crop-upload-button";
@@ -183,10 +181,12 @@ function PagesAndPolicies() {
   const [socials, setSocials] = useState<Social[]>([]);
   const [waEnabled, setWaEnabled] = useState(false);
   const [waNumber, setWaNumber] = useState("");
-  const [companyTitleEn, setCompanyTitleEn] = useState("Company");
-  const [companyTitleAr, setCompanyTitleAr] = useState("الشركة");
-  const [helpTitleEn, setHelpTitleEn] = useState("Help");
-  const [helpTitleAr, setHelpTitleAr] = useState("المساعدة");
+  const [footerTitles, setFooterTitles] = useState<FooterTitles>({
+    companyEn: "Company",
+    companyAr: "الشركة",
+    helpEn: "Help",
+    helpAr: "المساعدة",
+  });
   const [saving, setSaving] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadingIconIdx, setUploadingIconIdx] = useState<number | null>(null);
@@ -202,7 +202,7 @@ function PagesAndPolicies() {
       : Array.isArray(rawPagesData?.items)
         ? rawPagesData.items
         : [];
-    const footerTitles =
+    const storedTitles =
       !Array.isArray(rawPagesData) && typeof rawPagesData === "object" && rawPagesData !== null
         ? rawPagesData.footer_titles
         : null;
@@ -231,10 +231,12 @@ function PagesAndPolicies() {
     );
     setWaEnabled(Boolean(data.whatsapp_enabled));
     setWaNumber(data.whatsapp_number ?? "");
-    setCompanyTitleEn(footerTitles?.company_en?.trim() || "Company");
-    setCompanyTitleAr(footerTitles?.company_ar?.trim() || "الشركة");
-    setHelpTitleEn(footerTitles?.help_en?.trim() || "Help");
-    setHelpTitleAr(footerTitles?.help_ar?.trim() || "المساعدة");
+    setFooterTitles({
+      companyEn: storedTitles?.company_en?.trim() || "Company",
+      companyAr: storedTitles?.company_ar?.trim() || "الشركة",
+      helpEn: storedTitles?.help_en?.trim() || "Help",
+      helpAr: storedTitles?.help_ar?.trim() || "المساعدة",
+    });
   }, [data]);
 
   const updatePage = (index: number, patch: Partial<PageSlot>) => {
@@ -326,34 +328,10 @@ function PagesAndPolicies() {
 
   const save = async () => {
     setSaving(true);
-    const usedSlugs = new Set<string>();
-    const cleanedPages = pages.map((page, index) => ({
-      slug: uniquePageSlug(
-        page.slug || page.title_en || page.title_ar || `page-${index + 1}`,
-        usedSlugs,
-      ),
-      title_ar: page.title_ar.trim() || null,
-      title_en: page.title_en.trim() || null,
-      content_ar: sanitizeRichTextHtml(page.content_ar) || null,
-      content_en: sanitizeRichTextHtml(page.content_en) || null,
-      image_url: page.image_url || null,
-      menu_icon_url: page.menu_icon_url || null,
-      image_position: page.image_position,
-      meta_title: sanitizeMetaText(page.meta_title, META_TITLE_LIMIT) || null,
-      meta_description: sanitizeMetaText(page.meta_description, META_DESCRIPTION_LIMIT) || null,
-    }));
     const cleanedSocials = socials
       .map((social) => ({ name: social.name.trim(), url: social.url.trim() }))
       .filter((social) => social.name && social.url);
-    const pagesPayload = {
-      items: cleanedPages,
-      footer_titles: {
-        company_en: companyTitleEn.trim() || "Company",
-        company_ar: companyTitleAr.trim() || "الشركة",
-        help_en: helpTitleEn.trim() || "Help",
-        help_ar: helpTitleAr.trim() || "المساعدة",
-      },
-    };
+    const pagesPayload = buildPagesPayload(pages, footerTitles);
     try {
       await updateBusinessSettings(brandId, { pages: pagesPayload, socials: cleanedSocials });
     } catch (error) {
@@ -557,64 +535,14 @@ function PagesAndPolicies() {
 
       {activeScope === "pages" && (
         <section className="space-y-4">
-          <Card className="space-y-4 overflow-hidden rounded-2xl border-border-subtle bg-card p-4 shadow-md">
-            <div>
-              <h3 className="text-base font-bold">
-                {isAr ? "عناوين مجموعات رابط التذييل" : "Footer accordion group headings"}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr
-                  ? "خصص المسميات الرئيسية لمجموعات القوائم (مثل: الشركة والمساعدة) في أسفل المتجر."
-                  : "Customize the heading titles for your accordion groups in the storefront footer."}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                  {isAr ? "مجموعة 1 (عن المتجر/الشركة) — بالعربية" : "Group A Title (Arabic)"}
-                </Label>
-                <Input
-                  value={companyTitleAr}
-                  onChange={(e) => setCompanyTitleAr(e.target.value)}
-                  placeholder="الشركة"
-                  dir="rtl"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                  {isAr ? "مجموعة 1 (عن المتجر/الشركة) — English" : "Group A Title (English)"}
-                </Label>
-                <Input
-                  value={companyTitleEn}
-                  onChange={(e) => setCompanyTitleEn(e.target.value)}
-                  placeholder="Company"
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                  {isAr ? "مجموعة 2 (المساعدة/السياسات) — بالعربية" : "Group B Title (Arabic)"}
-                </Label>
-                <Input
-                  value={helpTitleAr}
-                  onChange={(e) => setHelpTitleAr(e.target.value)}
-                  placeholder="المساعدة"
-                  dir="rtl"
-                />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
-                  {isAr ? "مجموعة 2 (المساعدة/السياسات) — English" : "Group B Title (English)"}
-                </Label>
-                <Input
-                  value={helpTitleEn}
-                  onChange={(e) => setHelpTitleEn(e.target.value)}
-                  placeholder="Help"
-                  dir="ltr"
-                />
-              </div>
-            </div>
-          </Card>
+          <FooterGroupTitlesCard
+            lang={isAr ? "ar" : "en"}
+            titles={footerTitles}
+            onChange={(patch) => setFooterTitles((current) => ({ ...current, ...patch }))}
+            footerVariant={resolveFooterVariant(data ?? null)}
+            companyCount={pages.filter((page) => page.group === "company").length}
+            helpCount={pages.filter((page) => page.group !== "company").length}
+          />
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -767,7 +695,7 @@ function PagesAndPolicies() {
                           />
                         </div>
                         <div>
-                          <Label>{isAr ? "مجموعة رابط التذييل" : "Footer accordion group"}</Label>
+                          <Label>{isAr ? "مجموعة رابط التذييل" : "Footer group"}</Label>
                           <Select
                             value={page.group || "help"}
                             onValueChange={(value) =>
@@ -779,12 +707,14 @@ function PagesAndPolicies() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="company">
-                                {isAr ? "الشركة (عن المتجر، التواصل)" : "Company (About, Contact)"}
+                                {(isAr ? footerTitles.companyAr : footerTitles.companyEn) +
+                                  (isAr ? " (عن المتجر، التواصل)" : " (About, Contact)")}
                               </SelectItem>
                               <SelectItem value="help">
-                                {isAr
-                                  ? "المساعدة (الشروط، المقاسات، التوصيل)"
-                                  : "Help (Policies, FAQs, Shipping)"}
+                                {(isAr ? footerTitles.helpAr : footerTitles.helpEn) +
+                                  (isAr
+                                    ? " (الشروط، المقاسات، التوصيل)"
+                                    : " (Policies, FAQs, Shipping)")}
                               </SelectItem>
                             </SelectContent>
                           </Select>

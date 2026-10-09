@@ -45,3 +45,24 @@ export function footerPageGroups(pages: PublicSettings["pages"], isAr: boolean) 
 
   return { pageLinks, companyPages, helpPages };
 }
+
+/** The two footer group headings the store chose (Pages & Policies), with the defaults. */
+export function footerGroupTitles(
+  settings: Pick<
+    PublicSettings,
+    | "footer_company_title_en"
+    | "footer_company_title_ar"
+    | "footer_help_title_en"
+    | "footer_help_title_ar"
+  >,
+  isAr: boolean,
+) {
+  return {
+    company: isAr
+      ? settings.footer_company_title_ar?.trim() || "الشركة"
+      : settings.footer_company_title_en?.trim() || "Company",
+    help: isAr
+      ? settings.footer_help_title_ar?.trim() || "المساعدة"
+      : settings.footer_help_title_en?.trim() || "Help",
+  };
+}
