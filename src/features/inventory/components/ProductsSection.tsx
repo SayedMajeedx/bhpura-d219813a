@@ -36,12 +36,10 @@ import {
 import { inventoryScopeTabs } from "@/features/inventory/lib/inventory-scope-tabs";
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
 import { useProductBulkActions } from "@/features/inventory/hooks/use-product-bulk-actions";
+import { useProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
 import { InventoryImportMenu } from "@/features/inventory/components/InventoryImportMenu";
 import { isServicesProfile } from "@/lib/store-profile";
-import {
-  BulkCategoryDialog,
-  BulkDeleteProductsDialog,
-} from "@/features/inventory/components/ProductBulkDialogs";
+import { ProductBulkDialogsHost } from "@/features/inventory/components/ProductBulkDialogsHost";
 import { DeleteProductDialog } from "@/features/inventory/components/DeleteProductDialog";
 import { InventoryEmptyState } from "@/features/inventory/components/InventoryEmptyState";
 import { useInventoryCategories } from "@/features/inventory/hooks/use-inventory-categories";
@@ -129,21 +127,15 @@ export function ProductsSection({
     printAll,
     printProductLabels,
   } = useProductActions({ products, variants, variantsByProduct, businessName, isAr, onChanged });
-  const {
-    selectedProductIds,
-    setSelectedProductIds,
-    toggleSelectedProduct,
-    bulkDeleteOpen,
-    setBulkDeleteOpen,
-    bulkDeleting,
-    deleteSelectedProducts,
-    bulkCategoryOpen,
-    setBulkCategoryOpen,
-    bulkSelectedCategory,
-    setBulkSelectedCategory,
-    bulkCategoryApplying,
-    applyBulkCategory,
-  } = useProductBulkActions({ brandId, products, isAr, onChanged });
+  const { customFieldPresets } = useProductDialogData(brandId);
+  const bulk = useProductBulkActions({
+    brandId,
+    products,
+    presets: customFieldPresets,
+    isAr,
+    onChanged,
+  });
+  const { selectedProductIds, setSelectedProductIds, toggleSelectedProduct } = bulk;
 
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = deferredSearch.trim().toLowerCase();
@@ -345,7 +337,13 @@ export function ProductsSection({
         entityEn="products"
         selectedCount={selectedProductIds.size}
         allFilteredSelected={allFilteredProductsSelected}
-        disabled={bulkDeleting || bulkCategoryApplying || filteredDisplayProducts.length === 0}
+        disabled={
+          bulk.bulkDeleting ||
+          bulk.bulkCategoryApplying ||
+          bulk.bulkVisibilityApplying ||
+          bulk.bulkPresetApplying ||
+          filteredDisplayProducts.length === 0
+        }
         onSelectAll={() =>
           setSelectedProductIds((current) => {
             const next = new Set(current);
@@ -354,11 +352,14 @@ export function ProductsSection({
           })
         }
         onDeselectAll={() => setSelectedProductIds(new Set())}
-        onDeleteSelected={() => setBulkDeleteOpen(true)}
+        onDeleteSelected={() => bulk.setBulkDeleteOpen(true)}
         onUpdateCategory={() => {
-          setBulkSelectedCategory("");
-          setBulkCategoryOpen(true);
+          bulk.setBulkSelectedCategory("");
+          bulk.setBulkCategoryOpen(true);
         }}
+        onPublish={() => bulk.setBulkVisibilityTarget(true)}
+        onHide={() => bulk.setBulkVisibilityTarget(false)}
+        onApplyPreset={() => bulk.setBulkPresetOpen(true)}
         onTransferToIncubator={() => {
           const selectedProds = products.filter((p) => selectedProductIds.has(p.id));
           if (selectedProds.length > 0) {
@@ -461,24 +462,11 @@ export function ProductsSection({
         }}
       />
 
-      <BulkDeleteProductsDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        count={selectedProductIds.size}
-        deleting={bulkDeleting}
-        onConfirm={() => void deleteSelectedProducts()}
-        isAr={isAr}
-      />
-
-      <BulkCategoryDialog
-        open={bulkCategoryOpen}
-        onOpenChange={setBulkCategoryOpen}
-        count={selectedProductIds.size}
+      <ProductBulkDialogsHost
+        bulk={bulk}
+        products={products}
         categories={categoriesQ.data ?? []}
-        value={bulkSelectedCategory}
-        onValueChange={setBulkSelectedCategory}
-        applying={bulkCategoryApplying}
-        onApply={() => void applyBulkCategory()}
+        presets={customFieldPresets}
         isAr={isAr}
       />
 

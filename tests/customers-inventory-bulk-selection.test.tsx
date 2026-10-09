@@ -9,6 +9,7 @@ const data = vi.hoisted(() => ({
   invalidateCustomers: vi.fn(async () => undefined),
   deleteProducts: vi.fn(async () => undefined),
   updateProducts: vi.fn(async () => undefined),
+  updateProduct: vi.fn(async () => undefined),
   deletePublicMediaUrl: vi.fn(async () => undefined),
 }));
 vi.mock("sonner", () => ({ toast }));
@@ -16,7 +17,11 @@ const customers = {
   deleteCustomers: data.deleteCustomers,
   invalidateCustomers: data.invalidateCustomers,
 };
-const catalog = { deleteProducts: data.deleteProducts, updateProducts: data.updateProducts };
+const catalog = {
+  deleteProducts: data.deleteProducts,
+  updateProducts: data.updateProducts,
+  updateProduct: data.updateProduct,
+};
 const r2 = { deletePublicMediaUrl: data.deletePublicMediaUrl };
 vi.mock("../src/lib/data/customers", () => customers);
 vi.mock("@/lib/data/customers", () => customers);
@@ -186,6 +191,7 @@ describe("customers and inventory bulk selection", () => {
       useProductBulkActions({
         brandId: "b1",
         products: products as never[],
+        presets: [],
         isAr: false,
         onChanged,
       }),
