@@ -1,27 +1,38 @@
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 import { Button } from "@/components/ui/button";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { TrustBar } from "@/components/storefront/TrustBar";
-import { Instagram, ChevronDown } from "lucide-react";
+import { StorefrontSocialIcon } from "@/features/storefront-shell/components/StorefrontSocialIcon";
+import { footerGroupTitles, footerPageGroups } from "@/features/storefront-shell/lib/footer-pages";
+import { ChevronDown } from "lucide-react";
 
+type SectionKey = "shop" | "company" | "help";
+
+const FG = { color: "var(--sf-footer-fg)" } as const;
+const DESKTOP_LINK = "opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit";
+const MOBILE_LINK = "opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center";
+
+/**
+ * The columns footer (used by the v2 storefront). The Pages & Policies screen
+ * drives it: each page sits in the group the store chose (company or help),
+ * under the headings the store wrote, and socials come from the same list.
+ */
 export function FooterV2() {
   const { brand, settings, lang, t } = useStorefront();
   const isAr = lang === "ar";
   // A services store's footer talks about services and bookings, not products.
   const servicesStore = useIsServicesStore();
 
-  // Mobile accordion state
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     shop: false,
+    company: false,
     help: false,
-    contact: false,
   });
-
-  const toggleSection = (key: string) => {
+  const toggleSection = (key: SectionKey) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
 
   const footerLogoSize = Math.max(20, Math.min(120, Number(settings.footer_logo_size ?? 32)));
   const aboutText = isAr
@@ -33,26 +44,161 @@ export function FooterV2() {
       : aboutText
     : null;
 
-  // Socials
-  const rawSocials = settings.socials;
-  const socialsList: Array<{ name: string; url: string }> = Array.isArray(rawSocials)
-    ? rawSocials
-    : rawSocials && typeof rawSocials === "object"
-      ? Object.entries(rawSocials).map(([name, url]) => ({ name, url: String(url) }))
-      : [];
+  const socialsList: Array<{ name: string; url: string }> = Array.isArray(settings.socials)
+    ? settings.socials
+    : [];
 
-  // Navigation pages
-  const pageLinks = (settings.pages || [])
-    .filter((p: any) => p && (p.title_ar || p.title_en))
-    .map((p: any, idx: number) => ({
-      idx: idx + 1,
-      slug: p.slug || `page-${idx + 1}`,
-      title: isAr ? p.title_ar || p.title_en : p.title_en || p.title_ar,
-    }));
+  const { companyPages, helpPages } = footerPageGroups(settings.pages ?? [], isAr);
+  const titles = footerGroupTitles(settings, isAr);
+  const shopTitle = servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop");
+  const brandName = isAr ? brand.name_ar || brand.name_en : brand.name_en;
 
   const showTrustBarAboveFooter =
     settings.trust_bar_enabled &&
     (settings.trust_bar_position === "above_footer" || settings.trust_bar_position === "both");
+
+  const pageLinks = (pages: typeof companyPages, linkClass: string) =>
+    pages.map((p) => (
+      <Link
+        key={p.idx}
+        to="/$slug/$category"
+        params={{ slug: brand.slug, category: p.slug }}
+        className={linkClass}
+        style={FG}
+      >
+        {p.title}
+      </Link>
+    ));
+
+  const shopLinks = (linkClass: string) => (
+    <>
+      <Link to="/$slug" params={{ slug: brand.slug }} className={linkClass} style={FG}>
+        {t("الرئيسية", "Home")}
+      </Link>
+      {servicesStore ? (
+        <>
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: "all" }}
+            className={linkClass}
+            style={FG}
+          >
+            {t("كل الخدمات", "All services")}
+          </Link>
+          <Link
+            to="/$slug/book"
+            params={{ slug: brand.slug }}
+            className={`${linkClass} font-medium`}
+            style={FG}
+          >
+            {t("احجز موعدك", "Book a date")}
+          </Link>
+        </>
+      ) : (
+        <>
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: "all" }}
+            className={linkClass}
+            style={FG}
+          >
+            {t("كل المنتجات", "All Products")}
+          </Link>
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: "new" }}
+            className={linkClass}
+            style={FG}
+          >
+            {t("وصل حديثاً", "New Arrivals")}
+          </Link>
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: "sale" }}
+            className={`${linkClass} text-destructive font-medium`}
+          >
+            {t("التخفيضات", "Sale")}
+          </Link>
+        </>
+      )}
+      {!servicesStore && (brand as any)?.modules?.made_to_order && (
+        <Link
+          to={"/$slug/custom-order" as any}
+          params={{ slug: brand.slug } as any}
+          className={linkClass}
+          style={FG}
+        >
+          {t("طلب مخصص", "Custom Order")}
+        </Link>
+      )}
+    </>
+  );
+
+  const helpLinks = (linkClass: string) => (
+    <>
+      <Link to="/$slug/account" params={{ slug: brand.slug }} className={linkClass} style={FG}>
+        {servicesStore
+          ? t("حجوزاتي وحسابي", "My bookings & account")
+          : t("تتبع الطلبات وحسابي", "Track Order & Account")}
+      </Link>
+      {pageLinks(helpPages, linkClass)}
+      <AddonSlot
+        placement="storefront.footer.helpLink"
+        props={{ className: linkClass, style: FG }}
+      />
+    </>
+  );
+
+  const columnHeading = (title: string) => (
+    <h4
+      className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
+      style={FG}
+    >
+      {title}
+    </h4>
+  );
+
+  const accordion = (key: SectionKey, title: string, links: React.ReactNode) => (
+    <div className="border-b border-white/10 pb-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => toggleSection(key)}
+        aria-expanded={openSections[key]}
+        className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
+        style={FG}
+      >
+        <span>{title}</span>
+        <ChevronDown
+          className={`h-4 w-4 transition-transform duration-200 ${
+            openSections[key] ? "rotate-180" : ""
+          }`}
+        />
+      </Button>
+      {openSections[key] && (
+        <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">{links}</nav>
+      )}
+    </div>
+  );
+
+  const logo = (textClass: string) =>
+    settings.logo_url ? (
+      <img
+        src={settings.logo_url}
+        alt={brand.name_en || "Logo"}
+        width={footerLogoSize * 3}
+        height={footerLogoSize}
+        loading="lazy"
+        decoding="async"
+        style={{ height: `${footerLogoSize}px`, width: "auto" }}
+        className="object-contain"
+      />
+    ) : (
+      <span className={`${textClass} font-bold font-display`} style={FG}>
+        {brandName}
+      </span>
+    );
 
   return (
     <footer
@@ -65,46 +211,22 @@ export function FooterV2() {
         color: "var(--sf-footer-fg)",
       }}
     >
-      {/* Optional TrustBar above footer */}
       {showTrustBarAboveFooter && <TrustBar />}
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        {/* =========================================================================
-            DESKTOP 4-COLUMN GRID (hidden on mobile, lg:grid)
-            ========================================================================= */}
-        <div className="hidden lg:grid grid-cols-4 gap-8 xl:gap-12 text-start">
-          {/* Column 1: Brand & About */}
+        {/* Desktop columns: brand, shop, company (when it has pages), help, newsletter */}
+        <div
+          className={`hidden lg:grid gap-8 xl:gap-12 text-start ${
+            companyPages.length > 0 ? "grid-cols-5" : "grid-cols-4"
+          }`}
+        >
           <div className="space-y-4">
-            {settings.logo_url ? (
-              <img
-                src={settings.logo_url}
-                alt={brand.name_en || "Brand Logo"}
-                width={footerLogoSize * 3}
-                height={footerLogoSize}
-                loading="lazy"
-                decoding="async"
-                style={{ height: `${footerLogoSize}px`, width: "auto" }}
-                className="object-contain"
-              />
-            ) : (
-              <span
-                className="text-lg font-bold font-display"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {isAr ? brand.name_ar || brand.name_en : brand.name_en}
-              </span>
-            )}
-
+            {logo("text-lg")}
             {truncatedAbout && (
-              <p
-                className="text-xs leading-relaxed opacity-80"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
+              <p className="text-xs leading-relaxed opacity-80" style={FG}>
                 {truncatedAbout}
               </p>
             )}
-
-            {/* Social Channels */}
             {socialsList.length > 0 && (
               <div className="flex items-center gap-2 pt-1 flex-wrap">
                 {socialsList.map((s, i) => (
@@ -115,290 +237,74 @@ export function FooterV2() {
                     rel="noopener noreferrer"
                     aria-label={s.name}
                     className="h-8 w-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-all text-xs opacity-80 hover:opacity-100"
-                    style={{ color: "var(--sf-footer-fg)" }}
+                    style={FG}
                   >
-                    {s.name.toLowerCase().includes("insta") ? (
-                      <Instagram className="h-3.5 w-3.5" />
-                    ) : (
-                      <span>{s.name.charAt(0).toUpperCase()}</span>
-                    )}
+                    <StorefrontSocialIcon platform={s.name} />
                   </a>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Column 2: Shop Navigation */}
           <div className="space-y-3">
-            <h4
-              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
-              style={{ color: "var(--sf-footer-fg)" }}
-            >
-              {servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop")}
-            </h4>
-            <nav className="flex flex-col space-y-2 text-xs">
-              <Link
-                to="/$slug"
-                params={{ slug: brand.slug }}
-                className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {t("الرئيسية", "Home")}
-              </Link>
-              {servicesStore ? (
-                <>
-                  <Link
-                    to="/$slug/$category"
-                    params={{ slug: brand.slug, category: "all" }}
-                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                    style={{ color: "var(--sf-footer-fg)" }}
-                  >
-                    {t("كل الخدمات", "All services")}
-                  </Link>
-                  <Link
-                    to="/$slug/book"
-                    params={{ slug: brand.slug }}
-                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit font-medium"
-                    style={{ color: "var(--sf-footer-fg)" }}
-                  >
-                    {t("احجز موعدك", "Book a date")}
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/$slug/$category"
-                    params={{ slug: brand.slug, category: "all" }}
-                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                    style={{ color: "var(--sf-footer-fg)" }}
-                  >
-                    {t("كل المنتجات", "All Products")}
-                  </Link>
-                  <Link
-                    to="/$slug/$category"
-                    params={{ slug: brand.slug, category: "new" }}
-                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                    style={{ color: "var(--sf-footer-fg)" }}
-                  >
-                    {t("وصل حديثاً", "New Arrivals")}
-                  </Link>
-                  <Link
-                    to="/$slug/$category"
-                    params={{ slug: brand.slug, category: "sale" }}
-                    className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit text-destructive font-medium"
-                  >
-                    {t("التخفيضات", "Sale")}
-                  </Link>
-                </>
-              )}
-              {!servicesStore && (brand as any)?.modules?.made_to_order && (
-                <Link
-                  to={"/$slug/custom-order" as any}
-                  params={{ slug: brand.slug } as any}
-                  className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  {t("طلب مخصص", "Custom Order")}
-                </Link>
-              )}
-            </nav>
+            {columnHeading(shopTitle)}
+            <nav className="flex flex-col space-y-2 text-xs">{shopLinks(DESKTOP_LINK)}</nav>
           </div>
 
-          {/* Column 3: Customer Care & Pages */}
+          {companyPages.length > 0 && (
+            <div className="space-y-3">
+              {columnHeading(titles.company)}
+              <nav className="flex flex-col space-y-2 text-xs">
+                {pageLinks(companyPages, DESKTOP_LINK)}
+              </nav>
+            </div>
+          )}
+
           <div className="space-y-3">
-            <h4
-              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
-              style={{ color: "var(--sf-footer-fg)" }}
-            >
-              {t("المساعدة وخدمة العملاء", "Customer Care")}
-            </h4>
-            <nav className="flex flex-col space-y-2 text-xs">
-              <Link
-                to="/$slug/account"
-                params={{ slug: brand.slug }}
-                className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {servicesStore
-                  ? t("حجوزاتي وحسابي", "My bookings & account")
-                  : t("تتبع الطلبات وحسابي", "Track Order & Account")}
-              </Link>
-              {pageLinks.map((p) => (
-                <Link
-                  key={p.idx}
-                  to="/$slug/page/$idx"
-                  params={{ slug: brand.slug, idx: String(p.idx) }}
-                  className="opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  {p.title}
-                </Link>
-              ))}
-            </nav>
+            {columnHeading(titles.help)}
+            <nav className="flex flex-col space-y-2 text-xs">{helpLinks(DESKTOP_LINK)}</nav>
           </div>
 
-          {/* Column 4: Contact & Newsletter */}
           <div className="space-y-4">
-            <h4
-              className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
-              style={{ color: "var(--sf-footer-fg)" }}
-            >
-              {t("تواصل معنا", "Stay Connected")}
-            </h4>
-
+            {columnHeading(t("تواصل معنا", "Stay Connected"))}
             {settings.newsletter_enabled !== false && <NewsletterForm />}
           </div>
         </div>
 
-        {/* =========================================================================
-            MOBILE ACCORDIONS (lg:hidden)
-            ========================================================================= */}
+        {/* Mobile: the same groups as accordions */}
         <div className="block lg:hidden space-y-4 text-start">
-          {/* Logo & About */}
           <div className="flex flex-col items-center text-center space-y-2 pb-3 border-b border-white/10">
-            {settings.logo_url ? (
-              <img
-                src={settings.logo_url}
-                alt={brand.name_en || "Logo"}
-                width={footerLogoSize * 3}
-                height={footerLogoSize}
-                loading="lazy"
-                decoding="async"
-                style={{ height: `${footerLogoSize}px`, width: "auto" }}
-                className="object-contain"
-              />
-            ) : (
-              <span
-                className="text-base font-bold font-display"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
-                {isAr ? brand.name_ar || brand.name_en : brand.name_en}
-              </span>
-            )}
+            {logo("text-base")}
             {truncatedAbout && (
-              <p
-                className="text-xs leading-relaxed opacity-75 max-w-sm"
-                style={{ color: "var(--sf-footer-fg)" }}
-              >
+              <p className="text-xs leading-relaxed opacity-75 max-w-sm" style={FG}>
                 {truncatedAbout}
               </p>
             )}
           </div>
 
-          {/* Accordion 1: Shop */}
-          <div className="border-b border-white/10 pb-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => toggleSection("shop")}
-              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
-              style={{ color: "var(--sf-footer-fg)" }}
-            >
-              <span>{servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop")}</span>
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  openSections.shop ? "rotate-180" : ""
-                }`}
-              />
-            </Button>
-            {openSections.shop && (
-              <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">
-                {servicesStore ? (
-                  <>
-                    <Link
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: "all" }}
-                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {t("كل الخدمات", "All services")}
-                    </Link>
-                    <Link
-                      to="/$slug/book"
-                      params={{ slug: brand.slug }}
-                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center font-medium"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {t("احجز موعدك", "Book a date")}
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: "all" }}
-                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {t("كل المنتجات", "All Products")}
-                    </Link>
-                    <Link
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: "new" }}
-                      className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {t("وصل حديثاً", "New Arrivals")}
-                    </Link>
-                    <Link
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: "sale" }}
-                      className="opacity-75 hover:opacity-100 py-1 text-destructive font-medium"
-                    >
-                      {t("التخفيضات", "Sale")}
-                    </Link>
-                  </>
-                )}
-              </nav>
-            )}
-          </div>
+          {accordion("shop", shopTitle, shopLinks(MOBILE_LINK))}
+          {companyPages.length > 0 &&
+            accordion("company", titles.company, pageLinks(companyPages, MOBILE_LINK))}
+          {accordion("help", titles.help, helpLinks(MOBILE_LINK))}
 
-          {/* Accordion 2: Help */}
-          <div className="border-b border-white/10 pb-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => toggleSection("help")}
-              className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
-              style={{ color: "var(--sf-footer-fg)" }}
-            >
-              <span>{t("المساعدة وخدمة العملاء", "Customer Care")}</span>
-              <ChevronDown
-                className={`h-4 w-4 transition-transform duration-200 ${
-                  openSections.help ? "rotate-180" : ""
-                }`}
-              />
-            </Button>
-            {openSections.help && (
-              <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">
-                <Link
-                  to="/$slug/account"
-                  params={{ slug: brand.slug }}
-                  className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                  style={{ color: "var(--sf-footer-fg)" }}
+          {socialsList.length > 0 && (
+            <div className="flex flex-wrap justify-center items-center gap-3 py-1">
+              {socialsList.map((s, i) => (
+                <a
+                  key={`${s.name}-${i}`}
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.name}
+                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-all active:scale-95"
+                  style={FG}
                 >
-                  {servicesStore
-                    ? t("حجوزاتي وحسابي", "My bookings & account")
-                    : t("تتبع الطلبات وحسابي", "Track Order & Account")}
-                </Link>
-                {pageLinks.map((p) => (
-                  <Link
-                    key={p.idx}
-                    to="/$slug/page/$idx"
-                    params={{ slug: brand.slug, idx: String(p.idx) }}
-                    className="opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center"
-                    style={{ color: "var(--sf-footer-fg)" }}
-                  >
-                    {p.title}
-                  </Link>
-                ))}
-              </nav>
-            )}
-          </div>
+                  <StorefrontSocialIcon platform={s.name} />
+                </a>
+              ))}
+            </div>
+          )}
 
-          {/* Newsletter on Mobile */}
           {settings.newsletter_enabled !== false && (
             <div className="pt-2">
               <NewsletterForm />
@@ -406,11 +312,8 @@ export function FooterV2() {
           )}
         </div>
 
-        {/* =========================================================================
-            BOTTOM BAR: Payment Icons, Copyright & Powered by Boutq
-            ========================================================================= */}
+        {/* Bottom bar: payment icons, copyright, privacy choices, powered by */}
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-75">
-          {/* Payment Method Badges */}
           {settings.footer_show_payment_methods !== false && (
             <div
               className="flex items-center gap-2 flex-wrap justify-center sm:justify-start"
@@ -439,12 +342,22 @@ export function FooterV2() {
             </div>
           )}
 
-          {/* Copyright & Branding */}
-          <div className="flex items-center gap-3 text-xs text-center sm:text-end">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-center sm:text-end">
             <span>
-              © {new Date().getFullYear()} {isAr ? brand.name_ar || brand.name_en : brand.name_en}.{" "}
+              © {new Date().getFullYear()} {brandName}.{" "}
               {t("جميع الحقوق محفوظة", "All rights reserved.")}
             </span>
+            {settings.analytics_consent_required && (
+              <Button
+                type="button"
+                variant="link"
+                className="inline-flex min-h-11 items-center hover:opacity-100 py-0.5 sm:min-h-0 h-auto p-0 font-normal underline underline-offset-2"
+                style={FG}
+                onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
+              >
+                {t("خيارات الخصوصية", "Privacy choices")}
+              </Button>
+            )}
             <span className="opacity-40">•</span>
             <a
               href="https://boutq.store"
