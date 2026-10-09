@@ -160,6 +160,26 @@ export function AdvancePaymentCard() {
             </div>
           )}
 
+          <div className="flex items-start justify-between gap-4 rounded-lg border border-border p-3">
+            <div>
+              <Label htmlFor="advance-allow-full-payment" className="text-xs font-medium">
+                {isAr
+                  ? "السماح للعميل بدفع المبلغ كاملاً الآن"
+                  : "Let customers pay the full amount now"}
+              </Label>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "يظهر للعميل خيار دفع كامل المبلغ بدل الدفعة المقدمة، فلا يبقى عليه شيء عند الاستلام."
+                  : "Customers can choose to pay the whole total online instead of only the advance, so nothing is left to pay on delivery."}
+              </p>
+            </div>
+            <Switch
+              id="advance-allow-full-payment"
+              checked={bs.advance_allow_full_payment !== false}
+              onCheckedChange={(checked) => setBs({ advance_allow_full_payment: checked })}
+            />
+          </div>
+
           {!error && (
             <div className="space-y-2 rounded-lg bg-muted px-3 py-2 text-xs text-foreground">
               <p className="font-semibold">

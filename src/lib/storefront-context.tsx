@@ -142,6 +142,8 @@ export type PublicSettings = {
   advance_payment_percent: number;
   /** Which orders the advance covers: all, made_to_order, delivery or made_to_order_or_delivery. */
   advance_payment_scope: string;
+  /** A shopper under an advance may choose to pay the whole total now (on unless the store turns it off). */
+  advance_allow_full_payment: boolean;
   card_enabled: boolean;
   benefit_enabled: boolean;
   benefit_qr_url: string | null;

@@ -37,6 +37,7 @@ export function placeStorefrontOrderArgs({
   shipping,
   lang,
   idempotencyKey,
+  payInFull = false,
 }: {
   brand: Pick<Storefront["brand"], "slug">;
   form: CheckoutForm;
@@ -60,10 +61,13 @@ export function placeStorefrontOrderArgs({
   shipping: number;
   lang: Storefront["lang"];
   idempotencyKey: string;
+  /** The shopper chose to pay the whole total now instead of only the advance. */
+  payInFull?: boolean;
 }) {
   return {
     p_brand_slug: brand.slug,
     p_customer: {
+      ...(payInFull ? { pay_in_full: true } : {}),
       name: form.name,
       phone: form.phone,
       email: customerEmail,

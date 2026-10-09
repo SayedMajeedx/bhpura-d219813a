@@ -9,6 +9,7 @@ import conditionsEngine from "../supabase/migrations/20261004110000_advance_paym
 import destination from "../supabase/migrations/20261005100000_advance_payment_destination.sql?raw";
 import destinationEngine from "../supabase/migrations/20261005120000_advance_payment_destination_engine.sql?raw";
 import rulesOnly from "../supabase/migrations/20261009120000_advance_payment_rules_only_scope.sql?raw";
+import payInFull from "../supabase/migrations/20261009140000_advance_pay_in_full.sql?raw";
 import {
   ADVANCE_SCOPES,
   advanceDue,
@@ -66,6 +67,11 @@ beforeAll(async () => {
   await db.exec(destination);
   await db.exec(destinationEngine);
   await db.exec(rulesOnly);
+  // Only the small function of the pay-in-full migration: the rest of it needs the real schema.
+  const start = payInFull.indexOf("CREATE OR REPLACE FUNCTION public.advance_full_payment_rules");
+  await db.exec(
+    payInFull.slice(start, payInFull.indexOf("$function$;", start) + "$function$;".length),
+  );
 });
 
 const FULFILLMENTS: AdvanceOrder["fulfillment"][] = [
@@ -360,5 +366,24 @@ describe("the checkout's preview and the database agree on the advance", () => {
       }
     }
     expect(compared).toBe(RULE_SETS.length * 4 * WHO.length * SHAPES.length);
+  });
+});
+
+describe("paying the whole amount (the customer's choice at checkout)", () => {
+  it("asks the whole total for every fulfillment and order shape, whatever the store's rules", async () => {
+    for (const fulfillment of FULFILLMENTS) {
+      for (const shape of SHAPES) {
+        const due = await sqlDue(shape, fulfillment, async (id) => {
+          await db.query(
+            "UPDATE public.orders SET advance_rules = public.advance_full_payment_rules() WHERE id = $1",
+            [id],
+          );
+          return (
+            await db.query<{ d: string | null }>("SELECT public.order_advance_due($1) AS d", [id])
+          ).rows[0].d;
+        });
+        expect(due, `${fulfillment} / ${shape.name}`).toBeCloseTo(shape.total, 3);
+      }
+    }
   });
 });

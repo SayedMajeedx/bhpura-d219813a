@@ -6,8 +6,10 @@ import { storefrontQueries } from "@/lib/data/storefront";
 import { advanceRulesQueries } from "@/lib/data/advance-rules";
 import { ruleDefFromRow } from "@/lib/payments/advance-rule-form";
 import {
+  PAY_IN_FULL_RULE,
   advanceForOrder,
   advanceRuleFrom,
+  canPayInFull,
   methodsUnderAdvance,
 } from "@/lib/payments/advance-payment";
 import { Card } from "@/components/ui/card";
@@ -247,25 +249,21 @@ function Checkout() {
   const returning =
     useQuery(advanceRulesQueries.returning(brand.slug, needsCustomerKind && Boolean(session?.user)))
       .data === true;
-  const advance = useMemo(
-    () =>
-      advanceForOrder(
-        {
-          total: grandTotal,
-          shipping,
-          fulfillment: appointment ? "appointment" : fulfillment,
-          returning,
-          // Where a delivery goes, as the order will carry it (none for a pickup or a booking).
-          country:
-            fulfillment === "delivery" && !appointment
-              ? selectedDestination === "BH"
-                ? "BH"
-                : selectedCountryCode
-              : null,
-          lines: advanceLinesOfCart(cart, madeToOrderIds, categoryById),
-        },
-        advanceRuleFrom(settings, ownRuleDefs),
-      ),
+  const advanceOrder = useMemo(
+    () => ({
+      total: grandTotal,
+      shipping,
+      fulfillment: appointment ? ("appointment" as const) : fulfillment,
+      returning,
+      // Where a delivery goes, as the order will carry it (none for a pickup or a booking).
+      country:
+        fulfillment === "delivery" && !appointment
+          ? selectedDestination === "BH"
+            ? "BH"
+            : selectedCountryCode
+          : null,
+      lines: advanceLinesOfCart(cart, madeToOrderIds, categoryById),
+    }),
     [
       grandTotal,
       shipping,
@@ -274,13 +272,28 @@ function Checkout() {
       cart,
       madeToOrderIds,
       categoryById,
-      ownRuleDefs,
       returning,
       selectedDestination,
       selectedCountryCode,
-      settings,
     ],
   );
+  const advanceBase = useMemo(
+    () => advanceForOrder(advanceOrder, advanceRuleFrom(settings, ownRuleDefs)),
+    [advanceOrder, ownRuleDefs, settings],
+  );
+  // The shopper may pay the whole total now instead of the advance, when the store allows it.
+  const advanceFull = useMemo(
+    () => advanceForOrder(advanceOrder, PAY_IN_FULL_RULE),
+    [advanceOrder],
+  );
+  const [payInFullChoice, setPayInFullChoice] = useState(false);
+  const fullOffered = canPayInFull(
+    advanceBase,
+    settings.advance_allow_full_payment,
+    Boolean(appointment),
+  );
+  const payInFull = fullOffered && payInFullChoice;
+  const advance = payInFull ? advanceFull : advanceBase;
   // Where it applies, cash on delivery is not offered: the order is completed by paying the
   // advance by card or BenefitPay (the database refuses cod too).
   const availableMethods = useMemo(
@@ -342,6 +355,7 @@ function Checkout() {
     effectiveRedeemedPoints,
     cartSessionId,
     paymentErrorState,
+    payInFull,
   });
 
   if (cart.length === 0) {
@@ -493,6 +507,16 @@ function Checkout() {
           brand={brand}
           fulfillment={fulfillment}
           advance={advance}
+          fullChoice={
+            fullOffered
+              ? {
+                  base: advanceBase,
+                  full: advanceFull,
+                  payInFull,
+                  onChange: setPayInFullChoice,
+                }
+              : null
+          }
           currency={currency}
           appointment={Boolean(appointment)}
           lang={lang}
