@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   businessSettingsQueries,
   invalidateBusinessSettings,
-  updateBusinessSettings,
-  type StoredPages,
+  savePagesSettings,
 } from "@/lib/data/business-settings";
+import { storedFooterTitles, storedPages } from "@/lib/cms-pages";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { normalizeRichTextValue } from "@/lib/rich-text";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT } from "@/lib/seo";
 
-import { buildPagesPayload } from "@/components/pages/pages-payload";
+import { buildPagesPayload, editorSnapshot, pagesSurvived } from "@/components/pages/pages-payload";
 import { FooterGroupTitlesCard, type FooterTitles } from "@/components/pages/FooterGroupTitlesCard";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
@@ -188,6 +188,7 @@ function PagesAndPolicies() {
     helpAr: "المساعدة",
   });
   const [saving, setSaving] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState("");
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadingIconIdx, setUploadingIconIdx] = useState<number | null>(null);
   const [openPages, setOpenPages] = useState<string[]>([]);
@@ -196,48 +197,47 @@ function PagesAndPolicies() {
 
   useEffect(() => {
     if (!data) return;
-    const rawPagesData = data.pages as StoredPages;
-    const rawPages = Array.isArray(rawPagesData)
-      ? rawPagesData
-      : Array.isArray(rawPagesData?.items)
-        ? rawPagesData.items
-        : [];
-    const storedTitles =
-      !Array.isArray(rawPagesData) && typeof rawPagesData === "object" && rawPagesData !== null
-        ? rawPagesData.footer_titles
-        : null;
-
-    setPages(
-      rawPages.map((page: any) => ({
-        slug: page?.slug ?? "",
-        title_ar: page?.title_ar ?? "",
-        title_en: page?.title_en ?? "",
-        content_ar: normalizeRichTextValue(page?.content_ar),
-        content_en: normalizeRichTextValue(page?.content_en),
-        image_url: page?.image_url ?? null,
-        menu_icon_url: page?.menu_icon_url ?? null,
-        image_position: page?.image_position === "bottom" ? "bottom" : "top",
-        meta_title: page?.meta_title ?? "",
-        meta_description: page?.meta_description ?? "",
-        group: page?.group === "company" ? "company" : "help",
-      })),
-    );
-    const rawSocials = Array.isArray(data.socials) ? data.socials : [];
-    setSocials(
-      rawSocials.map((item: any) => ({
+    const storedTitles = storedFooterTitles(data.pages);
+    const loadedPages: PageSlot[] = storedPages(data.pages).map((page) => ({
+      slug: page.slug ?? "",
+      title_ar: page.title_ar ?? "",
+      title_en: page.title_en ?? "",
+      content_ar: normalizeRichTextValue(page.content_ar),
+      content_en: normalizeRichTextValue(page.content_en),
+      image_url: page.image_url,
+      menu_icon_url: page.menu_icon_url,
+      image_position: page.image_position,
+      meta_title: page.meta_title ?? "",
+      meta_description: page.meta_description ?? "",
+      group: page.group,
+    }));
+    const loadedSocials = (Array.isArray(data.socials) ? data.socials : []).map(
+      (item: any): Social => ({
         name: String(item?.name ?? ""),
         url: String(item?.url ?? ""),
-      })),
+      }),
     );
-    setWaEnabled(Boolean(data.whatsapp_enabled));
-    setWaNumber(data.whatsapp_number ?? "");
-    setFooterTitles({
+    const loadedTitles: FooterTitles = {
       companyEn: storedTitles?.company_en?.trim() || "Company",
       companyAr: storedTitles?.company_ar?.trim() || "الشركة",
       helpEn: storedTitles?.help_en?.trim() || "Help",
       helpAr: storedTitles?.help_ar?.trim() || "المساعدة",
-    });
+    };
+    setPages(loadedPages);
+    setSocials(loadedSocials);
+    setFooterTitles(loadedTitles);
+    setWaEnabled(Boolean(data.whatsapp_enabled));
+    setWaNumber(data.whatsapp_number ?? "");
+    setSavedSnapshot(editorSnapshot(loadedPages, loadedSocials, loadedTitles));
   }, [data]);
+
+  const dirty = savedSnapshot !== editorSnapshot(pages, socials, footerTitles);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   const updatePage = (index: number, patch: Partial<PageSlot>) => {
     setPages((current) =>
@@ -333,7 +333,18 @@ function PagesAndPolicies() {
       .filter((social) => social.name && social.url);
     const pagesPayload = buildPagesPayload(pages, footerTitles);
     try {
-      await updateBusinessSettings(brandId, { pages: pagesPayload, socials: cleanedSocials });
+      const stored = await savePagesSettings(brandId, {
+        pages: pagesPayload,
+        socials: cleanedSocials,
+      });
+      if (!pagesSurvived(pagesPayload, stored.pages)) {
+        toast.error(
+          isAr
+            ? "لم يحفظ الخادم كل الصفحات. لم نُغيّر شيئاً على شاشتك، حاول مرة أخرى أو تواصل مع الدعم."
+            : "The server did not keep all your pages. Your edits are still on screen; try again or contact support.",
+        );
+        return;
+      }
     } catch (error) {
       toast.error(getFriendlyErrorMessage(error));
       return;
@@ -385,6 +396,7 @@ function PagesAndPolicies() {
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         pageCount={pages.length}
         saving={saving}
+        dirty={dirty}
         onAddPage={addPage}
         onSave={save}
       />
@@ -970,7 +982,7 @@ function PagesAndPolicies() {
       <div className="sticky bottom-[calc(env(safe-area-inset-bottom)+5rem)] z-10 flex justify-end rounded-2xl border border-border-subtle bg-background/90 p-3 shadow-lg backdrop-blur-md sm:bottom-4 sm:p-4">
         <Button
           onClick={save}
-          disabled={saving}
+          disabled={saving || !dirty}
           size="lg"
           className="w-full px-6 font-semibold shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:w-auto"
         >
@@ -978,9 +990,13 @@ function PagesAndPolicies() {
             ? isAr
               ? "جاري الحفظ…"
               : "Saving…"
-            : isAr
-              ? "حفظ جميع التغييرات"
-              : "Save all changes"}
+            : !dirty
+              ? isAr
+                ? "كل التغييرات محفوظة"
+                : "All changes saved"
+              : isAr
+                ? "حفظ جميع التغييرات"
+                : "Save all changes"}
         </Button>
       </div>
     </div>

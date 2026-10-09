@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import { storedPageItems } from "@/lib/cms-pages";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { storefrontKeys } from "./keys";
 import {
@@ -134,7 +135,7 @@ export async function fetchStorefrontPageMeta(slug: string): Promise<StorefrontP
       meta_title: seo?.meta_title ?? null,
       meta_description: seo?.meta_description ?? null,
     },
-    pages: Array.isArray(settings?.pages) ? settings.pages : [],
+    pages: storedPageItems(settings?.pages),
     faviconUrl: settings?.favicon_url || settings?.logo_url || baseBrand.logo_url || null,
   };
 }

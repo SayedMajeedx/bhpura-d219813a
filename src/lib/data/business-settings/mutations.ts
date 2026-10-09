@@ -37,3 +37,23 @@ export async function updateBusinessSettings(brandId: string, patch: BusinessSet
   const { error } = await supabase.from("business_settings").update(patch).eq("brand_id", brandId);
   if (error) throw error;
 }
+
+/**
+ * Saves the Pages screen's columns and returns what the database stored. A
+ * write that matches no row (policy, wrong brand) comes back empty, and that
+ * is an error here, not a quiet success.
+ */
+export async function savePagesSettings(
+  brandId: string,
+  patch: Pick<BusinessSettingsPatch, "pages" | "socials">,
+) {
+  const { data, error } = await supabase
+    .from("business_settings")
+    .update(patch)
+    .eq("brand_id", brandId)
+    .select("pages, socials")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("PAGES_NOT_SAVED");
+  return data;
+}
