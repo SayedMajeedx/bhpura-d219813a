@@ -290,7 +290,8 @@ export function InstagramImporterModal({
       });
 
       setImportResult({ success: res.successCount, skipped: res.skippedCount });
-      const done = new Set(readyDrafts.map((d) => d.id));
+      // A draft leaves the list only once it is saved: one the store already has stays, never lost.
+      const done = new Set(res.savedIds ?? readyDrafts.map((d) => d.id));
       setDrafts((prev) => prev.filter((d) => !done.has(d.id)));
       setStep("success");
       onComplete();
@@ -313,20 +314,27 @@ export function InstagramImporterModal({
     }
 
     try {
-      await bulkInsertProducts({
+      const res = await bulkInsertProducts({
         data: {
           brandId,
           products: [forSave(draft)],
         },
       });
 
-      // Remove from active review list
-      setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
+      if (res.successCount === 0) {
+        toast.warning(
+          isAr
+            ? `"${draft.title}" موجود في المتجر من استيراد سابق، لم يُحفظ مرة ثانية (بقي في القائمة).`
+            : `"${draft.title}" is already in your store from an earlier import: not saved again (kept here).`,
+        );
+        return;
+      }
       toast.success(
         isAr
           ? `تم حفظ "${draft.title}" كمسودة بنجاح!`
           : `Draft "${draft.title}" saved successfully!`,
       );
+      setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
       onComplete();
     } catch (err: any) {
       toast.error(err?.message || (isAr ? "فشل حفظ المنتج" : "Failed to save product"));
@@ -914,6 +922,13 @@ export function InstagramImporterModal({
                       ? `تم حفظ ${importResult.success} منتج كمسودات غير منشورة (Drafts). يمكنك مراجعتها ونشرها لاحقاً.`
                       : `Successfully saved ${importResult.success} unpublished drafts to your catalog.`}
                   </p>
+                  {importResult.skipped > 0 && (
+                    <p className="text-xs font-semibold text-amber-600 leading-relaxed">
+                      {isAr
+                        ? `لم يُحفظ ${importResult.skipped} منتج لأنه موجود في المتجر من استيراد سابق.`
+                        : `${importResult.skipped} not saved: already in your store from an earlier import.`}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
