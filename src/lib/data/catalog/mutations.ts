@@ -161,7 +161,7 @@ export async function adjustVariantStock(args: {
     p_location: args.location,
     p_mode: args.mode,
     p_value: args.value,
-    p_reason: "manual_adjustment",
+    p_reason: "manual_adjust",
     p_note: args.note,
   });
   if (error) throw error;

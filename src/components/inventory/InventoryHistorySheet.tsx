@@ -76,6 +76,11 @@ const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string
     en: "Manual Adjustment",
     badgeClass: "bg-primary/10 text-primary border-primary/20",
   },
+  manual_adjust: {
+    ar: "تعديل يدوي",
+    en: "Manual Adjustment",
+    badgeClass: "bg-primary/10 text-primary border-primary/20",
+  },
   transfer_out: {
     ar: "تحويل صادر",
     en: "Transfer Out",
