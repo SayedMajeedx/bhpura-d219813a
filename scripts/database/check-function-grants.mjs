@@ -38,6 +38,24 @@ where n.nspname = 'public'
 order by 1`;
 
 /**
+ * Read policies written for visitors (`TO anon`) that call a function a visitor may not execute.
+ * Such a policy makes every visitor read of its table fail with "permission denied for function"
+ * (it broke the advance-payment rules, FAQ and gallery of the storefronts after the grants clean-up),
+ * so a visitor rule must not call a staff check such as can_access_brand: give staff their own policy.
+ */
+export const VISITOR_POLICY_QUERY = `
+select c.relname as tbl, p.polname as policy, f.proname as fn
+from pg_policy p
+join pg_class c on c.oid = p.polrelid
+join pg_depend d on d.classid = 'pg_policy'::regclass and d.objid = p.oid
+  and d.refclassid = 'pg_proc'::regclass
+join pg_proc f on f.oid = d.refobjid
+where p.polcmd in ('r', '*')
+  and 'anon'::regrole = any (p.polroles)
+  and not has_function_privilege('anon', f.oid, 'EXECUTE')
+order by 1, 2`;
+
+/**
  * What the live database lets a browser do that the allowlist does not.
  * `live`: [{ signature, anon, authenticated }]; `allowlist`: { [signature]: { anon, authenticated } }.
  */
@@ -63,11 +81,11 @@ export function diffGrants(live, allowlist) {
   return { problems, stale };
 }
 
-function readLive() {
+function readLive(query = LIVE_GRANTS_QUERY) {
   let output;
   try {
     output = execSync(
-      `npx supabase db query --linked -o json "${LIVE_GRANTS_QUERY.replace(/\s+/g, " ").trim()}"`,
+      `npx supabase db query --linked -o json "${query.replace(/\s+/g, " ").trim()}"`,
       {
         encoding: "utf8",
         stdio: ["pipe", "pipe", "pipe"],
@@ -112,6 +130,18 @@ export function checkFunctionGrants() {
     console.error(
       "\nIf only the server calls it: REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC, anon, authenticated; in its migration.\n" +
         "If a browser must call it: check the caller inside the function, then list it with a reason.",
+    );
+    process.exit(1);
+  }
+  const brokenPolicies = readLive(VISITOR_POLICY_QUERY) ?? [];
+  if (brokenPolicies.length) {
+    console.error(
+      `\n${brokenPolicies.length} visitor read polic(ies) call a function a visitor cannot execute, so every visitor read fails:`,
+    );
+    for (const row of brokenPolicies)
+      console.error(`  - ${row.tbl}: "${row.policy}" calls ${row.fn}()`);
+    console.error(
+      "\nKeep the visitor policy to plain columns (e.g. is_active) and give staff their own policy TO authenticated.",
     );
     process.exit(1);
   }
