@@ -189,7 +189,7 @@ describe("variant writes", () => {
         p_location: "incubator",
         p_mode: "delta",
         p_value: 3,
-        p_reason: "manual_adjustment",
+        p_reason: "manual_adjust",
         p_note: "Bulk add stock +3",
       },
     });
