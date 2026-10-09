@@ -10,7 +10,11 @@ import {
   type AdvanceOrder,
   type AdvanceRule,
 } from "../src/lib/payments/advance-payment";
-import { advanceRulesDue, type AdvanceRuleDef } from "../src/lib/payments/advance-rules";
+import {
+  advanceRulesDue,
+  type AdvanceFulfillment,
+  type AdvanceRuleDef,
+} from "../src/lib/payments/advance-rules";
 
 const money = (n: number) => `BHD ${n.toFixed(3)}`;
 const rule = (over: Partial<AdvanceRule> = {}): AdvanceRule => ({
@@ -316,5 +320,52 @@ describe("rules that look at where the order is going", () => {
   it("any ignores the country", () => {
     expect(due(sent("US"), [rule({ value: 10 })])).toBe(10);
     expect(due(sent(null), [rule({ value: 10 })])).toBe(10);
+  });
+});
+
+describe("only my own rules", () => {
+  const anOrder = (fulfillment: "delivery" | "pickup"): AdvanceOrder => ({
+    total: fulfillment === "delivery" ? 105 : 100,
+    shipping: fulfillment === "delivery" ? 5 : 0,
+    fulfillment,
+    lines: [{ amount: 100, madeToOrder: false }],
+  });
+  const fixed = (fulfillment: AdvanceFulfillment[]): AdvanceRuleDef => ({
+    fulfillment,
+    madeToOrder: null,
+    productIds: [],
+    categorySlugs: [],
+    kind: "fixed",
+    value: 10,
+    min: null,
+    max: null,
+    includeFee: false,
+    minTotal: null,
+    maxTotal: null,
+    customer: "any",
+    destination: "any",
+    countries: [],
+  });
+  const settings = { advance_payment_enabled: true, advance_payment_scope: "rules_only" };
+
+  it("asks nothing of an order no own rule reaches", () => {
+    expect(advanceDue(anOrder("pickup"), advanceRuleFrom(settings, []))).toBeNull();
+    expect(
+      advanceDue(anOrder("pickup"), advanceRuleFrom(settings, [fixed(["delivery"])])),
+    ).toBeNull();
+  });
+
+  it("asks exactly what the own rule asks, with no general share on top", () => {
+    const all = advanceRuleFrom(settings, [fixed([])]);
+    expect(advanceDue(anOrder("delivery"), all)).toBe(10);
+    expect(advanceDue(anOrder("pickup"), all)).toBe(10);
+  });
+
+  it("keeps the general share for the other scopes", () => {
+    const general = advanceRuleFrom({ ...settings, advance_payment_scope: "all" }, [
+      fixed(["delivery"]),
+    ]);
+    expect(advanceDue(anOrder("delivery"), general)).toBe(10);
+    expect(advanceDue(anOrder("pickup"), general)).toBe(30);
   });
 });

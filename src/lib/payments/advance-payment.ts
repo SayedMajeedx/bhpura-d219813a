@@ -12,6 +12,8 @@
  *   delivery                   an order that is delivered, whole, delivery fee included
  *   made_to_order_or_delivery  a delivered order whole; any other order only its
  *                              made-to-order lines
+ *   rules_only                 no general share at all: only the store's own rules ask
+ *                              for an advance (the percentage is not used)
  *
  * advanceDue is the same arithmetic as the database's order_advance_due (migration
  * 20261003140000), which is what charges, approves and refuses; this copy is for
@@ -38,6 +40,7 @@ export const ADVANCE_SCOPES = [
   "made_to_order",
   "delivery",
   "made_to_order_or_delivery",
+  "rules_only",
 ] as const;
 export type AdvanceScope = (typeof ADVANCE_SCOPES)[number];
 export const DEFAULT_ADVANCE_SCOPE: AdvanceScope = "all";
@@ -77,6 +80,12 @@ export const ADVANCE_SCOPE_LABELS: Record<
     en: "Made-to-order or delivered",
     hintAr: "طلب التوصيل كاملاً، وأي طلب آخر على منتجاته حسب الطلب فقط.",
     hintEn: "A delivered order whole; any other order on its made-to-order items only.",
+  },
+  rules_only: {
+    ar: "قواعدي الخاصة فقط",
+    en: "Only my own rules",
+    hintAr: "لا توجد نسبة عامة: لا تُطلب دفعة إلا حسب القواعد التي تضيفها أدناه.",
+    hintEn: "No general share: an advance is asked only by the rules you add below.",
   },
 };
 
