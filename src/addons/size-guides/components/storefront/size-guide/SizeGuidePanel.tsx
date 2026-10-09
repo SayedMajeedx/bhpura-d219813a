@@ -167,7 +167,11 @@ export function SizeGuidePanel({
             </h4>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div
+            className={`grid grid-cols-1 gap-4 items-start ${
+              guide.how_to_measure.length > 0 ? "md:grid-cols-2" : ""
+            }`}
+          >
             {/* Steps */}
             {guide.how_to_measure.length > 0 && (
               <div className="space-y-3">
@@ -196,7 +200,9 @@ export function SizeGuidePanel({
                   <img
                     src={guide.diagram_url}
                     alt={guideName}
-                    className="w-full object-contain max-h-72"
+                    className={`mx-auto w-full object-contain ${
+                      guide.how_to_measure.length > 0 ? "max-h-72" : "max-h-[32rem]"
+                    }`}
                   />
                 </div>
               )}
