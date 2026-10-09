@@ -3,6 +3,7 @@ import { resolveBannerSize } from "@/lib/banner-size";
 import { resolveStorefrontTypography } from "@/lib/typography";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile";
+import { storedFooterTitles, storedPages } from "@/lib/cms-pages";
 import type { fetchStorefrontPageData } from "@/lib/data/storefront";
 
 type PageData = NonNullable<Awaited<ReturnType<typeof fetchStorefrontPageData>>>;
@@ -20,29 +21,10 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
   const trackingSettings = pageData.trackingSettings ?? {};
 
   const s = settings as any;
-  const rawPagesData = s?.pages;
-  const rawPages = Array.isArray(rawPagesData)
-    ? rawPagesData
-    : Array.isArray(rawPagesData?.items)
-      ? rawPagesData.items
-      : [];
-  const footerTitles =
-    !Array.isArray(rawPagesData) && typeof rawPagesData === "object" && rawPagesData !== null
-      ? rawPagesData.footer_titles
-      : null;
-
-  const normalizedPages = rawPages.map((p: any, index: number) => ({
-    slug: p?.slug ?? `page-${index + 1}`,
-    title_ar: p?.title_ar ?? null,
-    title_en: p?.title_en ?? null,
-    content_ar: p?.content_ar ?? null,
-    content_en: p?.content_en ?? null,
-    image_url: p?.image_url ?? null,
-    menu_icon_url: p?.menu_icon_url ?? null,
-    image_position: p?.image_position === "bottom" ? "bottom" : "top",
-    meta_title: p?.meta_title ?? null,
-    meta_description: p?.meta_description ?? null,
-    group: p?.group === "company" ? "company" : "help",
+  const footerTitles = storedFooterTitles(s?.pages);
+  const normalizedPages = storedPages(s?.pages).map((page, index) => ({
+    ...page,
+    slug: page.slug ?? `page-${index + 1}`,
   }));
   const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
   const normalizedSocials = rawSocials

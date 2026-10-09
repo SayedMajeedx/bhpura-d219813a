@@ -5,6 +5,7 @@ import {
   sanitizeMetaText,
   uniquePageSlug,
 } from "@/lib/seo";
+import { storedFooterTitles, storedPageItems } from "@/lib/cms-pages";
 import type { FooterTitles } from "./FooterGroupTitlesCard";
 
 export type EditablePage = {
@@ -53,4 +54,37 @@ export function buildPagesPayload(pages: EditablePage[], titles: FooterTitles) {
       help_ar: titles.helpAr.trim() || "المساعدة",
     },
   };
+}
+
+type SavedPages = ReturnType<typeof buildPagesPayload>;
+
+/**
+ * True when the database kept what was sent: the same pages in the same
+ * order, each in its group, and the footer headings. A trigger or a policy
+ * that quietly changes the value must not look like a successful save.
+ */
+export function pagesSurvived(sent: SavedPages, stored: unknown): boolean {
+  const items = storedPageItems(stored);
+  if (items.length !== sent.items.length) return false;
+  const sameItems = sent.items.every((page, i) => {
+    const kept = items[i];
+    return kept.slug === page.slug && kept.group === page.group;
+  });
+  const titles = storedFooterTitles(stored);
+  return (
+    sameItems &&
+    titles !== null &&
+    Object.entries(sent.footer_titles).every(
+      ([key, value]) => titles[key as keyof typeof titles] === value,
+    )
+  );
+}
+
+/** One string that changes whenever anything on the screen changes (for "unsaved changes"). */
+export function editorSnapshot(
+  pages: EditablePage[],
+  socials: Array<{ name: string; url: string }>,
+  titles: FooterTitles,
+) {
+  return JSON.stringify({ pages, socials, titles });
 }

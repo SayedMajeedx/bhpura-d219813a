@@ -6,6 +6,8 @@ interface PagesCommandHeaderProps {
   brandName: string;
   pageCount: number;
   saving: boolean;
+  /** Something on the screen is not saved yet. */
+  dirty?: boolean;
   onAddPage: () => void;
   onSave: () => void;
 }
@@ -15,6 +17,7 @@ export function PagesCommandHeader({
   brandName,
   pageCount,
   saving,
+  dirty = false,
   onAddPage,
   onSave,
 }: PagesCommandHeaderProps) {
@@ -63,7 +66,7 @@ export function PagesCommandHeader({
           <Button
             type="button"
             onClick={onSave}
-            disabled={saving}
+            disabled={saving || !dirty}
             className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5 text-xs font-bold bg-primary text-primary-foreground"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -72,9 +75,13 @@ export function PagesCommandHeader({
                 ? isAr
                   ? "جاري الحفظ..."
                   : "Saving..."
-                : isAr
-                  ? "حفظ التغييرات"
-                  : "Save Changes"}
+                : dirty
+                  ? isAr
+                    ? "حفظ التغييرات"
+                    : "Save Changes"
+                  : isAr
+                    ? "كل التغييرات محفوظة"
+                    : "All changes saved"}
             </span>
           </Button>
         </div>
