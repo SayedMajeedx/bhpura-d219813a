@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Wallet } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
@@ -8,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
+import { advanceRulesQueries } from "@/lib/data/advance-rules";
+import { ruleDefFromRow } from "@/lib/payments/advance-rule-form";
 import {
   ADVANCE_SCOPES,
   ADVANCE_SCOPE_LABELS,
@@ -16,6 +19,7 @@ import {
   advanceLines,
   advancePercentError,
   advanceRuleFrom,
+  advanceScopeFrom,
   type AdvanceOrder,
 } from "@/lib/payments/advance-payment";
 
@@ -40,17 +44,22 @@ const sample = (fulfillment: AdvanceOrder["fulfillment"]): AdvanceOrder => ({
 export function AdvancePaymentCard() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { form, setBs } = useBrandSettingsFormContext();
+  const { form, setBs, brandId } = useBrandSettingsFormContext();
   const bs = form.bs;
   const enabled = bs.advance_payment_enabled === true;
   const percent = Number(bs.advance_payment_percent ?? DEFAULT_ADVANCE_PERCENT);
 
   // The text being typed; the setting changes only when it is a valid percentage.
   const [text, setText] = useState(String(percent));
-  const error = enabled ? advancePercentError(text, isAr) : null;
+  const rulesOnly = advanceScopeFrom(bs.advance_payment_scope) === "rules_only";
+  // With "only my own rules" there is no general share, so its percentage is not asked.
+  const error = enabled && !rulesOnly ? advancePercentError(text, isAr) : null;
+  const ownRules = (useQuery(advanceRulesQueries.list(brandId)).data ?? [])
+    .filter((row) => row.is_active)
+    .map(ruleDefFromRow);
   const canPayOnline = bs.card_enabled === true || bs.benefit_enabled === true;
   const currency = bs.currency || "BHD";
-  const rule = advanceRuleFrom(bs);
+  const rule = advanceRuleFrom(bs, ownRules);
   const money = (n: number) => formatMoney(n, currency);
   const previews = (["delivery", "pickup"] as const).map((fulfillment) => ({
     fulfillment,
@@ -111,33 +120,45 @@ export function AdvancePaymentCard() {
             </div>
           </fieldset>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="advance-payment-percent" className="text-xs font-medium">
-              {isAr ? "نسبة الدفعة المقدمة (%)" : "Advance share (%)"}
-            </Label>
-            <Input
-              id="advance-payment-percent"
-              type="number"
-              inputMode="decimal"
-              min={1}
-              max={100}
-              step="1"
-              dir="ltr"
-              className="h-9 w-28 text-xs font-mono"
-              value={text}
-              onChange={(event) => {
-                setText(event.target.value);
-                if (!advancePercentError(event.target.value, isAr)) {
-                  setBs({ advance_payment_percent: Number(event.target.value) });
-                }
-              }}
-            />
-            {error && (
-              <p className="text-xs font-semibold text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-          </div>
+          {rulesOnly ? (
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? ownRules.length > 0
+                  ? "لا توجد نسبة عامة: الدفعة المقدمة تأتي من قواعدك الخاصة أدناه فقط."
+                  : "لم تضف قاعدة بعد: لن تُطلب أي دفعة مقدمة حتى تضيف قاعدة أدناه."
+                : ownRules.length > 0
+                  ? "There is no general share: the advance comes only from your own rules below."
+                  : "You have no rule yet: no advance is asked until you add one below."}
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="advance-payment-percent" className="text-xs font-medium">
+                {isAr ? "نسبة الدفعة المقدمة (%)" : "Advance share (%)"}
+              </Label>
+              <Input
+                id="advance-payment-percent"
+                type="number"
+                inputMode="decimal"
+                min={1}
+                max={100}
+                step="1"
+                dir="ltr"
+                className="h-9 w-28 text-xs font-mono"
+                value={text}
+                onChange={(event) => {
+                  setText(event.target.value);
+                  if (!advancePercentError(event.target.value, isAr)) {
+                    setBs({ advance_payment_percent: Number(event.target.value) });
+                  }
+                }}
+              />
+              {error && (
+                <p className="text-xs font-semibold text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+            </div>
+          )}
 
           {!error && (
             <div className="space-y-2 rounded-lg bg-muted px-3 py-2 text-xs text-foreground">

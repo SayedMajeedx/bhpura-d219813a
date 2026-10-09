@@ -95,6 +95,8 @@ const everything = (over: Partial<AdvanceRuleDef>): AdvanceRuleDef => ({
 /** The store's general rule (a percentage and a scope) as rules: the database's advance_default_rules. */
 export function defaultAdvanceRules(percent: number, scope: string): AdvanceRuleDef[] {
   switch (scope) {
+    case "rules_only":
+      return [];
     case "made_to_order":
       return [everything({ madeToOrder: true, value: percent })];
     case "delivery":

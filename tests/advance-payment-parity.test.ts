@@ -8,6 +8,7 @@ import conditions from "../supabase/migrations/20261004100000_advance_payment_co
 import conditionsEngine from "../supabase/migrations/20261004110000_advance_payment_conditions_engine.sql?raw";
 import destination from "../supabase/migrations/20261005100000_advance_payment_destination.sql?raw";
 import destinationEngine from "../supabase/migrations/20261005120000_advance_payment_destination_engine.sql?raw";
+import rulesOnly from "../supabase/migrations/20261009120000_advance_payment_rules_only_scope.sql?raw";
 import {
   ADVANCE_SCOPES,
   advanceDue,
@@ -64,6 +65,7 @@ beforeAll(async () => {
   await db.exec(conditionsEngine);
   await db.exec(destination);
   await db.exec(destinationEngine);
+  await db.exec(rulesOnly);
 });
 
 const FULFILLMENTS: AdvanceOrder["fulfillment"][] = [
@@ -197,7 +199,7 @@ describe("the checkout's preview and the database agree on the advance", () => {
         }
       }
     }
-    expect(compared).toBe(4 * 4 * 5 * SHAPES.length);
+    expect(compared).toBe(ADVANCE_SCOPES.length * 4 * 5 * SHAPES.length);
   });
 
   const rule = (over: Partial<AdvanceRuleDef>): AdvanceRuleDef => ({
