@@ -1,14 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, useStoreModules } from "@/lib/storefront-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useCallback, useMemo, useRef, useEffect } from "react";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { BrandStorySection } from "@/components/storefront/BrandStorySection";
 import { RecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { PAGE_DATA_RANKING_LIMIT, storefrontQueries } from "@/lib/data/storefront";
 import { storeLayoutData } from "@/features/storefront-shell/lib/layout-data";
+import { categoryPathParam, parseCategoryPath } from "@/features/storefront-home/lib/category-path";
 import {
   homeGridProducts,
   homeMerchandising,
@@ -27,6 +28,9 @@ import { ServicesHome } from "@/features/services-home/components/ServicesHome";
 import { isServicesStore } from "@/features/services-home/lib/services-home";
 
 export const Route = createFileRoute("/$slug/")({
+  // The chosen category lives in the address (?cat=...), so the logo and the back button work.
+  validateSearch: (search: Record<string, unknown>): { cat?: string } =>
+    typeof search.cat === "string" && search.cat.trim() ? { cat: search.cat } : {},
   // The store's layout has just read this same page data; asking the database again doubled the
   // work of every home page load and cost a second round trip when coming back to the home page.
   loader: async ({ parentMatchPromise }) => {
@@ -45,8 +49,17 @@ function StoreHome() {
   const { brand, settings } = useStorefront();
   const modules = useStoreModules();
   const loaderData = Route.useLoaderData();
-  const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
+  const { cat } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const activeCategorySlugs = useMemo(() => parseCategoryPath(cat), [cat]);
   const activeCat = activeCategorySlugs[0] || null;
+  // A new history entry per choice: back returns to the previous filter, the logo to the
+  // unfiltered page. The page scrolls to the products itself (below), not to the top.
+  const setActiveCategorySlugs = useCallback(
+    (path: string[]) =>
+      void navigate({ search: { cat: categoryPathParam(path) }, resetScroll: false }),
+    [navigate],
+  );
 
   const productsSectionRef = useRef<HTMLDivElement>(null);
   const prevCatRef = useRef<string | null>(null);
