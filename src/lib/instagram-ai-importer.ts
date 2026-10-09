@@ -9,6 +9,11 @@ import { z } from "zod";
 import { productDraftItemSchema } from "@/features/instagram-import/lib/draft-schema";
 import { buildDraft, type AiReading } from "@/features/instagram-import/lib/build-draft";
 import {
+  importedPostIds,
+  type ImportRunRow,
+  type ProductRow,
+} from "@/features/instagram-import/lib/imported-posts";
+import {
   MAX_IMAGE_BYTES,
   isSafeRemoteImageUrl,
   verifyImageIntegrity,
@@ -765,60 +770,42 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
     if (!hasAccess) throw new Error("UNAUTHORIZED");
 
     if (data.products.length === 0) {
-      return { successCount: 0, skippedCount: 0 };
+      return { successCount: 0, skippedCount: 0, savedIds: [] as string[] };
     }
 
     try {
-      // Check existing imports to prevent duplicates
-      const existingPostIds = new Set<string>();
-
-      // Check import_runs for previous Instagram imports
+      // Posts whose product still exists were imported before (a deleted product frees its posts).
+      let runs: ImportRunRow[] = [];
+      let products: ProductRow[] = [];
       try {
-        const { data: existingRuns } = await supabaseAdmin
+        const { data: runRows } = await supabaseAdmin
           .from("import_runs")
-          .select("issues")
+          .select("created_at, issues")
           .eq("brand_id", brandId)
           .eq("source", "instagram");
-        for (const run of existingRuns ?? []) {
-          const ids = (run?.issues as { imported_post_ids?: string[] } | null)?.imported_post_ids;
-          if (Array.isArray(ids)) ids.forEach((id: string) => existingPostIds.add(String(id)));
-        }
-      } catch (err) {
-        console.warn("Could not query import_runs for existing Instagram posts:", err);
-      }
-
-      // Also check legacy products with instagram_post_id in custom_fields
-      try {
-        const { data: existingProducts } = await supabaseAdmin
+        runs = (runRows ?? []) as ImportRunRow[];
+        const { data: productRows } = await supabaseAdmin
           .from("products")
-          .select("id, custom_fields")
+          .select("id, created_at, custom_fields")
           .eq("brand_id", brandId);
-        for (const row of existingProducts ?? []) {
-          const cf = row.custom_fields;
-          if (Array.isArray(cf)) {
-            for (const item of cf as Record<string, unknown>[]) {
-              if (item?.key === "instagram_post_id" && item.value)
-                existingPostIds.add(String(item.value));
-            }
-          } else if (cf && typeof cf === "object" && !Array.isArray(cf)) {
-            const val = (cf as Record<string, unknown>).instagram_post_id;
-            if (val) existingPostIds.add(String(val));
-          }
-        }
+        products = (productRows ?? []) as ProductRow[];
       } catch (err) {
-        console.warn("Could not query legacy custom_fields:", err);
+        console.warn("Could not query existing Instagram imports:", err);
       }
+      const existingPostIds = importedPostIds(runs, products);
 
       // A product made of several posts is skipped when any of them was imported before.
       const newProducts = data.products.filter(
         (product) => !postIdsOf(product).some((id) => existingPostIds.has(id)),
       );
       if (newProducts.length === 0) {
-        return { successCount: 0, skippedCount: data.products.length };
+        return { successCount: 0, skippedCount: data.products.length, savedIds: [] as string[] };
       }
 
       let insertedCount = 0;
       const insertedPostIds: string[] = [];
+      const madeProducts: { product_id: string; post_ids: string[] }[] = [];
+      const savedIds: string[] = [];
 
       for (const p of newProducts) {
         // Collect all selected and successful R2 images
@@ -885,7 +872,9 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
 
         insertedCount++;
+        savedIds.push(p.id);
         insertedPostIds.push(...postIdsOf(p));
+        madeProducts.push({ product_id: prodData.id, post_ids: postIdsOf(p) });
 
         const sizes = Array.isArray(p.sizes)
           ? p.sizes.map((s: string) => String(s).trim()).filter(Boolean)
@@ -969,6 +958,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
             failed_count: 0,
             issues: {
               imported_post_ids: insertedPostIds,
+              products: madeProducts,
             },
           });
         } catch (auditErr) {
@@ -979,6 +969,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       return {
         successCount: insertedCount,
         skippedCount: data.products.length - insertedCount,
+        savedIds,
       };
     } catch (error: any) {
       console.error("Bulk draft insertion failed:", error);

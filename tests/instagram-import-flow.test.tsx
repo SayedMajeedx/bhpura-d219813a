@@ -147,6 +147,40 @@ describe("the Instagram importer's review screen", () => {
     expect(products.every((p) => !("mergedFrom" in p))).toBe(true);
   });
 
+  it("says so when a product was not saved because it is already in the store", async () => {
+    stubs.bulkInsertProducts.mockResolvedValue({
+      successCount: 1,
+      skippedCount: 1,
+      savedIds: ["a"],
+    });
+    render(
+      <I18nProvider>
+        <InstagramImporterModal
+          brandId="brand-1"
+          onComplete={vi.fn()}
+          open
+          onOpenChange={() => undefined}
+        />
+      </I18nProvider>,
+    );
+    fireEvent.change(screen.getByPlaceholderText("pura.line"), { target: { value: "abaya.zh" } });
+    fireEvent.click(screen.getByRole("button", { name: /Start Extraction Pipeline/ }));
+    await screen.findByText(/All \(6\)/, undefined, { timeout: 30_000 });
+    fireEvent.click(screen.getByRole("button", { name: "Merge" }));
+    await screen.findByText(/All \(2\)/);
+    fireEvent.click(screen.getByRole("button", { name: /Approve Ready \(2\)/ }));
+
+    expect(await screen.findByText(/Successfully saved 1 unpublished drafts/)).toBeInTheDocument();
+    expect(screen.getByText(/1 not saved: already in your store/)).toBeInTheDocument();
+    // The product that was not saved is not lost: it is still in the kept review, with its merge.
+    await waitFor(() => {
+      const kept = JSON.parse(
+        localStorage.getItem("boutq.instagram-import.session.brand-1") ?? "{}",
+      );
+      expect(kept.drafts.map((d: { id: string }) => d.id)).toEqual(["d"]);
+    });
+  });
+
   it("splits a merged product back into its posts", async () => {
     render(
       <I18nProvider>
