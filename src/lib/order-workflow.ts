@@ -21,6 +21,8 @@ export type FulfillmentStage =
   | "pending"
   | "on_hold"
   | "needs_packing"
+  /** A paid made-to-order piece that has not yet been handed to the tailor or workshop. */
+  | "awaiting_tailor"
   | "packing"
   | "sent_to_workshop"
   | "received_from_workshop"
@@ -145,7 +147,7 @@ export function getOrderWorkflow(
   const paid = pStatus === "paid" ? Math.max(total, rawPaid) : rawPaid;
 
   const payment = resolvePaymentStatus(order.payment_status, order.status, total, paid);
-  const fulfillment = getFulfillmentStage(order);
+  const storedStage = getFulfillmentStage(order);
   const method = normalize(order.payment_method);
   const fulfillmentMethod = normalize(order.fulfillment_method) || "delivery";
   const items = order.order_items ?? order.items ?? [];
@@ -154,8 +156,16 @@ export function getOrderWorkflow(
   const productionStagesEnabled = options?.productionStages ?? true;
   const isTailoring =
     (productionStagesEnabled && (detectedType === "tailoring" || detectedType === "mixed")) ||
-    fulfillment === "sent_to_tailor" ||
-    fulfillment === "received_from_tailor";
+    storedStage === "sent_to_tailor" ||
+    storedStage === "received_from_tailor";
+  // A paid order waits as NEEDS_PACKING. For a ready piece that is the packing queue; a
+  // made-to-order piece still has to go to the tailor first (then come back, then be packed).
+  const fulfillment: FulfillmentStage =
+    isTailoring &&
+    storedStage === "packing" &&
+    normalize(order.fulfillment_status) === "needs_packing"
+      ? "awaiting_tailor"
+      : storedStage;
 
   const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(method);
   const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(
@@ -190,7 +200,7 @@ export function getOrderWorkflow(
         nextAction = requiresCollection ? "collect_and_complete_service" : "complete_service";
       }
     } else if (isTailoring) {
-      if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
+      if (["pending", "on_hold", "needs_packing", "awaiting_tailor"].includes(fulfillment)) {
         nextAction = "send_to_tailor";
       } else if (fulfillment === "sent_to_tailor") {
         nextAction = "receive_from_tailor";

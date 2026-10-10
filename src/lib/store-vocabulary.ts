@@ -53,6 +53,30 @@ export const DEFAULT_VOCABULARY: StoreVocabulary = {
   variant_picker_prompt: { ar: "اختر الخيار المناسب", en: "Select option" },
 };
 
+/**
+ * The words for acting on a made-to-order piece and for waiting to: the buttons say what they
+ * will do ("Send to Tailor"), not what has been done, and the status of a paid piece that has
+ * not gone yet says it is waiting. Built from the store's own noun for the workshop, so a
+ * tailor, a roastery or a print shop each read right.
+ */
+export function workshopActionLabels(
+  vocabulary: Pick<StoreVocabulary, "workshop">,
+  lang: "ar" | "en",
+): { send: string; receive: string; awaiting: string } {
+  const noun = vocabulary.workshop?.[lang] || (lang === "ar" ? "الورشة" : "Workshop");
+  return lang === "ar"
+    ? {
+        send: `إرسال إلى ${noun}`,
+        receive: `استلام من ${noun}`,
+        awaiting: `بانتظار الإرسال إلى ${noun}`,
+      }
+    : {
+        send: `Send to ${noun}`,
+        receive: `Receive from ${noun}`,
+        awaiting: `Waiting to send to ${noun}`,
+      };
+}
+
 export function getVerticalVocabularyOverrides(vertical?: string | null): Partial<StoreVocabulary> {
   const v = (vertical || "").toLowerCase();
   if (v === "coffee" || v === "food" || v === "cafe") {
