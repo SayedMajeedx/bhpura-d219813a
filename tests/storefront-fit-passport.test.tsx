@@ -42,9 +42,10 @@ const renderPassport = () =>
       <StorefrontFitPassport brandId="b1" customerId="c1" isAr={false} />
     </QueryClientProvider>,
   );
-const fillMeasurements = async () => {
+// 24 inches is a plausible value for every field (a length, a sleeve, a shoulder width).
+const fillMeasurements = async (value = "24") => {
   for (const field of await screen.findAllByRole("spinbutton")) {
-    fireEvent.change(field, { target: { value: "50" } });
+    fireEvent.change(field, { target: { value } });
   }
 };
 
@@ -73,6 +74,15 @@ describe("storefront Fit Passport", () => {
       { onConflict: "brand_id,customer_id" },
     );
     expect(toast.success).toHaveBeenCalledWith("Measurements saved successfully");
+  });
+
+  it("does not save measurements that cannot be right", async () => {
+    renderPassport();
+    await fillMeasurements("655");
+    fireEvent.click(screen.getByRole("switch"));
+    fireEvent.click(screen.getByRole("button", { name: "Save Fit Passport" }));
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/^Check these measurements:/));
+    expect(db.upsert).not.toHaveBeenCalled();
   });
 
   it("restricts writes to the authenticated customer's own record", () => {
