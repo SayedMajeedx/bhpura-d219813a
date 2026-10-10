@@ -11,6 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  fitRangeMessage,
+  fitRangeProblems,
   missingFitFields,
   normalizeFitProfiles,
   resolveFitProfiles,
@@ -141,6 +143,19 @@ export function CustomerFitPassport({
           : "Please complete required fields marked with an asterisk",
       );
 
+    const rangeProblems = fitRangeProblems(measurements[profile] ?? {}, unit);
+    if (rangeProblems.length)
+      return toast.error(
+        fitRangeMessage(
+          rangeProblems,
+          (key) => {
+            const field = activeFields.find((f) => f.key === key);
+            return (isAr ? field?.label_ar : field?.label_en) || key;
+          },
+          unit,
+          isAr,
+        ),
+      );
     const cleanMeasurements = Object.fromEntries(
       Object.entries(measurements).map(([kind, values]) => [
         kind,
