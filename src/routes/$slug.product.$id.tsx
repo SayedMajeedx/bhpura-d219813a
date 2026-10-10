@@ -44,6 +44,7 @@ import {
   tailoringState,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
+import { madeToOrderLimit } from "@/lib/product-availability";
 import {
   discountPercentFor,
   displayPriceFor,
@@ -387,9 +388,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
   }, [selectedColor, media]);
 
+  // The store's limit on made-to-order pieces of this product. Used up: it is sold as a ready
+  // piece only (no measurements or options to fill, a ready size that must be in stock).
+  const madeToOrder = madeToOrderLimit(product);
   const customFields = useMemo<CustomField[]>(
-    () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
-    [product],
+    () =>
+      Array.isArray(product?.custom_fields) && !madeToOrder.closed
+        ? (product!.custom_fields as CustomField[])
+        : [],
+    [product, madeToOrder.closed],
   );
   const isMeasurementField = (key: string) =>
     key.startsWith("fit_") ||
@@ -468,7 +475,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
   // Derived flags + effect run before any early return so hook order is stable.
-  const isMadeToOrder = Boolean(product?.is_made_to_order);
+  const isMadeToOrder = Boolean(product?.is_made_to_order) && !madeToOrder.closed;
   const hasCustomFields = customFields.length > 0;
   const { hasReadySizes, showSizeModeToggle, isTailoringActive, tailoredOnly } = tailoringState({
     isMadeToOrder,
@@ -483,6 +490,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       setSizeMode("custom");
     }
   }, [tailoredOnly]);
+
+  // A made-to-order piece cannot be asked for in more pieces than the store can still make.
+  useEffect(() => {
+    if (isTailoringActive && madeToOrder.left !== null && madeToOrder.left > 0) {
+      setQty((q) => Math.min(q, madeToOrder.left as number));
+    }
+  }, [isTailoringActive, madeToOrder.left]);
 
   if (isLoading && !product) {
     return (
@@ -625,6 +639,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         vocabulary,
         targetVariant,
         isTailoringActive,
+        madeToOrderLeft: madeToOrder.left,
         product,
         displayName,
         media,
@@ -860,6 +875,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               isTailoringActive={isTailoringActive}
               lang={lang}
               maxStock={maxStock}
+              tailoringLeft={madeToOrder.left}
               product={product}
               qty={qty}
               selectedVariantOutOfStock={selectedVariantOutOfStock}

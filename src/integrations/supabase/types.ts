@@ -4607,6 +4607,64 @@ export type Database = {
           },
         ];
       };
+      made_to_order_movements: {
+        Row: {
+          actor_id: string | null;
+          available_after: number | null;
+          available_before: number | null;
+          brand_id: string;
+          created_at: string;
+          id: string;
+          order_id: string | null;
+          product_id: string;
+          reason: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          available_after?: number | null;
+          available_before?: number | null;
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          order_id?: string | null;
+          product_id: string;
+          reason: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          available_after?: number | null;
+          available_before?: number | null;
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          order_id?: string | null;
+          product_id?: string;
+          reason?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "made_to_order_movements_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "made_to_order_movements_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "made_to_order_movements_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       merchant_grant_applications: {
         Row: {
           admin_notes: string | null;
@@ -4982,6 +5040,52 @@ export type Database = {
             columns: ["variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_made_to_order_allocations: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          order_id: string;
+          product_id: string;
+          quantity: number;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          order_id: string;
+          product_id: string;
+          quantity: number;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          order_id?: string;
+          product_id?: string;
+          quantity?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_made_to_order_allocations_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_made_to_order_allocations_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_made_to_order_allocations_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
             referencedColumns: ["id"];
           },
         ];
@@ -5913,6 +6017,8 @@ export type Database = {
           is_made_to_order: boolean;
           is_package: boolean;
           item_kind: string;
+          made_to_order_available: number | null;
+          made_to_order_limit_set_at: string | null;
           media: Json;
           name: string;
           name_ar: string | null;
@@ -5966,6 +6072,8 @@ export type Database = {
           is_made_to_order?: boolean;
           is_package?: boolean;
           item_kind?: string;
+          made_to_order_available?: number | null;
+          made_to_order_limit_set_at?: string | null;
           media?: Json;
           name: string;
           name_ar?: string | null;
@@ -6019,6 +6127,8 @@ export type Database = {
           is_made_to_order?: boolean;
           is_package?: boolean;
           item_kind?: string;
+          made_to_order_available?: number | null;
+          made_to_order_limit_set_at?: string | null;
           media?: Json;
           name?: string;
           name_ar?: string | null;
@@ -9699,6 +9809,10 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      order_made_to_order_transition: {
+        Args: { p_desired_state: string; p_order_id: string };
+        Returns: undefined;
+      };
       place_booking_order: {
         Args: {
           p_benefit_receipt_id?: string;
@@ -10492,6 +10606,10 @@ export type Database = {
       set_default_message_template: {
         Args: { p_brand_id: string; p_template_id: string };
         Returns: undefined;
+      };
+      set_made_to_order_limit: {
+        Args: { p_available: number; p_product_id: string };
+        Returns: number;
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };

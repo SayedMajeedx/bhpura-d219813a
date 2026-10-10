@@ -47,6 +47,8 @@ export type Product = {
   size_guide_id?: string | null;
   size_guide_hidden?: boolean | null;
   is_made_to_order?: boolean | null;
+  /** Pieces that can still be made to order (null: no limit). Set through `setMadeToOrderLimit`. */
+  made_to_order_available?: number | null;
   /** "service" for a service (sold only with a booking), else "product". */
   item_kind?: string | null;
   is_package?: boolean | null;

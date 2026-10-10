@@ -18,7 +18,7 @@ const TONE_CLASSES: Record<AvailabilityTone, string> = {
 /**
  * A product's stock in one badge, the same on the desktop list and the mobile cards: out of
  * stock, N left, N available, or (for a made-to-order piece) "made to order" in the store's own
- * word with the number of ready pieces beside it when it has any.
+ * word, with the pieces left to make (when the store limits them) and the ready pieces beside it.
  */
 export function StockLevelBadge({
   product,
@@ -43,11 +43,14 @@ export function StockLevelBadge({
       >
         {badge.label}
       </span>
-      {badge.detail && (
-        <span className="inline-flex rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-          {badge.detail}
+      {badge.details.map((detail) => (
+        <span
+          key={detail}
+          className="inline-flex rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-foreground"
+        >
+          {detail}
         </span>
-      )}
+      ))}
     </span>
   );
 }

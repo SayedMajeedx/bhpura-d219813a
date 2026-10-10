@@ -266,6 +266,8 @@ export function ProductDialog({
             customFieldPresets={customFieldPresets}
             form={form}
             setForm={setForm}
+            brandId={brand.id}
+            product={product}
           />
         )}
       </div>

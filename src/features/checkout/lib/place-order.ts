@@ -146,6 +146,15 @@ export function placeOrderFailure(
     const isAr = t("ar", "en") === "ar";
     return { message: bookingErrorMessage(msg, isAr), clearPromo: false };
   }
+  if (msg.includes("MADE_TO_ORDER_SOLD_OUT")) {
+    return {
+      message: t(
+        "اكتمل عدد القطع المتاحة حسب الطلب لأحد المنتجات. حدّث السلة وحاول مرة أخرى.",
+        "One item can no longer be made to order: its limit has been reached. Update your cart and try again.",
+      ),
+      clearPromo: false,
+    };
+  }
   if (msg.includes("INSUFFICIENT_STOCK")) {
     return {
       message: t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"),

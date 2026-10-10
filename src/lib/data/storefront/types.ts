@@ -25,6 +25,8 @@ export type ProductRow = {
   featured_trending?: boolean;
   show_sale_badge?: boolean;
   is_made_to_order?: boolean;
+  /** Pieces that can still be made to order (null: no limit). */
+  made_to_order_available?: number | null;
   /** "service" for a service, sold only with a booking. */
   item_kind?: string | null;
   is_package?: boolean | null;
@@ -110,6 +112,8 @@ export type StorefrontProductDetail = {
   product_variants: StorefrontVariant[];
   base_price?: number | null;
   is_made_to_order?: boolean | null;
+  /** Pieces that can still be made to order (null: no limit). */
+  made_to_order_available?: number | null;
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;
@@ -141,6 +145,8 @@ export type RecommendationProduct = {
   media: unknown;
   custom_fields?: unknown;
   is_made_to_order?: boolean | null;
+  /** Pieces that can still be made to order (null: no limit). */
+  made_to_order_available?: number | null;
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;

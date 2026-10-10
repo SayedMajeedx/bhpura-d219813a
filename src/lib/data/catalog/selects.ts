@@ -34,6 +34,8 @@ export const ADMIN_PRODUCT_COLUMNS = [
   "is_made_to_order",
   "is_package",
   "item_kind",
+  "made_to_order_available",
+  "made_to_order_limit_set_at",
   "media",
   "name",
   "name_ar",

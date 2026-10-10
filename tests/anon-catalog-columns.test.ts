@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import migration from "../supabase/migrations/20261007120000_hide_cost_columns_from_visitors.sql?raw";
+import madeToOrderLimit from "../supabase/migrations/20261010110000_made_to_order_limit.sql?raw";
 import {
   PRODUCT_CARD_SELECT,
   PRODUCT_DETAIL_BASE_SELECT,
@@ -23,11 +24,17 @@ const HIDDEN = {
 /** The columns the migration grants to anon, by table. */
 function granted(): Record<string, string[]> {
   const out: Record<string, string[]> = {};
-  for (const m of migration.matchAll(/GRANT SELECT \(([^)]*)\) ON public\.(\w+) TO anon;/g)) {
-    out[m[2]] = m[1]
-      .split(",")
-      .map((c) => c.trim())
-      .filter(Boolean);
+  // The first migration grants the list; a later one adds a column to it.
+  for (const sql of [migration, madeToOrderLimit]) {
+    for (const m of sql.matchAll(/GRANT SELECT \(([^)]*)\) ON public\.(\w+) TO anon;/g)) {
+      out[m[2]] = [
+        ...(out[m[2]] ?? []),
+        ...m[1]
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      ];
+    }
   }
   return out;
 }
@@ -88,6 +95,11 @@ describe("what a visitor can read of the catalog", () => {
         .join("\n")}
     `);
     await db.exec(migration);
+    // A later migration's own grants to anon (a column added since).
+    for (const grant of madeToOrderLimit.match(/GRANT SELECT \([^)]*\) ON public\.\w+ TO anon;/g) ??
+      []) {
+      await db.exec(grant);
+    }
     const can = async (role: string, table: string, column: string) =>
       (
         await db.query<{ ok: boolean }>(
