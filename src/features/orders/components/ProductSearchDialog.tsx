@@ -3,6 +3,7 @@ import { Search, X, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { isSoldFromStock } from "@/lib/product-availability";
 
 /** Search the catalog by name, SKU, barcode or size and add a variant to the order. */
 export function ProductSearchDialog({
@@ -76,6 +77,8 @@ export function ProductSearchDialog({
                 const incStock = Number(v.stock_incubator ?? 0);
                 const fallbackStock = Number(v.stock ?? v.quantity ?? (p as any)?.stock ?? 0);
                 const totalStock = mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
+                // Made when ordered (or a service): no ready stock is not "out of stock".
+                const madeToOrder = !isSoldFromStock(p ?? {});
                 const price = Number(
                   v.selling_price ??
                     v.price_override ??
@@ -134,14 +137,20 @@ export function ProductSearchDialog({
                           "text-xs font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
                           totalStock > 0
                             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                            : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+                            : madeToOrder
+                              ? "bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300"
+                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
                         )}
                       >
                         {totalStock > 0
                           ? `${lang === "ar" ? "متوفر" : "In Stock"}: ${totalStock}`
-                          : lang === "ar"
-                            ? "نفذت الكمية"
-                            : "Out of Stock"}
+                          : madeToOrder
+                            ? lang === "ar"
+                              ? "حسب الطلب"
+                              : "Made to order"
+                            : lang === "ar"
+                              ? "نفذت الكمية"
+                              : "Out of Stock"}
                       </span>
                     </div>
                   </div>

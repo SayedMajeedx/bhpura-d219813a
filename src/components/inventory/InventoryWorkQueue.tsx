@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
-import { stockUnitsLabel, variantCountLabel } from "@/lib/inventory-labels";
+import { variantCountLabel } from "@/lib/inventory-labels";
+import { productAvailability } from "@/lib/product-availability";
+import { StockLevelBadge } from "@/components/inventory/StockLevelBadge";
 import {
   Package,
   Pencil,
@@ -203,8 +205,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     ? Math.min(...pVariants.map((v: any) => Number(v.selling_price || 0)))
                     : Number(product.base_price || 0);
 
-                const isLowStock = totalStock > 0 && totalStock <= 5;
-                const isOutOfStock = totalStock === 0;
+                // A made-to-order piece or a service is never "out" or "low": the shared rule decides.
+                const stockStatus = productAvailability(product, totalStock).status;
+                const isLowStock = stockStatus === "low";
+                const isOutOfStock = stockStatus === "out";
                 const isExpanded = !!expandedProducts[product.id];
 
                 // Commercial identifier resolution
@@ -373,27 +377,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                       {/* Stock Level */}
                       <td className="p-3 align-middle">
-                        <span
-                          className={`inline-flex px-2 py-0.5 rounded-md text-xs font-bold ${
-                            isOutOfStock
-                              ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                              : isLowStock
-                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                          }`}
-                        >
-                          {isOutOfStock
-                            ? isAr
-                              ? "نفذت الكمية"
-                              : "Out of Stock"
-                            : isLowStock
-                              ? isAr
-                                ? stockUnitsLabel(totalStock, "low", lang)
-                                : stockUnitsLabel(totalStock, "low", lang)
-                              : isAr
-                                ? stockUnitsLabel(totalStock, "available", lang)
-                                : stockUnitsLabel(totalStock, "available", lang)}
-                        </span>
+                        <StockLevelBadge product={product} totalStock={totalStock} lang={lang} />
                       </td>
 
                       {/* Price */}

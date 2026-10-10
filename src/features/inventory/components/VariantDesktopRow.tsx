@@ -133,7 +133,10 @@ export function VariantDesktopRow({
   });
   let runRateText = isAr ? "لا مبيعات" : "No sales";
   let runRateColor = "text-muted-foreground text-xs";
-  if (runRate.kind === "out") {
+  if (runRate.kind === "out" && product?.is_made_to_order) {
+    // Made when ordered: no ready piece of this size is not "out of stock".
+    runRateText = isAr ? "لا مخزون جاهز" : "No ready stock";
+  } else if (runRate.kind === "out") {
     runRateText = isAr ? "نفد" : "Out of stock";
     runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-xs";
   } else if (runRate.kind === "days-left") {
