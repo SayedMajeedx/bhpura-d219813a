@@ -7,6 +7,17 @@ import { OsEmptyState } from "@/components/os/os-empty-state";
 import { type ProductRow } from "@/lib/data/storefront";
 import { ProductCard } from "./product-card";
 
+/**
+ * A list up to SHOW_ALL_UP_TO products is shown whole (images load lazily as they come into
+ * view, so a few dozen cards cost little). A longer one shows PAGE_SIZE at a time with a
+ * "Show more" button, and remembers how far the shopper went for the length of the visit so
+ * that coming back from a product lands in the same place.
+ */
+export const SHOW_ALL_UP_TO = 36;
+export const PAGE_SIZE = 24;
+
+const shownKey = () => `storefront-grid-shown:${window.location.pathname}${window.location.search}`;
+
 export function ProductGrid({
   products,
   loading,
@@ -33,6 +44,29 @@ export function ProductGrid({
   // Read preference from localStorage only in useEffect after mount to completely prevent hydration mismatches!
   const [mobileCols, setMobileCols] = useState("2");
   const [, setMounted] = useState(false);
+  const [shown, setShown] = useState(PAGE_SIZE);
+  // The same list again (a filter changed and came back, or the shopper returned from a product):
+  // pick up how many were showing.
+  const listKey = `${products.length}:${products[0]?.id ?? ""}`;
+  useEffect(() => {
+    try {
+      const saved = Number(sessionStorage.getItem(shownKey()));
+      setShown(Number.isFinite(saved) && saved > PAGE_SIZE ? saved : PAGE_SIZE);
+    } catch {
+      setShown(PAGE_SIZE);
+    }
+  }, [listKey]);
+  const showMore = () => {
+    const next = shown + PAGE_SIZE;
+    setShown(next);
+    try {
+      sessionStorage.setItem(shownKey(), String(next));
+    } catch {
+      // Storage unavailable: the shopper just starts from the first page next time.
+    }
+  };
+  const paged = products.length > SHOW_ALL_UP_TO;
+  const visible = paged ? products.slice(0, shown) : products;
 
   useEffect(() => {
     setMounted(true);
@@ -127,7 +161,7 @@ export function ProductGrid({
   return (
     <div className="space-y-4">
       {/* Dynamic Grid Layout Switcher control bar */}
-      <div className="flex items-center justify-between pb-2 border-b border-border">
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
         <span className="text-xs text-muted-foreground font-medium">
           {products.length}{" "}
           {services
@@ -169,10 +203,26 @@ export function ProductGrid({
           mobileCols === "1" ? "grid-cols-1" : "grid-cols-2"
         } md:grid-cols-3 ${wide} gap-4 sm:gap-6`}
       >
-        {products.map((p, i) => (
+        {visible.map((p, i) => (
           <ProductCard key={p.id} product={p} index={i} />
         ))}
       </div>
+
+      {paged && (
+        <div className="flex flex-col items-center gap-3 pt-4">
+          <p className="text-xs text-muted-foreground" aria-live="polite">
+            {t(
+              `تعرض ${Math.min(visible.length, products.length)} من ${products.length}`,
+              `Showing ${Math.min(visible.length, products.length)} of ${products.length}`,
+            )}
+          </p>
+          {visible.length < products.length && (
+            <Button type="button" variant="outline" size="touch" onClick={showMore}>
+              {t("عرض المزيد", "Show more")}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

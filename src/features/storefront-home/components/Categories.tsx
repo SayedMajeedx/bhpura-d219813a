@@ -51,6 +51,27 @@ export function Categories({
     return Array.from(known.values());
   }, [categories, products, lang]);
 
+  // The chips a shopper can use: a category with nothing in it (or in its sub-categories) would
+  // only lead to an empty page, so it is left out. The menu lists every category.
+  const chips = useMemo(
+    () =>
+      navigation
+        ? merged
+        : merged.filter((item) => {
+            if (!item.id) return true;
+            const self = categories.find((c) => c.id === item.id);
+            if (!self) return true;
+            const matchValues = new Set(
+              [self, ...getDescendantCategories(self.id, categories)].flatMap((c) => [
+                c.slug,
+                c.name_en,
+              ]),
+            );
+            return products.some((p) => p.category && matchValues.has(p.category));
+          }),
+    [merged, categories, products, navigation],
+  );
+
   // Construct dynamic rows of pills recursively for each active level
   const rows = useMemo(() => {
     if (navigation) return []; // The side category navigation dropdown is static list of parent links
@@ -127,14 +148,18 @@ export function Categories({
     return rowsList;
   }, [categories, products, activeCategorySlugs, merged, navigation]);
 
-  if (merged.length === 0) return null;
+  if (merged.length === 0 || (!navigation && chips.length === 0)) return null;
 
   return (
-    <div className="w-full space-y-4">
-      {/* Level 0 Row */}
+    <div className={`w-full space-y-4 ${navigation ? "" : "mb-5 sm:mb-6"}`}>
+      {/* Level 0 Row: one swipeable line on a phone, a centred wrap from sm up */}
       <div
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={`${navigation ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center" : "justify-center"} flex flex-wrap gap-3`}
+        className={
+          navigation
+            ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center flex flex-wrap gap-3"
+            : "-mx-4 flex snap-x snap-proximity gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-3 sm:overflow-visible sm:px-0"
+        }
       >
         {navigation && (
           <details className="group relative shrink-0">
@@ -208,13 +233,25 @@ export function Categories({
             </div>
           </details>
         )}
-        {merged.map((c) => {
+        {!navigation && (
+          <Button
+            type="button"
+            variant={activeCategorySlugs.length === 0 ? "default" : "outline"}
+            aria-pressed={activeCategorySlugs.length === 0}
+            onClick={() => setActiveCategorySlugs([])}
+            className="inline-flex min-h-[44px] shrink-0 snap-start rounded-full px-4 py-2.5"
+          >
+            {t("الكل", "All")}
+          </Button>
+        )}
+        {chips.map((c) => {
           const active = activeCategorySlugs[0] === c.key;
           return (
             <Button
               key={c.key}
               type="button"
               variant={active ? "default" : "outline"}
+              aria-pressed={active}
               onClick={() => {
                 if (active) {
                   setActiveCategorySlugs([]);
@@ -222,7 +259,7 @@ export function Categories({
                   setActiveCategorySlugs([c.key]);
                 }
               }}
-              className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "inline-flex"} rounded-full gap-2 min-h-[44px]`}
+              className={`shrink-0 snap-start px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "inline-flex"} rounded-full gap-2 min-h-[44px]`}
             >
               {c.image && (
                 <ResponsiveImage
