@@ -97,6 +97,27 @@ export type AdvanceRule = {
   rules: readonly AdvanceRuleDef[];
 };
 
+/** The rule when the shopper chooses to pay the whole total now: one rule that asks all of it. */
+export const PAY_IN_FULL_RULE: AdvanceRule = {
+  enabled: true,
+  percent: 100,
+  scope: "all",
+  rules: [],
+};
+
+/**
+ * Whether the shopper may choose to pay the whole amount now instead of the advance: the store
+ * allows it, the advance really leaves a balance, and the order is not a booking (a booking is
+ * paid under its own deposit).
+ */
+export function canPayInFull(
+  advance: Pick<AdvanceSplit, "applies" | "balance">,
+  allowed: boolean | null | undefined,
+  appointment: boolean,
+): boolean {
+  return allowed !== false && !appointment && advance.applies && advance.balance > 0;
+}
+
 /** Every rule an order is worked out under: the store's own, then its general rule. */
 export const advanceRulesOf = (rule: AdvanceRule): AdvanceRuleDef[] => [
   ...rule.rules,

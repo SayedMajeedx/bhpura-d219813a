@@ -1964,6 +1964,7 @@ export type Database = {
         Row: {
           address: string | null;
           admin_typography: Json;
+          advance_allow_full_payment: boolean;
           advance_payment_enabled: boolean;
           advance_payment_percent: number;
           advance_payment_scope: string;
@@ -2168,6 +2169,7 @@ export type Database = {
         Insert: {
           address?: string | null;
           admin_typography?: Json;
+          advance_allow_full_payment?: boolean;
           advance_payment_enabled?: boolean;
           advance_payment_percent?: number;
           advance_payment_scope?: string;
@@ -2372,6 +2374,7 @@ export type Database = {
         Update: {
           address?: string | null;
           admin_typography?: Json;
+          advance_allow_full_payment?: boolean;
           advance_payment_enabled?: boolean;
           advance_payment_percent?: number;
           advance_payment_scope?: string;
@@ -8346,6 +8349,7 @@ export type Database = {
       };
       brand_public_settings: {
         Row: {
+          advance_allow_full_payment: boolean | null;
           advance_payment_enabled: boolean | null;
           advance_payment_percent: number | null;
           advance_payment_scope: string | null;
@@ -8729,6 +8733,7 @@ export type Database = {
         Args: { p_percent: number; p_scope: string };
         Returns: Json;
       };
+      advance_full_payment_rules: { Args: never; Returns: Json };
       advance_rules_due: {
         Args: { p_order_id: string; p_rules: Json };
         Returns: number;
@@ -9139,6 +9144,7 @@ export type Database = {
         Returns: {
           address: string | null;
           admin_typography: Json;
+          advance_allow_full_payment: boolean;
           advance_payment_enabled: boolean;
           advance_payment_percent: number;
           advance_payment_scope: string;

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Download, Copy, CheckCircle2, X, UploadCloud } from "lucide-react";
 import type { AdvanceSplit } from "@/lib/payments/advance-payment";
 import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
+import { PayInFullChoice } from "@/features/checkout/components/PayInFullChoice";
 import { ResponsiveImage } from "@/components/responsive-media";
 import type { Dispatch, SetStateAction } from "react";
 import type { Storefront } from "@/features/checkout/types";
@@ -20,6 +21,7 @@ export function PaymentMethodCard({
   brand,
   fulfillment,
   advance,
+  fullChoice = null,
   currency,
   appointment = false,
   lang,
@@ -36,6 +38,13 @@ export function PaymentMethodCard({
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
   /** What the store's advance-payment rule asks of this order, and the currency, for the note. */
   advance: AdvanceSplit;
+  /** The "pay everything now" choice, when the store offers it for this order. */
+  fullChoice?: {
+    base: AdvanceSplit;
+    full: AdvanceSplit;
+    payInFull: boolean;
+    onChange: (payInFull: boolean) => void;
+  } | null;
   currency: string;
   appointment?: boolean;
   lang: Storefront["lang"];
@@ -84,7 +93,10 @@ export function PaymentMethodCard({
         })}
       </div>
 
-      {/* Under the store's advance rule: what to pay now (a BenefitPay transfer is the advance only). */}
+      {/* Under the store's advance rule: pay the advance or everything, then what to pay now. */}
+      {fullChoice && (
+        <PayInFullChoice {...fullChoice} currency={currency} appointment={appointment} />
+      )}
       <AdvancePaymentNotice split={advance} currency={currency} appointment={appointment} />
 
       {fulfillment === "delivery" && selectedDestination !== "BH" && (

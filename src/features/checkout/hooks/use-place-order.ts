@@ -57,6 +57,7 @@ export function usePlaceOrder({
   effectiveRedeemedPoints,
   cartSessionId,
   paymentErrorState,
+  payInFull = false,
 }: {
   brand: Pick<Storefront["brand"], "id" | "slug">;
   session: Storefront["session"];
@@ -90,6 +91,8 @@ export function usePlaceOrder({
   effectiveRedeemedPoints: number;
   cartSessionId: string;
   paymentErrorState: { status: string; orderId: string } | null;
+  /** The shopper chose to pay the whole total now instead of only the advance. */
+  payInFull?: boolean;
 }) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -151,6 +154,7 @@ export function usePlaceOrder({
             shipping,
             lang,
             idempotencyKey,
+            payInFull,
           }),
           bookingOfCart(cart),
         );

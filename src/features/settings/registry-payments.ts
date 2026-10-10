@@ -77,6 +77,23 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     },
   },
   {
+    key: "advance_allow_full_payment",
+    table: "business_settings",
+    tab: "orders",
+    group: "payments",
+    level: "advanced",
+    owner: "settings",
+    type: "boolean",
+    label: {
+      ar: "السماح للعميل بدفع المبلغ كاملاً بدل الدفعة المقدمة",
+      en: "Let customers pay the full amount instead of the advance",
+    },
+    keywords: {
+      ar: ["دفع كامل", "دفع المبلغ كاملاً", "دفعة مقدمة"],
+      en: ["pay in full", "full payment", "advance payment"],
+    },
+  },
+  {
     key: "card_public_key",
     table: "business_settings",
     tab: "orders",

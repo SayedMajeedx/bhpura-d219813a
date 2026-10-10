@@ -95,6 +95,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     advance_payment_enabled: s?.advance_payment_enabled === true,
     advance_payment_percent: Number(s?.advance_payment_percent ?? 30) || 30,
     advance_payment_scope: s?.advance_payment_scope ?? "all",
+    advance_allow_full_payment: s?.advance_allow_full_payment !== false,
     card_enabled: s?.card_enabled ?? false,
     benefit_enabled: s?.benefit_enabled ?? false,
     benefit_qr_url: s?.benefit_qr_url ?? null,

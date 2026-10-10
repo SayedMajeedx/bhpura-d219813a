@@ -186,3 +186,23 @@ describe("only my own rules", () => {
     expect(screen.getAllByText(/10/).length).toBeGreaterThan(1);
   });
 });
+
+describe("letting customers pay the full amount", () => {
+  it("is on unless the store turned it off, and the switch changes it", () => {
+    state.bs.advance_payment_enabled = true;
+    renderCard();
+    const toggle = screen.getByRole("switch", { name: /Let customers pay the full amount now/ });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(toggle);
+    expect(state.setBs).toHaveBeenCalledWith({ advance_allow_full_payment: false });
+  });
+
+  it("shows as off when the store turned it off", () => {
+    state.bs.advance_payment_enabled = true;
+    state.bs.advance_allow_full_payment = false;
+    renderCard();
+    expect(
+      screen.getByRole("switch", { name: /Let customers pay the full amount now/ }),
+    ).toHaveAttribute("aria-checked", "false");
+  });
+});

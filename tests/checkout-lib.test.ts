@@ -175,6 +175,17 @@ const argsInput = (overrides: Partial<OrderArgsInput> = {}): OrderArgsInput => (
 });
 
 describe("placeStorefrontOrderArgs", () => {
+  it("tells the database the shopper chose to pay in full only when they did", () => {
+    expect(placeStorefrontOrderArgs(argsInput()).p_customer).not.toHaveProperty("pay_in_full");
+    expect(placeStorefrontOrderArgs(argsInput({ payInFull: false })).p_customer).not.toHaveProperty(
+      "pay_in_full",
+    );
+    expect(placeStorefrontOrderArgs(argsInput({ payInFull: true })).p_customer).toMatchObject({
+      pay_in_full: true,
+      name: "Sara",
+    });
+  });
+
   it("sends a Bahrain delivery", () => {
     const args = placeStorefrontOrderArgs(argsInput());
     expect(args).toMatchObject({
