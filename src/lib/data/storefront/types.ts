@@ -3,6 +3,8 @@
  * Each type matches a select constant in `selects.ts`; change them together.
  */
 
+import { availabilityOf } from "@/lib/product-availability";
+
 /** Identifies the store for a query: `id` scopes the rows, `slug` keys the cache. */
 export type StorefrontBrandRef = { id: string; slug: string };
 
@@ -48,15 +50,11 @@ export type ProductRow = {
 
 /**
  * Made-to-order products and services are always orderable (a service is booked,
- * not stocked); others need stock in some location.
+ * not stocked); others need stock in some location. The rule itself is
+ * `src/lib/product-availability.ts`, shared with the admin.
  */
 export function hasAvailableStock(product: ProductRow): boolean {
-  if (product.is_made_to_order || product.item_kind === "service") {
-    return true;
-  }
-  return product.product_variants.some(
-    (variant) => Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) > 0,
-  );
+  return availabilityOf(product, product.product_variants).sellable;
 }
 
 export type StorefrontCategory = {

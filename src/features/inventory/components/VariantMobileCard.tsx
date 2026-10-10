@@ -380,7 +380,10 @@ export function VariantMobileCard({
           });
           let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
           let runRateColor = "text-muted-foreground";
-          if (runRate.kind === "out") {
+          if (runRate.kind === "out" && product?.is_made_to_order) {
+            // Made when ordered: no ready piece of this size is not "out of stock".
+            runRateText = isAr ? "لا مخزون جاهز" : "No ready stock";
+          } else if (runRate.kind === "out") {
             runRateText = isAr ? "نفد المخزون" : "Out of stock";
             runRateColor = "text-rose-600 dark:text-rose-500 font-extrabold";
           } else if (runRate.kind === "days-left") {

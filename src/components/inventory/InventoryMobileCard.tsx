@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
-import { stockUnitsLabel, variantCountLabel } from "@/lib/inventory-labels";
+import { variantCountLabel } from "@/lib/inventory-labels";
+import { StockLevelBadge } from "@/components/inventory/StockLevelBadge";
 import {
   Package,
   Pencil,
@@ -86,8 +87,6 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   };
   const [deleteOpen, setDeleteOpen] = useState(false);
   const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
-  const isLowStock = totalStock > 0 && totalStock <= 5;
-  const isOutOfStock = totalStock === 0;
 
   return (
     <>
@@ -132,27 +131,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
         {/* Stock Status Badge */}
         <div className="flex items-center justify-between text-xs">
-          <span
-            className={`px-2 py-0.5 rounded-md text-xs font-bold ${
-              isOutOfStock
-                ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
-                : isLowStock
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-            }`}
-          >
-            {isOutOfStock
-              ? isAr
-                ? "نفذت الكمية"
-                : "Out of Stock"
-              : isLowStock
-                ? isAr
-                  ? stockUnitsLabel(totalStock, "low", lang)
-                  : stockUnitsLabel(totalStock, "low", lang)
-                : isAr
-                  ? stockUnitsLabel(totalStock, "available", lang)
-                  : stockUnitsLabel(totalStock, "available", lang)}
-          </span>
+          <StockLevelBadge product={product} totalStock={totalStock} lang={lang} />
 
           {/* Mobile Actions */}
           <div className="flex items-center gap-1">

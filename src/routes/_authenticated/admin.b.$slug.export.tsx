@@ -49,6 +49,10 @@ import {
 } from "@/lib/universal-exporter";
 import { importExportQueries } from "@/lib/data/import-export";
 import { catalogQueries } from "@/lib/data/catalog";
+import {
+  exportStockStatus,
+  matchesExportStockFilter,
+} from "@/features/import-export/lib/export-stock-status";
 import { expensesQueries, toExpenseExportLine, type ExpenseExportRow } from "@/lib/data/expenses";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/export")({
@@ -409,9 +413,8 @@ function ProductExportSection({
         const totalStock = (v.stock_main || 0) + (v.stock_incubator || 0);
 
         // Stock filter
-        if (stockFilter === "in_stock" && totalStock <= 0) return;
-        if (stockFilter === "low_stock" && (totalStock <= 0 || totalStock > 5)) return;
-        if (stockFilter === "out_of_stock" && totalStock > 0) return;
+        const stockStatus = exportStockStatus(p, totalStock);
+        if (!matchesExportStockFilter(stockFilter, stockStatus)) return;
         if (stockFilter === "active_only" && !p.is_active) return;
         if (stockFilter === "draft_only" && p.is_active) return;
 
@@ -421,9 +424,6 @@ function ProductExportSection({
           .replace(/(^-|-$)+/g, "");
 
         const statusLabel = p.is_active ? "active" : "draft";
-        const stockStatus =
-          totalStock <= 0 ? "Out of Stock" : totalStock <= 5 ? "Low Stock" : "In Stock";
-
         if (selectedPresetId === "shopify_compatible") {
           rows.push({
             handle,

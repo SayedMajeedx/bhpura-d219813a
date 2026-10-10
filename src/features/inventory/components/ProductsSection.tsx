@@ -17,7 +17,6 @@ import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncuba
 
 import { ListPagination } from "@/components/list-pagination";
 import { InstagramImporterModal } from "@/components/inventory/InstagramImporterModal";
-import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import type { Product, Variant } from "@/features/inventory/types";
 
 import { ProductImporterModal } from "@/features/inventory/components/ProductImporterModal";
@@ -28,6 +27,7 @@ import {
   inventoryScopeFromFilter,
   productNeedsAttention,
   productStockFrom,
+  productStockStatus,
   productWeeklySalesFrom,
   salesByVariantFrom,
   variantsByProductFrom,
@@ -140,8 +140,10 @@ export function ProductsSection({
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = deferredSearch.trim().toLowerCase();
 
-  const lowStock = products.filter((product) =>
-    isLowStock(productStock(product.id), productWeeklySales(product.id)),
+  const lowStock = products.filter(
+    (product) =>
+      productStockStatus(product, productStock(product.id), productWeeklySales(product.id)) ===
+      "low",
   ).length;
 
   const [scopeFilter, setScopeFilter] = useState<InventoryScope>(
@@ -169,7 +171,7 @@ export function ProductsSection({
       active: products.filter((p) => p.is_active).length,
       inactive: products.filter((p) => !p.is_active).length,
       low: lowStock,
-      out: products.filter((p) => isOutOfStock(productStock(p.id))).length,
+      out: products.filter((p) => productStockStatus(p, productStock(p.id)) === "out").length,
       featured: products.filter((p) => p.featured_trending).length,
     },
     { tracksStock: storeProfile.modules.stock },

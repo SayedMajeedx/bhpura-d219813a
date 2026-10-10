@@ -1,6 +1,7 @@
 import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
+import { isSoldFromStock } from "@/lib/product-availability";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 
 /**
@@ -372,9 +373,7 @@ export function inventoryIntelFor({
 }) {
   // Made-to-order items and services have no stock to run low, sell slowly or
   // go dead: they are left out of every stock figure.
-  const products = productRows.filter(
-    (product) => !product.is_made_to_order && product.item_kind !== "service",
-  );
+  const products = productRows.filter(isSoldFromStock);
   const trackedProductIds = new Set(products.map((product) => product.id));
   const variants = variantRows.filter((variant) => trackedProductIds.has(variant.product_id));
   const orders = validRevenueOrders;

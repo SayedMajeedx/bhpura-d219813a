@@ -1,4 +1,4 @@
-import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
+import { productAvailability, type AvailabilityStatus } from "@/lib/product-availability";
 import type { LabelData } from "@/components/barcode-label";
 import type { Product, Variant } from "@/features/inventory/types";
 
@@ -73,14 +73,28 @@ export function productHasMedia(product: Pick<Product, "image_url" | "media">): 
   );
 }
 
-/** "Needs attention": low or out of stock, or no photo. */
+type StockedProduct = Pick<Product, "is_made_to_order" | "item_kind">;
+
+/**
+ * How the product stands on stock: out, low or available for one sold from stock; a
+ * made-to-order piece or a service is never low or out, whatever its ready stock.
+ */
+export function productStockStatus(
+  product: StockedProduct,
+  stock: number,
+  weeklySales = 0,
+): AvailabilityStatus {
+  return productAvailability(product, stock, weeklySales).status;
+}
+
+/** "Needs attention": low or out of stock (for a product sold from stock), or no photo. */
 export function productNeedsAttention(
-  product: Pick<Product, "image_url" | "media">,
+  product: Pick<Product, "image_url" | "media"> & StockedProduct,
   stock: number,
   weeklySales: number,
 ): boolean {
-  const isCriticalStock = isLowStock(stock, weeklySales) || isOutOfStock(stock);
-  return isCriticalStock || !productHasMedia(product);
+  const status = productStockStatus(product, stock, weeklySales);
+  return status === "low" || status === "out" || !productHasMedia(product);
 }
 
 /** The scope a dashboard link (`?filter=`) opens; null when it names none. */
@@ -153,9 +167,9 @@ export function filterInventoryProducts({
     } else if (scope === "active") {
       matchesScope = Boolean(product.is_active);
     } else if (scope === "low") {
-      matchesScope = isLowStock(stock, productWeeklySales(product.id));
+      matchesScope = productStockStatus(product, stock, productWeeklySales(product.id)) === "low";
     } else if (scope === "out") {
-      matchesScope = isOutOfStock(stock);
+      matchesScope = productStockStatus(product, stock) === "out";
     } else if (scope === "featured") {
       matchesScope = Boolean(product.featured_trending);
     } else if (scope === "inactive") {
