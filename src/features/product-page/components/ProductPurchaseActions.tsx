@@ -23,6 +23,7 @@ export function ProductPurchaseActions({
   isTailoringActive,
   lang,
   maxStock,
+  tailoringLeft = null,
   product,
   qty,
   selectedVariantOutOfStock,
@@ -39,6 +40,8 @@ export function ProductPurchaseActions({
   isTailoringActive: boolean;
   lang: ReturnType<typeof useStorefront>["lang"];
   maxStock: number;
+  /** Pieces of this product that can still be made to order (null: no limit). */
+  tailoringLeft?: number | null;
   product: Product;
   qty: number;
   selectedVariantOutOfStock: boolean;
@@ -50,6 +53,8 @@ export function ProductPurchaseActions({
 }) {
   // A piece the shopper is having made takes the made-to-order estimate; a ready size does not.
   const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
+  // A ready size is capped by its stock; a made-to-order piece by the store's limit, if it has one.
+  const quantityCap = isTailoringActive ? (tailoringLeft ?? Number.POSITIVE_INFINITY) : maxStock;
   const estimate = deliveryEstimateLines({
     kinds: { ready: !tailored, tailored },
     settings,
@@ -84,10 +89,8 @@ export function ProductPurchaseActions({
                 size="icon"
                 aria-label={t("زيادة الكمية", "Increase quantity")}
                 className="h-11 w-11 rounded-none"
-                disabled={isTailoringActive ? false : qty >= maxStock}
-                onClick={() =>
-                  setQty((q) => (isTailoringActive ? q + 1 : Math.min(maxStock, q + 1)))
-                }
+                disabled={qty >= quantityCap}
+                onClick={() => setQty((q) => Math.min(quantityCap, q + 1))}
               >
                 +
               </Button>
@@ -97,6 +100,8 @@ export function ProductPurchaseActions({
             {isTailoringActive ? (
               <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium">
                 {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to order")}
+                {tailoringLeft !== null &&
+                  ` · ${t(`متبقي ${tailoringLeft}`, `${tailoringLeft} left`)}`}
               </span>
             ) : maxStock > 0 && maxStock <= 5 ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">

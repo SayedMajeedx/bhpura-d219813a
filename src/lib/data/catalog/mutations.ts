@@ -167,6 +167,19 @@ export async function adjustVariantStock(args: {
   if (error) throw error;
 }
 
+/**
+ * How many pieces of a product can still be made to order (null removes the limit). The
+ * database's own setter: it checks the product's brand and records the change; the number is
+ * never written with the rest of a product.
+ */
+export async function setMadeToOrderLimit(productId: string, available: number | null) {
+  const { error } = await supabase.rpc("set_made_to_order_limit", {
+    p_product_id: productId,
+    p_available: available as number,
+  });
+  if (error) throw error;
+}
+
 // ── Packaging materials ─────────────────────────────────────────────────────
 
 export async function createPackagingMaterial(brandId: string, values: NewPackagingMaterial) {

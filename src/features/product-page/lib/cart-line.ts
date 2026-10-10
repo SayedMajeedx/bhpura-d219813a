@@ -140,6 +140,7 @@ export function productCartLine({
   vocabulary,
   targetVariant,
   isTailoringActive,
+  madeToOrderLeft = null,
   product,
   displayName,
   media,
@@ -166,6 +167,8 @@ export function productCartLine({
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
   targetVariant: Variant | null | undefined;
   isTailoringActive: boolean;
+  /** Pieces that can still be made to order (null: no limit): the line cannot ask for more. */
+  madeToOrderLeft?: number | null;
   product: Product;
   displayName: string;
   media: PdpMediaItem[];
@@ -288,7 +291,7 @@ export function productCartLine({
     option_five: targetVariant?.option_five || selectedOptionFive || null,
     qty,
     max_stock: isTailoringActive
-      ? 999
+      ? (madeToOrderLeft ?? 999)
       : Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0) || 999,
     custom_fields: custom,
     // What the shopper chose on a made-to-order product: made to order, or a ready size.

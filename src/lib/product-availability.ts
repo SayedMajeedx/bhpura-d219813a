@@ -12,11 +12,18 @@ import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
  *
  * So zero ready stock means "out of stock" only for a product that is sold from stock. A
  * made-to-order piece with no ready stock is "made to order", not "out of stock".
+ *
+ * A store may limit how many pieces of a product it can still make
+ * (`products.made_to_order_available`: null is no limit, a number is the pieces left). At zero the
+ * product is no longer made to order: its ready pieces, if it has any, are all that is left to
+ * buy. The database enforces the same number when an order is placed (migration 20261010110000).
  */
 
 export type AvailabilityProduct = {
   is_made_to_order?: boolean | null;
   item_kind?: string | null;
+  /** Pieces that can still be made to order: null (or absent) is no limit. */
+  made_to_order_available?: number | string | null;
 };
 
 export type AvailabilityVariant = {
@@ -38,6 +45,10 @@ export type ProductAvailability = {
   /** Ready pieces across the product's variants (store plus incubator). */
   readyUnits: number;
   madeToOrder: boolean;
+  /** Pieces that can still be made to order; null when there is no limit (or it is not made to order). */
+  madeToOrderLeft: number | null;
+  /** A made-to-order product whose limit is used up. */
+  madeToOrderClosed: boolean;
   /** A shopper can buy it now. */
   sellable: boolean;
   /** Ready stock is what decides whether it can be bought (false for made to order and services). */
@@ -54,6 +65,22 @@ export function readyUnitsOf(variants: readonly AvailabilityVariant[] | null | u
       sum + Math.max(0, Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)),
     0,
   );
+}
+
+/**
+ * How a made-to-order product stands on its limit: `left` is the pieces that can still be made
+ * (null: no limit), `closed` that none can. A product that is not made to order has neither.
+ */
+export function madeToOrderLimit(product: AvailabilityProduct | null | undefined): {
+  left: number | null;
+  closed: boolean;
+} {
+  const raw = product?.made_to_order_available;
+  if (!product?.is_made_to_order || raw === null || raw === undefined || raw === "") {
+    return { left: null, closed: false };
+  }
+  const left = Math.max(0, Math.floor(Number(raw) || 0));
+  return { left, closed: left === 0 };
 }
 
 /** Whether ready stock is what decides if the product can be bought. */
@@ -76,19 +103,25 @@ export function productAvailability(
       status: "service",
       readyUnits: 0,
       madeToOrder: true,
+      madeToOrderLeft: null,
+      madeToOrderClosed: false,
       sellable: true,
       soldFromStock: false,
     };
   }
-  if (product.is_made_to_order) {
+  const limit = madeToOrderLimit(product);
+  if (product.is_made_to_order && !limit.closed) {
     return {
       status: "made_to_order",
       readyUnits: units,
       madeToOrder: true,
+      madeToOrderLeft: limit.left,
+      madeToOrderClosed: false,
       sellable: true,
       soldFromStock: false,
     };
   }
+  // Sold from stock, or made to order with its limit used up: the ready pieces decide.
   const status: AvailabilityStatus = isOutOfStock(units)
     ? "out"
     : isLowStock(units, expectedWeeklySales)
@@ -97,7 +130,9 @@ export function productAvailability(
   return {
     status,
     readyUnits: units,
-    madeToOrder: false,
+    madeToOrder: Boolean(product.is_made_to_order),
+    madeToOrderLeft: limit.left,
+    madeToOrderClosed: limit.closed,
     sellable: status !== "out",
     soldFromStock: true,
   };
@@ -116,8 +151,9 @@ export type AvailabilityTone = "out" | "low" | "ok" | "made_to_order" | "service
 
 /**
  * What a list shows for the product's stock: one headline (out of stock, N left, N available,
- * made to order) and, for a made-to-order piece that also has ready sizes, how many are ready.
- * `madeToOrder` is the store's own word ("Tailoring", "Made to order").
+ * made to order) and what else there is to know: how many pieces can still be made when the
+ * store limits them, how many are ready beside a made-to-order piece, and that the limit is used
+ * up. `madeToOrder` is the store's own word ("Tailoring", "Made to order").
  */
 export function availabilityBadge(
   availability: ProductAvailability,
@@ -126,35 +162,47 @@ export function availabilityBadge(
     unitsLabel: (units: number, kind: "low" | "available") => string;
     madeToOrder?: string;
   },
-): { tone: AvailabilityTone; label: string; detail: string | null } {
+): { tone: AvailabilityTone; label: string; details: string[] } {
   const isAr = lang === "ar";
+  const limitReached = isAr ? "اكتمل العدد حسب الطلب" : "Made-to-order limit reached";
   switch (availability.status) {
     case "service":
-      return { tone: "service", label: isAr ? "خدمة" : "Service", detail: null };
-    case "made_to_order":
+      return { tone: "service", label: isAr ? "خدمة" : "Service", details: [] };
+    case "made_to_order": {
+      const details: string[] = [];
+      if (availability.madeToOrderLeft !== null) {
+        details.push(
+          isAr
+            ? `باقي ${availability.madeToOrderLeft} حسب الطلب`
+            : `${availability.madeToOrderLeft} left to make`,
+        );
+      }
+      if (availability.readyUnits > 0) {
+        details.push(
+          isAr ? `جاهز: ${availability.readyUnits}` : `Ready: ${availability.readyUnits}`,
+        );
+      }
       return {
         tone: "made_to_order",
         label: labels.madeToOrder || (isAr ? "حسب الطلب" : "Made to order"),
-        detail:
-          availability.readyUnits > 0
-            ? isAr
-              ? `جاهز: ${availability.readyUnits}`
-              : `Ready: ${availability.readyUnits}`
-            : null,
+        details,
       };
+    }
     case "out":
-      return { tone: "out", label: isAr ? "نفذت الكمية" : "Out of Stock", detail: null };
+      return availability.madeToOrderClosed
+        ? { tone: "out", label: limitReached, details: [] }
+        : { tone: "out", label: isAr ? "نفذت الكمية" : "Out of Stock", details: [] };
     case "low":
       return {
         tone: "low",
         label: labels.unitsLabel(availability.readyUnits, "low"),
-        detail: null,
+        details: availability.madeToOrderClosed ? [limitReached] : [],
       };
     default:
       return {
         tone: "ok",
         label: labels.unitsLabel(availability.readyUnits, "available"),
-        detail: null,
+        details: availability.madeToOrderClosed ? [limitReached] : [],
       };
   }
 }
