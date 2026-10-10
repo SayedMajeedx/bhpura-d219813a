@@ -42,6 +42,7 @@ export type OrderQueueActionContext = {
 };
 
 import type { Order } from "@/features/orders/types";
+import { workshopActionLabels } from "@/lib/store-vocabulary";
 /** What an order row's action button depends on, plus the status-update call it makes. */
 export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
   const { brandId, hasMadeToOrder, lang, qc, setUpdatingOrderId, updatingOrderId } = ctx;
@@ -297,7 +298,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
         {isUpdating ? (
           <Loader2 className="animate-spin h-3.5 w-3.5" />
         ) : (
-          vocabulary.sent_to_workshop[lang] || (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")
+          workshopActionLabels(vocabulary, lang).send
         )}
       </Button>
     );
@@ -325,8 +326,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
         {isUpdating ? (
           <Loader2 className="animate-spin h-3.5 w-3.5" />
         ) : (
-          vocabulary.received_from_workshop[lang] ||
-          (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")
+          workshopActionLabels(vocabulary, lang).receive
         )}
       </Button>
     );

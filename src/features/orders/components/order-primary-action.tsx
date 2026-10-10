@@ -22,6 +22,7 @@ import type { Order, OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
+import { workshopActionLabels } from "@/lib/store-vocabulary";
 
 export type OrderPrimaryActionContext = {
   approveBenefitPayment: () => Promise<void>;
@@ -98,7 +99,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         }}
       >
         <Scissors className="h-4 w-4 me-1.5" />
-        {vocabulary.sent_to_workshop[lang] || (lang === "ar" ? "إرسال للورشة" : "Send to Workshop")}
+        {workshopActionLabels(vocabulary, lang).send}
       </Button>
     );
   }
@@ -136,8 +137,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         }}
       >
         <PackageCheck className="h-4 w-4 me-1.5" />
-        {vocabulary.received_from_workshop[lang] ||
-          (lang === "ar" ? "استلام من الورشة" : "Receive from Workshop")}
+        {workshopActionLabels(vocabulary, lang).receive}
       </Button>
     );
   }

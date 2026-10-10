@@ -3,7 +3,7 @@
  * Single source of truth for order, fulfillment, and payment status labels.
  */
 
-import type { StoreVocabulary } from "./store-vocabulary";
+import { DEFAULT_VOCABULARY, workshopActionLabels, type StoreVocabulary } from "./store-vocabulary";
 
 export type Lang = "ar" | "en";
 
@@ -368,6 +368,16 @@ export function getFulfillmentBadgeDetails(
       label: lang === "ar" ? "موعد مجدول" : "Scheduled",
       classes:
         "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs dark:bg-indigo-950/40 dark:text-indigo-300",
+    };
+  }
+  if (s === "AWAITING_TAILOR") {
+    return {
+      label: workshopActionLabels(
+        { workshop: vocab?.workshop ?? DEFAULT_VOCABULARY.workshop },
+        lang,
+      ).awaiting,
+      classes:
+        "bg-purple-50 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs dark:bg-purple-950/30 dark:text-purple-300",
     };
   }
   if (s === "SENT_TO_TAILOR" || s === "SENT_TO_WORKSHOP") {

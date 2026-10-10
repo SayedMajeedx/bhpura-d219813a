@@ -522,7 +522,13 @@ export function ordersToPrepareCount(orders: DashboardOrders, hasMadeToOrder: bo
         "on_hold",
         "needs_packing",
         ...(hasMadeToOrder
-          ? ["received_from_workshop", "sent_to_workshop", "received_from_tailor", "sent_to_tailor"]
+          ? [
+              "awaiting_tailor",
+              "received_from_workshop",
+              "sent_to_workshop",
+              "received_from_tailor",
+              "sent_to_tailor",
+            ]
           : []),
       ].includes(workflow.fulfillment) &&
       (!workflow.awaitingPayment || workflow.isCod)
