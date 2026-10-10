@@ -226,6 +226,7 @@ export function ProductDialog({
           <ProductBasicTab
             t={t}
             isAr={isAr}
+            brandId={brand.id}
             product={product}
             storeProfile={storeProfile}
             addonAxisDefaults={addonAxisDefaults}
@@ -266,8 +267,6 @@ export function ProductDialog({
             customFieldPresets={customFieldPresets}
             form={form}
             setForm={setForm}
-            brandId={brand.id}
-            product={product}
           />
         )}
       </div>

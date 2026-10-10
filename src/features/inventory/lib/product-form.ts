@@ -1,3 +1,4 @@
+import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
 import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
@@ -61,6 +62,9 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
     is_made_to_order: isService || (product?.is_made_to_order ?? false),
+    // A new made-to-order product's first limit, as typed (empty: no limit). A saved product
+    // changes its limit on its own, through the database setter, never with this form.
+    made_to_order_limit: "",
     service_location: (serviceLocationFrom(product?.service_location) ??
       (isService ? "customer" : null)) as ServiceLocation | null,
     service_includes: serviceIncludesFrom(product?.service_includes),
@@ -82,6 +86,7 @@ export type ProductFormErrors = {
   cost?: string;
   booking?: string;
   package?: string;
+  madeToOrderLimit?: string;
 };
 export type ProductDialogTab = "basic" | "media" | "customizer";
 
@@ -118,6 +123,10 @@ export function validateProductForm(form: ProductForm, isAr: boolean): ProductFo
     newErrors.cost = isAr
       ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً"
       : "Enter a valid non-negative cost or leave empty";
+  }
+  if (form.item_kind !== "service" && form.is_made_to_order) {
+    const limit = parseMadeToOrderLimit(form.made_to_order_limit);
+    if (!limit.ok) newErrors.madeToOrderLimit = limit.error[isAr ? "ar" : "en"];
   }
   if (form.item_kind === "service") {
     const booking = serviceBookingError(form, isAr);

@@ -121,13 +121,14 @@ describe("a made-to-order piece with a limit", () => {
   const limited = (left: number | null) => ({ ...tailored, made_to_order_available: left });
 
   it("reads the limit: none, some left, or used up", () => {
-    expect(madeToOrderLimit(limited(null))).toEqual({ left: null, closed: false });
-    expect(madeToOrderLimit(tailored)).toEqual({ left: null, closed: false });
-    expect(madeToOrderLimit(limited(3))).toEqual({ left: 3, closed: false });
-    expect(madeToOrderLimit(limited(0))).toEqual({ left: 0, closed: true });
+    expect(madeToOrderLimit(limited(null))).toEqual({ left: null, paused: false, closed: false });
+    expect(madeToOrderLimit(tailored)).toEqual({ left: null, paused: false, closed: false });
+    expect(madeToOrderLimit(limited(3))).toEqual({ left: 3, paused: false, closed: false });
+    expect(madeToOrderLimit(limited(0))).toEqual({ left: 0, paused: false, closed: true });
     // A product that is not made to order has no limit, whatever the column holds.
     expect(madeToOrderLimit({ ...ready, made_to_order_available: 0 })).toEqual({
       left: null,
+      paused: false,
       closed: false,
     });
   });

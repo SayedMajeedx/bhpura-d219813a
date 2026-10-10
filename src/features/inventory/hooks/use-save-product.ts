@@ -9,6 +9,7 @@ import {
   createProduct,
   createVariants,
   deleteVariants,
+  setMadeToOrderLimit,
   syncVariantsWithProduct,
   updateProduct,
   updateVariant,
@@ -25,6 +26,7 @@ import {
   type ProductFormErrors,
 } from "@/features/inventory/lib/product-form";
 import { getCurrentUser } from "@/lib/auth/session";
+import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
 import {
   serviceFromPrice,
   servicePricingChanges,
@@ -217,6 +219,18 @@ export function useSaveProduct({
       } else {
         await newDefaultVariant(createdProductId);
         prefetchOptionTranslations([form.fabric_type], isAr);
+        // A new made-to-order product's first limit: set by the database setter, like any later change.
+        const firstLimit = parseMadeToOrderLimit(form.made_to_order_limit);
+        if (form.is_made_to_order && firstLimit.ok && firstLimit.value !== null) {
+          await setMadeToOrderLimit(createdProductId, firstLimit.value).catch((error: unknown) => {
+            toast.error(
+              isAr
+                ? "تم حفظ المنتج، لكن تعذر حفظ عدد القطع حسب الطلب. افتحه وأعد المحاولة."
+                : "The product was saved, but its made-to-order limit was not. Open it and try again.",
+              { description: getFriendlyErrorMessage(error) },
+            );
+          });
+        }
       }
     }
     commitMedia();

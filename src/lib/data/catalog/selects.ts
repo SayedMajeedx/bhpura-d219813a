@@ -36,6 +36,7 @@ export const ADMIN_PRODUCT_COLUMNS = [
   "item_kind",
   "made_to_order_available",
   "made_to_order_limit_set_at",
+  "made_to_order_paused_at",
   "media",
   "name",
   "name_ar",

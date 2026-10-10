@@ -14,9 +14,10 @@ import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
  * made-to-order piece with no ready stock is "made to order", not "out of stock".
  *
  * A store may limit how many pieces of a product it can still make
- * (`products.made_to_order_available`: null is no limit, a number is the pieces left). At zero the
- * product is no longer made to order: its ready pieces, if it has any, are all that is left to
- * buy. The database enforces the same number when an order is placed (migration 20261010110000).
+ * (`products.made_to_order_available`: null is no limit, a number is the pieces left), and may
+ * pause making it for a while (`made_to_order_paused_at`). At zero, or while paused, the product
+ * is not made to order: its ready pieces, if it has any, are all that is left to buy. The
+ * database enforces the same when an order is placed (migrations 20261010110000, 20261010120000).
  */
 
 export type AvailabilityProduct = {
@@ -24,6 +25,8 @@ export type AvailabilityProduct = {
   item_kind?: string | null;
   /** Pieces that can still be made to order: null (or absent) is no limit. */
   made_to_order_available?: number | string | null;
+  /** When the store paused making it to order (null or absent: not paused). */
+  made_to_order_paused_at?: string | null;
 };
 
 export type AvailabilityVariant = {
@@ -47,8 +50,10 @@ export type ProductAvailability = {
   madeToOrder: boolean;
   /** Pieces that can still be made to order; null when there is no limit (or it is not made to order). */
   madeToOrderLeft: number | null;
-  /** A made-to-order product whose limit is used up. */
+  /** A made-to-order product that cannot be ordered made to order now (limit used up, or paused). */
   madeToOrderClosed: boolean;
+  /** The store paused making it to order. */
+  madeToOrderPaused: boolean;
   /** A shopper can buy it now. */
   sellable: boolean;
   /** Ready stock is what decides whether it can be bought (false for made to order and services). */
@@ -68,19 +73,23 @@ export function readyUnitsOf(variants: readonly AvailabilityVariant[] | null | u
 }
 
 /**
- * How a made-to-order product stands on its limit: `left` is the pieces that can still be made
- * (null: no limit), `closed` that none can. A product that is not made to order has neither.
+ * How a made-to-order product stands: `left` is the pieces that can still be made (null: no
+ * limit), `paused` that the store has paused making it, and `closed` that it cannot be ordered
+ * made to order now (none left, or paused). A product that is not made to order has none.
  */
 export function madeToOrderLimit(product: AvailabilityProduct | null | undefined): {
   left: number | null;
+  paused: boolean;
   closed: boolean;
 } {
-  const raw = product?.made_to_order_available;
-  if (!product?.is_made_to_order || raw === null || raw === undefined || raw === "") {
-    return { left: null, closed: false };
-  }
-  const left = Math.max(0, Math.floor(Number(raw) || 0));
-  return { left, closed: left === 0 };
+  if (!product?.is_made_to_order) return { left: null, paused: false, closed: false };
+  const raw = product.made_to_order_available;
+  const left =
+    raw === null || raw === undefined || raw === ""
+      ? null
+      : Math.max(0, Math.floor(Number(raw) || 0));
+  const paused = Boolean(product.made_to_order_paused_at);
+  return { left, paused, closed: paused || left === 0 };
 }
 
 /** Whether ready stock is what decides if the product can be bought. */
@@ -105,6 +114,7 @@ export function productAvailability(
       madeToOrder: true,
       madeToOrderLeft: null,
       madeToOrderClosed: false,
+      madeToOrderPaused: false,
       sellable: true,
       soldFromStock: false,
     };
@@ -117,6 +127,7 @@ export function productAvailability(
       madeToOrder: true,
       madeToOrderLeft: limit.left,
       madeToOrderClosed: false,
+      madeToOrderPaused: false,
       sellable: true,
       soldFromStock: false,
     };
@@ -133,6 +144,7 @@ export function productAvailability(
     madeToOrder: Boolean(product.is_made_to_order),
     madeToOrderLeft: limit.left,
     madeToOrderClosed: limit.closed,
+    madeToOrderPaused: limit.paused,
     sellable: status !== "out",
     soldFromStock: true,
   };
@@ -164,7 +176,14 @@ export function availabilityBadge(
   },
 ): { tone: AvailabilityTone; label: string; details: string[] } {
   const isAr = lang === "ar";
-  const limitReached = isAr ? "اكتمل العدد حسب الطلب" : "Made-to-order limit reached";
+  // Why a made-to-order product is closed: paused by the store, or its limit used up.
+  const limitReached = availability.madeToOrderPaused
+    ? isAr
+      ? "حسب الطلب موقوف مؤقتاً"
+      : "Made to order paused"
+    : isAr
+      ? "اكتمل العدد حسب الطلب"
+      : "Made-to-order limit reached";
   switch (availability.status) {
     case "service":
       return { tone: "service", label: isAr ? "خدمة" : "Service", details: [] };

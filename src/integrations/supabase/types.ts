@@ -6019,6 +6019,7 @@ export type Database = {
           item_kind: string;
           made_to_order_available: number | null;
           made_to_order_limit_set_at: string | null;
+          made_to_order_paused_at: string | null;
           media: Json;
           name: string;
           name_ar: string | null;
@@ -6074,6 +6075,7 @@ export type Database = {
           item_kind?: string;
           made_to_order_available?: number | null;
           made_to_order_limit_set_at?: string | null;
+          made_to_order_paused_at?: string | null;
           media?: Json;
           name: string;
           name_ar?: string | null;
@@ -6129,6 +6131,7 @@ export type Database = {
           item_kind?: string;
           made_to_order_available?: number | null;
           made_to_order_limit_set_at?: string | null;
+          made_to_order_paused_at?: string | null;
           media?: Json;
           name?: string;
           name_ar?: string | null;
@@ -10610,6 +10613,10 @@ export type Database = {
       set_made_to_order_limit: {
         Args: { p_available: number; p_product_id: string };
         Returns: number;
+      };
+      set_made_to_order_paused: {
+        Args: { p_paused: boolean; p_product_id: string };
+        Returns: boolean;
       };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
