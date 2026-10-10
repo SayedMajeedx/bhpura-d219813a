@@ -180,6 +180,15 @@ export async function setMadeToOrderLimit(productId: string, available: number |
   if (error) throw error;
 }
 
+/** Pauses or resumes making a product to order: the database setter (the limit keeps its number). */
+export async function setMadeToOrderPaused(productId: string, paused: boolean) {
+  const { error } = await supabase.rpc("set_made_to_order_paused", {
+    p_product_id: productId,
+    p_paused: paused,
+  });
+  if (error) throw error;
+}
+
 // ── Packaging materials ─────────────────────────────────────────────────────
 
 export async function createPackagingMaterial(brandId: string, values: NewPackagingMaterial) {

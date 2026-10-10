@@ -16,6 +16,10 @@ import type { Product, Variant } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
 import { StockStepper } from "@/features/inventory/components/StockStepper";
+import {
+  MadeToOrderOnlyNote,
+  isMadeToOrderOnlyVariant,
+} from "@/features/inventory/components/MadeToOrderOnlyNote";
 import { PremiumCurrencyInput } from "@/features/inventory/components/PremiumCurrencyInput";
 
 export function VariantMobileCard({
@@ -195,63 +199,72 @@ export function VariantMobileCard({
       </div>
 
       {/* Quick stock is the default mobile workflow. */}
-      <div
-        className="grid grid-cols-2 gap-3 rounded-xl border border-primary/15 bg-primary/5 p-3"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div>
-          <div className="flex items-center gap-1">
-            <Label className="text-xs font-black uppercase text-muted-foreground">
-              {mainLabel}
-            </Label>
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground">
-                    <HelpCircle className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                  {isAr
-                    ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
-                    : "Physical stock in your primary store, ready for instant sale and shipping."}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+      {isMadeToOrderOnlyVariant(product, v) ? (
+        <MadeToOrderOnlyNote
+          isAr={isAr}
+          className="rounded-xl border border-primary/15 bg-primary/5 p-3"
+        />
+      ) : (
+        <div
+          className="grid grid-cols-2 gap-3 rounded-xl border border-primary/15 bg-primary/5 p-3"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs font-black uppercase text-muted-foreground">
+                {mainLabel}
+              </Label>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-foreground">
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                    {isAr
+                      ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
+                      : "Physical stock in your primary store, ready for instant sale and shipping."}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="mt-1">
+              <StockStepper
+                value={v.stock_main ?? 0}
+                onChange={(val) => update(v, { stock_main: val })}
+              />
+            </div>
           </div>
-          <div className="mt-1">
-            <StockStepper
-              value={v.stock_main ?? 0}
-              onChange={(val) => update(v, { stock_main: val })}
-            />
+          <div>
+            <div className="flex items-center gap-1">
+              <Label className="text-xs font-black uppercase text-muted-foreground">
+                {incLabel}
+              </Label>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-foreground">
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                    {isAr
+                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
+                      : "Items held at partner boutiques or business incubators."}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="mt-1">
+              <StockStepper
+                value={v.stock_incubator ?? 0}
+                onChange={(val) => update(v, { stock_incubator: val })}
+              />
+            </div>
           </div>
         </div>
-        <div>
-          <div className="flex items-center gap-1">
-            <Label className="text-xs font-black uppercase text-muted-foreground">{incLabel}</Label>
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground">
-                    <HelpCircle className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                  {isAr
-                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
-                    : "Items held at partner boutiques or business incubators."}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="mt-1">
-            <StockStepper
-              value={v.stock_incubator ?? 0}
-              onChange={(val) => update(v, { stock_incubator: val })}
-            />
-          </div>
-        </div>
-      </div>
+      )}
 
       <details
         className="group rounded-xl border border-border-subtle bg-muted/15"

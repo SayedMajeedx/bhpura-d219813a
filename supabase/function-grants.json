@@ -561,6 +561,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (a session and can_access_brand on the product's brand)"
     },
+    "set_made_to_order_paused(p_product_id uuid, p_paused boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (a session and can_access_brand on the brand of the product)"
+    },
     "storefront_user_owns_customer(p_customer_id uuid)": {
       "anon": true,
       "authenticated": true,

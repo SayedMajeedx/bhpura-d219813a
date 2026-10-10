@@ -146,6 +146,15 @@ export function placeOrderFailure(
     const isAr = t("ar", "en") === "ar";
     return { message: bookingErrorMessage(msg, isAr), clearPromo: false };
   }
+  if (msg.includes("MADE_TO_ORDER_PAUSED")) {
+    return {
+      message: t(
+        "أحد المنتجات غير متاح حسب الطلب حالياً. حدّث السلة وحاول مرة أخرى.",
+        "One item cannot be made to order right now. Update your cart and try again.",
+      ),
+      clearPromo: false,
+    };
+  }
   if (msg.includes("MADE_TO_ORDER_SOLD_OUT")) {
     return {
       message: t(

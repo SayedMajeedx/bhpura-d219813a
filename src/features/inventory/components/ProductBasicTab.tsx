@@ -22,10 +22,12 @@ import type { ProductForm } from "@/features/inventory/lib/product-form";
 import type { ProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
 
 import { ProductAdvancedDetails } from "@/features/inventory/components/ProductAdvancedDetails";
+import { SaleModeSection } from "@/features/inventory/components/SaleModeSection";
 /** First step of the product editor: names, descriptions, category, price, cost and stock. */
 export function ProductBasicTab({
   t,
   isAr,
+  brandId,
   product,
   storeProfile,
   addonAxisDefaults,
@@ -46,6 +48,7 @@ export function ProductBasicTab({
 }: {
   t: ReturnType<typeof useT>;
   isAr: boolean;
+  brandId: string;
   product: Product | null;
   storeProfile: ProductDialogData["storeProfile"];
   addonAxisDefaults: ProductDialogData["addonAxisDefaults"];
@@ -242,12 +245,27 @@ export function ProductBasicTab({
             : "Leave it empty if you don't know it now; you can add it anytime later to track net profit."}
         </p>
       </div>
+      {!isService && (
+        <SaleModeSection
+          brandId={brandId}
+          product={product}
+          isAr={isAr}
+          madeToOrder={Boolean(form.is_made_to_order)}
+          onMadeToOrder={(madeToOrder) => setForm({ ...form, is_made_to_order: madeToOrder })}
+          draftLimit={form.made_to_order_limit}
+          onDraftLimit={(text) => setForm({ ...form, made_to_order_limit: text })}
+        />
+      )}
       {!product && !isService && (
         <div>
           <Label className="text-xs font-bold text-muted-foreground">
-            {isAr
-              ? "الكمية المتوفرة بالمحل (المخزون الأولي)"
-              : "In-Store Available Quantity (Initial Stock)"}
+            {form.is_made_to_order
+              ? isAr
+                ? "قطع جاهزة في المحل (اختياري)"
+                : "Ready pieces in store (optional)"
+              : isAr
+                ? "الكمية المتوفرة بالمحل (المخزون الأولي)"
+                : "In-Store Available Quantity (Initial Stock)"}
           </Label>
           <Input
             type="number"

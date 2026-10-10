@@ -16,8 +16,6 @@ import type { CustomField } from "@/features/inventory/types";
 
 import type { Dispatch, SetStateAction } from "react";
 import { cleanPassportCustomFields, type ProductForm } from "@/features/inventory/lib/product-form";
-import { MadeToOrderLimitField } from "@/features/inventory/components/MadeToOrderLimitField";
-import type { Product } from "@/features/inventory/types";
 import type { ProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
 
 /** Third step of the product editor: customer customization fields and their storefront preview. */
@@ -26,13 +24,8 @@ export function ProductCustomizerTab({
   customFieldPresets,
   form,
   setForm,
-  brandId,
-  product,
 }: {
   isAr: boolean;
-  brandId: string;
-  /** The product being edited (null while a new one is created). */
-  product: Pick<Product, "id" | "made_to_order_available"> | null;
   customFieldPresets: ProductDialogData["customFieldPresets"];
   form: ProductForm;
   setForm: Dispatch<SetStateAction<ProductForm>>;
@@ -126,32 +119,6 @@ export function ProductCustomizerTab({
             </Button>
           </div>
         </div>
-
-        <div className="flex items-center justify-between p-3.5 bg-background rounded-lg border border-border">
-          <div>
-            <p className="text-xs font-bold text-foreground">
-              {isAr ? "منتج حسب الطلب (لا يُخصم من المخزون)" : "Made to order (no stock deduction)"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {isAr
-                ? "المنتجات المصنعة حسب الطلب لا تتطلب توفر مخزون جاهز ولا يتم خصمها من المخزون عند الشراء"
-                : "Made-to-order items do not require ready physical stock and are not depleted on purchase"}
-            </p>
-          </div>
-          <Switch
-            checked={Boolean(form.is_made_to_order)}
-            onCheckedChange={(checked) => setForm({ ...form, is_made_to_order: checked })}
-          />
-        </div>
-
-        {Boolean(form.is_made_to_order) && (
-          <MadeToOrderLimitField
-            brandId={brandId}
-            productId={product?.id ?? null}
-            available={product?.made_to_order_available}
-            isAr={isAr}
-          />
-        )}
 
         {Boolean(form.is_made_to_order) && (
           <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 text-xs text-muted-foreground leading-relaxed flex items-start gap-2.5">

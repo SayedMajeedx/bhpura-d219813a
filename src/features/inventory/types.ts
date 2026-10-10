@@ -49,6 +49,8 @@ export type Product = {
   is_made_to_order?: boolean | null;
   /** Pieces that can still be made to order (null: no limit). Set through `setMadeToOrderLimit`. */
   made_to_order_available?: number | null;
+  /** When the store paused making it to order (null: not paused). Set through `setMadeToOrderPaused`. */
+  made_to_order_paused_at?: string | null;
   /** "service" for a service (sold only with a booking), else "product". */
   item_kind?: string | null;
   is_package?: boolean | null;
