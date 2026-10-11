@@ -1,6 +1,6 @@
 import { ServicePriceSummary } from "@/features/inventory/components/ServicePriceSummary";
 import { useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useMemo, useCallback, useDeferredValue } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -22,18 +22,16 @@ import type { Product, Variant } from "@/features/inventory/types";
 import { ProductImporterModal } from "@/features/inventory/components/ProductImporterModal";
 import { VariantList } from "@/features/inventory/components/VariantList";
 import {
-  filterInventoryProducts,
   inventoryCategoryOptions,
-  inventoryScopeFromFilter,
-  productNeedsAttention,
-  productStockFrom,
-  productStockStatus,
-  productWeeklySalesFrom,
-  salesByVariantFrom,
-  variantsByProductFrom,
   type InventoryScope,
+  type InventorySort,
 } from "@/features/inventory/lib/product-list";
 import { inventoryScopeTabs } from "@/features/inventory/lib/inventory-scope-tabs";
+import type { InventoryView } from "@/features/inventory/lib/list-view";
+import type { AttentionKey } from "@/features/inventory/lib/attention";
+import { useInventoryList } from "@/features/inventory/hooks/use-inventory-list";
+import { StockOverviewStrip } from "@/features/inventory/components/StockOverviewStrip";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
 import { useProductBulkActions } from "@/features/inventory/hooks/use-product-bulk-actions";
 import { useProductDialogData } from "@/features/inventory/hooks/use-product-dialog-data";
@@ -46,7 +44,7 @@ import { useInventoryCategories } from "@/features/inventory/hooks/use-inventory
 import { ProductDialog } from "@/features/inventory/components/ProductDialog";
 
 export function ProductsSection({
-  initialFilter,
+  initialView,
   initialAction,
   products,
   variants,
@@ -55,8 +53,14 @@ export function ProductsSection({
   currency,
   onChanged,
   salesHistory,
+  lowStockUnits,
+  pricesMatter = true,
+  canViewCosts = false,
+  canEditLowStockLevel = false,
+  onSaveLowStockLevel,
 }: {
-  initialFilter?: string;
+  /** What the address asks the list to show (tab, search, filters, sort, page). */
+  initialView: InventoryView;
   initialAction?: string;
   products: Product[];
   variants: Variant[];
@@ -65,6 +69,13 @@ export function ProductsSection({
   currency: string;
   onChanged: () => void;
   salesHistory: any[];
+  /** The store's own low-stock level. */
+  lowStockUnits: number;
+  /** False for a catalog that shows no prices: a product with no price is then as meant. */
+  pricesMatter?: boolean;
+  canViewCosts?: boolean;
+  canEditLowStockLevel?: boolean;
+  onSaveLowStockLevel: (level: number) => Promise<boolean>;
 }) {
   const navigate = useNavigate();
   const brand = useBrand();
@@ -91,15 +102,12 @@ export function ProductsSection({
       });
     }
   }, [initialAction, navigate]);
-  const [search, setSearch] = useState("");
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
   const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [isProductImporterOpen, setIsProductImporterOpen] = useState(false);
-  const [pageSize, setPageSize] = useState(10);
-  const [page, setPage] = useState(1);
 
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => ({
@@ -108,16 +116,18 @@ export function ProductsSection({
     }));
   };
 
-  const salesByVariant = useMemo(() => salesByVariantFrom(salesHistory), [salesHistory]);
-  const productWeeklySales = useCallback(
-    (productId: string) => productWeeklySalesFrom(variants, salesByVariant, productId),
-    [variants, salesByVariant],
-  );
-  const productStock = useCallback(
-    (productId: string) => productStockFrom(variants, productId),
-    [variants],
-  );
-  const variantsByProduct = useMemo(() => variantsByProductFrom(variants), [variants]);
+  const list = useInventoryList({
+    products,
+    variants,
+    salesHistory,
+    initialView,
+    lowStockUnits,
+    pricesMatter,
+    lang: isAr ? "ar" : "en",
+  });
+  const { view, variantsByProduct, salesByVariant, productStock, lowestPrice } = list;
+  const filteredDisplayProducts = list.filtered;
+  const paginatedProducts = list.pageProducts;
 
   const {
     del,
@@ -137,45 +147,11 @@ export function ProductsSection({
   });
   const { selectedProductIds, setSelectedProductIds, toggleSelectedProduct } = bulk;
 
-  const deferredSearch = useDeferredValue(search);
-  const normalizedSearch = deferredSearch.trim().toLowerCase();
-
-  const lowStock = products.filter(
-    (product) =>
-      productStockStatus(product, productStock(product.id), productWeeklySales(product.id)) ===
-      "low",
-  ).length;
-
-  const [scopeFilter, setScopeFilter] = useState<InventoryScope>(
-    () => inventoryScopeFromFilter(initialFilter) ?? "all",
-  );
-  useEffect(() => {
-    const scope = inventoryScopeFromFilter(initialFilter);
-    if (scope) setScopeFilter(scope);
-  }, [initialFilter]);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("newest");
-
-  const needsAttentionProducts = useMemo(
-    () =>
-      products.filter((p) =>
-        productNeedsAttention(p, productStock(p.id), productWeeklySales(p.id)),
-      ),
-    [products, productStock, productWeeklySales],
-  );
-
-  const scopeTabs = inventoryScopeTabs(
-    {
-      all: products.length,
-      attention: needsAttentionProducts.length,
-      active: products.filter((p) => p.is_active).length,
-      inactive: products.filter((p) => !p.is_active).length,
-      low: lowStock,
-      out: products.filter((p) => productStockStatus(p, productStock(p.id)) === "out").length,
-      featured: products.filter((p) => p.featured_trending).length,
-    },
-    { tracksStock: storeProfile.modules.stock },
-  );
+  const { vocabulary } = useVocabulary();
+  const scopeTabs = inventoryScopeTabs(list.counts, {
+    tracksStock: storeProfile.modules.stock,
+    madeToOrderLabel: vocabulary.made_to_order,
+  });
 
   // A service shows its lengths and prices; a product its sizes, colours and stock.
   const renderVariants = (prod: Product) =>
@@ -205,44 +181,8 @@ export function ProductsSection({
     [products, categoriesQ.data],
   );
 
-  const filteredDisplayProducts = useMemo(
-    () =>
-      filterInventoryProducts({
-        products,
-        variantsByProduct,
-        search: normalizedSearch,
-        category: selectedCategory,
-        scope: scopeFilter,
-        sortBy,
-        productStock,
-        productWeeklySales,
-      }),
-    [
-      products,
-      variantsByProduct,
-      normalizedSearch,
-      selectedCategory,
-      scopeFilter,
-      sortBy,
-      productStock,
-      productWeeklySales,
-    ],
-  );
-
   const filteredProductIds = filteredDisplayProducts.map((product) => product.id);
-  const inventoryTotalPages = Math.max(1, Math.ceil(filteredDisplayProducts.length / pageSize));
-  const safeInventoryPage = Math.min(page, inventoryTotalPages);
-  const paginatedProducts = filteredDisplayProducts.slice(
-    (safeInventoryPage - 1) * pageSize,
-    safeInventoryPage * pageSize,
-  );
   const paginatedProductIds = paginatedProducts.map((product) => product.id);
-  useEffect(() => {
-    setPage(1);
-  }, [search, selectedCategory, scopeFilter, sortBy, pageSize]);
-  useEffect(() => {
-    if (page > inventoryTotalPages) setPage(inventoryTotalPages);
-  }, [page, inventoryTotalPages]);
   const allFilteredProductsSelected =
     filteredProductIds.length > 0 && filteredProductIds.every((id) => selectedProductIds.has(id));
   const toggleVisibleProducts = () =>
@@ -279,14 +219,6 @@ export function ProductsSection({
     setDialogSession((v) => v + 1);
     setOpen(true);
   };
-  const clearFilters = () => {
-    setSearch("");
-    setSelectedCategory("all");
-    setScopeFilter("all");
-  };
-
-  const activeFilterCount = (selectedCategory !== "all" ? 1 : 0) + (search ? 1 : 0);
-
   return (
     <div className="space-y-3.5">
       {/* 1. Integrated Command Header */}
@@ -311,26 +243,42 @@ export function ProductsSection({
         }
       />
 
+      {storeProfile.modules.stock && (
+        <StockOverviewStrip
+          totals={list.totals}
+          currency={currency}
+          lang={isAr ? "ar" : "en"}
+          showCost={canViewCosts}
+          showPartners={storeProfile.modules.incubators}
+          lowStockUnits={lowStockUnits}
+          canEditLevel={canEditLowStockLevel}
+          onSaveLevel={onSaveLowStockLevel}
+        />
+      )}
+
       {/* 2. Operational Scope Switcher */}
       <InventoryScopeSwitcher
         lang={isAr ? "ar" : "en"}
         tabs={scopeTabs}
-        activeTab={scopeFilter}
-        onTabChange={(tabId) => setScopeFilter(tabId as any)}
+        activeTab={view.scope}
+        onTabChange={(tabId) => list.change({ scope: tabId as InventoryScope })}
       />
 
       {/* 3. Compact Command Toolbar */}
       <InventoryToolbar
         lang={isAr ? "ar" : "en"}
-        search={search}
-        onSearchChange={setSearch}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
+        search={view.search}
+        onSearchChange={(search) => list.change({ search })}
+        selectedCategory={view.category}
+        onCategoryChange={(category) => list.change({ category })}
         categories={categoryOptions}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        activeFilterCount={activeFilterCount}
-        onClearFilters={clearFilters}
+        sortBy={view.sort}
+        onSortChange={(sort) => list.change({ sort: sort as InventorySort })}
+        selectedIssue={view.issue}
+        onIssueChange={(issue) => list.change({ issue: issue as "all" | AttentionKey })}
+        tracksStock={storeProfile.modules.stock}
+        activeFilterCount={list.activeFilterCount}
+        onClearFilters={list.clearFilters}
       />
 
       <BulkSelectionToolbar
@@ -376,7 +324,7 @@ export function ProductsSection({
           productCount={products.length}
           isAr={isAr}
           onAddProduct={openNewProduct}
-          onClearFilters={clearFilters}
+          onClearFilters={list.clearFilters}
         />
       )}
 
@@ -385,10 +333,7 @@ export function ProductsSection({
         {paginatedProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
           const totalStock = productStock(p.id);
-          const minPrice =
-            pVariants.length > 0
-              ? Math.min(...pVariants.map((v) => Number(v.selling_price || 0)))
-              : Number(p.base_price || 0);
+          const minPrice = lowestPrice(p.id);
 
           return (
             <div id={`product-row-${p.id}`} key={p.id}>
@@ -414,6 +359,9 @@ export function ProductsSection({
                 onToggleSelected={toggleSelectedProduct}
                 isExpanded={Boolean(expandedProducts[p.id])}
                 onToggleExpand={() => toggleProduct(p.id)}
+                lowStockUnits={lowStockUnits}
+                weeklySales={list.productWeeklySales(p.id)}
+                pricesMatter={pricesMatter}
               />
             </div>
           );
@@ -447,6 +395,9 @@ export function ProductsSection({
           selectedProductIds={selectedProductIds}
           onToggleProduct={toggleSelectedProduct}
           onToggleAll={toggleVisibleProducts}
+          lowStockUnits={lowStockUnits}
+          weeklySalesOf={list.productWeeklySales}
+          pricesMatter={pricesMatter}
         />
       </div>
 
@@ -455,13 +406,10 @@ export function ProductsSection({
         entityAr="منتج"
         entityEn="Products"
         totalItems={filteredDisplayProducts.length}
-        page={safeInventoryPage}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={(size) => {
-          setPageSize(size);
-          setPage(1);
-        }}
+        page={list.page}
+        pageSize={list.pageSize}
+        onPageChange={list.setPage}
+        onPageSizeChange={list.setPageSize}
       />
 
       <ProductBulkDialogsHost

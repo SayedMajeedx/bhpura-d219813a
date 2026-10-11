@@ -81,6 +81,11 @@ const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string
     en: "Manual Adjustment",
     badgeClass: "bg-primary/10 text-primary border-primary/20",
   },
+  correction: {
+    ar: "تصحيح (جرد أو تالف)",
+    en: "Correction (count or loss)",
+    badgeClass: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300 border-yellow-500/20",
+  },
   transfer_out: {
     ar: "تحويل صادر",
     en: "Transfer Out",

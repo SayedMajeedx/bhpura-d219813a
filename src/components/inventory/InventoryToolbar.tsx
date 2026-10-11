@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
 import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { ATTENTION_KEYS, attentionReason } from "@/features/inventory/lib/attention";
 
 interface CategoryOption {
   id: string;
@@ -31,7 +32,24 @@ interface InventoryToolbarProps {
   onSortChange: (val: string) => void;
   activeFilterCount: number;
   onClearFilters: () => void;
+  /** The issue filter ("all" or one issue); the control is left out when no handler is given. */
+  selectedIssue?: string;
+  onIssueChange?: (val: string) => void;
+  /** False for a store that does not count stock: no stock sorts, no stock issues. */
+  tracksStock?: boolean;
 }
+
+const SORTS: Array<{ id: string; ar: string; en: string; stock?: boolean }> = [
+  { id: "newest", ar: "الأحدث", en: "Newest" },
+  { id: "name", ar: "الاسم", en: "Name" },
+  { id: "best-selling", ar: "الأكثر مبيعاً", en: "Best selling" },
+  { id: "price-asc", ar: "السعر: الأدنى", en: "Price: Low to High" },
+  { id: "price-desc", ar: "السعر: الأعلى", en: "Price: High to Low" },
+  { id: "stock-asc", ar: "المخزون: الأدنى", en: "Stock: Low to High", stock: true },
+  { id: "stock-desc", ar: "المخزون: الأعلى", en: "Stock: High to Low", stock: true },
+];
+
+const STOCK_ISSUES = new Set(["out_of_stock", "low_stock", "hidden_with_stock"]);
 
 export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   lang,
@@ -44,6 +62,9 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   onSortChange,
   activeFilterCount,
   onClearFilters,
+  selectedIssue = "all",
+  onIssueChange,
+  tracksStock = true,
 }) => {
   const isAr = lang === "ar";
   const shortcutLabel = useCommandShortcutLabel();
@@ -60,11 +81,79 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  const sorts = SORTS.filter((sort) => tracksStock || !sort.stock);
+  const issues = ATTENTION_KEYS.filter((key) => tracksStock || !STOCK_ISSUES.has(key)).map(
+    attentionReason,
+  );
+  const categoryName = (id: string) => {
+    const match = categories.find((cat) => cat.id === id);
+    return match ? (isAr ? match.name_ar || match.name : match.name) : id;
+  };
+  const issueName = (key: string) => {
+    const match = issues.find((issue) => issue.key === key);
+    return match ? (isAr ? match.label_ar : match.label_en) : key;
+  };
+
+  const sortItems = sorts.map((sort) => (
+    <SelectItem key={sort.id} value={sort.id}>
+      {isAr ? sort.ar : sort.en}
+    </SelectItem>
+  ));
+
+  const filterFields = (triggerClass: string) => (
+    <>
+      <div className="space-y-1">
+        <label className="text-xs font-medium text-muted-foreground">
+          {isAr ? "القسم" : "Category"}
+        </label>
+        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <SelectTrigger className={triggerClass}>
+            <SelectValue placeholder={isAr ? "جميع الأقسام" : "All Categories"} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{isAr ? "جميع الأقسام" : "All Categories"}</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {isAr ? cat.name_ar || cat.name : cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {onIssueChange && (
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-muted-foreground">
+            {isAr ? "المشكلة" : "Issue"}
+          </label>
+          <Select value={selectedIssue} onValueChange={onIssueChange}>
+            <SelectTrigger
+              className={triggerClass}
+              aria-label={isAr ? "تصفية حسب المشكلة" : "Filter by issue"}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isAr ? "أي حالة" : "Any"}</SelectItem>
+              {issues.map((issue) => (
+                <SelectItem key={issue.key} value={issue.key}>
+                  {isAr ? issue.label_ar : issue.label_en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+    </>
+  );
+
+  const chipClass =
+    "inline-flex max-w-full items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20";
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 bg-card p-2 rounded-xl border border-border-subtle shadow-2xs">
         {/* Search Input - Flex 1 */}
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={searchInputRef}
@@ -102,24 +191,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
               <div className="text-xs font-bold text-foreground">
                 {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
-                  {isAr ? "القسم" : "Category"}
-                </label>
-                <Select value={selectedCategory} onValueChange={onCategoryChange}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder={isAr ? "جميع الأقسام" : "All Categories"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{isAr ? "جميع الأقسام" : "All Categories"}</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {isAr ? cat.name_ar || cat.name : cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {filterFields("h-8 text-xs")}
             </PopoverContent>
           </Popover>
         </div>
@@ -149,26 +221,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 </SheetTitle>
               </SheetHeader>
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    {isAr ? "القسم" : "Category"}
-                  </label>
-                  <Select value={selectedCategory} onValueChange={onCategoryChange}>
-                    <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder={isAr ? "جميع الأقسام" : "All Categories"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {isAr ? "جميع الأقسام" : "All Categories"}
-                      </SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {isAr ? cat.name_ar || cat.name : cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {filterFields("h-9 text-xs")}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">
                     {isAr ? "الترتيب" : "Sort By"}
@@ -177,18 +230,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                     <SelectTrigger className="h-9 text-xs">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="newest">{isAr ? "الأحدث" : "Newest"}</SelectItem>
-                      <SelectItem value="price-asc">
-                        {isAr ? "السعر: الأدنى" : "Price: Low to High"}
-                      </SelectItem>
-                      <SelectItem value="price-desc">
-                        {isAr ? "السعر: الأعلى" : "Price: High to Low"}
-                      </SelectItem>
-                      <SelectItem value="stock-asc">
-                        {isAr ? "المخزون: الأدنى" : "Stock: Low to High"}
-                      </SelectItem>
-                    </SelectContent>
+                    <SelectContent>{sortItems}</SelectContent>
                   </Select>
                 </div>
               </div>
@@ -198,22 +240,14 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
 
         {/* Sort Select */}
         <Select value={sortBy} onValueChange={onSortChange}>
-          <SelectTrigger className="h-9 w-32 text-xs border-border-strong hidden md:flex">
+          <SelectTrigger
+            className="h-9 w-40 text-xs border-border-strong hidden md:flex"
+            aria-label={isAr ? "ترتيب المنتجات" : "Sort products"}
+          >
             <ArrowUpDown className="h-3 w-3 me-1 text-muted-foreground" />
             <SelectValue />
           </SelectTrigger>
-          <SelectContent align="end">
-            <SelectItem value="newest">{isAr ? "الأحدث" : "Newest"}</SelectItem>
-            <SelectItem value="price-asc">
-              {isAr ? "السعر: الأدنى" : "Price: Low to High"}
-            </SelectItem>
-            <SelectItem value="price-desc">
-              {isAr ? "السعر: الأعلى" : "Price: High to Low"}
-            </SelectItem>
-            <SelectItem value="stock-asc">
-              {isAr ? "المخزون: الأدنى" : "Stock: Low to High"}
-            </SelectItem>
-          </SelectContent>
+          <SelectContent align="end">{sortItems}</SelectContent>
         </Select>
       </div>
 
@@ -224,13 +258,30 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             {isAr ? "التصفية النشطة:" : "Active filters:"}
           </span>
           {selectedCategory !== "all" && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20">
-              {isAr ? "القسم:" : "Category:"} {selectedCategory}
+            <span className={chipClass}>
+              <span className="min-w-0 break-words">
+                {isAr ? "القسم:" : "Category:"} {categoryName(selectedCategory)}
+              </span>
               <button
                 type="button"
                 onClick={() => onCategoryChange("all")}
                 aria-label={isAr ? "إزالة تصفية القسم" : "Remove category filter"}
-                className="hover:text-primary/70"
+                className="shrink-0 hover:text-primary/70"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          )}
+          {onIssueChange && selectedIssue !== "all" && (
+            <span className={chipClass}>
+              <span className="min-w-0 break-words">
+                {isAr ? "المشكلة:" : "Issue:"} {issueName(selectedIssue)}
+              </span>
+              <button
+                type="button"
+                onClick={() => onIssueChange("all")}
+                aria-label={isAr ? "إزالة تصفية المشكلة" : "Remove issue filter"}
+                className="shrink-0 hover:text-primary/70"
               >
                 <X className="h-3 w-3" />
               </button>

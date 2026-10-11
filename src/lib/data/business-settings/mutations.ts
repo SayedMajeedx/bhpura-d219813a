@@ -57,3 +57,20 @@ export async function savePagesSettings(
   if (!data) throw new Error("PAGES_NOT_SAVED");
   return data;
 }
+
+/**
+ * The store's own low-stock level, set from the inventory page. Returns what the database
+ * stored; a write that matched no row (the member may not change settings) is an error, not a
+ * quiet success.
+ */
+export async function saveLowStockLevel(brandId: string, level: number) {
+  const { data, error } = await supabase
+    .from("business_settings")
+    .update({ low_stock_threshold: level })
+    .eq("brand_id", brandId)
+    .select("low_stock_threshold")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("LOW_STOCK_LEVEL_NOT_SAVED");
+  return data.low_stock_threshold;
+}

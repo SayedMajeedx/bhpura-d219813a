@@ -99,12 +99,14 @@ export function isSoldFromStock(product: AvailabilityProduct): boolean {
 
 /**
  * The product's availability from its ready pieces. `expectedWeeklySales` only sharpens "low"
- * (stock that will not last the week), as on the inventory list.
+ * (stock that will not last the week), as on the inventory list. `lowStockUnits` is the
+ * store's own low-stock level (`lowStockLevel` of its settings); left out, the default of 5.
  */
 export function productAvailability(
   product: AvailabilityProduct,
   readyUnits: number,
   expectedWeeklySales = 0,
+  lowStockUnits?: number,
 ): ProductAvailability {
   const units = Math.max(0, Number(readyUnits) || 0);
   if (product.item_kind === "service") {
@@ -135,7 +137,7 @@ export function productAvailability(
   // Sold from stock, or made to order with its limit used up: the ready pieces decide.
   const status: AvailabilityStatus = isOutOfStock(units)
     ? "out"
-    : isLowStock(units, expectedWeeklySales)
+    : isLowStock(units, expectedWeeklySales, lowStockUnits)
       ? "low"
       : "available";
   return {
@@ -155,8 +157,9 @@ export function availabilityOf(
   product: AvailabilityProduct,
   variants: readonly AvailabilityVariant[] | null | undefined,
   expectedWeeklySales = 0,
+  lowStockUnits?: number,
 ): ProductAvailability {
-  return productAvailability(product, readyUnitsOf(variants), expectedWeeklySales);
+  return productAvailability(product, readyUnitsOf(variants), expectedWeeklySales, lowStockUnits);
 }
 
 export type AvailabilityTone = "out" | "low" | "ok" | "made_to_order" | "service";

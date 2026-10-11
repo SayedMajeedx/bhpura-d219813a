@@ -6,6 +6,7 @@ import { ordersQueries } from "@/lib/data/orders";
 import { customersQueries } from "@/lib/data/customers";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useLowStockLevel } from "@/hooks/use-low-stock-level";
 import {
   productExportPresets,
   productListFilterLabel,
@@ -70,9 +71,6 @@ function ExportCenterPage() {
 
   const [activeTab, setActiveTab] = useState<string>("products");
 
-  // -------------------------------------------------------------
-  // Data Queries
-  // -------------------------------------------------------------
   const { data: products = [] } = useQuery(catalogQueries.productExportRows(brandId));
 
   const { data: customers = [] } = useQuery(customersQueries.exportRows(brandId));
@@ -376,6 +374,7 @@ function ProductExportSection({
   onExportSuccess: () => void;
 }) {
   const stock = useAdminStoreProfile(brandId).profile.modules.stock;
+  const lowStockUnits = useLowStockLevel(brandId);
   const [selectedPresetId, setSelectedPresetId] = useState("boutq_master");
   const [format, setFormat] = useState<ExportFormat>("xlsx");
   const [categoryFilter, setCategoryFilter] = useState("all");
@@ -413,7 +412,7 @@ function ProductExportSection({
         const totalStock = (v.stock_main || 0) + (v.stock_incubator || 0);
 
         // Stock filter
-        const stockStatus = exportStockStatus(p, totalStock);
+        const stockStatus = exportStockStatus(p, totalStock, lowStockUnits);
         if (!matchesExportStockFilter(stockFilter, stockStatus)) return;
         if (stockFilter === "active_only" && !p.is_active) return;
         if (stockFilter === "draft_only" && p.is_active) return;
@@ -504,7 +503,7 @@ function ProductExportSection({
     });
 
     return rows;
-  }, [products, categoryFilter, stockFilter, selectedPresetId, isAr, brandSlug]);
+  }, [products, categoryFilter, stockFilter, selectedPresetId, isAr, brandSlug, lowStockUnits]);
 
   const handleExport = async () => {
     if (flattenedRows.length === 0) {
@@ -636,7 +635,7 @@ function ProductExportSection({
                   className="h-9 px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="all">{isAr ? "كل المنتجات" : "All Products"}</option>
-                  {productListFilterOptions(stock).map((o) => (
+                  {productListFilterOptions(stock, lowStockUnits).map((o) => (
                     <option key={o.value} value={o.value}>
                       {isAr ? o.labelAr : o.labelEn}
                     </option>

@@ -185,6 +185,45 @@ describe("editing a variant's stock", () => {
     );
   });
 
+  it("sends a change made in the stock dialog once, with its reason and note", async () => {
+    const { changeStock } = renderMutations();
+    let saved = false;
+    await act(async () => {
+      saved = await changeStock(variants[0], {
+        mode: "delta",
+        value: -2,
+        reason: "correction",
+        note: "Damaged or lost: torn",
+      });
+    });
+    expect(saved).toBe(true);
+    expect(catalog.adjustVariantStock).toHaveBeenCalledTimes(1);
+    expect(catalog.adjustVariantStock).toHaveBeenCalledWith({
+      variantId: variants[0].id,
+      location: "main",
+      mode: "delta",
+      value: -2,
+      reason: "correction",
+      note: "Damaged or lost: torn",
+    });
+  });
+
+  it("says a refused stock change was refused, so the dialog keeps what was typed", async () => {
+    catalog.adjustVariantStock.mockRejectedValueOnce(new Error("NOT_AUTHORIZED"));
+    const { changeStock } = renderMutations();
+    let saved = true;
+    await act(async () => {
+      saved = await changeStock(variants[0], {
+        mode: "set",
+        value: 4,
+        reason: "correction",
+        note: "Count correction",
+      });
+    });
+    expect(saved).toBe(false);
+    expect(toast.error).toHaveBeenCalled();
+  });
+
   it("never adjusts the pieces held at partners: they move on the partners' page", async () => {
     const { update } = renderMutations();
     await act(() => update(variants[0], { stock_incubator: 4 }));

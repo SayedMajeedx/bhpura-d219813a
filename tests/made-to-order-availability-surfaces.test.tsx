@@ -35,7 +35,7 @@ const product = (id: string, over: Partial<Product> = {}): Product =>
     name: id,
     name_ar: id,
     name_en: id,
-    category: null,
+    category: "abayas",
     image_url: "https://x/a.jpg",
     media: [],
     is_active: true,
@@ -85,9 +85,9 @@ describe("the inventory tabs", () => {
 
   it("'Needs attention' leaves made-to-order pieces and services out", () => {
     expect(inScope("attention")).toEqual(["sold-out", "few-left"]);
-    expect(productNeedsAttention(tailored, 0, 0)).toBe(false);
+    expect(productNeedsAttention(tailored, { stock: 0 })).toBe(false);
     // A made-to-order piece with no photo still needs attention.
-    expect(productNeedsAttention({ ...tailored, image_url: null }, 0, 0)).toBe(true);
+    expect(productNeedsAttention({ ...tailored, image_url: null }, { stock: 0 })).toBe(true);
   });
 
   it("names each product's stock status", () => {

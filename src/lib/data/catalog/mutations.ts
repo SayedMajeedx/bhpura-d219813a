@@ -171,13 +171,15 @@ export async function adjustVariantStock(args: {
   mode: "set" | "delta";
   value: number;
   note: string;
+  /** Why: an arrival or a plain edit is an adjustment; a count or a loss is a correction. */
+  reason?: "manual_adjust" | "correction";
 }) {
   const { error } = await supabase.rpc("rpc_adjust_variant_stock", {
     p_variant_id: args.variantId,
     p_location: args.location,
     p_mode: args.mode,
     p_value: args.value,
-    p_reason: "manual_adjust",
+    p_reason: args.reason ?? "manual_adjust",
     p_note: args.note,
   });
   if (error) throw error;

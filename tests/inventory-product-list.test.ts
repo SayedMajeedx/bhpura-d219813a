@@ -119,7 +119,7 @@ describe("filterInventoryProducts", () => {
     product({ id: "a", name: "Silk abaya", base_price: 50, category: "abayas" }),
     product({ id: "b", name: "Scarf", base_price: 10, category: "scarves", is_active: false }),
     product({ id: "c", name: "Kaftan", base_price: 30, featured_trending: true, image_url: null }),
-  ];
+  ].map((item) => ({ ...item, name_en: item.name }));
   const variants = [
     variant({ id: "va", product_id: "a", sku: "SLK-1", stock_main: 0, stock_incubator: 0 }),
     variant({ id: "vb", product_id: "b", sku: "SCF-1", stock_main: 20 }),
@@ -148,7 +148,25 @@ describe("filterInventoryProducts", () => {
     expect(run({ scope: "inactive" })).toEqual(["b"]);
     expect(run({ scope: "out" })).toEqual(["a"]);
     expect(run({ scope: "featured" })).toEqual(["c"]);
-    expect(run({ scope: "attention" })).toEqual(["a", "c"]);
+    // a is out of stock, b is hidden while it holds 20 pieces, c has no picture.
+    expect(run({ scope: "attention" })).toEqual(["a", "b", "c"]);
+  });
+
+  it("narrows to one issue, with or without a tab", () => {
+    expect(run({ issue: "out_of_stock" })).toEqual(["a"]);
+    expect(run({ issue: "hidden_with_stock" })).toEqual(["b"]);
+    expect(run({ issue: "missing_image" })).toEqual(["c"]);
+    expect(run({ scope: "inactive", issue: "missing_image" })).toEqual([]);
+  });
+
+  it("calls a product low at the store's own level", () => {
+    // c holds 5 pieces: low at the default of 5, not low for a store that says 2.
+    expect(run({ scope: "low" })).toEqual(["c"]);
+    expect(run({ scope: "low", lowStockUnits: 2 })).toEqual([]);
+    expect(run({ scope: "low", lowStockUnits: 25 })).toEqual(["b", "c"]);
+    // 0 turns the warning off; "out" is untouched.
+    expect(run({ scope: "low", lowStockUnits: 0 })).toEqual([]);
+    expect(run({ scope: "out", lowStockUnits: 0 })).toEqual(["a"]);
   });
 
   it("sorts by price or stock and keeps the loaded order for newest", () => {
@@ -156,6 +174,17 @@ describe("filterInventoryProducts", () => {
     expect(run({ sortBy: "price-asc" })).toEqual(["b", "c", "a"]);
     expect(run({ sortBy: "price-desc" })).toEqual(["a", "c", "b"]);
     expect(run({ sortBy: "stock-asc" })[0]).toBe("a");
+    expect(run({ sortBy: "stock-desc" })).toEqual(["b", "c", "a"]);
+    expect(run({ sortBy: "name" })).toEqual(["c", "b", "a"]);
+  });
+
+  it("sorts by the price the row shows and by what sells", () => {
+    // The lowest variant price, not the product's base price: a's cheapest size costs 5.
+    const lowestPrice = (id: string) => ({ a: 5, b: 10, c: 30 })[id] ?? 0;
+    expect(run({ sortBy: "price-asc", lowestPrice })).toEqual(["a", "b", "c"]);
+    expect(run({ sortBy: "price-desc", lowestPrice })).toEqual(["c", "b", "a"]);
+    const productWeeklySales = (id: string) => ({ a: 1, b: 9, c: 4 })[id] ?? 0;
+    expect(run({ sortBy: "best-selling", productWeeklySales })).toEqual(["b", "c", "a"]);
   });
 });
 

@@ -1,9 +1,14 @@
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ordersQueries } from "@/lib/data/orders";
-import { businessSettingsQueries } from "@/lib/data/business-settings";
+import {
+  businessSettingsQueries,
+  invalidateBusinessSettings,
+  saveLowStockLevel,
+} from "@/lib/data/business-settings";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { useBrand } from "@/lib/brand-context";
@@ -25,18 +30,23 @@ import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { CustomizationsSection } from "@/features/inventory/components/CustomizationsSection";
 
 import { ProductsSection } from "@/features/inventory/components/ProductsSection";
-type InventorySearch = {
-  filter?: string;
-  scope?: string;
-  action?: string;
-};
+import { INVENTORY_VIEW_PARAMS, inventoryViewFromSearch } from "@/features/inventory/lib/list-view";
+import { lowStockLevel } from "@/lib/inventory-health";
+import { shouldShowPrices } from "@/lib/storefront-mode";
+import { useProfile } from "@/lib/profile-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
+
+/** The list's view (tab, search, filters, sort, page: `list-view.ts`) and the "new" action. */
+type InventorySearch = Partial<Record<(typeof INVENTORY_VIEW_PARAMS)[number] | "action", string>>;
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
   validateSearch: (search: Record<string, unknown>): InventorySearch => {
     const result: InventorySearch = {};
-    if (typeof search.filter === "string") result.filter = search.filter;
-    if (typeof search.scope === "string") result.scope = search.scope;
-    if (typeof search.action === "string") result.action = search.action;
+    for (const key of [...INVENTORY_VIEW_PARAMS, "action"] as const) {
+      const value = search[key];
+      if (typeof value === "string" && value) result[key] = value;
+      else if (typeof value === "number") result[key] = String(value);
+    }
     return result;
   },
   component: Inventory,
@@ -52,8 +62,8 @@ function Inventory() {
   useEntitlements({ brandId });
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const [tab, setTab] = useState<"products" | "customizations" | "packaging">("products");
-
-  useState<string | null>(null);
+  const { canViewFinancials, hasPermission } = useProfile();
+  const initialView = useMemo(() => inventoryViewFromSearch(searchParams), [searchParams]);
 
   useRealtimeInvalidate(
     [
@@ -87,6 +97,21 @@ function Inventory() {
     ...ordersQueries.variantSales(brandId, 45),
     refetchOnWindowFocus: false,
   });
+
+  const saveLevel = async (level: number) => {
+    try {
+      await saveLowStockLevel(brandId, level);
+    } catch (error) {
+      toast.error(
+        lang === "ar" ? "تعذّر حفظ حد المخزون المنخفض." : "The low stock level was not saved.",
+        { description: getFriendlyErrorMessage(error) },
+      );
+      return false;
+    }
+    await invalidateBusinessSettings(qc, brandId);
+    toast.success(lang === "ar" ? "تم حفظ حد المخزون المنخفض." : "Low stock level saved.");
+    return true;
+  };
 
   if (!brandId) {
     return <RoutePendingSkeleton />;
@@ -150,8 +175,13 @@ function Inventory() {
 
       {tab === "products" ? (
         <ProductsSection
-          initialFilter={searchParams.scope || searchParams.filter}
+          initialView={initialView}
           initialAction={searchParams.action}
+          lowStockUnits={lowStockLevel(businessName.data?.low_stock_threshold)}
+          pricesMatter={shouldShowPrices(businessName.data)}
+          canViewCosts={canViewFinancials}
+          canEditLowStockLevel={hasPermission("manage_settings")}
+          onSaveLowStockLevel={saveLevel}
           products={products.data ?? []}
           variants={variants.data ?? []}
           pendingNotifyCount={backInStockRequests.data ?? 0}

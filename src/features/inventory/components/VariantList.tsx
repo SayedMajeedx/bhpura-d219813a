@@ -79,7 +79,7 @@ export function VariantList({
     setAdding(true);
   };
 
-  const { add, update, del } = useVariantMutations({
+  const { add, update, del, changeStock } = useVariantMutations({
     productId,
     product,
     variants,
@@ -172,6 +172,7 @@ export function VariantList({
             isAr={isAr}
             brand={brand}
             update={update}
+            changeStock={changeStock}
             del={del}
             mainLabel={mainLabel}
             incLabel={incLabel}
@@ -236,6 +237,7 @@ export function VariantList({
                   isAr={isAr}
                   brand={brand}
                   update={update}
+                  changeStock={changeStock}
                   productName={productName}
                   businessName={businessName}
                   genBarcode={makeInStoreBarcode}

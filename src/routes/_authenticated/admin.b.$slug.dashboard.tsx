@@ -20,6 +20,7 @@ import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 import { ReviewInsightsSummary } from "@/components/dashboard/ReviewInsightsSummary";
 import { DashboardActionStrip } from "@/components/dashboard/DashboardActionStrip";
 import { useDashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
+import { lowStockLevel } from "@/lib/inventory-health";
 import { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
 import {
   customerSegments,
@@ -141,6 +142,7 @@ function Dashboard() {
   );
 
   // Inventory velocity & stock depletion calculations
+  const lowStockUnits = lowStockLevel(businessSettings.data?.low_stock_threshold);
   const inventoryIntel = useMemo(
     () =>
       inventoryIntelFor({
@@ -149,8 +151,9 @@ function Dashboard() {
         validRevenueOrders,
         lang,
         now: new Date(),
+        lowStockUnits,
       }),
-    [productsQ.data, variantsQ.data, validRevenueOrders, lang],
+    [productsQ.data, variantsQ.data, validRevenueOrders, lang, lowStockUnits],
   );
 
   // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
