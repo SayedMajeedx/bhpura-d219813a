@@ -25,6 +25,8 @@ import { cn } from "@/lib/utils";
 import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
 export interface OsMenuBarProps {
+  /** A courier sees no New button. */
+  isCourier?: boolean;
   brandLabel: string;
   breadcrumbs: Array<{ label: string; href?: string }>;
   lang: "en" | "ar";
@@ -42,6 +44,7 @@ export interface OsMenuBarProps {
 }
 
 export function OsMenuBar({
+  isCourier = false,
   brandLabel,
   breadcrumbs,
   lang,
@@ -122,7 +125,12 @@ export function OsMenuBar({
         {actions}
 
         {/* Global Quick Action Trigger (+ جديد) */}
-        <OsQuickActions slug={activeSlug ?? null} lang={lang} services={services} />
+        <OsQuickActions
+          slug={activeSlug ?? null}
+          lang={lang}
+          services={services}
+          isCourier={isCourier}
+        />
 
         {/* Spotlight Command Center Trigger */}
         <button

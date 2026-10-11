@@ -143,6 +143,8 @@ export async function signInWithStressData(page: Page, lang: "ar" | "en") {
       try {
         window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
         window.localStorage.setItem("lang", lang);
+        // "Keep me signed in": without it the app signs a fresh browser session out.
+        window.localStorage.setItem("boutq.auth.rememberMe", "1");
       } catch {
         /* storage is not available */
       }

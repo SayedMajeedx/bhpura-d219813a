@@ -40,6 +40,8 @@ export interface OsMobileNavigationProps {
   pathname: string;
   lang: "en" | "ar";
   isSuperAdmin?: boolean;
+  /** A courier sees their deliveries only: no office dock, no New button. */
+  isCourier?: boolean;
   onSetLang: (lang: "en" | "ar") => void;
   onSignOut: () => void;
   mobileOpen: boolean;
@@ -56,6 +58,7 @@ export function OsMobileNavigation({
   pathname,
   lang,
   isSuperAdmin = false,
+  isCourier = false,
   onSetLang,
   onSignOut,
   mobileOpen,
@@ -573,6 +576,7 @@ export function OsMobileNavigation({
             slug={activeSlug}
             lang={lang}
             services={services}
+            isCourier={isCourier}
             className="h-8.5 px-2 text-xs"
           />
           <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
@@ -598,7 +602,8 @@ export function OsMobileNavigation({
       </div>
 
       {/* Mobile & Tablet Floating Island Dock */}
-      {(activeSlug || isSuperAdmin) && (
+      {/* A courier has one screen, their deliveries: no dock of office workspaces. */}
+      {(activeSlug || isSuperAdmin) && !isCourier && (
         <OsIslandDock
           items={primaryTabItems}
           lang={lang}

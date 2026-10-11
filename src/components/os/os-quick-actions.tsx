@@ -22,6 +22,8 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface OsQuickActionsProps {
+  /** A courier does not create orders or products: the button is not shown. */
+  isCourier?: boolean;
   slug: string | null;
   lang: "en" | "ar";
   className?: string;
@@ -29,11 +31,18 @@ export interface OsQuickActionsProps {
   services?: boolean;
 }
 
-export function OsQuickActions({ slug, lang, className, services = false }: OsQuickActionsProps) {
+export function OsQuickActions({
+  slug,
+  lang,
+  className,
+  services = false,
+  isCourier = false,
+}: OsQuickActionsProps) {
   const navigate = useNavigate();
   const isAr = lang === "ar";
 
-  if (!slug) return null;
+  // Creating orders and products is the office's work, not a courier's.
+  if (!slug || isCourier) return null;
 
   const actions = [
     {
