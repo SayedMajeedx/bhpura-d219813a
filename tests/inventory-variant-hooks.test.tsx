@@ -161,3 +161,39 @@ describe("adding a variant whose option name cannot be saved", () => {
     expect(onAdded).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("editing a variant's stock", () => {
+  const axis = { label: "", visible: true, isCustom: false };
+  const axes = { size: axis, color: axis, fabric: axis, four: axis, five: axis };
+  const renderMutations = () =>
+    renderHook(() =>
+      useVariantMutations({
+        productId: "p1",
+        variants,
+        axes,
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    ).result.current;
+
+  it("adjusts the store's own stock through the ledger", async () => {
+    const { update } = renderMutations();
+    await act(() => update(variants[0], { stock_main: 9 }));
+    expect(catalog.adjustVariantStock).toHaveBeenCalledTimes(1);
+    expect(catalog.adjustVariantStock).toHaveBeenCalledWith(
+      expect.objectContaining({ variantId: variants[0].id, location: "main", value: 9 }),
+    );
+  });
+
+  it("never adjusts the pieces held at partners: they move on the partners' page", async () => {
+    const { update } = renderMutations();
+    await act(() => update(variants[0], { stock_incubator: 4 }));
+    expect(catalog.adjustVariantStock).not.toHaveBeenCalled();
+    // Nor is the number written with the row's other columns.
+    for (const [, , patch] of catalog.updateVariant.mock.calls as unknown as Array<
+      [string, string, Record<string, unknown>]
+    >) {
+      expect(patch).not.toHaveProperty("stock_incubator");
+    }
+  });
+});

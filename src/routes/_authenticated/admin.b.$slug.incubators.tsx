@@ -13,7 +13,6 @@ import {
   returnStockFromIncubator,
   reverseIncubatorSale,
   syncIncubatorPrices,
-  transferStockToIncubator,
   updateIncubator,
   updateIncubatorItem,
 } from "@/lib/data/incubators";
@@ -53,13 +52,13 @@ import { toast } from "sonner";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 import { InlineCodeEditor, useSaveIncubatorCode } from "@/components/incubators/InlineCodeEditor";
 import { fetchCallerProfile, permissionsOf } from "@/lib/data/profiles";
+import { PartnerStockNotices } from "@/features/incubators/components/PartnerStockNotices";
 
 /** The page's own row types over the typed rows (JSON and joined columns narrowed). */
 const asIncubators = (rows: unknown[]) => rows as Incubator[];
 const asStock = (rows: unknown[]) => rows as StockItem[];
 const asSales = (rows: unknown[]) => rows as Sale[];
 const asPayments = (rows: unknown[]) => rows as Payment[];
-const asProductOptions = (rows: unknown[]) => rows as ProductOption[];
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -142,17 +141,6 @@ type Payment = {
   reference: string | null;
 };
 
-type ProductOption = {
-  id: string;
-  sku: string | null;
-  barcode: string | null;
-  size: string | null;
-  color: string | null;
-  stock_main: number;
-  selling_price: number;
-  products: { name: string; name_ar: string | null } | null;
-};
-
 function IncubatorsPage() {
   const brand = useBrand();
   const { lang } = useI18n();
@@ -180,21 +168,13 @@ function IncubatorsPage() {
   useRealtimeInvalidate(
     [
       { table: "incubators", brandId: brand.id, queryKey: incubatorsKeys.list(brand.id) },
-      {
-        table: "incubator_inventory",
-        brandId: brand.id,
-        queryKey: incubatorsKeys.inventory(brand.id),
-      },
+      // A partner's count also moves with an order: refresh what orders hold along with it.
+      { table: "incubator_inventory", brandId: brand.id, queryKey: incubatorsKeys.all(brand.id) },
       { table: "incubator_sales", brandId: brand.id, queryKey: incubatorsKeys.sales(brand.id) },
       {
         table: "incubator_payments",
         brandId: brand.id,
         queryKey: incubatorsKeys.payments(brand.id),
-      },
-      {
-        table: "product_variants",
-        brandId: brand.id,
-        queryKey: incubatorsKeys.transferOptions(brand.id),
       },
     ],
     `incubators-${brand.id}`,
@@ -208,10 +188,6 @@ function IncubatorsPage() {
   const inventoryQ = useQuery({ ...incubatorsQueries.inventory(brand.id), select: asStock });
   const salesQ = useQuery({ ...incubatorsQueries.sales(brand.id), select: asSales });
   const paymentsQ = useQuery({ ...incubatorsQueries.payments(brand.id), select: asPayments });
-  const productsQ = useQuery({
-    ...incubatorsQueries.transferOptions(brand.id),
-    select: asProductOptions,
-  });
   // The batch transfer's product list comes from the shared catalog.
   const allBrandProductsQ = useQuery(catalogQueries.products(brand.id));
 
@@ -361,17 +337,6 @@ function IncubatorsPage() {
           consignmentPrice: Number(values.price),
           commissionType: String(values.commission_type),
           commissionValue: Number(values.commission_value || 0),
-        });
-      } else if (dialog === "transfer") {
-        await transferStockToIncubator({
-          incubatorId: currentId as string,
-          variantId: String(values.variant_id),
-          quantity: Number(values.quantity),
-          externalCode: String(values.external_code || "").trim() || null,
-          price: Number(values.price),
-          commissionType: String(values.commission_type),
-          commissionValue: Number(values.commission_value || 0),
-          notes: String(values.notes || "").trim() || null,
         });
       } else if (dialog === "sale" && activeItem) {
         await recordIncubatorSale({
@@ -561,6 +526,13 @@ function IncubatorsPage() {
                 />
               </div>
 
+              <PartnerStockNotices
+                brandId={brand.id}
+                slug={brand.slug}
+                incubatorId={currentId}
+                stock={allStock}
+                isAr={isAr}
+              />
               <Tabs defaultValue="stock" dir={isAr ? "rtl" : "ltr"}>
                 <TabsList className="w-full justify-start overflow-x-auto">
                   <TabsTrigger value="stock">{isAr ? "البضاعة عندهم" : "Stock"}</TabsTrigger>
@@ -825,7 +797,6 @@ function IncubatorsPage() {
         setDialog={setDialog}
         current={current}
         activeItem={activeItem}
-        products={productsQ.data ?? []}
         busy={busy}
         isAr={isAr}
         due={summary.due}
@@ -917,7 +888,6 @@ function OperationDialog({
   setDialog,
   current,
   activeItem,
-  products,
   busy,
   isAr,
   due,
@@ -936,7 +906,6 @@ function OperationDialog({
   setDialog: (value: null) => void;
   current: Incubator | null;
   activeItem: StockItem | null;
-  products: ProductOption[];
   busy: boolean;
   isAr: boolean;
   due: number;
@@ -956,21 +925,17 @@ function OperationDialog({
           ? isAr
             ? "تعديل كود وشروط القطعة"
             : "Edit item code and terms"
-          : dialog === "transfer"
+          : dialog === "sale"
             ? isAr
-              ? "تحويل بضاعة للحاضنة"
-              : "Transfer stock"
-            : dialog === "sale"
+              ? "تسجيل قطعة مباعة"
+              : "Record sale"
+            : dialog === "return"
               ? isAr
-                ? "تسجيل قطعة مباعة"
-                : "Record sale"
-              : dialog === "return"
-                ? isAr
-                  ? "إرجاع للمخزون الرئيسي"
-                  : "Return to main stock"
-                : isAr
-                  ? "تسجيل دفعة"
-                  : "Record payment";
+                ? "إرجاع للمخزون الرئيسي"
+                : "Return to main stock"
+              : isAr
+                ? "تسجيل دفعة"
+                : "Record payment";
   const itemName =
     (isAr
       ? activeItem?.product_variants?.products?.name_ar
@@ -1094,47 +1059,6 @@ function OperationDialog({
                 defaultValue={dialog === "edit_incubator" ? current?.notes || "" : ""}
                 textarea
               />
-            </>
-          )}
-          {dialog === "transfer" && (
-            <>
-              <div>
-                <Label>{isAr ? "المنتج والنسخة" : "Product variant"}</Label>
-                <select
-                  name="variant_id"
-                  required
-                  className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                >
-                  <option value="">{isAr ? "اختر منتجًا" : "Select product"}</option>
-                  {products.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {(isAr ? v.products?.name_ar : v.products?.name) || v.products?.name} —{" "}
-                      {v.sku || v.barcode || v.id.slice(0, 8)} ({isAr ? "متاح" : "available"}:{" "}
-                      {v.stock_main})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={isAr ? "الكمية" : "Quantity"}
-                  name="quantity"
-                  type="number"
-                  min="1"
-                  required
-                />
-                <Field label={isAr ? "كود الحاضنة" : "External code"} name="external_code" />
-              </div>
-              <Field
-                label={isAr ? "سعر البيع المتفق" : "Consignment price"}
-                name="price"
-                type="number"
-                min="0"
-                step="0.001"
-                required
-              />
-              <CommissionFields isAr={isAr} current={current} />
-              <Field label={isAr ? "ملاحظات التسليم" : "Transfer notes"} name="notes" textarea />
             </>
           )}
           {dialog === "edit_item" && activeItem && (

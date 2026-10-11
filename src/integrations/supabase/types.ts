@@ -4900,6 +4900,65 @@ export type Database = {
           },
         ];
       };
+      order_incubator_allocations: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          incubator_id: string;
+          order_id: string;
+          quantity: number;
+          updated_at: string;
+          variant_id: string;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          incubator_id: string;
+          order_id: string;
+          quantity: number;
+          updated_at?: string;
+          variant_id: string;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          incubator_id?: string;
+          order_id?: string;
+          quantity?: number;
+          updated_at?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_incubator_allocations_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_incubator_allocations_incubator_id_fkey";
+            columns: ["incubator_id"];
+            isOneToOne: false;
+            referencedRelation: "incubators";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_incubator_allocations_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_incubator_allocations_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       order_inventory_allocations: {
         Row: {
           brand_id: string;
@@ -9800,6 +9859,15 @@ export type Database = {
         Returns: number;
       };
       order_advance_due: { Args: { p_order_id: string }; Returns: number };
+      order_incubator_sync: {
+        Args: {
+          p_brand_id: string;
+          p_delta: number;
+          p_order_id: string;
+          p_variant_id: string;
+        };
+        Returns: undefined;
+      };
       order_inventory_desired_state: {
         Args: {
           p_payment_method: string;

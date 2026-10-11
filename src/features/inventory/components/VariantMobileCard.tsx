@@ -16,6 +16,7 @@ import type { Product, Variant } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
 import { StockStepper } from "@/features/inventory/components/StockStepper";
+import { partnerStockHint } from "@/features/inventory/lib/stock-labels";
 import {
   MadeToOrderOnlyNote,
   isMadeToOrderOnlyVariant,
@@ -249,19 +250,17 @@ export function VariantMobileCard({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                    {isAr
-                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
-                      : "Items held at partner boutiques or business incubators."}
+                    {partnerStockHint(isAr)}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
-            <div className="mt-1">
-              <StockStepper
-                value={v.stock_incubator ?? 0}
-                onChange={(val) => update(v, { stock_incubator: val })}
-              />
-            </div>
+            <p
+              className="mt-1 flex h-9 items-center text-sm font-black"
+              data-testid="partner-stock"
+            >
+              {v.stock_incubator ?? 0}
+            </p>
           </div>
         </div>
       )}

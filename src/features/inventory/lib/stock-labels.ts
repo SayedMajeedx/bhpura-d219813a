@@ -6,9 +6,17 @@ export function stockLabels(isAr: boolean) {
     mainTooltip: isAr
       ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن للعملاء."
       : "Physical stock in your primary store, ready for instant sale and shipping.",
-    incTooltip: isAr
-      ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة."
-      : "Items held at partner boutiques or business incubators.",
     barcodeLabel: isAr ? "الباركود" : "Barcode",
   };
+}
+
+/**
+ * What a partner's quantity is and where it changes. It is shown beside a variant, never typed
+ * there: each partner's count moves with a transfer, a return or a sale on the partners' page,
+ * so the total always equals what the partners hold.
+ */
+export function partnerStockHint(isAr: boolean): string {
+  return isAr
+    ? "القطع الموجودة عند الحاضنات الشريكة. تتغير من صفحة الحاضنات: تحويل، إرجاع أو بيع."
+    : "Pieces held at partner incubators. They change on the Incubators page: a transfer, a return or a sale.";
 }

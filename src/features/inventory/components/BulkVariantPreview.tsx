@@ -9,9 +9,6 @@ export type BulkBatchControls = {
   mainStock: string;
   setMainStock: (value: string) => void;
   applyMainStock: () => void;
-  incubatorStock: string;
-  setIncubatorStock: (value: string) => void;
-  applyIncubatorStock: () => void;
   salePrice: string;
   setSalePrice: (value: string) => void;
   applySalePrice: () => void;
@@ -79,27 +76,6 @@ export function BulkVariantPreview({
         </div>
 
         <div className="flex items-center gap-1.5">
-          <span>{isAr ? "الحاضنة:" : "Incubator:"}</span>
-          <Input
-            className="h-7 w-16 text-xs"
-            type="number"
-            min="0"
-            placeholder="0"
-            value={batch.incubatorStock}
-            onChange={(e) => batch.setIncubatorStock(e.target.value)}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={batch.applyIncubatorStock}
-          >
-            {isAr ? "تطبيق للكل" : "Apply all"}
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
           <span>{isAr ? "التخفيض:" : "Sale:"}</span>
           <Input
             className="h-7 w-20 text-xs"
@@ -135,7 +111,6 @@ export function BulkVariantPreview({
                 ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
                 isAr ? "السعر اللي يدفعه العميل" : "Customer price",
                 isAr ? "مخزون المحل" : "Store Stock",
-                isAr ? "مخزون الحاضنة" : "Incubator Stock",
                 "",
               ].map((label) => (
                 <th key={label} className="p-2 text-start font-semibold">
@@ -186,15 +161,6 @@ export function BulkVariantPreview({
                     min="0"
                     value={row.stock_main}
                     onChange={(e) => onPatchRow(index, { stock_main: Number(e.target.value) })}
-                  />
-                </td>
-                <td className="p-1">
-                  <Input
-                    className="h-8 w-20"
-                    type="number"
-                    min="0"
-                    value={row.stock_incubator}
-                    onChange={(e) => onPatchRow(index, { stock_incubator: Number(e.target.value) })}
                   />
                 </td>
                 <td className="p-1">

@@ -18,9 +18,12 @@ export const incubatorsKeys = {
   inventory: (brandId: string) => [...incubatorsKeys.all(brandId), "inventory"] as const,
   sales: (brandId: string) => [...incubatorsKeys.all(brandId), "sales"] as const,
   payments: (brandId: string) => [...incubatorsKeys.all(brandId), "payments"] as const,
-  /** Variants with main stock left, for the transfer picker. */
-  transferOptions: (brandId: string) =>
-    [...incubatorsKeys.all(brandId), "transfer-options"] as const,
+  /** The pieces orders have taken from partners (who hands over what). */
+  orderHolds: (brandId: string) => [...incubatorsKeys.all(brandId), "order-holds"] as const,
+  orderPickups: (brandId: string, orderId: string) =>
+    [...incubatorsKeys.orderHolds(brandId), orderId] as const,
+  /** Variants with a quantity at partners, to check against what the partners hold. */
+  partnerTotals: (brandId: string) => [...incubatorsKeys.all(brandId), "partner-totals"] as const,
   /** Some products' variants with what each incubator holds (batch transfer). */
   batchVariants: (brandId: string, productIds: readonly string[]) =>
     [...incubatorsKeys.all(brandId), "batch-variants", productIds.join(",")] as const,
@@ -56,7 +59,7 @@ export async function fetchIncubatorInventory(brandId: string) {
   const { data, error } = await supabase
     .from("incubator_inventory")
     .select(
-      "*, product_variants(id,sku,barcode,size,color,stock_main,selling_price,products(id,name,name_ar,image_url))",
+      "*, product_variants(id,sku,barcode,size,color,stock_main,stock_incubator,selling_price,products(id,name,name_ar,image_url))",
     )
     .eq("brand_id", brandId)
     .order("updated_at", { ascending: false });
@@ -86,16 +89,46 @@ export async function fetchIncubatorPayments(brandId: string) {
   return data ?? [];
 }
 
-/** The brand's variants that still have main stock, by SKU (transfer picker). */
-export async function fetchTransferOptions(brandId: string) {
+const PARTNER_HOLD_SELECT =
+  "order_id, variant_id, incubator_id, quantity, incubators(name, phone), product_variants(sku, size, color, products(name, name_ar)), orders(invoice_number, status, fulfillment_status)";
+
+/**
+ * The pieces orders have taken from partners. When the store's own stock runs out, an order
+ * takes a piece held at a partner (the order engine picks the partner and lowers its count):
+ * each row says which partner is to hand over what, for which order.
+ */
+export async function fetchPartnerOrderHolds(brandId: string) {
+  const { data, error } = await supabase
+    .from("order_incubator_allocations")
+    .select(PARTNER_HOLD_SELECT)
+    .eq("brand_id", brandId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** The pieces one order takes from partners. */
+export async function fetchOrderPartnerPickups(brandId: string, orderId: string) {
+  const { data, error } = await supabase
+    .from("order_incubator_allocations")
+    .select(PARTNER_HOLD_SELECT)
+    .eq("brand_id", brandId)
+    .eq("order_id", orderId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/**
+ * The brand's variants that say they have pieces at partners. Compared with what the partners
+ * hold (`partnerStockMismatches`): the two are kept equal by the database, and the partners'
+ * page says so if they ever differ.
+ */
+export async function fetchPartnerTotals(brandId: string) {
   const { data, error } = await supabase
     .from("product_variants")
-    .select(
-      "id,sku,barcode,size,color,stock_main,selling_price,products!inner(name,name_ar,brand_id)",
-    )
-    .eq("products.brand_id", brandId)
-    .gt("stock_main", 0)
-    .order("sku");
+    .select("id, sku, size, color, stock_incubator, products(name, name_ar)")
+    .eq("brand_id", brandId)
+    .gt("stock_incubator", 0);
   if (error) throw error;
   return data ?? [];
 }
@@ -153,10 +186,23 @@ export const incubatorsQueries = {
       queryFn: () => fetchIncubatorPayments(brandId),
       enabled: Boolean(brandId),
     }),
-  transferOptions: (brandId: string) =>
+  orderHolds: (brandId: string) =>
     queryOptions({
-      queryKey: incubatorsKeys.transferOptions(brandId),
-      queryFn: () => fetchTransferOptions(brandId),
+      queryKey: incubatorsKeys.orderHolds(brandId),
+      queryFn: () => fetchPartnerOrderHolds(brandId),
+      enabled: Boolean(brandId),
+    }),
+  orderPickups: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: incubatorsKeys.orderPickups(brandId, orderId),
+      queryFn: () => fetchOrderPartnerPickups(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
+      staleTime: 15_000,
+    }),
+  partnerTotals: (brandId: string) =>
+    queryOptions({
+      queryKey: incubatorsKeys.partnerTotals(brandId),
+      queryFn: () => fetchPartnerTotals(brandId),
       enabled: Boolean(brandId),
     }),
 };

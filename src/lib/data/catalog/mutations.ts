@@ -160,13 +160,14 @@ export async function deleteVariants(brandId: string, variantIds: string[]) {
 }
 
 /**
- * A manual stock change through the stock ledger (the server checks the
- * variant's brand and records the movement). `set` replaces the stock at the
- * location, `delta` adds to it.
+ * A manual change of the store's own stock, through the stock ledger (the server checks the
+ * caller and records the movement). `set` replaces the stock, `delta` adds to it. Pieces held
+ * at a partner are not adjusted here: they move with a transfer, a return or a sale on the
+ * partner's page, and the database refuses anything else.
  */
 export async function adjustVariantStock(args: {
   variantId: string;
-  location: "main" | "incubator";
+  location: "main";
   mode: "set" | "delta";
   value: number;
   note: string;
