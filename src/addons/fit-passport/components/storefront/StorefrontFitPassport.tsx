@@ -19,6 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useStorefront } from "@/lib/storefront-context";
 import {
+  fitRangeMessage,
+  fitRangeProblems,
   missingFitFields,
   normalizeFitProfiles,
   resolveFitProfiles,
@@ -159,6 +161,19 @@ export function StorefrontFitPassport({
         isAr
           ? "يرجى إكمال الحقول الإجبارية المعلّمة بنجمة."
           : "Complete the required fields marked with an asterisk.",
+      );
+    const rangeProblems = fitRangeProblems(measurements[profile] ?? {}, unit);
+    if (rangeProblems.length)
+      return toast.error(
+        fitRangeMessage(
+          rangeProblems,
+          (key) => {
+            const field = activeFields.find((f) => f.key === key);
+            return (isAr ? field?.label_ar : field?.label_en) || key;
+          },
+          unit,
+          isAr,
+        ),
       );
     const clean = Object.fromEntries(
       Object.entries(measurements).map(([kind, values]) => [

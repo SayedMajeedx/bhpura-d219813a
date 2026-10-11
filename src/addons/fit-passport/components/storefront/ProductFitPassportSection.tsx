@@ -7,6 +7,8 @@ import {
   resolveFitProfiles,
   fitProfileForProduct,
   normalizeFitProfiles,
+  fitRangeMessage,
+  fitRangeProblems,
   missingFitFields,
   FIT_PROFILE_FIELDS,
 } from "../../lib/fit-passport";
@@ -141,6 +143,24 @@ export function ProductFitPassportSection({
     })) ??
     [];
 
+  /** Tells the shopper which measurements cannot be right; true when there is one. */
+  const rangeError = (): boolean => {
+    const problems = fitRangeProblems(passportDraft, currentUnit);
+    if (problems.length === 0) return false;
+    toast.error(
+      fitRangeMessage(
+        problems,
+        (key) => {
+          const field = fields.find((f: { key: string }) => f.key === key);
+          return (isAr ? field?.label_ar : field?.label_en) || key;
+        },
+        currentUnit,
+        isAr,
+      ),
+    );
+    return true;
+  };
+
   const handleApplyPassport = () => {
     if (missingFitFields(fitProfiles, fitProfileType, passportDraft).length) {
       toast.error(
@@ -151,6 +171,7 @@ export function ProductFitPassportSection({
       );
       return;
     }
+    if (rangeError()) return;
 
     if (isGuest && brand?.slug) {
       try {
@@ -199,6 +220,7 @@ export function ProductFitPassportSection({
       );
       return;
     }
+    if (rangeError()) return;
     const cleanedProfile = Object.fromEntries(
       Object.entries(passportDraft)
         .filter(([, value]) => Number(value) > 0)

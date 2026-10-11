@@ -362,3 +362,66 @@ export function matchCustomFieldToMeasurement(
 
   return null;
 }
+
+/**
+ * What a measurement can plausibly be, so a slip of the finger (a bust of 655, a length of 12)
+ * is caught before a piece is cut to it. The bounds are wide on purpose: they cover children
+ * and adults, and a width measured flat as well as a full circumference. Inches; a field the
+ * list does not know gets the general bounds.
+ */
+const FIT_RANGES_IN: Record<string, readonly [number, number]> = {
+  length: [20, 75],
+  bust: [10, 80],
+  sleeve: [8, 40],
+  shoulder: [8, 30],
+  waist: [10, 80],
+  hips: [10, 90],
+  arm_width: [3, 30],
+};
+const GENERAL_FIT_RANGE_IN: readonly [number, number] = [1, 120];
+const CM_PER_INCH = 2.54;
+
+export type FitUnit = "in" | "cm";
+export type FitRangeProblem = { key: string; value: number; min: number; max: number };
+
+/** The least and most a field can be, in the unit the shopper is typing in. */
+export function fitFieldRange(key: string, unit: FitUnit): { min: number; max: number } {
+  const [min, max] = FIT_RANGES_IN[key] ?? GENERAL_FIT_RANGE_IN;
+  return unit === "cm"
+    ? { min: Math.round(min * CM_PER_INCH), max: Math.round(max * CM_PER_INCH) }
+    : { min, max };
+}
+
+/** The filled-in measurements that cannot be right, each with the bounds it broke. */
+export function fitRangeProblems(
+  values: FitMeasurements | null | undefined,
+  unit: FitUnit,
+): FitRangeProblem[] {
+  const problems: FitRangeProblem[] = [];
+  for (const [key, raw] of Object.entries(values ?? {})) {
+    if (raw === "" || raw === null || raw === undefined) continue;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value <= 0) continue; // "missing" is another check
+    const { min, max } = fitFieldRange(key, unit);
+    if (value < min || value > max) problems.push({ key, value, min, max });
+  }
+  return problems;
+}
+
+/** One sentence naming each measurement to check and what it can be. */
+export function fitRangeMessage(
+  problems: readonly FitRangeProblem[],
+  labelOf: (key: string) => string,
+  unit: FitUnit,
+  isAr: boolean,
+): string {
+  const unitWord = unit === "cm" ? (isAr ? "سم" : "cm") : isAr ? "إنش" : "in";
+  const parts = problems.map((problem) =>
+    isAr
+      ? `${labelOf(problem.key)} (من ${problem.min} إلى ${problem.max} ${unitWord})`
+      : `${labelOf(problem.key)} (${problem.min} to ${problem.max} ${unitWord})`,
+  );
+  return isAr
+    ? `تحقق من هذه القياسات: ${parts.join("، ")}`
+    : `Check these measurements: ${parts.join(", ")}`;
+}
