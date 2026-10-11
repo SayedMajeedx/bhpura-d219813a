@@ -239,7 +239,14 @@ export async function inspectAndRestockReturnItem(params: {
   condition: ReturnItemCondition;
   restockBranchId?: string;
   inspectionNotes?: string;
-}): Promise<{ success: boolean; condition?: string; restocked?: boolean; error?: string }> {
+}): Promise<{
+  success: boolean;
+  condition?: string;
+  restocked?: boolean;
+  /** The piece was made to order: it is never put back into ready stock. */
+  madeToOrder?: boolean;
+  error?: string;
+}> {
   try {
     const { data, error } = await (supabase.rpc as any)("rpc_inspect_and_restock_return_item", {
       p_brand_id: params.brandId,
@@ -261,6 +268,7 @@ export async function inspectAndRestockReturnItem(params: {
       success: true,
       condition: data.condition,
       restocked: data.restocked,
+      madeToOrder: data.made_to_order === true,
     };
   } catch (err: any) {
     return { success: false, error: err.message || "Failed to inspect item" };
