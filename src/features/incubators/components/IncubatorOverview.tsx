@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
+import { settlementNote } from "@/features/incubators/lib/summary";
 
 /** The partner picker: every partner with the pieces it holds and what it owes. */
 export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
@@ -43,8 +44,13 @@ export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
                 )}
               </span>
             </span>
-            <span className="shrink-0 text-xs font-bold text-primary">
+            <span className="shrink-0 text-end text-xs font-bold text-primary">
               {money(chip.due, chip.currency)}
+              {chip.overdue > 0 && (
+                <span className="block font-semibold text-destructive">
+                  {isAr ? "متأخر" : "Overdue"}
+                </span>
+              )}
             </span>
           </Button>
         ))}
@@ -60,8 +66,14 @@ export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
 
 /** The open partner: who it is, what can be done with it, and its figures. */
 export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
-  const { current, isAr, money, openDialog, summary } = page;
+  const { current, isAr, lang, locale, money, openDialog, settlement, summary } = page;
   if (!current) return null;
+  const settles = settlementNote(settlement, {
+    money,
+    lang,
+    date: (day) =>
+      new Date(`${day}T12:00:00`).toLocaleDateString(locale, { day: "numeric", month: "long" }),
+  });
   const packaging =
     current.packaging_policy === "our_bom"
       ? isAr
@@ -93,6 +105,8 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
                 {isAr ? "موقوفة: لا تُحوَّل لها بضاعة" : "Inactive: no stock can be sent"}
               </Badge>
             )}
+            {settles && <Badge variant="outline">{settles.next}</Badge>}
+            {settles?.overdue && <Badge variant="destructive">{settles.overdue}</Badge>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

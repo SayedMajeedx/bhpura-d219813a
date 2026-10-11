@@ -3878,6 +3878,9 @@ export type Database = {
           payment_date: string;
           payment_method: string | null;
           reference: string | null;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
         };
         Insert: {
           amount: number;
@@ -3890,6 +3893,9 @@ export type Database = {
           payment_date?: string;
           payment_method?: string | null;
           reference?: string | null;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
         };
         Update: {
           amount?: number;
@@ -3902,6 +3908,9 @@ export type Database = {
           payment_date?: string;
           payment_method?: string | null;
           reference?: string | null;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
         };
         Relationships: [
           {
@@ -9745,6 +9754,23 @@ export type Database = {
         };
         Returns: Json;
       };
+      incubator_summaries: {
+        Args: { p_brand_id: string; p_today?: string; p_tz?: string };
+        Returns: {
+          commission: number;
+          due: number;
+          gross: number;
+          incubator_id: string;
+          last_settlement: string;
+          net: number;
+          next_settlement: string;
+          overdue: number;
+          paid: number;
+          sold_units: number;
+          stock_value: number;
+          units: number;
+        }[];
+      };
       is_active: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };
       is_brand_admin: { Args: never; Returns: boolean };
@@ -10759,6 +10785,10 @@ export type Database = {
         };
         Returns: string;
       };
+      transfer_stock_to_incubator_batch: {
+        Args: { p_incubator_id: string; p_items: Json; p_notes?: string };
+        Returns: number;
+      };
       update_incubator_inventory_item: {
         Args: {
           p_commission_type: string;
@@ -10810,6 +10840,10 @@ export type Database = {
           p_subtotal: number;
         };
         Returns: Json;
+      };
+      void_incubator_payment: {
+        Args: { p_payment_id: string; p_reason: string };
+        Returns: undefined;
       };
     };
     Enums: {

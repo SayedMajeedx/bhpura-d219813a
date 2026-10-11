@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { batchTransferRefusal } from "@/features/incubators/lib/errors";
 import {
   incubatorsQueries,
   invalidateIncubators,
-  transferStockToIncubator,
+  transferStockBatchToIncubator,
 } from "@/lib/data/incubators";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -382,59 +383,45 @@ export function BatchIncubatorTransferModal({
     }
 
     setIsSubmitting(true);
-    let successCount = 0;
-    const errors: string[] = [];
-
     try {
       const commType = selectedIncubator?.commission_type || "percentage";
       const commVal = Number(selectedIncubator?.commission_value || 0);
 
-      for (const row of activeRows) {
-        try {
-          await transferStockToIncubator({
-            incubatorId: selectedIncubatorId,
-            variantId: row.variantId,
-            quantity: row.transferQty,
-            externalCode: row.externalCode.trim() || null,
-            price: Number(row.consignmentPrice),
-            commissionType: commType,
-            commissionValue: commVal,
-            notes: transferNotes.trim() || null,
-          });
-          successCount++;
-        } catch (err: any) {
-          console.error(`Failed transferring variant ${row.variantId}:`, err);
-          errors.push(row.variantLabel);
-        }
-      }
+      // One transaction: every piece moves, or none does. (Sent one at a time, a failure
+      // midway left half a transfer behind while the screen announced the whole.)
+      const pieces = await transferStockBatchToIncubator({
+        incubatorId: selectedIncubatorId,
+        items: activeRows.map((row) => ({
+          variantId: row.variantId,
+          quantity: row.transferQty,
+          externalCode: row.externalCode.trim() || null,
+          price: Number(row.consignmentPrice),
+          commissionType: commType,
+          commissionValue: commVal,
+        })),
+        notes: transferNotes.trim() || null,
+      });
 
-      if (successCount > 0) {
-        toast.success(
-          isAr
-            ? `تم تحويل ${totalPieces} قطعة بنجاح إلى حاضنة ${selectedIncubator?.name || ""}`
-            : `Successfully transferred ${totalPieces} items to ${selectedIncubator?.name || "incubator"}`,
-        );
+      toast.success(
+        isAr
+          ? `تم تحويل ${pieces} قطعة بنجاح إلى حاضنة ${selectedIncubator?.name || ""}`
+          : `Successfully transferred ${pieces} items to ${selectedIncubator?.name || "incubator"}`,
+      );
 
-        // Invalidate all inventory and incubator queries
-        await Promise.all([
-          qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) }),
-          invalidateIncubators(qc, brandId),
-        ]);
+      // Invalidate all inventory and incubator queries
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) }),
+        invalidateIncubators(qc, brandId),
+      ]);
 
-        if (onSuccess) onSuccess();
-        onOpenChange(false);
-      }
-
-      if (errors.length > 0) {
-        toast.error(
-          isAr
-            ? `تعذر تحويل ${errors.length} عنصر بسبب قيود المخزون`
-            : `Failed to transfer ${errors.length} items due to stock constraints`,
-        );
-      }
-    } catch (err: any) {
-      console.error("Batch incubator transfer error:", err);
-      toast.error(isAr ? "حدث خطأ أثناء تنفيذ التحويل" : "An error occurred during transfer");
+      if (onSuccess) onSuccess();
+      onOpenChange(false);
+    } catch (err) {
+      const pieceOf = (variantId: string) => {
+        const row = activeRows.find((item) => item.variantId === variantId);
+        return row ? `${row.productName} - ${row.variantLabel}` : null;
+      };
+      toast.error(batchTransferRefusal(err, pieceOf, isAr ? "ar" : "en"));
     } finally {
       setIsSubmitting(false);
     }

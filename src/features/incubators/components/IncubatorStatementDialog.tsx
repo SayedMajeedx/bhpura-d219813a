@@ -37,6 +37,7 @@ const PRESETS: Array<{ id: StatementPreset | "custom"; en: string; ar: string }>
  */
 export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }) {
   const { closeDialog, current, dialog, isAr, lang, money, payments, sales, storeName } = page;
+  const balanceDue = page.summary.due;
   const [preset, setPreset] = useState<StatementPreset | "custom">("this_month");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -47,8 +48,11 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
     [preset, from, to],
   );
   const statement = useMemo(
-    () => (current ? buildStatement({ incubator: current, sales, payments, period, lang }) : null),
-    [current, sales, payments, period, lang],
+    () =>
+      current
+        ? buildStatement({ incubator: current, sales, payments, period, lang, balanceDue })
+        : null,
+    [current, sales, payments, period, lang, balanceDue],
   );
   if (!current || !statement) return null;
 

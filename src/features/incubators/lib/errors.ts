@@ -56,6 +56,22 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
     ar: "هذه القطعة لا تتبع هذا المتجر",
   },
   VARIANT_NOT_FOUND: { en: "The piece was not found", ar: "القطعة غير موجودة" },
+  VOID_REASON_REQUIRED: {
+    en: "Say why the payment is being voided (a few words)",
+    ar: "اكتب سبب إلغاء الدفعة (بضع كلمات)",
+  },
+  PAYMENT_ALREADY_VOIDED: {
+    en: "This payment was already voided",
+    ar: "تم إلغاء هذه الدفعة مسبقاً",
+  },
+  NOTHING_TO_TRANSFER: {
+    en: "Choose at least one piece to transfer",
+    ar: "اختر قطعة واحدة على الأقل للتحويل",
+  },
+  TOO_MANY_PIECES_IN_ONE_TRANSFER: {
+    en: "That is too many different pieces for one transfer; send them in two",
+    ar: "عدد الأصناف كبير على تحويل واحد؛ قسّمه على تحويلين",
+  },
   NOT_AUTHORIZED: {
     en: "You do not have permission to do this (or the partner is inactive)",
     ar: "لا تملك صلاحية هذه العملية (أو أن الحاضنة موقوفة)",
@@ -63,6 +79,23 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
 };
 
 const FALLBACK = { en: "Could not save", ar: "تعذر حفظ العملية" };
+
+/**
+ * A batch transfer's refusal names the piece it stopped on (`<code>:<variant id>`): the reason
+ * in words, with that piece's own name in front when the screen knows it. Nothing was moved.
+ */
+export function batchTransferRefusal(
+  error: unknown,
+  pieceOf: (variantId: string) => string | null | undefined,
+  lang: Lang,
+): string {
+  const text = String((error as { message?: unknown } | null)?.message ?? "");
+  const variantId = /:([0-9a-f]{8}-[0-9a-f-]{27})\s*$/i.exec(text)?.[1] ?? null;
+  const piece = variantId ? pieceOf(variantId) : null;
+  const reason = incubatorErrorMessage(error, lang);
+  const nothing = lang === "ar" ? "لم يُحوَّل شيء." : "Nothing was transferred.";
+  return piece ? `${piece}: ${reason}. ${nothing}` : `${reason}. ${nothing}`;
+}
 
 /** The refusal in words. A reason that is not a known code is shown as it is. */
 export function incubatorErrorMessage(error: unknown, lang: Lang): string {

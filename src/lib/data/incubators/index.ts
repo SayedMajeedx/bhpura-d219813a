@@ -20,6 +20,9 @@ export const incubatorsKeys = {
   payments: (brandId: string) => [...incubatorsKeys.all(brandId), "payments"] as const,
   /** Which sales each payment settled. */
   allocations: (brandId: string) => [...incubatorsKeys.all(brandId), "allocations"] as const,
+  /** Every partner's figures and settlement, as of a day on the reader's calendar. */
+  summaries: (brandId: string, today: string, timeZone: string) =>
+    [...incubatorsKeys.all(brandId), "summaries", today, timeZone] as const,
   /** One partner's history, a page at a time. */
   movements: (brandId: string, incubatorId: string, page: number, pageSize: number) =>
     [...incubatorsKeys.all(brandId), "movements", incubatorId, page, pageSize] as const,
@@ -182,18 +185,43 @@ export async function fetchPartnerTotals(brandId: string) {
   return data ?? [];
 }
 
-/** Some products' variants with the stock each incubator holds of them. */
+/** More product ids than this are not put in the address: the whole brand is read instead. */
+export const BATCH_VARIANTS_ID_LIMIT = 60;
+
+/**
+ * Some products' variants with the stock each incubator holds of them. A long list of products
+ * (the partners' page offers the whole catalog) is not sent as ids: hundreds of them make an
+ * address the server refuses, so the brand's variants are read and the wanted ones kept.
+ */
 export async function fetchBatchTransferVariants(brandId: string, productIds: readonly string[]) {
   if (productIds.length === 0) return [];
-  const { data, error } = await supabase
+  const byIds = productIds.length <= BATCH_VARIANTS_ID_LIMIT;
+  const base = supabase
     .from("product_variants")
     .select(
       "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, incubator_inventory(quantity, incubator_id)",
     )
-    .eq("brand_id", brandId)
-    .in("product_id", [...productIds]);
+    .eq("brand_id", brandId);
+  const { data, error } = await (byIds ? base.in("product_id", [...productIds]) : base);
   if (error) throw error;
-  return withVariantCosts(data ?? [], await fetchVariantCosts(brandId));
+  const wanted = new Set(productIds);
+  const rows = byIds ? (data ?? []) : (data ?? []).filter((row) => wanted.has(row.product_id));
+  return withVariantCosts(rows, await fetchVariantCosts(brandId));
+}
+
+/**
+ * Every partner's figures, added up by the database (so they do not depend on how many sales
+ * the page has loaded), with its settlement: when the last and the next one fall, and what is
+ * overdue. `today` and `timeZone` are the reader's own calendar day and zone.
+ */
+export async function fetchIncubatorSummaries(brandId: string, today: string, timeZone: string) {
+  const { data, error } = await supabase.rpc("incubator_summaries", {
+    p_brand_id: brandId,
+    p_today: today,
+    p_tz: timeZone,
+  });
+  if (error) throw error;
+  return data ?? [];
 }
 
 export const incubatorsQueries = {
@@ -246,6 +274,12 @@ export const incubatorsQueries = {
       queryKey: incubatorsKeys.movements(brandId, incubatorId, page, pageSize),
       queryFn: () => fetchIncubatorMovements({ brandId, incubatorId, page, pageSize }),
       enabled: Boolean(brandId && incubatorId),
+    }),
+  summaries: (brandId: string, today: string, timeZone: string) =>
+    queryOptions({
+      queryKey: incubatorsKeys.summaries(brandId, today, timeZone),
+      queryFn: () => fetchIncubatorSummaries(brandId, today, timeZone),
+      enabled: Boolean(brandId),
     }),
   orderHolds: (brandId: string) =>
     queryOptions({
@@ -378,6 +412,52 @@ export async function recordIncubatorPayment(args: {
     p_notes: args.notes ?? undefined,
   });
   if (error) throw error;
+}
+
+/**
+ * Takes a payment back: the sales it settled owe their part again, and the payment stays on
+ * record as voided with the reason.
+ */
+export async function voidIncubatorPayment(paymentId: string, reason: string) {
+  const { error } = await supabase.rpc("void_incubator_payment", {
+    p_payment_id: paymentId,
+    p_reason: reason,
+  });
+  if (error) throw error;
+}
+
+export type BatchTransferItem = {
+  variantId: string;
+  quantity: number;
+  externalCode?: string | null;
+  price: number;
+  commissionType: string;
+  commissionValue: number;
+};
+
+/**
+ * Sends several pieces to a partner in one transaction: all of them, or none. A refusal names
+ * the piece it happened on (`<code>:<variant id>`). Returns how many pieces moved.
+ */
+export async function transferStockBatchToIncubator(args: {
+  incubatorId: string;
+  items: readonly BatchTransferItem[];
+  notes?: string | null;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc("transfer_stock_to_incubator_batch", {
+    p_incubator_id: args.incubatorId,
+    p_items: args.items.map((item) => ({
+      variant_id: item.variantId,
+      quantity: item.quantity,
+      external_code: item.externalCode ?? "",
+      price: item.price,
+      commission_type: item.commissionType,
+      commission_value: item.commissionValue,
+    })),
+    p_notes: args.notes ?? undefined,
+  });
+  if (error) throw error;
+  return Number(data ?? 0);
 }
 
 /** Changes a stock line's code, consignment price and commission. */

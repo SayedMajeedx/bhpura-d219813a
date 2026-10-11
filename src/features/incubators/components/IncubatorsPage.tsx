@@ -18,6 +18,7 @@ import {
 import {
   IncubatorFormDialog,
   ReverseSaleDialog,
+  VoidPaymentDialog,
 } from "@/features/incubators/components/IncubatorDialogs";
 import { IncubatorStatementDialog } from "@/features/incubators/components/IncubatorStatementDialog";
 import { PartnerStockNotices } from "@/features/incubators/components/PartnerStockNotices";
@@ -124,6 +125,7 @@ export function IncubatorsPage() {
 
       <IncubatorFormDialog page={page} />
       <ReverseSaleDialog page={page} />
+      <VoidPaymentDialog page={page} />
       <IncubatorStatementDialog page={page} />
       <BatchIncubatorTransferModal
         open={page.dialog === "transfer"}

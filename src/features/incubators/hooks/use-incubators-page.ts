@@ -20,6 +20,7 @@ import {
   syncIncubatorPrices,
   updateIncubator,
   updateIncubatorItem,
+  voidIncubatorPayment,
 } from "@/lib/data/incubators";
 import { incubatorErrorMessage } from "@/features/incubators/lib/errors";
 import {
@@ -34,9 +35,12 @@ import {
 } from "@/features/incubators/lib/forms";
 import {
   filterStock,
+  calendarDay,
   incubatorChips,
   incubatorSummary,
+  serverSummary,
   settlementsByPayment,
+  type ServerSummary,
 } from "@/features/incubators/lib/summary";
 import type {
   Incubator,
@@ -54,6 +58,9 @@ const asStock = (rows: unknown[]) => rows as StockItem[];
 const asSales = (rows: unknown[]) => rows as Sale[];
 const asPayments = (rows: unknown[]) => rows as Payment[];
 const asAllocations = (rows: unknown[]) => rows as PaymentAllocation[];
+/** Each partner's figures from the database, by partner. */
+const asSummaries = (rows: Array<Parameters<typeof serverSummary>[0] & { incubator_id: string }>) =>
+  new Map<string, ServerSummary>(rows.map((row) => [row.incubator_id, serverSummary(row)]));
 const asMovements = (page: { rows: unknown[]; total: number }) => ({
   rows: page.rows as Movement[],
   total: page.total,
@@ -83,6 +90,7 @@ export function useIncubatorsPage() {
   const [dialog, setDialog] = useState<IncubatorDialog>(null);
   const [activeItem, setActiveItem] = useState<StockItem | null>(null);
   const [saleToReverse, setSaleToReverse] = useState<Sale | null>(null);
+  const [paymentToVoid, setPaymentToVoid] = useState<Payment | null>(null);
   const [includeZeroStock, setIncludeZeroStock] = useState(false);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -96,12 +104,9 @@ export function useIncubatorsPage() {
       { table: "incubators", brandId: brand.id, queryKey: incubatorsKeys.list(brand.id) },
       // A partner's count also moves with an order: refresh what orders hold along with it.
       { table: "incubator_inventory", brandId: brand.id, queryKey: incubatorsKeys.all(brand.id) },
-      { table: "incubator_sales", brandId: brand.id, queryKey: incubatorsKeys.sales(brand.id) },
-      {
-        table: "incubator_payments",
-        brandId: brand.id,
-        queryKey: incubatorsKeys.payments(brand.id),
-      },
+      // A sale or a payment recorded elsewhere moves the figures and the settlements too.
+      { table: "incubator_sales", brandId: brand.id, queryKey: incubatorsKeys.all(brand.id) },
+      { table: "incubator_payments", brandId: brand.id, queryKey: incubatorsKeys.all(brand.id) },
     ],
     `incubators-${brand.id}`,
   );
@@ -152,13 +157,26 @@ export function useIncubatorsPage() {
     () => allPayments.filter((item) => item.incubator_id === currentId),
     [allPayments, currentId],
   );
-  const summary = useMemo(
+  // The figures are added up by the database, so they do not depend on how many sales this
+  // page has loaded; the loaded rows stand in until they arrive.
+  const summariesQ = useQuery({
+    ...incubatorsQueries.summaries(
+      brand.id,
+      calendarDay(),
+      Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    ),
+    select: asSummaries,
+  });
+  const serverFigures = currentId ? summariesQ.data?.get(currentId) : undefined;
+  const loadedFigures = useMemo(
     () => incubatorSummary(ownStock, sales, payments),
     [ownStock, sales, payments],
   );
+  const summary = serverFigures ?? loadedFigures;
+  const settlement = serverFigures?.settlement ?? null;
   const chips = useMemo(
-    () => incubatorChips(incubators, allStock, allSales),
-    [incubators, allStock, allSales],
+    () => incubatorChips(incubators, allStock, allSales, summariesQ.data),
+    [incubators, allStock, allSales, summariesQ.data],
   );
   const settlements = useMemo(
     () => settlementsByPayment(allocationsQ.data ?? [], sales),
@@ -288,6 +306,26 @@ export function useIncubatorsPage() {
     }
   }
 
+  /** Takes a payment back; the reason is kept with it. A refusal leaves the dialog open. */
+  async function voidPayment(reason: string) {
+    if (!paymentToVoid) return;
+    setBusy(true);
+    try {
+      await voidIncubatorPayment(paymentToVoid.id, reason);
+      toast.success(
+        isAr
+          ? "تم إلغاء الدفعة، وعادت مبيعاتها مستحقة"
+          : "Payment voided; the sales it settled are due again",
+      );
+      setPaymentToVoid(null);
+      await invalidateData();
+    } catch (error) {
+      toast.error(incubatorErrorMessage(error, language));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return {
     brand,
     lang: language,
@@ -311,6 +349,7 @@ export function useIncubatorsPage() {
 
     allStock,
     summary,
+    settlement,
     search,
     setSearch,
     includeZeroStock,
@@ -349,6 +388,9 @@ export function useIncubatorsPage() {
     saleToReverse,
     setSaleToReverse,
     reverseSale,
+    paymentToVoid,
+    setPaymentToVoid,
+    voidPayment,
     invalidateData,
   };
 }

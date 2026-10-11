@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { incubatorErrorMessage } from "../src/features/incubators/lib/errors";
+import { batchTransferRefusal, incubatorErrorMessage } from "../src/features/incubators/lib/errors";
 import {
   incubatorDetails,
   incubatorDetailsProblem,
@@ -21,6 +21,7 @@ import {
   statementPeriod,
 } from "../src/features/incubators/lib/statement";
 import {
+  calendarDay,
   commissionTerms,
   filterStock,
   incubatorChips,
@@ -29,6 +30,8 @@ import {
   saleProfit,
   saleState,
   saleStateLabel,
+  serverSummary,
+  settlementNote,
   settlementsByPayment,
 } from "../src/features/incubators/lib/summary";
 import type {
@@ -503,5 +506,150 @@ describe("a partner's statement", () => {
       "Paid in the period: BHD 20.000",
       "Balance due today: BHD 54.000",
     ]);
+  });
+});
+
+describe("the database's figures for a partner", () => {
+  const row = {
+    incubator_id: "i1",
+    units: 3,
+    stock_value: "90.000",
+    sold_units: 4,
+    gross: "120.000",
+    commission: "12.000",
+    net: "108.000",
+    paid: "54.000",
+    due: "54.000",
+    overdue: "10.500",
+    last_settlement: "2026-10-05",
+    next_settlement: "2026-11-05",
+  };
+
+  it("are read as numbers, with the settlement beside them", () => {
+    expect(serverSummary(row)).toEqual({
+      units: 3,
+      stockValue: 90,
+      soldUnits: 4,
+      gross: 120,
+      commission: 12,
+      net: 108,
+      paid: 54,
+      due: 54,
+      settlement: { last: "2026-10-05", next: "2026-11-05", overdue: 10.5 },
+    });
+    expect(serverSummary({}).settlement).toEqual({ last: null, next: null, overdue: 0 });
+  });
+
+  it("replace the loaded rows in the picker once they arrive, and mark what is late", () => {
+    const summaries = new Map([["i1", serverSummary(row)]]);
+    const chips = incubatorChips(
+      [partner(), partner({ id: "i2", name: "Arcade" })],
+      [stockLine({ quantity: 99 })],
+      [sale({ net_due: 999 })],
+      summaries,
+    );
+    expect(chips[0]).toMatchObject({ units: 3, due: 54, overdue: 10.5 });
+    // A partner the database said nothing about keeps the loaded figures.
+    expect(chips[1]).toMatchObject({ units: 0, due: 0, overdue: 0 });
+  });
+
+  it("do not count a voided payment as money received", () => {
+    const figures = incubatorSummary(
+      [],
+      [sale()],
+      [payment({ amount: 20 }), payment({ id: "pay2", amount: 30, voided_at: "2026-09-21" })],
+    );
+    expect(figures.paid).toBe(20);
+  });
+
+  it("use the reader's own calendar day", () => {
+    expect(calendarDay(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
+  });
+});
+
+describe("a partner's settlement", () => {
+  const options = { money, date: (day: string) => `<${day}>`, lang: "en" as const };
+
+  it("says when the next one is, and what is late since the last", () => {
+    expect(
+      settlementNote({ last: "2026-10-05", next: "2026-11-05", overdue: 10.5 }, options),
+    ).toEqual({
+      next: "Next settlement: <2026-11-05>",
+      overdue: "Overdue since <2026-10-05>: BHD 10.500",
+    });
+    expect(settlementNote({ last: "2026-10-05", next: "2026-11-05", overdue: 0 }, options)).toEqual(
+      { next: "Next settlement: <2026-11-05>", overdue: null },
+    );
+    expect(
+      settlementNote(
+        { last: "2026-10-05", next: "2026-11-05", overdue: 3 },
+        { ...options, lang: "ar" },
+      ),
+    ).toEqual({
+      next: "التسوية القادمة: <2026-11-05>",
+      overdue: "متأخر منذ <2026-10-05>: BHD 3.000",
+    });
+  });
+
+  it("says nothing for a partner with no settlement day", () => {
+    expect(settlementNote({ last: null, next: null, overdue: 0 }, options)).toBeNull();
+    expect(settlementNote(null, options)).toBeNull();
+  });
+});
+
+describe("a statement after a payment was voided", () => {
+  it("leaves the voided payment out, and owes what the database says is owed", () => {
+    const statement = buildStatement({
+      incubator: partner(),
+      sales: [sale()],
+      payments: [payment(), payment({ id: "pay2", amount: 30, voided_at: "2026-09-21" })],
+      period: statementPeriod("all", new Date(2026, 8, 20)),
+      lang: "en",
+      balanceDue: 12.345,
+    });
+    expect(statement.payments.map((line) => line.id)).toEqual(["pay1"]);
+    expect(statement.paid).toBe(20);
+    expect(statement.balanceDue).toBe(12.345);
+  });
+});
+
+describe("a batch transfer that is refused", () => {
+  const variantId = "00000000-0000-4000-8000-0000000000f2";
+  const pieceOf = (id: string) => (id === variantId ? "Abaya - M / Black" : null);
+
+  it("names the piece it stopped on, says why, and that nothing moved", () => {
+    expect(
+      batchTransferRefusal(new Error(`INSUFFICIENT_MAIN_STOCK:${variantId}`), pieceOf, "en"),
+    ).toBe(
+      "Abaya - M / Black: The store does not have that many pieces to transfer. Nothing was transferred.",
+    );
+    expect(
+      batchTransferRefusal(new Error(`INSUFFICIENT_MAIN_STOCK:${variantId}`), pieceOf, "ar"),
+    ).toBe("Abaya - M / Black: الكمية في مخزون المحل غير كافية للتحويل. لم يُحوَّل شيء.");
+  });
+
+  it("still says why when the piece is not one the screen knows", () => {
+    expect(batchTransferRefusal(new Error("NOT_AUTHORIZED"), pieceOf, "en")).toBe(
+      "You do not have permission to do this (or the partner is inactive). Nothing was transferred.",
+    );
+    expect(
+      batchTransferRefusal(
+        new Error("NOT_AUTHORIZED:11111111-1111-4111-8111-111111111111"),
+        pieceOf,
+        "en",
+      ),
+    ).toMatch(/^You do not have permission/);
+  });
+
+  it("has words for the new refusals", () => {
+    for (const code of [
+      "VOID_REASON_REQUIRED",
+      "PAYMENT_ALREADY_VOIDED",
+      "NOTHING_TO_TRANSFER",
+      "TOO_MANY_PIECES_IN_ONE_TRANSFER",
+    ]) {
+      expect(incubatorErrorMessage(new Error(code), "en")).not.toBe("Could not save");
+      expect(incubatorErrorMessage(new Error(code), "ar")).not.toBe("تعذر حفظ العملية");
+    }
   });
 });

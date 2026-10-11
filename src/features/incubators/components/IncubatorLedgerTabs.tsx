@@ -136,6 +136,7 @@ export function IncubatorSalesTab({ page }: { page: IncubatorsPageState }) {
 /** The payments received, each with the sales it settled. */
 export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
   const {
+    busy,
     isAr,
     lang,
     locale,
@@ -143,6 +144,7 @@ export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
     pagedPayments,
     payments,
     paymentsPaging,
+    setPaymentToVoid,
     setPaymentsPaging,
     settlements,
   } = page;
@@ -151,8 +153,9 @@ export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
       <Card className="divide-y divide-border border-border">
         {pagedPayments.map((payment) => {
           const settled = settlements.get(payment.id) ?? [];
+          const voided = Boolean(payment.voided_at);
           return (
-            <div key={payment.id} className="p-4">
+            <div key={payment.id} className={`p-4 ${voided ? "opacity-60" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="break-words text-sm font-bold" dir="auto">
@@ -165,13 +168,34 @@ export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
                       : ""}
                   </p>
                 </div>
-                <div className="shrink-0 text-end">
-                  <p className="font-bold">{money(Number(payment.amount))}</p>
-                  <Badge variant="secondary" className="mt-1">
-                    {isAr ? "مستلمة" : "Received"}
-                  </Badge>
+                <div className="flex shrink-0 items-start gap-2">
+                  <div className="text-end">
+                    <p className={`font-bold ${voided ? "line-through" : ""}`}>
+                      {money(Number(payment.amount))}
+                    </p>
+                    <Badge variant="secondary" className="mt-1">
+                      {voided ? (isAr ? "ملغاة" : "Voided") : isAr ? "مستلمة" : "Received"}
+                    </Badge>
+                  </div>
+                  {!voided && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={busy}
+                      className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                      onClick={() => setPaymentToVoid(payment)}
+                    >
+                      <RotateCcw className="me-1 h-3.5 w-3.5" />
+                      {isAr ? "إلغاء الدفعة" : "Void"}
+                    </Button>
+                  )}
                 </div>
               </div>
+              {voided && payment.void_reason && (
+                <p className="mt-2 break-words text-xs text-muted-foreground" dir="auto">
+                  {isAr ? "سبب الإلغاء" : "Voided"}: {payment.void_reason}
+                </p>
+              )}
               {settled.length > 0 && (
                 <div className="mt-3 rounded-lg bg-muted/40 p-2.5">
                   <p className="text-xs font-semibold text-muted-foreground">

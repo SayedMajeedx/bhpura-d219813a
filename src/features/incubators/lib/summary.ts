@@ -50,8 +50,90 @@ export function incubatorSummary(
     gross: sum(confirmed, (sale) => sale.gross_amount),
     commission: sum(confirmed, (sale) => sale.commission_amount),
     net: sum(confirmed, (sale) => sale.net_due),
-    paid: sum(payments, (payment) => payment.amount),
+    paid: sum(
+      payments.filter((payment) => !payment.voided_at),
+      (payment) => payment.amount,
+    ),
     due: incubatorAmountDue(sales),
+  };
+}
+
+/** When a partner settles, and what is late: as the database works it out. */
+export type Settlement = {
+  /** `YYYY-MM-DD`; null for a partner with no settlement day. */
+  last: string | null;
+  next: string | null;
+  /** Still unpaid for sales made before the last settlement day. */
+  overdue: number;
+};
+export type ServerSummary = IncubatorSummary & { settlement: Settlement };
+
+/** A row of `incubator_summaries`, as the page reads it. */
+export function serverSummary(row: {
+  units?: number | string | null;
+  stock_value?: number | string | null;
+  sold_units?: number | string | null;
+  gross?: number | string | null;
+  commission?: number | string | null;
+  net?: number | string | null;
+  paid?: number | string | null;
+  due?: number | string | null;
+  overdue?: number | string | null;
+  last_settlement?: string | null;
+  next_settlement?: string | null;
+}): ServerSummary {
+  const amount = (value: number | string | null | undefined) => fils(Number(value ?? 0));
+  return {
+    units: Number(row.units ?? 0),
+    stockValue: amount(row.stock_value),
+    soldUnits: Number(row.sold_units ?? 0),
+    gross: amount(row.gross),
+    commission: amount(row.commission),
+    net: amount(row.net),
+    paid: amount(row.paid),
+    due: amount(row.due),
+    settlement: {
+      last: row.last_settlement ?? null,
+      next: row.next_settlement ?? null,
+      overdue: amount(row.overdue),
+    },
+  };
+}
+
+/** The reader's calendar day, `YYYY-MM-DD`: "today" is theirs, not the server's. */
+export function calendarDay(now: Date = new Date()): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
+/**
+ * What a partner's page says about its settlement: when the next one is, and what is late.
+ * Null for a partner with no settlement day.
+ */
+export function settlementNote(
+  settlement: Settlement | null | undefined,
+  options: { money: (amount: number) => string; date: (day: string) => string; lang: "ar" | "en" },
+): { next: string; overdue: string | null } | null {
+  if (!settlement?.next) return null;
+  const { money, date, lang } = options;
+  const since = settlement.last ? date(settlement.last) : null;
+  const late = money(settlement.overdue);
+  const overdue =
+    settlement.overdue <= 0
+      ? null
+      : lang === "ar"
+        ? since
+          ? `متأخر منذ ${since}: ${late}`
+          : `متأخر: ${late}`
+        : since
+          ? `Overdue since ${since}: ${late}`
+          : `Overdue: ${late}`;
+  return {
+    next:
+      lang === "ar"
+        ? `التسوية القادمة: ${date(settlement.next)}`
+        : `Next settlement: ${date(settlement.next)}`,
+    overdue,
   };
 }
 
@@ -62,24 +144,38 @@ export type IncubatorChip = {
   isActive: boolean;
   units: number;
   due: number;
+  /** Late past its settlement day. */
+  overdue: number;
 };
 
-/** The partner picker: each partner with the pieces it holds and what it owes. */
+/**
+ * The partner picker: each partner with the pieces it holds and what it owes. The database's
+ * figures are used when they have arrived (`summaries`); until then, the loaded rows.
+ */
 export function incubatorChips(
   incubators: readonly Incubator[],
   stock: readonly StockItem[],
   sales: readonly Sale[],
+  summaries?: ReadonlyMap<string, ServerSummary>,
 ): IncubatorChip[] {
-  return incubators.map((incubator) => ({
-    id: incubator.id,
-    name: incubator.name,
-    currency: incubator.currency,
-    isActive: incubator.is_active !== false,
-    units: stock
-      .filter((row) => row.incubator_id === incubator.id)
-      .reduce((total, row) => total + Number(row.quantity), 0),
-    due: incubatorAmountDue(sales.filter((sale) => sale.incubator_id === incubator.id)),
-  }));
+  return incubators.map((incubator) => {
+    const server = summaries?.get(incubator.id);
+    return {
+      id: incubator.id,
+      name: incubator.name,
+      currency: incubator.currency,
+      isActive: incubator.is_active !== false,
+      units:
+        server?.units ??
+        stock
+          .filter((row) => row.incubator_id === incubator.id)
+          .reduce((total, row) => total + Number(row.quantity), 0),
+      due:
+        server?.due ??
+        incubatorAmountDue(sales.filter((sale) => sale.incubator_id === incubator.id)),
+      overdue: server?.settlement.overdue ?? 0,
+    };
+  });
 }
 
 export type SaleState = "reversed" | "paid" | "part_paid" | "due";

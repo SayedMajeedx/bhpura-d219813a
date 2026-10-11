@@ -16,6 +16,7 @@ const incubatorData = vi.hoisted(() => ({
   recordIncubatorPayment: vi.fn(async () => undefined),
   reverseIncubatorSale: vi.fn(async () => undefined),
   syncIncubatorPrices: vi.fn(async () => 3),
+  voidIncubatorPayment: vi.fn(async () => undefined),
   useRealtimeInvalidate: vi.fn(),
 }));
 const session = vi.hoisted(() => ({ financials: true, currency: "BHD", asked: [] as string[] }));
@@ -86,8 +87,28 @@ const rows: Record<string, unknown> = {
     payment_date: "2026-09-02",
     payment_method: "cash",
     reference: `REF-${n}`,
+    // The second payment was taken back.
+    voided_at: n === 2 ? "2026-09-03T08:00:00Z" : null,
+    void_reason: n === 2 ? "Recorded twice" : null,
   })),
   allocations: [{ payment_id: "pay1", sale_id: "sale3", amount: 4.5 }],
+  // The database's own figures: they differ from what the loaded rows add up to, on purpose.
+  summaries: [
+    {
+      incubator_id: "i1",
+      units: 40,
+      stock_value: 200,
+      sold_units: 31,
+      gross: 155,
+      commission: 15.5,
+      net: 139.5,
+      paid: 130,
+      due: 9.5,
+      overdue: 4.5,
+      last_settlement: "2026-10-05",
+      next_settlement: "2026-11-05",
+    },
+  ],
   movements: {
     total: 2,
     rows: [
@@ -502,9 +523,12 @@ describe("a partner's statement", () => {
 
   it("adds up the period and says what is owed today", async () => {
     const dialog = await openStatement();
-    // Eleven confirmed sales (one was reversed) and twelve payments.
+    // Eleven confirmed sales (one was reversed) and eleven payments (one was voided).
     await waitFor(() => expect(dialog).toHaveTextContent("Pieces sold11"));
-    expect(dialog).toHaveTextContent("lists 11 sales and 12 payments");
+    expect(dialog).toHaveTextContent("lists 11 sales and 11 payments");
+    // What is owed today is the database's figure.
+    expect(dialog).toHaveTextContent("Balance due today");
+    expect(dialog).toHaveTextContent("9.500");
     expect(within(dialog).getByText("Balance due today")).toBeInTheDocument();
   });
 
@@ -532,5 +556,79 @@ describe("a partner's statement", () => {
     const message = decodeURIComponent(href.split("text=")[1]);
     expect(message).toContain("Hello Souq Box, here is your statement from Pura Line.");
     expect(message).toContain("Balance due today");
+  });
+});
+
+describe("a partner's figures and settlement", () => {
+  it("come from the database, not from the rows this page happened to load", async () => {
+    renderPage();
+    // The loaded rows add up to 4.500 owed; the database says 9.500 (it sees every sale).
+    expect(await screen.findByText(/31 units/)).toBeInTheDocument();
+    const due = screen.getByText("Amount due").closest("div")!.parentElement!;
+    expect(due).toHaveTextContent("9.500");
+    // The payment dialog offers what is really owed.
+    fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByLabelText("Amount")).toHaveAttribute("max", "9.5");
+  });
+
+  it("say when the next settlement is, and what is late", async () => {
+    renderPage();
+    expect(await screen.findByText(/^Next settlement: /)).toBeInTheDocument();
+    expect(screen.getByText(/^Overdue since .*4\.500/)).toBeInTheDocument();
+    // The picker marks the partner that is late.
+    expect(screen.getByRole("button", { name: /Souq Box/ })).toHaveTextContent("Overdue");
+    expect(screen.getByRole("button", { name: /Arcade/ })).not.toHaveTextContent("Overdue");
+  });
+});
+
+describe("voiding a payment", () => {
+  const openPayments = async () => {
+    renderPage();
+    await screen.findByText("Showing 1-10 of 12 variants");
+    openTab("Payments");
+    return (await screen.findByText("REF-1")).closest("div.p-4") as HTMLElement;
+  };
+
+  it("asks for a reason, then takes the payment back", async () => {
+    const payment = await openPayments();
+    fireEvent.click(within(payment).getByRole("button", { name: "Void" }));
+    const confirm = await screen.findByRole("alertdialog");
+    expect(confirm).toHaveTextContent("The sales it settled become due again");
+    const go = within(confirm).getByRole("button", { name: "Void the payment" });
+    // No reason, no void.
+    expect(go).toBeDisabled();
+    fireEvent.change(within(confirm).getByLabelText("Reason"), {
+      target: { value: "  Recorded twice " },
+    });
+    expect(go).not.toBeDisabled();
+    fireEvent.click(go);
+    await waitFor(() =>
+      expect(incubatorData.voidIncubatorPayment).toHaveBeenCalledWith("pay1", "Recorded twice"),
+    );
+    expect(toast.success).toHaveBeenCalledWith(
+      "Payment voided; the sales it settled are due again",
+    );
+  });
+
+  it("shows a voided payment for what it is, with its reason, and offers no second void", async () => {
+    await openPayments();
+    const voided = screen.getByText("REF-2").closest("div.p-4") as HTMLElement;
+    expect(within(voided).getByText("Voided")).toBeInTheDocument();
+    expect(voided).toHaveTextContent("Voided: Recorded twice");
+    expect(within(voided).queryByRole("button", { name: "Void" })).toBeNull();
+  });
+
+  it("says a refusal in words and keeps the dialog open", async () => {
+    incubatorData.voidIncubatorPayment.mockRejectedValueOnce(new Error("PAYMENT_ALREADY_VOIDED"));
+    const payment = await openPayments();
+    fireEvent.click(within(payment).getByRole("button", { name: "Void" }));
+    const confirm = await screen.findByRole("alertdialog");
+    fireEvent.change(within(confirm).getByLabelText("Reason"), { target: { value: "Twice" } });
+    fireEvent.click(within(confirm).getByRole("button", { name: "Void the payment" }));
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("This payment was already voided"),
+    );
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 });
