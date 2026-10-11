@@ -34,6 +34,34 @@ export function alreadySettled(
   return plan.kind === "deposit" && ["partially_paid", "partial"].includes(status);
 }
 
+/**
+ * What stops an order from being packed or shipped on payment grounds, if anything.
+ *
+ * Cash on delivery is collected at the door, and an admin may override. An order paid in part
+ * goes ahead when the part it had to pay up front (its advance, or a booking's deposit: `upfront`)
+ * has been collected: the balance is due on delivery. A part payment below that, or one on an
+ * order that owed everything up front, still blocks.
+ */
+export function fulfillmentPaymentBlock(input: {
+  paymentStatus: string | null | undefined;
+  isCod: boolean;
+  adminOverride: boolean;
+  /** What has been collected so far (orders.advance_paid). */
+  paid: number | string | null | undefined;
+  /** What the order had to pay up front; null when it could not be worked out. */
+  upfront: ChargePlan | null;
+}): "unpaid" | "partially_paid" | null {
+  const status = String(input.paymentStatus ?? "").toLowerCase();
+  const partial = status === "partially_paid" || status === "partial";
+  if (status !== "" && status !== "unpaid" && !partial) return null;
+  if (input.isCod || input.adminOverride) return null;
+  if (!partial) return "unpaid";
+  const collected = Number(input.paid ?? 0);
+  const upfrontCollected =
+    input.upfront?.kind === "deposit" && collected >= input.upfront.amount - TOLERANCE;
+  return upfrontCollected ? null : "partially_paid";
+}
+
 /** What the order records once the gateway confirms the charge. */
 export function paidOrderUpdate(plan: ChargePlan, gatewayReference: string) {
   return plan.kind === "deposit"

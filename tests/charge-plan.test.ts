@@ -4,6 +4,7 @@ import {
   chargeMatches,
   chargePlan,
   depositOf,
+  fulfillmentPaymentBlock,
   paidOrderUpdate,
 } from "../src/lib/payments/charge-plan";
 
@@ -57,5 +58,61 @@ describe("what a card payment charges", () => {
     expect(depositOf(10.001, 50)).toBe(5.001);
     expect(depositOf(100, 0)).toBeNull();
     expect(depositOf(100, 100)).toBeNull();
+  });
+});
+
+describe("what stops an order from being packed or shipped", () => {
+  const base = { isCod: false, adminOverride: false, paid: 0, upfront: null };
+  const advance = { kind: "deposit" as const, amount: 30 };
+
+  it("nothing, once the order is paid", () => {
+    expect(fulfillmentPaymentBlock({ ...base, paymentStatus: "paid" })).toBeNull();
+    expect(fulfillmentPaymentBlock({ ...base, paymentStatus: "PAID" })).toBeNull();
+  });
+
+  it("an order nobody has paid for", () => {
+    expect(fulfillmentPaymentBlock({ ...base, paymentStatus: "unpaid" })).toBe("unpaid");
+    expect(fulfillmentPaymentBlock({ ...base, paymentStatus: null })).toBe("unpaid");
+  });
+
+  it("nothing, when the advance the order owed is collected: the balance is due on delivery", () => {
+    expect(
+      fulfillmentPaymentBlock({
+        ...base,
+        paymentStatus: "partially_paid",
+        paid: "30.000",
+        upfront: advance,
+      }),
+    ).toBeNull();
+    // More than the advance is fine too.
+    expect(
+      fulfillmentPaymentBlock({ ...base, paymentStatus: "partial", paid: 45, upfront: advance }),
+    ).toBeNull();
+  });
+
+  it("a part payment smaller than the advance", () => {
+    expect(
+      fulfillmentPaymentBlock({
+        ...base,
+        paymentStatus: "partially_paid",
+        paid: 29.99,
+        upfront: advance,
+      }),
+    ).toBe("partially_paid");
+  });
+
+  it("a part payment on an order that owed everything up front, or whose advance is unknown", () => {
+    const paidPart = { ...base, paymentStatus: "partially_paid", paid: 30 };
+    expect(fulfillmentPaymentBlock({ ...paidPart, upfront: { kind: "full", amount: 62 } })).toBe(
+      "partially_paid",
+    );
+    expect(fulfillmentPaymentBlock({ ...paidPart, upfront: null })).toBe("partially_paid");
+  });
+
+  it("nothing for cash on delivery or an admin override, whatever is paid", () => {
+    expect(fulfillmentPaymentBlock({ ...base, paymentStatus: "unpaid", isCod: true })).toBeNull();
+    expect(
+      fulfillmentPaymentBlock({ ...base, paymentStatus: "partially_paid", adminOverride: true }),
+    ).toBeNull();
   });
 });
