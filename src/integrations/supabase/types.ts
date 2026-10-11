@@ -10633,6 +10633,14 @@ export type Database = {
         };
         Returns: number;
       };
+      storefront_line_customizations: {
+        Args: {
+          p_brand_id: string;
+          p_custom_fields: Json;
+          p_product_id: string;
+        };
+        Returns: Json;
+      };
       storefront_user_owns_customer: {
         Args: { p_customer_id: string };
         Returns: boolean;
