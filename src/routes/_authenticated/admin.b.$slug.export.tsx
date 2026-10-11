@@ -161,7 +161,7 @@ function ExportCenterPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link to="/admin/b/$slug/import" params={{ slug: brandSlug }}>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold">
               <Upload className="h-3.5 w-3.5" />
@@ -608,14 +608,14 @@ function ProductExportSection({
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
-              <div className="space-y-1">
+              <div className="min-w-0 max-w-full space-y-1">
                 <Label className="text-xs text-muted-foreground">
                   {isAr ? "تصفية حسب القسم:" : "Filter by Category:"}
                 </Label>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="h-9 px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
+                  className="block h-9 max-w-full px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="all">{isAr ? "جميع الأقسام" : "All Categories"}</option>
                   {categories.map((c: any) => (
@@ -682,8 +682,8 @@ function ProductExportSection({
 
       {/* 3. Live Preview & Download Bar */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Eye className="h-4 w-4 text-muted-foreground" />
             <span className="text-xs font-bold text-foreground">
               {isAr ? "معاينة مباشرة للبيانات (أول 5 صفوف)" : "Live Data Preview (First 5 Rows)"}

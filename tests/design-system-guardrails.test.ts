@@ -195,4 +195,33 @@ describe("design system guardrails", () => {
     expect(darkBlock).not.toMatch(/--primary:\s*oklch\([^)]*\s7\d\)/);
     expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s25\)/);
   });
+
+  it("never sizes a grid column with a bare fr", () => {
+    // `1fr` is `minmax(auto, 1fr)`: the column cannot get narrower than its widest content, so
+    // one long product name pushes the page wider than a phone, and because the page hides
+    // sideways overflow the edge is cut off (the checkout did this). Write `minmax(0,1fr)`;
+    // Tailwind's own `grid-cols-2` already does.
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/grid-cols-\[([^\]]*)\]/g)) {
+        if (match[1].split("_").some((track) => /^\d*\.?\d+fr$/.test(track))) {
+          offenders.push(`${rel}: ${match[0]}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps a grid's implicit column from growing wider than its box", () => {
+    // "grid gap-4" and "grid md:grid-cols-2" (below md) are one implicit `auto` column with the
+    // same weakness. src/styles/layout-guards.css sizes it minmax(0, 1fr) for every such grid.
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const guards = fs.readFileSync(
+      path.resolve(__dirname, "../src/styles/layout-guards.css"),
+      "utf-8",
+    );
+    expect(css).toContain('@import "./styles/layout-guards.css";');
+    expect(guards).toMatch(/@layer base\s*{[\s\S]*\.grid:not\(/);
+    expect(guards).toContain("grid-auto-columns: minmax(0, 1fr);");
+  });
 });

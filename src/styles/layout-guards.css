@@ -1,0 +1,23 @@
+/*
+ * Layout guards: rules that stop one long piece of content from making a page wider than the
+ * screen. The page hides sideways overflow (html, body and the shells), so a block that grows
+ * too wide is not scrolled to, it is cut off: on a phone the shopper loses the edge of every
+ * field. tests/design-system-guardrails.test.ts keeps these rules; the overflow audits
+ * (tests/*-overflow-audit.spec.ts) measure the pages on a phone.
+ */
+@layer base {
+  /*
+   * A grid with no columns of its own ("grid gap-4", or "grid md:grid-cols-2" below md) is one
+   * implicit column sized `auto`, which can never be narrower than its widest content: a long
+   * product name on one line, a wide table, a long link. Sizing it `minmax(0, 1fr)` keeps the
+   * column at the width of its box; content that fits looks exactly as before.
+   *
+   * Left alone: grids that lay items out in columns by flow, set their own implicit columns, or
+   * position the column inside the box (there the column is meant to hug its content).
+   */
+  .grid:not([class*="grid-flow-col"]):not([class*="auto-cols-"]):not([class*="place-content-"]):not(
+      [class*="justify-"]
+    ) {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+}

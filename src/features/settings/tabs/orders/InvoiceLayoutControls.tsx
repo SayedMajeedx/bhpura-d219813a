@@ -208,7 +208,7 @@ export function InvoiceLayoutControls() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_140px] gap-3">
             <div>
               <Label className="text-xs text-muted-foreground">
                 {isAr ? "الخط اللاتيني / الإنجليزي" : "Latin / English font"}

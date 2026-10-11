@@ -128,7 +128,7 @@ export function OrderLineCard({
             {it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
           </p>
           {sku ? (
-            <span className="inline-flex items-center text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
+            <span className="inline-flex max-w-full items-center break-all text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
               SKU: {sku}
             </span>
           ) : (
@@ -413,7 +413,7 @@ export function OrderLineCard({
                 {it.custom_field_values && it.custom_field_values.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
                     {it.custom_field_values.map((cf, i) => (
-                      <div key={i} className="text-xs">
+                      <div key={i} className="min-w-0 text-xs [overflow-wrap:anywhere]">
                         <span className="font-bold text-muted-foreground">
                           {isAr
                             ? cf.label_ar || cf.label_en || cf.key

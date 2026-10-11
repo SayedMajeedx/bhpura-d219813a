@@ -385,7 +385,7 @@ function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_360px] gap-6">
       <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
         <BookingHoldBanner />

@@ -77,7 +77,7 @@ export function AddonCardMicrosoftStore({
       <div>
         {/* Top Header Row */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
+          <div className="flex min-w-0 items-start gap-3">
             {/* App Icon */}
             <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold shrink-0 transition-transform group-hover:scale-105 shadow-xs">
               {getAddonIcon(manifest.id)}

@@ -858,7 +858,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   </div>
 
                   {/* QR and IBAN */}
-                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4 p-4 rounded-2xl bg-muted/20 border border-border-subtle">
+                  <div className="grid grid-cols-1 md:grid-cols-[180px_minmax(0,1fr)] gap-4 p-4 rounded-2xl bg-muted/20 border border-border-subtle">
                     <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border-subtle bg-background text-center">
                       {systemSettings?.benefit_pay_qr_url ? (
                         <img

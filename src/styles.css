@@ -4,6 +4,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./styles/layout-guards.css";
 
 @custom-variant dark (&:is(.dark *));
 

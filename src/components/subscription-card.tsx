@@ -203,7 +203,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
             </div>
 
             {renewalIntent === "renew" && (
-              <div className="grid gap-5 md:grid-cols-[220px_1fr] pt-2 border-t border-border">
+              <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)] pt-2 border-t border-border">
                 <div className="rounded-xl border border-border bg-background p-4 text-center">
                   {settings.qrUrl ? (
                     <img

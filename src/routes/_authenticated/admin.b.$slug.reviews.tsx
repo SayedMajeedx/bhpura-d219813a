@@ -194,7 +194,7 @@ function CustomerReviewsPage() {
         />
       </section>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_1fr]">
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit rounded-md shadow-sm">
           <CardHeader className="p-4 pb-2">
             <CardTitle className="text-base">
@@ -207,7 +207,7 @@ function CustomerReviewsPage() {
               return (
                 <div
                   key={item.rating}
-                  className="grid grid-cols-[44px_1fr_28px] items-center gap-2 text-sm"
+                  className="grid grid-cols-[44px_minmax(0,1fr)_28px] items-center gap-2 text-sm"
                 >
                   <span className="flex items-center gap-1 font-semibold" dir="ltr">
                     {item.rating}
@@ -223,7 +223,7 @@ function CustomerReviewsPage() {
 
         <div className="space-y-3">
           <Card className="rounded-md shadow-sm">
-            <CardContent className="grid gap-3 p-3 md:grid-cols-[1fr_180px_180px]">
+            <CardContent className="grid gap-3 p-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
               <div className="relative">
                 <Search className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input

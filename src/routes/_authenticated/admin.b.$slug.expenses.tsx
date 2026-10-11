@@ -1154,7 +1154,7 @@ function ReceiptReviewDialog({
           </div>
 
           <div className="rounded-lg border overflow-hidden">
-            <div className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 bg-secondary/50 text-xs text-muted-foreground">
+            <div className="grid grid-cols-[minmax(0,1fr)_70px_100px_100px_36px] gap-2 px-3 py-2 bg-secondary/50 text-xs text-muted-foreground">
               <div>{lang === "ar" ? "المنتج" : "Item"}</div>
               <div className="text-center">{lang === "ar" ? "الكمية" : "Qty"}</div>
               <div className="text-end">{lang === "ar" ? "سعر الوحدة" : "Unit price"}</div>
@@ -1171,7 +1171,7 @@ function ReceiptReviewDialog({
               form.items.map((it, idx) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 border-t items-center"
+                  className="grid grid-cols-[minmax(0,1fr)_70px_100px_100px_36px] gap-2 px-3 py-2 border-t items-center"
                 >
                   <Input
                     value={it.name}
@@ -1238,7 +1238,7 @@ function ReceiptReviewDialog({
               <span className="tabular-nums">{formatMoney(subtotal, form.currency, locale)}</span>
             </div>
 
-            <div className="grid grid-cols-[1fr_90px_1fr] gap-2 items-center">
+            <div className="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] gap-2 items-center">
               <span className="text-muted-foreground">
                 {lang === "ar" ? "الضريبة / VAT" : "Tax / VAT"}
               </span>

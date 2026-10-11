@@ -141,7 +141,7 @@ function ImportCenterPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
           <Link to="/admin/b/$slug/export" params={{ slug: brandSlug }}>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold">
               <Download className="h-3.5 w-3.5" />
