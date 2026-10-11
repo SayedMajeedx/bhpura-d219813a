@@ -18,6 +18,11 @@ export const incubatorsKeys = {
   inventory: (brandId: string) => [...incubatorsKeys.all(brandId), "inventory"] as const,
   sales: (brandId: string) => [...incubatorsKeys.all(brandId), "sales"] as const,
   payments: (brandId: string) => [...incubatorsKeys.all(brandId), "payments"] as const,
+  /** Which sales each payment settled. */
+  allocations: (brandId: string) => [...incubatorsKeys.all(brandId), "allocations"] as const,
+  /** One partner's history, a page at a time. */
+  movements: (brandId: string, incubatorId: string, page: number, pageSize: number) =>
+    [...incubatorsKeys.all(brandId), "movements", incubatorId, page, pageSize] as const,
   /** The pieces orders have taken from partners (who hands over what). */
   orderHolds: (brandId: string) => [...incubatorsKeys.all(brandId), "order-holds"] as const,
   orderPickups: (brandId: string, orderId: string) =>
@@ -67,11 +72,11 @@ export async function fetchIncubatorInventory(brandId: string) {
   return data ?? [];
 }
 
-/** Every incubator sale with its variant's SKU and product name, newest first. */
+/** Every incubator sale with the piece that was sold, newest first. */
 export async function fetchIncubatorSales(brandId: string) {
   const { data, error } = await supabase
     .from("incubator_sales")
-    .select("*, product_variants(sku,products(name,name_ar))")
+    .select("*, product_variants(sku,size,color,products(name,name_ar))")
     .eq("brand_id", brandId)
     .order("sold_at", { ascending: false });
   if (error) throw error;
@@ -87,6 +92,50 @@ export async function fetchIncubatorPayments(brandId: string) {
     .order("payment_date", { ascending: false });
   if (error) throw error;
   return data ?? [];
+}
+
+/**
+ * Which sales each payment settled. A payment is spread over the partner's oldest unpaid
+ * sales by the database when it is recorded; the rows have no brand of their own, so they
+ * are read through their payment's.
+ */
+export async function fetchIncubatorPaymentAllocations(brandId: string) {
+  const { data, error } = await supabase
+    .from("incubator_payment_allocations")
+    .select("payment_id, sale_id, amount, incubator_payments!inner(brand_id)")
+    .eq("incubator_payments.brand_id", brandId);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    payment_id: row.payment_id,
+    sale_id: row.sale_id,
+    amount: Number(row.amount),
+  }));
+}
+
+/**
+ * One page of a partner's history, newest first, with how many lines there are in all: every
+ * time pieces went to the partner, came back, were sold there or were taken by a store order.
+ */
+export async function fetchIncubatorMovements(args: {
+  brandId: string;
+  incubatorId: string;
+  page: number;
+  pageSize: number;
+}) {
+  const from = (Math.max(1, args.page) - 1) * args.pageSize;
+  const { data, count, error } = await supabase
+    .from("incubator_movements")
+    .select(
+      "id, incubator_id, variant_id, movement_type, quantity_delta, reference_type, reference_id, notes, occurred_at, product_variants(sku,size,color,products(name,name_ar))",
+      { count: "exact" },
+    )
+    .eq("brand_id", args.brandId)
+    .eq("incubator_id", args.incubatorId)
+    .order("occurred_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(from, from + args.pageSize - 1);
+  if (error) throw error;
+  return { rows: data ?? [], total: count ?? 0 };
 }
 
 const PARTNER_HOLD_SELECT =
@@ -185,6 +234,18 @@ export const incubatorsQueries = {
       queryKey: incubatorsKeys.payments(brandId),
       queryFn: () => fetchIncubatorPayments(brandId),
       enabled: Boolean(brandId),
+    }),
+  allocations: (brandId: string) =>
+    queryOptions({
+      queryKey: incubatorsKeys.allocations(brandId),
+      queryFn: () => fetchIncubatorPaymentAllocations(brandId),
+      enabled: Boolean(brandId),
+    }),
+  movements: (brandId: string, incubatorId: string, page: number, pageSize: number) =>
+    queryOptions({
+      queryKey: incubatorsKeys.movements(brandId, incubatorId, page, pageSize),
+      queryFn: () => fetchIncubatorMovements({ brandId, incubatorId, page, pageSize }),
+      enabled: Boolean(brandId && incubatorId),
     }),
   orderHolds: (brandId: string) =>
     queryOptions({
