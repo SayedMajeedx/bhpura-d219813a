@@ -184,12 +184,17 @@ export function getOrderWorkflow(
   // An order is terminal if fulfillment is terminal or status is cancelled/refunded
   const terminal = isFulfillmentTerminal || payment === "refunded" || orderStatus === "cancelled";
 
+  // A transfer whose receipt was approved for the advance only: the order is recorded as
+  // partially paid and the balance is collected on delivery. Its payment is validated;
+  // approving again does nothing (approve_benefit_payment answers "already paid").
+  const advanceApproved = pStatus === "partially_paid" || pStatus === "partial";
+
   let nextAction: OrderNextAction = "none";
 
   if (!terminal) {
     if (fulfillment === "failed") {
       nextAction = "resolve_delivery_failure";
-    } else if (isManualBenefit && payment !== "paid") {
+    } else if (isManualBenefit && payment !== "paid" && !advanceApproved) {
       nextAction = "validate_payment";
     } else if (fulfillment === "scheduled") {
       // Nothing to do until the appointment starts; then the service is

@@ -20,6 +20,34 @@ describe("getOrderWorkflow", () => {
     expect(result.awaitingPayment).toBe(true);
   });
 
+  it("moves on once the advance of a BenefitPay order is approved", () => {
+    // approve_benefit_payment records the advance and leaves the order partially paid: the
+    // payment is validated, so the next step is the order's own, and the balance is collected
+    // when it is delivered.
+    const approved = order({ payment_status: "partially_paid", total: 62, advance_paid: 30 });
+    expect(getOrderWorkflow(approved).nextAction).toBe("start_packing");
+    expect(
+      getOrderWorkflow({ ...approved, fulfillment_status: "OUT_FOR_DELIVERY" }).nextAction,
+    ).toBe("collect_and_deliver");
+    expect(getOrderWorkflow(approved).outstanding).toBe(32);
+  });
+
+  it("sends a made-to-order piece to the workshop once its advance is approved", () => {
+    const approved = order({
+      payment_status: "partially_paid",
+      total: 62,
+      advance_paid: 30,
+      order_type: "tailoring",
+    });
+    expect(getOrderWorkflow(approved).nextAction).toBe("send_to_tailor");
+  });
+
+  it("still asks to validate a BenefitPay order nobody has approved", () => {
+    expect(getOrderWorkflow(order()).nextAction).toBe("validate_payment");
+    // Money typed in by hand without the status being set is not an approval.
+    expect(getOrderWorkflow(order({ advance_paid: 5 })).nextAction).toBe("validate_payment");
+  });
+
   it("treats unpaid COD as fulfillment work, not awaiting payment", () => {
     const result = getOrderWorkflow(order({ payment_method: "cod" }));
     expect(result.nextAction).toBe("pack_and_ship");
