@@ -1,5 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { incubatorAmountDue } from "@/features/incubators/lib/amount-due";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 import {
@@ -231,10 +232,7 @@ function IncubatorsPage() {
     );
     const confirmed = sales.filter((sale) => sale.status === "confirmed");
     const gross = confirmed.reduce((sum, sale) => sum + Number(sale.gross_amount), 0);
-    const due = confirmed.reduce(
-      (sum, sale) => sum + Number(sale.net_due) - Number(sale.paid_amount),
-      0,
-    );
+    const due = incubatorAmountDue(sales);
     const paid = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
     return { units, stockValue, gross, due, paid };
   }, [stock, sales, payments]);
