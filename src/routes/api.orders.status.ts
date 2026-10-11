@@ -114,10 +114,7 @@ export const Route = createFileRoute("/api/orders/status")({
 
           if (
             isAssignedCourier &&
-            (payment_status !== undefined ||
-              status !== undefined ||
-              assigned_to !== undefined ||
-              admin_override !== undefined)
+            (payment_status !== undefined || status !== undefined || assigned_to !== undefined)
           ) {
             return new Response(JSON.stringify({ error: "Forbidden" }), {
               status: 403,
@@ -125,12 +122,10 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
-          if (admin_override && !isSuperAdmin && !isAdmin) {
-            return new Response(JSON.stringify({ error: "Forbidden" }), {
-              status: 403,
-              headers: { "Content-Type": "application/json" },
-            });
-          }
+          // Only an admin can override the payment check. The flag from anyone else is ignored,
+          // not refused: the order list sends it with every change, and refusing the request
+          // stopped a courier (and staff who are not admins) from changing a stage at all.
+          const adminOverride = Boolean(admin_override) && (isSuperAdmin || isAdmin);
 
           if (assigned_to !== undefined && !orderRequiresCourier(order)) {
             return new Response(
@@ -169,13 +164,13 @@ export const Route = createFileRoute("/api/orders/status")({
               String(currentPayment ?? "").toLowerCase(),
             );
             const upfront =
-              partlyPaid && !isCod && !admin_override
+              partlyPaid && !isCod && !adminOverride
                 ? await orderChargePlan(supabaseAdmin, order, order.brand_id).catch(() => null)
                 : null;
             const block = fulfillmentPaymentBlock({
               paymentStatus: currentPayment,
               isCod,
-              adminOverride: Boolean(admin_override),
+              adminOverride,
               paid: order.advance_paid,
               upfront,
             });

@@ -65,6 +65,7 @@ import { OrderBookingCard } from "@/features/orders/components/OrderBookingCard"
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
 import { assignOrderCourier } from "@/lib/data/orders";
+import { OrderForRole } from "@/features/courier-delivery/components/OrderForRole";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -91,7 +92,13 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
 
 // ItemTailoringCustomizer extracted to @/addons/made-to-order via <AddonSlot placement="admin.order.itemPanel" />
 
+/** A courier gets the delivery page; the office gets the order editor. */
 function OrderDetail() {
+  const { id } = Route.useParams();
+  return <OrderForRole orderId={id} office={<OrderEditor />} />;
+}
+
+function OrderEditor() {
   const t = useT();
   const { lang } = useI18n();
   const { id, slug } = Route.useParams();

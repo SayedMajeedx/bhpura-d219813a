@@ -517,6 +517,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           pathname={pathname}
           lang={lang}
           isSuperAdmin={isSuperAdmin}
+          isCourier={isCourier}
           onSetLang={setLang}
           onSignOut={signOut}
           mobileOpen={mobileOpen}
@@ -543,6 +544,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
               activeSlug={activeSlug}
               userEmail={profile?.email}
               services={servicesStore}
+              isCourier={isCourier}
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
               actions={
