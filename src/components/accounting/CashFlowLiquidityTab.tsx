@@ -251,8 +251,11 @@ export function CashFlowLiquidityTab() {
               const recStatus = o.reconciliation_status || "unreconciled";
 
               return (
-                <Card key={o.id} className="p-3 border-border flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <Card
+                  key={o.id}
+                  className="p-3 border-border flex flex-wrap items-center justify-between gap-2"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
                     <div className="p-2 rounded-lg bg-muted text-muted-foreground">
                       {o.payment_method === "cash" ? (
                         <Wallet className="h-4 w-4" />
@@ -261,12 +264,14 @@ export function CashFlowLiquidityTab() {
                       )}
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-2">
                         <span className="font-bold text-xs text-foreground">
                           #{o.invoice_number}
                         </span>
-                        <span className="text-xs text-muted-foreground">• {customerName}</span>
+                        <span className="min-w-0 break-words text-xs text-muted-foreground">
+                          • {customerName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{formatDate(o.created_at)}</span>

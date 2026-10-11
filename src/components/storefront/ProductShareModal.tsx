@@ -185,7 +185,7 @@ export function ProductShareModal({
                 type="text"
                 readOnly
                 value={getFullUrl()}
-                className="flex-1 bg-transparent px-2.5 text-xs text-foreground outline-none select-all truncate"
+                className="min-w-0 flex-1 bg-transparent px-2.5 text-xs text-foreground outline-none select-all truncate"
               />
               <Button
                 type="button"

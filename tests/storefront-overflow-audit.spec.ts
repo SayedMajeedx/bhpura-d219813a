@@ -1,6 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 import { ANON_KEY, SUPABASE_URL, guardWrites } from "./helpers/storefront-e2e";
-import { describeCutOff, findCutOffContent } from "./helpers/overflow";
+import {
+  auditOverlays,
+  blockAppWrites,
+  describeCutOff,
+  findCutOffContent,
+} from "./helpers/overflow";
 
 /**
  * Nothing on a storefront page may be cut off at the side of a phone screen.
@@ -140,14 +145,17 @@ async function settle(page: Page) {
 
 for (const slug of SLUGS) {
   test.describe(`Storefront overflow audit: ${slug}`, () => {
+    // Long (it presses every button of every page), so it runs on demand: npm run audit:overflow
+    test.skip(!process.env.OVERFLOW_AUDIT, "On demand: npm run audit:overflow");
     test.skip(!SUPABASE_URL || !ANON_KEY, "Needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
 
     test("no page cuts content off at the side of a phone", async ({ page }) => {
-      test.setTimeout(600_000);
+      test.setTimeout(1_200_000);
       const item = await liveItem(slug);
       test.skip(!item, `The store "${slug}" has no product to put in a cart`);
 
       await guardWrites(page);
+      await blockAppWrites(page);
       await page.addInitScript(
         ({ slug, cart }) => {
           window.localStorage.setItem(`storefront-cart:${slug}`, JSON.stringify(cart));
@@ -187,6 +195,9 @@ for (const slug of SLUGS) {
               problems.push(`${path} (${lang}, ${width}px)\n${describeCutOff(cut)}`);
             }
           }
+          // The cart drawer, the menu, search, filters and pickers, on the narrowest phone.
+          await page.setViewportSize({ width: 320, height: 844 });
+          problems.push(...(await auditOverlays(page, `${path} (${lang}, 320px)`)));
         }
       }
 

@@ -15,6 +15,7 @@
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "test": "vitest run",
+    "audit:overflow": "node scripts/run-overflow-audit.mjs",
     "typecheck": "tsc --noEmit",
     "db:migrations:check": "node scripts/database/check-migration-integrity.mjs",
     "db:migrations:drift": "node scripts/database/check-migration-drift.mjs",
