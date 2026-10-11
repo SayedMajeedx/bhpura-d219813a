@@ -2,6 +2,7 @@ import type { SettingsScope } from "@/lib/storefront-engine";
 import { PAYMENTS_SETTINGS } from "@/features/settings/registry-payments";
 import { BANNER_SETTINGS } from "@/features/settings/registry-banners";
 import { DELIVERY_ESTIMATE_SETTINGS } from "@/features/settings/registry-delivery";
+import { INVENTORY_SETTINGS } from "@/features/settings/registry-inventory";
 
 export type SettingsTabId = "identity" | "storefront" | "orders" | "notifications" | "account";
 export type SettingsLevel = "basic" | "advanced";
@@ -11,6 +12,7 @@ export type SettingsOwner =
   | "route:integrations"
   | "route:team"
   | "route:expenses" // bom_enabled يُدار من صفحة المصروفات
+  | "route:inventory" // low_stock_threshold يُدار من صفحة المخزون
   | "system"; // لا يُعدَّل يدوياً (created_at, user_id, next_invoice_number...)
 
 export interface SettingsFieldDef {
@@ -2453,4 +2455,5 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
     readOnlyMirrors: ["admin.b.$slug.expenses.tsx"],
   },
+  ...INVENTORY_SETTINGS,
 ];

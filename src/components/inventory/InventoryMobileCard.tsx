@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { variantCountLabel } from "@/lib/inventory-labels";
 import { StockLevelBadge } from "@/components/inventory/StockLevelBadge";
+import { AttentionMarks } from "@/components/inventory/AttentionMarks";
+import { productAttentionReasons } from "@/features/inventory/lib/attention";
 import {
   Package,
   Pencil,
@@ -53,6 +55,12 @@ interface InventoryMobileCardProps {
   currency?: string;
   isExpanded?: boolean;
   onToggleExpand?: () => void;
+  /** The store's own low-stock level; the default when left out. */
+  lowStockUnits?: number;
+  /** Expected weekly sales: sharpens "low", as the tabs do. */
+  weeklySales?: number;
+  /** False for a catalog that shows no prices. */
+  pricesMatter?: boolean;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -74,6 +82,9 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   currency = "BHD",
   isExpanded: controlledExpanded,
   onToggleExpand: controlledOnToggleExpand,
+  lowStockUnits,
+  weeklySales = 0,
+  pricesMatter = true,
 }) => {
   const isAr = lang === "ar";
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -87,6 +98,14 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   };
   const [deleteOpen, setDeleteOpen] = useState(false);
   const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
+  // The marks the desktop row shows: a phone used to see the stock badge and nothing else.
+  const attentionReasons = productAttentionReasons(product, {
+    stock: totalStock,
+    weeklySales,
+    lowStockUnits,
+    lowestPrice: minPrice,
+    pricesMatter,
+  });
 
   return (
     <>
@@ -119,6 +138,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
               <p className="text-xs text-muted-foreground font-mono mt-0.5">
                 {variantCountLabel(variants.length, lang)}
               </p>
+              <AttentionMarks reasons={attentionReasons} lang={lang} className="mt-1" />
             </div>
           </div>
 
@@ -131,7 +151,12 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
         {/* Stock Status Badge */}
         <div className="flex items-center justify-between text-xs">
-          <StockLevelBadge product={product} totalStock={totalStock} lang={lang} />
+          <StockLevelBadge
+            product={product}
+            totalStock={totalStock}
+            lang={lang}
+            lowStockUnits={lowStockUnits}
+          />
 
           {/* Mobile Actions */}
           <div className="flex items-center gap-1">

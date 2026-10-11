@@ -11,8 +11,9 @@ export type ExportStockStatus =
 export function exportStockStatus(
   product: AvailabilityProduct,
   variantStock: number,
+  lowStockUnits?: number,
 ): ExportStockStatus {
-  switch (productAvailability(product, variantStock).status) {
+  switch (productAvailability(product, variantStock, 0, lowStockUnits).status) {
     case "service":
       return "Service";
     case "made_to_order":

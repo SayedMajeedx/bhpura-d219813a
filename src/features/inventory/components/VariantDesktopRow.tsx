@@ -19,7 +19,8 @@ import {
 } from "@/features/inventory/lib/variant-metrics";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
-import { StockStepper } from "@/features/inventory/components/StockStepper";
+import { StockChangeControl } from "@/features/inventory/components/StockChangeControl";
+import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
 import { partnerStockHint } from "@/features/inventory/lib/stock-labels";
 import {
   MadeToOrderOnlyNote,
@@ -36,6 +37,7 @@ export function VariantDesktopRow({
   isAr,
   brand,
   update,
+  changeStock,
   productName,
   businessName,
   genBarcode,
@@ -55,6 +57,7 @@ export function VariantDesktopRow({
   isAr: boolean;
   brand: { id: string };
   update: (v: Variant, patch: Partial<Variant>) => void;
+  changeStock: (v: Variant, request: StockChangeRequest) => Promise<boolean>;
   productName: string;
   businessName: string | null;
   genBarcode: () => string;
@@ -416,9 +419,11 @@ export function VariantDesktopRow({
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
                 {isAr ? "المحل:" : "Store:"}
               </span>
-              <StockStepper
+              <StockChangeControl
                 value={v.stock_main ?? 0}
-                onChange={(val) => update(v, { stock_main: val })}
+                pieceName={[productName, v.size, v.color].filter(Boolean).join(" · ")}
+                isAr={isAr}
+                onSave={(request) => changeStock(v, request)}
               />
               {onOpenHistory && (
                 <button

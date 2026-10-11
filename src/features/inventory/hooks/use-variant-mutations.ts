@@ -18,6 +18,7 @@ import {
   type VariantDraft,
 } from "@/features/inventory/lib/variant-draft";
 import { getCurrentUser } from "@/lib/auth/session";
+import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
 
 /**
  * Add, edit and delete one product's variants. Stock edits go through the
@@ -180,6 +181,29 @@ export function useVariantMutations({
     }
   };
 
+  /**
+   * A change to the store's stock, made once with its reason (`planStockChange`). Resolves false
+   * when the server refused it, so the dialog stays open with what was typed.
+   */
+  const changeStock = async (v: Variant, request: StockChangeRequest): Promise<boolean> => {
+    try {
+      await adjustVariantStock({
+        variantId: v.id,
+        location: "main",
+        mode: request.mode,
+        value: request.value,
+        reason: request.reason,
+        note: request.note,
+      });
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error));
+      return false;
+    }
+    toast.success(isAr ? "تم تحديث مخزون المحل." : "Store stock updated.");
+    onChanged();
+    return true;
+  };
+
   const del = async (id: string) => {
     try {
       await deleteVariants(brandId, [id]);
@@ -190,5 +214,5 @@ export function useVariantMutations({
     onChanged();
   };
 
-  return { add, update, del };
+  return { add, update, del, changeStock };
 }

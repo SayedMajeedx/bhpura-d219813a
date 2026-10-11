@@ -24,15 +24,19 @@ export function StockLevelBadge({
   product,
   totalStock,
   lang,
+  lowStockUnits,
   className = "",
 }: {
   product: AvailabilityProduct;
   totalStock: number;
   lang: "ar" | "en";
+  /** The store's own low-stock level; the default when left out. */
+  lowStockUnits?: number;
   className?: string;
 }) {
   const { vocabulary } = useVocabulary();
-  const badge = availabilityBadge(productAvailability(product, totalStock), lang, {
+  const availability = productAvailability(product, totalStock, 0, lowStockUnits);
+  const badge = availabilityBadge(availability, lang, {
     unitsLabel: (units, kind) => stockUnitsLabel(units, kind, lang),
     madeToOrder: vocabulary.made_to_order?.[lang],
   });

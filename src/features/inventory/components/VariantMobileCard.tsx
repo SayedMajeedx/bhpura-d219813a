@@ -15,7 +15,8 @@ import {
 import type { Product, Variant } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
-import { StockStepper } from "@/features/inventory/components/StockStepper";
+import { StockChangeControl } from "@/features/inventory/components/StockChangeControl";
+import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
 import { partnerStockHint } from "@/features/inventory/lib/stock-labels";
 import {
   MadeToOrderOnlyNote,
@@ -33,6 +34,7 @@ export function VariantMobileCard({
   isAr,
   brand,
   update,
+  changeStock,
   del,
   mainLabel,
   incLabel,
@@ -51,6 +53,7 @@ export function VariantMobileCard({
   isAr: boolean;
   brand: { id: string };
   update: (v: Variant, patch: Partial<Variant>) => void;
+  changeStock: (v: Variant, request: StockChangeRequest) => Promise<boolean>;
   del: (id: string) => void;
   mainLabel: string;
   incLabel: string;
@@ -231,9 +234,11 @@ export function VariantMobileCard({
               </TooltipProvider>
             </div>
             <div className="mt-1">
-              <StockStepper
+              <StockChangeControl
                 value={v.stock_main ?? 0}
-                onChange={(val) => update(v, { stock_main: val })}
+                pieceName={[product?.name, v.size, v.color].filter(Boolean).join(" · ")}
+                isAr={isAr}
+                onSave={(request) => changeStock(v, request)}
               />
             </div>
           </div>

@@ -364,12 +364,15 @@ export function inventoryIntelFor({
   validRevenueOrders,
   lang,
   now,
+  lowStockUnits,
 }: {
   productRows: Rows<"productsQ">;
   variantRows: Rows<"variantsQ">;
   validRevenueOrders: DashboardOrders;
   lang: string;
   now: Date;
+  /** The store's own low-stock level; the default when left out. */
+  lowStockUnits?: number;
 }) {
   // Made-to-order items and services have no stock to run low, sell slowly or
   // go dead: they are left out of every stock figure.
@@ -439,7 +442,7 @@ export function inventoryIntelFor({
   products.forEach((product) => {
     const stock = productStockMap.get(product.id) ?? 0;
     const weeklySales = productWeeklySalesMap.get(product.id) ?? 0;
-    if (isLowStock(stock, weeklySales)) {
+    if (isLowStock(stock, weeklySales, lowStockUnits)) {
       lowStockCount++;
     }
   });

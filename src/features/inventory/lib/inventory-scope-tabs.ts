@@ -1,4 +1,4 @@
-import { AlertTriangle, Boxes, Check, Package, Search, TrendingUp } from "lucide-react";
+import { AlertTriangle, Boxes, Check, Package, Scissors, Search, TrendingUp } from "lucide-react";
 import type { InventoryScopeTab } from "@/components/inventory/InventoryScopeSwitcher";
 
 /** Tabs that only mean something when the store counts stock. */
@@ -17,8 +17,13 @@ export function inventoryScopeTabs(
     low: number;
     out: number;
     featured: number;
+    /** Products made when they are ordered; the tab is left out when the store has none. */
+    madeToOrder?: number;
   },
-  { tracksStock = true }: { tracksStock?: boolean } = {},
+  {
+    tracksStock = true,
+    madeToOrderLabel,
+  }: { tracksStock?: boolean; madeToOrderLabel?: { ar: string; en: string } } = {},
 ): InventoryScopeTab[] {
   const tabs: InventoryScopeTab[] = [
     {
@@ -71,5 +76,14 @@ export function inventoryScopeTabs(
       icon: TrendingUp,
     },
   ];
+  if ((counts.madeToOrder ?? 0) > 0) {
+    tabs.splice(tabs.length - 1, 0, {
+      id: "made_to_order",
+      label_en: madeToOrderLabel?.en || "Made to Order",
+      label_ar: madeToOrderLabel?.ar || "حسب الطلب",
+      count: counts.madeToOrder ?? 0,
+      icon: Scissors,
+    });
+  }
   return tracksStock ? tabs : tabs.filter((tab) => !STOCK_TABS.has(tab.id));
 }

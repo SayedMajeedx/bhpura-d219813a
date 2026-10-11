@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { variantCountLabel } from "@/lib/inventory-labels";
-import { productAvailability } from "@/lib/product-availability";
 import { StockLevelBadge } from "@/components/inventory/StockLevelBadge";
+import { AttentionMarks } from "@/components/inventory/AttentionMarks";
+import { productAttentionReasons } from "@/features/inventory/lib/attention";
 import {
   Package,
   Pencil,
@@ -64,6 +65,12 @@ interface InventoryWorkQueueProps {
   }>;
   expandedProducts?: Record<string, boolean>;
   onToggleExpand?: (productId: string) => void;
+  /** The store's own low-stock level; the default when left out. */
+  lowStockUnits?: number;
+  /** Expected weekly sales per product: sharpens "low", as the tabs do. */
+  weeklySalesOf?: (productId: string) => number;
+  /** False for a catalog that shows no prices. */
+  pricesMatter?: boolean;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -88,6 +95,9 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   categories,
   expandedProducts: controlledExpandedProducts,
   onToggleExpand: controlledOnToggleExpand,
+  lowStockUnits,
+  weeklySalesOf,
+  pricesMatter = true,
 }) => {
   const isAr = lang === "ar";
   const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>(
@@ -205,10 +215,6 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     ? Math.min(...pVariants.map((v: any) => Number(v.selling_price || 0)))
                     : Number(product.base_price || 0);
 
-                // A made-to-order piece or a service is never "out" or "low": the shared rule decides.
-                const stockStatus = productAvailability(product, totalStock).status;
-                const isLowStock = stockStatus === "low";
-                const isOutOfStock = stockStatus === "out";
                 const isExpanded = !!expandedProducts[product.id];
 
                 // Commercial identifier resolution
@@ -216,63 +222,14 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                 const barcode =
                   product.barcode || pVariants.find((v: any) => v.barcode)?.barcode || null;
 
-                // Detailed attention diagnostics
-                const media = Array.isArray(product.media) ? product.media : [];
-                const hasMedia =
-                  product.image_url ||
-                  media.some((m: any) =>
-                    typeof m === "string" ? Boolean(m.trim()) : Boolean(m?.url || m?.src),
-                  );
-                const hasCategory = Boolean(
-                  product.category && resolveCategoryName(product.category),
-                );
-                const isHiddenWithStock = !product.is_active && totalStock > 0;
-
-                const attentionReasons: {
-                  key: string;
-                  label_ar: string;
-                  label_en: string;
-                  tone: "danger" | "warning" | "info";
-                }[] = [];
-                if (isOutOfStock) {
-                  attentionReasons.push({
-                    key: "out_of_stock",
-                    label_ar: "نفاد المخزون",
-                    label_en: "Out of Stock",
-                    tone: "danger",
-                  });
-                } else if (isLowStock) {
-                  attentionReasons.push({
-                    key: "low_stock",
-                    label_ar: "مخزون منخفض",
-                    label_en: "Low Stock",
-                    tone: "warning",
-                  });
-                }
-                if (!hasMedia) {
-                  attentionReasons.push({
-                    key: "missing_image",
-                    label_ar: "نقص الصور",
-                    label_en: "No Image",
-                    tone: "warning",
-                  });
-                }
-                if (!hasCategory) {
-                  attentionReasons.push({
-                    key: "missing_category",
-                    label_ar: "بدون تصنيف",
-                    label_en: "No Category",
-                    tone: "info",
-                  });
-                }
-                if (isHiddenWithStock) {
-                  attentionReasons.push({
-                    key: "hidden_with_stock",
-                    label_ar: "مخفي ولديه مخزون",
-                    label_en: "Hidden with Stock",
-                    tone: "info",
-                  });
-                }
+                // The one attention rule: the tab, its count and these marks cannot disagree.
+                const attentionReasons = productAttentionReasons(product, {
+                  stock: totalStock,
+                  weeklySales: weeklySalesOf?.(product.id) ?? 0,
+                  lowStockUnits,
+                  lowestPrice: minPrice,
+                  pricesMatter,
+                });
 
                 return (
                   <React.Fragment key={product.id}>
@@ -320,24 +277,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 BAR: {barcode}
                               </div>
                             ) : null}
-                            {attentionReasons.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-1">
-                                {attentionReasons.map((reason) => (
-                                  <span
-                                    key={reason.key}
-                                    className={`inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded ${
-                                      reason.tone === "danger"
-                                        ? "bg-destructive/10 text-destructive border border-destructive/20"
-                                        : reason.tone === "warning"
-                                          ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-                                          : "bg-muted text-muted-foreground border border-border-subtle"
-                                    }`}
-                                  >
-                                    {isAr ? reason.label_ar : reason.label_en}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                            <AttentionMarks
+                              reasons={attentionReasons}
+                              lang={lang}
+                              className="mt-1"
+                            />
                           </div>
                         </div>
                       </td>
@@ -377,7 +321,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                       {/* Stock Level */}
                       <td className="p-3 align-middle">
-                        <StockLevelBadge product={product} totalStock={totalStock} lang={lang} />
+                        <StockLevelBadge
+                          product={product}
+                          totalStock={totalStock}
+                          lang={lang}
+                          lowStockUnits={lowStockUnits}
+                        />
                       </td>
 
                       {/* Price */}

@@ -1,6 +1,13 @@
 import { productAvailability, type AvailabilityStatus } from "@/lib/product-availability";
 import type { LabelData } from "@/components/barcode-label";
 import type { Product, Variant } from "@/features/inventory/types";
+import {
+  hasPicture,
+  productAttentionReasons,
+  type AttentionFacts,
+  type AttentionKey,
+  type AttentionProduct,
+} from "@/features/inventory/lib/attention";
 
 /**
  * Pure rules for the inventory product list: stock and sales per product,
@@ -9,7 +16,18 @@ import type { Product, Variant } from "@/features/inventory/types";
  */
 
 export type InventoryScope =
-  "all" | "attention" | "active" | "low" | "out" | "featured" | "inactive";
+  "all" | "attention" | "active" | "low" | "out" | "featured" | "inactive" | "made_to_order";
+
+export const INVENTORY_SORTS = [
+  "newest",
+  "name",
+  "price-asc",
+  "price-desc",
+  "stock-asc",
+  "stock-desc",
+  "best-selling",
+] as const;
+export type InventorySort = (typeof INVENTORY_SORTS)[number];
 
 /** Units sold per variant across the loaded orders. */
 export function salesByVariantFrom(salesHistory: any[]): Map<string, number> {
@@ -61,16 +79,42 @@ export function productWeeklySalesFrom(
   return productDailyVelocity * 7;
 }
 
+/**
+ * Each product's figures, worked out once for the whole list: its pieces (the store's and its
+ * partners'), expected weekly sales and the lowest price a shopper can pay. The list used to
+ * walk every variant again for every product, for every tab and every sort.
+ */
+export type ProductFigures = { stock: number; weeklySales: number; lowestPrice: number };
+
+const NO_FIGURES: ProductFigures = { stock: 0, weeklySales: 0, lowestPrice: 0 };
+
+export function productFiguresFrom(
+  products: Array<Pick<Product, "id" | "base_price">>,
+  variantsByProduct: Record<string, Variant[]>,
+  salesByVariant: Map<string, number>,
+  now: number = Date.now(),
+): Map<string, ProductFigures> {
+  const figures = new Map<string, ProductFigures>();
+  for (const product of products) {
+    const variants = variantsByProduct[product.id] ?? [];
+    figures.set(product.id, {
+      stock: productStockFrom(variants, product.id),
+      weeklySales: productWeeklySalesFrom(variants, salesByVariant, product.id, now),
+      lowestPrice:
+        variants.length > 0
+          ? Math.min(...variants.map((variant) => Number(variant.selling_price || 0)))
+          : Number(product.base_price || 0),
+    });
+  }
+  return figures;
+}
+
+export function figuresOf(figures: Map<string, ProductFigures>, productId: string) {
+  return figures.get(productId) ?? NO_FIGURES;
+}
+
 export function productHasMedia(product: Pick<Product, "image_url" | "media">): boolean {
-  const media: unknown[] = Array.isArray(product.media) ? product.media : [];
-  return Boolean(
-    product.image_url ||
-    media.some((m) => {
-      if (typeof m === "string") return Boolean(m.trim());
-      const item = m as { url?: string; src?: string } | null;
-      return Boolean(item?.url || item?.src);
-    }),
-  );
+  return hasPicture(product);
 }
 
 type StockedProduct = Pick<Product, "is_made_to_order" | "item_kind">;
@@ -83,18 +127,14 @@ export function productStockStatus(
   product: StockedProduct,
   stock: number,
   weeklySales = 0,
+  lowStockUnits?: number,
 ): AvailabilityStatus {
-  return productAvailability(product, stock, weeklySales).status;
+  return productAvailability(product, stock, weeklySales, lowStockUnits).status;
 }
 
-/** "Needs attention": low or out of stock (for a product sold from stock), or no photo. */
-export function productNeedsAttention(
-  product: Pick<Product, "image_url" | "media"> & StockedProduct,
-  stock: number,
-  weeklySales: number,
-): boolean {
-  const status = productStockStatus(product, stock, weeklySales);
-  return status === "low" || status === "out" || !productHasMedia(product);
+/** "Needs attention": the product has at least one issue (`productAttentionReasons`). */
+export function productNeedsAttention(product: AttentionProduct, facts: AttentionFacts): boolean {
+  return productAttentionReasons(product, facts).length > 0;
 }
 
 /** The scope a dashboard link (`?filter=`) opens; null when it names none. */
@@ -105,6 +145,8 @@ export function inventoryScopeFromFilter(filter?: string): InventoryScope | null
   if (filter === "active") return "active";
   if (filter === "inactive" || filter === "hidden") return "inactive";
   if (filter === "featured") return "featured";
+  if (filter === "made_to_order") return "made_to_order";
+  if (filter === "all") return "all";
   return null;
 }
 
@@ -119,7 +161,8 @@ export function variantsByProductFrom(variants: Variant[]): Record<string, Varia
 
 /**
  * Products matching the search (name, category, variant SKU/barcode/size/colour),
- * category and scope, sorted. "newest" keeps the loaded order.
+ * category, scope and issue, sorted. "newest" keeps the loaded order. A price sort goes by the
+ * lowest price a shopper can pay (the price the row shows), not by the product's base price.
  */
 export function filterInventoryProducts({
   products,
@@ -130,6 +173,11 @@ export function filterInventoryProducts({
   sortBy,
   productStock,
   productWeeklySales,
+  issue = "all",
+  lowStockUnits,
+  lowestPrice,
+  pricesMatter = true,
+  lang = "en",
 }: {
   products: Product[];
   variantsByProduct: Record<string, Variant[]>;
@@ -139,7 +187,25 @@ export function filterInventoryProducts({
   sortBy: string;
   productStock: (productId: string) => number;
   productWeeklySales: (productId: string) => number;
+  /** Only the products carrying this issue. */
+  issue?: "all" | AttentionKey;
+  lowStockUnits?: number;
+  lowestPrice?: (productId: string) => number;
+  pricesMatter?: boolean;
+  lang?: "ar" | "en";
 }): Product[] {
+  const reasonsOf = (product: Product) =>
+    productAttentionReasons(product, {
+      stock: productStock(product.id),
+      weeklySales: productWeeklySales(product.id),
+      lowStockUnits,
+      lowestPrice: lowestPrice?.(product.id),
+      pricesMatter,
+    });
+  const priceOf = (product: Product) =>
+    lowestPrice ? lowestPrice(product.id) : Number(product.base_price || 0);
+  const nameOf = (product: Product) =>
+    (lang === "ar" ? product.name_ar || product.name : product.name_en || product.name) || "";
   const result = products.filter((product) => {
     const productVariants = variantsByProduct[product.id] || [];
     const searchable = [
@@ -163,28 +229,39 @@ export function filterInventoryProducts({
 
     let matchesScope = true;
     if (scope === "attention") {
-      matchesScope = productNeedsAttention(product, stock, productWeeklySales(product.id));
+      matchesScope = reasonsOf(product).length > 0;
     } else if (scope === "active") {
       matchesScope = Boolean(product.is_active);
     } else if (scope === "low") {
-      matchesScope = productStockStatus(product, stock, productWeeklySales(product.id)) === "low";
+      matchesScope =
+        productStockStatus(product, stock, productWeeklySales(product.id), lowStockUnits) === "low";
     } else if (scope === "out") {
       matchesScope = productStockStatus(product, stock) === "out";
     } else if (scope === "featured") {
       matchesScope = Boolean(product.featured_trending);
     } else if (scope === "inactive") {
       matchesScope = !product.is_active;
+    } else if (scope === "made_to_order") {
+      matchesScope = productStockStatus(product, stock) === "made_to_order";
     }
 
-    return matchesSearch && matchesCategory && matchesScope;
+    const matchesIssue = issue === "all" || reasonsOf(product).some((r) => r.key === issue);
+
+    return matchesSearch && matchesCategory && matchesScope && matchesIssue;
   });
 
   if (sortBy === "price-asc") {
-    result.sort((a, b) => (a.base_price || 0) - (b.base_price || 0));
+    result.sort((a, b) => priceOf(a) - priceOf(b));
   } else if (sortBy === "price-desc") {
-    result.sort((a, b) => (b.base_price || 0) - (a.base_price || 0));
+    result.sort((a, b) => priceOf(b) - priceOf(a));
   } else if (sortBy === "stock-asc") {
     result.sort((a, b) => productStock(a.id) - productStock(b.id));
+  } else if (sortBy === "stock-desc") {
+    result.sort((a, b) => productStock(b.id) - productStock(a.id));
+  } else if (sortBy === "best-selling") {
+    result.sort((a, b) => productWeeklySales(b.id) - productWeeklySales(a.id));
+  } else if (sortBy === "name") {
+    result.sort((a, b) => nameOf(a).localeCompare(nameOf(b), lang));
   }
 
   return result;

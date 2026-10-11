@@ -20,6 +20,8 @@ import {
 import { AlertCircle, PackageX, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { reportingQueries } from "@/lib/data/reporting";
+import { useLowStockLevel } from "@/hooks/use-low-stock-level";
+import { isLowStock } from "@/lib/inventory-health";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/products")({
   component: ReportsProducts,
@@ -51,6 +53,10 @@ function ReportsProducts() {
   );
 
   const brand = useBrand();
+  // The store's own level decides the "low" mark, as on the inventory list.
+  const lowStockUnits = useLowStockLevel(brand?.id ?? "");
+  const isLow = (row: { current_stock?: number | null }) =>
+    isLowStock(Number(row.current_stock || 0), 0, lowStockUnits);
 
   const { data: inquiriesData } = useQuery(
     reportingQueries.catalogInquiries(
@@ -194,7 +200,7 @@ function ReportsProducts() {
                               <PackageX className="me-1 h-3 w-3" />0
                             </Badge>
                           ) : (
-                            <Badge variant={p.is_low_stock ? "secondary" : "outline"}>
+                            <Badge variant={isLow(p) ? "secondary" : "outline"}>
                               {p.current_stock}
                             </Badge>
                           )}
@@ -295,7 +301,7 @@ function ReportsProducts() {
                                   <Badge variant="destructive" className="flex gap-1">
                                     <PackageX className="w-3 h-3" /> 0
                                   </Badge>
-                                ) : p.is_low_stock ? (
+                                ) : isLow(p) ? (
                                   <Badge
                                     variant="secondary"
                                     className="text-amber-500 border-amber-500/20 bg-amber-500/10"

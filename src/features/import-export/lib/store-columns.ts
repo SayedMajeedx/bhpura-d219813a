@@ -3,6 +3,7 @@
  * has no stock column to map, no stock-health filter and no valuation report. The data is the same
  * either way; only the offer follows the store's modules (docs/vertical-fit-audit.md).
  */
+import { DEFAULT_LOW_STOCK_UNITS } from "@/lib/inventory-health";
 
 export type ImportField = { field: string; label: string };
 
@@ -32,9 +33,13 @@ export function productImportFields(stock: boolean, isAr: boolean): ImportField[
 
 export type StockFilterOption = { value: string; labelAr: string; labelEn: string };
 
-const STOCK_OPTIONS: StockFilterOption[] = [
+const stockOptions = (lowStockUnits: number): StockFilterOption[] => [
   { value: "in_stock", labelAr: "المتوفر بالمخزن فقط", labelEn: "In Stock Only" },
-  { value: "low_stock", labelAr: "مخزون منخفض (≤ 5)", labelEn: "Low Stock (≤ 5)" },
+  {
+    value: "low_stock",
+    labelAr: `مخزون منخفض (≤ ${lowStockUnits})`,
+    labelEn: `Low Stock (≤ ${lowStockUnits})`,
+  },
   { value: "out_of_stock", labelAr: "المنتجات النافذة فقط", labelEn: "Out of Stock" },
 ];
 
@@ -43,9 +48,15 @@ const STATE_OPTIONS: StockFilterOption[] = [
   { value: "draft_only", labelAr: "المسودات والمعطلة", labelEn: "Drafts Only" },
 ];
 
-/** The product list's filter: the stock choices only mean something where there is stock. */
-export function productListFilterOptions(stock: boolean): StockFilterOption[] {
-  return stock ? [...STOCK_OPTIONS, ...STATE_OPTIONS] : STATE_OPTIONS;
+/**
+ * The product list's filter: the stock choices only mean something where there is stock. "Low"
+ * names the store's own level (`lowStockLevel`), the number the export then filters by.
+ */
+export function productListFilterOptions(
+  stock: boolean,
+  lowStockUnits: number = DEFAULT_LOW_STOCK_UNITS,
+): StockFilterOption[] {
+  return stock ? [...stockOptions(lowStockUnits), ...STATE_OPTIONS] : STATE_OPTIONS;
 }
 
 export function productListFilterLabel(stock: boolean, isAr: boolean): string {

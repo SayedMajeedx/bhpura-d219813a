@@ -299,6 +299,42 @@ describe("the total at partners", () => {
     await asServer();
     expect(await stock(variant)).toEqual({ store: 4, partners: 5, total: 9 });
   });
+
+  it("a stock change with its reason: an arrival adds, a loss takes off, a count sets", async () => {
+    // What the inventory list's stock dialog sends (src/features/inventory/lib/stock-change.ts).
+    const variant = await spread();
+    const change = (mode: string, value: number, reason: string, note: string) =>
+      db.query("SELECT public.rpc_adjust_variant_stock($1, 'main', $2, $3, $4, $5)", [
+        variant,
+        mode,
+        value,
+        reason,
+        note,
+      ]);
+    await asStaff();
+    await change("delta", 12, "manual_adjust", "Stock received");
+    await change("delta", -3, "correction", "Damaged or lost: torn");
+    await asServer();
+    expect(await stock(variant)).toEqual({ store: 10, partners: 5, total: 15 });
+    await asStaff();
+    await change("set", 7, "correction", "Count correction");
+    // More than the store holds is refused, and nothing moves.
+    await expect(change("delta", -8, "correction", "Damaged or lost")).rejects.toThrow();
+    await asServer();
+    expect(await stock(variant)).toEqual({ store: 7, partners: 5, total: 12 });
+    // The stock history reads as what happened.
+    const ledger = await db.query<{ delta: number; reason: string; note: string }>(
+      `SELECT delta, reason, note FROM public.inventory_movements
+       WHERE variant_id = $1 AND note IN ('Stock received', 'Damaged or lost: torn', 'Count correction')
+       ORDER BY balance_after DESC`,
+      [variant],
+    );
+    expect(ledger.rows).toEqual([
+      { delta: 12, reason: "manual_adjust", note: "Stock received" },
+      { delta: -3, reason: "correction", note: "Damaged or lost: torn" },
+      { delta: -3, reason: "correction", note: "Count correction" },
+    ]);
+  });
 });
 
 describe("who may adjust stock", () => {

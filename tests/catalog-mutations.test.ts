@@ -193,6 +193,16 @@ describe("variant writes", () => {
         p_note: "Bulk add stock +3",
       },
     });
+    // A change that says why (a count, a loss) carries its own reason.
+    await catalog.adjustVariantStock({
+      variantId: "v1",
+      location: "main",
+      mode: "set",
+      value: 4,
+      reason: "correction",
+      note: "Count correction",
+    });
+    expect(requests[1].payload).toMatchObject({ p_reason: "correction", p_mode: "set" });
     respond = () => ({ error: denied });
     await expect(
       catalog.adjustVariantStock({
