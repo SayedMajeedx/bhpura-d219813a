@@ -9,7 +9,7 @@ import type {
   StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
 import type { CustomField, PdpMediaItem } from "@/features/product-page/types";
-import { parsePriceDelta } from "@/features/product-page/lib/variant-options";
+import { fieldPriceDelta } from "@/features/product-page/lib/variant-options";
 
 /**
  * Pure rules for "Add to cart" on the product page: what blocks it, which
@@ -184,7 +184,7 @@ export function productCartLine({
   const custom = activeCustomFields
     .map((f) => {
       const val = (cfValues[f.key] ?? "").trim();
-      const price_delta = parsePriceDelta(val);
+      const price_delta = fieldPriceDelta(f, val);
       return {
         key: f.key,
         label_ar: f.label_ar,

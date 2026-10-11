@@ -36,7 +36,7 @@ import {
   matchingVariantsFor,
   offeredSizes,
   outOfStockByValue,
-  parsePriceDelta,
+  fieldPriceDelta,
   sortVariants,
   uniqueOptionValues,
   resolveProductAxes,
@@ -447,10 +447,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const selectedAddOnPrice = useMemo(() => {
     let total = 0;
     for (const f of customFields) {
-      const val = cfValues[f.key];
-      if (val) {
-        total += parsePriceDelta(val);
-      }
+      total += fieldPriceDelta(f, cfValues[f.key]);
     }
     for (const addonId of selectedAddonIds) {
       const opt = applicableAddons.find((a: any) => a.id === addonId);

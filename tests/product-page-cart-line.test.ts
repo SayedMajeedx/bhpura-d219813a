@@ -194,9 +194,14 @@ describe("productCartLine", () => {
   });
 
   it("records filled fields, price additions and tailoring notes", () => {
+    const finish: CustomField = {
+      ...engraving,
+      type: "select",
+      options: ["Plain", "Gold + 5 BHD"],
+    };
     const line = productCartLine(
       lineInput({
-        visibleCustomFields: [engraving, { ...engraving, key: "empty", required: false }],
+        visibleCustomFields: [finish, { ...engraving, key: "empty", required: false }],
         cfValues: { engraving: " Gold + 5 BHD " },
         tailoringNotes: " shorter sleeves ",
       }),
@@ -207,7 +212,7 @@ describe("productCartLine", () => {
         label_ar: "نقش",
         label_en: "Engraving",
         value: "Gold + 5 BHD",
-        type: "text",
+        type: "select",
         price_delta: 5,
       },
       expect.objectContaining({ key: "tailoring_notes", value: "shorter sleeves" }),
@@ -218,6 +223,17 @@ describe("productCartLine", () => {
       value: "Gold + 5 BHD",
       price_delta: 5,
     });
+  });
+
+  it("never prices text a shopper typed, whatever it says", () => {
+    const line = productCartLine(
+      lineInput({
+        visibleCustomFields: [engraving],
+        cfValues: { engraving: "Gold + 5 BHD" },
+      }),
+    );
+    expect(line.custom_fields[0]).toMatchObject({ value: "Gold + 5 BHD", price_delta: 0 });
+    expect(line.selected_customizations.options[0].price_delta).toBe(0);
   });
 
   it("drops custom fields when the ready size is chosen", () => {
