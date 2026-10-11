@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
+import { fulfillmentPaymentBlock } from "@/lib/payments/charge-plan";
+import { orderChargePlan } from "@/lib/payments/booking-deposit.server";
 
 export const Route = createFileRoute("/api/orders/status")({
   server: {
@@ -80,7 +82,7 @@ export const Route = createFileRoute("/api/orders/status")({
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select(
-              "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to",
+              "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to, total, advance_paid",
             )
             .eq("id", id)
             .maybeSingle();
@@ -144,12 +146,6 @@ export const Route = createFileRoute("/api/orders/status")({
           const currentPayment =
             payment_status !== undefined ? payment_status : order.payment_status;
 
-          const isUnpaid =
-            !currentPayment ||
-            ["unpaid", "UNPAID", "partially_paid", "PARTIALLY_PAID", "partial"].includes(
-              currentPayment,
-            );
-
           const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(
             String(order.payment_method || "").toLowerCase(),
           );
@@ -166,12 +162,25 @@ export const Route = createFileRoute("/api/orders/status")({
               "shipped",
             ].includes(fulfillment_status)
           ) {
-            if (isUnpaid && !isCod && !admin_override) {
-              const paymentLabel = ["partially_paid", "PARTIALLY_PAID", "partial"].includes(
-                currentPayment || "",
-              )
-                ? "partially paid"
-                : "unpaid";
+            // An order paid in part goes ahead once what it owed up front is collected (its
+            // advance, or a booking's deposit): the balance is due on delivery. A lookup that
+            // fails keeps the order blocked rather than guess.
+            const partlyPaid = ["partially_paid", "partial"].includes(
+              String(currentPayment ?? "").toLowerCase(),
+            );
+            const upfront =
+              partlyPaid && !isCod && !admin_override
+                ? await orderChargePlan(supabaseAdmin, order, order.brand_id).catch(() => null)
+                : null;
+            const block = fulfillmentPaymentBlock({
+              paymentStatus: currentPayment,
+              isCod,
+              adminOverride: Boolean(admin_override),
+              paid: order.advance_paid,
+              upfront,
+            });
+            if (block) {
+              const paymentLabel = block === "partially_paid" ? "partially paid" : "unpaid";
               return new Response(
                 JSON.stringify({
                   error: `Order cannot be packaged or shipped because it is ${paymentLabel}.`,
