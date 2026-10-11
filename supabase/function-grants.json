@@ -615,6 +615,11 @@
       "anon": true,
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "void_incubator_payment(p_payment_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (a session, can_access_brand and the manage_inventory permission)"
     }
   }
 }

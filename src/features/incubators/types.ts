@@ -78,6 +78,9 @@ export type Payment = {
   payment_method: string | null;
   reference: string | null;
   notes?: string | null;
+  /** Set when the payment was taken back: it is on record, and no longer counts. */
+  voided_at?: string | null;
+  void_reason?: string | null;
 };
 
 /** Which sale a payment settled, and by how much. */

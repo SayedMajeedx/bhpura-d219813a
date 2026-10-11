@@ -83,6 +83,7 @@ describe("keys", () => {
       incubators.incubatorsQueries.allocations("b1").queryKey,
       incubators.incubatorsQueries.movements("b1", "i1", 1, 20).queryKey,
       incubators.incubatorsQueries.movements("b1", "i1", 2, 20).queryKey,
+      incubators.incubatorsQueries.summaries("b1", "2026-10-11", "Asia/Bahrain").queryKey,
       incubators.incubatorsQueries.orderHolds("b1").queryKey,
       incubators.incubatorsQueries.orderPickups("b1", "o1").queryKey,
       incubators.incubatorsQueries.partnerTotals("b1").queryKey,
@@ -160,6 +161,37 @@ describe("reads", () => {
     expect(filters(requests[0], "eq")).toEqual([["incubator_payments.brand_id", "b1"]]);
   });
 
+  it("ask the database for every partner's figures, as of the reader's own day", async () => {
+    respond = () => ({ data: [{ incubator_id: "i1", due: 9.5 }], error: null });
+    expect(await incubators.fetchIncubatorSummaries("b1", "2026-10-11", "Asia/Bahrain")).toEqual([
+      { incubator_id: "i1", due: 9.5 },
+    ]);
+    expect(requests[0]).toMatchObject({
+      table: "incubator_summaries",
+      op: "rpc",
+      payload: { p_brand_id: "b1", p_today: "2026-10-11", p_tz: "Asia/Bahrain" },
+    });
+  });
+
+  it("read a whole catalog's variants by brand, not by a list of ids too long for an address", async () => {
+    const many = Array.from({ length: incubators.BATCH_VARIANTS_ID_LIMIT + 1 }, (_, i) => `p${i}`);
+    respond = (request) =>
+      request.table === "product_variants"
+        ? {
+            data: [
+              { id: "v1", product_id: "p3" },
+              { id: "v2", product_id: "other" },
+            ],
+            error: null,
+          }
+        : { data: [], error: null };
+    const rows = await incubators.fetchBatchTransferVariants("b1", many);
+    expect(filters(requests[0], "in")).toEqual([]);
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    // Only the wanted products' variants are kept.
+    expect(rows.map((row) => row.id)).toEqual(["v1"]);
+  });
+
   it("read the variants that say they have pieces at partners, by named columns", async () => {
     await incubators.fetchPartnerTotals("b1");
     expect(requests[0].table).toBe("product_variants");
@@ -232,6 +264,71 @@ describe("writes", () => {
       incubators.returnStockFromIncubator({ incubatorId: "i1", variantId: "v1", quantity: 1 }),
     ).rejects.toBe(denied);
     await expect(incubators.reverseIncubatorSale("s1", "Manual")).rejects.toBe(denied);
+  });
+
+  it("void a payment with its reason", async () => {
+    await incubators.voidIncubatorPayment("pay1", "Recorded twice");
+    expect(requests[0]).toMatchObject({
+      table: "void_incubator_payment",
+      op: "rpc",
+      payload: { p_payment_id: "pay1", p_reason: "Recorded twice" },
+    });
+    respond = () => ({ data: null, error: denied });
+    await expect(incubators.voidIncubatorPayment("pay1", "x")).rejects.toBe(denied);
+  });
+
+  it("send a batch of transfers in one call, and say how many pieces moved", async () => {
+    respond = () => ({ data: 5, error: null });
+    const pieces = await incubators.transferStockBatchToIncubator({
+      incubatorId: "i1",
+      notes: null,
+      items: [
+        {
+          variantId: "v1",
+          quantity: 2,
+          externalCode: "SB-1",
+          price: 30,
+          commissionType: "percentage",
+          commissionValue: 10,
+        },
+        {
+          variantId: "v2",
+          quantity: 3,
+          externalCode: null,
+          price: 12,
+          commissionType: "fixed",
+          commissionValue: 1,
+        },
+      ],
+    });
+    expect(pieces).toBe(5);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({
+      table: "transfer_stock_to_incubator_batch",
+      op: "rpc",
+      payload: {
+        p_incubator_id: "i1",
+        p_notes: undefined,
+        p_items: [
+          {
+            variant_id: "v1",
+            quantity: 2,
+            external_code: "SB-1",
+            price: 30,
+            commission_type: "percentage",
+            commission_value: 10,
+          },
+          {
+            variant_id: "v2",
+            quantity: 3,
+            external_code: "",
+            price: 12,
+            commission_type: "fixed",
+            commission_value: 1,
+          },
+        ],
+      },
+    });
   });
 
   it("report how many prices a sync changed", async () => {

@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState } from "react";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { localDateTimeValue } from "@/features/incubators/lib/forms";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
@@ -402,6 +403,66 @@ export function ReverseSaleDialog({ page }: { page: IncubatorsPageState }) {
             }}
           >
             {isAr ? "إلغاء البيع" : "Reverse the sale"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/**
+ * Taking a payment back: the sales it settled owe their part again, and the payment stays on
+ * record as voided with the reason typed here.
+ */
+export function VoidPaymentDialog({ page }: { page: IncubatorsPageState }) {
+  const { busy, isAr, money, paymentToVoid, setPaymentToVoid, voidPayment } = page;
+  const [reason, setReason] = useState("");
+  useEffect(() => setReason(""), [paymentToVoid?.id]);
+  const ready = reason.trim().length >= 3;
+  return (
+    <AlertDialog
+      open={Boolean(paymentToVoid)}
+      onOpenChange={(open) => !open && setPaymentToVoid(null)}
+    >
+      <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{isAr ? "إلغاء هذه الدفعة؟" : "Void this payment?"}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {paymentToVoid && (
+              <span className="mb-2 block break-words font-semibold text-foreground" dir="auto">
+                {money(Number(paymentToVoid.amount))}
+                {paymentToVoid.reference ? ` · ${paymentToVoid.reference}` : ""}
+              </span>
+            )}
+            {isAr
+              ? "ستعود المبيعات التي سدّدتها هذه الدفعة مستحقة، وتبقى الدفعة في السجل كملغاة مع السبب."
+              : "The sales it settled become due again, and the payment stays on record as voided with the reason."}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div>
+          <Label htmlFor="void-reason">{isAr ? "سبب الإلغاء" : "Reason"}</Label>
+          <Textarea
+            id="void-reason"
+            className="mt-2"
+            value={reason}
+            maxLength={300}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder={isAr ? "مثال: سُجّلت مرتين" : "For example: recorded twice"}
+          />
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>
+            {isAr ? "تراجع" : "Keep the payment"}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            disabled={busy || !ready}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={(event) => {
+              event.preventDefault();
+              void voidPayment(reason.trim());
+            }}
+          >
+            {isAr ? "إلغاء الدفعة" : "Void the payment"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -69,13 +69,17 @@ export type Statement = {
   balanceDue: number;
 };
 
-/** Reversed sales are left out: they were undone, and nothing is owed for them. */
+/**
+ * Reversed sales and voided payments are left out: they were undone. `balanceDue` is what the
+ * database says the partner owes today; without it, the loaded sales are added up.
+ */
 export function buildStatement(input: {
   incubator: Pick<Incubator, "name" | "currency">;
   sales: readonly Sale[];
   payments: readonly Payment[];
   period: StatementPeriod;
   lang: Lang;
+  balanceDue?: number;
 }): Statement {
   const sales = input.sales
     .filter((sale) => sale.status === "confirmed" && within(localDay(sale.sold_at), input.period))
@@ -91,7 +95,10 @@ export function buildStatement(input: {
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
   const payments = input.payments
-    .filter((payment) => within(String(payment.payment_date).slice(0, 10), input.period))
+    .filter(
+      (payment) =>
+        !payment.voided_at && within(String(payment.payment_date).slice(0, 10), input.period),
+    )
     .map((payment) => ({
       id: payment.id,
       date: String(payment.payment_date).slice(0, 10),
@@ -113,7 +120,7 @@ export function buildStatement(input: {
     commission: total(sales, (sale) => sale.commission),
     net: total(sales, (sale) => sale.net),
     paid: total(payments, (payment) => payment.amount),
-    balanceDue: incubatorAmountDue(input.sales),
+    balanceDue: input.balanceDue ?? incubatorAmountDue(input.sales),
   };
 }
 
