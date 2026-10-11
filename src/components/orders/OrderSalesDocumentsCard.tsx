@@ -14,6 +14,7 @@ import {
   Share2,
   ArrowRight,
   ClipboardList,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { printDeliveryNote } from "@/lib/thermal-print";
@@ -34,8 +35,12 @@ interface OrderSalesDocumentsCardProps {
   slug: string;
   onPrintThermalReceipt?: () => void;
   onPrintInvoice?: () => void;
-  /** Set only when the order has a piece that goes to the workshop. */
-  onPrintJobSheet?: () => void;
+  /** What goes with a piece to the workshop; each part is absent when it does not apply. */
+  workshop?: {
+    printJobSheet?: () => void;
+    tellCustomerWorkStarted?: () => void;
+    atWorkshop?: boolean;
+  };
 }
 
 function getPaymentStatusLabel(status: string | null | undefined, currentLang: "ar" | "en") {
@@ -58,7 +63,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   slug,
   onPrintThermalReceipt,
   onPrintInvoice,
-  onPrintJobSheet,
+  workshop: workshopActions,
 }) => {
   const isAr = lang === "ar";
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
@@ -66,6 +71,11 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const { vocabulary } = useVocabulary();
   const workshop = vocabulary.workshop?.[lang] || (isAr ? "الورشة" : "Workshop");
+  const onPrintJobSheet = workshopActions?.printJobSheet;
+  // Offered while the piece is with the workshop, in case the moment after sending it was missed.
+  const onTellCustomer = workshopActions?.atWorkshop
+    ? workshopActions.tellCustomerWorkStarted
+    : undefined;
 
   const resolvedBrandName =
     (isAr ? brand?.name_ar : brand?.name_en) ||
@@ -203,15 +213,28 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onPrintJobSheet}
-            className="h-9 shrink-0 gap-1.5 text-xs"
-          >
-            <Printer className="h-3.5 w-3.5" />
-            {isAr ? "طباعة أمر التشغيل" : "Print job sheet"}
-          </Button>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {onTellCustomer && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onTellCustomer}
+                className="h-9 gap-1.5 text-xs"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                {isAr ? "أبلغ العميل ببدء العمل" : "Tell the customer work has started"}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPrintJobSheet}
+              className="h-9 gap-1.5 text-xs"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              {isAr ? "طباعة أمر التشغيل" : "Print job sheet"}
+            </Button>
+          </div>
         </div>
       )}
 
