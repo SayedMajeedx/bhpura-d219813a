@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-// A product card's title is clipped to one line, so its line box has to be tall enough for Arabic
+// A product card's title is clipped (to two lines), so each line box has to be tall enough for Arabic
 // marks and letter tails below the baseline. A heading rule once gave every <h3> (cards included)
 // a tight line-height with !important, and the bottoms of names like مَرجان were cut off. This
 // checks what the browser really draws, on the live store, in Arabic.

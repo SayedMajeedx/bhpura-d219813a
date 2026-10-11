@@ -115,7 +115,9 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
+                    <h2 className="line-clamp-2 break-words text-sm font-bold text-foreground">
+                      {name}
+                    </h2>
                     {cat.is_smart && (
                       <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">
                         {isAr ? "ذكي" : "Smart"}

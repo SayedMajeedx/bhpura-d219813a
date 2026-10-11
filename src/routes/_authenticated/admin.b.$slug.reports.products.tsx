@@ -136,7 +136,9 @@ function ReportsProducts() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <h3 className="truncate text-sm font-bold">{p.product_name}</h3>
+                            <h3 className="line-clamp-2 break-words text-sm font-bold">
+                              {p.product_name}
+                            </h3>
                             <p
                               className="mt-0.5 truncate font-mono text-xs text-muted-foreground"
                               dir="ltr"

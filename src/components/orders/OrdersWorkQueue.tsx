@@ -213,7 +213,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       </span>
                     ) : (
                       <div>
-                        <div className="font-bold text-foreground truncate max-w-[180px]">
+                        <div className="font-bold text-foreground line-clamp-2 break-words max-w-[180px]">
                           {customerName}
                         </div>
                         {customerPhone && (

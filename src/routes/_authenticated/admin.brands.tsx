@@ -390,8 +390,8 @@ function BrandsPage() {
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <div className="font-display font-medium text-lg truncate flex items-center gap-2">
-                          <span>{lang === "ar" ? b.name_ar || b.name_en : b.name_en}</span>
+                        <div className="font-display font-medium text-lg line-clamp-2 break-words">
+                          {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
                         </div>
                         <div className="text-xs text-muted-foreground truncate font-mono">
                           {b.slug}.boutq.store

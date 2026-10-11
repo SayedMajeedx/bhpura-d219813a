@@ -303,8 +303,8 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="font-bold text-foreground truncate max-w-[200px] flex items-center gap-1.5">
-                              <span>{name}</span>
+                            <div className="font-bold text-foreground max-w-[200px] flex items-center gap-1.5">
+                              <span className="min-w-0 line-clamp-2 break-words">{name}</span>
                               {isExpanded ? (
                                 <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0" />
                               ) : (

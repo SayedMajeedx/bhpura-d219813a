@@ -156,7 +156,8 @@ export function ProductCard({
 
         <div className="mt-2 text-start">
           <div
-            className="product-title text-sm font-medium leading-[1.8] truncate"
+            dir="auto"
+            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 min-h-[2lh] break-words text-page-start"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}

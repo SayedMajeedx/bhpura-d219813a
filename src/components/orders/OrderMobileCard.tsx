@@ -78,7 +78,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
               {isAr ? "عميل زائر" : "Guest Customer"}
             </span>
           ) : (
-            <span className="font-semibold text-foreground truncate max-w-[180px]">
+            <span className="font-semibold text-foreground line-clamp-2 break-words max-w-[180px]">
               {customerName}
             </span>
           )}

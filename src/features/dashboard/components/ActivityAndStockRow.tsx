@@ -127,7 +127,7 @@ export function ActivityAndStockRow({
                   key={item.id}
                   className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs"
                 >
-                  <span className="font-semibold text-foreground truncate max-w-[180px]">
+                  <span className="font-semibold text-foreground line-clamp-2 break-words max-w-[180px]">
                     {item.name}
                   </span>
                   <span className="text-xs shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">

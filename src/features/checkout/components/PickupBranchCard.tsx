@@ -55,7 +55,7 @@ export function PickupBranchCard({
                     {active && <span className="h-2 w-2 rounded-full bg-primary-foreground" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold truncate">{branchLabel(b)}</div>
+                    <div className="font-semibold line-clamp-2 break-words">{branchLabel(b)}</div>
                     {branchLoc(b) && (
                       <div className="text-xs text-muted-foreground mt-0.5">{branchLoc(b)}</div>
                     )}

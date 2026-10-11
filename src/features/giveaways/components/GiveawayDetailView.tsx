@@ -57,7 +57,7 @@ export function GiveawayDetailView({
           )}
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="truncate font-display text-lg font-bold text-foreground">
+          <h2 className="line-clamp-2 break-words font-display text-lg font-bold text-foreground">
             {giveaway.title}
           </h2>
           {giveaway.media_permalink && (
