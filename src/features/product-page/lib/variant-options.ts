@@ -112,6 +112,22 @@ export function parsePriceDelta(valStr: string): number {
   return 0;
 }
 
+/**
+ * What a shopper's answer to one of the product's fields adds to the price. Only a choice the
+ * product really offers in a select field can carry a price: free text a shopper types (a note
+ * saying "+2 cm") never does. The order function prices a line by the same rule
+ * (storefront_line_customizations, migration 20261011100000).
+ */
+export function fieldPriceDelta(
+  field: { type?: string | null; options?: readonly string[] | null },
+  value: string | null | undefined,
+): number {
+  const chosen = (value ?? "").trim();
+  if (!chosen || field.type !== "select") return 0;
+  const offered = (field.options ?? []).some((option) => String(option).trim() === chosen);
+  return offered ? parsePriceDelta(chosen) : 0;
+}
+
 type AxisConfig = { visible: boolean };
 type AxesByKey<A extends AxisConfig> = Record<"size" | "color" | "fabric" | "four" | "five", A>;
 
