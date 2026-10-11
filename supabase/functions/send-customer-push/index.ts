@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notificationUrl } from "./link.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -141,6 +142,13 @@ Deno.serve(async (req) => {
         .eq("id", event.id);
       continue;
     }
+    // The link opens the event's own store (a path or a missing link resolves against it).
+    const { data: brand } = await supabase
+      .from("brands")
+      .select("slug")
+      .eq("id", event.brand_id)
+      .maybeSingle();
+    const url = notificationUrl(event.target_url, brand?.slug);
     const expoDevices = devices.filter((device) => device.token_provider === "expo");
     const directDevices = devices.filter((device) => device.token_provider !== "expo");
     const messages = expoDevices.map((device) => ({
@@ -153,9 +161,7 @@ Deno.serve(async (req) => {
       data: {
         ...event.payload,
         type: event.event_type,
-        url: event.target_url
-          ? new URL(event.target_url, "https://pura.boutq.store").toString()
-          : "https://pura.boutq.store",
+        url,
       },
     }));
     try {
@@ -194,9 +200,7 @@ Deno.serve(async (req) => {
                   notification: { title: event.title, body: event.body },
                   data: {
                     type: event.event_type,
-                    url: event.target_url
-                      ? new URL(event.target_url, "https://pura.boutq.store").toString()
-                      : "https://pura.boutq.store",
+                    url,
                   },
                   android: {
                     priority: "HIGH",
