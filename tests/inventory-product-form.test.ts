@@ -121,7 +121,9 @@ describe("saving", () => {
       cost_price: 0,
       stock_main: 4,
       stock: 4,
-      image_url: "https://x/legacy.jpg",
+      // No picture of its own: a variant with none shows the product's. A copy of the
+      // product's picture is a second pointer to a file that can be replaced.
+      image_url: null,
     });
     expect(defaultVariantValues({ ...form, initial_stock: "-3" }, false)).toMatchObject({
       size: PLACEHOLDER_SIZE_VALUES[1],

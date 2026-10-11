@@ -56,7 +56,7 @@ export function useSaveProduct({
   setErrors: (errors: ProductFormErrors) => void;
   /** Called after showing validation errors (the editor returns to the first step). */
   onInvalid: () => void;
-  commitMedia: () => void;
+  commitMedia: (productId?: string) => Promise<void>;
   onSaved: (newProductId?: string, kind?: "service" | "product") => void;
   /** The add-ons the service already has (the ones left out of the form are switched off). */
   savedOptionIds?: string[];
@@ -233,7 +233,7 @@ export function useSaveProduct({
         }
       }
     }
-    commitMedia();
+    await commitMedia(product?.id ?? createdProductId);
     if (defaultVariantError) {
       toast.error(
         isAr

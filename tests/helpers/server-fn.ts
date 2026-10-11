@@ -70,6 +70,7 @@ export function fakeSupabase(config: {
       eq: filter,
       neq: () => chain,
       in: filter,
+      contains: filter,
       lte: () => chain,
       gte: () => chain,
       lt: () => chain,
