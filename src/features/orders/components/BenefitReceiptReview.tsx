@@ -14,6 +14,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Order } from "@/features/orders/types";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { transferApproved } from "@/features/orders/lib/transfer-approval";
 
 /** BenefitPay transfer receipt: view it, approve the payment or reject it with a reason. */
 export function BenefitReceiptReview({
@@ -41,6 +42,11 @@ export function BenefitReceiptReview({
   setRejectReason: ReturnType<typeof useBenefitReview>["setRejectReason"];
   setRejectReasonOpen: ReturnType<typeof useBenefitReview>["setRejectReasonOpen"];
 }) {
+  // Approved in full, or for the advance (the balance is collected on delivery). Either way the
+  // receipt was accepted: it is not approved again, and above all not rejected, which would
+  // cancel an order whose payment was taken.
+  const approved = transferApproved(order.payment_status);
+  const advanceOnly = approved && order.payment_status !== "paid";
   return (
     <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -51,12 +57,16 @@ export function BenefitReceiptReview({
           </span>
         </div>
         <span
-          className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
+          className={`rounded-full px-2 py-1 text-xs font-semibold ${approved ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
         >
-          {order.payment_status === "paid"
-            ? lang === "ar"
-              ? "تم التحقق"
-              : "Verified"
+          {approved
+            ? advanceOnly
+              ? lang === "ar"
+                ? "تم التحقق من العربون"
+                : "Advance verified"
+              : lang === "ar"
+                ? "تم التحقق"
+                : "Verified"
             : lang === "ar"
               ? "بانتظار التحقق"
               : "Pending verification"}
@@ -90,7 +100,7 @@ export function BenefitReceiptReview({
               : "The private receipt could not be loaded."}
         </div>
       )}
-      {order.payment_status !== "paid" && (
+      {!approved && (
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Button
             type="button"

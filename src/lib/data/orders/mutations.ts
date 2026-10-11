@@ -83,10 +83,16 @@ export async function replaceOrderItems(orderId: string, items: NewOrderItem[]) 
   if (error) throw error;
 }
 
-/** Marks a BenefitPay transfer as verified and the order as paid. */
+/**
+ * Approves a transfer (BenefitPay or bank). The database decides what it records: the advance
+ * of an order placed under an advance rule (the balance stays due on delivery), or the whole
+ * total. This is the only way a transfer is validated, from the order page and from the list.
+ */
 export async function approveBenefitPayment(orderId: string) {
-  const { error } = await supabase.rpc("approve_benefit_payment", { p_order_id: orderId });
+  const { data, error } = await supabase.rpc("approve_benefit_payment", { p_order_id: orderId });
   if (error) throw error;
+  const result = (data ?? {}) as { advance_only?: boolean; already_paid?: boolean };
+  return { advanceOnly: result.advance_only === true, alreadyPaid: result.already_paid === true };
 }
 
 /**

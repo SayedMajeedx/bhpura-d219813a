@@ -1,6 +1,7 @@
 import { variantSpecs } from "@/lib/order-variant-specs";
-import type { Order, OrderItem } from "@/features/orders/types";
+import type { EditableOrderSource, Order, OrderItem } from "@/features/orders/types";
 import {
+  normalizeOrderMin,
   orderItemFromRow,
   simplifyItem,
   type orderTotals,
@@ -81,6 +82,43 @@ export function orderSavePayload(
     currency,
     order_date: order.order_date,
   };
+}
+
+/**
+ * The order's own state: its stage and its payment. Other screens and the server change these
+ * while an editor is open (a transfer approved from the list, a card payment confirmed, a
+ * courier's delivery).
+ */
+const STATE_FIELDS = [
+  "status",
+  "fulfillment_status",
+  "payment_status",
+  "payment_method",
+  "advance_paid",
+] as const;
+
+/**
+ * What the editor writes to an order that already exists: the saved columns, without the state
+ * fields that were not changed in this editor. The editor used to write back the stage and the
+ * payment it had loaded, so a page left open (with an unsaved note, say) undid an approval or a
+ * delivery recorded somewhere else the moment it was saved. `loaded` is the order as the editor
+ * loaded it; with none, everything is written as before.
+ */
+export function orderUpdatePayload<T extends ReturnType<typeof orderSavePayload>>(
+  payload: T,
+  loaded: EditableOrderSource | null | undefined,
+): Partial<T> {
+  if (!loaded) return payload;
+  const before = normalizeOrderMin(loaded);
+  const next: Partial<T> = { ...payload };
+  for (const field of STATE_FIELDS) {
+    const unchanged =
+      field === "advance_paid"
+        ? Math.abs(Number(payload.advance_paid ?? 0) - before.advance_paid) < 0.0005
+        : (payload[field] ?? null) === (before[field] ?? null);
+    if (unchanged) delete next[field];
+  }
+  return next;
 }
 
 /** An `order_items` row for an editor line. */

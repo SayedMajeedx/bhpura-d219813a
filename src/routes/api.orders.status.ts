@@ -122,6 +122,23 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
+          // Payment is not set here. A transfer is approved by approve_benefit_payment (which
+          // records the advance or the whole total, and who verified it) and a balance is
+          // collected by courier_complete_delivery (which records the amount). This route once
+          // took any payment status from any staff member, and the list's "Validate payment"
+          // used it to mark an order that had only paid its advance as paid in full.
+          if (payment_status !== undefined) {
+            return new Response(
+              JSON.stringify({
+                error:
+                  "Payment is recorded by approving the transfer or collecting the balance, not by a status change. Reload the page and try again.",
+                error_ar:
+                  "يُسجَّل الدفع باعتماد التحويل أو تحصيل المتبقي، وليس بتغيير الحالة. حدّث الصفحة وحاول مرة أخرى.",
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
+          }
+
           // Only an admin can override the payment check. The flag from anyone else is ignored,
           // not refused: the order list sends it with every change, and refusing the request
           // stopped a courier (and staff who are not admins) from changing a stage at all.
@@ -137,9 +154,7 @@ export const Route = createFileRoute("/api/orders/status")({
             );
           }
 
-          // Determine current vs updated payment and fulfillment statuses
-          const currentPayment =
-            payment_status !== undefined ? payment_status : order.payment_status;
+          const currentPayment = order.payment_status;
 
           const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(
             String(order.payment_method || "").toLowerCase(),
@@ -191,9 +206,6 @@ export const Route = createFileRoute("/api/orders/status")({
 
           // Prepare updates payload
           const updates: Record<string, any> = {};
-          if (payment_status !== undefined) {
-            updates.payment_status = payment_status;
-          }
           if (fulfillment_status !== undefined) {
             updates.fulfillment_status = fulfillment_status;
             const normalizedFulfillment = fulfillment_status.toLowerCase();
@@ -206,11 +218,6 @@ export const Route = createFileRoute("/api/orders/status")({
           }
           if (status !== undefined) {
             updates.status = status;
-          } else if (
-            payment_status?.toLowerCase() === "paid" &&
-            String(order.status ?? "").toLowerCase() === "pending_verification"
-          ) {
-            updates.status = "confirmed";
           }
           if (assigned_to !== undefined) {
             updates.assigned_to = assigned_to;

@@ -7,7 +7,16 @@ import { resolvePaymentStatus } from "@/lib/payment-status";
 import { Loader2 } from "lucide-react";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { invalidateOrders, ordersKeys, type OrderListRow } from "@/lib/data/orders";
+import {
+  approveBenefitPayment,
+  invalidateOrders,
+  ordersKeys,
+  type OrderListRow,
+} from "@/lib/data/orders";
+import {
+  transferApprovedMessage,
+  transferRefusedMessage,
+} from "@/features/orders/lib/transfer-approval";
 
 import { authenticatedJsonHeaders } from "@/features/orders/actions/order-links";
 import type { Dispatch, SetStateAction } from "react";
@@ -23,6 +32,7 @@ export type OrderQueueActionContext = {
     order: Order,
     amountToCollect: number,
     notes?: string,
+    doneMessage?: string,
   ) => Promise<unknown>;
   hasMadeToOrder: boolean;
   isSubmittingCash: boolean;
@@ -113,8 +123,30 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
     }
   };
 
+  /**
+   * Validates a transfer the way the order page does: the database records the advance of an
+   * order placed under an advance rule, or the whole total, and who verified it. Writing
+   * "paid" from here marked an order that had only paid its advance as paid in full.
+   * Resolves to whether the transfer is approved, so a caller can carry on with a next step.
+   */
+  const approveTransfer = async (): Promise<boolean> => {
+    setUpdatingOrderId(o.id);
+    try {
+      const result = await approveBenefitPayment(o.id);
+      toast.success(transferApprovedMessage(result, lang));
+      await invalidateOrders(qc, brandId);
+      return true;
+    } catch (err) {
+      toast.error(transferRefusedMessage(err, lang));
+      return false;
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
   return {
     workflow,
+    approveTransfer,
     paymentBadge,
     isPaid,
     isPartiallyPaid,
@@ -142,6 +174,7 @@ export type QueueActionState = ReturnType<typeof queueActionState>;
  */
 export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
   const {
+    handleCompleteDelivery,
     hasMadeToOrder,
     lang,
     setFulfillNotes,
@@ -217,14 +250,10 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
-          handleStatusUpdate(
-            {
-              fulfillment_status: "COMPLETED",
-              status: "completed",
-              ...(collects ? { payment_status: "paid" } : {}),
-            },
-            lang === "ar" ? "تم تنفيذ الخدمة" : "Service completed",
-          );
+          const done = lang === "ar" ? "تم تنفيذ الخدمة" : "Service completed";
+          // The balance is recorded with the completion, like a delivery's.
+          if (collects) void handleCompleteDelivery(o, workflow.outstanding, undefined, done);
+          else handleStatusUpdate({ fulfillment_status: "COMPLETED", status: "completed" }, done);
         }}
       >
         {isUpdating ? (

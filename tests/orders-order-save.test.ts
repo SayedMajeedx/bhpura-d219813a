@@ -6,6 +6,7 @@ import {
   orderItemRow,
   orderSaveBlocker,
   orderSavePayload,
+  orderUpdatePayload,
 } from "../src/features/orders/lib/order-save";
 
 const item = (overrides = {}) => ({
@@ -135,5 +136,55 @@ describe("haveOrderItemsChanged", () => {
     expect(haveOrderItemsChanged([row], [item(), item({ id: undefined })])).toBe(true);
     expect(haveOrderItemsChanged([row], [item({ id: "other" })])).toBe(true);
     expect(haveOrderItemsChanged([row], [item({ quantity: 2 })])).toBe(true);
+  });
+});
+
+describe("orderUpdatePayload", () => {
+  const totals = (advance_paid = 0) =>
+    orderTotals([item()], { discount: 0, shipping: 0, tax_rate: 0, advance_paid }, false);
+  // The order as the editor loaded it: a transfer waiting to be approved.
+  const loaded = {
+    id: "o1",
+    status: "pending",
+    fulfillment_status: "ON_HOLD",
+    payment_status: "unpaid",
+    payment_method: "benefit",
+    advance_paid: 0,
+    notes: "",
+  };
+  const written = (edited: Record<string, unknown>, advance = 0) =>
+    orderUpdatePayload(
+      orderSavePayload({ ...loaded, ...edited }, totals(advance), null, "BHD"),
+      loaded,
+    );
+
+  it("leaves the stage and the payment alone when the editor did not change them", () => {
+    // The advance was approved from the list while this page was open with an unsaved note:
+    // saving the note must not write "unpaid" and "on hold" back.
+    const payload = written({ notes: "Gift wrap" });
+    expect(payload.notes).toBe("Gift wrap");
+    expect(payload).not.toHaveProperty("payment_status");
+    expect(payload).not.toHaveProperty("advance_paid");
+    expect(payload).not.toHaveProperty("payment_method");
+    expect(payload).not.toHaveProperty("status");
+    expect(payload).not.toHaveProperty("fulfillment_status");
+    expect(payload.total).toBe(30);
+  });
+
+  it("writes what was changed in this editor, and only that", () => {
+    const payload = written({ payment_status: "partially_paid" }, 14);
+    expect(payload.payment_status).toBe("partially_paid");
+    expect(payload.advance_paid).toBe(14);
+    expect(payload).not.toHaveProperty("status");
+    expect(payload).not.toHaveProperty("payment_method");
+
+    expect(written({ payment_method: "cod" })).toMatchObject({ payment_method: "cod" });
+    expect(written({ status: "confirmed" })).toMatchObject({ status: "confirmed" });
+  });
+
+  it("writes everything when the editor has no loaded order to compare with", () => {
+    const payload = orderSavePayload(loaded, totals(), null, "BHD");
+    expect(orderUpdatePayload(payload, null)).toEqual(payload);
+    expect(orderUpdatePayload(payload, undefined)).toHaveProperty("payment_status", "unpaid");
   });
 });

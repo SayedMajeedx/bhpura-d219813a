@@ -37,6 +37,8 @@ export function useCompleteDelivery({
     order: Pick<OrderListRow, "id">,
     amountToCollect: number,
     notes?: string,
+    /** What to say when it is done, when the order is not a delivery (a service carried out). */
+    doneMessage?: string,
   ) => {
     if (amountToCollect < 0) {
       toast.error(
@@ -69,9 +71,10 @@ export function useCompleteDelivery({
       if (error) throw error;
 
       toast.success(
-        lang === "ar"
-          ? "تم تسجيل تسليم الطلب وتأكيد التحصيل بنجاح!"
-          : "Delivery completed and payment confirmed!",
+        doneMessage ??
+          (lang === "ar"
+            ? "تم تسجيل تسليم الطلب وتأكيد التحصيل بنجاح!"
+            : "Delivery completed and payment confirmed!"),
       );
       setCashModalOrder(null);
       setCashCollectedAmount("");
