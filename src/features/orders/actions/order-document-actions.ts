@@ -8,10 +8,17 @@ import type { Order } from "@/features/orders/types";
 import { orderTotals } from "@/features/orders/lib/order-editor";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import {
+  jobSheetHtml,
+  jobSheetPieces,
+  type JobSheetProduct,
+} from "@/features/orders/lib/job-sheet";
+import type { StoreVocabulary } from "@/lib/store-vocabulary";
 
 /**
  * Share and print actions for a loaded order: copy the public invoice link,
- * download the A4 PDF, and print the thermal receipt. Not hooks: the order
+ * download the A4 PDF, print the thermal receipt, and print the workshop's
+ * job sheet. Not hooks: the order
  * editor creates them after its loading and error returns.
  */
 export function createOrderDocumentActions({
@@ -24,6 +31,7 @@ export function createOrderDocumentActions({
   storeProfile,
   totals,
   currency,
+  vocabulary,
 }: {
   order: Order;
   items: OrderItem[];
@@ -34,6 +42,7 @@ export function createOrderDocumentActions({
   storeProfile: ReturnType<typeof useAdminStoreProfile>["profile"];
   totals: ReturnType<typeof orderTotals>;
   currency: string;
+  vocabulary: Pick<StoreVocabulary, "workshop">;
 }) {
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
@@ -137,5 +146,42 @@ export function createOrderDocumentActions({
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
 
-  return { copyLink, handlePrintA4, printReceipt };
+  // The pieces of this order that go to the workshop. With none, there is no job sheet.
+  const workshopPieces = jobSheetPieces(items, (productsQ.data ?? []) as JobSheetProduct[], {
+    lang,
+    brandAddons: storeProfile.addons,
+    storeVertical: storeProfile.vertical,
+  });
+
+  const printJobSheet = () => {
+    const settings = (settingsQ.data ?? {}) as { business_name?: string | null };
+    const w = window.open("", "_blank", "width=800,height=900");
+    if (!w) {
+      toast.error(t("orders.popupBlocked"));
+      return;
+    }
+    w.document.open();
+    w.document.write(
+      jobSheetHtml({
+        brand: (settings.business_name ?? "").trim() || (lang === "ar" ? "المتجر" : "Store"),
+        workshop: vocabulary.workshop?.[lang] || (lang === "ar" ? "الورشة" : "Workshop"),
+        orderNumber: order.invoice_number ?? order.id.slice(0, 8),
+        orderDate: order.order_date,
+        customerName: getOrderCustomerName(order) || null,
+        orderNote: order.notes ?? null,
+        pieces: workshopPieces,
+        lang,
+      }),
+    );
+    w.document.close();
+  };
+
+  return {
+    copyLink,
+    handlePrintA4,
+    printReceipt,
+    // Offered by a store that makes to order, for an order with a piece to make.
+    printJobSheet:
+      storeProfile.modules.made_to_order && workshopPieces.length > 0 ? printJobSheet : undefined,
+  };
 }
