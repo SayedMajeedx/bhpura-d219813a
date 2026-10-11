@@ -233,24 +233,6 @@ export function VariantAddRow({
               placeholder="0"
             />
           </div>
-          {viewMode === "full" ? (
-            <div className="flex items-center justify-center gap-1.5 mt-1 pt-1 border-t border-border-subtle w-full">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
-                {isAr ? "حاضنة:" : "Inc:"}
-              </span>
-              <Input
-                type="number"
-                className="h-7 w-22 text-center text-xs font-bold font-mono"
-                value={row.stock_incubator}
-                onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
-                placeholder="0"
-              />
-            </div>
-          ) : row.stock_incubator ? (
-            <span className="text-xs text-muted-foreground font-semibold">
-              {isAr ? "حاضنة:" : "Inc:"} {row.stock_incubator}
-            </span>
-          ) : null}
         </div>
       </td>
 

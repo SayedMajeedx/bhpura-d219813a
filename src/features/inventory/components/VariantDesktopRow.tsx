@@ -20,6 +20,7 @@ import {
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
 import { StockStepper } from "@/features/inventory/components/StockStepper";
+import { partnerStockHint } from "@/features/inventory/lib/stock-labels";
 import {
   MadeToOrderOnlyNote,
   isMadeToOrderOnlyVariant,
@@ -431,34 +432,21 @@ export function VariantDesktopRow({
                 </button>
               )}
             </div>
-            {viewMode === "full" ? (
-              <div className="flex flex-col items-center gap-1 mt-1 pt-1 border-t border-border-subtle w-full">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight shrink-0">
-                    {isAr ? "حاضنة:" : "Inc:"}
-                  </span>
-                  <StockStepper
-                    value={v.stock_incubator ?? 0}
-                    onChange={(val) => update(v, { stock_incubator: val })}
-                  />
-                </div>
-                <span className={`text-xs font-medium leading-none ${runRateColor}`}>
-                  {runRateText}
+            {/* Pieces at partners are counted per partner: shown here, changed on their page. */}
+            <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
+              {(v.stock_incubator ?? 0) > 0 && (
+                <span
+                  className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-xs border border-border-subtle"
+                  title={partnerStockHint(isAr)}
+                >
+                  {isAr ? "حاضنة:" : "Inc:"}{" "}
+                  <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
                 </span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center gap-2 text-xs flex-wrap">
-                {(v.stock_incubator ?? 0) > 0 && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-xs border border-border-subtle">
-                    {isAr ? "حاضنة:" : "Inc:"}{" "}
-                    <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
-                  </span>
-                )}
-                <span className={`text-xs whitespace-nowrap leading-none ${runRateColor}`}>
-                  {runRateText}
-                </span>
-              </div>
-            )}
+              )}
+              <span className={`text-xs whitespace-nowrap leading-none ${runRateColor}`}>
+                {runRateText}
+              </span>
+            </div>
           </div>
         )}
       </td>

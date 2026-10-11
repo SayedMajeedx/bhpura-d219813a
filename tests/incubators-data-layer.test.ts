@@ -79,7 +79,9 @@ describe("keys", () => {
       incubators.incubatorsQueries.inventory("b1").queryKey,
       incubators.incubatorsQueries.sales("b1").queryKey,
       incubators.incubatorsQueries.payments("b1").queryKey,
-      incubators.incubatorsQueries.transferOptions("b1").queryKey,
+      incubators.incubatorsQueries.orderHolds("b1").queryKey,
+      incubators.incubatorsQueries.orderPickups("b1", "o1").queryKey,
+      incubators.incubatorsQueries.partnerTotals("b1").queryKey,
       incubators.incubatorsQueries.batchVariants("b1", ["p1"]).queryKey,
     ];
     expect(new Set(keys.map((k) => JSON.stringify(k))).size).toBe(keys.length);
@@ -110,10 +112,26 @@ describe("reads", () => {
     expect(filters(requests[1], "eq")[1]).toEqual(["is_active", true]);
   });
 
-  it("offer only variants with main stock left, through their product's brand", async () => {
-    await incubators.fetchTransferOptions("b1");
-    expect(filters(requests[0], "eq")).toEqual([["products.brand_id", "b1"]]);
-    expect(filters(requests[0], "gt")).toEqual([["stock_main", 0]]);
+  it("read what orders take from partners within the brand, for all orders or one", async () => {
+    await incubators.fetchPartnerOrderHolds("b1");
+    await incubators.fetchOrderPartnerPickups("b1", "o1");
+    expect(requests.map((r) => r.table)).toEqual([
+      "order_incubator_allocations",
+      "order_incubator_allocations",
+    ]);
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[1], "eq")).toEqual([
+      ["brand_id", "b1"],
+      ["order_id", "o1"],
+    ]);
+  });
+
+  it("read the variants that say they have pieces at partners, by named columns", async () => {
+    await incubators.fetchPartnerTotals("b1");
+    expect(requests[0].table).toBe("product_variants");
+    expect(requests[0].select).not.toContain("*");
+    expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
+    expect(filters(requests[0], "gt")).toEqual([["stock_incubator", 0]]);
   });
 
   it("read batch variants within the brand, and nothing for no products", async () => {

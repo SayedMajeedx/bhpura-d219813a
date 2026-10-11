@@ -34,7 +34,7 @@ export function VariantAddCard({
   onSave: () => void;
 }) {
   const t = useT();
-  const { mainLabel, incLabel, mainTooltip, incTooltip, barcodeLabel } = stockLabels(isAr);
+  const { mainLabel, mainTooltip, barcodeLabel } = stockLabels(isAr);
   const {
     size: sizeAxis,
     color: colorAxis,
@@ -211,29 +211,6 @@ export function VariantAddCard({
             className="mt-1 h-9 rounded-md text-xs"
             value={row.stock_main}
             onChange={(e) => setRow({ ...row, stock_main: e.target.value })}
-          />
-        </div>
-        <div>
-          <div className="flex items-center gap-1">
-            <Label className="text-xs font-bold text-muted-foreground uppercase">{incLabel}</Label>
-            <TooltipProvider delayDuration={200}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground">
-                    <HelpCircle className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                  {incTooltip}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <Input
-            type="number"
-            className="mt-1 h-9 rounded-md text-xs"
-            value={row.stock_incubator}
-            onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
           />
         </div>
         <div>

@@ -65,7 +65,31 @@ const rows: Record<string, unknown[]> = {
     payment_method: "cash",
     reference: `REF-${n}`,
   })),
-  transferOptions: [],
+  // An order took one piece from this partner; a second partner's hold is not shown here.
+  orderHolds: [
+    {
+      order_id: "o-1104",
+      variant_id: "v1",
+      incubator_id: "i1",
+      quantity: 1,
+      incubators: { name: "Souq Box", phone: null },
+      product_variants: { sku: "AB-1", size: "M", color: "Black", products: { name: "Abaya" } },
+      orders: { invoice_number: 1104, status: "confirmed", fulfillment_status: "NEEDS_PACKING" },
+    },
+    {
+      order_id: "o-1105",
+      variant_id: "v2",
+      incubator_id: "i2",
+      quantity: 2,
+      incubators: { name: "Other", phone: null },
+      product_variants: { sku: "AB-2", products: { name: "Scarf" } },
+      orders: { invoice_number: 1105, status: "confirmed", fulfillment_status: "NEEDS_PACKING" },
+    },
+  ],
+  // One variant says 3 pieces are at partners while no partner holds it.
+  partnerTotals: [
+    { id: "v-lost", sku: "LOST-1", stock_incubator: 3, products: { name: "Lost shawl" } },
+  ],
 };
 const fixture = (name: string) => () => ({
   queryKey: ["incubator-test", name],
@@ -99,6 +123,9 @@ vi.mock("@/components/incubators/BatchIncubatorTransferModal", () => transferMod
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: object) => ({ options }),
   redirect: vi.fn(),
+  Link: ({ children, params }: { children: React.ReactNode; params: { id: string } }) => (
+    <a href={`/orders/${params.id}`}>{children}</a>
+  ),
 }));
 
 const { Route } = await import("../src/routes/_authenticated/admin.b.$slug.incubators");
@@ -200,6 +227,27 @@ describe("incubator page management", () => {
     expect(tables).toEqual(
       expect.arrayContaining(["incubators", "incubator_inventory", "incubator_sales"]),
     );
+  });
+
+  it("says which pieces store orders took from this partner, with a link to each order", async () => {
+    renderPage();
+    const notice = (await screen.findByText(/Reserved by store orders/)).closest("div")!;
+    expect(within(notice).getByText("1 × Abaya · M / Black")).toBeInTheDocument();
+    expect(within(notice).getByRole("link", { name: "Order #1104" })).toHaveAttribute(
+      "href",
+      "/orders/o-1104",
+    );
+    // Another partner's piece is on that partner's page, not this one.
+    expect(screen.queryByText(/Scarf/)).toBeNull();
+  });
+
+  it("warns when a product's total at partners is not what the partners hold", async () => {
+    renderPage();
+    const warning = await screen.findByRole("alert");
+    expect(warning).toHaveTextContent("does not match what the partners hold");
+    expect(warning).toHaveTextContent("Lost shawl: the product says 3, the partners hold 0");
+    // The twelve stock lines carry no total of their own here, so they read as unaccounted too.
+    expect(within(warning).getAllByRole("listitem").length).toBeGreaterThan(1);
   });
 
   it("lays the page out right-to-left with Bahraini money formatting in Arabic", async () => {

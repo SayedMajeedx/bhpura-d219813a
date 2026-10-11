@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { generateCourierWhatsAppUrl, recordCourierNotified } from "@/lib/courier-whatsapp";
 import { useI18n } from "@/lib/i18n";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PartnerPickupNotice } from "@/features/orders/components/PartnerPickupNotice";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
@@ -101,6 +102,7 @@ export function OrderFulfillmentModal({
             </DialogHeader>
 
             <div className="space-y-4 py-3 overflow-y-auto flex-1 pe-1 text-sm">
+              <PartnerPickupNotice orderId={selectedFulfillOrder.id} lang={lang} />
               {/* Pick Checklist Header */}
               {(() => {
                 const modalItems = selectedFulfillOrder.order_items ?? [];

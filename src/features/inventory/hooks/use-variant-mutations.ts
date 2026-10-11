@@ -155,25 +155,6 @@ export function useVariantMutations({
       stockUpdated = true;
     }
 
-    if (
-      patch.stock_incubator !== undefined &&
-      Number(patch.stock_incubator) !== Number(v.stock_incubator ?? 0)
-    ) {
-      try {
-        await adjustVariantStock({
-          variantId: v.id,
-          location: "incubator",
-          mode: "set",
-          value: Math.max(0, Number(patch.stock_incubator)),
-          note: "Admin variant table inline edit",
-        });
-      } catch (incErr) {
-        toast.error(getFriendlyErrorMessage(incErr));
-        return;
-      }
-      stockUpdated = true;
-    }
-
     const normalizedPatch = variantColumnPatch(patch, Number(product?.base_price ?? 0));
 
     if (Object.keys(normalizedPatch).length > 0) {

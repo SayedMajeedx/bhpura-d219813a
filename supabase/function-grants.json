@@ -21,11 +21,6 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
-    "apply_inventory_movement(p_brand_id uuid, p_variant_id uuid, p_location text, p_delta integer, p_reason text, p_reference_type text, p_reference_id uuid, p_idempotency_key text, p_actor_id uuid, p_note text)": {
-      "anon": false,
-      "authenticated": true,
-      "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
-    },
     "approve_benefit_payment(p_order_id uuid)": {
       "anon": false,
       "authenticated": true,

@@ -510,31 +510,6 @@ export function BulkVariantDialog({
               onChange={(e) => setPlan({ ...plan, stock_main: Number(e.target.value) })}
             />
           </div>
-          <div>
-            <div className="flex items-center gap-1">
-              <Label>{isAr ? "مخزون الحاضنة" : "Incubator stock"}</Label>
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="text-muted-foreground hover:text-foreground">
-                      <HelpCircle className="h-3 w-3" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                    {isAr
-                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة."
-                      : "Items held at partner boutiques or business incubators."}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Input
-              type="number"
-              min="0"
-              value={plan.stock_incubator}
-              onChange={(e) => setPlan({ ...plan, stock_incubator: Number(e.target.value) })}
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-2">

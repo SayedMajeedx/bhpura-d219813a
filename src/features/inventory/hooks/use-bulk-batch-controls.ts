@@ -11,7 +11,6 @@ export function useBulkBatchControls(
   isAr: boolean,
 ): BulkBatchControls {
   const [mainStock, setMainStock] = useState<string>("");
-  const [incubatorStock, setIncubatorStock] = useState<string>("");
   const [salePrice, setSalePrice] = useState<string>("");
 
   const applyMainStock = () => {
@@ -19,13 +18,6 @@ export function useBulkBatchControls(
     if (isNaN(val) || val < 0) return;
     setRows((current) => current.map((row) => ({ ...row, stock_main: val })));
     setMainStock("");
-  };
-
-  const applyIncubatorStock = () => {
-    const val = parseInt(incubatorStock, 10);
-    if (isNaN(val) || val < 0) return;
-    setRows((current) => current.map((row) => ({ ...row, stock_incubator: val })));
-    setIncubatorStock("");
   };
 
   const applySalePrice = () => {
@@ -42,9 +34,6 @@ export function useBulkBatchControls(
     mainStock,
     setMainStock,
     applyMainStock,
-    incubatorStock,
-    setIncubatorStock,
-    applyIncubatorStock,
     salePrice,
     setSalePrice,
     applySalePrice,
