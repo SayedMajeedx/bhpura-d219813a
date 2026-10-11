@@ -42,7 +42,12 @@ const order = {
   payment_status: "unpaid",
 };
 
-function show(props: { onPrintJobSheet?: () => void; lang?: "ar" | "en" }) {
+function show(props: {
+  onPrintJobSheet?: () => void;
+  onTellCustomer?: () => void;
+  atWorkshop?: boolean;
+  lang?: "ar" | "en";
+}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
@@ -53,7 +58,11 @@ function show(props: { onPrintJobSheet?: () => void; lang?: "ar" | "en" }) {
         currency="BHD"
         lang={props.lang ?? "en"}
         slug="zh"
-        onPrintJobSheet={props.onPrintJobSheet}
+        workshop={{
+          printJobSheet: props.onPrintJobSheet,
+          tellCustomerWorkStarted: props.onTellCustomer,
+          atWorkshop: props.atWorkshop,
+        }}
       />
     </QueryClientProvider>,
   );
@@ -77,5 +86,20 @@ describe("the job sheet in the order's documents", () => {
     show({ onPrintJobSheet: vi.fn(), lang: "ar" });
     expect(screen.getByText("أمر التشغيل (المشغل)")).toBeTruthy();
     expect(screen.getByRole("button", { name: "طباعة أمر التشغيل" })).toBeTruthy();
+  });
+
+  it("offers to tell the customer while the piece is with the workshop", () => {
+    const tell = vi.fn();
+    show({ onPrintJobSheet: vi.fn(), onTellCustomer: tell, atWorkshop: true });
+    fireEvent.click(screen.getByRole("button", { name: "Tell the customer work has started" }));
+    expect(tell).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not offer it before the piece is sent, or when the customer cannot be reached", () => {
+    const { unmount } = show({ onPrintJobSheet: vi.fn(), onTellCustomer: vi.fn() });
+    expect(screen.queryByRole("button", { name: /tell the customer/i })).toBeNull();
+    unmount();
+    show({ onPrintJobSheet: vi.fn(), atWorkshop: true });
+    expect(screen.queryByRole("button", { name: /tell the customer/i })).toBeNull();
   });
 });

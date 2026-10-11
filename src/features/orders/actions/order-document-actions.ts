@@ -14,11 +14,18 @@ import {
   type JobSheetProduct,
 } from "@/features/orders/lib/job-sheet";
 import type { StoreVocabulary } from "@/lib/store-vocabulary";
+import { workStartedMessage } from "@/features/orders/lib/stage-messages";
+import { whatsAppToCustomer } from "@/features/bookings/lib/booking-invoice";
+import { tailoredEstimate, type EstimateSettings } from "@/lib/delivery-estimate";
+import { getOrderWorkflow } from "@/lib/order-workflow";
+import { detectOrderType } from "@/lib/order-type-detector";
+import { logActivity } from "@/lib/activity-log";
 
 /**
  * Share and print actions for a loaded order: copy the public invoice link,
- * download the A4 PDF, print the thermal receipt, and print the workshop's
- * job sheet. Not hooks: the order
+ * download the A4 PDF, print the thermal receipt, and what goes with a piece
+ * to the workshop (its job sheet, and telling the customer work has started).
+ * Not hooks: the order
  * editor creates them after its loading and error returns.
  */
 export function createOrderDocumentActions({
@@ -32,6 +39,7 @@ export function createOrderDocumentActions({
   totals,
   currency,
   vocabulary,
+  brand,
 }: {
   order: Order;
   items: OrderItem[];
@@ -43,6 +51,7 @@ export function createOrderDocumentActions({
   totals: ReturnType<typeof orderTotals>;
   currency: string;
   vocabulary: Pick<StoreVocabulary, "workshop">;
+  brand: { name_ar?: string | null; name_en?: string | null };
 }) {
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
@@ -176,12 +185,47 @@ export function createOrderDocumentActions({
     w.document.close();
   };
 
+  // Telling the customer work has started: a WhatsApp message a person sends, never the system.
+  const makesToOrder = Boolean(storeProfile.modules.made_to_order) && workshopPieces.length > 0;
+  const workStartedLink = makesToOrder
+    ? whatsAppToCustomer(
+        getOrderCustomerPhone(order),
+        workStartedMessage({
+          isAr: lang === "ar",
+          brandName: (lang === "ar" ? brand.name_ar : null) || brand.name_en || "",
+          customerName: getOrderCustomerName(order) || null,
+          invoiceNumber: order.invoice_number ?? order.id.slice(0, 8),
+          estimate: tailoredEstimate((settingsQ.data ?? {}) as EstimateSettings, lang),
+        }),
+      )
+    : null;
+  const tellCustomerWorkStarted = () => {
+    if (!workStartedLink) return;
+    window.open(workStartedLink, "_blank", "noopener,noreferrer");
+    void logActivity({
+      action: "customer_message",
+      order_id: order.id,
+      en: "Opened WhatsApp to tell the customer work on the order has started",
+      ar: "فتح واتساب لإبلاغ العميل ببدء العمل على الطلب",
+    });
+  };
+  const stage = getOrderWorkflow(
+    { ...order, order_type: detectOrderType(items) },
+    { productionStages: storeProfile.modules.made_to_order },
+  ).fulfillment;
+
   return {
     copyLink,
     handlePrintA4,
     printReceipt,
-    // Offered by a store that makes to order, for an order with a piece to make.
-    printJobSheet:
-      storeProfile.modules.made_to_order && workshopPieces.length > 0 ? printJobSheet : undefined,
+    /** What goes with a piece to the workshop; each part is absent when it does not apply. */
+    workshop: {
+      // Offered by a store that makes to order, for an order with a piece to make.
+      printJobSheet: makesToOrder ? printJobSheet : undefined,
+      // Needs a number WhatsApp can reach.
+      tellCustomerWorkStarted: workStartedLink ? tellCustomerWorkStarted : undefined,
+      /** The piece is with the workshop now. */
+      atWorkshop: stage === "sent_to_tailor",
+    },
   };
 }

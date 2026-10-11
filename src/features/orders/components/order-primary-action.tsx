@@ -37,6 +37,8 @@ export type OrderPrimaryActionContext = {
   qc: QueryClient;
   storeProfile: ReturnType<typeof useAdminStoreProfile>["profile"];
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
+  /** After the piece goes to the workshop, staff can tell the customer on WhatsApp. */
+  workshop?: { tellCustomerWorkStarted?: () => void };
 };
 
 /**
@@ -58,6 +60,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     qc,
     storeProfile,
     vocabulary,
+    workshop,
   } = ctx;
   if (isCreationMode || !order || isReadOnly) return null;
   const computedOrderType = detectOrderType(items);
@@ -80,6 +83,15 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             toast.success(
               vocabulary.sent_to_workshop_success[lang] ||
                 (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
+              workshop?.tellCustomerWorkStarted
+                ? {
+                    duration: 12000,
+                    action: {
+                      label: lang === "ar" ? "أبلغ العميل واتساب" : "Tell the customer",
+                      onClick: workshop.tellCustomerWorkStarted,
+                    },
+                  }
+                : undefined,
             );
             await logActivity({
               action: "status_change",
