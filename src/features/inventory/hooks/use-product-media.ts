@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { toast } from "sonner";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
+import { clearVariantPictures } from "@/lib/data/catalog";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import type { ProductForm } from "@/features/inventory/lib/product-form";
 
@@ -140,13 +141,18 @@ export function useProductMedia(
     setForm((current) => ({ ...current, media: next }));
   };
 
-  /** After a successful save: delete removed files and keep the new uploads. */
-  const commitMedia = () => {
-    for (const url of removedCommittedMedia.current) {
-      void deletePublicMediaUrl(brandId, url).catch(() => undefined);
-    }
+  /**
+   * After a successful save: keep the new uploads and delete the removed files. A variant that
+   * was given one of the removed pictures is cleared first, so it falls back to the product's
+   * picture; if that fails the server still keeps a file that is in use.
+   */
+  const commitMedia = async (productId?: string) => {
+    const removed = [...removedCommittedMedia.current];
     removedCommittedMedia.current.clear();
     uncommittedUploads.current.clear();
+    if (removed.length === 0) return;
+    if (productId) await clearVariantPictures(brandId, productId, removed).catch(() => undefined);
+    for (const url of removed) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
   };
 
   return {

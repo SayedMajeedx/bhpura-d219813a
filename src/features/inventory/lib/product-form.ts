@@ -215,6 +215,11 @@ export function productColumnsFrom(form: ProductForm) {
 /**
  * The standard variant created for a product with none, so it can be sold
  * right away: placeholder size, the form's price, cost, fabric and opening stock.
+ *
+ * It has no picture of its own: a variant with none shows the product's. It used to be given
+ * the product's first picture, a second pointer to the same file that nothing kept up to date,
+ * so replacing that picture left the variant (and the storefront card, which prefers a
+ * variant's picture) on a deleted file.
  */
 export function defaultVariantValues(form: ProductForm, isAr: boolean) {
   const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
@@ -231,6 +236,6 @@ export function defaultVariantValues(form: ProductForm, isAr: boolean) {
     stock: initialQty,
     sku: null,
     barcode: null,
-    image_url: primaryImageUrl(form) || null,
+    image_url: null,
   };
 }

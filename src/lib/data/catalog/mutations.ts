@@ -89,6 +89,21 @@ export async function updateVariant(brandId: string, variantId: string, patch: V
   if (error) throw error;
 }
 
+/**
+ * Clears the picture of a product's variants that point at one of these files (gallery pictures
+ * the merchant just removed). A variant with no picture of its own shows the product's.
+ */
+export async function clearVariantPictures(brandId: string, productId: string, urls: string[]) {
+  if (urls.length === 0) return;
+  const { error } = await supabase
+    .from("product_variants")
+    .update({ image_url: null })
+    .eq("brand_id", brandId)
+    .eq("product_id", productId)
+    .in("image_url", urls);
+  if (error) throw error;
+}
+
 /** Changes the same columns on several variants of the brand. */
 export async function updateVariants(brandId: string, variantIds: string[], patch: VariantPatch) {
   const { error } = await supabase

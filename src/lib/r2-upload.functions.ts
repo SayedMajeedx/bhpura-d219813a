@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { AwsClient } from "aws4fetch";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { isProductPictureKey, productPictureInUse } from "@/lib/product-picture-use";
 
 let getEventFn: any = null;
 const vinxiHttp = "vinxi/http";
@@ -236,13 +237,21 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     });
     if (!canAccess) throw new Error("FORBIDDEN");
     if (!data.key.startsWith(`brands/${data.brandId}/`)) throw new Error("INVALID_OBJECT_KEY");
-    const { signer, endpoint, bucket } = r2Connection();
+    const { signer, endpoint, bucket, publicBaseUrl } = r2Connection();
+    // A product picture that a product or a variant still points at is kept: the caller only
+    // knows it stopped using the file, not that nothing else does.
+    if (
+      isProductPictureKey(data.key) &&
+      (await productPictureInUse(context.supabase, data.brandId, `${publicBaseUrl}/${data.key}`))
+    ) {
+      return { deleted: false, inUse: true };
+    }
     const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, data.key), {
       method: "DELETE",
     });
     if (!response.ok && response.status !== 404)
       throw new Error(`R2 delete failed (${response.status})`);
-    return { deleted: true };
+    return { deleted: true, inUse: false };
   });
 
 const PurgeBrandInput = z.object({ brandId: z.string().uuid() });
