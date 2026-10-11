@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -16,6 +16,10 @@ function getAllTsFiles(dirPath: string, arrayOfFiles: string[] = []): string[] {
 
   return arrayOfFiles;
 }
+
+// These tests read every source file. Alone that takes about a second; in the full suite, next
+// to the tests that run a real Postgres, it has gone past the default five seconds.
+vi.setConfig({ testTimeout: 30_000 });
 
 describe("Query Keys Integrity & Single Source of Truth", () => {
   const rootDir = path.resolve(__dirname, "..");
