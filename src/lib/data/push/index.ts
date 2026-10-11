@@ -72,6 +72,18 @@ export function campaignTargetUrl(brand: { slug: string; custom_domain?: string 
   return `https://${brand.slug.trim().toLowerCase()}.boutq.store`;
 }
 
+/** The example shown in the campaign title box: the store's own name, never another store's. */
+export function campaignTitleExample(
+  brand: { name_en?: string | null; name_ar?: string | null },
+  lang: "ar" | "en",
+) {
+  const en = brand.name_en?.trim();
+  const ar = brand.name_ar?.trim();
+  const name = lang === "ar" ? ar || en : en || ar;
+  if (!name) return lang === "ar" ? "وصل الجديد" : "New arrivals";
+  return lang === "ar" ? `وصل الجديد من ${name}` : `New at ${name}`;
+}
+
 /**
  * Queues a marketing notification to every subscribed customer of the brand,
  * or to one customer. A missing customer is omitted: the function defaults it

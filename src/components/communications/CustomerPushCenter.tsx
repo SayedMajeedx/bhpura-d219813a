@@ -4,6 +4,7 @@ import { AlertTriangle, BellRing, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   campaignTargetUrl,
+  campaignTitleExample,
   createPushCampaign,
   invalidatePush,
   pushQueries,
@@ -156,7 +157,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
               value={title}
               maxLength={100}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={isAr ? "وصل الجديد من Pura Line" : "New at Pura Line"}
+              placeholder={campaignTitleExample(brand, isAr ? "ar" : "en")}
             />
             <p className="text-end text-xs text-muted-foreground">{title.length}/100</p>
           </div>
