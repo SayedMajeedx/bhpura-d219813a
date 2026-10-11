@@ -527,7 +527,7 @@ export function SizeGuidesStudioPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -790,14 +790,14 @@ export function SizeGuidesStudioPage() {
 
               {/* Columns Editor */}
               <div className="space-y-3 border-t border-border pt-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       {isAr ? "أعمدة الجدول" : "Table Columns"} ({form.columns.length})
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
                       variant="outline"

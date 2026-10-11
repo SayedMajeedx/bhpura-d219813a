@@ -571,7 +571,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <Input
           dir="ltr"
           inputMode="tel"
@@ -595,7 +595,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
               : "Send OTP"}
         </Button>
       </div>
-      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
         <Input
           dir="ltr"
           inputMode="numeric"

@@ -127,20 +127,20 @@ function Inventory() {
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
       <div className="flex p-1.5 gap-1.5 bg-muted rounded-xl border border-border-subtle max-w-lg">
         <button
-          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
+          className={`min-w-0 flex-1 break-words rounded-lg py-2 px-2 text-xs sm:px-3 sm:text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
         >
           {t("inventory.products")}
         </button>
         <button
-          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "customizations" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
+          className={`min-w-0 flex-1 break-words rounded-lg py-2 px-2 text-xs sm:px-3 sm:text-sm font-semibold transition-all duration-200 ${tab === "customizations" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("customizations")}
         >
           {t("inventory.customizations")}
         </button>
         {storeProfile.modules.packaging && (
           <button
-            className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
+            className={`min-w-0 flex-1 break-words rounded-lg py-2 px-2 text-xs sm:px-3 sm:text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
             onClick={() => setTab("packaging")}
           >
             {lang === "ar" ? "مواد التغليف" : "Packaging materials"}

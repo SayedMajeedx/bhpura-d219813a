@@ -555,7 +555,7 @@ export function AddonStore({
       {/* 5. Category Tabs & Pills */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-border pb-3">
         {/* Main Tabs */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-1.5">
           <Button
             variant={activeTab === "all" ? "default" : "ghost"}
             size="sm"

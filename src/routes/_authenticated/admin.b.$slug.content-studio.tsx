@@ -35,7 +35,7 @@ function ContentStudioPage() {
     >
       <StudioHero studio={studio} />
 
-      <div className="grid w-full min-w-0 max-w-full items-start gap-4 sm:gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_1fr]">
+      <div className="grid w-full min-w-0 max-w-full items-start gap-4 sm:gap-6 lg:gap-8 xl:grid-cols-[minmax(460px,520px)_minmax(0,1fr)]">
         <Card
           id="studio-controls"
           className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card shadow-xs"

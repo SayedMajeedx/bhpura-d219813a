@@ -466,7 +466,7 @@ function PagesAndPolicies() {
               {socials.map((social, index) => (
                 <div
                   key={`${index}-${social.name}`}
-                  className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(160px,0.7fr)_2fr_auto]"
+                  className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(160px,0.7fr)_minmax(0,2fr)_auto]"
                 >
                   <Select
                     value={normalizePlatform(social.name)}

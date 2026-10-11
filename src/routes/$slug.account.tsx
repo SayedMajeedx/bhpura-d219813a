@@ -345,7 +345,7 @@ function AccountPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[290px_1fr] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[290px_minmax(0,1fr)] gap-8 items-start">
         {/* Luxury Profiler Side Panel */}
         <Card className="p-6 text-center space-y-6 bg-card border border-border-strong rounded-2xl shadow-xs relative overflow-hidden">
           <div className="space-y-4">
