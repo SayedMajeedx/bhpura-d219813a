@@ -16,6 +16,7 @@ import {
   orderItemRow,
   orderSaveBlocker,
   orderSavePayload,
+  orderUpdatePayload,
 } from "@/features/orders/lib/order-save";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
@@ -119,7 +120,11 @@ export function useSaveOrder({
     }
 
     try {
-      await updateOrder(brandId, order.id, orderPayload);
+      await updateOrder(
+        brandId,
+        order.id,
+        orderUpdatePayload(orderPayload, initialSnapshotRef.current?.order),
+      );
     } catch (oe) {
       setSaving(false);
       return toast.error((oe as { message?: string }).message);

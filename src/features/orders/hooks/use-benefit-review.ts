@@ -7,6 +7,10 @@ import {
   approveBenefitPayment as approveBenefitTransfer,
   invalidateOrders,
 } from "@/lib/data/orders";
+import {
+  transferApprovedMessage,
+  transferRefusedMessage,
+} from "@/features/orders/lib/transfer-approval";
 
 /** Approving or rejecting a BenefitPay transfer receipt the customer uploaded. */
 export function useBenefitReview({
@@ -29,17 +33,13 @@ export function useBenefitReview({
   const approveBenefitPayment = async () => {
     setApprovingBenefit(true);
     try {
-      await approveBenefitTransfer(id);
+      const result = await approveBenefitTransfer(id);
 
       await orderQ.refetch();
       invalidateOrders(qc, brandId);
-      toast.success(
-        lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved",
-      );
-    } catch (error: any) {
-      toast.error(
-        error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"),
-      );
+      toast.success(transferApprovedMessage(result, lang === "ar" ? "ar" : "en"));
+    } catch (error) {
+      toast.error(transferRefusedMessage(error, lang === "ar" ? "ar" : "en"));
     } finally {
       setApprovingBenefit(false);
     }

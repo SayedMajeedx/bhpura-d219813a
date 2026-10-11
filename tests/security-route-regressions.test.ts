@@ -298,7 +298,7 @@ describe("server route security regressions", () => {
       error: null,
     });
     const updateSingle = vi.fn().mockResolvedValue({
-      data: { id: "order-99", payment_status: "paid", status: "confirmed" },
+      data: { id: "order-99", payment_status: "unpaid", status: "confirmed" },
       error: null,
     });
     const updateSelect = vi.fn().mockReturnValue({ single: updateSingle });
@@ -325,12 +325,71 @@ describe("server route security regressions", () => {
           "Content-Type": "application/json",
           Authorization: "Bearer valid-token",
         },
-        body: JSON.stringify({ id: "order-99", payment_status: "paid" }),
+        body: JSON.stringify({ id: "order-99", status: "confirmed" }),
       }),
     });
 
     expect(response.status).toBe(200);
-    expect(updateSpy).toHaveBeenCalledWith(expect.objectContaining({ payment_status: "paid" }));
+    expect(updateSpy).toHaveBeenCalledWith({ status: "confirmed" });
+  });
+
+  it("refuses to set a payment status: a transfer is approved and a balance collected, each recording its amount", async () => {
+    supabaseAdmin.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+      error: null,
+    });
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: { role: "admin", status: "active", brand_id: "brand-1", permissions: [] },
+      error: null,
+    });
+    const orderMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "order-1",
+        brand_id: "brand-1",
+        status: "pending",
+        payment_status: "unpaid",
+        payment_method: "benefit",
+        fulfillment_method: "delivery",
+        fulfillment_status: "ON_HOLD",
+        total: 30,
+        advance_paid: 0,
+        assigned_to: null,
+      },
+      error: null,
+    });
+    const updateSpy = vi.fn(() => {
+      throw new Error("A payment status must not be written by this route");
+    });
+    supabaseAdmin.from.mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: table === "profiles" ? profileMaybeSingle : orderMaybeSingle,
+        }),
+      }),
+      update: updateSpy,
+    }));
+
+    for (const body of [
+      { id: "order-1", payment_status: "paid", admin_override: true },
+      { id: "order-1", payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
+      { id: "order-1", payment_status: "refunded" },
+    ]) {
+      const response = await handler(
+        OrderStatusRoute,
+        "PATCH",
+      )({
+        request: new Request("https://example.test/api/orders/status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer valid-token" },
+          body: JSON.stringify(body),
+        }),
+      });
+      expect(response.status).toBe(400);
+      expect(((await response.json()) as { error: string }).error).toContain(
+        "approving the transfer",
+      );
+    }
+    expect(updateSpy).not.toHaveBeenCalled();
   });
 
   it("rejects a Tap redirect whose verified metadata targets another order", async () => {

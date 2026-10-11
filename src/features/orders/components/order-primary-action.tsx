@@ -20,7 +20,7 @@ import { useVocabulary } from "@/hooks/use-vocabulary";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Order, OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
-import { invalidateOrders, updateOrder, type OrderPatch } from "@/lib/data/orders";
+import { courierCompleteDelivery, invalidateOrders, updateOrder } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { workshopActionLabels } from "@/lib/store-vocabulary";
 
@@ -68,6 +68,26 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     { ...order, order_type: computedOrderType },
     { productionStages: storeProfile.modules.made_to_order },
   );
+
+  /**
+   * Hands the order over. When a balance is collected with it, the same server step the list
+   * and the courier use records the amount; writing "paid" from here left the collected amount
+   * behind (an invoice with a balance on a paid order), and a pickup was handed over with its
+   * balance never recorded at all.
+   */
+  const completeOrder = async (collects: boolean) => {
+    if (collects) {
+      const error = await courierCompleteDelivery(order.id, workflow.outstanding, null);
+      if (error) throw error;
+      return;
+    }
+    await updateOrder(brandId, order.id, {
+      fulfillment_status: "COMPLETED",
+      status: "completed",
+      delivered_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+  };
 
   if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
     return (
@@ -276,14 +296,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const updatePayload: OrderPatch = {
-              fulfillment_status: "COMPLETED",
-              status: "completed",
-              delivered_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
-            if (collects) updatePayload.payment_status = "paid";
-            await updateOrder(brandId, order.id, updatePayload);
+            await completeOrder(collects);
             toast.success(lang === "ar" ? "تم تنفيذ الخدمة وإتمام الطلب" : "Service completed");
             await logActivity({
               action: "status_change",
@@ -432,25 +445,13 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
   }
 
   if (workflow.nextAction === "mark_delivered" || workflow.nextAction === "collect_and_deliver") {
+    const collects = workflow.nextAction === "collect_and_deliver";
     return (
       <Button
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            const updatePayload: OrderPatch = {
-              fulfillment_status: "COMPLETED",
-              status: "completed",
-              delivered_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
-            if (
-              workflow.nextAction === "collect_and_deliver" ||
-              workflow.nextAction === "collect_and_hand_over" ||
-              order.payment_method === "cod"
-            ) {
-              updatePayload.payment_status = "paid";
-            }
-            await updateOrder(brandId, order.id, updatePayload);
+            await completeOrder(collects);
             toast.success(
               lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed",
             );
@@ -465,7 +466,13 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         }}
       >
         <CheckCircle2 className="h-4 w-4 me-1.5" />
-        {lang === "ar" ? "تسليم الطلب" : "Mark Delivered"}
+        {collects
+          ? lang === "ar"
+            ? "تحصيل المتبقي وتسليم الطلب"
+            : "Collect balance & deliver"
+          : lang === "ar"
+            ? "تسليم الطلب"
+            : "Mark Delivered"}
       </Button>
     );
   }
@@ -501,17 +508,13 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     workflow.nextAction === "hand_over_pickup" ||
     workflow.nextAction === "collect_and_hand_over"
   ) {
+    const collects = workflow.nextAction === "collect_and_hand_over";
     return (
       <Button
         className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onClick={async () => {
           try {
-            await updateOrder(brandId, order.id, {
-              fulfillment_status: "COMPLETED",
-              status: "completed",
-              delivered_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            });
+            await completeOrder(collects);
             toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
@@ -524,7 +527,13 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         }}
       >
         <CheckCircle2 className="h-4 w-4 me-1.5" />
-        {lang === "ar" ? "تسليم العميل" : "Hand Over"}
+        {collects
+          ? lang === "ar"
+            ? "تحصيل المتبقي وتسليم العميل"
+            : "Collect balance & hand over"
+          : lang === "ar"
+            ? "تسليم العميل"
+            : "Hand Over"}
       </Button>
     );
   }

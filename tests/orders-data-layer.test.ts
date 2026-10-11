@@ -257,6 +257,15 @@ describe("order writes", () => {
     ]);
   });
 
+  it("say what a transfer approval recorded: the advance only, or everything", async () => {
+    rpcReply = () => ({ data: { approved: true, advance_only: true }, error: null });
+    expect(await approveBenefitPayment("o1")).toEqual({ advanceOnly: true, alreadyPaid: false });
+    rpcReply = () => ({ data: { approved: true, already_paid: true }, error: null });
+    expect(await approveBenefitPayment("o1")).toEqual({ advanceOnly: false, alreadyPaid: true });
+    rpcReply = () => ({ data: null, error: new Error("FORBIDDEN") });
+    await expect(approveBenefitPayment("o1")).rejects.toThrow("FORBIDDEN");
+  });
+
   it("surface RPC failures: thrown for writes, returned for the courier completion", async () => {
     rpcReply = () => ({ data: null, error: new Error("INSUFFICIENT_STOCK") });
     await expect(replaceOrderItems("o1", [])).rejects.toThrow("INSUFFICIENT_STOCK");

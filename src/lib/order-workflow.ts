@@ -247,7 +247,10 @@ export function getOrderWorkflow(
     }
   }
 
-  const awaitingPayment = !terminal && !isCod && (hasUnpaidBalance || payment !== "paid");
+  // An approved advance leaves a balance that is collected on delivery, like cash on delivery:
+  // the order is not waiting for a payment, it is waiting to be made and delivered.
+  const awaitingPayment =
+    !terminal && !isCod && !advanceApproved && (hasUnpaidBalance || payment !== "paid");
 
   return {
     payment,

@@ -22,7 +22,7 @@ export function renderPickupQueueAction(
     setCashModalOrder,
     updatingOrderId,
   } = ctx;
-  const { workflow, isPaid, isUpdating, isCod, handleStatusUpdate } = state;
+  const { workflow, isPaid, isUpdating, isCod, handleStatusUpdate, approveTransfer } = state;
   // B. STORE PICKUP WORKFLOW
 
   // 1. BenefitPay Manual Validation (Pickup)
@@ -34,12 +34,13 @@ export function renderPickupQueueAction(
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
-          handleStatusUpdate(
-            { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
-            lang === "ar"
-              ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!"
-              : "Payment validated and pickup prepared!",
-          );
+          void approveTransfer().then((approved) => {
+            if (!approved) return;
+            handleStatusUpdate(
+              { fulfillment_status: "READY_FOR_PICKUP" },
+              lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Pickup prepared!",
+            );
+          });
         }}
       >
         {isUpdating ? (
@@ -192,6 +193,7 @@ export function renderDeliveryQueueAction(
     updatingOrderId,
   } = ctx;
   const { workflow, isPaid, isPartiallyPaid, isUpdating, isCod, handleStatusUpdate } = state;
+  const { approveTransfer } = state;
   // A. DELIVERY WORKFLOW
 
   // 1. BenefitPay Manual Validation
@@ -203,10 +205,7 @@ export function renderDeliveryQueueAction(
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
-          handleStatusUpdate(
-            { payment_status: "paid" },
-            lang === "ar" ? "تم تسجيل وتأكيد الدفع بنجاح!" : "Order payment marked as Paid!",
-          );
+          void approveTransfer();
         }}
       >
         {isUpdating ? (
