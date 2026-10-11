@@ -2094,6 +2094,7 @@ export type Database = {
           logo_width: number;
           logo_x: number;
           logo_y: number;
+          low_stock_threshold: number;
           menu_bg: string | null;
           menu_fg: string | null;
           menu_show_account: boolean;
@@ -2299,6 +2300,7 @@ export type Database = {
           logo_width?: number;
           logo_x?: number;
           logo_y?: number;
+          low_stock_threshold?: number;
           menu_bg?: string | null;
           menu_fg?: string | null;
           menu_show_account?: boolean;
@@ -2504,6 +2506,7 @@ export type Database = {
           logo_width?: number;
           logo_x?: number;
           logo_y?: number;
+          low_stock_threshold?: number;
           menu_bg?: string | null;
           menu_fg?: string | null;
           menu_show_account?: boolean;
@@ -9455,6 +9458,7 @@ export type Database = {
           logo_width: number;
           logo_x: number;
           logo_y: number;
+          low_stock_threshold: number;
           menu_bg: string | null;
           menu_fg: string | null;
           menu_show_account: boolean;
