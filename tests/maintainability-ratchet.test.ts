@@ -29,7 +29,7 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 24,
   readFileSyncTestFiles: 43,
-  filesOver1000: 20,
+  filesOver1000: 18,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -41,7 +41,8 @@ const BUDGETS = {
  * Removed once under 1000 lines: admin.b.$slug.inventory.tsx (Phase 5, now ~250 lines),
  *   admin.b.$slug.orders.$id.tsx (Phase 5, now ~980 lines),
  *   admin.b.$slug.orders.index.tsx (Phase 5, now ~920 lines),
- *   admin.b.$slug.content-studio.tsx (content studio Phase 0, now ~90 lines).
+ *   admin.b.$slug.content-studio.tsx (content studio Phase 0, now ~90 lines),
+ *   admin.b.$slug.incubators.tsx (incubators v2, now ~25 lines: the page is in features/incubators).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2475,
@@ -53,7 +54,6 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.team.tsx": 1703,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/routes/$slug.account.tsx": 1477,
-  "src/routes/_authenticated/admin.b.$slug.incubators.tsx": 1347,
   "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": 1446,
   "src/routes/_authenticated/admin.b.$slug.import.tsx": 1448,
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": 1313,

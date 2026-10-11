@@ -13,7 +13,7 @@ type Request = {
   select?: string;
   filters: Array<[string, ...unknown[]]>;
 };
-type Reply = { data?: unknown; error: unknown };
+type Reply = { data?: unknown; count?: number; error: unknown };
 
 const requests: Request[] = [];
 let respond: (request: Request) => Reply = () => ({ data: [], error: null });
@@ -40,6 +40,7 @@ function builder(table: string) {
     in: record("in"),
     gt: record("gt"),
     order: record("order"),
+    range: record("range"),
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },
@@ -79,6 +80,9 @@ describe("keys", () => {
       incubators.incubatorsQueries.inventory("b1").queryKey,
       incubators.incubatorsQueries.sales("b1").queryKey,
       incubators.incubatorsQueries.payments("b1").queryKey,
+      incubators.incubatorsQueries.allocations("b1").queryKey,
+      incubators.incubatorsQueries.movements("b1", "i1", 1, 20).queryKey,
+      incubators.incubatorsQueries.movements("b1", "i1", 2, 20).queryKey,
       incubators.incubatorsQueries.orderHolds("b1").queryKey,
       incubators.incubatorsQueries.orderPickups("b1", "o1").queryKey,
       incubators.incubatorsQueries.partnerTotals("b1").queryKey,
@@ -124,6 +128,36 @@ describe("reads", () => {
       ["brand_id", "b1"],
       ["order_id", "o1"],
     ]);
+  });
+
+  it("read a partner's history a page at a time, newest first, with the total", async () => {
+    respond = () => ({ data: [{ id: "m1" }], count: 41, error: null });
+    const page = await incubators.fetchIncubatorMovements({
+      brandId: "b1",
+      incubatorId: "i1",
+      page: 3,
+      pageSize: 20,
+    });
+    expect(page).toEqual({ rows: [{ id: "m1" }], total: 41 });
+    expect(requests[0].table).toBe("incubator_movements");
+    expect(filters(requests[0], "eq")).toEqual([
+      ["brand_id", "b1"],
+      ["incubator_id", "i1"],
+    ]);
+    expect(filters(requests[0], "order")[0]).toEqual(["occurred_at", { ascending: false }]);
+    expect(filters(requests[0], "range")).toEqual([[40, 59]]);
+  });
+
+  it("read which sales each payment settled, through the payment's brand", async () => {
+    respond = () => ({
+      data: [{ payment_id: "p1", sale_id: "s1", amount: "4.500", incubator_payments: {} }],
+      error: null,
+    });
+    expect(await incubators.fetchIncubatorPaymentAllocations("b1")).toEqual([
+      { payment_id: "p1", sale_id: "s1", amount: 4.5 },
+    ]);
+    expect(requests[0].table).toBe("incubator_payment_allocations");
+    expect(filters(requests[0], "eq")).toEqual([["incubator_payments.brand_id", "b1"]]);
   });
 
   it("read the variants that say they have pieces at partners, by named columns", async () => {
