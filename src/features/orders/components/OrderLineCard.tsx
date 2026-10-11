@@ -10,16 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Plus,
-  Minus,
-  Pencil,
-  Trash2,
-  ImageIcon,
-  Scissors,
-  SlidersHorizontal,
-  FileText,
-} from "lucide-react";
+import { Plus, Minus, Pencil, Trash2, Scissors, SlidersHorizontal, FileText } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -32,6 +23,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 
 import { OrderItemEditDialog } from "@/features/orders/components/OrderItemEditDialog";
 import { isTailoredLine } from "@/features/orders/lib/order-editor";
+import { LineThumbnail } from "@/features/orders/components/LineThumbnail";
 /** One order line: image, SKU, stock, quantity and price, with its edit dialog. */
 export function OrderLineCard({
   addonDefaults,
@@ -104,7 +96,6 @@ export function OrderLineCard({
     return null;
   };
 
-  const imageUrl = getMediaUrl(variant) || getMediaUrl(product);
   const sku = (variant as any)?.sku || (product as any)?.sku;
   const mainStock = Number((variant as any)?.stock_main ?? 0);
   const incStock = Number((variant as any)?.stock_incubator ?? 0);
@@ -117,11 +108,10 @@ export function OrderLineCard({
       {/* Item Thumbnail & SKU Header */}
       <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">
         <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
-          {imageUrl ? (
-            <img src={imageUrl} alt={it.description || ""} className="h-full w-full object-cover" />
-          ) : (
-            <ImageIcon className="h-5 w-5 text-muted-foreground" />
-          )}
+          <LineThumbnail
+            sources={[getMediaUrl(variant), getMediaUrl(product)]}
+            alt={it.description || ""}
+          />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-sm line-clamp-2 break-words text-foreground">
