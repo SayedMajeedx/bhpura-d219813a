@@ -271,7 +271,7 @@ export function CustomizationsSection({
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate">{p.name}</p>
+                          <p className="text-xs font-medium line-clamp-2 break-words">{p.name}</p>
                           {p.category && (
                             <p className="text-xs text-muted-foreground">{p.category}</p>
                           )}
@@ -444,7 +444,7 @@ export function CustomizationsSection({
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium truncate">{p.name}</p>
+                        <p className="text-xs font-medium line-clamp-2 break-words">{p.name}</p>
                         {p.category && (
                           <p className="text-xs text-muted-foreground">{p.category}</p>
                         )}

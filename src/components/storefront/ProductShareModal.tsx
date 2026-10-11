@@ -132,7 +132,9 @@ export function ProductShareModal({
             <Share2 className="h-5 w-5 text-primary" />
             <span>{isAr ? "مشاركة هذا المنتج" : "Share this product"}</span>
           </DialogTitle>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">{productName}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 break-words">
+            {productName}
+          </p>
         </DialogHeader>
 
         <div className="mt-4 space-y-4">

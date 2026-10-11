@@ -112,7 +112,7 @@ export function ProductSearchDialog({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                        <p className="font-semibold text-xs sm:text-sm text-foreground line-clamp-2 break-words">
                           {title}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">

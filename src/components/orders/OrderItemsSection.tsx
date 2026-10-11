@@ -63,7 +63,9 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-foreground truncate">{itemTitle}</div>
+                  <div className="font-bold text-foreground line-clamp-2 break-words">
+                    {itemTitle}
+                  </div>
                   {variantTitle && (
                     <div className="text-xs text-muted-foreground font-mono">{variantTitle}</div>
                   )}

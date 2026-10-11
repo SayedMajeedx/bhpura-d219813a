@@ -144,7 +144,7 @@ export function OrderSummaryCard({
                 )}
               </div>
               <div className="min-w-0">
-                <div className="truncate">
+                <div className="line-clamp-2 break-words">
                   {c.name} × {c.qty}
                 </div>
                 {(() => {

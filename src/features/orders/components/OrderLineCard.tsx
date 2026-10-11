@@ -124,7 +124,7 @@ export function OrderLineCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-sm truncate text-foreground">
+          <p className="font-semibold text-sm line-clamp-2 break-words text-foreground">
             {it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
           </p>
           {sku ? (

@@ -65,6 +65,9 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+/** One-line truncations in the code today; the ceiling only moves down. */
+const TRUNCATE_BUDGET = 211;
+
 const FILES = walk(SRC).map((file) => ({
   rel: path.relative(SRC, file).split(path.sep).join("/"),
   source: fs.readFileSync(file, "utf-8"),
@@ -194,6 +197,26 @@ describe("design system guardrails", () => {
     // different brand in dark mode than in light.
     expect(darkBlock).not.toMatch(/--primary:\s*oklch\([^)]*\s7\d\)/);
     expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s25\)/);
+  });
+
+  it("never cuts a product's name to one line", () => {
+    // A name is what the shopper is choosing: cut on one line, half of "Soft transparency,
+    // timeless elegance" is gone. A product title wraps onto two lines (and in a grid always
+    // keeps the height of two, so a row's prices line up). Anything still cut is shown in full
+    // by TruncationReveal on a rest of the mouse, a tap or a long press.
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/className="([^"]*\bproduct-title\b[^"]*)"/g)) {
+        if (/\b(truncate|line-clamp-1|whitespace-nowrap)\b/.test(match[1])) offenders.push(rel);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps one-line truncation within budget", () => {
+    // `truncate` hides the end of a text. It is right for a secondary line (an email under a
+    // name, a file name) and wrong for the name itself: use `line-clamp-2 break-words` there.
+    expect(countMatches(/\btruncate\b/g)).toBeLessThanOrEqual(TRUNCATE_BUDGET);
   });
 
   it("never sizes a grid column with a bare fr", () => {

@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportAppError } from "../lib/error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { TruncationReveal } from "@/components/ui/truncation-reveal";
 import { I18nProvider } from "@/lib/i18n";
 import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 import { ProfileProvider } from "@/lib/profile-context";
@@ -213,6 +214,7 @@ function RootComponent() {
         <ProfileProvider>
           <Outlet />
           <Toaster />
+          <TruncationReveal />
         </ProfileProvider>
       </I18nProvider>
     </QueryClientProvider>

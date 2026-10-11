@@ -134,7 +134,12 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                         <div className="h-16 w-16 rounded bg-muted shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{displayName}</div>
+                        <div
+                          dir="auto"
+                          className="font-medium line-clamp-2 break-words text-page-start"
+                        >
+                          {displayName}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           {displayVariantParts(
                             {

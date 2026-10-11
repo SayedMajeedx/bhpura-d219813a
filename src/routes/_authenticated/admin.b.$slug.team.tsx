@@ -744,7 +744,7 @@ function TeamManagement() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-base truncate">
+                    <span className="font-bold text-base line-clamp-2 break-words">
                       {member.name || member.email.split("@")[0]}
                     </span>
                     <span className="text-xs text-muted-foreground truncate" dir="ltr">

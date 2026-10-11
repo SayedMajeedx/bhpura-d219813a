@@ -86,7 +86,7 @@ export function AddonCardMicrosoftStore({
             {/* App Info */}
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h3 className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+                <h3 className="font-bold text-sm text-foreground line-clamp-2 break-words group-hover:text-primary transition-colors">
                   {isAr ? manifest.name.ar : manifest.name.en}
                 </h3>
                 {isRecommended && (

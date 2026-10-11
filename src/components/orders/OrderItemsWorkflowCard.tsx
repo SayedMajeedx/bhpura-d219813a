@@ -140,7 +140,7 @@ export const OrderItemsWorkflowCard: React.FC<OrderItemsWorkflowCardProps> = ({
                   </div>
 
                   <div className="min-w-0 space-y-0.5">
-                    <div className="font-extrabold text-foreground text-sm truncate font-display">
+                    <div className="font-extrabold text-foreground text-sm line-clamp-2 break-words font-display">
                       {itemTitle}
                     </div>
 

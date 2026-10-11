@@ -52,7 +52,7 @@ export function ProductAddonsPicker({
                 >
                   {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                 </div>
-                <span className="text-sm truncate">{addon.name}</span>
+                <span className="min-w-0 text-sm break-words">{addon.name}</span>
               </div>
               {shouldShowPrices(settings) &&
                 (delta > 0 ? (

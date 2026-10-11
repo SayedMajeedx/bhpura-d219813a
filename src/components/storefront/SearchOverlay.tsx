@@ -366,7 +366,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        <h4 className="text-sm font-semibold text-foreground line-clamp-2 break-words group-hover:text-primary transition-colors">
                           {displayName}
                         </h4>
                         {product.category && (

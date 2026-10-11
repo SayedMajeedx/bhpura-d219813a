@@ -174,7 +174,9 @@ export function OrderCustomerCard({
                             )}
                           />
                           <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-foreground truncate">{c.name}</span>
+                            <span className="font-semibold text-foreground line-clamp-2 break-words">
+                              {c.name}
+                            </span>
                             {(c.phone || c.email) && (
                               <span className="text-xs text-muted-foreground font-mono truncate">
                                 {[c.phone, c.email].filter(Boolean).join(" • ")}

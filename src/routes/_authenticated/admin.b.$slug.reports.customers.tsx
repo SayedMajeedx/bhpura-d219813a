@@ -178,7 +178,7 @@ function ReportsCustomers() {
                           className="rounded-xl border border-border-subtle bg-background/70 p-3"
                         >
                           <div className="flex items-start justify-between gap-3">
-                            <h3 className="min-w-0 truncate text-sm font-bold">
+                            <h3 className="min-w-0 line-clamp-2 break-words text-sm font-bold">
                               {c.customer_name}
                             </h3>
                             <strong className="shrink-0 font-mono text-sm">

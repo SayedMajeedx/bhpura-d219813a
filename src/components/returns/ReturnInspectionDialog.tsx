@@ -125,7 +125,7 @@ export function ReturnInspectionDialog({
               />
             )}
             <div className="min-w-0 flex-1">
-              <h4 className="text-xs font-bold text-foreground truncate">
+              <h4 className="text-xs font-bold text-foreground line-clamp-2 break-words">
                 {isAr
                   ? item.product?.name_ar || item.product?.name_en
                   : item.product?.name_en || item.product?.name_ar}

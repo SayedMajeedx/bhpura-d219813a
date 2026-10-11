@@ -108,8 +108,8 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
               )}
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-xs text-foreground truncate flex items-center gap-1">
-                <span>{name}</span>
+              <h3 className="font-bold text-xs text-foreground min-w-0 flex items-center gap-1">
+                <span className="min-w-0 line-clamp-2 break-words">{name}</span>
                 {isExpanded ? (
                   <ChevronUp className="h-3.5 w-3.5 text-primary shrink-0" />
                 ) : (

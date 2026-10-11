@@ -83,7 +83,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
       {/* Product Pair Visual */}
       <div className="flex items-center gap-3">
         {/* Main Product Thumbnail: each product shares the row (min-w-0) so
-            long names truncate instead of pushing the pair off a phone screen. */}
+            long names wrap onto a second line instead of pushing the pair off a phone screen. */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <div className="h-16 w-14 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
             {mainProduct.image_url ? (
@@ -103,7 +103,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
             )}
           </div>
           <div className="min-w-0 text-start">
-            <p className="text-xs font-medium truncate">
+            <p className="text-xs font-medium line-clamp-2 break-words">
               {isAr
                 ? mainProduct.name_ar || mainProduct.name
                 : mainProduct.name_en || mainProduct.name}
@@ -137,7 +137,7 @@ export function BundleOffer({ mainProduct, mainVariant, bundleItems = [] }: Bund
               )}
             </div>
             <div className="min-w-0 text-start">
-              <p className="text-xs font-medium truncate">
+              <p className="text-xs font-medium line-clamp-2 break-words">
                 {isAr
                   ? selectedItem.name_ar || selectedItem.name
                   : selectedItem.name_en || selectedItem.name}

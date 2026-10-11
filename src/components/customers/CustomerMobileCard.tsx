@@ -67,8 +67,8 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             {customer.name ? customer.name.charAt(0).toUpperCase() : "C"}
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-xs text-foreground truncate flex items-center gap-1.5">
-              <span>{customer.name}</span>
+            <h3 className="font-bold text-xs text-foreground min-w-0 flex items-center gap-1.5">
+              <span className="min-w-0 line-clamp-2 break-words">{customer.name}</span>
               {stats?.badge === "VIP" && (
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
                   <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
