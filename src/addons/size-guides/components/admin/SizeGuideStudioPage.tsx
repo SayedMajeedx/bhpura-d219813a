@@ -1274,7 +1274,7 @@ export function SizeGuidesStudioPage() {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   {form.diagram_url ? (
                     <div className="relative h-28 w-24 rounded-lg overflow-hidden border border-border bg-muted">
                       <img
@@ -1299,7 +1299,7 @@ export function SizeGuidesStudioPage() {
                     </div>
                   )}
 
-                  <div className="space-y-2 flex-1 max-w-sm">
+                  <div className="w-full space-y-2 sm:w-auto sm:flex-1 max-w-sm">
                     <CropUploadButton
                       onCrop={handleDiagramUpload}
                       preset="sizeGuideDiagram"

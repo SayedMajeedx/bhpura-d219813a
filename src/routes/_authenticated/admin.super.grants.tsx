@@ -42,7 +42,7 @@ function SuperAdminGrantsPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button asChild variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-bold">
               <Link to="/admin/super/requests">
                 <span>طلبات المنصة العامة</span>

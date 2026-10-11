@@ -66,6 +66,14 @@ export async function findCutOffContent(page: Page): Promise<CutOff[]> {
       return false;
     };
 
+    // A box that hides its overflow can still be scrolled sideways by focus (a dialog taking
+    // focus does it). Put each back, so the block that is too wide is reported, not the shift.
+    for (const el of Array.from(document.body.querySelectorAll("*"))) {
+      if (el.scrollLeft !== 0 && /hidden|clip/.test(getComputedStyle(el).overflowX)) {
+        el.scrollLeft = 0;
+      }
+    }
+
     const cut = new Set<Element>();
     for (const el of Array.from(document.body.querySelectorAll("*"))) {
       const r = el.getBoundingClientRect();
@@ -118,4 +126,87 @@ export function describeCutOff(found: CutOff[]): string {
       in ${c.within}`,
     )
     .join("\n");
+}
+
+/**
+ * Nothing the page does reaches the app's own server with a write: an audit that presses buttons
+ * must not save, send or delete. Supabase calls are answered by each spec's own routes.
+ */
+export async function blockAppWrites(page: Page) {
+  await page.route(
+    (url) => !/\/(rest|auth|storage|functions)\/v1\//.test(url.pathname),
+    (route) => {
+      if (["GET", "HEAD", "OPTIONS"].includes(route.request().method())) return route.fallback();
+      return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+    },
+  );
+}
+
+const TRIGGERS = [
+  'button[aria-haspopup="dialog"]',
+  'button[aria-haspopup="menu"]',
+  "header button",
+  "main button",
+  'main [role="button"]',
+].join(", ");
+const OVERLAYS = '[role="dialog"], [role="alertdialog"], [role="menu"]';
+
+/** Back to the page being audited; a navigation still in flight is given one more try. */
+async function reopen(page: Page, url: string) {
+  await page.goto(url).catch(() => page.goto(url).catch(() => undefined));
+  await page.waitForLoadState("domcontentloaded").catch(() => undefined);
+  await page.waitForTimeout(800);
+}
+
+/**
+ * Presses the page's buttons one by one and measures the page after each press, so what a press
+ * reveals is audited too: a dialog, a drawer, a menu, another tab, an opened panel. Returns one
+ * entry per distinct finding. A press that leaves the page is undone by loading it again.
+ */
+export async function auditOverlays(
+  page: Page,
+  label: string,
+  options: { presses?: number } = {},
+): Promise<string[]> {
+  const problems: string[] = [];
+  const home = page.url();
+  const seen = new Set<string>();
+  const presses = Math.min(await page.locator(TRIGGERS).count(), options.presses ?? 30);
+
+  for (let i = 0; i < presses; i++) {
+    const trigger = page.locator(TRIGGERS).nth(i);
+    if (!(await trigger.isVisible().catch(() => false))) continue;
+    if (await trigger.isDisabled().catch(() => true)) continue;
+    const name = (
+      (await trigger.getAttribute("aria-label").catch(() => null)) ||
+      (await trigger.innerText().catch(() => "")) ||
+      `button ${i}`
+    )
+      .trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 40);
+
+    await trigger.click({ timeout: 1_500 }).catch(() => undefined);
+    // Sheets slide in: measure them where they come to rest.
+    await page.waitForTimeout(650);
+
+    if (page.url() !== home) {
+      await reopen(page, home);
+      continue;
+    }
+
+    const cut = await findCutOffContent(page).catch(() => []);
+    const finding = cut.map((c) => `${c.element}|${c.text}`).join("\n");
+    if (cut.length > 0 && !seen.has(finding)) {
+      seen.add(finding);
+      problems.push(`${label}, after "${name}"\n${describeCutOff(cut)}`);
+    }
+
+    const overlay = page.locator(OVERLAYS).last();
+    if (!(await overlay.isVisible().catch(() => false))) continue;
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(300);
+    if (await overlay.isVisible().catch(() => false)) await reopen(page, home);
+  }
+  return problems;
 }
