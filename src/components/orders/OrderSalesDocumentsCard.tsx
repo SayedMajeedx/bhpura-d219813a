@@ -4,7 +4,17 @@ import { useQuery } from "@tanstack/react-query";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Truck, RotateCcw, Printer, Copy, Check, Share2, ArrowRight } from "lucide-react";
+import {
+  FileText,
+  Truck,
+  RotateCcw,
+  Printer,
+  Copy,
+  Check,
+  Share2,
+  ArrowRight,
+  ClipboardList,
+} from "lucide-react";
 import { toast } from "sonner";
 import { printDeliveryNote } from "@/lib/thermal-print";
 
@@ -12,6 +22,7 @@ import { getFulfillmentBadgeDetails, getFulfillmentMethodLabel } from "@/lib/sta
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { returnsQueries } from "@/lib/data/returns";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -23,6 +34,8 @@ interface OrderSalesDocumentsCardProps {
   slug: string;
   onPrintThermalReceipt?: () => void;
   onPrintInvoice?: () => void;
+  /** Set only when the order has a piece that goes to the workshop. */
+  onPrintJobSheet?: () => void;
 }
 
 function getPaymentStatusLabel(status: string | null | undefined, currentLang: "ar" | "en") {
@@ -45,11 +58,14 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   slug,
   onPrintThermalReceipt,
   onPrintInvoice,
+  onPrintJobSheet,
 }) => {
   const isAr = lang === "ar";
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
+  const { vocabulary } = useVocabulary();
+  const workshop = vocabulary.workshop?.[lang] || (isAr ? "الورشة" : "Workshop");
 
   const resolvedBrandName =
     (isAr ? brand?.name_ar : brand?.name_en) ||
@@ -168,6 +184,36 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
           </p>
         </div>
       </div>
+
+      {/* The workshop's job sheet: only for an order with a made-to-order piece */}
+      {onPrintJobSheet && (
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <ClipboardList className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-foreground">
+                {isAr ? `أمر التشغيل (${workshop})` : `Job sheet (${workshop})`}
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "ورقة تُطبع وتُرسل مع القطعة: المقاسات، الخيارات وملاحظات العميل، بدون أسعار أو بيانات اتصال"
+                  : "A page to print and send with the piece: measurements, options and the customer's notes, with no prices or contact details"}
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onPrintJobSheet}
+            className="h-9 shrink-0 gap-1.5 text-xs"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            {isAr ? "طباعة أمر التشغيل" : "Print job sheet"}
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Document 1: Sales Order */}

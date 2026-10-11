@@ -560,7 +560,7 @@ function OrderDetail() {
       </div>
     );
 
-  const { copyLink, handlePrintA4, printReceipt } = createOrderDocumentActions({
+  const { copyLink, handlePrintA4, printReceipt, printJobSheet } = createOrderDocumentActions({
     order,
     items,
     t,
@@ -570,6 +570,7 @@ function OrderDetail() {
     storeProfile,
     totals,
     currency,
+    vocabulary,
   });
 
   const renderTopPrimaryAction = () =>
@@ -817,6 +818,7 @@ function OrderDetail() {
               lang={lang}
               slug={slug}
               onPrintThermalReceipt={printReceipt}
+              onPrintJobSheet={printJobSheet}
               onPrintInvoice={() => window.print()}
             />
           </div>
