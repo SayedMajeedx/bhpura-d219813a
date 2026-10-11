@@ -33,6 +33,7 @@ import {
   type ReturnItemCondition,
 } from "@/lib/returns.types";
 import { returnVariantLabel } from "@/lib/returns-variant";
+import { inspectionResultMessage } from "@/lib/returns-inspection-message";
 import { branchesQueries } from "@/lib/data/branches";
 
 interface ReturnInspectionDialogProps {
@@ -92,15 +93,8 @@ export function ReturnInspectionDialog({
         return;
       }
 
-      toast.success(
-        isAr
-          ? isSellable
-            ? `تم فحص البند وتحديث المخزون (+${item.quantity}) بنجاح`
-            : "تم تسجيل حالة الفحص بنجاح"
-          : isSellable
-            ? `Item inspected and restocked (+${item.quantity}) successfully`
-            : "Item inspection recorded successfully",
-      );
+      // What the database did, not what the form expected: a made-to-order piece is not restocked.
+      toast.success(inspectionResultMessage(res, item.quantity, isAr));
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
