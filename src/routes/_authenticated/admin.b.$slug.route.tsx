@@ -11,6 +11,7 @@ import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { profilesQueries } from "@/lib/data/profiles";
 import { brandQueries } from "@/lib/data/brands";
 import { signOut } from "@/lib/auth/session";
+import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -84,7 +85,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
     if (!brand) throw redirect({ to: "/admin" });
 
     const email = (user.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
+    const isFixedSuperAdmin = email === SUPER_ADMIN_EMAIL;
     const isSuperAdmin = isFixedSuperAdmin || profile?.role === "super_admin";
     const isActive = !profile || profile.status === "active";
 

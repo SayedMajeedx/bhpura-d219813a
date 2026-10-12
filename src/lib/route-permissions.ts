@@ -1,8 +1,8 @@
 import { redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 
 const ADMIN_ROLES = new Set(["admin", "brand_admin", "super_admin"]);
-const FIXED_SUPER_ADMIN_EMAILS = new Set(["majeed@hotmail.it", "majeed@hotmail.com"]);
 
 export async function requireBrandPermission(slug: string, permission: string) {
   const {
@@ -18,7 +18,7 @@ export async function requireBrandPermission(slug: string, permission: string) {
     .maybeSingle();
 
   const email = (user.email || "").toLowerCase();
-  const isSuperAdmin = FIXED_SUPER_ADMIN_EMAILS.has(email) || profile?.role === "super_admin";
+  const isSuperAdmin = email === SUPER_ADMIN_EMAIL || profile?.role === "super_admin";
   const isAdmin = ADMIN_ROLES.has(profile?.role);
   const isAssignedOrderCourier = profile?.role === "courier" && permission === "manage_orders";
   const permissions = Array.isArray(profile?.permissions) ? profile.permissions : [];

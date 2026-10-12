@@ -145,6 +145,43 @@ describe("super-admin platform navigation", () => {
     expect(await outcome(beforeLoad({}))).toEqual({ redirect: "/admin/b/$slug/dashboard" });
   });
 
+  it("knows the platform's owner by one address only: a look-alike is an ordinary account", async () => {
+    // The guards once named a second address (the same name at another provider) that is not
+    // the owner's: anyone holding it would have been let into the platform's screens.
+    const beforeLoad = await guardOf("../src/routes/_authenticated/admin.index");
+    auth.profile = null;
+    auth.brandSlug = null;
+    auth.user = { id: "u1", email: "Majeed@Hotmail.it" };
+    expect(await outcome(beforeLoad({}))).toEqual({ redirect: "/admin/brands" });
+    auth.user = { id: "u1", email: "majeed@hotmail.com" };
+    expect(await outcome(beforeLoad({}))).not.toEqual({ redirect: "/admin/brands" });
+    auth.brandSlug = "own-brand";
+  });
+
+  it("does not let a look-alike address into a store's admin", async () => {
+    const beforeLoad = await guardOf("../src/routes/_authenticated/admin.b.$slug.route");
+    const brand = { id: "b1", slug: "qoffee", is_active: true, support_access_enabled: true };
+    const data = new Map<string, unknown>([
+      [JSON.stringify(brandQueries.adminBySlug("qoffee").queryKey), brand],
+      [JSON.stringify(profilesQueries.caller("u1").queryKey), null],
+      [JSON.stringify(brandQueries.iconsBySlug("qoffee").queryKey), null],
+    ]);
+    const queryClient = {
+      ensureQueryData: async (options: { queryKey: unknown }) =>
+        data.get(JSON.stringify(options.queryKey)),
+    };
+    const payload = btoa(JSON.stringify({ targetTenantId: "b1", issuedAt: Date.now() }));
+    document.cookie = `boutq_impersonation_token=${payload}.signature; path=/`;
+    const load = () =>
+      outcome(beforeLoad({ context: { queryClient }, params: { slug: "qoffee" } }));
+
+    auth.user = { id: "u1", email: "majeed@hotmail.com" };
+    expect(await load()).toEqual({ redirect: "/admin" });
+    // The owner's own address, with a support session for this store, is let in.
+    auth.user = { id: "u1", email: "majeed@hotmail.it" };
+    expect(await load()).toMatchObject({ allowed: { brand: { id: "b1" } } });
+  });
+
   it("requires support access and an impersonation token for a super admin in a tenant", async () => {
     const beforeLoad = await guardOf("../src/routes/_authenticated/admin.b.$slug.route");
     const brand = { id: "b1", slug: "qoffee", is_active: true, support_access_enabled: true };
