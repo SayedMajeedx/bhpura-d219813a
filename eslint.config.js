@@ -377,6 +377,7 @@ export default tseslint.config(
       "src/routes/_authenticated/admin.b.$slug.customers.*",
       "src/components/customer-address-manager.tsx",
       "src/routes/_authenticated/admin.b.$slug.import.tsx",
+      "src/features/import-export/components/**",
       "src/routes/_authenticated/admin.b.$slug.campaigns.tsx",
       "src/routes/_authenticated/admin.b.$slug.export.tsx",
       "src/components/communications/CustomerPushCenter.tsx",
