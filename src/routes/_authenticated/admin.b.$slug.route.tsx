@@ -8,7 +8,8 @@ import { RotateCw, AlertTriangle, ArrowLeft } from "lucide-react";
 import { TrialExpiredPaywall } from "@/components/admin/TrialExpiredPaywall";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
-import { profilesQueries } from "@/lib/data/profiles";
+import { permissionsOf, profilesQueries } from "@/lib/data/profiles";
+import { homePageOf, mayOpenPage, pageOf } from "@/lib/page-access";
 import { brandQueries } from "@/lib/data/brands";
 import { signOut } from "@/lib/auth/session";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -56,7 +57,7 @@ function parseTokenPayload(token: string | null): any | null {
 }
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
-  beforeLoad: async ({ context: { queryClient }, params }) => {
+  beforeLoad: async ({ context: { queryClient }, params, location }) => {
     // Retry helper for transient network glitches in route beforeLoad
     const fetchWithRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
       try {
@@ -125,6 +126,18 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       } catch {
         throw redirect({ to: "/admin/brands" });
       }
+    }
+
+    // One guard for every page of the store's admin (`src/lib/page-access.ts`): a page the
+    // menu does not offer a member of staff is not opened by its address either.
+    const page = pageOf(location?.pathname ?? "", params.slug);
+    const caller = {
+      role: profile?.role,
+      status: profile?.status,
+      permissions: permissionsOf(profile),
+    };
+    if (page && !isSuperAdmin && !mayOpenPage(page, caller)) {
+      throw redirect({ to: `/admin/b/$slug/${homePageOf(caller)}`, params: { slug: params.slug } });
     }
 
     const isTrialExpired =
