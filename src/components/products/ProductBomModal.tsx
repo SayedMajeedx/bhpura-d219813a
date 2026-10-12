@@ -22,6 +22,12 @@ import {
   saveProductBom,
 } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useProfile } from "@/lib/profile-context";
+
+// One list for "no lines yet": a new list on every render would look like new data to the effect
+// below, which then set the state again, and again, for as long as the lines were loading (and
+// for good when the read failed).
+const NO_BOM_LINES: Array<{ packaging_material_id: string; quantity_per_unit: number | null }> = [];
 
 interface ProductBomModalProps {
   open: boolean;
@@ -47,6 +53,9 @@ export function ProductBomModal({
   const brandId = brand.id;
   const currency = useStoreCurrency(brandId);
   const qc = useQueryClient();
+  // What a product costs is for staff who may see the store's finances. Anyone who manages the
+  // stock can still say which packaging a product uses; the cost figure is then left as it is.
+  const { canViewFinancials } = useProfile();
 
   const [directCost, setDirectCost] = useState<number>(initialDirectCost || 0);
   const [selectedMaterials, setSelectedMaterials] = useState<
@@ -66,7 +75,7 @@ export function ProductBomModal({
   );
 
   // Fetch current product BOM items
-  const { data: currentBom = [] } = useQuery({
+  const { data: currentBom = NO_BOM_LINES } = useQuery({
     ...catalogQueries.productBom(brandId, productId),
     enabled: !!productId && !!brandId && open,
   });
@@ -135,7 +144,12 @@ export function ProductBomModal({
     if (!productId || !brandId) return;
     setIsSaving(true);
     try {
-      await saveProductBom(brandId, productId, directCost, selectedMaterials);
+      await saveProductBom(
+        brandId,
+        productId,
+        canViewFinancials ? directCost : null,
+        selectedMaterials,
+      );
 
       toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
       qc.invalidateQueries({ queryKey: catalogKeys.products(brandId) });
@@ -199,29 +213,31 @@ export function ProductBomModal({
 
         <div className="space-y-5 py-2">
           {/* Direct Packaging Cost Fallback */}
-          <div className="rounded-lg border border-border-subtle bg-muted/30 p-3.5 space-y-2">
-            <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-              <span>
-                {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
-              </span>
-              <span className="text-xs text-muted-foreground">{currency}</span>
-            </Label>
-            <Input
-              type="number"
-              step="0.001"
-              min="0"
-              value={directCost}
-              onChange={(e) => setDirectCost(parseFloat(e.target.value) || 0)}
-              className="h-9 text-sm"
-              placeholder="0.000"
-            />
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Info className="h-3 w-3 text-primary shrink-0" />
-              {isAr
-                ? "استخدم هذا الحقل للإعداد السريع إذا لم تقم بإنشاء مواد تغليف في المخزون."
-                : "Use this field for fast manual setup if you haven't created inventory raw materials."}
-            </p>
-          </div>
+          {canViewFinancials && (
+            <div className="rounded-lg border border-border-subtle bg-muted/30 p-3.5 space-y-2">
+              <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
+                <span>
+                  {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
+                </span>
+                <span className="text-xs text-muted-foreground">{currency}</span>
+              </Label>
+              <Input
+                type="number"
+                step="0.001"
+                min="0"
+                value={directCost}
+                onChange={(e) => setDirectCost(parseFloat(e.target.value) || 0)}
+                className="h-9 text-sm"
+                placeholder="0.000"
+              />
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3 text-primary shrink-0" />
+                {isAr
+                  ? "استخدم هذا الحقل للإعداد السريع إذا لم تقم بإنشاء مواد تغليف في المخزون."
+                  : "Use this field for fast manual setup if you haven't created inventory raw materials."}
+              </p>
+            </div>
+          )}
 
           {/* Attached BOM Raw Materials */}
           <div className="space-y-3">
@@ -311,14 +327,16 @@ export function ProductBomModal({
           </div>
 
           {/* Total Packaging Cost Summary */}
-          <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 flex items-center justify-between">
-            <span className="text-xs font-bold text-foreground">
-              {isAr ? "إجمالي تكلفة التغليف للقطعة:" : "Total Packaging Cost / Unit:"}
-            </span>
-            <span className="text-sm font-extrabold text-primary">
-              {formatMoney(totalCalculatedPackagingCost, currency)}
-            </span>
-          </div>
+          {canViewFinancials && (
+            <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-foreground">
+                {isAr ? "إجمالي تكلفة التغليف للقطعة:" : "Total Packaging Cost / Unit:"}
+              </span>
+              <span className="text-sm font-extrabold text-primary">
+                {formatMoney(totalCalculatedPackagingCost, currency)}
+              </span>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 justify-between items-center w-full">

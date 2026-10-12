@@ -41,6 +41,8 @@ function builder(table: string) {
       return chain;
     },
     eq: record("eq"),
+    neq: record("neq"),
+    gte: record("gte"),
     in: record("in"),
     order: record("order"),
     limit: record("limit"),
@@ -206,5 +208,34 @@ describe("overrides and tenant requests", () => {
     ]) {
       expect(options.queryKey[0]).toBe("super-admin");
     }
+  });
+});
+
+describe("the health log", () => {
+  it("reads the latest records and, by themselves, the last day's runs that went wrong", async () => {
+    vi.stubGlobal("fetch", async () =>
+      Response.json({ status: "healthy", database: "up", latencyMs: 12 }),
+    );
+    const incident = { id: "e2", service: "whatsapp_retry", status: "failed" };
+    respond = (request) =>
+      request.filters.some(([kind]) => kind === "neq")
+        ? { data: [incident], error: null }
+        : { data: [{ id: "e1", service: "order_email_retry", status: "healthy" }], error: null };
+
+    const health = await superAdmin.fetchSystemHealth();
+
+    expect(health.incidents).toEqual([incident]);
+    expect(health.events).toHaveLength(1);
+    expect(health.readyOk).toBe(true);
+    const [latest, incidents] = requests.filter((r) => r.table === "system_health_events");
+    expect(latest.filters).toEqual([
+      ["order", "created_at", { ascending: false }],
+      ["limit", 1000],
+    ]);
+    expect(incidents.filters[0]).toEqual(["neq", "status", "healthy"]);
+    expect(incidents.filters[1][0]).toBe("gte");
+    // A day back, to the minute.
+    const since = new Date(String(incidents.filters[1][2])).getTime();
+    expect(Math.abs(Date.now() - 86_400_000 - since)).toBeLessThan(60_000);
   });
 });

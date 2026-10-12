@@ -49,6 +49,10 @@ export function generateShortCartCode(length: number = 6): string {
 /**
  * Creates a persistent short cart link in Supabase and returns the short URL.
  * Falls back to base64 URL if database insertion is unavailable.
+ *
+ * A visitor may write these four columns and nothing else (the id, the creation time and the
+ * 90-day expiry are the table's own), and the database refuses a row that is not a cart: a code
+ * of another shape, more than 100 lines, or more than 256 KB.
  */
 export async function createSharedCartLink(
   brandId: string,
@@ -90,27 +94,12 @@ export async function fetchSharedCartByCode(code: string): Promise<CartItem[] | 
 
   try {
     const cleanCode = code.trim().toLowerCase();
-    // Try RPC first for tight security (world-read on table is revoked)
-    const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
-      "get_shared_cart_by_code",
-      { _code: cleanCode },
-    );
+    // A shared cart is read only through this function: a visitor cannot read the table.
+    const { data: rpcData } = await (supabase.rpc as any)("get_shared_cart_by_code", {
+      _code: cleanCode,
+    });
 
-    let row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-
-    // Fallback to direct query if RPC does not exist
-    if (rpcError || !row) {
-      const { data, error } = await (supabase as any)
-        .from("shared_carts")
-        .select("items, expires_at")
-        .eq("code", cleanCode)
-        .maybeSingle();
-
-      if (!error && data) {
-        row = data;
-      }
-    }
-
+    const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
     if (!row) return null;
 
     if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {

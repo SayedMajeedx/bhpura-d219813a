@@ -253,6 +253,14 @@ describe("packaging BOM", () => {
     ]);
   });
 
+  it("leaves the cost alone when it is given none (staff who may not see finances)", async () => {
+    await catalog.saveProductBom("b1", "p1", null, lines);
+    expect(requests.map((r) => [r.table, r.op])).toEqual([
+      ["product_bom_items", "delete"],
+      ["product_bom_items", "insert"],
+    ]);
+  });
+
   it("inserts nothing for an empty BOM and never inserts after a failed delete", async () => {
     await catalog.saveProductBom("b1", "p1", 0, []);
     expect(requests.map((r) => r.op)).toEqual(["update", "delete"]);

@@ -1,9 +1,11 @@
+import { worthRecording, type HealthStatus } from "./system-health";
+
+export type { HealthStatus };
+
 type RuntimeEnv = {
   SUPABASE_URL?: string;
   SUPABASE_SERVICE_ROLE_KEY?: string;
 };
-
-export type HealthStatus = "healthy" | "degraded" | "failed";
 
 const SENSITIVE_KEY = /(authorization|cookie|token|secret|password|apikey|api_key|email|phone)/i;
 
@@ -134,6 +136,9 @@ export async function runObservedTask<T extends Record<string, unknown>>(
   service: string,
   correlationId: string,
   task: () => Promise<T>,
+  // A task that runs every minute is quiet between heartbeats: a healthy run that did nothing
+  // is logged to the console and not written to the health log (see `worthRecording`).
+  options: { quietWhenIdle?: boolean } = {},
 ): Promise<T | undefined> {
   const startedAt = Date.now();
   try {
@@ -147,13 +152,17 @@ export async function runObservedTask<T extends Record<string, unknown>>(
       durationMs: Date.now() - startedAt,
       ...result,
     });
-    await recordHealthEvent(env, {
-      service,
-      status,
-      correlationId,
-      durationMs: Date.now() - startedAt,
-      metrics: result,
-    });
+    if (
+      worthRecording({ status, metrics: result, quietWhenIdle: options.quietWhenIdle === true })
+    ) {
+      await recordHealthEvent(env, {
+        service,
+        status,
+        correlationId,
+        durationMs: Date.now() - startedAt,
+        metrics: result,
+      });
+    }
     return result;
   } catch (error) {
     logOperationalEvent("error", `${service}_failed`, { correlationId, error });
