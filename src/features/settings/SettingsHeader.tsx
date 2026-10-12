@@ -140,11 +140,7 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
             className="h-9 px-3 text-xs gap-1.5 rounded-xl hover:bg-muted"
             title={isAr ? "معاينة المتجر في نافذة جديدة" : "Preview store in new tab"}
           >
-            <a
-              href={getStorefrontUrl(brand.slug || "pura")}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={getStorefrontUrl(brand.slug)} target="_blank" rel="noopener noreferrer">
               <Eye className="size-3.5 text-primary" />
               <span>{isAr ? "معاينة المتجر" : "Store Preview"}</span>
               <ExternalLink className="size-3 text-muted-foreground" />

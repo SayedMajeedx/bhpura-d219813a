@@ -27,7 +27,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export function SubscriptionCard({ brand }: SubscriptionCardProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const isPermanent = brand.slug.toLowerCase() === "pura" || brand.plan_type === "lifetime";
+  const isPermanent = brand.plan_type === "lifetime";
   const isTrial = brand.plan_type === "trial";
   const expiresAt = isTrial ? brand.trial_ends_at : brand.subscription_expires_at;
   const daysLeft = expiresAt

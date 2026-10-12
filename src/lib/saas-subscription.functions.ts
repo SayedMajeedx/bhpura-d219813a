@@ -215,7 +215,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
       .maybeSingle();
 
     if (!brand) throw new Error("BRAND_NOT_FOUND");
-    if (brand.slug.toLowerCase() === "pura" || brand.plan_type === "lifetime") {
+    if (brand.plan_type === "lifetime") {
       throw new Error("PERMANENT_PROJECT_DOES_NOT_REQUIRE_RENEWAL");
     }
     if (!brand.payment_receipt_url) throw new Error("PAYMENT_RECEIPT_REQUIRED");

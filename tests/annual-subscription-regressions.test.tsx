@@ -116,9 +116,11 @@ describe("annual subscription lifecycle", () => {
     expect(outsider.db.supabase.rpc.mock.calls.map(([name]) => name)).toEqual(["is_super_admin"]);
 
     await expect(approve({}).run).rejects.toThrow("PAYMENT_RECEIPT_REQUIRED");
-    await expect(approve({ ...receipt, slug: "Pura" }).run).rejects.toThrow(
+    // A permanent store is one on the lifetime plan; a store's name decides nothing.
+    await expect(approve({ ...receipt, plan_type: "lifetime" }).run).rejects.toThrow(
       "PERMANENT_PROJECT_DOES_NOT_REQUIRE_RENEWAL",
     );
+    await expect(approve({ ...receipt, slug: "Pura" }).run).resolves.toEqual({ success: true });
 
     // Still active: the year is added to the current expiry, not to today.
     const renewal = approve({ ...receipt, subscription_expires_at: "2099-03-15T00:00:00.000Z" });
