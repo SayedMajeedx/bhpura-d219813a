@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { fetchAnyBrandSlug, fetchBrandSlug } from "@/lib/data/brands";
 import { getCurrentUser } from "@/lib/auth/session";
+import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 
 /**
  * /admin smart redirector.
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     const profile = await fetchCallerProfile(user.id);
 
     const email = (user.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
+    const isFixedSuperAdmin = email === SUPER_ADMIN_EMAIL;
     const isSuperAdmin = isFixedSuperAdmin || profile?.role === "super_admin";
 
     // Super admin workspace is strictly platform tenant management (/admin/brands).

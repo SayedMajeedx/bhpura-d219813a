@@ -60,7 +60,7 @@ describe("launch security regressions", () => {
       await expect(
         onboarding[name]({
           data: { requestId },
-          context: { ...caller, userId: "u1", claims: { email: "majeed@hotmail.com" } },
+          context: { ...caller, userId: "u1", claims: { email: "majeed@hotmail.it" } },
         }),
       ).rejects.toThrow("UNAUTHORIZED_SUPER_ADMIN_ONLY");
       expect(caller.supabase.rpc.mock.calls.map(([rpc]) => rpc)).toEqual(["is_super_admin"]);

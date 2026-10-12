@@ -83,7 +83,7 @@ const TENANT = "7b0c8f7e-5a8d-4c55-9b7e-2f6f0c9f1a11";
 const operator = (isSuperAdmin: boolean) => ({
   userId: "operator-1",
   // A platform owner's email is not enough: only the database role counts.
-  claims: { email: "majeed@hotmail.com" },
+  claims: { email: "majeed@hotmail.it" },
   supabase: { rpc: vi.fn(async () => ({ data: isSuperAdmin, error: null })) },
 });
 
