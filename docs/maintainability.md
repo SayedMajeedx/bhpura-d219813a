@@ -86,7 +86,7 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                                                                                    |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel.                                                               |
 | `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                                                     |
-| Files over 1,000 lines    |        31        |     15      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
+| Files over 1,000 lines    |        31        |     14      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
 | Tests                     |      1,078       |    1,599    |                                                                                                                                                                        |
 
 \* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
@@ -104,7 +104,7 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 |  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`                  | 1,703 |
 |  8  | `src/routes/_authenticated/admin.b.$slug.team.tsx`                                 | 1,703 |
 |  9  | `src/routes/_authenticated/admin.b.$slug.customers.tsx`                            | 1,670 |
-| 10  | `src/routes/$slug.account.tsx`                                                     | 1,477 |
+| 10  | `src/routes/$slug.account.tsx` (now 6: out of the list)                            |   6   |
 | 11  | `src/routes/_authenticated/admin.b.$slug.import.tsx` (now 6: out of the list)      |   6   |
 | 12  | `src/routes/_authenticated/admin.b.$slug.campaigns.tsx` (now 15: out of the list)  |  15   |
 | 13  | `src/routes/_authenticated/admin.b.$slug.incubators.tsx` (now 26: out of the list) |  26   |
