@@ -24,6 +24,7 @@ import type { ProductDialogData } from "@/features/inventory/hooks/use-product-d
 import { ProductAdvancedDetails } from "@/features/inventory/components/ProductAdvancedDetails";
 import { SaleModeSection } from "@/features/inventory/components/SaleModeSection";
 import { currencyLabel } from "@/lib/currency-label";
+import { ProductCostField } from "@/features/inventory/components/ProductCostField";
 /** First step of the product editor: names, descriptions, category, price, cost and stock. */
 export function ProductBasicTab({
   t,
@@ -222,32 +223,13 @@ export function ProductBasicTab({
           )}
         </div>
       )}
-      <div>
-        <Label className="text-xs font-bold text-muted-foreground">
-          {isService
-            ? isAr
-              ? "تكلفة الخدمة عليك (اختياري)"
-              : "Your cost per booking (optional)"
-            : isAr
-              ? "تكلفة القطعة عليك (اختياري)"
-              : "Unit Cost (Optional)"}
-        </Label>
-        <Input
-          type="number"
-          step="0.001"
-          min="0"
-          className={`mt-1 h-10.5 rounded-lg ${errors.cost ? "border-destructive" : ""}`}
-          placeholder={isAr ? "0.000 (اختياري)" : "0.000 (optional)"}
-          value={form.cost_price}
-          onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
-        />
-        {errors.cost && <p className="mt-1 text-xs text-destructive">{errors.cost}</p>}
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          {isAr
-            ? "اتركه فاضي إذا ما تعرف الرقم الآن، تقدر تضيفه لاحقاً لحساب صافي أرباحك بدقة."
-            : "Leave it empty if you don't know it now; you can add it anytime later to track net profit."}
-        </p>
-      </div>
+      <ProductCostField
+        isAr={isAr}
+        isService={isService}
+        value={form.cost_price}
+        error={errors.cost}
+        onChange={(cost) => setForm({ ...form, cost_price: cost })}
+      />
       {!isService && (
         <SaleModeSection
           brandId={brandId}

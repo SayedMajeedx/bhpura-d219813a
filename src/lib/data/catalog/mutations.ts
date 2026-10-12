@@ -244,14 +244,19 @@ export async function deletePackagingMaterial(brandId: string, materialId: strin
  * Saves one product's packaging: its direct packaging cost, then its BOM lines
  * (replaced as a whole). Refresh with `catalogKeys.products`, `productBom` and
  * `bomItems`.
+ *
+ * A null cost leaves the cost as it is: that is what a member of staff who may not see the
+ * store's finances sends (they cannot read it, so they must not write it).
  */
 export async function saveProductBom(
   brandId: string,
   productId: string,
-  directPackagingCost: number,
+  directPackagingCost: number | null,
   lines: BomLine[],
 ) {
-  await updateProduct(brandId, productId, { direct_packaging_cost: directPackagingCost });
+  if (directPackagingCost !== null) {
+    await updateProduct(brandId, productId, { direct_packaging_cost: directPackagingCost });
+  }
   const { error: deleteError } = await supabase
     .from("product_bom_items")
     .delete()

@@ -2,9 +2,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { readAll } from "../read-all";
 
 /**
- * What a brand pays for its products. These rows are visible to the brand's own staff only
- * (row policy on `product_costs` and `variant_costs`), so a visitor or a shopper's account reads
- * none. The admin screens ask for them next to the catalog and merge them into the rows they show.
+ * What a brand pays for its products. These rows are visible only to the brand's own staff who
+ * may see its finances (`can_view_brand_costs`: the row policy on `product_costs` and
+ * `variant_costs`), so a visitor, a shopper's account and a member of staff without the
+ * `view_financials` permission read none: their costs are zero here, their screens show no cost
+ * field, and the database keeps the real costs when they save (migration `20261013150000`). The
+ * admin screens ask for the costs next to the catalog and merge them into the rows they show.
  *
  * A failed read throws: a screen that showed zero costs would let someone save them back as zero.
  * For the same reason the lists are read whole (`readAll`): a cost past the API's row limit would
