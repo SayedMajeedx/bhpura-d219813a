@@ -8,6 +8,7 @@ import {
   consumeBrandUsage,
 } from "../saas-billing/entitlements-engine.server";
 import type { ApiScope } from "./public-api.types";
+import { readBrandInventory } from "./inventory-read.server";
 
 const db = supabaseAdmin as any;
 
@@ -591,12 +592,7 @@ export async function handlePublicApiV1Request(
         );
       }
 
-      const { data: variants, error } = await db
-        .from("product_variants")
-        .select("id, product_id, sku, selling_price, stock, products!inner(brand_id, name)")
-        .eq("products.brand_id", authContext.brandId);
-
-      if (error) throw error;
+      const variants = await readBrandInventory(db, authContext.brandId);
 
       return finalizeResponse(200, {
         success: true,

@@ -38,6 +38,7 @@ function builder(table: string) {
     },
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     maybeSingle: () => chain,
     single: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {

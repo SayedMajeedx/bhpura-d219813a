@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "@/lib/data/read-all";
 
 export type DateRange = {
   from: Date;
@@ -395,20 +396,20 @@ export async function fetchCatalogInquiriesReporting(
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
   const start = startDate || thirtyDaysAgo.toISOString().slice(0, 10);
 
-  let query = (supabase as any)
-    .from("product_engagement_daily")
-    .select("product_id, inquiry_count, view_count, click_count, event_date, products(name)")
-    .eq("brand_id", brandId)
-    .gte("event_date", start);
+  // One row per product per day: thirty days of forty products is already past the API's limit.
+  const data = await readAll<unknown>((from, to) => {
+    let query = (supabase as any)
+      .from("product_engagement_daily")
+      .select("product_id, inquiry_count, view_count, click_count, event_date, products(name)", {
+        count: "exact",
+      })
+      .eq("brand_id", brandId)
+      .gte("event_date", start);
+    if (endDate) query = query.lte("event_date", endDate);
+    return query.order("event_date").order("product_id").range(from, to);
+  });
 
-  if (endDate) {
-    query = query.lte("event_date", endDate);
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  const rows = (data || []) as Array<{
+  const rows = data as Array<{
     product_id: string;
     inquiry_count: number | null;
     view_count: number | null;

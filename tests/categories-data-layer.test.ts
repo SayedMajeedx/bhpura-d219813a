@@ -38,6 +38,7 @@ function builder(table: string) {
     update: write("update"),
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },

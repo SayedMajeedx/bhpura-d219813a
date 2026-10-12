@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { Tables } from "@/integrations/supabase/types";
 import { customersKeys } from "./keys";
 
@@ -21,33 +22,39 @@ export type CustomerAddressRow = Tables<"customer_addresses">;
 
 /** The brand's customers, newest first. */
 export async function fetchCustomers(brandId: string): Promise<CustomerRow[]> {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("*")
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("*", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** Id, name and phone of every customer of the brand. */
 export async function fetchCustomerContacts(brandId: string) {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, phone")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("id, name, phone", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** Phone and email of every customer, to catch duplicates before a save. */
 export async function fetchCustomerIdentities(brandId: string) {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, phone, email")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("id, phone, email", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** One customer's profile, or null when it is not a customer of the brand. */
@@ -65,12 +72,14 @@ export type CustomerProfile = NonNullable<Awaited<ReturnType<typeof fetchCustome
 
 /** Every saved address of the brand's customers. */
 export async function fetchBrandAddresses(brandId: string): Promise<CustomerAddressRow[]> {
-  const { data, error } = await supabase
-    .from("customer_addresses")
-    .select("*")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customer_addresses")
+      .select("*", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** One customer's saved addresses: the default first, then oldest first. */
@@ -103,13 +112,15 @@ export async function fetchCustomerDirectory(brandId: string, limit: number) {
 
 /** Every customer of the brand with their marketing consent, by name. */
 export async function fetchCustomerAudience(brandId: string) {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, phone, marketing_consent, opted_out_at")
-    .eq("brand_id", brandId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("id, name, phone, marketing_consent, opted_out_at", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("name")
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /**
@@ -117,16 +128,18 @@ export async function fetchCustomerAudience(brandId: string) {
  * logged and reads as no customers, so the other exports still work.
  */
 export async function fetchCustomersForExport(brandId: string) {
-  const { data, error } = await supabase
-    .from("customers")
-    .select("id, name, phone, email, notes, created_at")
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) {
+  return readAll((from, to) =>
+    supabase
+      .from("customers")
+      .select("id, name, phone, email, notes, created_at", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  ).catch((error: unknown) => {
     console.error("Failed to query customers for export:", error);
     return [];
-  }
-  return data ?? [];
+  });
 }
 
 /**

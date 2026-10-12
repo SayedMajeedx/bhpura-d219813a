@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
+import { readAll } from "@/lib/data/read-all";
 
 const ProductImportSchema = z.object({
   brandId: z.string().uuid(),
@@ -185,12 +186,17 @@ export const importProductCatalog = createServerFn({ method: "POST" })
       const issues: Array<{ row: number; code: string; name: string }> = [];
       const totalCount = data.products.length;
 
-      const { data: existingVariants, error: existingVariantsError } = await context.supabase
-        .from("product_variants")
-        .select("sku")
-        .eq("brand_id", data.brandId)
-        .not("sku", "is", null);
-      if (existingVariantsError) throw new Error("IMPORT_PREFLIGHT_FAILED");
+      const existingVariants = await readAll((from, to) =>
+        context.supabase
+          .from("product_variants")
+          .select("sku", { count: "exact" })
+          .eq("brand_id", data.brandId)
+          .not("sku", "is", null)
+          .order("id")
+          .range(from, to),
+      ).catch(() => {
+        throw new Error("IMPORT_PREFLIGHT_FAILED");
+      });
       const knownSkus = new Set(
         (existingVariants ?? [])
           .map((row: { sku: string | null }) => normalizeSku(row.sku || ""))

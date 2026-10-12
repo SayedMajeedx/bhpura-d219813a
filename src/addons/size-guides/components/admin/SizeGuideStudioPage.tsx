@@ -50,6 +50,7 @@ import {
 } from "../../lib/size-guide";
 import { ALL_SIZE_GUIDE_TEMPLATES, ABAYA_GULF_TEMPLATE } from "../../lib/size-guide-templates";
 import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
+import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
 
 type FormState = {
   id?: string;
@@ -150,29 +151,7 @@ export function SizeGuidesStudioPage() {
   // Fetch usage counts
   const { data: usage = { products: {}, categories: {} } } = useQuery({
     queryKey: ["admin", brandId, "size_guides_usage"],
-    queryFn: async () => {
-      const [prodRes, catRes] = await Promise.all([
-        supabase
-          .from("products")
-          .select("id, size_guide_id")
-          .eq("brand_id", brandId)
-          .not("size_guide_id", "is", null),
-        supabase
-          .from("categories")
-          .select("id, size_guide_id")
-          .eq("brand_id", brandId)
-          .not("size_guide_id", "is", null),
-      ]);
-      const products: Record<string, number> = {};
-      const categories: Record<string, number> = {};
-      (prodRes.data ?? []).forEach((p: any) => {
-        if (p.size_guide_id) products[p.size_guide_id] = (products[p.size_guide_id] || 0) + 1;
-      });
-      (catRes.data ?? []).forEach((c: any) => {
-        if (c.size_guide_id) categories[c.size_guide_id] = (categories[c.size_guide_id] || 0) + 1;
-      });
-      return { products, categories };
-    },
+    queryFn: () => fetchSizeGuideUsage(brandId),
   });
 
   // Fetch brand categories for bulk linking

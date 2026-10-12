@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 
 /**
  * What a brand pays for its products. These rows are visible to the brand's own staff only
@@ -6,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
  * none. The admin screens ask for them next to the catalog and merge them into the rows they show.
  *
  * A failed read throws: a screen that showed zero costs would let someone save them back as zero.
+ * For the same reason the lists are read whole (`readAll`): a cost past the API's row limit would
+ * read as zero.
  */
 
 export type ProductCost = {
@@ -15,13 +18,16 @@ export type ProductCost = {
 };
 
 export async function fetchProductCosts(brandId: string): Promise<Map<string, ProductCost>> {
-  const { data, error } = await supabase
-    .from("product_costs")
-    .select("product_id, cost_price, direct_packaging_cost, vendor_id")
-    .eq("brand_id", brandId);
-  if (error) throw error;
+  const data = await readAll((from, to) =>
+    supabase
+      .from("product_costs")
+      .select("product_id, cost_price, direct_packaging_cost, vendor_id", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("product_id")
+      .range(from, to),
+  );
   return new Map(
-    (data ?? []).map((row) => [
+    data.map((row) => [
       row.product_id,
       {
         cost_price: Number(row.cost_price ?? 0),
@@ -33,12 +39,15 @@ export async function fetchProductCosts(brandId: string): Promise<Map<string, Pr
 }
 
 export async function fetchVariantCosts(brandId: string): Promise<Map<string, number>> {
-  const { data, error } = await supabase
-    .from("variant_costs")
-    .select("variant_id, cost_price")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  return new Map((data ?? []).map((row) => [row.variant_id, Number(row.cost_price ?? 0)]));
+  const data = await readAll((from, to) =>
+    supabase
+      .from("variant_costs")
+      .select("variant_id, cost_price", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("variant_id")
+      .range(from, to),
+  );
+  return new Map(data.map((row) => [row.variant_id, Number(row.cost_price ?? 0)]));
 }
 
 /** The rows with their costs (zero and no supplier for a product that has no cost row). */

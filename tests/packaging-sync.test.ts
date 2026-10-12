@@ -3,6 +3,7 @@ import {
   syncPackagingExpensesToInventory,
   syncSingleExpenseToPackagingMaterial,
 } from "../src/lib/packaging-sync";
+import { listReply } from "./helpers/list-reply";
 
 describe("Packaging Expenses to Inventory Auto-Sync", () => {
   it("synchronizes existing packaging expenses into packaging_materials table", async () => {
@@ -47,9 +48,7 @@ describe("Packaging Expenses to Inventory Auto-Sync", () => {
             if (table === "packaging_materials") {
               return Promise.resolve({ data: mockPackagingMaterials, error: null });
             }
-            if (table === "expenses") {
-              return Promise.resolve({ data: mockExpenses, error: null });
-            }
+            if (table === "expenses") return listReply(mockExpenses);
             return Promise.resolve({ data: [], error: null });
           },
         }),
@@ -114,21 +113,19 @@ describe("Packaging Expenses to Inventory Auto-Sync", () => {
       from: (table: string) => ({
         select: () => ({
           eq: () =>
-            Promise.resolve({
-              data:
-                table === "packaging_materials"
-                  ? [{ id: "m1", name: "اكياس كبيرة", unit_cost: 0, stock_quantity: 0 }]
-                  : [
-                      {
-                        description: "اكياس كبيرة",
-                        category: "Packaging",
-                        quantity: 10,
-                        amount: 5,
-                      },
-                      { description: "علب هدايا", category: "Packaging", quantity: 10, amount: 5 },
-                    ],
-              error: null,
-            }),
+            listReply(
+              table === "packaging_materials"
+                ? [{ id: "m1", name: "اكياس كبيرة", unit_cost: 0, stock_quantity: 0 }]
+                : [
+                    {
+                      description: "اكياس كبيرة",
+                      category: "Packaging",
+                      quantity: 10,
+                      amount: 5,
+                    },
+                    { description: "علب هدايا", category: "Packaging", quantity: 10, amount: 5 },
+                  ],
+            ),
         }),
         insert: () => Promise.resolve({ error: { message: "denied" } }),
         update: () => ({

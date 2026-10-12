@@ -28,6 +28,7 @@ function builder(table: string) {
     gte: record("gte"),
     or: record("or"),
     order: record("order"),
+    range: record("range"),
     limit: record("limit"),
     maybeSingle: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {

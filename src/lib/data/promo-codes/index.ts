@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { Json, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -15,15 +16,18 @@ export const promoCodesKeys = {
 
 /** The brand's promo codes, newest first. */
 export async function fetchPromoCodes(brandId: string) {
-  const { data, error } = await supabase
-    .from("promo_codes")
-    .select(
-      "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
-    )
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("promo_codes")
+      .select(
+        "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 export type PromoCodeRow = Awaited<ReturnType<typeof fetchPromoCodes>>[number];
 

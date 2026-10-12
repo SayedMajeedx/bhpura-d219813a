@@ -39,6 +39,7 @@ function builder(table: string) {
     delete: write("delete"),
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     or: record("or"),
     limit: record("limit"),
     single: () => chain,
@@ -104,7 +105,7 @@ describe("customer reads", () => {
     await customers.fetchCustomers("b1");
     expect(requests[0]).toMatchObject({ table: "customers", select: "*" });
     expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
-    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }]]);
+    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }], ["id"]]);
     respond = () => ({ data: null, error: denied });
     await expect(customers.fetchCustomers("b1")).rejects.toBe(denied);
   });
@@ -263,7 +264,7 @@ describe("pickers, campaigns, export and search", () => {
   it("export only its columns, newest first, and read a failure as no customers", async () => {
     await customers.fetchCustomersForExport("b1");
     expect(requests[0].select).toBe("id, name, phone, email, notes, created_at");
-    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }]]);
+    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }], ["id"]]);
     const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
     respond = () => ({ data: null, error: denied });
     expect(await customers.fetchCustomersForExport("b1")).toEqual([]);

@@ -48,6 +48,78 @@ export function countDirectSupabaseCalls(content) {
   return (content.match(new RegExp(SUPABASE_CALL_PATTERN.source, "g")) || []).length;
 }
 
+/**
+ * What gives a Supabase read a bound of its own: a limit, a range, one row, a count with no rows,
+ * a list of ids, or the helper that reads a list to its end (`readAll`, src/lib/data/read-all.ts).
+ */
+const LIST_BOUNDS = [
+  ".limit(",
+  ".range(",
+  ".single(",
+  ".maybeSingle(",
+  "head: true",
+  ", head)",
+  '.eq("id"',
+  '.in("id"',
+];
+const LIST_WRITES = [".insert(", ".update(", ".upsert(", ".delete("];
+
+/** Where the statement that starts at `start` ends: its `;`, or the bracket that closes around it. */
+function statementEnd(content, start) {
+  let depth = 0;
+  const stop = Math.min(content.length, start + 4000);
+  for (let i = start; i < stop; i += 1) {
+    const ch = content[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth += 1;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      depth -= 1;
+      if (depth < 0) return i;
+    } else if (ch === ";" && depth === 0) return i;
+  }
+  return stop;
+}
+
+/**
+ * A query kept in a variable (`let query = supabase.from(...)`, filters added, then
+ * `query.range(from, to)`) takes its bound in a later statement that names the variable.
+ */
+function boundedLater(content, start, end) {
+  const before = content.slice(Math.max(0, start - 120), start);
+  const assigned = /(?:let|const)\s+(\w+)\s*=\s*(?:await\s+)?[\w\s().]*$/.exec(before);
+  if (!assigned) return false;
+  const name = new RegExp(`\\b${assigned[1]}\\b`);
+  return content
+    .slice(end, end + 1500)
+    .split(";")
+    .some(
+      (statement) =>
+        name.test(statement) && (statement.includes(".range(") || statement.includes(".limit(")),
+    );
+}
+
+/**
+ * The list reads in a source text that have no bound of their own, as `{ table, line }`. The API
+ * answers such a read with at most its row limit (1,000 rows) and does not say that it stopped:
+ * the caller holds a cut list and takes it for the whole. A read whose caller needs every row
+ * goes through `readAll`; any other says how many rows it wants.
+ */
+export function findUnboundedListReads(content) {
+  const found = [];
+  const from = /\.from\(\s*["']([a-z_]+)["']\s*\)/g;
+  for (let match = from.exec(content); match; match = from.exec(content)) {
+    const chain = content.slice(match.index, statementEnd(content, match.index));
+    if (!chain.includes(".select(")) continue;
+    if (LIST_WRITES.some((write) => chain.includes(write))) continue;
+    if (LIST_BOUNDS.some((bound) => chain.includes(bound))) continue;
+    if (boundedLater(content, match.index, statementEnd(content, match.index))) continue;
+    found.push({
+      table: match[1],
+      line: content.slice(0, match.index).split(/\r?\n/).length,
+    });
+  }
+  return found;
+}
+
 export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
   const srcDir = path.join(rootDir, "src");
   const testsDir = path.join(rootDir, "tests");
@@ -122,6 +194,15 @@ export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
     }
   }
 
+  // List reads with no bound of their own, anywhere in src
+  const unboundedListReads = [];
+  for (const { full, rel } of srcFiles) {
+    if (rel.startsWith("src/integrations/")) continue;
+    for (const read of findUnboundedListReads(fs.readFileSync(full, "utf8"))) {
+      unboundedListReads.push(`${rel}:${read.line} ${read.table}`);
+    }
+  }
+
   // Test files that use readFileSync to inspect source files (brittle tests)
   const testFiles = walk(testsDir, (name) => /\.(tsx?|jsx?|mjs|cjs)$/.test(name))
     .map((full) => {
@@ -153,6 +234,7 @@ export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
       eslintDisable,
       directSupabaseCalls,
       readFileSyncTestFiles: readFileSyncTestFiles.length,
+      unboundedListReads: unboundedListReads.length,
     },
     directSupabaseCalls: {
       total: directSupabaseCalls,
@@ -168,6 +250,7 @@ export function collectMaintainabilityMetrics(rootDir = REPO_ROOT) {
     },
     filesOver1000,
     readFileSyncTestFiles,
+    unboundedListReads,
     fileLineCounts,
   };
 }

@@ -42,6 +42,7 @@ function builder(table: string) {
     is: record("is"),
     not: record("not"),
     order: record("order"),
+    range: record("range"),
     single: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
@@ -339,7 +340,7 @@ describe("customization options (paid add-ons)", () => {
     await catalog.fetchCustomizations("b1");
     expect(requests[0]).toMatchObject({ table: "customization_options", select: "*" });
     expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
-    expect(filters(requests[0], "order")).toEqual([["name"]]);
+    expect(filters(requests[0], "order")).toEqual([["name"], ["id"]]);
     expect(catalog.catalogQueries.customizations("b1").queryKey).toEqual(["customizations", "b1"]);
     expect(catalog.catalogQueries.customizations("").enabled).toBe(false);
     respond = () => ({ data: null, error: denied });

@@ -1,5 +1,6 @@
 import type { StoreVertical } from "@/lib/store-profile";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { readAll } from "@/lib/data/read-all";
 
 export interface DefaultCategorySpec {
   name_ar: string;
@@ -284,16 +285,18 @@ export async function syncBrandVerticalCategories({
   const existingCats = currentCategories || [];
 
   // 2. Fetch products to determine which categories are in active use
-  const { data: prods, error: prodErr } = await db
-    .from("products")
-    .select("category")
-    .eq("brand_id", brandId)
-    .not("category", "is", null);
-
-  if (prodErr) throw prodErr;
+  const prods = await readAll<{ category: string | null }>((from, to) =>
+    db
+      .from("products")
+      .select("category", { count: "exact" })
+      .eq("brand_id", brandId)
+      .not("category", "is", null)
+      .order("id")
+      .range(from, to),
+  );
 
   const usedCategoryIdentifiers = new Set<string>();
-  for (const p of prods || []) {
+  for (const p of prods) {
     if (p.category) {
       usedCategoryIdentifiers.add(String(p.category).trim().toLowerCase());
     }

@@ -34,6 +34,7 @@ function builder(table: string) {
     },
     eq: (...args: unknown[]) => (request.filters.push(["eq", ...args]), chain),
     order: (...args: unknown[]) => (request.filters.push(["order", ...args]), chain),
+    range: (...args: unknown[]) => (request.filters.push(["range", ...args]), chain),
     update: (payload: unknown) => ((request.write = { kind: "update", payload }), chain),
     insert: (payload: unknown) => ((request.write = { kind: "insert", payload }), chain),
     delete: () => ((request.write = { kind: "delete" }), chain),

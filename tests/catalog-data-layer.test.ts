@@ -24,6 +24,7 @@ function builder(table: string) {
     },
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },
@@ -72,8 +73,11 @@ describe("one order per list (bug backlog #13)", () => {
     await catalog.fetchPackagingMaterials("b1");
     // Each list also reads its staff-only cost table beside it; the order is the list's own.
     const of = (table: string) => requests.find((request) => request.table === table)!;
-    expect(filters(of("products"), "order")).toEqual([["created_at", { ascending: false }]]);
-    expect(filters(of("product_variants"), "order")).toEqual([["created_at"]]);
+    expect(filters(of("products"), "order")).toEqual([
+      ["created_at", { ascending: false }],
+      ["id"],
+    ]);
+    expect(filters(of("product_variants"), "order")).toEqual([["created_at"], ["id"]]);
     expect(filters(of("packaging_materials"), "order")).toEqual([
       ["created_at", { ascending: false }],
     ]);

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogKeys } from "./keys";
+import { readAll } from "../read-all";
 
 /**
  * Smaller catalog reads around the product list: the inventory screen's
@@ -53,16 +54,19 @@ export async function searchProducts(brandId: string, text: string) {
 
 /** The brand's active products for the content studio, most recently edited first. */
 export async function fetchContentStudioProducts(brandId: string) {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion",
-    )
-    .eq("brand_id", brandId)
-    .eq("is_active", true)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("products")
+      .select(
+        "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion",
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .eq("is_active", true)
+      .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** One page of the brand's stock movements, newest first, with the total for paging. */

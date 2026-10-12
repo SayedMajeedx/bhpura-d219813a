@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+import { listReply } from "./helpers/list-reply";
 import {
   syncBrandVerticalCategories,
   DEFAULT_VERTICAL_CATEGORIES,
@@ -87,10 +88,7 @@ describe("Vertical Categories Synchronization & Invariants", () => {
           return {
             select: vi.fn(() => ({
               eq: vi.fn(() => ({
-                not: vi.fn(async () => ({
-                  data: existingProducts,
-                  error: null,
-                })),
+                not: vi.fn(() => listReply(existingProducts)),
               })),
             })),
           };

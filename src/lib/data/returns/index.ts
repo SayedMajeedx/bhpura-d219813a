@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { TablesInsert } from "@/integrations/supabase/types";
 
 /**
@@ -108,10 +109,11 @@ export type ReturnPolicyRow = NonNullable<Awaited<ReturnType<typeof fetchReturnP
 
 /** Every return of the brand with its order, customer and items, newest first. */
 export async function fetchAdminReturns(brandId: string) {
-  const { data, error } = await supabase
-    .from("return_requests")
-    .select(
-      `
+  return readAll((from, to) =>
+    supabase
+      .from("return_requests")
+      .select(
+        `
           *,
           order:orders (
             id,
@@ -156,11 +158,13 @@ export async function fetchAdminReturns(brandId: string) {
             )
           )
         `,
-    )
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** One return of the brand with its order, customer and items (with inspection details). */
@@ -234,10 +238,11 @@ export async function fetchAdminReturn(brandId: string, returnId: string) {
 
 /** The brand's variants to exchange into, newest first, with their product and store stock. */
 export async function fetchExchangeVariants(brandId: string) {
-  const { data, error } = await supabase
-    .from("product_variants")
-    .select(
-      `
+  return readAll((from, to) =>
+    supabase
+      .from("product_variants")
+      .select(
+        `
           id, sku, size, size_unit, color, fabric, option_four, option_five, stock_main,
           selling_price,
           product_id,
@@ -248,11 +253,13 @@ export async function fetchExchangeVariants(brandId: string) {
             base_price
           )
         `,
-    )
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 export const returnsQueries = {

@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { fetchVariantCosts, withVariantCosts } from "@/lib/data/catalog/costs";
 
@@ -64,37 +65,44 @@ export async function fetchActiveIncubators(brandId: string) {
 
 /** Stock held at every incubator with its variant and product, latest change first. */
 export async function fetchIncubatorInventory(brandId: string) {
-  const { data, error } = await supabase
-    .from("incubator_inventory")
-    .select(
-      "*, product_variants(id,sku,barcode,size,color,stock_main,stock_incubator,selling_price,products(id,name,name_ar,image_url))",
-    )
-    .eq("brand_id", brandId)
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("incubator_inventory")
+      .select(
+        "*, product_variants(id,sku,barcode,size,color,stock_main,stock_incubator,selling_price,products(id,name,name_ar,image_url))",
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** Every incubator sale with the piece that was sold, newest first. */
 export async function fetchIncubatorSales(brandId: string) {
-  const { data, error } = await supabase
-    .from("incubator_sales")
-    .select("*, product_variants(sku,size,color,products(name,name_ar))")
-    .eq("brand_id", brandId)
-    .order("sold_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("incubator_sales")
+      .select("*, product_variants(sku,size,color,products(name,name_ar))", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("sold_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** Every payment received from incubators, newest first. */
 export async function fetchIncubatorPayments(brandId: string) {
-  const { data, error } = await supabase
-    .from("incubator_payments")
-    .select("*")
-    .eq("brand_id", brandId)
-    .order("payment_date", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("incubator_payments")
+      .select("*", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("payment_date", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /**
@@ -103,12 +111,17 @@ export async function fetchIncubatorPayments(brandId: string) {
  * are read through their payment's.
  */
 export async function fetchIncubatorPaymentAllocations(brandId: string) {
-  const { data, error } = await supabase
-    .from("incubator_payment_allocations")
-    .select("payment_id, sale_id, amount, incubator_payments!inner(brand_id)")
-    .eq("incubator_payments.brand_id", brandId);
-  if (error) throw error;
-  return (data ?? []).map((row) => ({
+  const data = await readAll((from, to) =>
+    supabase
+      .from("incubator_payment_allocations")
+      .select("payment_id, sale_id, amount, incubator_payments!inner(brand_id)", {
+        count: "exact",
+      })
+      .eq("incubator_payments.brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
+  return data.map((row) => ({
     payment_id: row.payment_id,
     sale_id: row.sale_id,
     amount: Number(row.amount),
@@ -150,13 +163,17 @@ const PARTNER_HOLD_SELECT =
  * each row says which partner is to hand over what, for which order.
  */
 export async function fetchPartnerOrderHolds(brandId: string) {
-  const { data, error } = await supabase
-    .from("order_incubator_allocations")
-    .select(PARTNER_HOLD_SELECT)
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("order_incubator_allocations")
+      .select(PARTNER_HOLD_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("order_id")
+      .order("variant_id")
+      .order("incubator_id")
+      .range(from, to),
+  );
 }
 
 /** The pieces one order takes from partners. */
@@ -176,13 +193,15 @@ export async function fetchOrderPartnerPickups(brandId: string, orderId: string)
  * page says so if they ever differ.
  */
 export async function fetchPartnerTotals(brandId: string) {
-  const { data, error } = await supabase
-    .from("product_variants")
-    .select("id, sku, size, color, stock_incubator, products(name, name_ar)")
-    .eq("brand_id", brandId)
-    .gt("stock_incubator", 0);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("product_variants")
+      .select("id, sku, size, color, stock_incubator, products(name, name_ar)", { count: "exact" })
+      .eq("brand_id", brandId)
+      .gt("stock_incubator", 0)
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /** More product ids than this are not put in the address: the whole brand is read instead. */
@@ -196,16 +215,18 @@ export const BATCH_VARIANTS_ID_LIMIT = 60;
 export async function fetchBatchTransferVariants(brandId: string, productIds: readonly string[]) {
   if (productIds.length === 0) return [];
   const byIds = productIds.length <= BATCH_VARIANTS_ID_LIMIT;
-  const base = supabase
-    .from("product_variants")
-    .select(
-      "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, incubator_inventory(quantity, incubator_id)",
-    )
-    .eq("brand_id", brandId);
-  const { data, error } = await (byIds ? base.in("product_id", [...productIds]) : base);
-  if (error) throw error;
+  const data = await readAll((from, to) => {
+    const base = supabase
+      .from("product_variants")
+      .select(
+        "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, incubator_inventory(quantity, incubator_id)",
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId);
+    return (byIds ? base.in("product_id", [...productIds]) : base).order("id").range(from, to);
+  });
   const wanted = new Set(productIds);
-  const rows = byIds ? (data ?? []) : (data ?? []).filter((row) => wanted.has(row.product_id));
+  const rows = byIds ? data : data.filter((row) => wanted.has(row.product_id));
   return withVariantCosts(rows, await fetchVariantCosts(brandId));
 }
 

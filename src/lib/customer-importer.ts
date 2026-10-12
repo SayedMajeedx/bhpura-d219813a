@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { readAll } from "@/lib/data/read-all";
 
 const CustomerImportSchema = z.object({
   brandId: z.string().uuid(),
@@ -78,15 +79,19 @@ export const importCustomerDatabase = createServerFn({ method: "POST" })
       const totalCount = data.customers.length;
 
       // Fetch existing phone numbers to prevent duplicates
-      const { data: existingCustomers, error: fetchErr } = await context.supabase
-        .from("customers")
-        .select("phone")
-        .eq("brand_id", data.brandId);
-
-      if (fetchErr) {
+      const existingCustomers = await readAll((from, to) =>
+        context.supabase
+          .from("customers")
+          .select("phone", { count: "exact" })
+          .eq("brand_id", data.brandId)
+          .order("id")
+          .range(from, to),
+      ).catch((fetchErr: unknown) => {
         console.error("Failed to query existing customer contacts:", fetchErr);
-        throw new Error(`Database error while querying existing customers: ${fetchErr.message}`);
-      }
+        throw new Error(
+          `Database error while querying existing customers: ${(fetchErr as { message?: string })?.message}`,
+        );
+      });
 
       const existingPhones = new Set(
         (existingCustomers ?? []).map((c: any) => c.phone).filter(Boolean),

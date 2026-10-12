@@ -19,6 +19,7 @@ import {
   verifyImageIntegrity,
 } from "@/features/instagram-import/lib/image-integrity";
 import { postIdsOf } from "@/features/instagram-import/lib/merge-drafts";
+import { readAll } from "@/lib/data/read-all";
 
 // Rate limits documentation constants for UI & error handling
 export const RATE_LIMIT_INFO = {
@@ -784,11 +785,15 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
           .eq("brand_id", brandId)
           .eq("source", "instagram");
         runs = (runRows ?? []) as ImportRunRow[];
-        const { data: productRows } = await supabaseAdmin
-          .from("products")
-          .select("id, created_at, custom_fields")
-          .eq("brand_id", brandId);
-        products = (productRows ?? []) as ProductRow[];
+        const productRows = await readAll((from, to) =>
+          supabaseAdmin
+            .from("products")
+            .select("id, created_at, custom_fields", { count: "exact" })
+            .eq("brand_id", brandId)
+            .order("id")
+            .range(from, to),
+        ).catch(() => []);
+        products = productRows as ProductRow[];
       } catch (err) {
         console.warn("Could not query existing Instagram imports:", err);
       }

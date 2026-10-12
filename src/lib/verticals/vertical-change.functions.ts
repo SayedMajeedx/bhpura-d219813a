@@ -9,6 +9,7 @@ import { normalizeVertical, STORE_VERTICALS } from "@/lib/store-profile";
 import { planVerticalChange, type VerticalChangePlan } from "@/lib/verticals/vertical-change";
 import type { LeftoverFacts } from "@/lib/verticals/vertical-leftovers";
 import { normalizeModuleOverrides } from "@/lib/store-profile";
+import { readAll } from "@/lib/data/read-all";
 
 /**
  * Changing a store's vertical, for a super admin: preview what the change
@@ -140,7 +141,19 @@ async function planFor(
     db.from("business_settings").select("store_vertical").eq("brand_id", brandId).maybeSingle(),
     db.from("brand_addons").select("addon_id, status").eq("brand_id", brandId),
     db.from("categories").select("id, slug, name_ar, name_en").eq("brand_id", brandId),
-    db.from("products").select("category").eq("brand_id", brandId).not("category", "is", null),
+    // Which categories are in use is read from every product, however many there are.
+    readAll<{ category: string | null }>((from, to) =>
+      db
+        .from("products")
+        .select("category", { count: "exact" })
+        .eq("brand_id", brandId)
+        .not("category", "is", null)
+        .order("id")
+        .range(from, to),
+    ).then(
+      (data) => ({ data, error: null }),
+      (error: { message?: string }) => ({ data: null, error }),
+    ),
     db.from("platform_addon_policies").select("*"),
     readLeftoverFacts(db, brandId),
   ]);

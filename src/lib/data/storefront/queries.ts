@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { storedPageItems } from "@/lib/cms-pages";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import { storefrontKeys } from "./keys";
 import {
   CATEGORY_SELECT,
@@ -145,14 +146,17 @@ export async function fetchStorefrontPageMeta(slug: string): Promise<StorefrontP
 /* ------------------------------------------------------------------------- */
 
 export async function fetchStorefrontProducts(brandId: string): Promise<ProductRow[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(PRODUCT_CARD_SELECT)
-    .eq("brand_id", brandId)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as unknown as ProductRow[];
+  const data = await readAll((from, to) =>
+    supabase
+      .from("products")
+      .select(PRODUCT_CARD_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data as unknown as ProductRow[];
 }
 
 /** Active products with these ids, in the order given; unknown or inactive ids are dropped. */
@@ -260,14 +264,17 @@ export async function fetchProductDetail(
 export async function fetchRecommendationCatalog(
   brandId: string,
 ): Promise<RecommendationProduct[]> {
-  const { data, error } = await supabase
-    .from("products")
-    .select(RECOMMENDATION_SELECT)
-    .eq("brand_id", brandId)
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []) as unknown as RecommendationProduct[];
+  const data = await readAll((from, to) =>
+    supabase
+      .from("products")
+      .select(RECOMMENDATION_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+  return data as unknown as RecommendationProduct[];
 }
 
 export async function fetchBestSellerRows(slug: string, limit: number): Promise<BestSellerRow[]> {
@@ -315,25 +322,30 @@ export async function fetchCategoryProducts(
     );
   }
 
-  let query = supabase
-    .from("products")
-    .select(PRODUCT_CARD_SELECT)
-    .eq("brand_id", brand.id)
-    .eq("is_active", true);
+  const newSince = new Date(Date.now() - NEW_ARRIVALS_WINDOW_MS).toISOString();
+  // New arrivals and offers show the latest few; a category shows all of its products.
+  const cap = scope.kind === "new" ? 60 : scope.kind === "offers" ? 200 : null;
+  const newestFirst = (counted: boolean) => {
+    let query = supabase
+      .from("products")
+      .select(PRODUCT_CARD_SELECT, counted ? { count: "exact" } : undefined)
+      .eq("brand_id", brand.id)
+      .eq("is_active", true);
+    if (scope.kind === "categories") query = query.in("category", scope.values);
+    else if (scope.kind === "new") query = query.gte("created_at", newSince);
+    query = query.order("created_at", { ascending: false });
+    return cap === null ? query : query.limit(cap);
+  };
 
-  if (scope.kind === "categories") {
-    query = query.in("category", scope.values);
-  } else if (scope.kind === "new") {
-    query = query.gte("created_at", new Date(Date.now() - NEW_ARRIVALS_WINDOW_MS).toISOString());
+  let data: unknown[];
+  if (cap === null) {
+    data = await readAll((from, to) => newestFirst(true).order("id").range(from, to));
+  } else {
+    const latest = await newestFirst(false);
+    if (latest.error) throw latest.error;
+    data = latest.data ?? [];
   }
-
-  let ordered = query.order("created_at", { ascending: false });
-  if (scope.kind === "new") ordered = ordered.limit(60);
-  if (scope.kind === "offers") ordered = ordered.limit(200);
-
-  const { data, error } = await ordered;
-  if (error) throw error;
-  const rows = (data ?? []) as unknown as ProductRow[];
+  const rows = data as unknown as ProductRow[];
   if (scope.kind !== "offers") return rows;
   return rows.filter((product) =>
     product.product_variants.some(

@@ -37,6 +37,7 @@ function builder(table: string) {
     or: (...args: unknown[]) => (request.filters.push(["or", ...args]), chain),
     gte: (...args: unknown[]) => (request.filters.push(["gte", ...args]), chain),
     order: (...args: unknown[]) => (request.filters.push(["order", ...args]), chain),
+    range: (...args: unknown[]) => (request.filters.push(["range", ...args]), chain),
     limit: (...args: unknown[]) => (request.filters.push(["limit", ...args]), chain),
     maybeSingle() {
       request.single = true;
