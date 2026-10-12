@@ -21,6 +21,7 @@ import {
   catalogQueries,
   saveProductBom,
 } from "@/lib/data/catalog";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 interface ProductBomModalProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function ProductBomModal({
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
   const qc = useQueryClient();
 
   const [directCost, setDirectCost] = useState<number>(initialDirectCost || 0);
@@ -202,7 +204,7 @@ export function ProductBomModal({
               <span>
                 {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
               </span>
-              <span className="text-xs text-muted-foreground">BHD</span>
+              <span className="text-xs text-muted-foreground">{currency}</span>
             </Label>
             <Input
               type="number"
@@ -271,8 +273,8 @@ export function ProductBomModal({
                       >
                         {materials.map((m: any) => (
                           <option key={m.id} value={m.id}>
-                            {isAr ? m.name_ar || m.name : m.name} ({formatMoney(m.unit_cost, "BHD")}
-                            )
+                            {isAr ? m.name_ar || m.name : m.name} (
+                            {formatMoney(m.unit_cost, currency)})
                           </option>
                         ))}
                       </select>
@@ -288,7 +290,7 @@ export function ProductBomModal({
                       </div>
 
                       <span className="text-xs font-semibold text-muted-foreground w-16 text-end">
-                        {formatMoney(matCost * item.quantity_per_unit, "BHD")}
+                        {formatMoney(matCost * item.quantity_per_unit, currency)}
                       </span>
 
                       <Button
@@ -314,7 +316,7 @@ export function ProductBomModal({
               {isAr ? "إجمالي تكلفة التغليف للقطعة:" : "Total Packaging Cost / Unit:"}
             </span>
             <span className="text-sm font-extrabold text-primary">
-              {formatMoney(totalCalculatedPackagingCost, "BHD")}
+              {formatMoney(totalCalculatedPackagingCost, currency)}
             </span>
           </div>
         </div>

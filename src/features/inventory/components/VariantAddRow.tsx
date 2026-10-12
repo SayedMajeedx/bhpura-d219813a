@@ -8,6 +8,7 @@ import { SIZE_UNITS, SIZE_UNIT_LABELS } from "@/features/inventory/lib/size-unit
 import { stockLabels } from "@/features/inventory/lib/stock-labels";
 import { makeInStoreBarcode, type VariantDraft } from "@/features/inventory/lib/variant-draft";
 import { VariantImageUploader } from "@/features/inventory/components/VariantImageUploader";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 /** Desktop table row for a new variant, matching the variant row's columns. */
 export function VariantAddRow({
@@ -34,6 +35,7 @@ export function VariantAddRow({
   viewMode: VariantViewMode;
 }) {
   const t = useT();
+  const money = useMoneyLabel("en");
   const { barcodeLabel } = stockLabels(isAr);
   const {
     size: sizeAxis,
@@ -185,7 +187,7 @@ export function VariantAddRow({
               onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
             />
             <span className="absolute end-2 text-xs font-black text-muted-foreground pointer-events-none uppercase">
-              BHD
+              {money}
             </span>
           </div>
           {viewMode === "full" && canViewFinancials ? (
@@ -206,7 +208,7 @@ export function VariantAddRow({
                   placeholder="0.000"
                 />
                 <span className="absolute end-1 text-xs font-black text-muted-foreground pointer-events-none">
-                  BHD
+                  {money}
                 </span>
               </div>
             </div>

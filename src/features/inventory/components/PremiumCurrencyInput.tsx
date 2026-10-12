@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export function PremiumCurrencyInput({
   value,
@@ -19,6 +20,8 @@ export function PremiumCurrencyInput({
   onClear?: () => void;
   clearLabel?: string;
 }) {
+  // The store's own currency, as a code beside the number.
+  const money = useMoneyLabel("en");
   return (
     <div
       className="relative inline-flex items-center w-full min-w-[115px] max-w-[130px] shrink-0"
@@ -48,7 +51,7 @@ export function PremiumCurrencyInput({
         </button>
       )}
       <span className="absolute end-2.5 text-xs font-black text-muted-foreground pointer-events-none uppercase tracking-tight">
-        BHD
+        {money}
       </span>
     </div>
   );

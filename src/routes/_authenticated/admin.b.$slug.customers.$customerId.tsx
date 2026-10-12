@@ -65,6 +65,7 @@ import {
 import { toast } from "sonner";
 import { CustomerAddressManager } from "@/components/customer-address-manager";
 import { AddonSlot } from "@/components/addons/AddonSlot";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -118,6 +119,7 @@ function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
   const { lang } = useI18n();
   const brand = useBrand();
+  const currency = useStoreCurrency(brand.id);
   const router = useRouter();
   useT();
   const qc = useQueryClient();
@@ -361,11 +363,7 @@ function CustomerProfilePage() {
                       totalOrders: activeOrders.length,
                       lifetimeSpend: totalSpent,
                       lastOrderDate,
-                      // Single-currency storefront: this admin Brand context
-                      // (brands table) never carries a currency column — that
-                      // lives on brand_storefront_settings — so this always
-                      // resolved to the fallback below anyway.
-                      currency: "BHD",
+                      currency,
                     });
                     if (badge.segment === "lead") return null;
                     return (
@@ -399,13 +397,13 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "إجمالي المشتريات" : "Total Spend"}
                   </span>
                   <span className="text-xs font-bold font-mono text-primary">
-                    {formatMoney(totalSpent, "BHD")}
+                    {formatMoney(totalSpent, currency)}
                   </span>
                   {pendingCollection > 0 && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 block mt-0.5">
                       {lang === "ar"
-                        ? `(معلق: ${formatMoney(pendingCollection, "BHD")})`
-                        : `(Pending: ${formatMoney(pendingCollection, "BHD")})`}
+                        ? `(معلق: ${formatMoney(pendingCollection, currency)})`
+                        : `(Pending: ${formatMoney(pendingCollection, currency)})`}
                     </span>
                   )}
                 </div>
@@ -414,7 +412,7 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "المبالغ المحصّلة" : "Total Paid"}
                   </span>
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                    {formatMoney(totalPaid, "BHD")}
+                    {formatMoney(totalPaid, currency)}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
@@ -430,7 +428,7 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "متوسط الطلب" : "Avg Order (AOV)"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
-                    {formatMoney(aov, "BHD")}
+                    {formatMoney(aov, currency)}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
@@ -562,7 +560,7 @@ function CustomerProfilePage() {
                           </p>
                         </div>
                         <p className="font-mono text-sm font-extrabold">
-                          {formatMoney(Number(order.total), order.currency || "BHD")}
+                          {formatMoney(Number(order.total), order.currency || currency)}
                         </p>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2.5">
@@ -695,7 +693,7 @@ function CustomerProfilePage() {
                             </div>
                           </td>
                           <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
-                            {formatMoney(Number(order.total), order.currency || "BHD")}
+                            {formatMoney(Number(order.total), order.currency || currency)}
                           </td>
                         </tr>
                       ))}

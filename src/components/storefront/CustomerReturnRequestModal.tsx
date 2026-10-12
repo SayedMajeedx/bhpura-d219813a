@@ -64,6 +64,8 @@ export function CustomerReturnRequestModal({
   isAr,
   onSuccess,
 }: CustomerReturnRequestModalProps) {
+  // What the order was placed in: a return is worked out in the order's own currency.
+  const currency: string = order?.currency || "BHD";
   const [reasonCode, setReasonCode] = useState<ReturnReasonCode>("size_fit");
   const [reasonDetails, setReasonDetails] = useState("");
   const [preferredCompensation, setPreferredCompensation] =
@@ -211,7 +213,7 @@ export function CustomerReturnRequestModal({
                     {isAr ? "رسوم الشحن:" : "Shipping Fee:"}{" "}
                     {formatMoney(
                       Number(policy.return_shipping_fee),
-                      "BHD",
+                      currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
                     )}
                   </span>
@@ -245,7 +247,11 @@ export function CustomerReturnRequestModal({
                       <div>
                         <h4 className="font-bold text-foreground">{item.description}</h4>
                         <span className="text-xs font-mono text-muted-foreground">
-                          {formatMoney(item.unitPrice, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                          {formatMoney(
+                            item.unitPrice,
+                            currency,
+                            isAr ? "ar-BH-u-nu-latn" : "en-US",
+                          )}
                         </span>
                       </div>
                     </div>
@@ -369,7 +375,7 @@ export function CustomerReturnRequestModal({
                 <span>
                   {formatMoney(
                     financials.totalItemRefund,
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -381,7 +387,7 @@ export function CustomerReturnRequestModal({
                     -
                     {formatMoney(
                       financials.proRatedDiscount,
-                      "BHD",
+                      currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
                     )}
                   </span>
@@ -391,7 +397,12 @@ export function CustomerReturnRequestModal({
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span>{isAr ? "رسوم الشحن:" : "Return Fee:"}</span>
                   <span className="text-destructive">
-                    -{formatMoney(financials.returnFee, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                    -
+                    {formatMoney(
+                      financials.returnFee,
+                      currency,
+                      isAr ? "ar-BH-u-nu-latn" : "en-US",
+                    )}
                   </span>
                 </div>
               )}
@@ -400,7 +411,7 @@ export function CustomerReturnRequestModal({
                 <span className="text-emerald-600 dark:text-emerald-400">
                   {formatMoney(
                     financials.netRefundAmount,
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>

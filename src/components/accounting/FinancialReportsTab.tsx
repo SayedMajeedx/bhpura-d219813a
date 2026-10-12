@@ -13,12 +13,16 @@ import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { expensesQueries } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
 import { accountingQueries } from "@/lib/data/accounting";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export function FinancialReportsTab() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const { modules } = useAdminStoreProfile(brandId).profile;
 
   const [reportType, setActiveReportType] = useState<"pnl" | "cash_flow">("pnl");
@@ -55,7 +59,7 @@ export function FinancialReportsTab() {
     let rows: string[][] = [];
     if (reportType === "pnl") {
       rows = [
-        ["INCOME STATEMENT / PROFIT & LOSS REPORT", "BHD"],
+        ["INCOME STATEMENT / PROFIT & LOSS REPORT", currency],
         ["Gross Revenue (المبيعات والإيرادات الإجمالية)", String(pnl.grossRevenue)],
         ["Product COGS (تكلفة المنتجات المباعة)", String(pnl.productCogs)],
         ["Packaging BOM COGS (تكلفة مواد التغليف والعلب المستهلكة)", String(pnl.packagingBomCogs)],
@@ -73,7 +77,7 @@ export function FinancialReportsTab() {
       ];
     } else {
       rows = [
-        ["CASH FLOW & LIQUIDITY STATEMENT", "BHD"],
+        ["CASH FLOW & LIQUIDITY STATEMENT", currency],
         ["Cash Box Balance (الصندوق النقدي)", String(cashFlow.cashBoxBalance)],
         ["Bank / BENEFIT Account Balance (الحساب البنكي)", String(cashFlow.bankAccountBalance)],
         [
@@ -174,7 +178,7 @@ export function FinancialReportsTab() {
                     : "Income Statement (P&L)"}
                 </h2>
                 <span className="text-xs text-muted-foreground">
-                  {isAr ? "جميع المبالغ بالدينار البحريني BHD" : "All amounts in BHD"}
+                  {isAr ? `جميع المبالغ بالدينار البحريني ${money}` : `All amounts in ${money}`}
                 </span>
               </div>
               <Badge
@@ -192,7 +196,7 @@ export function FinancialReportsTab() {
                   {isAr ? "إجمالي المبيعات والإيرادات (Revenue)" : "Gross Revenue"}
                 </span>
                 <span className="font-extrabold text-foreground text-base">
-                  {formatMoney(pnl.grossRevenue, "BHD")}
+                  {formatMoney(pnl.grossRevenue, currency)}
                 </span>
               </div>
 
@@ -200,7 +204,7 @@ export function FinancialReportsTab() {
               <div className="ps-4 pe-4 space-y-1.5 py-1 text-xs text-muted-foreground">
                 <div className="flex justify-between">
                   <span>{isAr ? "• تكلفة المنتجات المباعة (Product Cost)" : "• Product COGS"}</span>
-                  <span className="font-mono">{formatMoney(pnl.productCogs, "BHD")}</span>
+                  <span className="font-mono">{formatMoney(pnl.productCogs, currency)}</span>
                 </div>
                 {(modules.packaging || pnl.packagingBomCogs !== 0) && (
                   <div className="flex justify-between">
@@ -209,7 +213,7 @@ export function FinancialReportsTab() {
                         ? "• تكلفة مواد التغليف والعلب (Packaging BOM)"
                         : "• Packaging BOM COGS"}
                     </span>
-                    <span className="font-mono">{formatMoney(pnl.packagingBomCogs, "BHD")}</span>
+                    <span className="font-mono">{formatMoney(pnl.packagingBomCogs, currency)}</span>
                   </div>
                 )}
               </div>
@@ -220,7 +224,7 @@ export function FinancialReportsTab() {
                   {isAr ? "إجمالي تكلفة المبيعات (Total COGS)" : "Total COGS"}
                 </span>
                 <span className="font-extrabold text-amber-500">
-                  - {formatMoney(pnl.totalCogs, "BHD")}
+                  - {formatMoney(pnl.totalCogs, currency)}
                 </span>
               </div>
 
@@ -230,7 +234,7 @@ export function FinancialReportsTab() {
                   {isAr ? "إجمالي الربح (Gross Profit)" : "Gross Profit"}
                 </span>
                 <span className="font-extrabold text-primary text-base">
-                  {formatMoney(pnl.grossProfit, "BHD")}
+                  {formatMoney(pnl.grossProfit, currency)}
                 </span>
               </div>
 
@@ -242,7 +246,7 @@ export function FinancialReportsTab() {
                     : "Operating Expenses (OpEx)"}
                 </span>
                 <span className="font-bold text-muted-foreground">
-                  - {formatMoney(pnl.operatingExpenses, "BHD")}
+                  - {formatMoney(pnl.operatingExpenses, currency)}
                 </span>
               </div>
 
@@ -254,7 +258,7 @@ export function FinancialReportsTab() {
                     : "Payment Processing Fees"}
                 </span>
                 <span className="font-bold text-muted-foreground">
-                  - {formatMoney(pnl.paymentProcessingFees, "BHD")}
+                  - {formatMoney(pnl.paymentProcessingFees, currency)}
                 </span>
               </div>
 
@@ -265,7 +269,7 @@ export function FinancialReportsTab() {
                     {isAr ? "صافي الربح النهائي (Net Operating Profit)" : "Net Operating Profit"}
                   </span>
                   <span className="text-2xl font-black">
-                    {formatMoney(pnl.netOperatingProfit, "BHD")}
+                    {formatMoney(pnl.netOperatingProfit, currency)}
                   </span>
                 </div>
                 <div className="text-end">
@@ -298,7 +302,7 @@ export function FinancialReportsTab() {
               variant="outline"
               className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-bold text-xs"
             >
-              Liquidity: {formatMoney(cashFlow.totalLiquidity, "BHD")}
+              Liquidity: {formatMoney(cashFlow.totalLiquidity, currency)}
             </Badge>
           </div>
 
@@ -309,7 +313,7 @@ export function FinancialReportsTab() {
                   {isAr ? "المقبوضات النقدية (Inflow)" : "Cash Inflow"}
                 </span>
                 <span className="font-extrabold text-emerald-600 text-lg">
-                  {formatMoney(cashFlow.operatingCashInflow, "BHD")}
+                  {formatMoney(cashFlow.operatingCashInflow, currency)}
                 </span>
               </div>
 
@@ -318,7 +322,7 @@ export function FinancialReportsTab() {
                   {isAr ? "المدفوعات والمصاريف (Outflow)" : "Cash Outflow"}
                 </span>
                 <span className="font-extrabold text-amber-500 text-lg">
-                  - {formatMoney(cashFlow.operatingCashOutflow, "BHD")}
+                  - {formatMoney(cashFlow.operatingCashOutflow, currency)}
                 </span>
               </div>
             </div>
@@ -328,7 +332,7 @@ export function FinancialReportsTab() {
                 {isAr ? "صافي التدفق النقدي (Net Cash Flow)" : "Net Cash Flow"}
               </span>
               <span className="font-extrabold text-primary text-xl">
-                {formatMoney(cashFlow.netCashFlow, "BHD")}
+                {formatMoney(cashFlow.netCashFlow, currency)}
               </span>
             </div>
           </div>

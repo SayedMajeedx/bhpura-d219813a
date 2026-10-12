@@ -24,6 +24,7 @@ import { formatMoney } from "@/lib/format";
 import type { ReturnRequest } from "@/lib/returns.types";
 import { returnsQueries } from "@/lib/data/returns";
 import { returnVariantLabel } from "@/lib/returns-variant";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 interface ReturnExchangeDialogProps {
   open: boolean;
@@ -50,6 +51,7 @@ export function ReturnExchangeDialog({
   onSuccess,
 }: ReturnExchangeDialogProps) {
   const isAr = lang === "ar";
+  const currency = useStoreCurrency(brandId);
   const [items, setItems] = useState<ReplacementRow[]>([
     { variantId: "", quantity: 1, unitPrice: 0, description: "" },
   ]);
@@ -175,7 +177,7 @@ export function ReturnExchangeDialog({
                 {isAr ? "قيمة المرتجع الأصلي:" : "Returned Value:"}
               </span>
               <span className="font-mono font-bold text-foreground">
-                {formatMoney(returnedTotal, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(returnedTotal, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
           </div>
@@ -224,7 +226,7 @@ export function ReturnExchangeDialog({
                               {name} {varName} —{" "}
                               {formatMoney(
                                 Number(v.selling_price || 0),
-                                "BHD",
+                                currency,
                                 isAr ? "ar-BH-u-nu-latn" : "en-US",
                               )}{" "}
                               ({isAr ? `مخزون: ${stock}` : `Stock: ${stock}`})
@@ -265,7 +267,7 @@ export function ReturnExchangeDialog({
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">
-                      {isAr ? "سعر القطعة (د.ب)" : "Unit Price (BHD)"}
+                      {isAr ? `سعر القطعة (${currency})` : `Unit Price (${currency})`}
                     </Label>
                     <Input
                       type="number"
@@ -318,7 +320,7 @@ export function ReturnExchangeDialog({
                       : "Even Exchange (No Price Difference):"}
               </span>
               <span className="font-mono font-bold">
-                {formatMoney(Math.abs(priceDiff), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(Math.abs(priceDiff), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">

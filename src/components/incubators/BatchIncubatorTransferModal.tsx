@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { catalogKeys } from "@/lib/data/catalog";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export interface BatchTransferProduct {
   id: string;
@@ -108,8 +110,10 @@ export function BatchIncubatorTransferModal({
 }: BatchIncubatorTransferModalProps) {
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
 
   const [selectedIncubatorId, setSelectedIncubatorId] = useState<string>(initialIncubatorId || "");
@@ -492,7 +496,7 @@ export function BatchIncubatorTransferModal({
                       {inc.name} — (
                       {inc.commission_type === "percentage"
                         ? `${inc.commission_value}% عمولة`
-                        : `${formatMoney(inc.commission_value, inc.currency || "BHD")} ثابت`}
+                        : `${formatMoney(inc.commission_value, inc.currency || currency)} ثابت`}
                       )
                     </option>
                   ))}
@@ -685,7 +689,7 @@ export function BatchIncubatorTransferModal({
                           {groupTotalTransferQty} {isAr ? "محول" : "transferred"}
                         </Badge>
                         <span className="font-mono font-bold text-muted-foreground">
-                          {formatMoney(groupTotalValue, "BHD")}
+                          {formatMoney(groupTotalValue, currency)}
                         </span>
                       </div>
 
@@ -850,7 +854,7 @@ export function BatchIncubatorTransferModal({
                                       className="h-8 w-24 text-center font-mono text-xs"
                                     />
                                     <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                                      د.ب
+                                      {money}
                                     </span>
                                   </div>
                                 </td>
@@ -916,7 +920,7 @@ export function BatchIncubatorTransferModal({
                 {isAr ? "القيمة التقديرية:" : "Total Value:"}
               </span>
               <span className="font-mono font-bold text-foreground text-sm">
-                {formatMoney(totalValue, "BHD")}
+                {formatMoney(totalValue, currency)}
               </span>
             </div>
           </div>

@@ -335,10 +335,11 @@ export function orderTotals(
   return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
 }
 
-/** Why `validate_promo_code` rejected a code, for the merchant. */
+/** Why `validate_promo_code` rejected a code, for the merchant (amounts in the order's currency). */
 export function promoFailureMessage(
   result: { reason?: string; minimum_order_amount?: unknown } | null | undefined,
   lang: string,
+  currency = "BHD",
 ): string {
   switch (result?.reason) {
     case "FIRST_ORDER_ONLY":
@@ -351,8 +352,8 @@ export function promoFailureMessage(
         : "This promo code is only available to customers with a previous order.";
     case "MINIMUM_NOT_MET":
       return lang === "ar"
-        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`
-        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`;
+        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), currency)}.`
+        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), currency)}.`;
     case "NO_ELIGIBLE_ITEMS":
       return lang === "ar"
         ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً."

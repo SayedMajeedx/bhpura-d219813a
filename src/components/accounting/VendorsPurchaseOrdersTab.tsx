@@ -25,12 +25,16 @@ import {
   invalidateVendors,
   updatePurchaseOrder,
 } from "@/lib/data/accounting";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export function VendorsPurchaseOrdersTab() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
 
   const [activeSubTab, setActiveSubTab] = useState<"pos" | "vendors">("pos");
@@ -167,7 +171,7 @@ export function VendorsPurchaseOrdersTab() {
             {isAr ? "التزامات الموردين والديون (Accounts Payable)" : "Total Accounts Payable"}
           </span>
           <span className="text-xl font-extrabold text-amber-500 mt-1 block">
-            {formatMoney(totalAccountsPayable, "BHD")}
+            {formatMoney(totalAccountsPayable, currency)}
           </span>
         </div>
 
@@ -261,7 +265,7 @@ export function VendorsPurchaseOrdersTab() {
                         {isAr ? "الإجمالي:" : "Total:"}
                       </span>
                       <span className="font-extrabold text-sm text-foreground">
-                        {formatMoney(total, "BHD")}
+                        {formatMoney(total, currency)}
                       </span>
                     </div>
                   </div>
@@ -271,13 +275,13 @@ export function VendorsPurchaseOrdersTab() {
                     <div className="flex items-center justify-between text-xs">
                       <span>
                         {isAr
-                          ? `المدفوع: ${formatMoney(paid, "BHD")}`
-                          : `Paid: ${formatMoney(paid, "BHD")}`}
+                          ? `المدفوع: ${formatMoney(paid, currency)}`
+                          : `Paid: ${formatMoney(paid, currency)}`}
                       </span>
                       <span className="font-bold text-amber-500">
                         {isAr
-                          ? `المتبقي: ${formatMoney(remaining, "BHD")}`
-                          : `Remaining: ${formatMoney(remaining, "BHD")}`}
+                          ? `المتبقي: ${formatMoney(remaining, currency)}`
+                          : `Remaining: ${formatMoney(remaining, currency)}`}
                       </span>
                     </div>
 
@@ -289,8 +293,8 @@ export function VendorsPurchaseOrdersTab() {
                           onClick={() => {
                             const amtStr = prompt(
                               isAr
-                                ? "أدخل مبلغ الدفعة الإضافية (BHD):"
-                                : "Enter payment amount (BHD):",
+                                ? `أدخل مبلغ الدفعة الإضافية (${money}):`
+                                : `Enter payment amount (${money}):`,
                             );
                             if (amtStr) handleRecordPartialPayment(po, parseFloat(amtStr) || 0);
                           }}
@@ -450,7 +454,7 @@ export function VendorsPurchaseOrdersTab() {
 
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label>{isAr ? "الإجمالي الكلي (BHD)" : "Total Amount (BHD)"}</Label>
+                <Label>{isAr ? `الإجمالي الكلي (${money})` : `Total Amount (${money})`}</Label>
                 <Input
                   type="number"
                   step="0.001"
@@ -461,7 +465,9 @@ export function VendorsPurchaseOrdersTab() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>{isAr ? "الدفعة الأولى المقدمة (BHD)" : "Down Payment (BHD)"}</Label>
+                <Label>
+                  {isAr ? `الدفعة الأولى المقدمة (${money})` : `Down Payment (${money})`}
+                </Label>
                 <Input
                   type="number"
                   step="0.001"

@@ -23,6 +23,7 @@ import type { ProductDialogData } from "@/features/inventory/hooks/use-product-d
 
 import { ProductAdvancedDetails } from "@/features/inventory/components/ProductAdvancedDetails";
 import { SaleModeSection } from "@/features/inventory/components/SaleModeSection";
+import { currencyLabel } from "@/lib/currency-label";
 /** First step of the product editor: names, descriptions, category, price, cost and stock. */
 export function ProductBasicTab({
   t,
@@ -189,7 +190,9 @@ export function ProductBasicTab({
       ) : (
         <div>
           <Label className="text-xs font-bold text-muted-foreground">
-            {isAr ? "السعر الأساسي للمنتج (د.ب)" : "Base Price (BHD)"}
+            {isAr
+              ? `السعر الأساسي للمنتج (${currencyLabel(currency, isAr ? "ar" : "en")})`
+              : `Base Price (${currencyLabel(currency, isAr ? "ar" : "en")})`}
           </Label>
           <Input
             type="number"

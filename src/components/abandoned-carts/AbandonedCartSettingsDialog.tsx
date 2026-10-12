@@ -28,6 +28,7 @@ import {
   invalidateAbandonedCartSettings,
   saveAbandonedCartSettings,
 } from "@/lib/data/abandoned-carts";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 interface AbandonedCartSettingsDialogProps {
   open: boolean;
@@ -44,6 +45,7 @@ export function AbandonedCartSettingsDialog({
 }: AbandonedCartSettingsDialogProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<Partial<BrandAbandonedCartSettings>>({
@@ -259,7 +261,7 @@ export function AbandonedCartSettingsDialog({
                       {isAr ? "نسبة مئوية (%)" : "Percentage (%)"}
                     </SelectItem>
                     <SelectItem value="fixed">
-                      {isAr ? "مبلغ ثابت (د.ب)" : "Fixed Amount (BHD)"}
+                      {isAr ? `مبلغ ثابت (${money})` : `Fixed Amount (${money})`}
                     </SelectItem>
                     <SelectItem value="none">{isAr ? "بدون خصم" : "No Discount"}</SelectItem>
                   </SelectContent>

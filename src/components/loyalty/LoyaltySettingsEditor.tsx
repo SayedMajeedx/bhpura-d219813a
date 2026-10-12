@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Coins, ShieldCheck, Gift, Clock } from "lucide-react";
 import type { BrandLoyaltyProgram } from "@/lib/loyalty.types";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 interface LoyaltySettingsEditorProps {
   open: boolean;
@@ -34,6 +35,7 @@ export function LoyaltySettingsEditor({
 }: LoyaltySettingsEditorProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<Partial<BrandLoyaltyProgram>>({
@@ -125,7 +127,7 @@ export function LoyaltySettingsEditor({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="points_per_bhd">
-                  {isAr ? "النقاط المكتسبة لكل 1 د.ب" : "Points per 1 BHD spend"}
+                  {isAr ? `النقاط المكتسبة لكل 1 ${money}` : `Points per 1 ${money} spend`}
                 </Label>
                 <Input
                   id="points_per_bhd"
@@ -144,7 +146,7 @@ export function LoyaltySettingsEditor({
 
               <div className="space-y-1.5">
                 <Label htmlFor="redemption_rate">
-                  {isAr ? "قيمة النقطة بالدينار (د.ب)" : "Point value in BHD"}
+                  {isAr ? `قيمة النقطة بالدينار (${money})` : `Point value in ${money}`}
                 </Label>
                 <Input
                   id="redemption_rate"

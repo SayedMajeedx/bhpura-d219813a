@@ -22,6 +22,7 @@ import {
   mergeImportRunsBySession,
 } from "@/features/inventory/lib/product-import";
 import { importExportQueries } from "@/lib/data/import-export";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 type ImportIssueItem = { row: number; code: string; name: string };
 
@@ -56,6 +57,7 @@ export function ProductImporterModal(props: {
   const [totalCount, setTotalCount] = useState(0);
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const importHistoryQuery = useQuery({
     ...importExportQueries.productImportRuns(brandId),
     enabled: isOpen && Boolean(brandId),
@@ -308,7 +310,11 @@ export function ProductImporterModal(props: {
               <div className="space-y-4">
                 {[
                   { key: "name", label: isAr ? "اسم المنتج" : "Product Title", required: true },
-                  { key: "price", label: isAr ? "السعر (د.ب)" : "Price (BHD)", required: true },
+                  {
+                    key: "price",
+                    label: isAr ? `السعر (${money})` : `Price (${money})`,
+                    required: true,
+                  },
                   { key: "image", label: isAr ? "رابط الصورة" : "Image URL", required: false },
                   {
                     key: "stock",
