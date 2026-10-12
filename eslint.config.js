@@ -379,6 +379,7 @@ export default tseslint.config(
       "src/routes/_authenticated/admin.b.$slug.import.tsx",
       "src/features/import-export/components/**",
       "src/routes/_authenticated/admin.b.$slug.campaigns.tsx",
+      "src/features/campaigns/**",
       "src/routes/_authenticated/admin.b.$slug.export.tsx",
       "src/components/communications/CustomerPushCenter.tsx",
       "src/components/spotlight-command-palette.tsx",
