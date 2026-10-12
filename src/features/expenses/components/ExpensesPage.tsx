@@ -35,6 +35,7 @@ import { FinancialReportsTab } from "@/components/accounting/FinancialReportsTab
 import { scanReceipt, type ScannedExpense } from "@/lib/scan-receipt.functions";
 import type { Expense, DatePreset } from "@/features/expenses/types";
 import { presetRange } from "@/features/expenses/lib/date-range";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 import {
   cogsCsv,
   cogsCsvFileName,
@@ -78,8 +79,6 @@ export function ExpensesPage() {
   const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">(
     "opex_cogs",
   );
-  useMemo(() => presetRange("month"), []);
-
   const [customRange] = useState({ from: "", to: "" });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
@@ -98,8 +97,9 @@ export function ExpensesPage() {
       }),
     [list, activeRange.from, activeRange.to, search, categoryFilter],
   );
-  const currency = list[0]?.currency ?? "BHD";
-  useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
+  // The strip above the list is the store's own money (its orders and its costs); a row is in
+  // its expense's own currency, with the store's when it has none.
+  const currency = useStoreCurrency(brandId);
 
   const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 

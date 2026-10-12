@@ -22,6 +22,8 @@ import { createExpense, updateExpense } from "@/lib/data/expenses";
 
 import { getCurrentUser } from "@/lib/auth/session";
 import type { Expense } from "@/features/expenses/types";
+import { expenseCurrency } from "@/features/expenses/lib/expense-list";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { CreatableCategorySelect } from "@/features/expenses/components/CreatableCategorySelect";
 
 // ============================================================================
@@ -43,6 +45,8 @@ export function ExpenseDialog({
   const t = useT();
   const { lang } = useI18n();
   const brand = useBrand();
+  // A new expense is in the store's own currency (the page has its settings loaded already).
+  const storeCurrency = useStoreCurrency(brand.id);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -51,7 +55,7 @@ export function ExpenseDialog({
     category: expense?.category ?? "",
     description: expense?.description ?? "",
     amount: expense ? String(expense.amount) : "0",
-    currency: expense?.currency ?? "BHD",
+    currency: expenseCurrency(expense, storeCurrency),
     expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
     notes: expense?.notes ?? "",
   });
