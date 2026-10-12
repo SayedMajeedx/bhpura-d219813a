@@ -1,9 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -143,35 +142,9 @@ import {
   type ScannedExpense,
   type ScannedLineItem,
 } from "@/lib/scan-receipt.functions";
-import { permissionsOf, profilesQueries } from "@/lib/data/profiles";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
-  beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await ensureSessionUser(queryClient);
-
-    if (!user) throw redirect({ to: "/auth" });
-
-    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
-
-    const email = (user.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it";
-    const role = profile?.role;
-    const status = profile?.status ?? "active";
-    const permissions = permissionsOf(profile);
-    const hasFinancials = permissions.includes("view_financials");
-    const allowed =
-      isFixedSuperAdmin ||
-      ((role === "admin" ||
-        role === "super_admin" ||
-        role === "brand_admin" ||
-        (role === "staff" && hasFinancials)) &&
-        status === "active");
-
-    if (!allowed) {
-      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
-    }
-  },
   component: ExpensesPage,
 });
 

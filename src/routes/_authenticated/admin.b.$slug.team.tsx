@@ -1,7 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,33 +63,9 @@ import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
 import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
 import { queryKeys } from "@/lib/query-keys";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
-import { profilesQueries } from "@/lib/data/profiles";
-import { getCurrentSession, signOut } from "@/lib/auth/session";
+import { getCurrentSession } from "@/lib/auth/session";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
-  beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await ensureSessionUser(queryClient);
-
-    if (!user) throw redirect({ to: "/auth" });
-
-    const profile = await queryClient.ensureQueryData(profilesQueries.caller(user.id));
-
-    const role = profile?.role;
-    const allowed =
-      !profile ||
-      role === "admin" ||
-      role === "super_admin" ||
-      role === "brand_admin" ||
-      (profile.email || "").toLowerCase() === SUPER_ADMIN_EMAIL;
-
-    if (!allowed) {
-      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
-    }
-    if (profile && profile.status !== "active") {
-      await signOut();
-      throw redirect({ to: "/auth" });
-    }
-  },
   component: TeamManagement,
 });
 

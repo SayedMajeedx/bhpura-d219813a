@@ -182,6 +182,62 @@ describe("super-admin platform navigation", () => {
     expect(await load()).toMatchObject({ allowed: { brand: { id: "b1" } } });
   });
 
+  it("opens a page by its address only for someone the menu would offer it to", async () => {
+    // One guard in the admin's layout (src/lib/page-access.ts): the menu hid a page from a
+    // member of staff, and its address still opened it.
+    const beforeLoad = await guardOf("../src/routes/_authenticated/admin.b.$slug.route");
+    const brand = { id: "b1", slug: "qoffee", is_active: true, support_access_enabled: true };
+    const open = (page: string) => {
+      const data = new Map<string, unknown>([
+        [JSON.stringify(brandQueries.adminBySlug("qoffee").queryKey), brand],
+        [JSON.stringify(profilesQueries.caller("u1").queryKey), auth.profile],
+        [JSON.stringify(brandQueries.iconsBySlug("qoffee").queryKey), null],
+      ]);
+      const queryClient = {
+        ensureQueryData: async (options: { queryKey: unknown }) =>
+          data.get(JSON.stringify(options.queryKey)),
+      };
+      return outcome(
+        beforeLoad({
+          context: { queryClient },
+          params: { slug: "qoffee" },
+          location: { pathname: `/admin/b/qoffee/${page}` },
+        }),
+      );
+    };
+    const member = (role: string, permissions: string[] = []) => ({
+      role,
+      brand_id: "b1",
+      status: "active",
+      permissions,
+    });
+    const home = { redirect: "/admin/b/$slug/dashboard" };
+
+    auth.profile = member("staff", ["manage_orders"]);
+    expect(await open("orders/order-1")).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    expect(await open("dashboard")).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    for (const page of ["expenses", "reports/sales", "inventory", "settings", "team"]) {
+      expect(await open(page), page).toEqual(home);
+    }
+
+    auth.profile = member("staff", ["view_financials"]);
+    expect(await open("expenses")).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    expect(await open("reports/sales")).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    expect(await open("orders")).toEqual(home);
+
+    // A courier has their deliveries; everything else sends them back there.
+    auth.profile = member("courier");
+    expect(await open("orders")).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    expect(await open("inventory")).toEqual({ redirect: "/admin/b/$slug/orders" });
+    expect(await open("dashboard")).toEqual({ redirect: "/admin/b/$slug/orders" });
+
+    // The store's admin opens everything.
+    auth.profile = member("brand_admin");
+    for (const page of ["expenses", "team", "integrations", "inventory"]) {
+      expect(await open(page), page).toMatchObject({ allowed: { brand: { id: "b1" } } });
+    }
+  });
+
   it("requires support access and an impersonation token for a super admin in a tenant", async () => {
     const beforeLoad = await guardOf("../src/routes/_authenticated/admin.b.$slug.route");
     const brand = { id: "b1", slug: "qoffee", is_active: true, support_access_enabled: true };
