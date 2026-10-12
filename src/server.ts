@@ -11,7 +11,7 @@ import {
   runObservedTask,
 } from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
-import { isHeartbeatMinute } from "./lib/system-health";
+import { isHeartbeatMinute, scheduledWork } from "./lib/system-health";
 
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
@@ -93,6 +93,10 @@ async function runScheduledTasks(
   g.__CLOUDFLARE_ENV__ = env;
 
   const correlationId = createCorrelationId();
+  if (scheduledWork(cron) === "daily") {
+    await runDailyTasks(cron, env, correlationId);
+    return;
+  }
   // The tasks that run every minute write a quiet run to the health log only on a heartbeat.
   const everyMinute = { quietWhenIdle: !isHeartbeatMinute(scheduledTime) };
 
@@ -142,17 +146,22 @@ async function runScheduledTasks(
     },
     everyMinute,
   );
+}
 
-  if (cron === "17 2 * * *") {
-    await runObservedTask(env, "benefit_receipt_cleanup", correlationId, async () => {
-      const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");
-      return { cron, ...(await cleanupBenefitReceipts()) };
-    });
-    await runObservedTask(env, "health_event_retention", correlationId, async () => ({
-      cron,
-      ...(await pruneHealthEvents(env)),
-    }));
-  }
+/** The once-a-day tasks. Every run is written to the health log. */
+async function runDailyTasks(
+  cron: string,
+  env: Cloudflare.Env,
+  correlationId: string,
+): Promise<void> {
+  await runObservedTask(env, "benefit_receipt_cleanup", correlationId, async () => {
+    const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");
+    return { cron, ...(await cleanupBenefitReceipts()) };
+  });
+  await runObservedTask(env, "health_event_retention", correlationId, async () => ({
+    cron,
+    ...(await pruneHealthEvents(env)),
+  }));
 }
 
 export default {

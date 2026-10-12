@@ -2,12 +2,16 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   HEARTBEAT_MINUTES,
   didWork,
+  DAILY_CRON,
+  EVERY_MINUTE_CRON,
   isHeartbeatMinute,
+  scheduledWork,
   isSilent,
   latestPerService,
   worthRecording,
 } from "../src/lib/system-health";
 import { runObservedTask } from "../src/lib/observability.server";
+import wrangler from "../wrangler.json";
 
 // The health log keeps what says something: a run that did work or went wrong, and one quiet
 // run every quarter of an hour so a scheduler that stopped can be seen.
@@ -175,5 +179,22 @@ describe("how the health page reads the log", () => {
         now,
       ),
     ).toBe(true);
+  });
+});
+
+describe("what a scheduled run does", () => {
+  it("knows the worker's two schedules as the worker's configuration lists them", () => {
+    expect(wrangler.triggers.crons).toEqual([EVERY_MINUTE_CRON, DAILY_CRON]);
+  });
+
+  it("does the daily tasks only on the daily schedule, so nothing runs twice at 02:17", () => {
+    // Both schedules start a run of their own in that minute.
+    expect(scheduledWork(DAILY_CRON)).toBe("daily");
+    expect(scheduledWork(EVERY_MINUTE_CRON)).toBe("every-minute");
+  });
+
+  it("does the every-minute tasks on a schedule it does not know, so recovery never stops", () => {
+    expect(scheduledWork("*/5 * * * *")).toBe("every-minute");
+    expect(scheduledWork("")).toBe("every-minute");
   });
 });
