@@ -21,7 +21,7 @@ import { collectMaintainabilityMetrics } from "../scripts/maintainability-metric
  */
 
 const BUDGETS = {
-  asAny: 566,
+  asAny: 562,
   colonAny: 713,
   asNever: 0,
   tsIgnore: 0,

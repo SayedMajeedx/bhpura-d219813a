@@ -193,23 +193,44 @@ export async function fetchEntitlementOverrides(brandId: string) {
   return data ?? [];
 }
 
-/** The latest 500 health events and the app's own readiness probe. */
+const HEALTH_EVENT_COLUMNS =
+  "id,service,status,correlation_id,duration_ms,metrics,error_code,created_at";
+
+/**
+ * The health log and the app's own readiness probe. `events` are the latest records (enough to
+ * hold each service's newest, a daily task's included); `incidents` are every run of the last
+ * 24 hours that was not healthy, asked for by themselves so quiet records cannot crowd them out.
+ */
 export async function fetchSystemHealth() {
-  const [{ data, error }, readyResponse] = await Promise.all([
+  const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+  const [{ data, error }, incidentsReply, readyResponse] = await Promise.all([
     supabase
       .from("system_health_events")
-      .select("id,service,status,correlation_id,duration_ms,metrics,error_code,created_at")
+      .select(HEALTH_EVENT_COLUMNS)
       .order("created_at", { ascending: false })
-      .limit(500),
+      .limit(1000),
+    supabase
+      .from("system_health_events")
+      .select(HEALTH_EVENT_COLUMNS)
+      .neq("status", "healthy")
+      .gte("created_at", dayAgo)
+      .order("created_at", { ascending: false })
+      .limit(200),
     fetch("/api/health/ready", { cache: "no-store" }),
   ]);
   if (error) throw error;
+  if (incidentsReply.error) throw incidentsReply.error;
   const readiness = (await readyResponse.json()) as {
     status: string;
     database: string;
     latencyMs: number;
   };
-  return { events: data ?? [], readiness, readyOk: readyResponse.ok };
+  return {
+    events: data ?? [],
+    incidents: incidentsReply.data ?? [],
+    readiness,
+    readyOk: readyResponse.ok,
+  };
 }
 
 /** Store requests waiting for a decision, newest first. */

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminQueries } from "@/lib/data/super-admin";
 import { getCurrentUser } from "@/lib/auth/session";
+import { HEARTBEAT_MINUTES, isSilent, latestPerService } from "@/lib/system-health";
 
 type HealthEvent = {
   id: string;
@@ -38,17 +39,22 @@ function SystemHealthPage() {
   const isAr = lang === "ar";
   const query = useQuery({
     ...superAdminQueries.systemHealth(),
-    select: (health) => ({ ...health, events: health.events as HealthEvent[] }),
+    select: (health) => ({
+      ...health,
+      events: health.events as HealthEvent[],
+      incidents: health.incidents as HealthEvent[],
+    }),
     refetchInterval: 60_000,
   });
 
   const events = query.data?.events ?? [];
-  const latest = Array.from(new Map(events.map((event) => [event.service, event])).values());
-  const failures24h = events.filter(
-    (event) =>
-      event.status !== "healthy" && Date.now() - new Date(event.created_at).getTime() < 86_400_000,
-  );
-  const healthyServices = latest.filter((event) => event.status === "healthy").length;
+  const now = Date.now();
+  const latest = latestPerService(events);
+  const failures24h = query.data?.incidents ?? [];
+  // A service whose newest record is too old has stopped running, whatever that record says.
+  const healthyServices = latest.filter(
+    (event) => event.status === "healthy" && !isSilent(event, now),
+  ).length;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8" dir={isAr ? "rtl" : "ltr"}>
@@ -100,7 +106,7 @@ function SystemHealthPage() {
           title={isAr ? "الخدمات المستقرة" : "Healthy services"}
           value={`${healthyServices}/${latest.length || 0}`}
           healthy={latest.length > 0 && healthyServices === latest.length}
-          detail={isAr ? "حسب آخر تشغيل" : "Based on latest run"}
+          detail={isAr ? "حسب آخر تشغيل مسجل" : "Based on the latest recorded run"}
         />
         <SummaryCard
           title={isAr ? "تنبيهات 24 ساعة" : "24-hour alerts"}
@@ -113,6 +119,11 @@ function SystemHealthPage() {
       <Card>
         <CardHeader>
           <CardTitle>{isAr ? "آخر حالة لكل خدمة" : "Latest service status"}</CardTitle>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? `التشغيل الذي لم يجد ما يعمله يسجل كل ${HEARTBEAT_MINUTES} دقيقة، والتشغيل الذي عمل شيئا أو تعثر يسجل دائما.`
+              : `A run with nothing to do is recorded every ${HEARTBEAT_MINUTES} minutes; a run that did something or went wrong is always recorded.`}
+          </p>
         </CardHeader>
         <CardContent className="space-y-3">
           {latest.length === 0 ? (
@@ -122,7 +133,14 @@ function SystemHealthPage() {
                 : "Results appear after the first scheduled run."}
             </p>
           ) : (
-            latest.map((event) => <ServiceRow key={event.service} event={event} isAr={isAr} />)
+            latest.map((event) => (
+              <ServiceRow
+                key={event.service}
+                event={event}
+                isAr={isAr}
+                silent={isSilent(event, now)}
+              />
+            ))
           )}
         </CardContent>
       </Card>
@@ -177,7 +195,15 @@ function SummaryCard({
   );
 }
 
-function ServiceRow({ event, isAr }: { event: HealthEvent; isAr: boolean }) {
+function ServiceRow({
+  event,
+  isAr,
+  silent = false,
+}: {
+  event: HealthEvent;
+  isAr: boolean;
+  silent?: boolean;
+}) {
   const tone =
     event.status === "healthy"
       ? "bg-emerald-50 text-emerald-700"
@@ -197,6 +223,11 @@ function ServiceRow({ event, isAr }: { event: HealthEvent; isAr: boolean }) {
       <div className="flex items-center gap-2">
         {event.error_code ? (
           <code className="text-xs text-muted-foreground">{event.error_code}</code>
+        ) : null}
+        {silent ? (
+          <Badge className="bg-amber-50 text-amber-700">
+            {isAr ? "لا تشغيل حديث" : "No recent run"}
+          </Badge>
         ) : null}
         <Badge className={tone}>{event.status}</Badge>
       </div>

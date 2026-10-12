@@ -11,6 +11,7 @@ import {
   runObservedTask,
 } from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
+import { isHeartbeatMinute } from "./lib/system-health";
 
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
@@ -81,36 +82,66 @@ function withSecurityHeaders(response: Response, correlationId?: string): Respon
   });
 }
 
-async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<void> {
+async function runScheduledTasks(
+  cron: string,
+  env: Cloudflare.Env,
+  scheduledTime: number,
+): Promise<void> {
   const g = globalThis as typeof globalThis & {
     __CLOUDFLARE_ENV__?: Cloudflare.Env;
   };
   g.__CLOUDFLARE_ENV__ = env;
 
   const correlationId = createCorrelationId();
+  // The tasks that run every minute write a quiet run to the health log only on a heartbeat.
+  const everyMinute = { quietWhenIdle: !isHeartbeatMinute(scheduledTime) };
 
   // Every task is isolated: one provider outage must never prevent the other
   // recovery loops from running.
-  await runObservedTask(env, "tap_payment_reconciliation", correlationId, async () => {
-    const { reconcileAbandonedTapPayments } =
-      await import("./lib/tap-payment-reconciliation.server");
-    return { cron, ...(await reconcileAbandonedTapPayments()) };
-  });
+  await runObservedTask(
+    env,
+    "tap_payment_reconciliation",
+    correlationId,
+    async () => {
+      const { reconcileAbandonedTapPayments } =
+        await import("./lib/tap-payment-reconciliation.server");
+      return { cron, ...(await reconcileAbandonedTapPayments()) };
+    },
+    everyMinute,
+  );
 
-  await runObservedTask(env, "order_email_retry", correlationId, async () => {
-    const { retryOrderEmailOutbox } = await import("./lib/order-email-outbox.server");
-    return { cron, ...(await retryOrderEmailOutbox(env)) };
-  });
+  await runObservedTask(
+    env,
+    "order_email_retry",
+    correlationId,
+    async () => {
+      const { retryOrderEmailOutbox } = await import("./lib/order-email-outbox.server");
+      return { cron, ...(await retryOrderEmailOutbox(env)) };
+    },
+    everyMinute,
+  );
 
-  await runObservedTask(env, "whatsapp_retry", correlationId, async () => {
-    const { retryWhatsAppOutbox } = await import("./lib/meta-whatsapp.server");
-    return { cron, ...(await retryWhatsAppOutbox(env)) };
-  });
+  await runObservedTask(
+    env,
+    "whatsapp_retry",
+    correlationId,
+    async () => {
+      const { retryWhatsAppOutbox } = await import("./lib/meta-whatsapp.server");
+      return { cron, ...(await retryWhatsAppOutbox(env)) };
+    },
+    everyMinute,
+  );
 
-  await runObservedTask(env, "abandoned_cart_processing", correlationId, async () => {
-    const { processAbandonedCarts } = await import("./lib/abandoned-carts.server");
-    return { cron, ...(await processAbandonedCarts()) };
-  });
+  await runObservedTask(
+    env,
+    "abandoned_cart_processing",
+    correlationId,
+    async () => {
+      const { processAbandonedCarts } = await import("./lib/abandoned-carts.server");
+      return { cron, ...(await processAbandonedCarts()) };
+    },
+    everyMinute,
+  );
 
   if (cron === "17 2 * * *") {
     await runObservedTask(env, "benefit_receipt_cleanup", correlationId, async () => {
@@ -234,6 +265,6 @@ export default {
   },
 
   scheduled(controller: ScheduledController, env: Cloudflare.Env, ctx: ExecutionContext) {
-    ctx.waitUntil(runScheduledTasks(controller.cron, env));
+    ctx.waitUntil(runScheduledTasks(controller.cron, env, controller.scheduledTime));
   },
 } satisfies ExportedHandler<Cloudflare.Env>;
