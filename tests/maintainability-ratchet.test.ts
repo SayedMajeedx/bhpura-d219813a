@@ -33,7 +33,7 @@ const BUDGETS = {
   // API cuts such a read at its row limit without saying so. What is left is settings-sized
   // tables and one parent's rows (an order's history, a customer's addresses).
   unboundedListReads: 96,
-  filesOver1000: 13,
+  filesOver1000: 12,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -54,7 +54,6 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/routes/_authenticated/admin.b.$slug.export.tsx": 1838,
   "src/lib/addons/addon-showcase-data.ts": 1893,
   "src/components/super/SuperPlansManager.tsx": 1721,
-  "src/routes/_authenticated/admin.b.$slug.team.tsx": 1703,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/lib/public-api/public-api-router.server.ts": 1271,
   "src/routes/_authenticated/admin.brands.tsx": 1024,
