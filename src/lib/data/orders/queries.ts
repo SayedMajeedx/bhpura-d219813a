@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { localDayRange } from "@/lib/day-range";
 import { readAll } from "../read-all";
 import { NOT_SOLD_ORDER_FILTER } from "./sold-orders";
 import { ordersKeys } from "./keys";
@@ -125,9 +126,11 @@ export type OrderReconciliationRow = Awaited<ReturnType<typeof fetchReconciliati
 
 /**
  * Orders whose lines count as COGS (every order that counts as sold: `sold-orders.ts`), created
- * in `[from, to]` (whole days, `YYYY-MM-DD`; an empty bound is open), newest first.
+ * in `[from, to]` (whole days, `YYYY-MM-DD`, on the reader's own clock like the reports; an empty
+ * bound is open), newest first.
  */
 export async function fetchCogsOrders(brandId: string, from: string, to: string) {
+  const { since, before } = localDayRange(from, to);
   return readAll((first, last) => {
     let query = supabase
       .from("orders")
@@ -136,13 +139,8 @@ export async function fetchCogsOrders(brandId: string, from: string, to: string)
       .not("status", "in", NOT_SOLD_ORDER_FILTER)
       .order("created_at", { ascending: false })
       .order("id");
-    if (from) query = query.gte("created_at", from);
-    if (to) {
-      // Include the whole last day
-      const endDay = new Date(to);
-      endDay.setDate(endDay.getDate() + 1);
-      query = query.lt("created_at", endDay.toISOString().slice(0, 10));
-    }
+    if (since) query = query.gte("created_at", since);
+    if (before) query = query.lt("created_at", before);
     return query.range(first, last);
   });
 }
