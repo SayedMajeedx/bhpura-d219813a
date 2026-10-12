@@ -1,0 +1,33 @@
+export const CUSTOMER_HEADER_MAPS = {
+  name: [
+    "first name",
+    "last name",
+    "name",
+    "اسم العميل",
+    "الاسم",
+    "client name",
+    "customer name",
+    "customer_name",
+  ],
+  phone: [
+    "phone",
+    "phone number",
+    "tel",
+    "mobile",
+    "رقم الجوال",
+    "رقم الهاتف",
+    "الجوال",
+    "phone_number",
+  ],
+  email: ["email", "email address", "البريد الإلكتروني", "البريد", "email_address"],
+  orders: ["total orders", "orders", "عدد الطلبات", "الطلبات", "total_orders"],
+  spend: [
+    "total spend",
+    "spend",
+    "إجمالي المشتريات",
+    "المشتريات",
+    "إجمالي المبيعات",
+    "total_spend",
+    "total_spent",
+  ],
+};

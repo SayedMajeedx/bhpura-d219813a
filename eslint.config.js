@@ -376,6 +376,7 @@ export default tseslint.config(
     // addresses in some screens and one customer's in others.
     files: [
       "src/routes/_authenticated/admin.b.$slug.customers.*",
+      "src/features/customers/**",
       "src/components/customer-address-manager.tsx",
       "src/routes/_authenticated/admin.b.$slug.import.tsx",
       "src/features/import-export/components/**",
