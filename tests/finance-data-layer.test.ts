@@ -107,8 +107,10 @@ describe("finance order reads", () => {
     const [request] = requests;
     // Every order that counts as sold, whatever stage it is at (packing, at the tailor...).
     expect(filters(request, "not")).toEqual([["status", "in", orders.NOT_SOLD_ORDER_FILTER]]);
-    expect(filters(request, "gte")).toEqual([["created_at", "2026-09-01"]]);
-    expect(filters(request, "lt")).toEqual([["created_at", "2026-10-01"]]);
+    // The days are the reader's own: from midnight on the 1st to midnight after the 30th, on
+    // this device's clock, sent as moments (a bare day would be read at midnight UTC).
+    expect(filters(request, "gte")).toEqual([["created_at", new Date(2026, 8, 1).toISOString()]]);
+    expect(filters(request, "lt")).toEqual([["created_at", new Date(2026, 9, 1).toISOString()]]);
   });
 
   it("leaves an empty COGS range open", async () => {

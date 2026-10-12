@@ -143,8 +143,8 @@ describe("customers and orders", () => {
     tables.orders = rows(1100, (i) => ({ id: `o${i}` }));
     expect(await orders.fetchCogsOrders("b1", "2026-09-01", "2026-09-30")).toHaveLength(1100);
     for (const request of to("orders")) {
-      expect(callsOf(request, "gte")).toEqual([["created_at", "2026-09-01"]]);
-      expect(callsOf(request, "lt")).toEqual([["created_at", "2026-10-01"]]);
+      expect(callsOf(request, "gte")).toEqual([["created_at", new Date(2026, 8, 1).toISOString()]]);
+      expect(callsOf(request, "lt")).toEqual([["created_at", new Date(2026, 9, 1).toISOString()]]);
     }
     expect(to("orders").map((request) => callsOf(request, "range")[0])).toEqual([
       [0, 999],
