@@ -2,26 +2,47 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
 import { translateOptionValue, hasKnownTranslation } from "./variant-i18n";
+import { acceptedTranslations, translatableTerms } from "./translate-option-terms";
 
 const Input = z.object({
-  terms: z.array(z.string()).min(1).max(50),
+  // Bounded so a request cannot be made of megabytes; `translatableTerms` then keeps the short ones.
+  terms: z.array(z.string().max(500)).min(1).max(100),
   from: z.enum(["ar", "en"]).default("ar"),
   to: z.enum(["ar", "en"]).default("en"),
 });
 
 const DEFAULT_MODEL = "gemini-3.1-flash-lite";
 
+/** The words that are an option value of some product. A failed check sends nothing to the model. */
+async function catalogTerms(terms: string[]): Promise<string[]> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await (supabaseAdmin as any).rpc("catalog_option_values", {
+      p_terms: terms,
+    });
+    if (error || !Array.isArray(data)) return [];
+    const sold = new Set<string>(data.filter((term: unknown) => typeof term === "string"));
+    return terms.filter((term) => sold.has(term));
+  } catch (err) {
+    console.warn("[translateOptionTerms] Catalog check skipped:", err);
+    return [];
+  }
+}
+
 /**
  * Autonomous, high-speed variant option translation function.
  * Uses persistent DB cache (translation_cache) and falls back to Gemini AI
  * only for genuinely unseen terms. Stores newly translated terms permanently.
+ *
+ * Anyone can call it (a shopper's page asks for the words it has not seen), so it is careful
+ * with what it pays for and what it stores: only short words are looked at, only words a store
+ * really sells under are sent to the model (`catalog_option_values`), and only a translation of
+ * a word that was asked is kept (`translate-option-terms.ts`).
  */
 export const translateOptionTerms = createServerFn({ method: "POST" })
   .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data }) => {
-    const rawTerms = Array.from(
-      new Set(data.terms.map((t) => (typeof t === "string" ? t.trim() : "")).filter(Boolean)),
-    );
+    const rawTerms = translatableTerms(data.terms);
 
     if (rawTerms.length === 0 || data.from === data.to) {
       const identity: Record<string, string> = {};
@@ -63,15 +84,19 @@ export const translateOptionTerms = createServerFn({ method: "POST" })
 
       const localTranslation = translateOptionValue(term, data.to);
       if (hasKnownTranslation(term, data.to)) {
+        // Known to the built-in lexicon (or already in the target language): answered here,
+        // every time, at no cost. It is not stored: a caller could otherwise fill the shared
+        // cache with a row for every piece of text it sent.
         translations[term] = localTranslation;
-        toSaveInCache.push({ source: term, translated: localTranslation });
       } else {
         unmapped.push(term);
       }
     }
 
-    // Step 3: For genuinely new / unknown terms, translate with Gemini AI in 1 compact batch
-    if (unmapped.length > 0) {
+    // Step 3: For genuinely new / unknown terms, translate with Gemini AI in 1 compact batch.
+    // Only words a store sells under: a caller cannot have arbitrary text translated and kept.
+    const sellable = unmapped.length > 0 ? await catalogTerms(unmapped) : [];
+    if (sellable.length > 0) {
       try {
         const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
         if (apiKey) {
@@ -84,7 +109,7 @@ export const translateOptionTerms = createServerFn({ method: "POST" })
             `- Keep brand names, numbers, and units intact.`,
             `- Do NOT include markdown code fences or any other commentary.`,
             `Input terms to translate:`,
-            JSON.stringify(unmapped),
+            JSON.stringify(sellable),
           ].join("\n");
 
           const response = await fetch(
@@ -110,14 +135,10 @@ export const translateOptionTerms = createServerFn({ method: "POST" })
             const jsonText = payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "{}";
 
             try {
-              const aiMap = JSON.parse(jsonText);
-              if (aiMap && typeof aiMap === "object") {
-                for (const [k, v] of Object.entries(aiMap)) {
-                  if (typeof v === "string" && v.trim()) {
-                    translations[k] = v.trim();
-                    toSaveInCache.push({ source: k, translated: v.trim() });
-                  }
-                }
+              const kept = acceptedTranslations(sellable, JSON.parse(jsonText));
+              for (const [term, translation] of Object.entries(kept)) {
+                translations[term] = translation;
+                toSaveInCache.push({ source: term, translated: translation });
               }
             } catch (pErr) {
               console.warn("[translateOptionTerms] Failed to parse AI JSON:", pErr, jsonText);

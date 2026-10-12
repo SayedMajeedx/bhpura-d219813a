@@ -226,6 +226,7 @@ export function ProductsSection({
         lang={isAr ? "ar" : "en"}
         productCount={products.length}
         pendingNotifyCount={pendingNotifyCount}
+        waitlistSlug={brand.slug}
         isCourier={false}
         isServices={isServicesProfile(storeProfile.modules)}
         onCreateNew={openNewProduct}
