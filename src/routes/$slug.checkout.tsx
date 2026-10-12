@@ -33,6 +33,7 @@ import { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
 import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
+import { checkoutQueries } from "@/lib/data/checkout";
 import { PaymentFailedCard } from "@/features/checkout/components/PaymentFailedCard";
 import { BookingHoldBanner } from "@/features/storefront-booking/components/BookingHoldBanner";
 import { CustomerDetailsCard } from "@/features/checkout/components/CustomerDetailsCard";
@@ -89,6 +90,9 @@ function Checkout() {
   } = useCustomerPrefill({ brand, session, setForm });
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
+  // Offered only by a store that can really send them (its WhatsApp connection is on).
+  const whatsappUpdatesReady =
+    useQuery(checkoutQueries.whatsappUpdatesReady(brand.id)).data === true;
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const {
@@ -421,7 +425,6 @@ function Checkout() {
 
         {!appointment && (
           <CustomerDetailsCard
-            brand={brand}
             checkRegisteredAccount={checkRegisteredAccount}
             form={form}
             fulfillment={fulfillment}
@@ -438,6 +441,7 @@ function Checkout() {
             setWhatsappOrderUpdates={setWhatsappOrderUpdates}
             t={t}
             whatsappOrderUpdates={whatsappOrderUpdates}
+            whatsappUpdatesReady={whatsappUpdatesReady}
           />
         )}
 

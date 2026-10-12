@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { readAll } from "../read-all";
+import { NOT_SOLD_ORDER_FILTER } from "./sold-orders";
 import { ordersKeys } from "./keys";
 import {
   ORDER_COGS_SELECT,
@@ -122,20 +123,9 @@ export async function fetchReconciliationOrders(brandId: string, limit: number) 
 }
 export type OrderReconciliationRow = Awaited<ReturnType<typeof fetchReconciliationOrders>>[number];
 
-/** Statuses whose lines count as cost of goods sold. */
-export const COGS_ORDER_STATUSES = [
-  "confirmed",
-  "paid",
-  "shipped",
-  "completed",
-  "delivered",
-  "ready_for_pickup",
-  "picked_up",
-];
-
 /**
- * Orders whose lines count as COGS, created in `[from, to]` (whole days,
- * `YYYY-MM-DD`; an empty bound is open), newest first.
+ * Orders whose lines count as COGS (every order that counts as sold: `sold-orders.ts`), created
+ * in `[from, to]` (whole days, `YYYY-MM-DD`; an empty bound is open), newest first.
  */
 export async function fetchCogsOrders(brandId: string, from: string, to: string) {
   return readAll((first, last) => {
@@ -143,7 +133,7 @@ export async function fetchCogsOrders(brandId: string, from: string, to: string)
       .from("orders")
       .select(ORDER_COGS_SELECT, { count: "exact" })
       .eq("brand_id", brandId)
-      .in("status", COGS_ORDER_STATUSES)
+      .not("status", "in", NOT_SOLD_ORDER_FILTER)
       .order("created_at", { ascending: false })
       .order("id");
     if (from) query = query.gte("created_at", from);

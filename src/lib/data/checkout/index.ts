@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -46,7 +47,36 @@ export async function placeStorefrontOrder(
   };
 }
 
-/** Records that the shopper wants WhatsApp order updates. Returns whether it was recorded. */
+export const checkoutKeys = {
+  whatsappUpdatesReady: (brandId: string) =>
+    ["checkout", brandId, "whatsapp-updates-ready"] as const,
+};
+
+/**
+ * Whether the store can send WhatsApp order updates now (its own connection is on, with a number
+ * and an active message). The checkout offers the opt-in only then: a box that promises messages
+ * nothing will send is worse than no box. A failed read offers nothing.
+ */
+export async function fetchWhatsappUpdatesReady(brandId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc("storefront_whatsapp_updates_ready", {
+    p_brand_id: brandId,
+  });
+  return !error && data === true;
+}
+
+export const checkoutQueries = {
+  whatsappUpdatesReady: (brandId: string) =>
+    queryOptions({
+      queryKey: checkoutKeys.whatsappUpdatesReady(brandId),
+      queryFn: () => fetchWhatsappUpdatesReady(brandId),
+      staleTime: 5 * 60_000,
+    }),
+};
+
+/**
+ * Records that the shopper wants WhatsApp order updates. Returns whether it was recorded (the
+ * database records it only for a store that can send them).
+ */
 export async function recordOrderWhatsappOptIn(orderId: string, confirmationToken: string) {
   const { error } = await supabase.rpc("record_order_whatsapp_opt_in", {
     p_order_id: orderId,

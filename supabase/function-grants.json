@@ -571,6 +571,11 @@
       "authenticated": true,
       "reason": "Signed-in shopper or session helper: checks the session inside"
     },
+    "storefront_whatsapp_updates_ready(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront read by design: answers yes or no to whether a store can send WhatsApp order updates, nothing else"
+    },
     "submit_grant_application(p_business_name text, p_instagram_handle text, p_whatsapp_number text, p_product_category text, p_readiness_status text, p_current_sales_channel text, p_biggest_challenge text)": {
       "anon": true,
       "authenticated": true,

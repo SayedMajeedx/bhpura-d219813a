@@ -13,7 +13,6 @@ import type { useRegisteredAccountCheck } from "@/features/checkout/hooks/use-re
 
 /** Name, phone and email (offering sign-in when they match an account), the gift note, order notes and the opt-ins. */
 export function CustomerDetailsCard({
-  brand,
   checkRegisteredAccount,
   form,
   fulfillment,
@@ -30,8 +29,8 @@ export function CustomerDetailsCard({
   setWhatsappOrderUpdates,
   t,
   whatsappOrderUpdates,
+  whatsappUpdatesReady,
 }: {
-  brand: Storefront["brand"];
   checkRegisteredAccount: ReturnType<typeof useRegisteredAccountCheck>["checkRegisteredAccount"];
   form: CheckoutForm;
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
@@ -48,6 +47,8 @@ export function CustomerDetailsCard({
   setWhatsappOrderUpdates: Dispatch<SetStateAction<boolean>>;
   t: Storefront["t"];
   whatsappOrderUpdates: boolean;
+  /** The store can send WhatsApp order updates now: only then is the opt-in offered. */
+  whatsappUpdatesReady: boolean;
 }) {
   const servicesStore = useIsServicesStore();
   return (
@@ -188,7 +189,7 @@ export function CustomerDetailsCard({
           </span>
         </label>
       )}
-      {brand.slug === "pura" && (
+      {whatsappUpdatesReady && (
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
           <Checkbox
             className="mt-0.5"

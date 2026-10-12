@@ -160,7 +160,7 @@ export function usePlaceOrder({
         );
         orderId = placed.orderId;
         confirmationToken = placed.confirmationToken;
-        if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
+        if (whatsappOrderUpdates && orderId && confirmationToken) {
           const recorded = await recordOrderWhatsappOptIn(orderId, confirmationToken);
           if (!recorded) {
             console.warn("[checkout] WhatsApp order-update consent could not be recorded");

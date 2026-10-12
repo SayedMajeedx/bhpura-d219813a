@@ -161,3 +161,25 @@ describe("placing an order with loyalty points", () => {
     expect(stubs.navigate).toHaveBeenCalled();
   });
 });
+
+describe("the WhatsApp order-updates consent", () => {
+  it("is recorded for the order when the shopper ticked it, whatever the store is called", async () => {
+    checkout.recordOrderWhatsappOptIn.mockResolvedValue(true);
+    for (const slug of ["zh", "pura", "aurora"]) {
+      checkout.recordOrderWhatsappOptIn.mockClear();
+      await place({ brand: { id: "brand-1", slug }, whatsappOrderUpdates: true });
+      expect(checkout.recordOrderWhatsappOptIn, slug).toHaveBeenCalledWith(ORDER, "tok");
+    }
+  });
+
+  it("is not recorded when the box was not ticked (or was never offered)", async () => {
+    await place({ whatsappOrderUpdates: false });
+    expect(checkout.recordOrderWhatsappOptIn).not.toHaveBeenCalled();
+  });
+
+  it("does not stop the order when the consent could not be recorded", async () => {
+    checkout.recordOrderWhatsappOptIn.mockResolvedValue(false);
+    await place({ whatsappOrderUpdates: true });
+    expect(stubs.navigate).toHaveBeenCalled();
+  });
+});
