@@ -18,6 +18,19 @@ export const DAILY_SERVICES: ReadonlySet<string> = new Set([
   "health_event_retention",
 ]);
 
+/** The worker's two schedules, as `wrangler.json` lists them. */
+export const EVERY_MINUTE_CRON = "* * * * *";
+export const DAILY_CRON = "17 2 * * *";
+
+/**
+ * Which tasks a scheduled run does. Each schedule starts its own run, so at 02:17 UTC there are
+ * two: the daily one does the daily tasks only, or the four that run every minute would run
+ * twice at once that minute (they did). Any other schedule does the every-minute tasks.
+ */
+export function scheduledWork(cron: string): "daily" | "every-minute" {
+  return cron === DAILY_CRON ? "daily" : "every-minute";
+}
+
 export function isHeartbeatMinute(scheduledTime: number): boolean {
   return new Date(scheduledTime).getUTCMinutes() % HEARTBEAT_MINUTES === 0;
 }
