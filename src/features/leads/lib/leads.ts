@@ -210,5 +210,5 @@ export function subscribersCsv(rows: readonly Subscriber[]): string {
       row.created_at.slice(0, 10),
     ]),
   ];
-  return `﻿${lines.map((line) => line.map(csvCell).join(",")).join("\r\n")}\r\n`;
+  return `\uFEFF${lines.map((line) => line.map(csvCell).join(",")).join("\r\n")}\r\n`;
 }

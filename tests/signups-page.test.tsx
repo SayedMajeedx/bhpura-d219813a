@@ -228,9 +228,9 @@ describe("the newsletter list", () => {
 
   it("is a file a spreadsheet opens right, with nothing in it a spreadsheet would run", () => {
     const csv = subscribersCsv(rows);
-    expect(csv.startsWith("﻿")).toBe(true);
+    expect(csv.startsWith("\uFEFF")).toBe(true);
     expect(csv.split("\r\n")).toEqual([
-      "﻿contact,channel,language,source,signed_up",
+      "\uFEFFcontact,channel,language,source,signed_up",
       "a@b.co,email,en,footer,2026-10-01",
       "97339001122,whatsapp,ar,,2026-10-02",
       '"\'=cmd,""x""@b.co",email,,popup,2026-10-03',

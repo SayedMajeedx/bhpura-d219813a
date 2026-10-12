@@ -9130,6 +9130,7 @@ export type Database = {
         Args: { p_payment_method: string };
         Returns: string;
       };
+      catalog_option_values: { Args: { p_terms: string[] }; Returns: string[] };
       check_registered_customer_exists: {
         Args: { p_brand_id: string; p_email: string; p_phone: string };
         Returns: boolean;
@@ -10745,6 +10746,10 @@ export type Database = {
       };
       storefront_user_owns_order: {
         Args: { p_order_id: string };
+        Returns: boolean;
+      };
+      storefront_whatsapp_updates_ready: {
+        Args: { p_brand_id: string };
         Returns: boolean;
       };
       submit_grant_application: {
