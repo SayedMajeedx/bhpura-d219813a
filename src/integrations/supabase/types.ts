@@ -9126,6 +9126,7 @@ export type Database = {
       };
       bookings_enabled: { Args: { p_brand_id: string }; Returns: boolean };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
+      can_view_brand_costs: { Args: { _brand_id: string }; Returns: boolean };
       cash_account_type_for_payment: {
         Args: { p_payment_method: string };
         Returns: string;
@@ -9308,6 +9309,7 @@ export type Database = {
         Returns: Json;
       };
       delete_category: { Args: { p_id: string }; Returns: Json };
+      delete_expired_shared_carts: { Args: never; Returns: number };
       delete_integration_credential: {
         Args: { p_brand_id: string; p_id: string };
         Returns: boolean;
