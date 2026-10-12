@@ -58,6 +58,7 @@ import {
   type EditableField,
   type MergeableDraft,
 } from "@/features/instagram-import";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export interface InstagramImporterModalProps {
   brandId: string;
@@ -78,6 +79,7 @@ export function InstagramImporterModal({
 }: InstagramImporterModalProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
 
   const isControlled = controlledOpen !== undefined;
   const [internalOpen, setInternalOpen] = React.useState(false);
@@ -770,7 +772,7 @@ export function InstagramImporterModal({
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-xs">
                               <span className="font-bold text-foreground">
-                                {isAr ? "السعر (د.ب)" : "Price (BHD)"}
+                                {isAr ? `السعر (${money})` : `Price (${money})`}
                               </span>
                               {isPriceLow ? (
                                 <span className="text-xs font-bold text-destructive">

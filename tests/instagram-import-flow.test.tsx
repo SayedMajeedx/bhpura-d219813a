@@ -22,6 +22,11 @@ const stubs = vi.hoisted(() => ({
 const toast = vi.hoisted(() =>
   Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() }),
 );
+// The dialog names the store's currency beside a price; the settings read behind it is not
+// what this test is about.
+const storeCurrency = { useMoneyLabel: () => "BHD", useStoreCurrency: () => "BHD" };
+vi.mock("../src/hooks/use-store-currency", () => storeCurrency);
+vi.mock("@/hooks/use-store-currency", () => storeCurrency);
 vi.mock("sonner", () => ({ toast }));
 const importer = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),

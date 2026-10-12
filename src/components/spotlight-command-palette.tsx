@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { fetchBrandIdBySlug } from "@/lib/data/brands";
 import { searchProducts } from "@/lib/data/catalog";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 export function SpotlightCommandPalette({
   open,
@@ -52,6 +53,7 @@ export function SpotlightCommandPalette({
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const { lang, setLang } = useI18n();
   const brand = useBrandOptional();
+  const storeCurrency = useStoreCurrency(brand?.id);
   const isAr = lang === "ar";
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -211,7 +213,7 @@ export function SpotlightCommandPalette({
                 <span className="text-xs font-mono font-bold">
                   {formatMoney(
                     Number(o.total || 0),
-                    o.currency || "BHD",
+                    o.currency || storeCurrency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -253,7 +255,7 @@ export function SpotlightCommandPalette({
                       : p.product_variants?.[0]?.selling_price
                         ? Number(p.product_variants[0].selling_price)
                         : 0,
-                    "BHD",
+                    storeCurrency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>

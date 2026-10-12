@@ -12,6 +12,7 @@ import { AbandonedCartSequencesEditor } from "@/components/abandoned-carts/Aband
 import { AbandonedCartSettingsDialog } from "@/components/abandoned-carts/AbandonedCartSettingsDialog";
 import { AbandonedCartLogsTable } from "@/components/abandoned-carts/AbandonedCartLogsTable";
 import { abandonedCartsQueries } from "@/lib/data/abandoned-carts";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/abandoned-carts")({
   component: AbandonedCartsDashboardPage,
@@ -21,6 +22,7 @@ function AbandonedCartsDashboardPage() {
   const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
 
   const [activeTab, setActiveTab] = useState<string>("carts");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -91,7 +93,7 @@ function AbandonedCartsDashboardPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-bold font-mono text-foreground">
-              {totalAbandonedValue.toFixed(3)} BHD
+              {totalAbandonedValue.toFixed(3)} {money}
             </span>
             <span className="text-xs text-muted-foreground block mt-1">
               {isAr ? "فرص بيع معلقة قابلة للاستعادة" : "Potential revenue at risk"}
@@ -110,7 +112,7 @@ function AbandonedCartsDashboardPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-              {recoveredRevenue.toFixed(3)} BHD
+              {recoveredRevenue.toFixed(3)} {money}
             </span>
             <span className="text-xs text-muted-foreground block mt-1">
               {isAr

@@ -26,6 +26,7 @@ import {
   type CashAccountType,
   type CashEntryRefusal,
 } from "@/lib/data/accounting";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 const ENTRY_REFUSAL_MESSAGES: Record<CashEntryRefusal, { ar: string; en: string }> = {
   INVALID_ENTRY_AMOUNT: { ar: "يرجى إدخال مبلغ صحيح", en: "Please enter a valid amount" },
@@ -58,6 +59,7 @@ export function CashEntryDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const qc = useQueryClient();
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const [account, setAccount] = useState<CashAccountType>("cash_box");
   const [direction, setDirection] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
@@ -156,7 +158,7 @@ export function CashEntryDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="cash-entry-amount" className="text-xs font-semibold">
-              {isAr ? "المبلغ (BHD)" : "Amount (BHD)"}
+              {isAr ? `المبلغ (${money})` : `Amount (${money})`}
             </Label>
             <Input
               id="cash-entry-amount"

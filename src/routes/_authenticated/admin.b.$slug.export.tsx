@@ -55,6 +55,7 @@ import {
   matchesExportStockFilter,
 } from "@/features/import-export/lib/export-stock-status";
 import { expensesQueries, toExpenseExportLine, type ExpenseExportRow } from "@/lib/data/expenses";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/export")({
   component: ExportCenterPage,
@@ -67,7 +68,7 @@ function ExportCenterPage() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brandName = (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
-  const currency = "BHD";
+  const currency = useStoreCurrency(brandId);
 
   const [activeTab, setActiveTab] = useState<string>("products");
 

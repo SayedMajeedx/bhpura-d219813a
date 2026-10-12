@@ -21,6 +21,7 @@ import {
 import { Sliders, Save, Loader2, Clock, Truck, FileText } from "lucide-react";
 import { toast } from "sonner";
 import type { BrandReturnPolicy, CompensationMethod } from "@/lib/returns.types";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 interface ReturnPolicyEditorProps {
   brandId: string;
@@ -54,6 +55,7 @@ function defaultReturnPolicy(brandId: string): BrandReturnPolicy {
 
 export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
@@ -255,7 +257,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-foreground">
-                {isAr ? "رسوم استرجاع الشحن (د.ب)" : "Return Shipping Fee (BHD)"}
+                {isAr ? `رسوم استرجاع الشحن (${money})` : `Return Shipping Fee (${money})`}
               </Label>
               <Input
                 type="number"

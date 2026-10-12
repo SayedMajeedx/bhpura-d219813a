@@ -3,6 +3,7 @@ import { History } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { accountingQueries, type CashMovementRow } from "@/lib/data/accounting";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 const MOVEMENT_LABELS: Record<string, { ar: string; en: string }> = {
   order_payment: { ar: "تسوية طلب", en: "Order reconciled" },
@@ -33,6 +34,7 @@ export function CashMovementsList({
   accountNames: Map<string, string>;
 }) {
   const movementsQ = useQuery(accountingQueries.cashMovements(brandId));
+  const currency = useStoreCurrency(brandId);
   const movements = movementsQ.data ?? [];
 
   return (
@@ -83,7 +85,7 @@ export function CashMovementsList({
                   }`}
                 >
                   {sign < 0 ? "−" : sign > 0 ? "+" : ""}
-                  {formatMoney(Number(movement.amount), "BHD")}
+                  {formatMoney(Number(movement.amount), currency)}
                 </span>
               </Card>
             );

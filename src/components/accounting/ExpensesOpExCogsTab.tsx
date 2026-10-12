@@ -30,6 +30,8 @@ import { catalogKeys } from "@/lib/data/catalog";
 import { accountingQueries } from "@/lib/data/accounting";
 import { getCurrentUser } from "@/lib/auth/session";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -40,6 +42,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
   const { modules } = useAdminStoreProfile(brandId).profile;
 
@@ -168,7 +172,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
         user_id: user.id,
         description: description.trim(),
         amount: Number(amount) || 0,
-        currency: "BHD",
+        currency,
         category,
         expense_type: expenseType,
         quantity: expenseType === "cogs" ? Math.max(1, quantity) : 1,
@@ -195,7 +199,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             user_id: user.id,
             description: description.trim(),
             amount: Number(amount) || 0,
-            currency: "BHD",
+            currency,
             category,
             expense_date: expenseDate,
           };
@@ -221,7 +225,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             user_id: user.id,
             description: description.trim(),
             amount: Number(amount) || 0,
-            currency: "BHD",
+            currency,
             category,
             expense_date: expenseDate,
           };
@@ -293,7 +297,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             {isAr ? "إجمالي المصاريف والمشتريات المسجلة" : "Total Logged Purchases & Expenses"}
           </span>
           <span className="text-xl font-extrabold text-foreground mt-1">
-            {formatMoney(totalCogsAmount + totalOpexAmount, "BHD")}
+            {formatMoney(totalCogsAmount + totalOpexAmount, currency)}
           </span>
         </Card>
 
@@ -311,7 +315,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
               </Badge>
             </div>
             <span className="text-xl font-extrabold text-primary mt-1">
-              {formatMoney(totalCogsAmount, "BHD")}
+              {formatMoney(totalCogsAmount, currency)}
             </span>
             <p className="text-xs text-muted-foreground mt-1">
               {isAr
@@ -331,7 +335,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-1">
-            {formatMoney(totalOpexAmount, "BHD")}
+            {formatMoney(totalOpexAmount, currency)}
           </span>
           <p className="text-xs text-muted-foreground mt-1">
             {isAr
@@ -431,7 +435,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                           <span>•</span>
                           <span className="font-semibold text-primary">
                             {exp.quantity} {exp.unit_type || (isAr ? "قطع" : "pcs")} (
-                            {formatMoney(exp.unit_cost, "BHD")}/
+                            {formatMoney(exp.unit_cost, currency)}/
                             {exp.unit_type || (isAr ? "قطعة" : "unit")})
                           </span>
                         </>
@@ -451,7 +455,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-extrabold text-foreground">
-                    {formatMoney(exp.amount, "BHD")}
+                    {formatMoney(exp.amount, currency)}
                   </span>
 
                   <div className="flex items-center gap-1">
@@ -544,7 +548,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
-                  {isAr ? "المبلغ الإجمالي (BHD)" : "Total Amount (BHD)"}
+                  {isAr ? `المبلغ الإجمالي (${money})` : `Total Amount (${money})`}
                 </Label>
                 <Input
                   type="number"
@@ -621,8 +625,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                     className="border-primary/40 bg-primary/10 text-primary font-bold text-xs py-0.5 px-2.5"
                   >
                     {isAr
-                      ? `تكلفة القطعة الواحدة: ${formatMoney(calculatedUnitCost, "BHD")}`
-                      : `Unit Cost: ${formatMoney(calculatedUnitCost, "BHD")}`}
+                      ? `تكلفة القطعة الواحدة: ${formatMoney(calculatedUnitCost, currency)}`
+                      : `Unit Cost: ${formatMoney(calculatedUnitCost, currency)}`}
                   </Badge>
                 </div>
               </div>

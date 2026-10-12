@@ -20,6 +20,7 @@ import { Award, Sparkles, Check, Edit2, Truck, Loader2 } from "lucide-react";
 import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { DEFAULT_LOYALTY_TIERS } from "@/lib/loyalty.types";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 interface LoyaltyTiersManagerProps {
   brandId: string;
@@ -30,6 +31,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
   const { modules } = useAdminStoreProfile(brandId).profile;
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const queryClient = useQueryClient();
 
   const [editingTier, setEditingTier] = useState<LoyaltyTier | null>(null);
@@ -133,7 +135,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                   <div className="text-sm font-bold text-foreground">
                     {Number(tier.min_spend) > 0 ? (
                       <span>
-                        {tier.min_spend} {isAr ? "د.ب إنفاق" : "BHD spend"}
+                        {tier.min_spend} {isAr ? `${money} إنفاق` : `${money} spend`}
                       </span>
                     ) : (
                       <span>
@@ -236,7 +238,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label>{isAr ? "الحد الأدنى للإنفاق (د.ب)" : "Min Spend (BHD)"}</Label>
+                  <Label>{isAr ? `الحد الأدنى للإنفاق (${money})` : `Min Spend (${money})`}</Label>
                   <Input
                     type="number"
                     min="0"

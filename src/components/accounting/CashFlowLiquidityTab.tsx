@@ -35,6 +35,8 @@ import {
   transferCashToBank,
   type CashTransferRefusal,
 } from "@/lib/data/accounting";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 const TRANSFER_REFUSAL_MESSAGES: Record<CashTransferRefusal, { ar: string; en: string }> = {
   INVALID_TRANSFER_AMOUNT: {
@@ -60,6 +62,8 @@ export function CashFlowLiquidityTab() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
 
   const [transferModalOpen, setTransferModalOpen] = useState(false);
@@ -166,7 +170,7 @@ export function CashFlowLiquidityTab() {
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-2">
-            {formatMoney(cashBoxAcc.balance || 0, "BHD")}
+            {formatMoney(cashBoxAcc.balance || 0, currency)}
           </span>
         </Card>
 
@@ -185,7 +189,7 @@ export function CashFlowLiquidityTab() {
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-2">
-            {formatMoney(bankAcc.balance || 0, "BHD")}
+            {formatMoney(bankAcc.balance || 0, currency)}
           </span>
         </Card>
 
@@ -216,7 +220,7 @@ export function CashFlowLiquidityTab() {
             </div>
           </div>
           <span className="text-xl font-extrabold text-primary mt-2">
-            {formatMoney(totalLiquidity, "BHD")}
+            {formatMoney(totalLiquidity, currency)}
           </span>
         </Card>
       </div>
@@ -283,7 +287,7 @@ export function CashFlowLiquidityTab() {
 
                   <div className="flex items-center gap-3">
                     <span className="font-extrabold text-xs text-foreground">
-                      {formatMoney(o.total, "BHD")}
+                      {formatMoney(o.total, currency)}
                     </span>
 
                     {/* Status Pill Switcher */}
@@ -347,13 +351,15 @@ export function CashFlowLiquidityTab() {
                 {isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}
               </span>
               <span className="font-bold text-sm text-foreground">
-                {formatMoney(cashBoxAcc.balance || 0, "BHD")}
+                {formatMoney(cashBoxAcc.balance || 0, currency)}
               </span>
             </div>
 
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">
-                {isAr ? "المبلغ المراد تحويله وإيداعه بالبنك (BHD)" : "Transfer Amount (BHD)"}
+                {isAr
+                  ? `المبلغ المراد تحويله وإيداعه بالبنك (${money})`
+                  : `Transfer Amount (${money})`}
               </Label>
               <Input
                 type="number"

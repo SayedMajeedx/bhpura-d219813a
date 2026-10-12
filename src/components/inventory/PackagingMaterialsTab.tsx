@@ -43,12 +43,16 @@ import {
   deletePackagingMaterial,
   updatePackagingMaterial,
 } from "@/lib/data/catalog";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useMoneyLabel } from "@/hooks/use-store-currency";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -447,7 +451,7 @@ export function PackagingMaterialsTab() {
                         {isAr ? "تكلفة الوحدة" : "Unit Cost"}
                       </span>
                       <span className="font-extrabold text-primary text-sm">
-                        {formatMoney(item.unit_cost, "BHD")}
+                        {formatMoney(item.unit_cost, currency)}
                       </span>
                     </div>
                   </div>
@@ -584,7 +588,7 @@ export function PackagingMaterialsTab() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
-                  {isAr ? "تكلفة الوحدة (BHD)" : "Unit Cost (BHD)"}
+                  {isAr ? `تكلفة الوحدة (${money})` : `Unit Cost (${money})`}
                 </Label>
                 <Input
                   type="number"

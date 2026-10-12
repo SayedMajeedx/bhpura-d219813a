@@ -61,7 +61,9 @@ export function useOrderPromoCode({
     } finally {
       setCheckingPromo(false);
     }
-    if (!result?.valid) return toast.error(promoFailureMessage(result, lang));
+    if (!result?.valid) {
+      return toast.error(promoFailureMessage(result, lang, order?.currency ?? undefined));
+    }
     const amount = Number(result.discount_amount ?? 0);
     const active = { code: String(result.code), id: String(result.promo_code_id), amount };
     setPromoInput(active.code);

@@ -11,6 +11,7 @@ import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { Order } from "@/features/orders/types";
+import { currencyLabel } from "@/lib/currency-label";
 /** Confirm the cash a courier collected on delivery and complete the order. */
 export function CashCollectionModal({
   cashCollectedInput,
@@ -105,7 +106,9 @@ export function CashCollectionModal({
 
             <div className="space-y-2">
               <label className="text-xs font-bold text-foreground block">
-                {lang === "ar" ? "المبلغ المستلم نقداً (د.ب)" : "Cash Amount Received (BHD)"}
+                {lang === "ar"
+                  ? `المبلغ المستلم نقداً (${currencyLabel(cashModalOrder?.currency, "ar")})`
+                  : `Cash Amount Received (${currencyLabel(cashModalOrder?.currency, "en")})`}
               </label>
               <Input
                 type="number"
