@@ -7,6 +7,17 @@ type ListedExpense = {
   notes?: string | null;
 };
 
+/**
+ * The currency an expense is written in: its own when it has one (an expense being edited, a
+ * scanned foreign receipt), and the store's for a new one.
+ */
+export function expenseCurrency(
+  expense: { currency?: string | null } | null | undefined,
+  storeCurrency: string,
+): string {
+  return expense?.currency || storeCurrency;
+}
+
 /** The categories the store has used, one spelling each (the first seen), in the reader's order. */
 export function expenseCategories(list: readonly ListedExpense[], locale: string): string[] {
   const canonical = new Map<string, string>();
