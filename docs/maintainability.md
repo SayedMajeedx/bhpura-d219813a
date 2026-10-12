@@ -86,7 +86,7 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                                                                                    |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel.                                                               |
 | `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                                                     |
-| Files over 1,000 lines    |        31        |     12      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
+| Files over 1,000 lines    |        31        |     11      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
 | Tests                     |      1,078       |    1,599    |                                                                                                                                                                        |
 
 \* The call pattern was corrected on 2026-09-25 to count cast-wrapped calls (section 4).
@@ -99,7 +99,7 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 |  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`                       | 2,404 |
 |  3  | `src/components/subscription/BrandSubscriptionHub.tsx`                             | 1,954 |
 |  4  | `src/lib/addons/addon-showcase-data.ts`                                            | 1,893 |
-|  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                               | 1,838 |
+|  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx` (now 6: out of the list)      |   6   |
 |  6  | `src/components/super/SuperPlansManager.tsx`                                       | 1,721 |
 |  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`                  | 1,703 |
 |  8  | `src/routes/_authenticated/admin.b.$slug.team.tsx` (now 6: out of the list)        |   6   |
