@@ -33,6 +33,7 @@ function builder(table: string) {
     gte: record("gte"),
     lt: record("lt"),
     order: record("order"),
+    range: record("range"),
     limit: record("limit"),
     update: (payload: unknown) => ((request.write = { kind: "update", payload }), chain),
     insert: (payload: unknown) => ((request.write = { kind: "insert", payload }), chain),
@@ -129,7 +130,7 @@ describe("expenses", () => {
   it("lists the brand's expenses newest first", async () => {
     await expenses.fetchExpenses("b1");
     expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
-    expect(filters(requests[0], "order")).toEqual([["expense_date", { ascending: false }]]);
+    expect(filters(requests[0], "order")).toEqual([["expense_date", { ascending: false }], ["id"]]);
   });
 
   it("writes scoped to the brand and throws on failure", async () => {

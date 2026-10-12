@@ -35,6 +35,7 @@ function builder(table: string) {
     delete: write("delete"),
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);
     },
@@ -69,7 +70,7 @@ describe("promo code list", () => {
   it("reads the brand's codes newest first, under a list key the page updates in place", async () => {
     await promo.fetchPromoCodes("b1");
     expect(filters(requests[0], "eq")).toEqual([["brand_id", "b1"]]);
-    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }]]);
+    expect(filters(requests[0], "order")).toEqual([["created_at", { ascending: false }], ["id"]]);
     expect(promo.promoCodesQueries.list("b1").queryKey).toEqual(["promo-codes", "b1", "list"]);
   });
 

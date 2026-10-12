@@ -80,6 +80,7 @@ export function fakeSupabase(config: {
       not: () => chain,
       order: () => chain,
       limit: () => chain,
+      range: () => chain,
       update: record,
       insert: record,
       upsert: (values: unknown, options?: unknown) =>

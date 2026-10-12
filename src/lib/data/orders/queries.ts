@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import { ordersKeys } from "./keys";
 import {
   ORDER_COGS_SELECT,
@@ -45,15 +46,18 @@ async function currentUserId(): Promise<string | null> {
 
 /** The brand's orders, newest first; a courier gets only their assigned deliveries. */
 export async function fetchOrderList(brandId: string, scope: OrderScope): Promise<OrderListRow[]> {
-  let query = supabase.from("orders").select(ORDER_LIST_SELECT).eq("brand_id", brandId);
-  if (scope === "assigned-courier") {
-    const userId = await currentUserId();
-    if (!userId) return [];
-    query = query.eq("assigned_to", userId).eq("fulfillment_method", "delivery");
-  }
-  const { data, error } = await query.order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  const courierId = scope === "assigned-courier" ? await currentUserId() : null;
+  if (scope === "assigned-courier" && !courierId) return [];
+  return readAll((from, to) => {
+    let query = supabase
+      .from("orders")
+      .select(ORDER_LIST_SELECT, { count: "exact" })
+      .eq("brand_id", brandId);
+    if (courierId) {
+      query = query.eq("assigned_to", courierId).eq("fulfillment_method", "delivery");
+    }
+    return query.order("created_at", { ascending: false }).order("id").range(from, to);
+  });
 }
 
 /** One order of the brand; a courier can only open deliveries assigned to them. */
@@ -80,13 +84,15 @@ export async function fetchOrderDetail(
 
 /** Every order of the brand for the finance views, newest first. */
 export async function fetchFinanceOrders(brandId: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .select(ORDER_FINANCE_SELECT)
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("orders")
+      .select(ORDER_FINANCE_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 export type OrderFinanceRow = Awaited<ReturnType<typeof fetchFinanceOrders>>[number];
 
@@ -132,22 +138,23 @@ export const COGS_ORDER_STATUSES = [
  * `YYYY-MM-DD`; an empty bound is open), newest first.
  */
 export async function fetchCogsOrders(brandId: string, from: string, to: string) {
-  let query = supabase
-    .from("orders")
-    .select(ORDER_COGS_SELECT)
-    .eq("brand_id", brandId)
-    .in("status", COGS_ORDER_STATUSES)
-    .order("created_at", { ascending: false });
-  if (from) query = query.gte("created_at", from);
-  if (to) {
-    // Include the whole last day
-    const endDay = new Date(to);
-    endDay.setDate(endDay.getDate() + 1);
-    query = query.lt("created_at", endDay.toISOString().slice(0, 10));
-  }
-  const { data, error } = await query;
-  if (error) throw error;
-  return data ?? [];
+  return readAll((first, last) => {
+    let query = supabase
+      .from("orders")
+      .select(ORDER_COGS_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .in("status", COGS_ORDER_STATUSES)
+      .order("created_at", { ascending: false })
+      .order("id");
+    if (from) query = query.gte("created_at", from);
+    if (to) {
+      // Include the whole last day
+      const endDay = new Date(to);
+      endDay.setDate(endDay.getDate() + 1);
+      query = query.lt("created_at", endDay.toISOString().slice(0, 10));
+    }
+    return query.range(first, last);
+  });
 }
 export type OrderCogsRow = Awaited<ReturnType<typeof fetchCogsOrders>>[number];
 

@@ -29,6 +29,10 @@ const BUDGETS = {
   eslintDisable: 10,
   directSupabaseCalls: 24,
   readFileSyncTestFiles: 43,
+  // List reads with no bound of their own (no readAll, limit, range, single row or id list). The
+  // API cuts such a read at its row limit without saying so. What is left is settings-sized
+  // tables and one parent's rows (an order's history, a customer's addresses).
+  unboundedListReads: 96,
   filesOver1000: 18,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
@@ -97,6 +101,12 @@ describe("maintainability ratchets", () => {
 
   it("keeps direct Supabase calls in routes, components, and features within budget", () => {
     expect(metrics.directSupabaseCalls.total).toBeLessThanOrEqual(BUDGETS.directSupabaseCalls);
+  });
+
+  it("keeps list reads with no bound of their own within budget", () => {
+    // A new one: read the whole list with readAll (src/lib/data/read-all.ts), or say how many
+    // rows are wanted with .limit(). `node scripts/maintainability-metrics.mjs` lists them.
+    expect(metrics.unboundedListReads.length).toBeLessThanOrEqual(BUDGETS.unboundedListReads);
   });
 
   it("keeps brittle readFileSync test files within budget", () => {

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 
 /**
  * Order reads for screens outside the order editor and queue: customer
@@ -10,12 +11,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Every order's customer, total and statuses (customer CRM stats in customers and campaigns). */
 export async function fetchCustomerMetricOrders(brandId: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("orders")
+      .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status", {
+        count: "exact",
+      })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
 }
 export type CustomerMetricOrderRow = Awaited<ReturnType<typeof fetchCustomerMetricOrders>>[number];
 
@@ -35,13 +40,15 @@ export async function fetchCustomerOrders(brandId: string, customerId: string) {
 
 /** Orders that used a promo code (discount analytics). */
 export async function fetchPromoOrders(brandId: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .select("promo_code_id, total, status")
-    .eq("brand_id", brandId)
-    .not("promo_code_id", "is", null);
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("orders")
+      .select("promo_code_id, total, status", { count: "exact" })
+      .eq("brand_id", brandId)
+      .not("promo_code_id", "is", null)
+      .order("id")
+      .range(from, to),
+  );
 }
 
 export type OrderPromoRow = Awaited<ReturnType<typeof fetchPromoOrders>>[number];
@@ -53,14 +60,16 @@ export const SOLD_ORDER_STATUSES = ["confirmed", "paid", "shipped", "completed"]
 export async function fetchVariantSales(brandId: string, days: number, now = new Date()) {
   const since = new Date(now);
   since.setDate(since.getDate() - days);
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id, created_at, order_items(variant_id, quantity)")
-    .eq("brand_id", brandId)
-    .in("status", SOLD_ORDER_STATUSES)
-    .gte("created_at", since.toISOString());
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("orders")
+      .select("id, created_at, order_items(variant_id, quantity)", { count: "exact" })
+      .eq("brand_id", brandId)
+      .in("status", SOLD_ORDER_STATUSES)
+      .gte("created_at", since.toISOString())
+      .order("id")
+      .range(from, to),
+  );
 }
 
 /**
@@ -68,24 +77,27 @@ export async function fetchVariantSales(brandId: string, days: number, now = new
  * failure is logged and reads as no orders, so the other exports still work.
  */
 export async function fetchOrdersForExport(brandId: string) {
-  const { data, error } = await supabase
-    .from("orders")
-    .select(
-      `
+  return readAll((from, to) =>
+    supabase
+      .from("orders")
+      .select(
+        `
           id, invoice_number, total, subtotal, shipping, discount, tax_amount,
           payment_method, payment_status, status, fulfillment_status, delivery_notes, created_at, customer_id,
           order_items (
             id, description, quantity, unit_price, unit_cost, line_total
           )
         `,
-    )
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) {
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  ).catch((error: unknown) => {
     console.error("Failed to query orders for export:", error);
     return [];
-  }
-  return data ?? [];
+  });
 }
 
 /**

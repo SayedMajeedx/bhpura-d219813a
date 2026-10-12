@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { readAll } from "@/lib/data/read-all";
 
 export interface SyncResult {
   syncedCount: number;
@@ -47,14 +48,16 @@ export async function syncPackagingExpensesToInventory(
     if (matErr) throw matErr;
 
     // 2. Fetch all expenses categorized under Packaging or COGS packaging
-    const { data: expenses, error: expErr } = await (supabase as any)
-      .from("expenses")
-      .select("*")
-      .eq("brand_id", brandId);
+    const expenses = await readAll<any>((from, to) =>
+      (supabase as any)
+        .from("expenses")
+        .select("*", { count: "exact" })
+        .eq("brand_id", brandId)
+        .order("id")
+        .range(from, to),
+    );
 
-    if (expErr) throw expErr;
-
-    const packagingExpenses = (expenses ?? []).filter((e: any) => {
+    const packagingExpenses = expenses.filter((e: any) => {
       const cat = (e.category || "").toLowerCase();
       const desc = (e.description || "").toLowerCase();
       const isPkgCategory =

@@ -10,6 +10,7 @@ import {
   type ProductCost,
 } from "./costs";
 import { ADMIN_PRODUCT_SELECT, ADMIN_VARIANT_SELECT } from "./selects";
+import { readAll } from "../read-all";
 
 export * from "./keys";
 export * from "./mutations";
@@ -55,18 +56,21 @@ export type PackagingMaterial = Tables<"packaging_materials">;
 
 /** The brand's products, newest first. */
 export async function fetchAdminProducts(brandId: string): Promise<AdminProduct[]> {
-  const [{ data, error }, costs] = await Promise.all([
-    supabase
-      .from("products")
-      .select(ADMIN_PRODUCT_SELECT)
-      .eq("brand_id", brandId)
-      .order("created_at", { ascending: false }),
+  const [data, costs] = await Promise.all([
+    readAll((from, to) =>
+      supabase
+        .from("products")
+        .select(ADMIN_PRODUCT_SELECT, { count: "exact" })
+        .eq("brand_id", brandId)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
     fetchProductCosts(brandId),
   ]);
-  if (error) throw error;
   // The column list is built from names, so the client cannot infer the row: it is the table's
   // row without its cost columns (merged back in below).
-  const rows = (data ?? []) as unknown as Array<Omit<Tables<"products">, keyof ProductCost>>;
+  const rows = data as unknown as Array<Omit<Tables<"products">, keyof ProductCost>>;
   return withProductCosts(rows, costs).map((p) => ({
     ...p,
     media: (Array.isArray(p.media) ? p.media : []) as unknown as ProductMediaItem[],
@@ -78,19 +82,19 @@ export async function fetchAdminProducts(brandId: string): Promise<AdminProduct[
 
 /** The brand's variants, oldest first (the order they were added in). */
 export async function fetchAdminVariants(brandId: string): Promise<AdminVariant[]> {
-  const [{ data, error }, costs] = await Promise.all([
-    supabase
-      .from("product_variants")
-      .select(ADMIN_VARIANT_SELECT)
-      .eq("brand_id", brandId)
-      .order("created_at"),
+  const [data, costs] = await Promise.all([
+    readAll((from, to) =>
+      supabase
+        .from("product_variants")
+        .select(ADMIN_VARIANT_SELECT, { count: "exact" })
+        .eq("brand_id", brandId)
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    ),
     fetchVariantCosts(brandId),
   ]);
-  if (error) throw error;
-  return withVariantCosts(
-    (data ?? []) as unknown as Array<Omit<AdminVariant, "cost_price">>,
-    costs,
-  );
+  return withVariantCosts(data as unknown as Array<Omit<AdminVariant, "cost_price">>, costs);
 }
 
 /**
@@ -98,12 +102,14 @@ export async function fetchAdminVariants(brandId: string): Promise<AdminVariant[
  * (packaging costs then count as zero) rather than breaking the screen.
  */
 export async function fetchBomItems(brandId: string) {
-  const { data, error } = await supabase
-    .from("product_bom_items")
-    .select("product_id, packaging_material_id, quantity_per_unit")
-    .eq("brand_id", brandId);
-  if (error) return [];
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("product_bom_items")
+      .select("product_id, packaging_material_id, quantity_per_unit", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  ).catch(() => []);
 }
 export type BomItem = Awaited<ReturnType<typeof fetchBomItems>>[number];
 
@@ -158,21 +164,27 @@ export async function countProductVariants(brandId: string, productId: string): 
  */
 export async function fetchBarcodeLabelData(brandId: string) {
   const [products, variants] = await Promise.all([
-    supabase
-      .from("products")
-      .select("id, name")
-      .eq("brand_id", brandId)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("product_variants")
-      .select("product_id, barcode, size, color, selling_price")
-      .eq("brand_id", brandId)
-      .not("barcode", "is", null)
-      .order("created_at"),
+    readAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, name", { count: "exact" })
+        .eq("brand_id", brandId)
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
+    readAll((from, to) =>
+      supabase
+        .from("product_variants")
+        .select("product_id, barcode, size, color, selling_price", { count: "exact" })
+        .eq("brand_id", brandId)
+        .not("barcode", "is", null)
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    ),
   ]);
-  const error = products.error ?? variants.error;
-  if (error) throw error;
-  return { products: products.data ?? [], variants: variants.data ?? [] };
+  return { products, variants };
 }
 
 /**
@@ -180,10 +192,11 @@ export async function fetchBarcodeLabelData(brandId: string) {
  * read exports nothing (and is logged).
  */
 export async function fetchProductExportRows(brandId: string) {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
+  const data = await readAll((from, to) =>
+    supabase
+      .from("products")
+      .select(
+        `
       id, name, name_ar, name_en, description, description_ar, description_en,
       category, image_url, is_active, created_at,
       product_variants (
@@ -191,13 +204,17 @@ export async function fetchProductExportRows(brandId: string) {
         selling_price, stock_main, stock_incubator
       )
     `,
-    )
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) {
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  ).catch((error: unknown) => {
     console.error("Failed to query products for export:", error);
-    return [];
-  }
+    return null;
+  });
+  if (!data) return [];
   // The cost column is read from the staff-only table; a failed read exports nothing.
   let costs: Map<string, number>;
   try {
@@ -206,7 +223,7 @@ export async function fetchProductExportRows(brandId: string) {
     console.error("Failed to query variant costs for export:", cause);
     return [];
   }
-  return (data ?? []).map((product) => ({
+  return data.map((product) => ({
     ...product,
     product_variants: withVariantCosts(product.product_variants ?? [], costs),
   }));
@@ -214,13 +231,15 @@ export async function fetchProductExportRows(brandId: string) {
 
 /** The brand's paid add-ons (customization options), by name. */
 export async function fetchCustomizations(brandId: string) {
-  const { data, error } = await supabase
-    .from("customization_options")
-    .select("*")
-    .eq("brand_id", brandId)
-    .order("name");
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("customization_options")
+      .select("*", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("name")
+      .order("id")
+      .range(from, to),
+  );
 }
 export type CustomizationOption = Awaited<ReturnType<typeof fetchCustomizations>>[number];
 

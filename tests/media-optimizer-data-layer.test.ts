@@ -35,6 +35,7 @@ function builder(table: string) {
     },
     eq: record("eq"),
     order: record("order"),
+    range: record("range"),
     single: () => chain,
     then(resolve: (reply: Reply) => unknown, reject?: (reason: unknown) => unknown) {
       return Promise.resolve(respond(request)).then(resolve, reject);

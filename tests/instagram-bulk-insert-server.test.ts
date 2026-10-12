@@ -15,6 +15,8 @@ function query(table: string) {
   const builder = {
     select: () => builder,
     eq: () => builder,
+    order: () => builder,
+    range: () => builder,
     single: async () => ({ data: db.inserts.at(-1)?.rows[0] ?? null, error: null }),
     insert: (rows: Row | Row[]) => {
       const list = Array.isArray(rows) ? rows : [rows];

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { updateBrand } from "@/lib/data/brands";
 import { updateProduct } from "@/lib/data/catalog";
+import { readAll } from "../read-all";
 
 /**
  * The super admin's video re-optimizer: every brand's hero videos (background
@@ -26,14 +27,17 @@ export async function fetchVideoSources() {
       .from("brands")
       .select("id, slug, name_en, name_ar, hero_media")
       .order("name_en", { ascending: true }),
-    supabase
-      .from("products")
-      .select("id, brand_id, name, name_ar, name_en, media")
-      .order("created_at", { ascending: false }),
+    readAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, brand_id, name, name_ar, name_en, media", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    ),
   ]);
   if (brands.error) throw brands.error;
-  if (products.error) throw products.error;
-  return { brands: brands.data ?? [], products: products.data ?? [] };
+  return { brands: brands.data ?? [], products };
 }
 export type VideoSources = Awaited<ReturnType<typeof fetchVideoSources>>;
 

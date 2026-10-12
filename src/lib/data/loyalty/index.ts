@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 /**
@@ -109,12 +110,14 @@ export async function fetchCustomerLoyaltyLedger(
 
 /** Points outstanding and redeemed across the brand's accounts, and how many accounts. */
 export async function fetchLoyaltySummary(brandId: string) {
-  const { data, error } = await supabase
-    .from("loyalty_accounts")
-    .select("active_points, lifetime_spent_points")
-    .eq("brand_id", brandId);
-  if (error) throw error;
-  const rows = data ?? [];
+  const rows = await readAll((from, to) =>
+    supabase
+      .from("loyalty_accounts")
+      .select("active_points, lifetime_spent_points", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
   return {
     totalActive: rows.reduce((acc, row) => acc + (row.active_points || 0), 0),
     totalRedeemed: rows.reduce((acc, row) => acc + (row.lifetime_spent_points || 0), 0),

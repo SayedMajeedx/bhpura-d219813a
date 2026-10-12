@@ -30,6 +30,13 @@ src/lib/data/<domain>/
    missing column fails the whole request (see `selects.ts`).
 6. **Test fetchers by behaviour** with a fake client, never against a real
    database. See `tests/storefront-data-layer.test.ts` (it also blocks `fetch`).
+7. **A list is read to its end, or says how many rows it wants.** The API cuts
+   a list at its row limit (1,000 rows) without saying so. A fetcher whose
+   caller treats the result as the whole list uses `readAll` (`read-all.ts`):
+   ask for `{ count: "exact" }`, end the order on a unique column and take the
+   range it hands you. Any other list read carries `.limit()`, `.range()`, one
+   row or a list of ids. The ratchet (`unboundedListReads`) fails on a new read
+   with neither.
 
 ## Status
 

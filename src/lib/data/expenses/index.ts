@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -21,13 +22,15 @@ export const expensesKeys = {
 
 /** The brand's expenses, newest first. */
 export async function fetchExpenses(brandId: string) {
-  const { data, error } = await supabase
-    .from("expenses")
-    .select(EXPENSE_SELECT)
-    .eq("brand_id", brandId)
-    .order("expense_date", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("expenses")
+      .select(EXPENSE_SELECT, { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("expense_date", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 export type ExpenseRow = Awaited<ReturnType<typeof fetchExpenses>>[number];
@@ -39,16 +42,20 @@ export type ExpenseRow = Awaited<ReturnType<typeof fetchExpenses>>[number];
  * the read always failed.
  */
 export async function fetchExpenseExportRows(brandId: string) {
-  const { data, error } = await supabase
-    .from("expenses")
-    .select("id, expense_date, category, description, amount, notes, created_at")
-    .eq("brand_id", brandId)
-    .order("expense_date", { ascending: false });
-  if (error) {
-    console.warn("Could not query expenses:", error.message);
+  return readAll((from, to) =>
+    supabase
+      .from("expenses")
+      .select("id, expense_date, category, description, amount, notes, created_at", {
+        count: "exact",
+      })
+      .eq("brand_id", brandId)
+      .order("expense_date", { ascending: false })
+      .order("id")
+      .range(from, to),
+  ).catch((error: unknown) => {
+    console.warn("Could not query expenses:", (error as { message?: string })?.message);
     return [];
-  }
-  return data ?? [];
+  });
 }
 export type ExpenseExportRow = Awaited<ReturnType<typeof fetchExpenseExportRows>>[number];
 

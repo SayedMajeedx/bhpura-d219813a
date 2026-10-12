@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -75,13 +76,15 @@ export async function fetchVendorOptions(brandId: string) {
 
 /** Every purchase order of the brand with its vendor's name, newest first. */
 export async function fetchPurchaseOrders(brandId: string) {
-  const { data, error } = await supabase
-    .from("purchase_orders")
-    .select("*, vendors(name)")
-    .eq("brand_id", brandId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((from, to) =>
+    supabase
+      .from("purchase_orders")
+      .select("*, vendors(name)", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
 }
 
 export const accountingQueries = {

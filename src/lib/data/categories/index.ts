@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -84,20 +85,24 @@ export async function fetchCategoriesOverview(brandId: string): Promise<Category
     console.warn("Falling back to client-side category count calculation:", err);
   }
 
-  const [{ data: cats, error: catErr }, { data: prods }] = await Promise.all([
+  const [{ data: cats, error: catErr }, productsList] = await Promise.all([
     supabase
       .from("categories")
       .select("*")
       .eq("brand_id", brandId)
       .order("sort_order", { ascending: true }),
-    supabase
-      .from("products")
-      .select("id, category, is_active, show_sale_badge")
-      .eq("brand_id", brandId),
+    // A failed read counts no products, as before; a long list is read whole.
+    readAll((from, to) =>
+      supabase
+        .from("products")
+        .select("id, category, is_active, show_sale_badge", { count: "exact" })
+        .eq("brand_id", brandId)
+        .order("id")
+        .range(from, to),
+    ).catch(() => []),
   ]);
   if (catErr) throw catErr;
 
-  const productsList = prods ?? [];
   const totalActiveProducts = productsList.filter((p) => p.is_active).length;
 
   return (cats ?? []).map((cat) => {

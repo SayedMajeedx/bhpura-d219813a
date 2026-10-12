@@ -1,5 +1,6 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { readAll } from "../read-all";
 import type { Json } from "@/integrations/supabase/types";
 import {
   toBookingRules,
@@ -73,15 +74,17 @@ export async function fetchBookingSettings(brandId: string): Promise<BookingRule
 
 /** Bookings from `from` to `to` (ISO days, inclusive), earliest first. */
 export async function fetchBookingsInRange(brandId: string, from: string, to: string) {
-  const { data, error } = await supabase
-    .from("bookings")
-    .select(BOOKING_COLUMNS)
-    .eq("brand_id", brandId)
-    .gte("event_date", from)
-    .lte("event_date", to)
-    .order("starts_at", { ascending: true });
-  if (error) throw error;
-  return data ?? [];
+  return readAll((first, last) =>
+    supabase
+      .from("bookings")
+      .select(BOOKING_COLUMNS, { count: "exact" })
+      .eq("brand_id", brandId)
+      .gte("event_date", from)
+      .lte("event_date", to)
+      .order("starts_at", { ascending: true })
+      .order("id")
+      .range(first, last),
+  );
 }
 
 export type Booking = Awaited<ReturnType<typeof fetchBookingsInRange>>[number];
