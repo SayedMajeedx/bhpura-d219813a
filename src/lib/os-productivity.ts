@@ -96,7 +96,9 @@ export function recordVisitedModule(module: Omit<RecentModule, "timestamp">) {
 
 // 2. Pinned Quick Actions
 export function getPinnedActions(activeSlug?: string | null): PinnedAction[] {
-  const slug = activeSlug || "pura";
+  // With no store open the routes carry a placeholder: they are rewritten for the store that
+  // is open whenever they are read (below), so no real store's address is ever stored.
+  const slug = activeSlug || "store";
   const defaultQuickActions: PinnedAction[] = [
     {
       id: "new_order",

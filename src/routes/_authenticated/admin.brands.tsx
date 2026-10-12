@@ -174,8 +174,7 @@ function BrandsPage() {
     (sum, brand) =>
       brand.subscription_status === "active" &&
       brand.plan_type !== "lifetime" &&
-      brand.plan_type !== "trial" &&
-      brand.slug.toLowerCase() !== "pura"
+      brand.plan_type !== "trial"
         ? sum + (brand.plan_type === "monthly" ? 0 : 49)
         : sum,
     0,
@@ -408,7 +407,7 @@ function BrandsPage() {
                             {lang === "ar" ? "الخصوصية مفعلة" : "Privacy Lock"}
                           </Badge>
                         )}
-                        {b.slug.toLowerCase() === "pura" || b.plan_type === "lifetime" ? (
+                        {b.plan_type === "lifetime" ? (
                           <Badge className="bg-violet-600 text-white hover:bg-violet-700 text-xs">
                             {lang === "ar" ? "مشروع دائم" : "Permanent"}
                           </Badge>

@@ -85,7 +85,10 @@ describe("annual renewal decision window", () => {
       [{ subscription_expires_at: inDays(45) }, false],
       [{ subscription_expires_at: inDays(20) }, true],
       [{ subscription_expires_at: inDays(-3) }, true],
-      [{ slug: "pura", subscription_expires_at: inDays(5) }, false],
+      // A permanent store is one on the lifetime plan: it has nothing to renew.
+      [{ plan_type: "lifetime", subscription_expires_at: inDays(5) }, false],
+      // A store's name decides nothing: this one is on an annual plan like any other.
+      [{ slug: "pura", subscription_expires_at: inDays(5) }, true],
       [{ plan_type: "trial", trial_ends_at: inDays(5) }, false],
     ] as const) {
       const view = renderCard(brand);
