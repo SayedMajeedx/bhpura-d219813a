@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "@tanstack/react-router";
 import { Package, Plus, MoreHorizontal, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,8 @@ interface InventoryCommandHeaderProps {
   lang: "en" | "ar";
   productCount: number;
   pendingNotifyCount?: number;
+  /** The store whose sign-ups page lists the people waiting: the count is then a link to it. */
+  waitlistSlug?: string;
   isCourier: boolean;
   onCreateNew: () => void;
   renderImporters?: React.ReactNode;
@@ -22,6 +25,7 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
   lang,
   productCount,
   pendingNotifyCount,
+  waitlistSlug,
   isCourier,
   onCreateNew,
   renderImporters,
@@ -56,12 +60,12 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
               {isServices ? (isAr ? "خدمة" : "services") : isAr ? "منتج" : "products"}
             </span>
             {Boolean(pendingNotifyCount && pendingNotifyCount > 0) && (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+              <WaitlistMark slug={waitlistSlug}>
                 <Bell className="size-3" />
                 <span>
                   {pendingNotifyCount} {isAr ? "طلب إشعار توفر" : "waitlist"}
                 </span>
-              </span>
+              </WaitlistMark>
             )}
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
@@ -118,3 +122,20 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
     </header>
   );
 };
+
+/** The count of shoppers waiting for stock: a link to who they are, when the page is known. */
+function WaitlistMark({ slug, children }: { slug?: string; children: React.ReactNode }) {
+  const className =
+    "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20";
+  return slug ? (
+    <Link
+      to="/admin/b/$slug/signups"
+      params={{ slug }}
+      className={`${className} underline-offset-2 hover:underline`}
+    >
+      {children}
+    </Link>
+  ) : (
+    <span className={className}>{children}</span>
+  );
+}

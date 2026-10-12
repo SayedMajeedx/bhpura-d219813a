@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { readAll } from "../read-all";
+import { NOT_SOLD_ORDER_FILTER } from "./sold-orders";
 
 /**
  * Order reads for screens outside the order editor and queue: customer
@@ -53,9 +54,6 @@ export async function fetchPromoOrders(brandId: string) {
 
 export type OrderPromoRow = Awaited<ReturnType<typeof fetchPromoOrders>>[number];
 
-/** Statuses whose orders count as sold for the inventory sales history. */
-export const SOLD_ORDER_STATUSES = ["confirmed", "paid", "shipped", "completed"];
-
 /** Sold orders of the last `days` days with their variant quantities (inventory velocity). */
 export async function fetchVariantSales(brandId: string, days: number, now = new Date()) {
   const since = new Date(now);
@@ -65,7 +63,7 @@ export async function fetchVariantSales(brandId: string, days: number, now = new
       .from("orders")
       .select("id, created_at, order_items(variant_id, quantity)", { count: "exact" })
       .eq("brand_id", brandId)
-      .in("status", SOLD_ORDER_STATUSES)
+      .not("status", "in", NOT_SOLD_ORDER_FILTER)
       .gte("created_at", since.toISOString())
       .order("id")
       .range(from, to),

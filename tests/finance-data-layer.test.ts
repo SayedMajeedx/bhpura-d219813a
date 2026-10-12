@@ -32,6 +32,7 @@ function builder(table: string) {
     in: record("in"),
     gte: record("gte"),
     lt: record("lt"),
+    not: record("not"),
     order: record("order"),
     range: record("range"),
     limit: record("limit"),
@@ -104,7 +105,8 @@ describe("finance order reads", () => {
   it("counts only sold orders for COGS and includes the whole last day", async () => {
     await orders.fetchCogsOrders("b1", "2026-09-01", "2026-09-30");
     const [request] = requests;
-    expect(filters(request, "in")).toEqual([["status", orders.COGS_ORDER_STATUSES]]);
+    // Every order that counts as sold, whatever stage it is at (packing, at the tailor...).
+    expect(filters(request, "not")).toEqual([["status", "in", orders.NOT_SOLD_ORDER_FILTER]]);
     expect(filters(request, "gte")).toEqual([["created_at", "2026-09-01"]]);
     expect(filters(request, "lt")).toEqual([["created_at", "2026-10-01"]]);
   });

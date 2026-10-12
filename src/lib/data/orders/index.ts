@@ -4,4 +4,5 @@ export * from "./mutations";
 export * from "./queries";
 export * from "./readers";
 export * from "./selects";
+export * from "./sold-orders";
 export * from "./types";

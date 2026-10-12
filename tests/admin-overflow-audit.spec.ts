@@ -48,6 +48,7 @@ const SCREENS = [
   "import",
   "incubators",
   "loyalty",
+  "signups",
   "returns",
   "reviews",
   "size-guides",

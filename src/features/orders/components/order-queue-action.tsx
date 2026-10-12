@@ -452,7 +452,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
         onClick={(e) => {
           e.stopPropagation();
           handleStatusUpdate(
-            { fulfillment_status: "COMPLETED" },
+            { fulfillment_status: "COMPLETED", status: "completed" },
             lang === "ar" ? "تم إتمام الطلب بنجاح!" : "Order completed!",
           );
         }}

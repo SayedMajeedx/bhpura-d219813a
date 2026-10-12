@@ -109,7 +109,7 @@ describe("readers", () => {
 
   it("read sold orders of the last N days", async () => {
     await orders.fetchVariantSales("b1", 45, new Date("2026-09-25T12:00:00Z"));
-    expect(filters(requests[0], "in")).toEqual([["status", orders.SOLD_ORDER_STATUSES]]);
+    expect(filters(requests[0], "not")).toEqual([["status", "in", orders.NOT_SOLD_ORDER_FILTER]]);
     const [[column, since]] = filters(requests[0], "gte") as [[string, string]];
     expect(column).toBe("created_at");
     expect(since.slice(0, 10)).toBe("2026-08-11");

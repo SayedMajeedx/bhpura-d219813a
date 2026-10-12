@@ -84,6 +84,7 @@ import { Route as AuthenticatedAdminBSlugPagesRouteImport } from './routes/_auth
 import { Route as AuthenticatedAdminBSlugReportsRouteImport } from './routes/_authenticated/admin.b.$slug.reports'
 import { Route as AuthenticatedAdminBSlugReviewsRouteImport } from './routes/_authenticated/admin.b.$slug.reviews'
 import { Route as AuthenticatedAdminBSlugSettingsRouteImport } from './routes/_authenticated/admin.b.$slug.settings'
+import { Route as AuthenticatedAdminBSlugSignupsRouteImport } from './routes/_authenticated/admin.b.$slug.signups'
 import { Route as AuthenticatedAdminBSlugSizeGuidesRouteImport } from './routes/_authenticated/admin.b.$slug.size-guides'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
 import { Route as ApiPublicBookingsCalendarTokenRouteImport } from './routes/api.public.bookings.calendar.$token'
@@ -514,6 +515,12 @@ const AuthenticatedAdminBSlugSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugSignupsRoute =
+  AuthenticatedAdminBSlugSignupsRouteImport.update({
+    id: '/signups',
+    path: '/signups',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugSizeGuidesRoute =
   AuthenticatedAdminBSlugSizeGuidesRouteImport.update({
     id: '/size-guides',
@@ -674,6 +681,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   '/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
+  '/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
@@ -761,6 +769,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
   '/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
+  '/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
@@ -853,6 +862,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   '/_authenticated/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
   '/_authenticated/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
+  '/_authenticated/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/_authenticated/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/_authenticated/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
@@ -945,6 +955,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports'
     | '/admin/b/$slug/reviews'
     | '/admin/b/$slug/settings'
+    | '/admin/b/$slug/signups'
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
@@ -1032,6 +1043,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/pages'
     | '/admin/b/$slug/reviews'
     | '/admin/b/$slug/settings'
+    | '/admin/b/$slug/signups'
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
@@ -1123,6 +1135,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/reports'
     | '/_authenticated/admin/b/$slug/reviews'
     | '/_authenticated/admin/b/$slug/settings'
+    | '/_authenticated/admin/b/$slug/signups'
     | '/_authenticated/admin/b/$slug/size-guides'
     | '/_authenticated/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
@@ -1692,6 +1705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugSettingsRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/signups': {
+      id: '/_authenticated/admin/b/$slug/signups'
+      path: '/signups'
+      fullPath: '/admin/b/$slug/signups'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugSignupsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/size-guides': {
       id: '/_authenticated/admin/b/$slug/size-guides'
       path: '/size-guides'
@@ -1903,6 +1923,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugReportsRoute: typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   AuthenticatedAdminBSlugReviewsRoute: typeof AuthenticatedAdminBSlugReviewsRoute
   AuthenticatedAdminBSlugSettingsRoute: typeof AuthenticatedAdminBSlugSettingsRoute
+  AuthenticatedAdminBSlugSignupsRoute: typeof AuthenticatedAdminBSlugSignupsRoute
   AuthenticatedAdminBSlugSizeGuidesRoute: typeof AuthenticatedAdminBSlugSizeGuidesRoute
   AuthenticatedAdminBSlugTeamRoute: typeof AuthenticatedAdminBSlugTeamRoute
   AuthenticatedAdminBSlugOrdersIdRoute: typeof AuthenticatedAdminBSlugOrdersIdRoute
@@ -1948,6 +1969,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
       AuthenticatedAdminBSlugReportsRouteWithChildren,
     AuthenticatedAdminBSlugReviewsRoute: AuthenticatedAdminBSlugReviewsRoute,
     AuthenticatedAdminBSlugSettingsRoute: AuthenticatedAdminBSlugSettingsRoute,
+    AuthenticatedAdminBSlugSignupsRoute: AuthenticatedAdminBSlugSignupsRoute,
     AuthenticatedAdminBSlugSizeGuidesRoute:
       AuthenticatedAdminBSlugSizeGuidesRoute,
     AuthenticatedAdminBSlugTeamRoute: AuthenticatedAdminBSlugTeamRoute,
