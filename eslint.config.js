@@ -251,6 +251,7 @@ export default tseslint.config(
       "src/features/dashboard/**",
       "src/components/accounting/**",
       "src/routes/_authenticated/admin.b.$slug.expenses.tsx",
+      "src/features/expenses/**",
     ],
     rules: {
       "no-restricted-syntax": [
