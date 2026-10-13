@@ -3,6 +3,11 @@ import type { BrandAddonRow } from "@/lib/addons/addon-types";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis } from "@/lib/variant-axes";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import {
+  productAvailability,
+  readyUnitsOf,
+  type AvailabilityProduct,
+} from "@/lib/product-availability";
 
 /**
  * Pure rules for the product page's option pickers: variant order, the values
@@ -100,6 +105,69 @@ export function outOfStockByValue(
     },
     {} as Record<string, boolean>,
   );
+}
+
+/** The values offered on each option (the pickers' values), for chosenVariant. */
+export type OfferedOptions = Record<Axis, readonly string[]>;
+
+/** Pieces a variant can sell: the store's and its partners'. */
+const unitsOf = (v: Variant) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0);
+
+/**
+ * The variant the shopper's choice names, or null while it names none: every
+ * option offered with more than one value has to be chosen. Nothing is chosen
+ * for the shopper. The page once read "nothing chosen" as "anything fits" and
+ * took the first variant, so it opened on a size that could be out of stock
+ * ("notify me" for a piece that was on the shelf in other sizes) and could add
+ * a size the shopper never picked. Where the options still leave several
+ * variants (values the pickers do not tell apart), one in stock comes first.
+ */
+export function chosenVariant(
+  variants: Variant[],
+  selection: VariantSelection,
+  offered: OfferedOptions,
+): Variant | null {
+  const open = (Object.keys(AXIS_FIELD) as Axis[]).some(
+    (axis) => offered[axis].length > 1 && !selection[axis],
+  );
+  if (open) return null;
+  const fitting = matchingVariantsFor(variants, selection);
+  return fitting.find((v) => unitsOf(v) > 0) ?? fitting[0] ?? null;
+}
+
+/**
+ * The variant whose photo the gallery shows while the choice is partial (a
+ * colour picked, no size yet): the first fitting one with a photo, one in
+ * stock first. None until something is chosen, so the page opens on the
+ * product's own photos.
+ */
+export function previewVariant(variants: Variant[], selection: VariantSelection): Variant | null {
+  if (!Object.values(selection).some(Boolean)) return null;
+  const withPhoto = matchingVariantsFor(variants, selection).filter((v) => Boolean(v.image_url));
+  return withPhoto.find((v) => unitsOf(v) > 0) ?? withPhoto[0] ?? null;
+}
+
+/**
+ * Whether the page offers "notify me" instead of adding to the cart: the
+ * chosen variant has no piece or, with nothing chosen yet, the product as a
+ * whole cannot be bought (the one availability rule: a made-to-order piece
+ * can be bought with no ready stock). Never while it is being made to order.
+ */
+export function choiceUnavailable({
+  variant,
+  variants,
+  product,
+  isTailoringActive,
+}: {
+  variant: Variant | null | undefined;
+  variants: Variant[];
+  product: AvailabilityProduct;
+  isTailoringActive: boolean;
+}): boolean {
+  if (isTailoringActive) return false;
+  if (variant) return unitsOf(variant) <= 0;
+  if (variants.length === 0) return false;
+  return !productAvailability(product, readyUnitsOf(variants)).sellable;
 }
 
 /** "+ 5 BHD" in a customer's option value adds 5 to the price. */

@@ -14,7 +14,8 @@ export async function syncStorefrontCartActivity({
   cartItems,
   subtotal,
   currency = "BHD",
-  marketingConsent = true,
+  // Consent is never assumed (the database defaults it to false too).
+  marketingConsent = false,
 }: {
   brandId: string;
   sessionId: string;

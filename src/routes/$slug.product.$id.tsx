@@ -36,6 +36,8 @@ import {
   matchingVariantsFor,
   offeredSizes,
   outOfStockByValue,
+  previewVariant,
+  choiceUnavailable,
   fieldPriceDelta,
   sortVariants,
   uniqueOptionValues,
@@ -270,18 +272,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [product]);
   const variant = variantId ? variants.find((v) => v.id === variantId) : null;
 
-  const media = useMemo(
-    () => productMediaList(product, variant?.image_url),
-    [product, variant?.image_url],
-  );
-
-  useEffect(() => {
-    if (variant?.image_url) {
-      const idx = media.findIndex((m) => m.url === variant.image_url);
-      if (idx !== -1) setMediaIdx(idx);
-    }
-  }, [variant?.image_url, media]);
-
   const uniqueColors = useMemo(() => uniqueOptionValues(variants, (v) => v.color), [variants]);
 
   const uniqueSizes = useMemo(() => offeredSizes(variants), [variants]);
@@ -338,6 +328,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }),
     [selectedSize, selectedColor, selectedFabric, selectedOptionFour, selectedOptionFive],
   );
+  // The chosen variant's photo, or while the choice is partial (a colour, no size yet) a fitting one's.
+  const shownImage = (variant ?? previewVariant(variants, optionSelection))?.image_url;
+  const media = useMemo(() => productMediaList(product, shownImage), [product, shownImage]);
+  useEffect(() => {
+    if (!shownImage) return;
+    const idx = media.findIndex((m) => m.url === shownImage);
+    if (idx !== -1) setMediaIdx(idx);
+  }, [shownImage, media]);
+
   const isColorOutOfStock = useMemo(
     () => outOfStockByValue(variants, "color", uniqueColors, optionSelection),
     [variants, uniqueColors, optionSelection],
@@ -566,7 +565,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
+  const selectedVariantOutOfStock = choiceUnavailable({
+    variant,
+    variants,
+    product,
+    isTailoringActive,
+  });
 
   const validate = (): string | null =>
     productSelectionError({
@@ -903,7 +907,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
           {/* Layer 2 Bundle Offer */}
           {settings?.storefront_design_version === 2 && !isService && bundleItems.length > 0 && (
-            <BundleOffer mainProduct={product} mainVariant={variant} bundleItems={bundleItems} />
+            <BundleOffer
+              mainProduct={product}
+              mainVariant={variant}
+              madeToOrderChoice={isTailoringActive}
+              bundleItems={bundleItems}
+            />
           )}
         </div>
 

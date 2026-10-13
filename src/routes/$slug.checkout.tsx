@@ -70,7 +70,8 @@ function Checkout() {
   const [shareOpen, setShareOpen] = useState(false);
   const { paymentErrorState, mounted } = usePaymentReturnError(t);
 
-  const [marketingConsent, setMarketingConsent] = useState<boolean>(true);
+  // Marketing (offers, cart reminders) is the shopper's to opt into: the box starts unticked.
+  const [marketingConsent, setMarketingConsent] = useState<boolean>(false);
 
   const {
     form,
