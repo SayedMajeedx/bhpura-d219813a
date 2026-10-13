@@ -206,10 +206,12 @@ describe("templatesForStore", () => {
   it("puts an abaya store's templates first and suggests the top three", () => {
     expect(order("abayas")).toEqual([
       "atelier-reveal*",
+      "reel-cut*",
       "swatch-run*",
-      "detail-zoom*",
+      "detail-zoom",
       "lookbook-carousel",
       "editorial-cover",
+      "bold-poster",
       "price-drop",
       "occasion-pack",
     ]);
@@ -217,12 +219,12 @@ describe("templatesForStore", () => {
 
   it("gives a roastery its own set, and keeps every template for every store", () => {
     const coffee = order("coffee");
-    expect(coffee.slice(0, 3)).toEqual(["swatch-run*", "price-drop*", "occasion-pack*"]);
+    expect(coffee.slice(0, 3)).toEqual(["bold-poster*", "swatch-run*", "price-drop*"]);
     expect(coffee).toHaveLength(ENGINE_TEMPLATES.length);
   });
 
   it("treats an unknown store type as a general store", () => {
     expect(order("spaceships")).toEqual(order("general"));
-    expect(order(null)[0]).toBe("atelier-reveal*");
+    expect(order(null)[0]).toBe("reel-cut*");
   });
 });

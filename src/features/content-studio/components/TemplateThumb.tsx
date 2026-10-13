@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
-import type { SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
+import {
+  stillTime,
+  type SceneData,
+  type StudioTemplate,
+} from "@/features/content-studio/engine/scene";
 
 /** The thumbnail's drawing size: a 4:5 post, sharp on a two-times screen. */
 const THUMB_W = 240;
@@ -45,7 +49,7 @@ export function TemplateThumb({
     let start: number | undefined;
     let frame = requestAnimationFrame(function draw(now: number) {
       if (!animate) {
-        template.render(ctx, template.duration - 1, data);
+        template.render(ctx, stillTime(template), data);
         return;
       }
       start ??= now;

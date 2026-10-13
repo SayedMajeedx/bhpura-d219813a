@@ -49,6 +49,12 @@ export type SceneData = {
   /** The product photo or, while exporting a video, the current video frame. */
   media: Drawable | null;
   /**
+   * The product's photos for templates that cut between them (the chosen one
+   * first). Absent or null when they are not loaded: such a template cuts
+   * between details of `media` instead.
+   */
+  shots?: Drawable[] | null;
+  /**
    * The product's options to cycle through (its colours, or another option),
    * each with its own photo when it has one. Null when there is only one.
    */
@@ -95,6 +101,11 @@ export type StudioTemplate<S extends BaseScene = SceneData> = {
   goal: { en: string; ar: string };
   /** Length in seconds; the animation loops at the end. */
   duration: number;
+  /**
+   * The frame that shows the template best, for its thumbnail and as the
+   * default still (see stillTime). Without it, one second before the end.
+   */
+  posterTime?: number;
   /** Draws the whole frame at `t` seconds. Must not keep state between calls. */
   render: (ctx: CanvasRenderingContext2D, t: number, scene: S) => void;
   /**
@@ -103,3 +114,8 @@ export type StudioTemplate<S extends BaseScene = SceneData> = {
    */
   slideTimes?: (scene: S) => number[];
 };
+
+/** The time of a template's still: its poster frame, else one second before the end. */
+export function stillTime(template: { duration: number; posterTime?: number }): number {
+  return template.posterTime ?? Math.max(0, template.duration - 1);
+}

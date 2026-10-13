@@ -1,5 +1,10 @@
 import { frameCount } from "@/features/content-studio/engine/timeline";
-import type { BaseScene, Drawable, StudioTemplate } from "@/features/content-studio/engine/scene";
+import {
+  stillTime,
+  type BaseScene,
+  type Drawable,
+  type StudioTemplate,
+} from "@/features/content-studio/engine/scene";
 
 /** Frame rate and bitrate of exported videos: smooth on Instagram, crisp text. */
 export const EXPORT_FPS = 30;
@@ -93,7 +98,7 @@ export async function exportTemplateMp4<S extends BaseScene>({
 export async function exportTemplatePng<S extends BaseScene>({
   template,
   scene,
-  t = Math.max(0, template.duration - 1),
+  t = stillTime(template),
   createCanvas = makeCanvas,
 }: {
   template: StudioTemplate<S>;

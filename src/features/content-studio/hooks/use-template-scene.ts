@@ -67,6 +67,7 @@ export function useTemplateScene({
   style,
   photo,
   isCurrentVideo,
+  shotUrls,
   logo,
   businessName,
   instagram,
@@ -92,6 +93,8 @@ export function useTemplateScene({
   style: StudioStyle;
   photo: string | null;
   isCurrentVideo: boolean;
+  /** The photos a template cuts between (Reel Cut), or empty: loaded only when asked for. */
+  shotUrls: readonly string[];
   logo: string | null | undefined;
   businessName: string;
   instagram: string | null;
@@ -119,6 +122,7 @@ export function useTemplateScene({
 }) {
   const photoImage = useLoadedImage(isCurrentVideo ? null : photo);
   const logoImage = useLoadedImage(logo);
+  const shotImages = useLoadedImages(shotUrls);
   const stopUrls = useMemo(() => (run ? run.stops.map((stop) => stop.imageUrl) : []), [run]);
   const stopImages = useLoadedImages(stopUrls);
   const collectionUrls = useMemo(
@@ -167,6 +171,12 @@ export function useTemplateScene({
       issueLabel,
       discountPercent: showPrice && sale ? sale.percent : null,
       media: media === undefined ? photoImage : media,
+      // The product's photos, while the studio draws its own product (an export's
+      // video frames or another product's photo cut between their own details).
+      shots:
+        media === undefined
+          ? shotImages.filter((image): image is HTMLImageElement => Boolean(image))
+          : null,
       options: run
         ? {
             axisLabel: run.axisLabel,
@@ -210,6 +220,7 @@ export function useTemplateScene({
       showPrice,
       sale,
       photoImage,
+      shotImages,
       run,
       stopImages,
       collection,
