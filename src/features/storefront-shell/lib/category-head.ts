@@ -83,10 +83,10 @@ export function categoryHead({
       ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) || categorySlug
       : SMART_NAMES[smart!][lang];
     title = `${name} | ${storeName}`;
+    // Only what is true of every store: it once also promised every store's prices and speed of
+    // delivery, a catalog with no prices and a store that makes to order included.
     description =
-      lang === "ar"
-        ? `تسوّق ${name} من ${storeName}، بأسعار واضحة وتوصيل سريع.`
-        : `Shop ${name} at ${storeName}: clear prices and fast delivery.`;
+      lang === "ar" ? `تسوّق ${name} من ${storeName}.` : `Shop ${name} at ${storeName}.`;
     image = category?.image_url || brand.logo_url;
   } else {
     return {};

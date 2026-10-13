@@ -17,6 +17,8 @@ import {
 } from "@/lib/shipping";
 import { CountryFlag } from "@/components/ui/country-flag";
 import { Banknote, CreditCard, Plus, QrCode, Sparkles, Trash2, Truck } from "lucide-react";
+import { DeliveryShopperPreview } from "@/features/settings/tabs/orders/DeliveryShopperPreview";
+import type { DeliveryInfoSettings } from "@/lib/delivery-info";
 
 export function FulfillmentGroup() {
   const { lang } = useI18n();
@@ -269,8 +271,8 @@ export function FulfillmentGroup() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
                   {isAr
-                    ? "نص الشحن والاستبدال في صفحة المنتج (عربي)"
-                    : "Shipping & returns text on product page (Arabic)"}
+                    ? "كلامك عن الشحن والاسترجاع، يظهر تحت البيانات في صفحة المنتج (عربي)"
+                    : "Your own words on shipping & returns, shown under the facts on a product page (Arabic)"}
                 </Label>
                 <Textarea
                   dir="rtl"
@@ -284,8 +286,8 @@ export function FulfillmentGroup() {
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
                   {isAr
-                    ? "نص الشحن والاستبدال في صفحة المنتج (إنجليزي)"
-                    : "Shipping & returns text on product page (English)"}
+                    ? "كلامك عن الشحن والاسترجاع، يظهر تحت البيانات في صفحة المنتج (إنجليزي)"
+                    : "Your own words on shipping & returns, shown under the facts on a product page (English)"}
                 </Label>
                 <Textarea
                   dir="ltr"
@@ -297,6 +299,12 @@ export function FulfillmentGroup() {
                 />
               </div>
             </div>
+            <DeliveryShopperPreview
+              brandId={form.brandId}
+              settings={bs as DeliveryInfoSettings}
+              pages={bs.pages}
+              isAr={isAr}
+            />
           </div>
         )}
 

@@ -5,7 +5,7 @@ import type { Fulfillment, Storefront } from "@/features/checkout/types";
 import {
   deliveryEstimateLines,
   readyEstimate,
-  tailoredEstimate,
+  zoneEstimate,
   type EstimateKinds,
   type EstimateLine,
 } from "@/lib/delivery-estimate";
@@ -186,15 +186,9 @@ export function useCheckoutFulfillment({
     }
   }, [method, availableMethods]);
 
-  const bahrainText =
-    readyEstimate(settings, lang) ||
-    (lang === "ar" ? "خلال 24 - 48 ساعة داخل البحرين" : "Within 24 - 48 hours in Bahrain");
-  const zoneText = selectedZone
-    ? (lang === "ar" ? selectedZone.estimate_ar : selectedZone.estimate_en) ||
-      (lang === "ar" ? "خلال 3 - 5 أيام عمل" : "3 - 5 business days")
-    : lang === "ar"
-      ? "خلال 3 - 5 أيام عمل"
-      : "3 - 5 business days";
+  // A time is said only when the store, or the zone, wrote one (`delivery-estimate.ts`).
+  const bahrainText = readyEstimate(settings, lang);
+  const zoneText = zoneEstimate(selectedZone, lang);
 
   /** What is said about delivery for this cart; a made-to-order piece keeps its own time. */
   const estimatedDeliveryLines = useMemo((): EstimateLine[] => {
@@ -229,10 +223,7 @@ export function useCheckoutFulfillment({
 
   /** The same for the Bahrain card in the address step, shown only when the store wrote one. */
   const homeEstimateLines = useMemo(
-    (): EstimateLine[] =>
-      readyEstimate(settings, lang) || tailoredEstimate(settings, lang)
-        ? deliveryEstimateLines({ kinds, settings, lang, readyText: bahrainText })
-        : [],
+    (): EstimateLine[] => deliveryEstimateLines({ kinds, settings, lang, readyText: bahrainText }),
     [kinds, settings, lang, bahrainText],
   );
 

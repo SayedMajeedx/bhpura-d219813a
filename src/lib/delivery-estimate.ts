@@ -6,6 +6,11 @@ import type { CartItem } from "@/lib/storefront-context";
  * (`delivery_estimate_tailored_*`): a tailored piece is made before it is sent. The product page
  * shows the one that fits the choice made; checkout shows the one that fits the cart, and both
  * when the cart holds both kinds. A store with no tailored text says one thing, as it always did.
+ *
+ * **A time a shopper reads is one the store wrote.** When the store (or a shipping zone) wrote
+ * none, nothing is said: the screens once filled the gap with a time of their own ("within 24 -
+ * 48 hours in Bahrain", "3 - 5 business days"), a promise no store had made. Everything else a
+ * shopper is told about delivery and returns is built in `delivery-info.ts`.
  */
 
 type Lang = "ar" | "en";
@@ -64,9 +69,10 @@ const LABELS: Record<Lang, { ready: string; tailored: string; thenShipping: stri
 };
 
 /**
- * The lines to show. `readyText` is what the destination says for ready pieces (the store's text,
- * a shipping zone's, or a default). `afterMaking` is time added once a tailored piece is made,
- * such as a zone's shipping time, so it is not left out of the tailored line.
+ * The lines to show. `readyText` is what the destination says for ready pieces (the store's text
+ * or a shipping zone's; null when neither wrote one, and then no line is made up for it).
+ * `afterMaking` is time added once a tailored piece is made, such as a zone's shipping time, so
+ * it is not left out of the tailored line. No lines at all means there is nothing to say.
  */
 export function deliveryEstimateLines({
   kinds,
@@ -78,21 +84,30 @@ export function deliveryEstimateLines({
   kinds: EstimateKinds;
   settings: EstimateSettings;
   lang: Lang;
-  readyText: string;
+  readyText: string | null;
   afterMaking?: string | null;
 }): EstimateLine[] {
+  const ready = clean(readyText);
   const own = tailoredEstimate(settings, lang);
-  if (!own || !kinds.tailored) return [{ kind: "all", label: null, text: readyText }];
+  if (!own || !kinds.tailored) return ready ? [{ kind: "all", label: null, text: ready }] : [];
 
   const labels = LABELS[lang];
   const after = clean(afterMaking);
   const comma = lang === "ar" ? "،" : ",";
   const tailoredText = after ? `${own}${comma} ${labels.thenShipping}: ${after}` : own;
-  if (!kinds.ready) return [{ kind: "tailored", label: null, text: tailoredText }];
+  if (!kinds.ready || !ready) return [{ kind: "tailored", label: null, text: tailoredText }];
   return [
-    { kind: "ready", label: labels.ready, text: readyText },
+    { kind: "ready", label: labels.ready, text: ready },
     { kind: "tailored", label: labels.tailored, text: tailoredText },
   ];
+}
+
+/** What a shipping zone says about its own delivery time, if it wrote anything. */
+export function zoneEstimate(
+  zone: { estimate_ar?: string | null; estimate_en?: string | null } | null | undefined,
+  lang: Lang,
+): string | null {
+  return clean(lang === "ar" ? zone?.estimate_ar : zone?.estimate_en);
 }
 
 /** One line as a sentence: "Ready pieces: within 24 hours". */

@@ -897,6 +897,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
               )}
               bookingTerms={bookingTerms}
+              deliveryKinds={{ ready: !isMadeToOrder || hasReadySizes, tailored: isMadeToOrder }}
             />
           )}
 

@@ -1,14 +1,19 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ChevronDown, Sparkles, Shirt, Truck, Ruler } from "lucide-react";
-import { useStorefront } from "@/lib/storefront-context";
+import { useQuery } from "@tanstack/react-query";
+import { formatPrice, useStorefront } from "@/lib/storefront-context";
+import { deliveryInfo } from "@/lib/delivery-info";
+import type { EstimateKinds } from "@/lib/delivery-estimate";
+import { returnsQueries } from "@/lib/data/returns";
+import { DeliveryInfoDetails } from "@/components/storefront/DeliveryInfoDetails";
 import { DEFAULT_VOCABULARY, getVerticalVocabularyOverrides } from "@/lib/store-vocabulary";
 
 interface ProductAccordionProps {
   description?: string | null;
   fabricCare?: string | null;
-  shippingPolicy?: string | null;
-  returnPolicy?: string | null;
+  /** Which pieces this product is sold as, so the delivery time said is the one that applies. */
+  deliveryKinds?: EstimateKinds;
   onOpenSizeGuide?: () => void;
   hasSizeGuide?: boolean;
   /** A service's booking terms: shown in place of shipping, returns and care. */
@@ -18,8 +23,7 @@ interface ProductAccordionProps {
 export function ProductAccordion({
   description,
   fabricCare,
-  shippingPolicy,
-  returnPolicy,
+  deliveryKinds = { ready: true, tailored: false },
   onOpenSizeGuide,
   hasSizeGuide = false,
   bookingTerms = null,
@@ -52,13 +56,17 @@ export function ProductAccordion({
     setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const defaultShipping = isAr
-    ? settings?.shipping_policy_ar ||
-      "توصيل سريع خلال 2-4 أيام عمل في جميع دول مجلس التعاون الخليجي. خدمة الاسترجاع متاحة خلال 14 يوماً من استلام الطلب وفقاً للشروط."
-    : settings?.shipping_policy_en ||
-      "Fast delivery within 2–4 business days across all GCC countries. Returns available within 14 days of receipt per terms.";
-
-  const effectiveShipping = shippingPolicy || defaultShipping;
+  // What the store says about delivery and returns: its own settings, its return policy and its
+  // policy pages, put into words in one place (`deliveryInfo`). Nothing is said that no setting says.
+  const returnPolicyQ = useQuery({ ...returnsQueries.policy(brand.id), staleTime: 5 * 60_000 });
+  const delivery = deliveryInfo({
+    settings,
+    lang,
+    kinds: deliveryKinds,
+    returnPolicy: returnPolicyQ.data ?? null,
+    pages: settings?.pages ?? null,
+    formatMoney: (amount) => formatPrice(amount, settings?.currency || "BHD", lang),
+  });
 
   const defaultFabricCare = isApparelVertical
     ? isAr
@@ -107,19 +115,14 @@ export function ProductAccordion({
             <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">{bookingTerms}</p>
           ),
         }
-      : {
-          id: "shipping",
-          title: t("الشحن والاسترجاع", "Shipping & Returns"),
-          icon: Truck,
-          content: (
-            <div className="space-y-2 text-xs leading-relaxed opacity-90">
-              <p>{effectiveShipping}</p>
-              {returnPolicy && (
-                <p className="pt-1 border-t border-border opacity-80">{returnPolicy}</p>
-              )}
-            </div>
-          ),
-        },
+      : delivery.hasAnything
+        ? {
+            id: "shipping",
+            title: t("الشحن والاسترجاع", "Shipping & Returns"),
+            icon: Truck,
+            content: <DeliveryInfoDetails info={delivery} slug={brand.slug} />,
+          }
+        : null,
     ...(hasSizeGuide && onOpenSizeGuide && !bookingTerms
       ? [
           {
@@ -148,7 +151,7 @@ export function ProductAccordion({
           },
         ]
       : []),
-  ];
+  ].filter((section) => section !== null);
 
   return (
     <div className="divide-y divide-border/70 border-y border-border my-6">
