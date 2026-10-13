@@ -77,6 +77,19 @@ export type SceneData = {
   /** The collection's prices added up and formatted, when every one has a price. */
   collectionTotal?: string | null;
   /**
+   * Last Chance: the last day (its weekday and date, as the reader's calendar
+   * names it) and, when a code goes with it, the code and what it takes off
+   * (in pieces in reading order: an amount is never joined to a word).
+   */
+  deadline?: { day: string; date: string; code: string | null; offer: string[] | null } | null;
+  /**
+   * Back in Stock: the options a shopper can buy now (sizes first) with the
+   * store's name for them, and how many asked to hear (null when not shown).
+   */
+  restock?: { axisLabel: string | null; options: string[]; asked: number | null } | null;
+  /** Customer Favourite: the store's average rating, how many reviews, and what they praise. */
+  rating?: { average: number; count: number; highlights: string[] } | null;
+  /**
    * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
    * and down), what it is (the fabric or finish) and a note (the occasion).
    * Null outside that template.

@@ -11,6 +11,9 @@ import { reelCut } from "@/features/content-studio/templates/reel-cut";
 import { boldPoster } from "@/features/content-studio/templates/bold-poster";
 import { menuBoard } from "@/features/content-studio/templates/menu-board";
 import { bundleSet } from "@/features/content-studio/templates/bundle-set";
+import { lastChance } from "@/features/content-studio/templates/last-chance";
+import { backInStock } from "@/features/content-studio/templates/back-in-stock";
+import { customerFavourite } from "@/features/content-studio/templates/customer-favourite";
 
 /** The animated templates, in the order the picker shows them after Classic. */
 export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
@@ -19,6 +22,9 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   boldPoster,
   editorialCover,
   priceDrop,
+  lastChance,
+  backInStock,
+  customerFavourite,
   swatchRun,
   detailZoom,
   lookbookCarousel,
