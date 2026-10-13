@@ -8,7 +8,7 @@
     "build": "vite build && node -e \"import('fs').then(fs => { fs.mkdirSync('.output/server', { recursive: true }); fs.mkdirSync('.output/client', { recursive: true }); if (fs.existsSync('dist/server')) { fs.cpSync('dist/server', '.output/server', { recursive: true }); } if (fs.existsSync('dist/client')) { fs.cpSync('dist/client', '.output/client', { recursive: true }); } })\"",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
+    "deploy": "npm run build && node scripts/deploy.mjs",
     "cf-typegen": "wrangler types",
     "lint": "eslint . --max-warnings 0",
     "format": "prettier --write .",

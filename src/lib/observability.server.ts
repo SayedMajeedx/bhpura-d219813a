@@ -1,4 +1,4 @@
-import { worthRecording, type HealthStatus } from "./system-health";
+import { runMinute, worthRecording, type HealthStatus } from "./system-health";
 
 export type { HealthStatus };
 
@@ -129,6 +129,41 @@ export async function pruneHealthEvents(env: RuntimeEnv): Promise<{ deleted: num
   });
   if (!response.ok) throw new Error(`OBSERVABILITY_PRUNE_FAILED_${response.status}`);
   return { deleted: Number(await response.json()) || 0 };
+}
+
+/**
+ * Claims a scheduled run's minute, so a run that is started twice happens once (Cloudflare has
+ * started every run twice). False only when the database says another start already has it:
+ * when the database cannot be asked, the run goes ahead, because a recovery loop must not stop
+ * for a guard it cannot reach.
+ */
+export async function claimScheduledRun(
+  env: RuntimeEnv,
+  cron: string,
+  scheduledTime: number,
+): Promise<boolean> {
+  const baseUrl = env.SUPABASE_URL?.trim().replace(/\/+$/, "");
+  const key = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  if (!baseUrl || !key) return true;
+  try {
+    const response = await fetch(`${baseUrl}/rest/v1/rpc/claim_scheduled_run`, {
+      method: "POST",
+      headers: supabaseHeaders(key),
+      body: JSON.stringify({ p_cron: cron, p_run_minute: runMinute(scheduledTime) }),
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (!response.ok) {
+      logOperationalEvent("warn", "scheduled_run_claim_unavailable", {
+        cron,
+        statusCode: response.status,
+      });
+      return true;
+    }
+    return (await response.json()) !== false;
+  } catch (error) {
+    logOperationalEvent("warn", "scheduled_run_claim_unavailable", { cron, error });
+    return true;
+  }
 }
 
 export async function runObservedTask<T extends Record<string, unknown>>(
