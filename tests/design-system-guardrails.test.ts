@@ -229,7 +229,7 @@ describe("design system guardrails", () => {
       rel.startsWith("components/storefront/") ||
       /^features\/(product-page|checkout|storefront-[a-z-]+|services-home)\//.test(rel);
     const promise =
-      /\d+\s*[-–]\s*\d+\s*(business days|hours|أيام عمل|ساعة)|GCC countries|دول مجلس التعاون|within 14 days|خلال 14 يوم/;
+      /\d+\s*[-–]\s*\d+\s*(business days|hours|أيام عمل|ساعة)|GCC countries|دول مجلس التعاون|within 14 days|خلال 14 يوم|fast delivery|توصيل سريع/i;
     const offenders = FILES.filter((file) => shopperScreens(file.rel) && promise.test(file.source));
     expect(offenders.map((file) => file.rel)).toEqual([]);
   });
