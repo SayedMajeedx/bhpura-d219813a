@@ -36,12 +36,6 @@ export function calculateReviewMetrics(reviews: OrderReviewAdminRow[]) {
   return { total, average, distribution, lowCount, positiveRate };
 }
 
-/** The review story's accent: Pura's maroon for Pura (and as the default), else the brand color. */
-export function storyBrandColor(brandSlug: string, primaryColor: string | null | undefined) {
-  if (brandSlug.toLowerCase() === "pura") return "#330a0a";
-  return primaryColor || "#330a0a";
-}
-
 /**
  * The reviews screen's filters: a star rating ("all" or 1–5), a period ("all",
  * "30" or "90" days back from `now`), and a search over the customer's name,

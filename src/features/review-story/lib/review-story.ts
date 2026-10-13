@@ -1,5 +1,6 @@
 import type { BaseScene, Drawable } from "@/features/content-studio/engine/scene";
 import { REVIEW_HIGHLIGHT_LABELS, type OrderReviewAdminRow } from "@/lib/order-reviews";
+import { readableInk, type StoreColours } from "@/features/content-studio/lib/studio-styles";
 
 /** The story's size: an Instagram story. */
 export const STORY_WIDTH = 1080;
@@ -38,6 +39,26 @@ export type ReviewScene = BaseScene & {
 /** A brand colour the story can use: a #rrggbb hex, or the house maroon. */
 export function safeColor(value?: string | null) {
   return value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#330a0a";
+}
+
+/**
+ * The deepest of the story's light grounds (the classic look's sand at its
+ * foot): ink that reads on it reads on every lighter one too.
+ */
+const DEEPEST_LIGHT_GROUND = "#cfc0b0";
+
+/**
+ * The story's colour: the store's own (the colour its storefront wears), as
+ * the ink of the name, the contact and the badge on the story's light
+ * grounds. A colour too light to read there gives way to the storefront's
+ * text colour, else is deepened until it reads. Never chosen by the store's
+ * name: every store gets its own colours by the same rule.
+ */
+export function storyColor(colours: StoreColours): string {
+  const accent = colours.accent && /^#[0-9a-f]{6}$/i.test(colours.accent) ? colours.accent : null;
+  const base = accent ?? "#330a0a";
+  const text = colours.text && /^#[0-9a-f]{6}$/i.test(colours.text) ? colours.text : null;
+  return readableInk(DEEPEST_LIGHT_GROUND, [base, text], base);
 }
 
 /** The first name only: a published story never shows a full name. */

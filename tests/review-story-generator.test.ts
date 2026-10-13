@@ -5,11 +5,13 @@ import {
   publicFirstName,
   reviewStoryFields,
   safeColor,
+  storyColor,
   type ReviewScene,
   type StoryLook,
 } from "../src/features/review-story/lib/review-story";
 import { reviewStory } from "../src/features/review-story/templates/review-story";
-import { storyBrandColor, type OrderReviewAdminRow } from "../src/lib/order-reviews";
+import { type OrderReviewAdminRow } from "../src/lib/order-reviews";
+import { contrastRatio } from "../src/features/content-studio/lib/studio-styles";
 
 // The customer review story, drawn by the content studio's engine. jsdom has
 // no canvas: record what the story would draw instead.
@@ -154,10 +156,27 @@ describe("customer review story", () => {
     expect(early).toBeLessThan(5);
   });
 
-  it("uses the brand color, with Pura maroon for Pura and as the safe default", () => {
-    expect(storyBrandColor("PURA", "#112233")).toBe("#330a0a");
-    expect(storyBrandColor("lulu", "#112233")).toBe("#112233");
-    expect(storyBrandColor("lulu", null)).toBe("#330a0a");
+  it("takes every store's colour from its own settings, never from its name", () => {
+    // Pura's storefront wears #330a0a, so its story keeps the maroon it always had.
+    expect(storyColor({ accent: "#330a0a", background: null, text: "#0a0a0a" })).toBe("#330a0a");
+    expect(storyColor({ accent: "#112233", background: null, text: null })).toBe("#112233");
+    expect(storyColor({ accent: null, background: null, text: null })).toBe("#330a0a");
+  });
+
+  it("keeps the name, contact and badge readable on the story's light grounds", () => {
+    // Too light to read: the storefront's own text colour takes over.
+    expect(storyColor({ accent: "#a0738d", background: "#ffffff", text: "#1e1b4b" })).toBe(
+      "#1e1b4b",
+    );
+    // Nothing else reads: the colour is deepened until it does.
+    for (const accent of ["#ffd400", "#f5d0e0", "#a0738d"]) {
+      const ink = storyColor({ accent, background: null, text: null });
+      expect(contrastRatio(ink, "#cfc0b0")).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(ink, "#ffffff")).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("falls back to a safe colour for anything that is not one", () => {
     expect(safeColor("#AbCdEf")).toBe("#AbCdEf");
     expect(safeColor("red")).toBe("#330a0a");
     expect(safeColor(null)).toBe("#330a0a");
