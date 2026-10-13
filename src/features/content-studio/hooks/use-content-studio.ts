@@ -38,6 +38,7 @@ import type { ContentDraft } from "@/lib/data/content-drafts";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import { studioSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
+import { reelShotUrls } from "@/features/content-studio/lib/reel-shots";
 import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
 import { describeVariantAxes } from "@/lib/variant-axes";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
@@ -158,6 +159,12 @@ export function useContentStudio(slug: string) {
     isAr,
     handle: instagram,
   });
+  // Reel Cut cuts between the product's photos; the others never load them.
+  const { productMediaList, photo: chosenPhoto } = product;
+  const shotUrls = useMemo(
+    () => (templateId === "reel-cut" ? reelShotUrls(productMediaList, chosenPhoto) : []),
+    [templateId, productMediaList, chosenPhoto],
+  );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
     format,
@@ -165,6 +172,7 @@ export function useContentStudio(slug: string) {
     style: palette,
     photo: product.photo,
     isCurrentVideo: product.isCurrentVideo,
+    shotUrls,
     logo,
     businessName,
     instagram,

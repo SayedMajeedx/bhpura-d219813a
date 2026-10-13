@@ -3,7 +3,12 @@ import { Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
-import type { BaseScene, Drawable, StudioTemplate } from "@/features/content-studio/engine/scene";
+import {
+  stillTime,
+  type BaseScene,
+  type Drawable,
+  type StudioTemplate,
+} from "@/features/content-studio/engine/scene";
 
 /** Preview width before the canvas has been measured (then: on-screen width × pixel density). */
 const INITIAL_PREVIEW_WIDTH = 540;
@@ -48,7 +53,7 @@ export function TemplatePlayer<S extends BaseScene>({
   const frameRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(() => !prefersReducedMotion());
-  const [time, setTime] = useState(() => (prefersReducedMotion() ? template.duration - 1 : 0));
+  const [time, setTime] = useState(() => (prefersReducedMotion() ? stillTime(template) : 0));
   const [fontsReady, setFontsReady] = useState(false);
   // Bumped on each scrub, so a paused preview redraws at the new time.
   const [scrubs, setScrubs] = useState(0);

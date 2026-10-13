@@ -7,10 +7,14 @@ import { editorialCover } from "@/features/content-studio/templates/editorial-co
 import { detailZoom } from "@/features/content-studio/templates/detail-zoom";
 import { occasionPack } from "@/features/content-studio/templates/occasion-pack";
 import { lookbookCarousel } from "@/features/content-studio/templates/lookbook-carousel";
+import { reelCut } from "@/features/content-studio/templates/reel-cut";
+import { boldPoster } from "@/features/content-studio/templates/bold-poster";
 
 /** The animated templates, in the order the picker shows them after Classic. */
 export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   atelierReveal,
+  reelCut,
+  boldPoster,
   editorialCover,
   priceDrop,
   swatchRun,

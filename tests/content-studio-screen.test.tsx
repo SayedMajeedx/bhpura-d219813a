@@ -327,9 +327,9 @@ describe("the content studio", () => {
     // The fixture store sells fashion.
     expect(names[0]).toMatch(/^Classic/);
     expect(names.slice(1, 4)).toEqual([
+      expect.stringMatching(/^Reel Cut.*Suggested/),
       expect.stringMatching(/^Atelier Reveal.*Suggested/),
       expect.stringMatching(/^Lookbook.*Suggested/),
-      expect.stringMatching(/^Swatch Run.*Suggested/),
     ]);
     expect(names.filter((name) => name.includes("Suggested"))).toHaveLength(3);
   });
