@@ -7365,6 +7365,24 @@ export type Database = {
           },
         ];
       };
+      scheduled_runs: {
+        Row: {
+          claimed_at: string;
+          cron: string;
+          run_minute: string;
+        };
+        Insert: {
+          claimed_at?: string;
+          cron: string;
+          run_minute: string;
+        };
+        Update: {
+          claimed_at?: string;
+          cron?: string;
+          run_minute?: string;
+        };
+        Relationships: [];
+      };
       service_options: {
         Row: {
           brand_id: string;
@@ -9143,6 +9161,10 @@ export type Database = {
           language: string;
           order_id: string;
         }[];
+      };
+      claim_scheduled_run: {
+        Args: { p_cron: string; p_run_minute: string };
+        Returns: boolean;
       };
       claim_whatsapp_outbox_event: {
         Args: { p_event_id: string };
