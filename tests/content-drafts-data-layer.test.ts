@@ -143,8 +143,9 @@ describe("reading a draft's settings", () => {
 
   it("opens anything, even an empty or broken draft", () => {
     for (const raw of [null, "text", [], { theme: "neon", occasion: { id: "halloween" } }]) {
+      // A draft with no style it knows opens in the store's own colours, the studio's default.
       expect(readDraftSettings(raw)).toMatchObject({
-        theme: "editorial",
+        theme: "store",
         showPrice: true,
         logoScale: 1,
         occasion: null,
