@@ -1,6 +1,11 @@
 import type { FormatKey } from "@/features/content-studio/engine/scene";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
-import { FORMATS, THEMES } from "@/features/content-studio/lib/studio-content";
+import { FORMATS } from "@/features/content-studio/lib/studio-content";
+import {
+  DEFAULT_STYLE,
+  isStyleKey,
+  type StyleKey,
+} from "@/features/content-studio/lib/studio-styles";
 import { OCCASIONS, type OccasionId } from "@/features/content-studio/lib/occasions";
 
 /**
@@ -10,7 +15,7 @@ import { OCCASIONS, type OccasionId } from "@/features/content-studio/lib/occasi
  */
 export type DraftSettings = {
   v: 1;
-  theme: keyof typeof THEMES;
+  theme: StyleKey;
   showPrice: boolean;
   imageFit: "cover" | "contain";
   logoScale: number;
@@ -50,10 +55,7 @@ export function readDraftSettings(raw: unknown): DraftSettings {
   const scale = typeof s.logoScale === "number" && Number.isFinite(s.logoScale) ? s.logoScale : 1;
   return {
     v: 1,
-    theme:
-      typeof s.theme === "string" && s.theme in THEMES
-        ? (s.theme as keyof typeof THEMES)
-        : "editorial",
+    theme: isStyleKey(s.theme) ? s.theme : DEFAULT_STYLE,
     showPrice: typeof s.showPrice === "boolean" ? s.showPrice : true,
     imageFit: s.imageFit === "contain" ? "contain" : "cover",
     logoScale: Math.min(2.2, Math.max(0.6, scale)),

@@ -15,23 +15,29 @@ import type {
 } from "@/features/content-studio/engine/scene";
 import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
 import { ease, mix, presence, progress } from "@/features/content-studio/engine/timeline";
+import { CONTENT_BOTTOM, photoHeight } from "@/features/content-studio/engine/safe-area";
 
 const DURATION = 9;
 const INTRO = 0.7;
 const OUTRO = 0.7;
 
-/** Fractions of the height. Stories keep clear of Instagram's top and bottom bars. */
+/**
+ * Fractions of the height. Stories keep clear of Instagram's top and bottom
+ * bars. The card takes whatever height the names, row and copy below it
+ * leave, down to `minCardH`.
+ */
 const LAYOUT: Record<
   FormatKey,
-  { topRowY: number; cardY: number; cardH: number; cardInset: number; footerY: number | null }
+  { topRowY: number; cardY: number; minCardH: number; cardInset: number; footerY: number | null }
 > = {
-  story: { topRowY: 0.11, cardY: 0.155, cardH: 0.53, cardInset: 120, footerY: null },
-  portrait: { topRowY: 0.05, cardY: 0.095, cardH: 0.52, cardInset: 170, footerY: 0.945 },
-  square: { topRowY: 0.055, cardY: 0.1, cardH: 0.5, cardInset: 250, footerY: 0.94 },
+  story: { topRowY: 0.11, cardY: 0.155, minCardH: 0.4, cardInset: 120, footerY: null },
+  portrait: { topRowY: 0.05, cardY: 0.095, minCardH: 0.4, cardInset: 170, footerY: 0.945 },
+  square: { topRowY: 0.055, cardY: 0.1, minCardH: 0.36, cardInset: 250, footerY: 0.94 },
 };
 
-/** Height (fraction of H) the card gives up when the post has body copy. */
-const BODY_ROOM: Record<FormatKey, number> = { story: 0.06, portrait: 0.07, square: 0.09 };
+/** The swatch row's sizes, shared by the layout and the drawing. */
+const SWATCH_R = 26;
+const CHIP_H = 56;
 
 type Stop = { label: string; color: string | null; media: Drawable | null };
 
@@ -81,15 +87,39 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   }
   ctx.restore();
 
+  // What is set under the card, measured first: the card takes the height it leaves.
+  const body = scene.body.trim();
+  const bodyFit = body
+    ? fitText(body, { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 27 * u }, (size) => {
+        ctx.font = font(size, STUDIO_FONTS.body, 400);
+        return (text) => ctx.measureText(text).width;
+      })
+    : null;
+  const bodyLines = bodyFit ? bodyFit.lines.slice(0, 2) : [];
+  const rowBlock =
+    n >= 2 ? 150 * u + (scene.options?.swatch ? SWATCH_R * u : (CHIP_H / 2) * u) + 40 * u : 110 * u;
+  const underCard =
+    0.03 * H +
+    52 * u +
+    rowBlock +
+    (bodyFit
+      ? (scene.price ? 56 * u : 0) + bodyLines.length * bodyFit.size * 1.45
+      : scene.price
+        ? 44 * u
+        : 0);
+
   // The card: each option's own photo, crossfading with a gentle push.
   const inset = layout.cardInset * u;
-  // The card gives up some height when there is body copy to set below.
-  const bodyRoom = scene.body.trim() ? BODY_ROOM[scene.format] : 0;
   const card: Box = {
     x: inset,
     y: layout.cardY * H,
     w: W - 2 * inset,
-    h: (layout.cardH - bodyRoom) * H,
+    h: photoHeight({
+      top: layout.cardY * H,
+      bottom: CONTENT_BOTTOM[scene.format] * H,
+      below: underCard,
+      min: layout.minCardH * H,
+    }),
   };
   const cardIn = progress(t, 0.1, 0.9, ease.outExpo);
   ctx.save();
@@ -164,7 +194,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.save();
     ctx.globalAlpha = rowAlpha;
     if (scene.options?.swatch) {
-      const r = 26 * u;
+      const r = SWATCH_R * u;
       const gap = 40 * u;
       const rowW = n * 2 * r + (n - 1) * gap;
       const xOf = (i: number) => {
@@ -190,7 +220,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     } else {
       ctx.font = font(26 * u, STUDIO_FONTS.body, 500);
       const pad = 26 * u;
-      const h = 56 * u;
+      const h = CHIP_H * u;
       const gap = 16 * u;
       const widths = stops.map((stop) => ctx.measureText(stop.label).width + 2 * pad);
       const rowW = widths.reduce((sum, w) => sum + w, 0) + gap * (n - 1);
@@ -219,16 +249,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   }
 
   // The price, quietly, under the row, then the body copy.
-  const body = scene.body.trim();
-  if (body) {
-    const bodyFit = fitText(
-      body,
-      { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 27 * u },
-      (size) => {
-        ctx.font = font(size, STUDIO_FONTS.body, 400);
-        return (text) => ctx.measureText(text).width;
-      },
-    );
+  if (bodyFit) {
     const bodyY = afterRow + (scene.price ? 56 * u : 0);
     ctx.save();
     ctx.globalAlpha = presence(t, { start: 1.4, end: DURATION }) * 0.75;
@@ -237,7 +258,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.direction = textDirection(body);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    bodyFit.lines.slice(0, 2).forEach((line, index) => {
+    bodyLines.forEach((line, index) => {
       ctx.fillText(line, W / 2, bodyY + index * bodyFit.size * 1.45);
     });
     ctx.restore();

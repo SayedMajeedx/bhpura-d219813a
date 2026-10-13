@@ -6,8 +6,13 @@ import {
   containsArabic,
   FORMATS,
   instagramHandle,
-  THEMES,
 } from "@/features/content-studio/lib/studio-content";
+import {
+  DEFAULT_STYLE,
+  storeColoursFrom,
+  studioStyles,
+  type StyleKey,
+} from "@/features/content-studio/lib/studio-styles";
 import { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
 import { useStudioCopy } from "@/features/content-studio/hooks/use-studio-copy";
 import { useHeaderLayout } from "@/features/content-studio/hooks/use-header-layout";
@@ -54,7 +59,7 @@ export function useContentStudio(slug: string) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { previewScale } = usePreviewScale(stageViewportRef);
   const [format, setFormat] = useState<keyof typeof FORMATS>("story");
-  const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
+  const [theme, setTheme] = useState<StyleKey>(DEFAULT_STYLE);
   const [showPrice, setShowPrice] = useState(true);
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
   const [templateId, setTemplateId] = useState<TemplateId>("classic");
@@ -84,7 +89,14 @@ export function useContentStudio(slug: string) {
           ? "د.ك."
           : currency
     : currency;
-  const palette = THEMES[theme];
+  // The colour styles: the store's own (from its storefront colours) and the studio's.
+  const settingsRow = settingsQ.data;
+  const brandColour = brand.primary_color;
+  const styles = useMemo(
+    () => studioStyles(storeColoursFrom(settingsRow, { primary_color: brandColour })),
+    [settingsRow, brandColour],
+  );
+  const palette = styles[theme];
   const editionIsAr = containsArabic(editionLabel);
   const headlineIsAr = containsArabic(headline);
   const bodyIsAr = containsArabic(body);
@@ -150,7 +162,7 @@ export function useContentStudio(slug: string) {
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
-    theme,
+    style: palette,
     photo: product.photo,
     isCurrentVideo: product.isCurrentVideo,
     logo,
@@ -303,6 +315,7 @@ export function useContentStudio(slug: string) {
     setFormat,
     theme,
     setTheme,
+    styles,
     showPrice,
     setShowPrice,
     imageFit,

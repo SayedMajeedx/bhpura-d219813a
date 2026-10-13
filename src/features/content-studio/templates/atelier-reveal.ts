@@ -10,6 +10,7 @@ import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/font
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
 import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
 import { ease, mix, presence, progress, stagger } from "@/features/content-studio/engine/timeline";
+import { CONTENT_BOTTOM, photoHeight } from "@/features/content-studio/engine/safe-area";
 
 const DURATION = 7;
 
@@ -17,19 +18,17 @@ const DURATION = 7;
  * Where things sit in each format, as fractions of the height. Stories keep
  * the top and bottom clear of Instagram's own buttons, so their handle sits
  * in the top row beside the wordmark (`footerY` null); feed posts have no
- * overlay and close with a footer line.
+ * overlay and close with a footer line. The photo takes whatever height the
+ * copy below it leaves, down to `minPhotoH`.
  */
 const LAYOUT: Record<
   FormatKey,
-  { logoY: number; photoY: number; photoH: number; footerY: number | null; headlineMax: number }
+  { logoY: number; photoY: number; minPhotoH: number; footerY: number | null; headlineMax: number }
 > = {
-  story: { logoY: 0.11, photoY: 0.155, photoH: 0.465, footerY: null, headlineMax: 112 },
-  portrait: { logoY: 0.045, photoY: 0.1, photoH: 0.53, footerY: 0.94, headlineMax: 110 },
-  square: { logoY: 0.045, photoY: 0.105, photoH: 0.48, footerY: 0.935, headlineMax: 92 },
+  story: { logoY: 0.11, photoY: 0.155, minPhotoH: 0.36, footerY: null, headlineMax: 112 },
+  portrait: { logoY: 0.045, photoY: 0.1, minPhotoH: 0.34, footerY: 0.94, headlineMax: 110 },
+  square: { logoY: 0.045, photoY: 0.105, minPhotoH: 0.3, footerY: 0.935, headlineMax: 92 },
 };
-
-/** Height (fraction of H) the photo gives up when the post has body copy. */
-const BODY_ROOM: Record<FormatKey, number> = { story: 0.075, portrait: 0.085, square: 0.1 };
 
 function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   const { width: W, height: H, brand, lang } = scene;
@@ -57,14 +56,49 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   });
   ctx.restore();
 
-  // The photo, unveiled from below while it settles (a slow push out). It
-  // gives up some height when there is body copy to set under the headline.
-  const bodyRoom = scene.body.trim() ? BODY_ROOM[scene.format] : 0;
+  // The copy is measured first: the photo takes the height it leaves.
+  const headline = scene.headline.trim() || scene.productName;
+  const family = displayFont(
+    textDirection(headline) === "rtl" ? "ar" : "en",
+    scene.brand.displayFamilies,
+  );
+  const fit = fitText(
+    headline,
+    { maxWidth: W - 2 * margin, maxLines: 2, min: 56 * u, max: layout.headlineMax * u },
+    (size) => {
+      ctx.font = font(size, family, 600);
+      return (text) => ctx.measureText(text).width;
+    },
+  );
+  const lineHeight = fit.size * 1.04;
+  const body = scene.body.trim();
+  const bodyFit = body
+    ? fitText(body, { maxWidth: W - 2 * margin, maxLines: 2, min: 24 * u, max: 30 * u }, (size) => {
+        ctx.font = font(size, STUDIO_FONTS.body, 400);
+        return (text) => ctx.measureText(text).width;
+      })
+    : null;
+  const bodyLines = bodyFit ? bodyFit.lines.slice(0, 2) : [];
+  const bodyLineHeight = bodyFit ? bodyFit.size * 1.45 : 0;
+  const priceSize = 34 * u;
+  const below =
+    0.035 * H +
+    fit.lines.length * lineHeight +
+    (bodyFit ? 0.012 * H + bodyLines.length * bodyLineHeight : 0) +
+    0.016 * H +
+    (scene.price ? 0.028 * H + priceSize * 1.9 : Math.max(1, 3 * u));
+
+  // The photo, unveiled from below while it settles (a slow push out).
   const photo: Box = {
     x: margin,
     y: layout.photoY * H,
     w: W - 2 * margin,
-    h: (layout.photoH - bodyRoom) * H,
+    h: photoHeight({
+      top: layout.photoY * H,
+      bottom: CONTENT_BOTTOM[scene.format] * H,
+      below,
+      min: layout.minPhotoH * H,
+    }),
   };
   const open = progress(t, 0.15, 1.1, ease.inOutCubic);
   const close = progress(t, DURATION - 0.55, 0.5, ease.inOutCubic);
@@ -97,20 +131,6 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   }
 
   // Headline: line by line, rising into place.
-  const headline = scene.headline.trim() || scene.productName;
-  const family = displayFont(
-    textDirection(headline) === "rtl" ? "ar" : "en",
-    scene.brand.displayFamilies,
-  );
-  const fit = fitText(
-    headline,
-    { maxWidth: W - 2 * margin, maxLines: 2, min: 56 * u, max: layout.headlineMax * u },
-    (size) => {
-      ctx.font = font(size, family, 600);
-      return (text) => ctx.measureText(text).width;
-    },
-  );
-  const lineHeight = fit.size * 1.04;
   const headlineY = photo.y + photo.h + 0.035 * H;
   ctx.fillStyle = palette.ink;
   ctx.font = font(fit.size, family, 600);
@@ -127,28 +147,16 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
 
   // The body copy, two lines at most, following the headline in.
   let textBottom = headlineY + fit.lines.length * lineHeight;
-  const body = scene.body.trim();
-  if (body) {
-    const bodySize = 30 * u;
-    ctx.font = font(bodySize, STUDIO_FONTS.body, 400);
-    const bodyFit = fitText(
-      body,
-      { maxWidth: W - 2 * margin, maxLines: 2, min: 24 * u, max: bodySize },
-      (size) => {
-        ctx.font = font(size, STUDIO_FONTS.body, 400);
-        return (text) => ctx.measureText(text).width;
-      },
-    );
+  if (bodyFit) {
     const bodyY = textBottom + 0.012 * H;
     ctx.save();
     ctx.fillStyle = palette.ink;
     ctx.globalAlpha = 0.78;
     ctx.font = font(bodyFit.size, STUDIO_FONTS.body, 400);
-    const lines = bodyFit.lines.slice(0, 2);
-    drawLines(ctx, lines, {
+    drawLines(ctx, bodyLines, {
       x: startX,
       y: bodyY,
-      lineHeight: bodyFit.size * 1.45,
+      lineHeight: bodyLineHeight,
       dir: textDirection(body),
       reveal: (index) => {
         const p = presence(t, { start: stagger(1.35, index, 0.1), end: DURATION });
@@ -156,7 +164,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
       },
     });
     ctx.restore();
-    textBottom = bodyY + lines.length * bodyFit.size * 1.45;
+    textBottom = bodyY + bodyLines.length * bodyLineHeight;
   }
 
   // A fine line drawn under the text, from the reading start.
@@ -176,7 +184,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     const stamp = progress(t, 1.75, 0.55, ease.outBack);
     const alpha = presence(t, { start: 1.75, end: DURATION, enter: 0.3 });
     if (alpha > 0) {
-      const size = 34 * u;
+      const size = priceSize;
       ctx.save();
       ctx.font = font(size, STUDIO_FONTS.body, 500);
       const textW = ctx.measureText(scene.price).width;

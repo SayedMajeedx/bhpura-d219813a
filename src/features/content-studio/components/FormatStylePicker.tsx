@@ -1,13 +1,23 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
-import { FORMATS, THEMES } from "@/features/content-studio/lib/studio-content";
+import { FORMATS } from "@/features/content-studio/lib/studio-content";
+import { STYLE_KEYS } from "@/features/content-studio/lib/studio-styles";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
 /** Publish size, colour style and how the product photo fills the frame. */
 export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, format, setFormat, theme, setTheme, imageFit, setImageFit, activeTemplate } =
-    studio;
+  const {
+    isAr,
+    format,
+    setFormat,
+    theme,
+    setTheme,
+    styles,
+    imageFit,
+    setImageFit,
+    activeTemplate,
+  } = studio;
   return (
     <>
       {/* Publish Size */}
@@ -58,13 +68,15 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
           {isAr ? "الأسلوب البصري" : "Visual style"}
         </Label>
         <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
-          {Object.entries(THEMES).map(([key, item]) => {
+          {/* The store's own colours first, then the studio's editorial looks. */}
+          {STYLE_KEYS.map((key) => {
+            const item = styles[key];
             const isSelected = theme === key;
             return (
               <button
                 type="button"
                 key={key}
-                onClick={() => setTheme(key as keyof typeof THEMES)}
+                onClick={() => setTheme(key)}
                 className={cn(
                   "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                   isSelected
