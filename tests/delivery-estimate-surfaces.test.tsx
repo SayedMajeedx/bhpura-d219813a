@@ -104,11 +104,11 @@ describe("checkout's delivery time", () => {
     ).toEqual(["Within 24 hours", "Within 7 - 10 days"]);
   });
 
-  it("shows nothing new for a store with no made-to-order time, and the default when none is written", () => {
+  it("says nothing about time when the store wrote none: it does not make one up", () => {
+    // It once said "Within 24 - 48 hours in Bahrain" here, a promise no store had made.
     const none = { ...store, delivery_estimate_tailored_en: null, delivery_estimate_en: null };
-    expect(lines({ ready: true, tailored: true }, none).estimatedDeliveryLines).toEqual([
-      { kind: "all", label: null, text: "Within 24 - 48 hours in Bahrain" },
-    ]);
+    expect(lines({ ready: true, tailored: true }, none).estimatedDeliveryLines).toEqual([]);
+    expect(lines({ ready: true, tailored: true }, none).homeEstimateLines).toEqual([]);
   });
 
   it("offers the Bahrain card in the address step only when the store wrote a time", () => {

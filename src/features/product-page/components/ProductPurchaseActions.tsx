@@ -55,16 +55,13 @@ export function ProductPurchaseActions({
   const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
   // A ready size is capped by its stock; a made-to-order piece by the store's limit, if it has one.
   const quantityCap = isTailoringActive ? (tailoringLeft ?? Number.POSITIVE_INFINITY) : maxStock;
-  const estimate = deliveryEstimateLines({
-    kinds: { ready: !tailored, tailored },
-    settings,
-    lang,
-    readyText:
-      readyEstimate(settings, lang) ||
-      (lang === "ar"
-        ? "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
-        : "Estimated delivery within 24 - 48 hours"),
-  })[0].text;
+  const estimate =
+    deliveryEstimateLines({
+      kinds: { ready: !tailored, tailored },
+      settings,
+      lang,
+      readyText: readyEstimate(settings, lang),
+    })[0]?.text ?? null;
   return (
     <>
       {!isCatalogMode(settings) && (variant || isTailoringActive) && (
@@ -201,7 +198,7 @@ export function ProductPurchaseActions({
         </div>
       )}
 
-      {settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
+      {estimate && settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
         <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
           <Truck className="h-4 w-4 text-primary shrink-0" />
           <span className="font-medium text-foreground">{estimate}</span>

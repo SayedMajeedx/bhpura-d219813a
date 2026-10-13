@@ -219,6 +219,21 @@ describe("design system guardrails", () => {
     expect(countMatches(/\btruncate\b/g)).toBeLessThanOrEqual(TRUNCATE_BUDGET);
   });
 
+  it("never makes a delivery or returns promise of its own on a shopper's screen", () => {
+    // What a shopper is told about delivery and returns is the store's own settings, put into
+    // words by `src/lib/delivery-info.ts` and `delivery-estimate.ts`. The product page once told
+    // every store's shoppers "2-4 business days across all GCC countries, returns within 14
+    // days", and checkout filled an unwritten time with "24 - 48 hours in Bahrain".
+    const shopperScreens = (rel: string) =>
+      rel.startsWith("routes/$slug.") ||
+      rel.startsWith("components/storefront/") ||
+      /^features\/(product-page|checkout|storefront-[a-z-]+|services-home)\//.test(rel);
+    const promise =
+      /\d+\s*[-–]\s*\d+\s*(business days|hours|أيام عمل|ساعة)|GCC countries|دول مجلس التعاون|within 14 days|خلال 14 يوم/;
+    const offenders = FILES.filter((file) => shopperScreens(file.rel) && promise.test(file.source));
+    expect(offenders.map((file) => file.rel)).toEqual([]);
+  });
+
   it("never sizes a grid column with a bare fr", () => {
     // `1fr` is `minmax(auto, 1fr)`: the column cannot get narrower than its widest content, so
     // one long product name pushes the page wider than a phone, and because the page hides

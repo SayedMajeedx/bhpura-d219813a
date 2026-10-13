@@ -263,8 +263,6 @@ export type PublicSettings = {
   analytics_consent_required: boolean;
   storefront_loader_text_ar?: string | null;
   storefront_loader_text_en?: string | null;
-  shipping_policy_ar?: string | null;
-  shipping_policy_en?: string | null;
   brand_story_title_ar?: string | null;
   brand_story_title_en?: string | null;
   brand_story_subtitle_ar?: string | null;
