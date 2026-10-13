@@ -1,10 +1,11 @@
 import { useEffect, type Dispatch, type SetStateAction } from "react";
 import type { StorefrontVariant as Variant } from "@/lib/data/storefront";
+import { chosenVariant } from "@/features/product-page/lib/variant-options";
 
 /**
  * Keeps the product page's option pickers and the chosen variant in step:
  * an axis with one value is pre-selected, a product with one variant selects
- * it, and every change of option picks the first matching variant (or none).
+ * it, and a variant is chosen only once every option is (see chosenVariant).
  */
 export function useVariantSelectionSync({
   variants,
@@ -98,21 +99,27 @@ export function useVariantSelectionSync({
     setSelectedOptionFive,
   ]);
 
-  // Sync selected attributes back to variantId
+  // The chosen options name a variant only once every option offered with
+  // more than one value is chosen; until then none is picked for the shopper.
   useEffect(() => {
-    const match = variants.find((v) => {
-      const colorMatch = !selectedColor || v.color === selectedColor;
-      const sizeMatch = !selectedSize || v.size === selectedSize;
-      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      const fourMatch = !selectedOptionFour || v.option_four === selectedOptionFour;
-      const fiveMatch = !selectedOptionFive || v.option_five === selectedOptionFive;
-      return colorMatch && sizeMatch && fabricMatch && fourMatch && fiveMatch;
-    });
-    if (match) {
-      setVariantId(match.id);
-    } else {
-      setVariantId(null);
-    }
+    const match = chosenVariant(
+      variants,
+      {
+        size: selectedSize,
+        color: selectedColor,
+        fabric: selectedFabric,
+        four: selectedOptionFour,
+        five: selectedOptionFive,
+      },
+      {
+        size: uniqueSizes,
+        color: uniqueColors,
+        fabric: uniqueFabrics,
+        four: uniqueFour,
+        five: uniqueFive,
+      },
+    );
+    setVariantId(match?.id ?? null);
   }, [
     selectedColor,
     selectedSize,
@@ -120,6 +127,11 @@ export function useVariantSelectionSync({
     selectedOptionFour,
     selectedOptionFive,
     variants,
+    uniqueSizes,
+    uniqueColors,
+    uniqueFabrics,
+    uniqueFour,
+    uniqueFive,
     setVariantId,
   ]);
 }

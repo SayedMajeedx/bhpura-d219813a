@@ -162,6 +162,9 @@ export type RecommendationProduct = {
     original_price: number | null;
     stock_main: number;
     stock_incubator?: number;
+    size?: string | null;
+    size_unit?: string | null;
+    color?: string | null;
   }>;
 };
 
