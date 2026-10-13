@@ -5,6 +5,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import {
   checkProductionReadiness,
+  claimScheduledRun,
   createCorrelationId,
   logOperationalEvent,
   pruneHealthEvents,
@@ -93,6 +94,11 @@ async function runScheduledTasks(
   g.__CLOUDFLARE_ENV__ = env;
 
   const correlationId = createCorrelationId();
+  // A run that is started twice happens once: the second start finds its minute claimed.
+  if (!(await claimScheduledRun(env, cron, scheduledTime))) {
+    logOperationalEvent("info", "scheduled_run_already_claimed", { cron, correlationId });
+    return;
+  }
   if (scheduledWork(cron) === "daily") {
     await runDailyTasks(cron, env, correlationId);
     return;

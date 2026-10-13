@@ -31,6 +31,14 @@ export function scheduledWork(cron: string): "daily" | "every-minute" {
   return cron === DAILY_CRON ? "daily" : "every-minute";
 }
 
+/**
+ * The minute a scheduled run belongs to, as the claim is keyed. Cloudflare has started every run
+ * twice, a few seconds apart in the same minute: both starts name the same minute.
+ */
+export function runMinute(scheduledTime: number): string {
+  return new Date(Math.floor(scheduledTime / 60_000) * 60_000).toISOString();
+}
+
 export function isHeartbeatMinute(scheduledTime: number): boolean {
   return new Date(scheduledTime).getUTCMinutes() % HEARTBEAT_MINUTES === 0;
 }

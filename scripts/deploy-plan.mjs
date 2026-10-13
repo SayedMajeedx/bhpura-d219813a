@@ -1,15 +1,19 @@
 /**
  * What `npm run deploy` does, decided by where it runs.
  *
- * Cloudflare builds every pushed branch (Workers Builds) and ran this same script for each of
- * them, so every push of any branch replaced what was live: unreviewed code went out on push, and
+ * Cloudflare builds every pushed branch (Workers Builds), and its build settings released each of
+ * them: every push of any branch replaced what was live, so unreviewed code went out on push and
  * a branch behind main rolled production back until the next push. Found on 2026-10-13 in the
  * health log, which changed its behaviour two minutes after a branch was pushed and five hours
  * before its pull request was merged.
  *
- * Only the production branch is released now. Any other branch is uploaded as a version: it can
- * be previewed and nothing that is live changes. A run outside Cloudflare's builds (a person at
- * a terminal) releases, as before.
+ * Through this script only the production branch is released. Any other branch is uploaded as a
+ * version: it can be previewed and nothing that is live changes. A run outside Cloudflare's
+ * builds (a person at a terminal) releases, as before.
+ *
+ * The script decides only for a build that runs it. The setting that released every branch is in
+ * the Cloudflare dashboard (the worker's Builds settings, "Non-production branch deploy
+ * command"): it must be `npx wrangler versions upload`, or this script. See docs/ci-cd.md.
  */
 
 /** The branch whose builds are released. */
