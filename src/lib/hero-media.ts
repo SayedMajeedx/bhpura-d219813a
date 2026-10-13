@@ -210,6 +210,27 @@ export const HERO_FILL_MOBILE = {
 export const HERO_FILL_DESKTOP_PX = { compact: 420, standard: 520, cinematic: 620 } as const;
 
 /**
+ * A store's phone hero shape until the merchant picks one (the database default
+ * too, migration 20261014100000): landscape 4:3 leaves room for the first
+ * products on a phone's first screen; 4:5 filled 73% of it.
+ */
+export const DEFAULT_HERO_MOBILE = "landscape_4_3" as const;
+
+/** A phone as the hero is judged on: an iPhone's width, and the height Safari leaves visible. */
+export const PHONE_FIRST_SCREEN = { w: 390, h: 664 } as const;
+
+/**
+ * How much of a phone's first screen a Fill hero in `mobileRatio` takes, as a
+ * whole percentage (more than 100 when it is taller than the screen): what the
+ * hero settings tell the merchant beside the shape.
+ */
+export function heroPhoneShare(mobileRatio?: string | null): number {
+  const { ratio, minPx } = HERO_FILL_MOBILE[mobileKey(mobileRatio)];
+  const height = Math.max(minPx, PHONE_FIRST_SCREEN.w / ratio);
+  return Math.round((height / PHONE_FIRST_SCREEN.h) * 100);
+}
+
+/**
  * The hero frame's size classes. Smart Fit follows the media's own shape (CSS
  * variables set by HeroV2) within the HERO_SMART_FRAME limits; Fill uses the
  * merchant's phone ratio and desktop height (HERO_FILL_MOBILE /
@@ -231,7 +252,7 @@ export function heroFrameSizingClass(args: {
           : "sm:max-h-[min(80svh,680px)]";
     return `aspect-[var(--hero-ar-m)] sm:aspect-[var(--hero-ar)] min-h-[180px] max-h-[min(78svh,680px)] sm:min-h-[320px] ${desktopMax}`;
   }
-  const mobile = args.mobileRatio ?? "portrait_4_5";
+  const mobile = args.mobileRatio ?? DEFAULT_HERO_MOBILE;
   const mobileClass =
     mobile === "story_9_16"
       ? "aspect-[9/16] min-h-[520px]"
@@ -264,7 +285,7 @@ function desktopKey(value?: string | null): DesktopHeightKey {
 }
 
 function mobileKey(value?: string | null): MobileRatioKey {
-  return value && value in HERO_FILL_MOBILE ? (value as MobileRatioKey) : "portrait_4_5";
+  return value && value in HERO_FILL_MOBILE ? (value as MobileRatioKey) : DEFAULT_HERO_MOBILE;
 }
 
 export function isSmartFitSetting(fitSetting?: string | null): boolean {
