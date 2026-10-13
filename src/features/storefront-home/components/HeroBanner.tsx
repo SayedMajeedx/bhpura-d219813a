@@ -61,8 +61,9 @@ export function HeroBanner() {
           type: bgType,
           title_en: settings.hero_title_en || brand.name_en,
           title_ar: settings.hero_title_ar || brand.name_ar || brand.name_en,
-          body_en: brand.about_en || "A curated collection made for you.",
-          body_ar: brand.about_ar || "مجموعة مختارة بعناية لك.",
+          // The store's own words, or none: a sentence the store never wrote is not shown in its name.
+          body_en: brand.about_en || "",
+          body_ar: brand.about_ar || "",
           media_url: bgUrl || "",
           media_poster_url_ar: bgPoster,
           media_poster_url_en: bgPoster,

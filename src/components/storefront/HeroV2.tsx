@@ -9,6 +9,7 @@ import {
   type AspectProbe,
 } from "@/lib/media-aspect";
 import {
+  DEFAULT_HERO_MOBILE,
   heroFocalPosition,
   heroFrameSizingClass,
   isSmartFitSetting,
@@ -161,7 +162,7 @@ export function HeroV2({ slides, background }: HeroV2Props) {
 
   // Responsive Hero Layout & Presentation Settings
   const isFullBleed = (settings.hero_layout ?? "full_bleed") === "full_bleed";
-  const mobileRatio = settings.hero_aspect_mobile ?? "portrait_4_5";
+  const mobileRatio = settings.hero_aspect_mobile ?? DEFAULT_HERO_MOBILE;
   const desktopHeight = settings.hero_height_desktop ?? "standard";
   const showArrows = hasMultiple && settings.hero_show_arrows !== false;
   const videoFit = settings.hero_video_fit ?? "contain_ambient";
