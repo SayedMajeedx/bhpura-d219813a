@@ -112,7 +112,9 @@ To prevent broken code or unvalidated migrations from entering `main`, configure
 
 ## 4. Release & Rollback Procedures
 
-Deployment is strictly separated from validation. Validating a PR does not automatically deploy code. Production deployments require deliberate deployment commands.
+Deployment is separated from validation: only the production branch is released.
+
+Cloudflare (Workers Builds) builds every pushed branch and runs `npm run deploy` for each. Until 2026-10-13 that released every branch: unreviewed code went live on push, and a branch behind `main` rolled production back until the next push. `npm run deploy` now decides by the branch it is building (`scripts/deploy-plan.mjs`, `tests/deploy-plan.test.ts`): a build of `main` is released (`wrangler deploy`), any other branch is only uploaded as a version to preview (`wrangler versions upload`), and a run at a terminal releases as before. If the build's commands are ever changed in the Cloudflare dashboard, keep them going through `npm run deploy`, and check with `npx wrangler deployments list` that a branch push adds no deployment.
 
 ### Production Deployment Checklist
 
