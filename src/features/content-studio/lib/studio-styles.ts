@@ -94,10 +94,14 @@ export function contrastRatio(a: string, b: string): number {
 const isLight = (color: string) => relativeLuminance(color) > 0.4;
 
 /**
- * The first candidate that reads on `ground`; failing all, the store's colour
+ * The first candidate that reads on `ground` (WCAG AA); failing all, `base`
  * deepened (or lightened, on a dark ground) step by step until it does.
  */
-function readableInk(ground: string, candidates: Array<string | null>, base: string): string {
+export function readableInk(
+  ground: string,
+  candidates: Array<string | null>,
+  base: string,
+): string {
   for (const candidate of candidates) {
     if (candidate && contrastRatio(candidate, ground) >= READABLE) return candidate;
   }

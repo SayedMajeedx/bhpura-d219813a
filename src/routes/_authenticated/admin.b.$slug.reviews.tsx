@@ -20,7 +20,6 @@ import {
   filterReviews,
   REVIEW_HIGHLIGHT_LABELS,
   type OrderReviewAdminRow,
-  storyBrandColor,
 } from "@/lib/order-reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,6 +35,8 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { ReviewStoryDialog } from "@/features/review-story/components/ReviewStoryDialog";
+import { storyColor } from "@/features/review-story/lib/review-story";
+import { storeColoursFrom } from "@/features/content-studio/lib/studio-styles";
 import { reviewsQueries } from "@/lib/data/reviews";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
@@ -314,7 +315,7 @@ function CustomerReviewsPage() {
           brandStyleQ.data?.business_name?.trim() ||
           (isAr ? brand.name_ar || brand.name_en : brand.name_en)
         }
-        brandColor={storyBrandColor(brand.slug, brand.primary_color)}
+        brandColor={storyColor(storeColoursFrom(brandStyleQ.data, brand))}
         logoUrl={brand.logo_url}
         isAr={isAr}
         orderDate={orderDate}
