@@ -43,6 +43,8 @@ describe("batch export", () => {
   it("runs the templates built around one product", () => {
     expect(BATCH_TEMPLATES).toEqual([
       "atelier-reveal",
+      "reel-cut",
+      "bold-poster",
       "editorial-cover",
       "price-drop",
       "swatch-run",

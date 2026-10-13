@@ -79,6 +79,7 @@ describe("the lookbook's products", () => {
       id: "a",
       name: "Noor",
       price: 20,
+      minutes: null,
       imageUrl: "https://cdn.example/a.jpg",
     });
     expect(lookbookEntries([product("a")], [], "ar")[0].name).toBe("منتج a");

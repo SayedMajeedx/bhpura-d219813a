@@ -213,13 +213,15 @@ describe("templatesForStore", () => {
       "editorial-cover",
       "bold-poster",
       "price-drop",
+      "menu-board",
+      "bundle-set",
       "occasion-pack",
     ]);
   });
 
   it("gives a roastery its own set, and keeps every template for every store", () => {
     const coffee = order("coffee");
-    expect(coffee.slice(0, 3)).toEqual(["bold-poster*", "swatch-run*", "price-drop*"]);
+    expect(coffee.slice(0, 3)).toEqual(["menu-board*", "bold-poster*", "swatch-run*"]);
     expect(coffee).toHaveLength(ENGINE_TEMPLATES.length);
   });
 

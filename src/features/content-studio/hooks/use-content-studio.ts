@@ -142,7 +142,7 @@ export function useContentStudio(slug: string) {
   const variantRows = product.variantsQ.data;
   const variantList = useMemo(() => variantRows ?? [], [variantRows]);
   const lookbook = useLookbook({
-    active: templateId === "lookbook-carousel",
+    templateId,
     products: product.products,
     variants: variantList,
     leadId: selected?.id,

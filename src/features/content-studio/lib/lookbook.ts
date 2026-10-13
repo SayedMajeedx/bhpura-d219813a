@@ -6,7 +6,32 @@ export const LOOKBOOK_MAX = 5;
 /** How many products a lookbook starts with, before the merchant picks. */
 export const LOOKBOOK_DEFAULT = 4;
 
-type PricedVariant = { product_id: string; selling_price: number | null };
+/** How many products a template that shows several takes: at least, at most, and to start with. */
+export type CollectionLimits = { min: number; max: number; start: number };
+
+/**
+ * The templates that show several products, sharing one pick of them: the
+ * Lookbook's carousel, a Menu's rows (a café's drinks, a salon's services)
+ * and a Bundle's set of two or three.
+ */
+export const COLLECTION_LIMITS = {
+  "lookbook-carousel": { min: LOOKBOOK_MIN, max: LOOKBOOK_MAX, start: LOOKBOOK_DEFAULT },
+  "menu-board": { min: 2, max: 6, start: 5 },
+  "bundle-set": { min: 2, max: 3, start: 3 },
+} as const satisfies Record<string, CollectionLimits>;
+
+export type CollectionTemplateId = keyof typeof COLLECTION_LIMITS;
+
+export function isCollectionTemplate(id: string): id is CollectionTemplateId {
+  return id in COLLECTION_LIMITS;
+}
+
+type PricedVariant = {
+  product_id: string;
+  selling_price: number | null;
+  /** A service's length, when the variant is one. */
+  duration_minutes?: number | null;
+};
 
 /** One product in the lookbook, as the template shows it. */
 export type LookbookEntry = {
@@ -14,6 +39,8 @@ export type LookbookEntry = {
   name: string;
   /** The price it starts from, or null when it has none. */
   price: number | null;
+  /** A service's shortest length in minutes, or null for a product. */
+  minutes: number | null;
   imageUrl: string | null;
 };
 
@@ -26,17 +53,18 @@ export function lookbookProducts(
   products: readonly Product[],
   chosenIds: readonly string[],
   leadId: string | null | undefined,
+  limits: CollectionLimits = COLLECTION_LIMITS["lookbook-carousel"],
 ): Product[] {
   if (chosenIds.length > 0) {
     const byId = new Map(products.map((product) => [product.id, product]));
     return chosenIds
       .map((id) => byId.get(id))
       .filter((product): product is Product => Boolean(product))
-      .slice(0, LOOKBOOK_MAX);
+      .slice(0, limits.max);
   }
   const lead = products.find((product) => product.id === leadId);
   const rest = products.filter((product) => product.id !== lead?.id && firstImage(product));
-  return [...(lead ? [lead] : []), ...rest].slice(0, LOOKBOOK_DEFAULT);
+  return [...(lead ? [lead] : []), ...rest].slice(0, limits.start);
 }
 
 /**
@@ -44,11 +72,17 @@ export function lookbookProducts(
  * when it is already in (never below the minimum). Returns the same list when
  * nothing may change.
  */
-export function toggleLookbookPick(current: readonly string[], id: string): readonly string[] {
-  if (current.includes(id)) {
-    return current.length > LOOKBOOK_MIN ? current.filter((picked) => picked !== id) : current;
+export function toggleLookbookPick(
+  current: readonly string[],
+  id: string,
+  limits: CollectionLimits = COLLECTION_LIMITS["lookbook-carousel"],
+): readonly string[] {
+  // Picks made for a template that takes more (a Lookbook's five, then a Bundle) count as its first ones.
+  const shown = current.length > limits.max ? current.slice(0, limits.max) : current;
+  if (shown.includes(id)) {
+    return shown.length > limits.min ? shown.filter((picked) => picked !== id) : current;
   }
-  return current.length < LOOKBOOK_MAX ? [...current, id] : current;
+  return shown.length < limits.max ? [...shown, id] : current;
 }
 
 /**
@@ -65,6 +99,18 @@ export function fromPrice(product: Product, variants: readonly PricedVariant[]):
   return Number.isFinite(base) && base > 0 ? base : null;
 }
 
+/** A service's shortest length in minutes (its variants' durations), or null for a product. */
+export function shortestMinutes(
+  product: Product,
+  variants: readonly PricedVariant[],
+): number | null {
+  const minutes = variants
+    .filter((variant) => variant.product_id === product.id)
+    .map((variant) => Number(variant.duration_minutes))
+    .filter((value) => Number.isFinite(value) && value > 0);
+  return minutes.length > 0 ? Math.min(...minutes) : null;
+}
+
 /** The lookbook's products, named in `lang`, with their price and photo. */
 export function lookbookEntries(
   products: readonly Product[],
@@ -77,6 +123,7 @@ export function lookbookEntries(
       (lang === "ar" ? product.name_ar || product.name : product.name_en || product.name) ||
       product.name,
     price: fromPrice(product, variants),
+    minutes: shortestMinutes(product, variants),
     imageUrl: firstImage(product),
   }));
 }

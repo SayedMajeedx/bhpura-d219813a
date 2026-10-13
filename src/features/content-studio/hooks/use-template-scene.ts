@@ -7,6 +7,7 @@ import type { OptionRun } from "@/features/content-studio/lib/option-run";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
 import type { LookbookEntry } from "@/features/content-studio/lib/lookbook";
 import { formatAmount } from "@/features/content-studio/lib/batch";
+import { formatDuration } from "@/lib/bookings/format";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -194,8 +195,13 @@ export function useTemplateScene({
             price:
               showPrice && entry.price ? `${formatAmount(entry.price)} ${currencySymbol}` : null,
             media: collectionImages[index] ?? null,
+            note: entry.minutes ? formatDuration(entry.minutes, isAr) : null,
           }))
         : null,
+      collectionTotal:
+        showPrice && collection && collection.every((entry) => entry.price)
+          ? `${formatAmount(collection.reduce((sum, entry) => sum + (entry.price ?? 0), 0))} ${currencySymbol}`
+          : null,
       detail,
       occasion,
     }),
