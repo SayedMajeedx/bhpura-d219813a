@@ -9,6 +9,8 @@ import { occasionPack } from "@/features/content-studio/templates/occasion-pack"
 import { lookbookCarousel } from "@/features/content-studio/templates/lookbook-carousel";
 import { reelCut } from "@/features/content-studio/templates/reel-cut";
 import { boldPoster } from "@/features/content-studio/templates/bold-poster";
+import { menuBoard } from "@/features/content-studio/templates/menu-board";
+import { bundleSet } from "@/features/content-studio/templates/bundle-set";
 
 /** The animated templates, in the order the picker shows them after Classic. */
 export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
@@ -20,6 +22,8 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   swatchRun,
   detailZoom,
   lookbookCarousel,
+  menuBoard,
+  bundleSet,
   occasionPack,
 ];
 

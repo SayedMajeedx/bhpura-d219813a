@@ -67,7 +67,7 @@ export function readDraftSettings(raw: unknown): DraftSettings {
     variantId: typeof s.variantId === "string" ? s.variantId : null,
     mediaUrl: typeof s.mediaUrl === "string" ? s.mediaUrl : null,
     lookbookIds: Array.isArray(s.lookbookIds)
-      ? s.lookbookIds.filter((id): id is string => typeof id === "string").slice(0, 5)
+      ? s.lookbookIds.filter((id): id is string => typeof id === "string").slice(0, 6)
       : [],
     detail: detail
       ? {

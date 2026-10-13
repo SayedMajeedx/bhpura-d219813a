@@ -543,6 +543,31 @@ describe("the content studio", () => {
     expect(zipName).toBe("pura-lookbook-carousel.zip");
   });
 
+  it("draws a Menu from the same pick, and a Bundle's set with its total", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /^Menu/ }));
+    const menu = await screen.findByRole("group", { name: "On the menu" });
+    expect(within(menu).getByRole("button", { name: /Silk Abaya/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("2 / 6")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /^Bundle/ }));
+    await screen.findByRole("group", { name: "In the set" });
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: { collectionTotal: string | null } },
+    ];
+    expect(template.id).toBe("bundle-set");
+    // 39 (the abaya's sale) and 30 (the kaftan) together.
+    expect(scene.collectionTotal).toBe("69.000 BHD");
+  });
+
   it("zooms into the detail the merchant taps, named from the product's fabric", async () => {
     await renderStudio();
     fireEvent.click(screen.getByRole("radio", { name: /Detail Zoom/ }));

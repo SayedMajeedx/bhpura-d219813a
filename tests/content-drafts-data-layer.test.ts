@@ -135,7 +135,8 @@ describe("reading a draft's settings", () => {
       logoTint: "auto",
       headline: "The Eid edit",
       body: "",
-      lookbookIds: ["a", "b", "c", "d", "e"],
+      // Up to six: a Menu takes six products.
+      lookbookIds: ["a", "b", "c", "d", "e", "f"],
       detail: { x: 1, y: 0.3, label: "Silk", note: "" },
       occasion: { id: "eid-al-fitr", greeting: "Eid Mubarak", offer: "20%" },
     });

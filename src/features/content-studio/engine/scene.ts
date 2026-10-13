@@ -64,10 +64,18 @@ export type SceneData = {
     stops: Array<{ label: string; color: string | null; media: Drawable | null }>;
   } | null;
   /**
-   * The products a lookbook runs through, in order, each with its formatted
-   * price (null when prices are hidden) and photo. Null outside the lookbook.
+   * The products a lookbook, a menu or a bundle shows, in order, each with its
+   * formatted price (null when prices are hidden), photo, and a short note (a
+   * service's length, "60 min"). Null outside those templates.
    */
-  collection: Array<{ name: string; price: string | null; media: Drawable | null }> | null;
+  collection: Array<{
+    name: string;
+    price: string | null;
+    media: Drawable | null;
+    note?: string | null;
+  }> | null;
+  /** The collection's prices added up and formatted, when every one has a price. */
+  collectionTotal?: string | null;
   /**
    * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
    * and down), what it is (the fabric or finish) and a note (the occasion).

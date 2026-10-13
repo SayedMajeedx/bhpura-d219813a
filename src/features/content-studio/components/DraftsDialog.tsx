@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultDraftName, readDraftFormat } from "@/features/content-studio/lib/drafts";
 import { occasionById } from "@/features/content-studio/lib/occasions";
+import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
@@ -63,7 +64,7 @@ function DraftsPanel({ studio }: { studio: ContentStudio }) {
   const subject =
     templateId === "occasion-pack"
       ? occasionById(occasionId).name[lang]
-      : templateId === "lookbook-carousel"
+      : isCollectionTemplate(templateId)
         ? isAr
           ? `${lookbookIds.length} منتجات`
           : `${lookbookIds.length} products`
