@@ -16,6 +16,7 @@ import { TemplatePreview } from "@/features/content-studio/components/TemplatePr
 import { LookbookPicker } from "@/features/content-studio/components/LookbookPicker";
 import { DetailPointPicker } from "@/features/content-studio/components/DetailPointPicker";
 import { OccasionPanel } from "@/features/content-studio/components/OccasionPanel";
+import { MomentPanel } from "@/features/content-studio/components/MomentPanel";
 import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
@@ -85,6 +86,8 @@ function ContentStudioPage() {
               <ProductMediaPicker studio={studio} />
             )}
             {studio.templateId === "detail-zoom" && <DetailPointPicker studio={studio} />}
+            {/* Last Chance's day and code, Back in Stock's shelf, Customer Favourite's reviews. */}
+            <MomentPanel studio={studio} />
 
             <FormatStylePicker studio={studio} />
 

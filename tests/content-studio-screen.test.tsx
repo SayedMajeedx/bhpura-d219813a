@@ -136,6 +136,29 @@ const settings = async (importOriginal: () => Promise<object>) => {
     },
   };
 };
+// The store's codes: one any shopper may use, and one made for a single customer's cart.
+const promoCodes = async (importOriginal: () => Promise<object>) => {
+  const actual = (await importOriginal()) as { promoCodesQueries: object };
+  const code = {
+    discount_type: "percentage",
+    discount_value: 15,
+    is_active: true,
+    start_date: null,
+    end_date: "2099-01-01T12:00:00Z",
+  };
+  return {
+    ...actual,
+    promoCodesQueries: {
+      ...actual.promoCodesQueries,
+      list: fixture("promo-codes", [
+        { ...code, id: "pr1", code: "EID15", max_redemptions: null },
+        { ...code, id: "pr2", code: "CART-D73DE62E", max_redemptions: 1 },
+      ]),
+    },
+  };
+};
+vi.mock("../src/lib/data/promo-codes", (io) => promoCodes(io));
+vi.mock("@/lib/data/promo-codes", (io) => promoCodes(io));
 vi.mock("../src/lib/data/business-settings", (io) => settings(io));
 vi.mock("@/lib/data/business-settings", (io) => settings(io));
 const brandContext = {
@@ -566,6 +589,32 @@ describe("the content studio", () => {
     expect(template.id).toBe("bundle-set");
     // 39 (the abaya's sale) and 30 (the kaftan) together.
     expect(scene.collectionTotal).toBe("69.000 BHD");
+  });
+
+  it("ends a Last Chance on a public code's last day, never naming one customer's code", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /^Last Chance/ }));
+    openSelect(await screen.findByRole("combobox", { name: "Discount code (optional)" }));
+    expect(await screen.findByRole("option", { name: "EID15 · 15% off" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /CART-/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("option", { name: "EID15 · 15% off" }));
+    // The code's own last day becomes the post's.
+    expect(screen.getByLabelText("Last day")).toHaveValue("2099-01-01");
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: { deadline: unknown } },
+    ];
+    expect(template.id).toBe("last-chance");
+    expect(scene.deadline).toEqual({
+      day: "Thursday",
+      date: "1 January",
+      code: "EID15",
+      offer: ["15% off"],
+    });
   });
 
   it("zooms into the detail the merchant taps, named from the product's fabric", async () => {

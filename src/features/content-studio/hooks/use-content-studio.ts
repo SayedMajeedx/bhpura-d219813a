@@ -27,6 +27,7 @@ import { useOccasion } from "@/features/content-studio/hooks/use-occasion";
 import { useBatchExport } from "@/features/content-studio/hooks/use-batch-export";
 import { useDrafts } from "@/features/content-studio/hooks/use-drafts";
 import { useStoreFonts } from "@/features/content-studio/hooks/use-store-fonts";
+import { useMoments } from "@/features/content-studio/hooks/use-moments";
 import {
   readDraftFormat,
   readDraftSettings,
@@ -165,6 +166,20 @@ export function useContentStudio(slug: string) {
     () => (templateId === "reel-cut" ? reelShotUrls(productMediaList, chosenPhoto) : []),
     [templateId, productMediaList, chosenPhoto],
   );
+  const moments = useMoments({
+    templateId,
+    brandId: brand.id,
+    productId: selected?.id,
+    productVariants,
+    allVariants: variantList,
+    axisDefaults,
+    isAr,
+    currencySymbol,
+  });
+  const momentScene = useMemo(
+    () => ({ deadline: moments.deadline, restock: moments.restock, rating: moments.rating }),
+    [moments.deadline, moments.restock, moments.rating],
+  );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
     format,
@@ -188,6 +203,7 @@ export function useContentStudio(slug: string) {
     collection: lookbook.collection,
     detail: detailZoom.detail,
     occasion: occasion.occasionScene,
+    moments: momentScene,
     logoScale,
     logoTint,
     displayFamilies: storeFonts.storeFamilies,
@@ -359,6 +375,7 @@ export function useContentStudio(slug: string) {
     ...lookbook,
     ...detailZoom,
     ...occasion,
+    ...moments,
     ...batch,
     ...drafts,
     ...product,

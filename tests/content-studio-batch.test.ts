@@ -47,6 +47,8 @@ describe("batch export", () => {
       "bold-poster",
       "editorial-cover",
       "price-drop",
+      "last-chance",
+      "customer-favourite",
       "swatch-run",
       "detail-zoom",
     ]);

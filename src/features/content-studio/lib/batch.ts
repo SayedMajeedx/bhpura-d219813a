@@ -7,13 +7,18 @@ import { DEFAULT_DETAIL_POINT } from "@/features/content-studio/templates/detail
 /** The most products one batch exports. */
 export const BATCH_MAX = 12;
 
-/** The templates a batch can run: the ones built around one product. */
+/**
+ * The templates a batch can run: the ones built around one product. Back in
+ * Stock is not one of them: the sizes it names are the chosen product's.
+ */
 export const BATCH_TEMPLATES: readonly string[] = [
   "atelier-reveal",
   "reel-cut",
   "bold-poster",
   "editorial-cover",
   "price-drop",
+  "last-chance",
+  "customer-favourite",
   "swatch-run",
   "detail-zoom",
 ];
