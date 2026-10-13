@@ -1,7 +1,8 @@
 import { useState, type RefObject } from "react";
 import { toast } from "sonner";
 import { creativeFileName, deliverCreativeFile } from "@/lib/creative-export";
-import { FORMATS, THEMES, type Product } from "@/features/content-studio/lib/studio-content";
+import { FORMATS, type Product } from "@/features/content-studio/lib/studio-content";
+import type { StudioStyle } from "@/features/content-studio/lib/studio-styles";
 import { getExactVideoDuration } from "@/features/content-studio/lib/video-duration";
 
 /**
@@ -28,7 +29,7 @@ export function useCreativeExport({
   brandSlugClean: string;
   selected: Product | undefined;
   format: keyof typeof FORMATS;
-  palette: (typeof THEMES)[keyof typeof THEMES];
+  palette: StudioStyle;
   headline: string;
   businessName: string;
   isAr: boolean;

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Drawable, FormatKey, SceneData } from "@/features/content-studio/engine/scene";
 import { paletteFor } from "@/features/content-studio/templates";
-import type { THEMES } from "@/features/content-studio/lib/studio-content";
+import type { StudioStyle } from "@/features/content-studio/lib/studio-styles";
 import type { Sale } from "@/features/content-studio/lib/sale-price";
 import type { OptionRun } from "@/features/content-studio/lib/option-run";
 import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
@@ -64,7 +64,7 @@ export function useLoadedImages(urls: readonly (string | null)[]) {
 export function useTemplateScene({
   format,
   isAr,
-  theme,
+  style,
   photo,
   isCurrentVideo,
   logo,
@@ -88,7 +88,8 @@ export function useTemplateScene({
 }: {
   format: FormatKey;
   isAr: boolean;
-  theme: keyof typeof THEMES;
+  /** The colour style the template draws in. */
+  style: StudioStyle;
   photo: string | null;
   isCurrentVideo: boolean;
   logo: string | null | undefined;
@@ -153,7 +154,7 @@ export function useTemplateScene({
         displayFamilies,
         handle: instagram,
         contact: phone || null,
-        palette: paletteFor(theme),
+        palette: paletteFor(style),
       },
       productName,
       headline,
@@ -198,7 +199,7 @@ export function useTemplateScene({
       displayFamilies,
       instagram,
       phone,
-      theme,
+      style,
       productName,
       headline,
       body,

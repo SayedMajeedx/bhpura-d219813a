@@ -130,6 +130,8 @@ const settings = async (importOriginal: () => Promise<object>) => {
         phone: "+97333000000",
         socials: [{ name: "Instagram", url: "https://instagram.com/pura.bh" }],
         currency: "BHD",
+        storefront_accent_color: "#1f4e5f",
+        storefront_background_color: "#ffffff",
       }),
     },
   };
@@ -286,6 +288,16 @@ describe("the content studio", () => {
     expect(await screen.findByRole("button", { name: "Download Video (MP4)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download options" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Download PNG" })).not.toBeInTheDocument();
+  });
+
+  it("opens in the store's own colours, with the studio's looks a click away", async () => {
+    const stage = await renderStudio();
+    // A white storefront becomes a soft tint of the store's teal, inked in the teal itself.
+    expect(stage).toHaveStyle({ background: "#edf1f2", color: "#1f4e5f" });
+    fireEvent.click(screen.getByRole("button", { name: /Store · bold/ }));
+    expect(stage).toHaveStyle({ background: "#1f4e5f" });
+    fireEvent.click(screen.getByRole("button", { name: /Editorial/ }));
+    expect(stage).toHaveStyle({ background: "#f4eee9" });
   });
 
   it("applies the visual style and the edition label to the stage", async () => {
