@@ -26,7 +26,6 @@ import { type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 import { OsQuickActions } from "./os-quick-actions";
-import { OsThemeToggle } from "./os-theme-toggle";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
 import { useTheme } from "@/lib/theme-context";
@@ -571,6 +570,7 @@ export function OsMobileNavigation({
           )}
         </div>
 
+        {/* Theme, language and signing out live in the menu (the drawer): the bar keeps its room for the store's name. */}
         <div className="flex items-center gap-1.5 shrink-0">
           <OsQuickActions
             slug={activeSlug}
@@ -579,25 +579,6 @@ export function OsMobileNavigation({
             isCourier={isCourier}
             className="h-8.5 px-2 text-xs"
           />
-          <OsThemeToggle lang={lang} className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl" />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-xl"
-            onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
-            aria-label={lang === "en" ? "تبديل إلى العربية" : "Switch to English"}
-          >
-            <span className="text-xs font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive rounded-xl"
-            onClick={onSignOut}
-            aria-label={lang === "ar" ? "تسجيل الخروج" : "Sign Out"}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 

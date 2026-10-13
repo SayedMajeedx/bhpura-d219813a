@@ -393,7 +393,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           />
           <label
             htmlFor="include-historical-toggle"
-            className="text-xs font-bold text-muted-foreground cursor-pointer whitespace-nowrap hidden sm:inline"
+            className="text-xs font-bold text-muted-foreground cursor-pointer whitespace-nowrap"
           >
             {isAr ? "الأرشيف" : "Archive"}
           </label>

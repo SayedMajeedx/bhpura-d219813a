@@ -48,7 +48,8 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-card border border-border-subtle shadow-2xs">
+    // One row on a phone too: stacked, the filter button took a second line (100px above the list).
+    <div className="flex items-center justify-between gap-2.5 p-2.5 rounded-xl bg-card border border-border-subtle shadow-2xs">
       {/* Search Input */}
       <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
         <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
