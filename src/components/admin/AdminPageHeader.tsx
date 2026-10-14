@@ -1,5 +1,7 @@
 import React from "react";
-import type { LucideIcon } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
+import { Button, type ButtonProps } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * The heading of an admin page: its title with its counts, a line saying what
@@ -60,5 +62,58 @@ export function AdminPageCount({ children }: { children: React.ReactNode }) {
     <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
       {children}
     </span>
+  );
+}
+
+/**
+ * An action in a page's heading. On a phone it shares the row with the title,
+ * so the main action takes a short label (`short`, "New") and a secondary one
+ * shows only its icon (`iconOnPhone`); the full label stays its name for a
+ * screen reader, and is what a wider screen shows.
+ */
+export function AdminPageAction({
+  icon: Icon,
+  label,
+  short,
+  iconOnPhone = false,
+  busy = false,
+  className,
+  ...props
+}: {
+  icon: LucideIcon;
+  label: string;
+  short?: string;
+  iconOnPhone?: boolean;
+  /** Shows a spinner in place of the icon while the action runs. */
+  busy?: boolean;
+} & Omit<ButtonProps, "children">) {
+  const compact = iconOnPhone || Boolean(short);
+  return (
+    <Button
+      type="button"
+      aria-label={compact ? label : undefined}
+      className={cn(
+        "h-9 gap-1.5 px-3 text-xs font-bold shadow-2xs sm:px-3.5",
+        iconOnPhone && "w-9 px-0 sm:w-auto sm:px-3.5",
+        className,
+      )}
+      {...props}
+    >
+      {busy ? (
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+      ) : (
+        <Icon className="h-4 w-4" aria-hidden="true" />
+      )}
+      {iconOnPhone ? (
+        <span className="hidden sm:inline">{label}</span>
+      ) : short ? (
+        <>
+          <span className="sm:hidden">{short}</span>
+          <span className="hidden sm:inline">{label}</span>
+        </>
+      ) : (
+        <span>{label}</span>
+      )}
+    </Button>
   );
 }

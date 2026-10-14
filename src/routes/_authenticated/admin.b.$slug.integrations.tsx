@@ -202,7 +202,6 @@ function IntegrationsPage() {
       <IntegrationsCommandHeader
         shipping={storeProfile.modules.shipping}
         lang={isAr ? "ar" : "en"}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         integrationCount={integrationsList.length}
         onNewIntegration={() => {
           setEditing(null);

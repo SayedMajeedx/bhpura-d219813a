@@ -1,7 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Clock, ReceiptText, Truck } from "lucide-react";
+import { Clock, Plus, ReceiptText, Settings2, Truck } from "lucide-react";
 
 // The admin on a phone, measured on a real store (2026-10-14): a page's heading card took 121
 // to 167px before its first order, product or customer (the inventory's first product started
@@ -16,7 +16,10 @@ vi.mock("@tanstack/react-router", () => ({
 
 const { orderCardWhen, orderIsSettled, orderItemsLine } =
   await import("../src/features/orders/lib/order-card");
-const { AdminPageHeader, AdminPageCount } = await import("../src/components/admin/AdminPageHeader");
+const { AdminPageHeader, AdminPageCount, AdminPageAction } =
+  await import("../src/components/admin/AdminPageHeader");
+const { TeamCommandHeader } = await import("../src/components/team/TeamCommandHeader");
+const { ReturnsCommandHeader } = await import("../src/components/returns/ReturnsCommandHeader");
 const { OrderMobileCard } = await import("../src/components/orders/OrderMobileCard");
 const { OrdersScopeSwitcher } = await import("../src/components/orders/OrdersScopeSwitcher");
 
@@ -84,6 +87,50 @@ describe("a page's heading", () => {
     expect(header).toContainElement(screen.getByRole("button", { name: "New order" }));
     // The line saying what the page is for waits for a wider screen.
     expect(screen.getByText("Follow payment, packing and delivery")).toHaveClass("hidden");
+  });
+});
+
+describe("a heading's actions on a phone", () => {
+  it("give the main action a short label and keep the full one as its name", () => {
+    const add = vi.fn();
+    render(<AdminPageAction icon={Plus} label="Add Team Member" short="Add" onClick={add} />);
+    const button = screen.getByRole("button", { name: "Add Team Member" });
+    expect(screen.getByText("Add")).toHaveClass("sm:hidden");
+    expect(screen.getByText("Add Team Member")).toHaveClass("hidden");
+    fireEvent.click(button);
+    expect(add).toHaveBeenCalledOnce();
+  });
+
+  it("show a secondary action as its icon, still named", () => {
+    render(<AdminPageAction icon={Settings2} label="Return Policy" iconOnPhone />);
+    expect(screen.getByRole("button", { name: "Return Policy" })).toHaveClass("w-9");
+    expect(screen.getByText("Return Policy")).toHaveClass("hidden");
+  });
+
+  it("are the pages' headings: title, count and actions in one header", () => {
+    const { unmount } = render(
+      <TeamCommandHeader lang="ar" memberCount={4} onAddMember={() => undefined} />,
+    );
+    const header = screen.getByRole("banner");
+    expect(
+      screen.getByRole("heading", { level: 1, name: "أعضاء الفريق والصلاحيات" }),
+    ).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByText("4 أعضاء"));
+    expect(header).toContainElement(screen.getByRole("button", { name: "إضافة عضو جديد" }));
+    unmount();
+    render(
+      <ReturnsCommandHeader
+        lang="en"
+        brandName="Pura"
+        totalReturns={3}
+        pendingReviewCount={2}
+        onOpenPolicy={() => undefined}
+        onNewReturn={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/2 action required/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Return Policy" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New Return" })).toBeInTheDocument();
   });
 });
 

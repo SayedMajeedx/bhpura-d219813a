@@ -126,13 +126,13 @@ describe("design system guardrails", () => {
         }
       }
     }
-    expect(offenders.length).toBeLessThanOrEqual(55);
+    expect(offenders.length).toBeLessThanOrEqual(53);
   });
 
   it("keeps glass and blur off data surfaces within budget", () => {
     // AGENTS.md §6: glassmorphism is for floating elements only.
     const count = countMatches(/backdrop-blur-[a-z0-9]+/g);
-    expect(count).toBeLessThanOrEqual(54);
+    expect(count).toBeLessThanOrEqual(49);
   });
 
   it("keeps opacity-hacked borders within budget", () => {
@@ -158,7 +158,7 @@ describe("design system guardrails", () => {
     const count = countMatches(
       /\b(?:bg|text|border|ring|from|to|via)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
     );
-    expect(count).toBeLessThanOrEqual(2524);
+    expect(count).toBeLessThanOrEqual(2449);
   });
 
   it("allows no new raw hex outside the files that genuinely need it", () => {

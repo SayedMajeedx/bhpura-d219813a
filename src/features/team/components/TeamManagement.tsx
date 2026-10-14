@@ -14,7 +14,6 @@ export function TeamManagement() {
   const page = useTeamPage();
   const {
     isAr,
-    brand,
     setAddOpen,
     statusScope,
     setStatusScope,
@@ -28,7 +27,6 @@ export function TeamManagement() {
       {/* 1. Command Header */}
       <TeamCommandHeader
         lang={isAr ? "ar" : "en"}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         memberCount={staff.length}
         onAddMember={() => setAddOpen(true)}
       />
