@@ -1,11 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ChevronRight } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 import { orderTabCounts } from "@/features/orders/lib/order-queue";
 import type { Dispatch, SetStateAction } from "react";
 
-/** Nudge to open the 'Needs attention' tab when orders are waiting on the team. */
+/**
+ * Nudge to open the 'Needs attention' tab when orders are waiting on the team:
+ * one line that is itself the way in. On a phone it was a sentence with a
+ * button under it, about 100px between the filters and the orders.
+ */
 export function UrgentOrdersBanner({
   hasMadeToOrder,
   lang,
@@ -21,18 +25,27 @@ export function UrgentOrdersBanner({
   >;
   tabCounts: ReturnType<typeof orderTabCounts>;
 }) {
+  const isAr = lang === "ar";
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-900 dark:text-amber-200">
-      <div className="flex items-center gap-2.5">
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => {
+        setTabFilter("action_required");
+        setPage(1);
+      }}
+      className="h-auto w-full justify-between gap-3 whitespace-normal rounded-xl border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-start text-xs font-medium text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
+    >
+      <span className="flex min-w-0 items-center gap-2">
         <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-        <div className="text-xs font-medium">
+        <span className="min-w-0 break-words">
           <span className="font-bold">
-            {lang === "ar"
-              ? `تنبيه: ${tabCounts.action_required} طلب يحتاج إجراءً فورياً`
-              : `Attention: ${tabCounts.action_required} order(s) require immediate action`}
+            {isAr
+              ? `${tabCounts.action_required} طلب يحتاج إجراءً فورياً`
+              : `${tabCounts.action_required} order(s) need action now`}
           </span>
-          <span className="opacity-80 ms-1.5 hidden sm:inline">
-            {lang === "ar"
+          <span className="ms-1.5 hidden opacity-80 sm:inline">
+            {isAr
               ? hasMadeToOrder
                 ? "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تفاصيل الطلب)"
                 : "(تحصيل عند الاستلام، تسليم غير مكتمل، أو تأكيد الدفع)"
@@ -40,20 +53,12 @@ export function UrgentOrdersBanner({
                 ? "(COD collection, failed delivery, or custom specifications)"
                 : "(COD collection, failed delivery, or payment verification)"}
           </span>
-        </div>
-      </div>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => {
-          setTabFilter("action_required");
-          setPage(1);
-        }}
-        className="h-7 text-xs font-bold border-amber-500/40 hover:bg-amber-500/20 text-amber-900 dark:text-amber-100 shrink-0"
-      >
-        {lang === "ar" ? "معالجة التنبيهات الآن" : "Resolve Exceptions Now"}
-      </Button>
-    </div>
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-0.5 font-bold">
+        {isAr ? "عرضها" : "Review"}
+        <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+      </span>
+    </Button>
   );
 }
