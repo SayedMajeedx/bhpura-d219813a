@@ -393,7 +393,6 @@ function PagesAndPolicies() {
       {/* 1. Command Header */}
       <PagesCommandHeader
         lang={isAr ? "ar" : "en"}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         pageCount={pages.length}
         saving={saving}
         dirty={dirty}

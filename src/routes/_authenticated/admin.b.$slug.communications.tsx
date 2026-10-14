@@ -52,7 +52,6 @@ function CommunicationsPage() {
       {/* 1. Command Header */}
       <CommunicationsCommandHeader
         lang={isAr ? "ar" : "en"}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         recipientCount={recipientsQ.data?.length ?? 0}
         onAddRecipient={() => {
           setActiveScope("recipients");

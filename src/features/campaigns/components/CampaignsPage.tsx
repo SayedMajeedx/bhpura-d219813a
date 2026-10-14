@@ -14,7 +14,6 @@ export function CampaignsPage({ segment }: { segment: CampaignSegment }) {
   const page = useCampaignsPage(segment);
   const {
     isAr,
-    brand,
     selectedSegment,
     setSelectedSegment,
     selectedCustomerIds,
@@ -32,7 +31,6 @@ export function CampaignsPage({ segment }: { segment: CampaignSegment }) {
       {/* 1. Command Header */}
       <CampaignsCommandHeader
         lang={isAr ? "ar" : "en"}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         templateCount={templates.length}
         selectedCount={selectedCustomerIds.length}
         onNewTemplate={() => openSave("new")}

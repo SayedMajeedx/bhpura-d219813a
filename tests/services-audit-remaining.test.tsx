@@ -132,7 +132,6 @@ describe("the integrations page", () => {
       render(
         <IntegrationsCommandHeader
           lang="en"
-          brandName="Aurora"
           integrationCount={0}
           onNewIntegration={() => undefined}
           shipping={shipping}
