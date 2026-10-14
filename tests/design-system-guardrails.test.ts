@@ -66,7 +66,7 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 /** One-line truncations in the code today; the ceiling only moves down. */
-const TRUNCATE_BUDGET = 210;
+const TRUNCATE_BUDGET = 209;
 
 const FILES = walk(SRC).map((file) => ({
   rel: path.relative(SRC, file).split(path.sep).join("/"),
@@ -158,7 +158,7 @@ describe("design system guardrails", () => {
     const count = countMatches(
       /\b(?:bg|text|border|ring|from|to|via)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/g,
     );
-    expect(count).toBeLessThanOrEqual(2449);
+    expect(count).toBeLessThanOrEqual(2446);
   });
 
   it("allows no new raw hex outside the files that genuinely need it", () => {
