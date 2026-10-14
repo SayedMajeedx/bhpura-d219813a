@@ -9571,6 +9571,7 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: undefined;
       };
+      expire_loyalty_points: { Args: never; Returns: number };
       format_currency_amount: {
         Args: { p_amount: number; p_currency: string };
         Returns: string;
@@ -9902,6 +9903,22 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      loyalty_order_earns: {
+        Args: {
+          p_customer_id: string;
+          p_payment_status: string;
+          p_status: string;
+        };
+        Returns: boolean;
+      };
+      loyalty_order_undone: {
+        Args: { p_payment_status: string; p_status: string };
+        Returns: boolean;
+      };
+      loyalty_revoke_order_points: {
+        Args: { p_idempotency_key: string; p_order_id: string };
+        Returns: number;
+      };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };
@@ -10172,6 +10189,7 @@ export type Database = {
       reject_benefit_payment:
         | { Args: { p_order_id: string }; Returns: Json }
         | { Args: { p_order_id: string; p_reason: string }; Returns: Json };
+      release_due_loyalty_points: { Args: never; Returns: number };
       reorder_categories: {
         Args: { p_brand_id: string; p_category_ids: string[] };
         Returns: undefined;

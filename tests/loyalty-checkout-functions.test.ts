@@ -17,11 +17,11 @@ const adminClient = {
 vi.mock("../src/integrations/supabase/client.server", () => adminClient);
 vi.mock("@/integrations/supabase/client.server", () => adminClient);
 
-const { redeemLoyaltyForOrder, awardLoyaltyForOrder } =
-  (await import("../src/lib/loyalty-checkout.functions")) as unknown as {
-    redeemLoyaltyForOrder: ServerFn;
-    awardLoyaltyForOrder: ServerFn;
-  };
+const loyaltyCheckout = (await import("../src/lib/loyalty-checkout.functions")) as unknown as {
+  redeemLoyaltyForOrder: ServerFn;
+  awardLoyaltyForOrder?: ServerFn;
+};
+const { redeemLoyaltyForOrder } = loyaltyCheckout;
 const middleware = await import("../src/integrations/supabase/auth-middleware");
 
 const ORDER = "00000000-0000-4000-8000-0000000000d1";
@@ -42,7 +42,10 @@ beforeEach(() => vi.clearAllMocks());
 describe("redeeming points at checkout", () => {
   it("runs only for a signed-in shopper", () => {
     expect(redeemLoyaltyForOrder.middleware).toEqual([middleware.requireSupabaseAuth]);
-    expect(awardLoyaltyForOrder.middleware).toEqual([middleware.requireSupabaseAuth]);
+  });
+
+  it("leaves the order's own points to the database, which gives them when it is completed or paid", () => {
+    expect(loyaltyCheckout.awardLoyaltyForOrder).toBeUndefined();
   });
 
   it("does nothing for an order that is not the shopper's", async () => {
@@ -98,46 +101,5 @@ describe("redeeming points at checkout", () => {
     }
     expect(() => validate({ orderId: "not-an-id", points: 10 })).toThrow();
     expect(() => validate({ orderId: ORDER, points: 10 })).not.toThrow();
-  });
-});
-
-describe("awarding points for an order", () => {
-  it("does nothing for an order that is not the shopper's", async () => {
-    const { rpc } = server({});
-    await expect(
-      awardLoyaltyForOrder({ data: { orderId: ORDER }, context: shopper(false) }),
-    ).rejects.toThrow("FORBIDDEN_ORDER");
-    expect(rpc).not.toHaveBeenCalled();
-  });
-
-  it("makes its key from the order and its brand from the order, so asking again gives nothing more", async () => {
-    const { rpc } = server({
-      rpc_award_order_loyalty_points: { success: true, points_awarded: 12 },
-    });
-    for (let i = 0; i < 3; i += 1) {
-      await expect(
-        awardLoyaltyForOrder({ data: { orderId: ORDER }, context: shopper(true) }),
-      ).resolves.toEqual({ awarded: true });
-    }
-    const keys = rpc.mock.calls.map(
-      ([, args]) => (args as { p_idempotency_key: string }).p_idempotency_key,
-    );
-    expect(new Set(keys)).toEqual(new Set([`award:${ORDER}`]));
-    expect(rpc).toHaveBeenCalledWith("rpc_award_order_loyalty_points", {
-      p_brand_id: BRAND,
-      p_order_id: ORDER,
-      p_idempotency_key: `award:${ORDER}`,
-    });
-  });
-
-  it("reports nothing awarded for an order it cannot find, or when the database says no", async () => {
-    server({}, null);
-    await expect(
-      awardLoyaltyForOrder({ data: { orderId: ORDER }, context: shopper(true) }),
-    ).resolves.toEqual({ awarded: false });
-    server({ rpc_award_order_loyalty_points: { success: false } });
-    await expect(
-      awardLoyaltyForOrder({ data: { orderId: ORDER }, context: shopper(true) }),
-    ).resolves.toEqual({ awarded: false });
   });
 });
