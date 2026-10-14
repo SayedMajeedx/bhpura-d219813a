@@ -29,6 +29,9 @@ export type PartnerHold = {
     invoice_number?: number | string | null;
     status?: string | null;
     fulfillment_status?: string | null;
+    /** The partner whose shop the shopper collects the order at (migration 20261014130000). */
+    pickup_incubator_id?: string | null;
+    customer_name_snapshot?: string | null;
   } | null;
 };
 
@@ -69,6 +72,9 @@ export type PickupLine = {
   phone: string | null;
   piece: string;
   quantity: number;
+  /** The shopper collects the order at this partner's shop, rather than the store fetching it. */
+  customerCollects: boolean;
+  customer: string | null;
 };
 
 /** What is still to be collected, largest first: one line per partner and piece. */
@@ -83,6 +89,10 @@ export function pickupLines(holds: readonly PartnerHold[], lang: Lang): PickupLi
       phone: String(hold.incubators?.phone ?? "").trim() || null,
       piece: pieceName(hold.product_variants, lang),
       quantity: Number(hold.quantity),
+      customerCollects: Boolean(
+        hold.orders?.pickup_incubator_id && hold.orders.pickup_incubator_id === hold.incubator_id,
+      ),
+      customer: String(hold.orders?.customer_name_snapshot ?? "").trim() || null,
     }))
     .sort((a, b) => b.quantity - a.quantity || a.partner.localeCompare(b.partner));
 }
@@ -157,4 +167,37 @@ export function partnerStockMismatches(
     });
   }
   return mismatches.sort((a, b) => a.piece.localeCompare(b.piece));
+}
+
+/**
+ * The message a member of staff sends a partner about an order collected at the partner's shop.
+ * Partners do not use the system: a person sends it on WhatsApp. It names the order, the
+ * customer and the pieces, and asks the partner to hand them over.
+ */
+export function partnerPickupMessage(
+  lines: readonly Pick<PickupLine, "orderNumber" | "customer" | "piece" | "quantity">[],
+  store: string,
+  lang: Lang,
+): string {
+  const first = lines[0];
+  if (!first) return "";
+  const pieces = lines.map((line) => `- ${line.quantity} × ${line.piece}`).join("\n");
+  const order = first.orderNumber ? `#${first.orderNumber}` : "";
+  const customer = first.customer;
+  if (lang === "ar") {
+    return [
+      `مرحباً، معكم ${store}.`,
+      `طلب أونلاين ${order} سيستلمه الزبون من محلكم${customer ? `: ${customer}` : ""}.`,
+      "القطع:",
+      pieces,
+      "نرجو تجهيزها وتسليمها له عند حضوره، وشكراً لكم.",
+    ].join("\n");
+  }
+  return [
+    `Hello, this is ${store}.`,
+    `Online order ${order} will be collected at your shop${customer ? ` by ${customer}` : ""}.`,
+    "Pieces:",
+    pieces,
+    "Please have them ready to hand over when they arrive. Thank you.",
+  ].join("\n");
 }

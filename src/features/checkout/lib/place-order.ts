@@ -30,6 +30,7 @@ export function placeStorefrontOrderArgs({
   giftMessage,
   fulfillment,
   branchId,
+  partnerId = "",
   digitalChannel,
   digitalContact,
   appliedPromo,
@@ -54,6 +55,8 @@ export function placeStorefrontOrderArgs({
   giftMessage: string;
   fulfillment: Fulfillment;
   branchId: string;
+  /** A partner's shop to collect at: the database takes the pieces from it (migration 20261014130000). */
+  partnerId?: string;
   digitalChannel: "email" | "whatsapp";
   digitalContact: string;
   appliedPromo: AppliedPromo | null;
@@ -68,6 +71,7 @@ export function placeStorefrontOrderArgs({
     p_brand_slug: brand.slug,
     p_customer: {
       ...(payInFull ? { pay_in_full: true } : {}),
+      ...(fulfillment === "pickup" && partnerId ? { pickup_partner_id: partnerId } : {}),
       name: form.name,
       phone: form.phone,
       email: customerEmail,
@@ -109,7 +113,7 @@ export function placeStorefrontOrderArgs({
       return [giftNote, userNote].filter(Boolean).join("\n\n") || undefined;
     })(),
     p_fulfillment: fulfillment,
-    p_branch_id: fulfillment === "pickup" ? branchId || null : null,
+    p_branch_id: fulfillment === "pickup" && !partnerId ? branchId || null : null,
     p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
     p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
     p_promo_code: appliedPromo?.code ?? null,
@@ -145,6 +149,15 @@ export function placeOrderFailure(
     // `t` picks the shopper's language; asking it for "ar"/"en" tells which.
     const isAr = t("ar", "en") === "ar";
     return { message: bookingErrorMessage(msg, isAr), clearPromo: false };
+  }
+  if (msg.includes("PICKUP_PARTNER_UNAVAILABLE")) {
+    return {
+      message: t(
+        "لم يعد مكان الاستلام المختار يملك كل قطع طلبك. اختر مكان استلام آخر وحاول مرة أخرى.",
+        "The pickup place you chose no longer holds every piece of your order. Choose another place and try again.",
+      ),
+      clearPromo: false,
+    };
   }
   if (msg.includes("MADE_TO_ORDER_PAUSED")) {
     return {

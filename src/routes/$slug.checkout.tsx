@@ -158,7 +158,10 @@ function Checkout() {
     setDigitalContact,
     branchLabel,
     branchLoc,
-  } = usePickupAndDigital({ brand, settings, lang });
+    pickupPartners,
+    partnerId,
+    setPartnerId,
+  } = usePickupAndDigital({ brand, settings, lang, cart, madeToOrderIds });
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -353,6 +356,7 @@ function Checkout() {
     benefitReceipt,
     branches,
     branchId,
+    partnerId,
     digitalChannel,
     digitalContact,
     appliedPromo,
@@ -480,6 +484,9 @@ function Checkout() {
             lang={lang}
             setBranchId={setBranchId}
             t={t}
+            pickupPartners={pickupPartners}
+            partnerId={partnerId}
+            setPartnerId={setPartnerId}
           />
         )}
 

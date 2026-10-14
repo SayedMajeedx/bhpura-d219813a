@@ -19,6 +19,15 @@ export type Incubator = {
   is_active: boolean;
   packaging_policy: "incubator" | "our_bom" | "fixed";
   fixed_packaging_cost: number;
+  /** A shopper may collect an order here (the store's choice), with what the checkout shows. */
+  pickup_enabled?: boolean;
+  pickup_address_ar?: string | null;
+  pickup_address_en?: string | null;
+  pickup_location_url?: string | null;
+  pickup_notes_ar?: string | null;
+  pickup_notes_en?: string | null;
+  /** Days to bring a piece from this partner to the store's branch. */
+  transfer_days?: number | null;
 };
 
 type ProductName = { id?: string; name: string; name_ar: string | null; image_url?: string | null };

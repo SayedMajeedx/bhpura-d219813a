@@ -155,7 +155,7 @@ export async function fetchIncubatorMovements(args: {
 }
 
 const PARTNER_HOLD_SELECT =
-  "order_id, variant_id, incubator_id, quantity, incubators(name, phone), product_variants(sku, size, color, products(name, name_ar)), orders(invoice_number, status, fulfillment_status)";
+  "order_id, variant_id, incubator_id, quantity, incubators(name, phone), product_variants(sku, size, color, products(name, name_ar)), orders(invoice_number, status, fulfillment_status, pickup_incubator_id, customer_name_snapshot)";
 
 /**
  * The pieces orders have taken from partners. When the store's own stock runs out, an order

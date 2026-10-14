@@ -4043,7 +4043,14 @@ export type Database = {
           notes: string | null;
           packaging_policy: string;
           phone: string | null;
+          pickup_address_ar: string | null;
+          pickup_address_en: string | null;
+          pickup_enabled: boolean;
+          pickup_location_url: string | null;
+          pickup_notes_ar: string | null;
+          pickup_notes_en: string | null;
           settlement_day: number | null;
+          transfer_days: number | null;
           updated_at: string;
         };
         Insert: {
@@ -4062,7 +4069,14 @@ export type Database = {
           notes?: string | null;
           packaging_policy?: string;
           phone?: string | null;
+          pickup_address_ar?: string | null;
+          pickup_address_en?: string | null;
+          pickup_enabled?: boolean;
+          pickup_location_url?: string | null;
+          pickup_notes_ar?: string | null;
+          pickup_notes_en?: string | null;
           settlement_day?: number | null;
+          transfer_days?: number | null;
           updated_at?: string;
         };
         Update: {
@@ -4081,7 +4095,14 @@ export type Database = {
           notes?: string | null;
           packaging_policy?: string;
           phone?: string | null;
+          pickup_address_ar?: string | null;
+          pickup_address_en?: string | null;
+          pickup_enabled?: boolean;
+          pickup_location_url?: string | null;
+          pickup_notes_ar?: string | null;
+          pickup_notes_en?: string | null;
           settlement_day?: number | null;
+          transfer_days?: number | null;
           updated_at?: string;
         };
         Relationships: [
@@ -5352,6 +5373,7 @@ export type Database = {
           payment_method: string | null;
           payment_reference: string | null;
           payment_status: string;
+          pickup_incubator_id: string | null;
           promo_code: string | null;
           promo_code_id: string | null;
           public_invoice_token: string;
@@ -5430,6 +5452,7 @@ export type Database = {
           payment_method?: string | null;
           payment_reference?: string | null;
           payment_status?: string;
+          pickup_incubator_id?: string | null;
           promo_code?: string | null;
           promo_code_id?: string | null;
           public_invoice_token?: string;
@@ -5508,6 +5531,7 @@ export type Database = {
           payment_method?: string | null;
           payment_reference?: string | null;
           payment_status?: string;
+          pickup_incubator_id?: string | null;
           promo_code?: string | null;
           promo_code_id?: string | null;
           public_invoice_token?: string;
@@ -5572,6 +5596,13 @@ export type Database = {
             columns: ["delivery_status_updated_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_pickup_incubator_id_fkey";
+            columns: ["pickup_incubator_id"];
+            isOneToOne: false;
+            referencedRelation: "incubators";
             referencedColumns: ["id"];
           },
           {
@@ -9032,6 +9063,10 @@ export type Database = {
         Args: { p_courier_id: string; p_order_id: string };
         Returns: undefined;
       };
+      assign_order_pickup_partner: {
+        Args: { p_order_id: string; p_partner_id: string };
+        Returns: undefined;
+      };
       award_past_order_loyalty_points: {
         Args: { p_brand_id: string };
         Returns: Json;
@@ -10784,6 +10819,10 @@ export type Database = {
           p_custom_fields: Json;
           p_product_id: string;
         };
+        Returns: Json;
+      };
+      storefront_pickup_partners: {
+        Args: { p_brand_id: string; p_items: Json };
         Returns: Json;
       };
       storefront_user_owns_customer: {

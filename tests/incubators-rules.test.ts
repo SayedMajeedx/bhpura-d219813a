@@ -267,6 +267,14 @@ describe("the forms", () => {
       packaging_policy: "our_bom",
       fixed_packaging_cost: 0,
       notes: null,
+      // A partner takes no pickups until the store says so.
+      pickup_enabled: false,
+      pickup_address_ar: null,
+      pickup_address_en: null,
+      pickup_location_url: null,
+      pickup_notes_ar: null,
+      pickup_notes_en: null,
+      transfer_days: null,
     });
   });
 
