@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { HeroHeadlineSlideFields } from "@/lib/hero-headline";
 import { Button } from "@/components/ui/button";
 
 export type HeroSlide = {
@@ -35,7 +36,7 @@ export type HeroSlide = {
   button_href: string;
   title_size?: number;
   align?: "start" | "center" | "end";
-};
+} & HeroHeadlineSlideFields;
 
 export function HeroSlideLivePreview({
   slide,

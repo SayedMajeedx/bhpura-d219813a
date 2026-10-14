@@ -20,6 +20,15 @@ import {
 } from "@/lib/hero-media";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  HERO_TEXT_ALIGN_CLASS,
+  HERO_TEXT_POSITION_CLASS,
+  HERO_TEXT_SCALE,
+  headlinePhrases,
+  headlineSettings,
+  heroScrim,
+} from "@/lib/hero-headline";
+import { HeroHeadline } from "@/components/storefront/HeroHeadline";
 
 export interface HeroV2Props {
   slides: HeroContentSlide[];
@@ -31,6 +40,8 @@ type ResolvedSlide = {
   title: string;
   body: string;
   button: string;
+  phrases: string[];
+  headline: ReturnType<typeof headlineSettings>;
   main: HeroMediaVariant | null;
   mobile: HeroMediaVariant | null;
   isVideo: boolean;
@@ -77,7 +88,21 @@ export function HeroV2({ slides, background }: HeroV2Props) {
     const media = resolveHeroSlideMedia(slide, isAr ? "ar" : "en", resolvedBg);
     const isVideo = Boolean(media.main) && media.isVideo;
     const isImage = Boolean(media.main) && !media.isVideo;
-    return { slide, title, body, button, main: media.main, mobile: media.mobile, isVideo, isImage };
+    // The headline: the slide's phrases (one after another), else its title as the only one.
+    const phrases = headlinePhrases(slide, isAr ? "ar" : "en");
+    const headline = headlineSettings(slide);
+    return {
+      slide,
+      title,
+      body,
+      button,
+      phrases,
+      headline,
+      main: media.main,
+      mobile: media.mobile,
+      isVideo,
+      isImage,
+    };
   });
 
   // Media uploaded before aspects were recorded is measured in the browser.
@@ -363,17 +388,19 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                   />
                 )}
 
-                {/* High-Contrast Luxury Vignette Scrim */}
+                {/* High-Contrast Luxury Vignette Scrim: darkest where the text sits. */}
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    backgroundImage: `linear-gradient(to top, rgba(0,0,0,${scrimBottom}), rgba(0,0,0,${scrimMiddle}) 45%, rgba(0,0,0,0))`,
+                    backgroundImage: heroScrim(item.headline.position, scrimBottom, scrimMiddle),
                   }}
                 />
 
-                {/* Text / Action Content */}
+                {/* Text / Action Content: where the store placed it, aligned as it chose. */}
                 <div
-                  className={`absolute inset-0 flex flex-col justify-end text-white z-10 pointer-events-none px-6 sm:px-10 ${
+                  className={`absolute inset-0 flex flex-col text-white z-10 pointer-events-none px-6 sm:px-10 ${
+                    HERO_TEXT_POSITION_CLASS[item.headline.position]
+                  } ${HERO_TEXT_ALIGN_CLASS[item.headline.align]} ${
                     dense
                       ? "p-4 sm:px-8 sm:py-4 pb-6 sm:pb-7"
                       : desktopHeight === "cinematic"
@@ -386,21 +413,27 @@ export function HeroV2({ slides, background }: HeroV2Props) {
                       dense ? "space-y-1 sm:space-y-1.5" : "space-y-2"
                     }`}
                   >
-                    {title && (
-                      <h1
+                    {item.phrases.length > 0 && (
+                      <HeroHeadline
+                        phrases={item.phrases}
+                        animation={item.headline.animation}
+                        seconds={item.headline.seconds}
+                        loops={item.headline.loops}
+                        active={isActive && isInViewport}
+                        dir={isAr ? "rtl" : "ltr"}
                         className="font-bold tracking-tight text-white drop-shadow-md text-balance"
                         style={{
-                          fontSize: dense
-                            ? "clamp(1.15rem, 0.85rem + 1.2vw, 1.85rem)"
-                            : desktopHeight === "cinematic"
-                              ? "clamp(1.5rem, 1.2rem + 2.4vw, 3.2rem)"
-                              : "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)",
+                          fontSize: `calc(${
+                            dense
+                              ? "clamp(1.15rem, 0.85rem + 1.2vw, 1.85rem)"
+                              : desktopHeight === "cinematic"
+                                ? "clamp(1.5rem, 1.2rem + 2.4vw, 3.2rem)"
+                                : "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)"
+                          } * ${HERO_TEXT_SCALE[item.headline.size]})`,
                           lineHeight: 1.18,
                           ...(heroTitleColor ? { color: heroTitleColor } : {}),
                         }}
-                      >
-                        {title}
-                      </h1>
+                      />
                     )}
                     {body && !isTinyFrame && (
                       <p
