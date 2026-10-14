@@ -6,7 +6,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
  * Loyalty at checkout, decided by the server. The browser only says which order and how many
  * points; the server checks the order is the signed-in shopper's, takes the customer, the amounts
  * and the idempotency key from the order itself, and calls the database as the service role (the
- * database functions are not callable from a browser: migration 20261007140000).
+ * database functions are not callable from a browser: migration 20261007140000). The points an
+ * order earns are not asked for here: the database gives them when the order is completed or
+ * paid (migration 20261014110000).
  */
 
 const OrderInput = z.object({ orderId: z.string().uuid() });
@@ -61,32 +63,4 @@ export const redeemLoyaltyForOrder = createServerFn({ method: "POST" })
       discount: Number(redemption.discount_amount ?? 0),
       total: Number(redemption.new_total ?? 0),
     };
-  });
-
-/**
- * Gives the order's points to its customer (held for the programme's holding period). The key is
- * made from the order, so asking again never gives more.
- */
-export const awardLoyaltyForOrder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((raw: unknown) => OrderInput.parse(raw))
-  .handler(async ({ data, context }) => {
-    await requireOwnOrder(context as Context, data.orderId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: order } = await supabaseAdmin
-      .from("orders")
-      .select("brand_id")
-      .eq("id", data.orderId)
-      .maybeSingle();
-    if (!order?.brand_id) return { awarded: false as const };
-
-    const { data: result, error } = await (supabaseAdmin.rpc as CallableFunction)(
-      "rpc_award_order_loyalty_points",
-      {
-        p_brand_id: order.brand_id,
-        p_order_id: data.orderId,
-        p_idempotency_key: `award:${data.orderId}`,
-      },
-    );
-    return { awarded: !error && (result as { success?: boolean } | null)?.success === true };
   });

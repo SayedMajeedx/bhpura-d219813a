@@ -7,7 +7,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const stubs = vi.hoisted(() => ({
   placeStorefrontOrder: vi.fn(),
   redeemLoyaltyForOrder: vi.fn(),
-  awardLoyaltyForOrder: vi.fn(),
   navigate: vi.fn(),
   toast: {
     error: vi.fn(),
@@ -27,7 +26,6 @@ vi.mock("../src/lib/data/checkout", () => checkout);
 vi.mock("@/lib/data/checkout", () => checkout);
 const loyalty = {
   redeemLoyaltyForOrder: stubs.redeemLoyaltyForOrder,
-  awardLoyaltyForOrder: stubs.awardLoyaltyForOrder,
 };
 vi.mock("../src/lib/loyalty-checkout.functions", () => loyalty);
 vi.mock("@/lib/loyalty-checkout.functions", () => loyalty);
@@ -118,17 +116,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   stubs.placeStorefrontOrder.mockResolvedValue({ orderId: ORDER, confirmationToken: "tok" });
   stubs.redeemLoyaltyForOrder.mockResolvedValue({ applied: true, discount: 5, total: 33 });
-  stubs.awardLoyaltyForOrder.mockResolvedValue({ awarded: true });
 });
 
 describe("placing an order with loyalty points", () => {
-  it("has the server redeem the points on the order that was just placed, then award its points", async () => {
+  it("has the server redeem the points on the order that was just placed", async () => {
     await place();
     expect(stubs.placeStorefrontOrder).toHaveBeenCalledTimes(1);
     expect(stubs.redeemLoyaltyForOrder).toHaveBeenCalledWith({
       data: { orderId: ORDER, points: 500 },
     });
-    expect(stubs.awardLoyaltyForOrder).toHaveBeenCalledWith({ data: { orderId: ORDER } });
     expect(stubs.toast.warning).not.toHaveBeenCalled();
     expect(stubs.navigate).toHaveBeenCalled();
   });
@@ -151,13 +147,11 @@ describe("placing an order with loyalty points", () => {
   it("asks for no redemption when no points were used, and none of it for a guest", async () => {
     await place({ effectiveRedeemedPoints: 0 });
     expect(stubs.redeemLoyaltyForOrder).not.toHaveBeenCalled();
-    expect(stubs.awardLoyaltyForOrder).toHaveBeenCalledTimes(1);
 
     vi.clearAllMocks();
     stubs.placeStorefrontOrder.mockResolvedValue({ orderId: ORDER, confirmationToken: "tok" });
     await place({ session: null, customerId: null });
     expect(stubs.redeemLoyaltyForOrder).not.toHaveBeenCalled();
-    expect(stubs.awardLoyaltyForOrder).not.toHaveBeenCalled();
     expect(stubs.navigate).toHaveBeenCalled();
   });
 });

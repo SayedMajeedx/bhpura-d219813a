@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
-import { awardLoyaltyForOrder, redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
+import { redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
 import { markCartRecoveredOnOrder } from "@/lib/abandoned-carts.functions";
 import type { ShippingZone } from "@/lib/shipping";
 import type {
@@ -189,16 +189,10 @@ export function usePlaceOrder({
           }
         }
 
-        // 2. Award points for the order (a signed-in shopper's; asking twice gives nothing more)
-        if (orderId && session) {
-          try {
-            await awardLoyaltyForOrder({ data: { orderId: String(orderId) } });
-          } catch (ptsAwardErr) {
-            console.warn("Points award error:", ptsAwardErr);
-          }
-        }
+        // The order's points are the database's: it gives them when the order is completed or
+        // paid, whoever placed it, and takes them back if it is undone (migration 20261014110000).
 
-        // 3. Mark cart recovered
+        // 2. Mark cart recovered
         if (orderId) {
           try {
             await markCartRecoveredOnOrder({
