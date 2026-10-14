@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { ResponsiveImage, OptimizedVideo } from "@/components/responsive-media";
 import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
+import { HeroHeadlineFields } from "./HeroHeadlineFields";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
@@ -535,6 +536,13 @@ export function HeroSlidesEditor({
               </div>
             </>
           )}
+
+          <HeroHeadlineFields
+            idPrefix={`slide-${slide.id || index}`}
+            slide={slide}
+            isAr={isAr}
+            onChange={(patch) => update(index, patch)}
+          />
 
           <HeroFocalPointPicker
             imageUrl={

@@ -1,3 +1,4 @@
+import type { HeroHeadlineSlideFields } from "@/lib/hero-headline";
 import { cartLineId } from "@/lib/cart-line-id";
 import {
   createContext,
@@ -109,7 +110,7 @@ export type HeroContentSlide = {
   button_href: string;
   title_size?: number;
   align?: "start" | "center" | "end";
-};
+} & HeroHeadlineSlideFields;
 export type HeroMediaConfig = { background: HeroMediaItem | null; slides: HeroContentSlide[] };
 
 export type Brand = {
