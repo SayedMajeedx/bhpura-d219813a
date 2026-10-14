@@ -5,6 +5,8 @@ import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-co
 import { cn } from "@/lib/utils";
 import { ownCustomerQueries } from "@/lib/data/customers";
 import { returnsQueries } from "@/lib/data/returns";
+import { loyaltyQueries } from "@/lib/data/loyalty";
+import { loyaltyProgramState, shopperLoyaltyTier } from "@/lib/loyalty-program";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -73,27 +75,14 @@ export function AccountPage() {
     return (orders ?? []).reduce((sum, o) => sum + Number(o.total || 0), 0);
   }, [orders]);
 
-  // Determine elegant customer loyalty rewards tiers based on BHD spend
-  const loyaltyTier = useMemo(() => {
-    if (totalSpent >= 350) {
-      return {
-        label: t("عضوية VIP الذهبية", "Gold VIP Member"),
-        style:
-          "bg-amber-50 text-amber-700 border-amber-200/60 dark:bg-amber-950/20 dark:text-amber-400",
-      };
-    }
-    if (totalSpent >= 150) {
-      return {
-        label: t("عضوية VIP الفضية", "Silver VIP Member"),
-        style: "bg-muted text-muted-foreground border-border",
-      };
-    }
-    return {
-      label: t("العضوية النخبوية", "Elite Member"),
-      style:
-        "bg-primary/5 text-primary border-primary/20 dark:bg-primary/10 dark:text-primary-foreground",
-    };
-  }, [totalSpent, t]);
+  // The store's own programme: the Rewards tab and the tier only while it is on, and the tier
+  // the database gave the shopper (the page once made up "Gold VIP" from 350 spent).
+  const { data: loyaltyProgram } = useQuery(loyaltyQueries.program(brand.id));
+  const { data: loyaltyTiers = [] } = useQuery(loyaltyQueries.tiers(brand.id));
+  const { data: loyaltyAccount } = useQuery(loyaltyQueries.account(brand.id, customer?.id ?? ""));
+  const loyaltyOn = loyaltyProgramState(loyaltyProgram) === "on";
+  const loyaltyTier = shopperLoyaltyTier(loyaltyProgram, loyaltyAccount, loyaltyTiers);
+  const tabCount = 5 + (loyaltyOn ? 1 : 0) + (modules.fit_passport ? 1 : 0);
 
   if (membershipLoading) {
     return (
@@ -157,13 +146,13 @@ export function AccountPage() {
               <p className="text-xs text-muted-foreground truncate px-2">{session.user?.email}</p>
             </div>
 
-            {/* Brand Loyalty Badge */}
-            <div
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${loyaltyTier.style}`}
-            >
-              <Award className="w-3.5 h-3.5" />
-              {loyaltyTier.label}
-            </div>
+            {/* The shopper's tier in the store's programme, when there is one. */}
+            {loyaltyTier && (
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
+                <Award className="w-3.5 h-3.5" />
+                {isAr ? loyaltyTier.name_ar : loyaltyTier.name_en}
+              </div>
+            )}
 
             {/* Store Credit Wallet Pill if Available */}
             {Number(storeCredit) > 0 && (
@@ -235,7 +224,12 @@ export function AccountPage() {
             <TabsList
               className={cn(
                 "grid w-full h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1",
-                modules.fit_passport ? "grid-cols-2 sm:grid-cols-7" : "grid-cols-2 sm:grid-cols-6",
+                "grid-cols-2",
+                tabCount === 7
+                  ? "sm:grid-cols-7"
+                  : tabCount === 6
+                    ? "sm:grid-cols-6"
+                    : "sm:grid-cols-5",
               )}
             >
               <TabsTrigger
@@ -245,13 +239,15 @@ export function AccountPage() {
                 <PackageSearch className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("طلباتي", "My orders")}</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="loyalty"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
-              >
-                <Coins className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
-              </TabsTrigger>
+              {loyaltyOn && (
+                <TabsTrigger
+                  value="loyalty"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                >
+                  <Coins className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="returns"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -307,13 +303,15 @@ export function AccountPage() {
               />
             </TabsContent>
 
-            <TabsContent value="loyalty" className="mt-0 focus-visible:outline-none">
-              <CustomerLoyaltySection
-                brandId={brand.id}
-                customerId={customer?.id || ""}
-                currency={currency}
-              />
-            </TabsContent>
+            {loyaltyOn && (
+              <TabsContent value="loyalty" className="mt-0 focus-visible:outline-none">
+                <CustomerLoyaltySection
+                  brandId={brand.id}
+                  customerId={customer?.id || ""}
+                  currency={currency}
+                />
+              </TabsContent>
+            )}
 
             <TabsContent value="returns" className="mt-0 focus-visible:outline-none">
               <CustomerReturnsSection

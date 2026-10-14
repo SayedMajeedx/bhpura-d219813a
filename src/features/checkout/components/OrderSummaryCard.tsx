@@ -376,9 +376,10 @@ export function OrderSummaryCard({
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
+            {/* The database gives them when the order is completed or paid (migration 20261014110000). */}
             {t(
-              `ستكسب +${estimatedPointsToEarn} نقطة مكافأة فور إتمام هذا الطلب!`,
-              `You will earn +${estimatedPointsToEarn} loyalty points on this order!`,
+              `ستُضاف ${estimatedPointsToEarn} نقطة مكافأة لحسابك عند اكتمال طلبك`,
+              `${estimatedPointsToEarn} reward points will be added to your account once your order is completed`,
             )}
           </span>
         </div>
