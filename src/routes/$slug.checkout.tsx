@@ -43,6 +43,7 @@ import { DigitalDeliveryCard } from "@/features/checkout/components/DigitalDeliv
 import { DeliveryAddressCard } from "@/features/checkout/components/DeliveryAddressCard";
 import { PaymentMethodCard } from "@/features/checkout/components/PaymentMethodCard";
 import { OrderSummaryCard } from "@/features/checkout/components/OrderSummaryCard";
+import { MobileCartPeek } from "@/features/checkout/components/MobileCartPeek";
 import { MobileCheckoutBar } from "@/features/checkout/components/MobileCheckoutBar";
 import { AccountExistsDialog } from "@/features/checkout/components/AccountExistsDialog";
 import { AppointmentDetailsCard } from "@/features/checkout/components/AppointmentDetailsCard";
@@ -394,6 +395,16 @@ function Checkout() {
       <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
         <BookingHoldBanner />
+        {/* On a phone the summary falls to the foot of the form: what is being bought shows first. */}
+        {!appointment && (
+          <MobileCartPeek
+            cart={cart}
+            grandTotal={grandTotal}
+            currency={currency}
+            lang={lang}
+            t={t}
+          />
+        )}
         {paymentErrorState && (
           <PaymentFailedCard setMethod={setMethod} submit={submit} submitting={submitting} t={t} />
         )}

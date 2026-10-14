@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { isStorefrontV2 } from "@/lib/storefront-engine";
 import { aspectFromSize, prepareHeroImage, probeMediaAspect } from "@/lib/media-aspect";
+import { DEFAULT_HERO_MOBILE, heroPhoneShare, isSmartFitSetting } from "@/lib/hero-media";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
@@ -256,7 +257,7 @@ export function HomeHeroGroup() {
               {isAr ? "تناسب الفيديو والصور على الجوال" : "Mobile Hero Media Ratio"}
             </Label>
             <Select
-              value={bs.hero_aspect_mobile || "portrait_4_5"}
+              value={bs.hero_aspect_mobile || DEFAULT_HERO_MOBILE}
               onValueChange={(val) => setBs({ hero_aspect_mobile: val })}
             >
               <SelectTrigger className="h-9 text-xs">
@@ -264,9 +265,7 @@ export function HomeHeroGroup() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="portrait_4_5">
-                  {isAr
-                    ? "طولي 4:5 (موصى به للفيديوهات والريلز)"
-                    : "Portrait 4:5 (Optimal for Reels & Videos)"}
+                  {isAr ? "طولي 4:5 (للفيديوهات والريلز)" : "Portrait 4:5 (For Reels & Videos)"}
                 </SelectItem>
                 <SelectItem value="story_9_16">
                   {isAr ? "ستوري كامل 9:16 (Story 9:16)" : "Story 9:16 (Full Vertical)"}
@@ -275,7 +274,9 @@ export function HomeHeroGroup() {
                   {isAr ? "مربع 1:1 (Square 1:1)" : "Square 1:1"}
                 </SelectItem>
                 <SelectItem value="landscape_4_3">
-                  {isAr ? "عريض كلاسيكي 4:3 (Landscape 4:3)" : "Landscape 4:3"}
+                  {isAr
+                    ? "عريض 4:3 (موصى به: يترك مكاناً للمنتجات)"
+                    : "Landscape 4:3 (Recommended: leaves room for products)"}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -284,6 +285,22 @@ export function HomeHeroGroup() {
                 ? "يُستخدم مع أوضاع الملء والاقتصاص. الملاءمة الذكية تتبع أبعاد كل ملف مرفوع تلقائياً."
                 : "Used by the Fill & Crop modes. Smart Fit follows each upload's own shape automatically."}
             </p>
+            {/* What the shape costs on a phone: the share of the first screen before any product. */}
+            {!isSmartFitSetting(bs.hero_video_fit || "contain_ambient") && (
+              <p className="text-xs font-medium text-foreground" role="status">
+                {(() => {
+                  const share = heroPhoneShare(bs.hero_aspect_mobile || DEFAULT_HERO_MOBILE);
+                  if (share >= 100) {
+                    return isAr
+                      ? "على الجوال يملأ الهيرو أول شاشة كاملة، ولا تظهر المنتجات قبل التمرير."
+                      : "On a phone the hero fills the whole first screen: no product shows before scrolling.";
+                  }
+                  return isAr
+                    ? `على الجوال يأخذ الهيرو ${share}٪ من أول شاشة.${share > 60 ? " المنتجات تبدأ بعد التمرير." : ""}`
+                    : `On a phone the hero takes ${share}% of the first screen.${share > 60 ? " Products start below it." : ""}`;
+                })()}
+              </p>
+            )}
           </div>
 
           {/* Hero Video Fit / Framing */}
@@ -753,7 +770,7 @@ export function HomeHeroGroup() {
           background={backgroundMedia}
           framing={{
             fit: bs.hero_video_fit || "contain_ambient",
-            mobileRatio: bs.hero_aspect_mobile || "portrait_4_5",
+            mobileRatio: bs.hero_aspect_mobile || DEFAULT_HERO_MOBILE,
             desktopHeight: bs.hero_height_desktop || "standard",
           }}
         />

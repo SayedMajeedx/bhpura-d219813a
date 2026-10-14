@@ -29,7 +29,11 @@ vi.mock("@/lib/storefront-context", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useStorefront: () => storefront,
 }));
-vi.mock("@tanstack/react-router", () => ({ Outlet: () => null, useRouter: () => ({}) }));
+vi.mock("@tanstack/react-router", () => ({
+  Outlet: () => null,
+  useRouter: () => ({}),
+  useLocation: () => ({ pathname: "/pura" }),
+}));
 vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({}) }));
 const stubs = {
   analytics: { StorefrontAnalytics: () => null },

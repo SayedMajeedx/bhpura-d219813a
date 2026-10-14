@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { railPhoneAlign } from "@/lib/rail-layout";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -22,7 +23,9 @@ export function RecommendationRail({
           {t("اسحب للمزيد", "Scroll for more")}
         </span>
       </div>
-      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:gap-4 sm:px-0 [scrollbar-width:thin]">
+      <div
+        className={`-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:gap-4 sm:px-0 [scrollbar-width:thin] ${railPhoneAlign(products.length)}`}
+      >
         {products.map((item) => {
           const variants = item.product_variants
             .filter((variant) => Number(variant.selling_price || 0) >= 0)

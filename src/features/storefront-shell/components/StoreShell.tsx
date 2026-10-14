@@ -1,4 +1,4 @@
-import { Outlet, useRouter } from "@tanstack/react-router";
+import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
 import React, { useEffect } from "react";
 import { useStorefront } from "@/lib/storefront-context";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,12 +8,14 @@ import { AnnouncementBar, StoreHeader } from "@/components/storefront/Storefront
 import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNavigation";
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
+import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
 import { shellTheme } from "@/features/storefront-shell/lib/shell-theme";
 import { isEmbeddedWindow } from "@/features/storefront-shell/lib/embedded";
 
 /** The storefront frame: theme variables, typography, the sticky header, the page, the footer, WhatsApp and the analytics consent. */
 export function StoreShell() {
   const { brand, settings, lang, cart, clearCart } = useStorefront();
+  const isCheckout = isCheckoutPath(useLocation().pathname);
   useQueryClient();
   useRouter();
 
@@ -87,7 +89,8 @@ export function StoreShell() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <StorefrontFooter />
+      {/* Checkout keeps the shopper on the form: no footer to wander off through. */}
+      {!isCheckout && <StorefrontFooter />}
       <WhatsAppFab />
       {/* Inside the shell on purpose: the consent banner used to render outside
           this element and inherited the admin font stack, which pulled ~229 KB

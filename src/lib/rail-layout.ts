@@ -21,6 +21,15 @@ export const RAIL_CONTAINER: Record<RailLayout, string> = {
   centered: "md:flex md:flex-wrap md:justify-center md:gap-6 md:overflow-visible md:pb-0",
 };
 
+/**
+ * Classes for the products' container on a phone: a single product sits in the
+ * middle instead of at the reading edge with the rest of the row empty (more
+ * than one scroll sideways).
+ */
+export function railPhoneAlign(count: number): string {
+  return count === 1 ? "justify-center" : "";
+}
+
 /** Classes for one card: in the centred layout it is as wide as a grid column would be. */
 export const RAIL_CARD: Record<RailLayout, string> = {
   grid: "md:w-auto md:min-w-0 md:shrink",

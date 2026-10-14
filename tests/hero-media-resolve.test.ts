@@ -134,9 +134,10 @@ describe("heroFrameAspect", () => {
   });
 
   it("falls back to the fill frame until the lead aspect is known", () => {
+    // The default phone shape is landscape 4:3 (it leaves room for products on the first screen).
     expect(
       heroFrameAspect({ device: "mobile", fitSetting: "contain_ambient", leadAspect: null }),
-    ).toBeCloseTo(4 / 5, 3);
+    ).toBeCloseTo(4 / 3, 3);
   });
 });
 
@@ -174,11 +175,11 @@ describe("HeroV2 classes mirror the frame model", () => {
     for (const [desktopHeight, px] of Object.entries(HERO_FILL_DESKTOP_PX)) {
       expect(heroFrameSizingClass({ smartFit: false, desktopHeight })).toContain(`sm:h-[${px}px]`);
     }
-    // Unset settings use the defaults: portrait phones, standard desktops.
+    // Unset settings use the defaults: landscape phones, standard desktops.
     expect(heroFrameSizingClass({ smartFit: false })).toBe(
       heroFrameSizingClass({
         smartFit: false,
-        mobileRatio: "portrait_4_5",
+        mobileRatio: "landscape_4_3",
         desktopHeight: "standard",
       }),
     );

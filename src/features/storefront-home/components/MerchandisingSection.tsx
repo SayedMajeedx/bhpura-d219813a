@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/storefront/product-card";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { type ProductRow } from "@/lib/data/storefront";
 import { SECTION_BANNER, resolveBannerSize } from "@/lib/banner-size";
-import { RAIL_CARD, RAIL_CONTAINER, railLayout } from "@/lib/rail-layout";
+import { RAIL_CARD, RAIL_CONTAINER, railLayout, railPhoneAlign } from "@/lib/rail-layout";
 
 /** A home page section heading with bilingual fallbacks. */
 export function SectionHeading({
@@ -97,7 +97,7 @@ export function MerchandisingSection({
   const productGrid = (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className={`flex overflow-x-auto flex-nowrap gap-4 pb-4 ${RAIL_CONTAINER[layout]}`}
+      className={`flex overflow-x-auto flex-nowrap gap-4 pb-4 ${railPhoneAlign(products.length)} ${RAIL_CONTAINER[layout]}`}
     >
       {products.map((product) => (
         <ProductCard

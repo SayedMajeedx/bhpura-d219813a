@@ -110,9 +110,10 @@ describe("Storefront Hero & PDP Gallery Options Suite", () => {
     expect(contained.container.innerHTML).toContain("rounded-2xl");
     contained.unmount();
 
-    // Phone ratios (portrait default, reels, square) and desktop heights.
+    // Phone ratios (landscape default, portrait, reels, square) and desktop heights.
     for (const [ratio, cls] of [
-      [undefined, "aspect-[4/5]"],
+      [undefined, "aspect-[4/3]"],
+      ["portrait_4_5", "aspect-[4/5]"],
       ["story_9_16", "aspect-[9/16]"],
       ["square_1_1", "aspect-square"],
     ] as const) {
