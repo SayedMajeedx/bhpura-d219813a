@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchPublicBranches, type PublicBranch } from "@/lib/data/branches";
 import { checkoutQueries, NO_PICKUP_PARTNERS } from "@/lib/data/checkout";
-import { pickupCartItems } from "@/features/checkout/lib/pickup-places";
+import { pickupBranchesOffered, pickupCartItems } from "@/features/checkout/lib/pickup-places";
 import type { CartItem } from "@/lib/storefront-context";
 import type { Storefront } from "@/features/checkout/types";
 
@@ -68,13 +68,25 @@ export function usePickupAndDigital({
     setBranchId(id);
     if (id) setPartnerIdState("");
   };
-  // A partner chosen for a cart it no longer holds whole is not a place to collect from.
+  // The branches this cart can be collected at: none when its pieces are at a partner's shop.
+  const offeredBranches = useMemo(
+    () => pickupBranchesOffered(branches, pickupPartners),
+    [branches, pickupPartners],
+  );
+  const firstPartner = pickupPartners.partners[0]?.id ?? "";
   useEffect(() => {
+    // A partner chosen for a cart it no longer holds whole is not a place to collect from.
     if (partnerId && !pickupPartners.partners.some((p) => p.id === partnerId)) {
       setPartnerIdState("");
-      setBranchId((cur) => cur || (branches[0]?.id ?? ""));
+      setBranchId((cur) => cur || (offeredBranches[0]?.id ?? ""));
+      return;
     }
-  }, [partnerId, pickupPartners.partners, branches]);
+    // With no branch to offer, the place is the partner's shop: chosen for the shopper.
+    if (!partnerId && offeredBranches.length === 0 && firstPartner) {
+      setPartnerIdState(firstPartner);
+      setBranchId("");
+    }
+  }, [partnerId, pickupPartners.partners, offeredBranches, firstPartner]);
 
   const branchLabel = (b: (typeof branches)[number]) =>
     lang === "ar" ? b.name_ar || b.name_en || "" : b.name_en || b.name_ar || "";
@@ -82,7 +94,7 @@ export function usePickupAndDigital({
     lang === "ar" ? b.location_ar || b.location_en || "" : b.location_en || b.location_ar || "";
 
   return {
-    branches,
+    branches: offeredBranches,
     branchId,
     setBranchId: chooseBranch,
     pickupPartners,
