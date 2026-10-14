@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { loyaltyQueries } from "@/lib/data/loyalty";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   Award,
   Coins,
@@ -14,7 +13,7 @@ import {
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
-import { DEFAULT_LOYALTY_TIERS } from "@/lib/loyalty.types";
+import { formatMoney } from "@/lib/format";
 
 interface CustomerLoyaltySectionProps {
   brandId: string;
@@ -44,25 +43,25 @@ export function CustomerLoyaltySection({
 
   const activePoints = account?.active_points ?? 0;
   const pendingPoints = account?.pending_points ?? 0;
+  const locale = isAr ? "ar" : "en";
   const redemptionRate = program?.redemption_rate ?? 0.01;
-  const cashEquivalent = (activePoints * redemptionRate).toFixed(3);
+  const cashEquivalent = formatMoney(activePoints * redemptionRate, currency, locale);
+  const holdingDays = program?.holding_period_days ?? 14;
 
-  const effectiveTiers = tiers.length > 0 ? tiers : (DEFAULT_LOYALTY_TIERS as any[]);
+  // The store's own tiers only: with none saved there is no tier to show (default tiers were
+  // shown here, with a discount nothing gives).
   const currentTierKey = account?.current_tier_key ?? "bronze";
-  const currentTier =
-    effectiveTiers.find((t: any) => t.tier_key === currentTierKey) || effectiveTiers[0];
-
-  // Find next tier for progression bar
-  const currentTierIdx = effectiveTiers.findIndex((t: any) => t.tier_key === currentTierKey);
+  const currentTier = tiers.find((t) => t.tier_key === currentTierKey) ?? null;
+  const currentTierIdx = tiers.findIndex((t) => t.tier_key === currentTierKey);
   const nextTier =
-    currentTierIdx >= 0 && currentTierIdx < effectiveTiers.length - 1
-      ? effectiveTiers[currentTierIdx + 1]
-      : null;
+    currentTierIdx >= 0 && currentTierIdx < tiers.length - 1 ? tiers[currentTierIdx + 1] : null;
 
   return (
     <div className="space-y-6">
       {/* Hero Points Summary Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div
+        className={`grid grid-cols-1 gap-4 ${currentTier ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+      >
         {/* Active Points */}
         <Card className="p-6 border-border bg-gradient-to-br from-primary/10 via-primary/5 to-transparent flex flex-col justify-between relative overflow-hidden">
           <div className="space-y-2">
@@ -76,12 +75,12 @@ export function CustomerLoyaltySection({
             </div>
             <div>
               <span className="text-3xl sm:text-4xl font-extrabold font-mono text-foreground">
-                {activePoints.toLocaleString()}
+                {activePoints.toLocaleString("en")}
               </span>
               <span className="text-xs text-muted-foreground block mt-1 font-medium">
                 {isAr
-                  ? `تعادل خصماً بقيمة ${cashEquivalent} ${currency} عند الدفع`
-                  : `Equivalent to ${cashEquivalent} ${currency} at checkout`}
+                  ? `تعادل خصماً بقيمة ${cashEquivalent} عند الدفع`
+                  : `Worth ${cashEquivalent} off at checkout`}
               </span>
             </div>
           </div>
@@ -109,12 +108,12 @@ export function CustomerLoyaltySection({
             </div>
             <div>
               <span className="text-3xl font-extrabold font-mono text-foreground">
-                {pendingPoints.toLocaleString()}
+                {pendingPoints.toLocaleString("en")}
               </span>
               <span className="text-xs text-muted-foreground block mt-1">
                 {isAr
-                  ? "تضاف تلقائياً لرصيدك بعد انتهاء فترة الاسترجاع"
-                  : "Matures into active balance after return window"}
+                  ? "نقاط طلباتك المكتملة، تُضاف لرصيدك بعد فترة الاعتماد"
+                  : "From your completed orders, added to your balance after the holding period"}
               </span>
             </div>
           </div>
@@ -123,142 +122,130 @@ export function CustomerLoyaltySection({
             <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <span>
               {isAr
-                ? `فترة الاعتماد: ${program?.holding_period_days ?? 14} يوماً من استلام الطلب`
-                : `Holding period: ${program?.holding_period_days ?? 14} days`}
+                ? `فترة الاعتماد: ${holdingDays} يوماً من اكتمال الطلب`
+                : `Holding period: ${holdingDays} days after the order is completed`}
             </span>
           </div>
         </Card>
 
-        {/* Current VIP Tier Card */}
-        <Card className="p-6 border-border bg-card flex flex-col justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-muted-foreground">
-                {isAr ? "مستوى العضوية الحالي" : "Current VIP Tier"}
-              </span>
-              <div
-                className="h-9 w-9 rounded-xl flex items-center justify-center text-white"
-                style={{ backgroundColor: currentTier.badge_color || "var(--primary)" }}
-              >
-                <Award className="h-5 w-5" />
-              </div>
-            </div>
-            <div>
-              <span className="text-2xl font-bold font-display text-foreground block">
-                {isAr ? currentTier.name_ar : currentTier.name_en}
-              </span>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs font-bold text-primary">
-                  {currentTier.points_multiplier}x {isAr ? "مضاعف نقاط" : "multiplier"}
+        {/* Current VIP Tier Card: only a tier the store saved */}
+        {currentTier && (
+          <Card className="p-6 border-border bg-card flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  {isAr ? "مستوى العضوية الحالي" : "Current VIP Tier"}
                 </span>
-                {currentTier.free_shipping && (
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                    <Truck className="h-3 w-3" />
-                    {isAr ? "شحن مجاني" : "Free shipping"}
+                <div
+                  className="h-9 w-9 rounded-xl flex items-center justify-center text-white"
+                  style={{ backgroundColor: currentTier.badge_color || "var(--primary)" }}
+                >
+                  <Award className="h-5 w-5" />
+                </div>
+              </div>
+              <div>
+                <span className="text-2xl font-bold font-display text-foreground block">
+                  {isAr ? currentTier.name_ar : currentTier.name_en}
+                </span>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-bold text-primary">
+                    {currentTier.points_multiplier}x {isAr ? "مضاعف نقاط" : "multiplier"}
                   </span>
-                )}
+                  {currentTier.free_shipping && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <Truck className="h-3 w-3" />
+                      {isAr ? "شحن مجاني" : "Free shipping"}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {nextTier ? (
-            <div className="mt-4 pt-3 border-t border-border-subtle space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>{isAr ? "الترقية للمستوى التالي:" : "Next Tier:"}</span>
-                <span className="font-semibold text-foreground">
-                  {isAr ? nextTier.name_ar : nextTier.name_en} ({nextTier.min_spend} {currency})
+            {nextTier ? (
+              <div className="mt-4 pt-3 border-t border-border-subtle space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? `المستوى التالي: ${nextTier.name_ar}، عند إنفاق ${formatMoney(Number(nextTier.min_spend), currency, locale)}`
+                    : `Next tier: ${nextTier.name_en}, at ${formatMoney(Number(nextTier.min_spend), currency, locale)} spent`}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>
+                  {isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}
                 </span>
               </div>
-              <Progress
-                value={Math.min(
-                  100,
-                  Math.max(15, (activePoints / (nextTier.min_points || 1000)) * 100),
-                )}
-                className="h-1.5"
-              />
-            </div>
-          ) : (
-            <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>
-                {isAr ? "أنت في أعلى مستويات العضوية!" : "You have reached the top tier!"}
-              </span>
-            </div>
-          )}
-        </Card>
+            )}
+          </Card>
+        )}
       </div>
 
       {/* Tiers & Perks Showcase */}
-      <Card className="p-6 border-border bg-card space-y-4">
-        <h3 className="text-base font-bold font-display text-foreground flex items-center gap-2">
-          <Award className="h-5 w-5 text-primary" />
-          {isAr ? "مستويات ومزايا برنامج الولاء" : "Loyalty Tiers & Benefits"}
-        </h3>
+      {tiers.length > 0 && (
+        <Card className="p-6 border-border bg-card space-y-4">
+          <h3 className="text-base font-bold font-display text-foreground flex items-center gap-2">
+            <Award className="h-5 w-5 text-primary" />
+            {isAr ? "مستويات ومزايا برنامج الولاء" : "Loyalty Tiers & Benefits"}
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {effectiveTiers.map((t: any) => {
-            const isCurrent = t.tier_key === currentTierKey;
-            return (
-              <div
-                key={t.tier_key}
-                className={`p-4 rounded-xl border transition-all ${
-                  isCurrent
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                    : "border-border-strong bg-background/50"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className="text-xs font-bold px-2 py-0.5 rounded-md"
-                    style={{
-                      backgroundColor: `${t.badge_color || "#64748b"}20`,
-                      color: t.badge_color || "var(--foreground)",
-                    }}
-                  >
-                    {isAr ? t.name_ar : t.name_en}
-                  </span>
-                  {isCurrent && (
-                    <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                      {isAr ? "مستواك الحالي" : "Your Tier"}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {tiers.map((t) => {
+              const isCurrent = t.tier_key === currentTierKey;
+              return (
+                <div
+                  key={t.tier_key}
+                  className={`p-4 rounded-xl border transition-all ${
+                    isCurrent
+                      ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                      : "border-border-strong bg-background/50"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-md"
+                      style={{
+                        backgroundColor: `${t.badge_color || "#64748b"}20`,
+                        color: t.badge_color || "var(--foreground)",
+                      }}
+                    >
+                      {isAr ? t.name_ar : t.name_en}
                     </span>
-                  )}
-                </div>
+                    {isCurrent && (
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {isAr ? "مستواك الحالي" : "Your Tier"}
+                      </span>
+                    )}
+                  </div>
 
-                <div className="text-xs text-muted-foreground mb-3 font-mono">
-                  {Number(t.min_spend) > 0
-                    ? `${t.min_spend} ${currency} ${isAr ? "إنفاق" : "spend"}`
-                    : isAr
-                      ? "مستوى البداية"
-                      : "Starting Tier"}
-                </div>
+                  <div className="text-xs text-muted-foreground mb-3 font-mono">
+                    {Number(t.min_spend) > 0
+                      ? `${formatMoney(Number(t.min_spend), currency, locale)} ${isAr ? "إنفاق" : "spend"}`
+                      : isAr
+                        ? "مستوى البداية"
+                        : "Starting Tier"}
+                  </div>
 
-                <ul className="space-y-1.5 text-xs text-foreground/80">
-                  <li className="flex items-center gap-1.5">
-                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span>
-                      {t.points_multiplier}x {isAr ? "مضاعف نقاط" : "Points Multiplier"}
-                    </span>
-                  </li>
-                  {t.discount_percent > 0 && (
+                  <ul className="space-y-1.5 text-xs text-foreground/80">
                     <li className="flex items-center gap-1.5">
                       <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span>
-                        {t.discount_percent}% {isAr ? "خصم دائم" : "Exclusive Discount"}
+                        {t.points_multiplier}x {isAr ? "مضاعف نقاط" : "Points Multiplier"}
                       </span>
                     </li>
-                  )}
-                  {t.free_shipping && (
-                    <li className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
-                      <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                      <span>{isAr ? "شحن مجاني على كل الطلبات" : "Free Shipping"}</span>
-                    </li>
-                  )}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+                    {t.free_shipping && (
+                      <li className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>{isAr ? "شحن مجاني على كل الطلبات" : "Free Shipping"}</span>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Points History Ledger */}
       <Card className="p-6 border-border bg-card space-y-4">
@@ -298,11 +285,14 @@ export function CustomerLoyaltySection({
                         {isAr ? entry.reference_note_ar : entry.reference_note_en}
                       </p>
                       <span className="text-xs text-muted-foreground block">
-                        {new Date(entry.created_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
+                        {new Date(entry.created_at).toLocaleDateString(
+                          isAr ? "ar-u-nu-latn" : "en-GB",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )}
                       </span>
                     </div>
                   </div>

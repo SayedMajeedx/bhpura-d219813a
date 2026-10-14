@@ -87,3 +87,17 @@ export function loyaltyMembers(
       (a, b) => b.available + b.held - (a.available + a.held) || a.name.localeCompare(b.name, "ar"),
     );
 }
+
+/**
+ * The tier a shopper's account page names, or null: only a programme that is on, an account the
+ * shopper has, and a tier the store saved. The page once worked out its own ("Gold VIP" from 350
+ * spent) beside the store's real tiers.
+ */
+export function shopperLoyaltyTier<T extends { tier_key: string }>(
+  program: { is_enabled?: boolean | null } | null | undefined,
+  account: { current_tier_key?: string | null } | null | undefined,
+  tiers: readonly T[],
+): T | null {
+  if (loyaltyProgramState(program) !== "on" || !account || tiers.length === 0) return null;
+  return tiers.find((tier) => tier.tier_key === (account.current_tier_key || "bronze")) ?? null;
+}
