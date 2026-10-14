@@ -37,7 +37,12 @@ export function StockOverviewStrip({
   const number = (value: number) => value.toLocaleString(isAr ? "ar" : "en");
 
   return (
-    <section aria-label={isAr ? "ملخص المخزون" : "Stock summary"} className="flex flex-wrap gap-2">
+    // On a phone the figures are one row that scrolls sideways: wrapped, they took 253px above the
+    // first product (it started at 755px of an 812px screen).
+    <section
+      aria-label={isAr ? "ملخص المخزون" : "Stock summary"}
+      className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+    >
       <Tile
         label={isAr ? "قطع في المحل" : "Pieces in store"}
         value={number(totals.storePieces)}
@@ -82,7 +87,7 @@ export function StockOverviewStrip({
 
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="min-w-0 flex-1 basis-36 rounded-xl border border-border-subtle bg-card p-3 shadow-2xs">
+    <div className="w-40 min-w-0 shrink-0 snap-start rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
       <p className="break-words text-xs font-medium text-muted-foreground">{label}</p>
       <p className="mt-1 break-words font-mono text-sm font-extrabold text-foreground">{value}</p>
       {hint && <p className="mt-0.5 break-words text-xs text-muted-foreground">{hint}</p>}
@@ -122,7 +127,7 @@ function LowStockLevelTile({
     level === 0 ? (isAr ? "متوقف" : "Off") : isAr ? `${level} قطع أو أقل` : `${level} or fewer`;
 
   return (
-    <div className="min-w-0 flex-1 basis-36 rounded-xl border border-border-subtle bg-card p-3 shadow-2xs">
+    <div className="w-40 min-w-0 shrink-0 snap-start rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
       <p className="break-words text-xs font-medium text-muted-foreground">
         {isAr ? "تنبيه المخزون المنخفض عند" : "Low stock warning at"}
       </p>

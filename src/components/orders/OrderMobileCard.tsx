@@ -8,6 +8,7 @@ import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { maskPhoneForList } from "@/lib/privacy";
 import type { OrderListRow } from "@/lib/data/orders";
 import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
+import { orderCardWhen, orderIsSettled, orderItemsLine } from "@/features/orders/lib/order-card";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -36,6 +37,10 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   const customerPhone = contact.phone;
   const isGuest = !customerName;
   const paymentMethod = getStoredPaymentMethodPresentation(order.payment_method, lang);
+  const items = orderItemsLine(order.order_items, lang);
+  const when = orderCardWhen(order.created_at, lang);
+  // A handed-over, cancelled or refunded order has no next step: its badge already says so.
+  const settled = orderIsSettled(order);
 
   return (
     <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
@@ -94,7 +99,17 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
         )}
       </div>
 
-      {/* Badges Row */}
+      {/* What was ordered */}
+      {items && (
+        <p className="line-clamp-2 break-words text-xs text-foreground">
+          {items.first}
+          {items.more > 0 && (
+            <span className="ms-1.5 font-semibold text-muted-foreground">+{items.more}</span>
+          )}
+        </p>
+      )}
+
+      {/* Badges Row, and when it was placed */}
       <div className="flex items-center gap-1.5 flex-wrap">
         <span
           className={`rounded border px-2 py-0.5 text-xs font-semibold ${
@@ -115,14 +130,17 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
             {fulfillmentBadge.label}
           </span>
         )}
+        {when && <span className="ms-auto text-xs text-muted-foreground">{when}</span>}
       </div>
 
       <OrderAppointmentLine order={order} isAr={isAr} />
 
-      {/* Primary Action Button Bar */}
-      <div className="pt-1 flex items-center justify-end gap-2 border-t border-border-subtle">
-        <div className="w-full sm:w-auto">{renderPrimaryAction(order)}</div>
-      </div>
+      {/* Primary Action Button Bar: only when there is a next step */}
+      {!settled && (
+        <div className="pt-1 flex items-center justify-end gap-2 border-t border-border-subtle">
+          <div className="w-full sm:w-auto">{renderPrimaryAction(order)}</div>
+        </div>
+      )}
     </div>
   );
 };

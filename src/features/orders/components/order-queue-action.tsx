@@ -4,6 +4,7 @@ import { CalendarDays, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus } from "@/lib/payment-status";
+import { orderSettledState } from "@/features/orders/lib/order-card";
 import { Loader2 } from "lucide-react";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { useVocabulary } from "@/hooks/use-vocabulary";
@@ -65,13 +66,15 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
   );
   const isPaid = paymentBadge === "paid";
   const isPartiallyPaid = paymentBadge === "partial";
-  const isRefunded = paymentBadge === "refunded";
   const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
   const orderStatus = String(o.status || "").toUpperCase();
   const isUpdating = updatingOrderId === o.id;
-  const isDelivered =
-    ["COMPLETED", "DELIVERED"].includes(ff) || ["COMPLETED", "DELIVERED"].includes(orderStatus);
-  const isCancelled = ff === "CANCELLED" || orderStatus === "CANCELLED";
+  // One reading of "done" for the button and the card (lib/order-card).
+  const {
+    delivered: isDelivered,
+    cancelled: isCancelled,
+    refunded: isRefunded,
+  } = orderSettledState(o);
   const isOutForDelivery = [
     "SHIPPED",
     "ASSIGNED",
