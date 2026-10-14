@@ -1,6 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Save, Loader2, MoreHorizontal, Phone, Receipt, Printer, Copy, Unlock } from "lucide-react";
+import {
+  Save,
+  Loader2,
+  MessageCircle,
+  MoreHorizontal,
+  Phone,
+  Receipt,
+  Printer,
+  Copy,
+  Unlock,
+} from "lucide-react";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -45,6 +56,10 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
 }) => {
   const isAr = lang === "ar";
   const cleanPhone = (customerPhone || "").replace(/[^\d]/g, "");
+  const chatUrl = whatsappChatUrl(customerPhone);
+  const savesFirst = (isDirty || isCreationMode) && Boolean(onSave);
+  const unlockInMenu =
+    !savesFirst && Boolean(primaryAction) && isReadOnly && canUnlockEditing && Boolean(onUnlock);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -65,7 +80,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
       />
 
       {/* Primary CTA Slot (Takes Full Available Width) */}
-      {(isDirty || isCreationMode) && onSave ? (
+      {savesFirst ? (
         <Button
           onClick={onSave}
           disabled={saving}
@@ -121,6 +136,25 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
         </Button>
       )}
 
+      {/* The customer on WhatsApp in one tap: the call a phone makes most about an order. */}
+      {!isCreationMode && chatUrl && (
+        <Button
+          asChild
+          variant="outline"
+          size="icon"
+          className="h-11 w-11 shrink-0 rounded-2xl border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 shadow-xs touch-manipulation"
+        >
+          <a
+            href={chatUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={isAr ? "واتساب العميل" : "WhatsApp the customer"}
+          >
+            <MessageCircle className="h-5 w-5" />
+          </a>
+        </Button>
+      )}
+
       {/* Secondary Actions Overflow Menu ("...") */}
       {!isCreationMode && (
         <DropdownMenu>
@@ -145,6 +179,17 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
               {isAr ? "إجراءات إضافية" : "Secondary Actions"}
             </div>
             <DropdownMenuSeparator />
+
+            {/* The next step holds the bar's main button, so editing the order is here. */}
+            {unlockInMenu && (
+              <DropdownMenuItem
+                onClick={onUnlock}
+                className="cursor-pointer flex items-center gap-2.5 px-2 py-2 text-xs font-medium rounded-lg"
+              >
+                <Unlock className="h-4 w-4 text-primary shrink-0" />
+                <span>{isAr ? "تعديل الطلب" : "Edit Order"}</span>
+              </DropdownMenuItem>
+            )}
 
             {/* WhatsApp / Send Invoice */}
             {sendInvoiceDialogTrigger ? (

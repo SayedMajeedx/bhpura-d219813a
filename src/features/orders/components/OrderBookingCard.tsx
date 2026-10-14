@@ -91,13 +91,13 @@ export function OrderBookingCard({
           {travelFee > 0 && (
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">{isAr ? "رسوم التنقل" : "Travel fee"}</dt>
-              <dd dir="ltr">{formatMoney(travelFee, currency)}</dd>
+              <dd dir="ltr">{formatMoney(travelFee, currency, isAr ? "ar" : "en")}</dd>
             </div>
           )}
           {deposit > 0 && (
             <div className="flex justify-between gap-2">
               <dt className="text-muted-foreground">{isAr ? "العربون" : "Deposit"}</dt>
-              <dd dir="ltr">{formatMoney(deposit, currency)}</dd>
+              <dd dir="ltr">{formatMoney(deposit, currency, isAr ? "ar" : "en")}</dd>
             </div>
           )}
         </dl>

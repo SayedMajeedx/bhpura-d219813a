@@ -1,4 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
+import { AdminPageCount, AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 interface DashboardCommandHeaderProps {
   lang: "ar" | "en";
@@ -14,9 +15,13 @@ interface DashboardCommandHeaderProps {
   isServices?: boolean;
 }
 
+/**
+ * The dashboard's heading: one row on a phone (the title and its count), so
+ * today's figures come next; the line on what the figures cover waits for a
+ * wider screen. The store's name is in the top bar already.
+ */
 export function DashboardCommandHeader({
   lang,
-  brandName,
   salesTransactionCount,
   periodLabel,
   isCatalog = false,
@@ -27,55 +32,38 @@ export function DashboardCommandHeader({
   const isAr = lang === "ar";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-card p-4 sm:p-5 shadow-sm">
-      {/* Background Mesh */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/10 pointer-events-none" />
-
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            <LayoutDashboard className="h-3.5 w-3.5 shrink-0" />
-            <span>{isAr ? "ملخص المتجر" : "Store Overview"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-              {brandName}
-            </span>
-          </div>
-
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <span>{isAr ? "نظرة عامة" : "Overview"}</span>
-            {isCatalog ? (
-              <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40 rounded-full">
-                {inquiryCount} {isAr ? "استفسار واتساب" : "inquiries"}
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border rounded-full">
-                {salesTransactionCount}{" "}
-                {isServices ? (isAr ? "حجز مدفوع" : "paid bookings") : isAr ? "عملية بيع" : "sales"}
-              </span>
-            )}
-          </h1>
-
-          <p className="text-xs text-muted-foreground max-w-xl">
-            {isCatalog
+    <AdminPageHeader
+      icon={LayoutDashboard}
+      title={isAr ? "نظرة عامة" : "Overview"}
+      badges={
+        isCatalog ? (
+          <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40 rounded-full">
+            {inquiryCount} {isAr ? "استفسار واتساب" : "inquiries"}
+          </span>
+        ) : (
+          <AdminPageCount>
+            {salesTransactionCount}{" "}
+            {isServices ? (isAr ? "حجز مدفوع" : "paid bookings") : isAr ? "عملية بيع" : "sales"}
+          </AdminPageCount>
+        )
+      }
+      description={
+        isCatalog
+          ? isAr
+            ? `استفسارات العملاء عبر واتساب وتفاعلهم مع منتجات الكتالوج خلال ${periodLabel}.`
+            : `WhatsApp customer inquiries and catalog product engagement for ${periodLabel}.`
+          : isServices
+            ? isAr
+              ? `المبالغ المحصلة من الحجوزات والطلبات خلال ${periodLabel}. افتح الطلبات للتفاصيل.`
+              : `Money collected from bookings and orders for ${periodLabel}. Open Orders for the details.`
+            : hasIncubators
               ? isAr
-                ? `استفسارات العملاء عبر واتساب وتفاعلهم مع منتجات الكتالوج خلال ${periodLabel}.`
-                : `WhatsApp customer inquiries and catalog product engagement for ${periodLabel}.`
-              : isServices
-                ? isAr
-                  ? `المبالغ المحصلة من الحجوزات والطلبات خلال ${periodLabel}. افتح الطلبات للتفاصيل.`
-                  : `Money collected from bookings and orders for ${periodLabel}. Open Orders for the details.`
-                : hasIncubators
-                  ? isAr
-                    ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
-                    : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`
-                  : isAr
-                    ? `المبيعات المحصلة من الطلبات خلال ${periodLabel}. افتح صفحة الطلبات للتفاصيل.`
-                    : `Collected order sales for ${periodLabel}. Open Orders for the details.`}
-          </p>
-        </div>
-
-        {/* Clean telemetry header without duplicate buttons */}
-      </div>
-    </div>
+                ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
+                : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`
+              : isAr
+                ? `المبيعات المحصلة من الطلبات خلال ${periodLabel}. افتح صفحة الطلبات للتفاصيل.`
+                : `Collected order sales for ${periodLabel}. Open Orders for the details.`
+      }
+    />
   );
 }

@@ -192,7 +192,6 @@ describe("handing an order over from its own page", () => {
           approvingBenefit: false,
           brandId: "b1",
           isCreationMode: false,
-          isReadOnly: false,
           items: [],
           lang: "en",
           order: { ...transferOrder, ...advanceApproved, ...order },

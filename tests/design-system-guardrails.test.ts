@@ -66,7 +66,7 @@ function walk(dir: string, out: string[] = []): string[] {
 }
 
 /** One-line truncations in the code today; the ceiling only moves down. */
-const TRUNCATE_BUDGET = 211;
+const TRUNCATE_BUDGET = 210;
 
 const FILES = walk(SRC).map((file) => ({
   rel: path.relative(SRC, file).split(path.sep).join("/"),
@@ -108,7 +108,7 @@ describe("design system guardrails", () => {
   it("keeps hand-rolled <button> elements within budget", () => {
     // AGENTS.md §2: anything that behaves like a button uses <Button>.
     const count = countMatches(/<button[\s>]/g);
-    expect(count).toBeLessThanOrEqual(213);
+    expect(count).toBeLessThanOrEqual(212);
   });
 
   it("lets card-like buttons wrap their text, within budget", () => {
@@ -208,6 +208,31 @@ describe("design system guardrails", () => {
     for (const { rel, source } of FILES) {
       for (const match of source.matchAll(/className="([^"]*\bproduct-title\b[^"]*)"/g)) {
         if (/\b(truncate|line-clamp-1|whitespace-nowrap)\b/.test(match[1])) offenders.push(rel);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("writes an order's money in the reader's language on the order screens", () => {
+    // `formatMoney(amount, currency)` with no language writes English ("BHD 30.000"): the order
+    // page did, in Arabic, beside a list that wrote "30.000 د.ب.". An order screen says which
+    // language it writes in. The invoice message (SendInvoiceDialog) keeps its own language.
+    const orderScreens = (rel: string) =>
+      (rel.startsWith("features/orders/") || rel.startsWith("components/orders/")) &&
+      rel !== "components/orders/SendInvoiceDialog.tsx";
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      if (!orderScreens(rel)) continue;
+      for (const match of source.matchAll(/formatMoney\(([^()]|\([^()]*\))*\)/g)) {
+        const args = match[0].slice("formatMoney(".length, -1);
+        let depth = 0;
+        let commas = 0;
+        for (const c of args) {
+          if (c === "(" || c === "[" || c === "{") depth += 1;
+          else if (c === ")" || c === "]" || c === "}") depth -= 1;
+          else if (c === "," && depth === 0) commas += 1;
+        }
+        if (commas === 1) offenders.push(`${rel}: ${match[0]}`);
       }
     }
     expect(offenders).toEqual([]);

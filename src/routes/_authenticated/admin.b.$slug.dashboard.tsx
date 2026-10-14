@@ -1,3 +1,5 @@
+import { checklistView } from "@/features/dashboard/lib/checklist-view";
+import { OnboardingChecklistLine } from "@/features/dashboard/components/OnboardingChecklistLine";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { BookingsGlanceCard } from "@/features/bookings/components/BookingsGlanceCard";
 import { createFileRoute } from "@tanstack/react-router";
@@ -60,6 +62,7 @@ function Dashboard() {
 
   const isMounted = typeof window !== "undefined";
   const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
+  const [checklistOpen, setChecklistOpen] = useState(false);
 
   const {
     isPreviewed,
@@ -209,6 +212,10 @@ function Dashboard() {
 
   const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
   const isAllStepsCompleted = completedStepsCount === 3;
+  const checklist = checklistView({
+    completed: completedStepsCount,
+    dismissed: isOnboardingDismissed,
+  });
 
   // Primary Financial or Catalog KPIs
   const primaryKpis = primaryKpisFor({
@@ -237,6 +244,9 @@ function Dashboard() {
         isServices={isServicesProfile(storeProfile.modules)}
       />
 
+      {/* The figures first, on every view: on a phone they once came after the checklist, a screen down. */}
+      <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} />
+
       {/* 1.5 Merchant Action Strip: What Needs Attention Today */}
       <DashboardActionStrip
         slug={slug}
@@ -257,8 +267,6 @@ function Dashboard() {
         isAr={isAr}
       />
 
-      <ReviewInsightsSummary brandId={brandId} slug={slug} isAr={isAr} />
-
       {/* 2. Scope Switcher Toolbar */}
       <DashboardScopeSwitcher
         lang={isAr ? "ar" : "en"}
@@ -272,7 +280,14 @@ function Dashboard() {
       {activeScope === "financials" && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Guided Onboarding Checklist with Real State & Interactive Completion */}
-          {!isOnboardingDismissed && (
+          {checklist === "line" && !checklistOpen && (
+            <OnboardingChecklistLine
+              completed={completedStepsCount}
+              isAr={isAr}
+              onOpen={() => setChecklistOpen(true)}
+            />
+          )}
+          {(checklist === "full" || (checklist === "line" && checklistOpen)) && (
             <OnboardingChecklist
               brand={brand}
               completedStepsCount={completedStepsCount}
@@ -308,9 +323,6 @@ function Dashboard() {
               </button>
             </div>
           )}
-
-          {/* Primary Financial KPIs (Top Row) */}
-          <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} />
 
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <SalesAndActionsRow
@@ -362,6 +374,9 @@ function Dashboard() {
           tracksStock={storeProfile.modules.stock}
         />
       )}
+
+      {/* What customers say: worth reading, after the figures and the work to do. */}
+      <ReviewInsightsSummary brandId={brandId} slug={slug} isAr={isAr} />
     </div>
   );
 }

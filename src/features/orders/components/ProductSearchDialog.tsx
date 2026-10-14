@@ -130,7 +130,7 @@ export function ProductSearchDialog({
 
                     <div className="text-end shrink-0">
                       <p className="font-bold text-sm text-foreground">
-                        {formatMoney(price, currency)}
+                        {formatMoney(price, currency, lang)}
                       </p>
                       <span
                         className={cn(

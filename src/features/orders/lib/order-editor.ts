@@ -352,8 +352,8 @@ export function promoFailureMessage(
         : "This promo code is only available to customers with a previous order.";
     case "MINIMUM_NOT_MET":
       return lang === "ar"
-        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), currency)}.`
-        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), currency)}.`;
+        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), currency, lang)}.`
+        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), currency, lang)}.`;
     case "NO_ELIGIBLE_ITEMS":
       return lang === "ar"
         ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً."

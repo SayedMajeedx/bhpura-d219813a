@@ -200,7 +200,6 @@ describe("right after sending the piece to the workshop", () => {
       approvingBenefit: false,
       brandId: "b1",
       isCreationMode: false,
-      isReadOnly: false,
       items: [tailoredLine],
       lang: "en",
       order: paidOrder,

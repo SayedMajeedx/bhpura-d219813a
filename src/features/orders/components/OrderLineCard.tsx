@@ -33,6 +33,7 @@ export function OrderLineCard({
   editingItemSheetIdx,
   editingItems,
   idx,
+  isReadOnly = false,
   it,
   items,
   lang,
@@ -54,6 +55,8 @@ export function OrderLineCard({
   editingItemSheetIdx: number | null;
   editingItems: Record<number, boolean>;
   idx: number;
+  /** View mode: the line's edit and remove buttons are left out, not shown greyed. */
+  isReadOnly?: boolean;
   it: OrderItem;
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
@@ -134,23 +137,25 @@ export function OrderLineCard({
             </span>
           )}
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border-strong touch-manipulation"
-          onClick={() => setEditingItemSheetIdx(idx)}
-        >
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{isAr ? "تعديل المنتج" : "Product / Edit"}</span>
-        </Button>
+        {!isReadOnly && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border-strong touch-manipulation"
+            onClick={() => setEditingItemSheetIdx(idx)}
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{isAr ? "تعديل المنتج" : "Product / Edit"}</span>
+          </Button>
+        )}
       </div>
 
       {/* Mobile Read-Only Compact Summary Row (< 640px) */}
       <div className="flex sm:hidden items-center justify-between gap-2 pt-1 pb-0.5">
         <div className="flex items-center gap-1.5 text-xs font-semibold">
           <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border-subtle">
-            {it.quantity} × {formatMoney(it.unit_price, currency)}
+            {it.quantity} × {formatMoney(it.unit_price, currency, isAr ? "ar" : "en")}
           </span>
         </div>
         <div className="text-end">
@@ -158,7 +163,7 @@ export function OrderLineCard({
             {isAr ? "المجموع" : "Total"}
           </span>
           <span className="font-extrabold text-sm text-foreground">
-            {formatMoney(it.line_total, currency)}
+            {formatMoney(it.line_total, currency, isAr ? "ar" : "en")}
           </span>
         </div>
       </div>
@@ -194,7 +199,7 @@ export function OrderLineCard({
                 return (
                   <SelectItem key={v.id} value={v.id}>
                     {p.name} {v.size ? `· ${v.size}` : ""} {v.color ? `· ${v.color}` : ""} —{" "}
-                    {formatMoney(v.selling_price, currency)}
+                    {formatMoney(v.selling_price, currency, isAr ? "ar" : "en")}
                   </SelectItem>
                 );
               })}
@@ -269,7 +274,7 @@ export function OrderLineCard({
             />
           ) : (
             <div className="text-xs font-bold text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
-              {formatMoney(it.unit_price, currency)}
+              {formatMoney(it.unit_price, currency, isAr ? "ar" : "en")}
             </div>
           )}
           {Number(it.original_price ?? (variant as any)?.original_price ?? 0) >
@@ -285,7 +290,7 @@ export function OrderLineCard({
               <span className="mx-1">·</span>
               {isAr ? "سعر التخفيض" : "Sale"}:{" "}
               <span className="font-medium text-foreground">
-                {formatMoney(it.unit_price, currency)}
+                {formatMoney(it.unit_price, currency, isAr ? "ar" : "en")}
               </span>
             </p>
           )}
@@ -318,7 +323,8 @@ export function OrderLineCard({
               <div className="flex items-center gap-2">
                 {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                    {isAr ? "التكلفة المسجلة:" : "Cost:"} {formatMoney(it.unit_cost, currency)}
+                    {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
+                    {formatMoney(it.unit_cost, currency, isAr ? "ar" : "en")}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
@@ -487,7 +493,7 @@ export function OrderLineCard({
                         : "border-border hover:bg-secondary"
                     }`}
                   >
-                    {c.name} +{formatMoney(c.price_delta, currency)}
+                    {c.name} +{formatMoney(c.price_delta, currency, isAr ? "ar" : "en")}
                   </button>
                 );
               })}
@@ -504,15 +510,19 @@ export function OrderLineCard({
       <div className="flex items-center justify-between pt-2 border-t border-border">
         <span className="text-sm text-muted-foreground">{t("orderDetail.lineTotal")}</span>
         <div className="flex items-center gap-3">
-          <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setItems(items.filter((_, i) => i !== idx))}
-            aria-label={lang === "ar" ? "حذف بند الطلب" : "Remove order item"}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <span className="font-medium">
+            {formatMoney(it.line_total, currency, isAr ? "ar" : "en")}
+          </span>
+          {!isReadOnly && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setItems(items.filter((_, i) => i !== idx))}
+              aria-label={lang === "ar" ? "حذف بند الطلب" : "Remove order item"}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
 
