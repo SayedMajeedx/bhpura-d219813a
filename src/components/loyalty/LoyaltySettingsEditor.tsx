@@ -18,7 +18,9 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Coins, ShieldCheck, Gift, Clock } from "lucide-react";
 import type { BrandLoyaltyProgram } from "@/lib/loyalty.types";
-import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { formatMoney } from "@/lib/format";
+import { currencyLabel } from "@/lib/currency-label";
 
 interface LoyaltySettingsEditorProps {
   open: boolean;
@@ -35,7 +37,8 @@ export function LoyaltySettingsEditor({
 }: LoyaltySettingsEditorProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const money = useMoneyLabel(isAr ? "ar" : "en");
+  const currency = useStoreCurrency(brandId);
+  const money = currencyLabel(currency, isAr ? "ar" : "en");
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<Partial<BrandLoyaltyProgram>>({
@@ -146,7 +149,7 @@ export function LoyaltySettingsEditor({
 
               <div className="space-y-1.5">
                 <Label htmlFor="redemption_rate">
-                  {isAr ? `قيمة النقطة بالدينار (${money})` : `Point value in ${money}`}
+                  {isAr ? `قيمة النقطة (${money})` : `Point value in ${money}`}
                 </Label>
                 <Input
                   id="redemption_rate"
@@ -162,9 +165,7 @@ export function LoyaltySettingsEditor({
                   }
                 />
                 <span className="text-xs text-muted-foreground block">
-                  {isAr
-                    ? `(100 نقطة = ${((form.redemption_rate ?? 0.01) * 100).toFixed(3)} د.ب)`
-                    : `(100 pts = ${((form.redemption_rate ?? 0.01) * 100).toFixed(3)} BHD)`}
+                  {`(${isAr ? "100 نقطة" : "100 pts"} = ${formatMoney((form.redemption_rate ?? 0.01) * 100, currency, isAr ? "ar" : "en")})`}
                 </span>
               </div>
 
@@ -301,22 +302,6 @@ export function LoyaltySettingsEditor({
                 <div>
                   <Label className="font-normal">
                     {isAr
-                      ? "كسب نقاط على المنتجات المخفضة/العروض"
-                      : "Include discounted/sale items"}
-                  </Label>
-                </div>
-                <Switch
-                  checked={form.include_discounted_items ?? false}
-                  onCheckedChange={(c) =>
-                    setForm((prev) => ({ ...prev, include_discounted_items: c }))
-                  }
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="font-normal">
-                    {isAr
                       ? "تفعيل مضاعفات مستويات العضوية (Tier Multipliers)"
                       : "Enable VIP Tier Multipliers"}
                   </Label>
@@ -335,7 +320,7 @@ export function LoyaltySettingsEditor({
           <Card className="p-4 space-y-4 border-border">
             <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Gift className="h-4 w-4 text-primary" />
-              {isAr ? "مكافآت وحوافز إضافية (Bonus Triggers)" : "Bonus Points Triggers"}
+              {isAr ? "مكافأة أول طلب" : "First Order Bonus"}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -357,59 +342,11 @@ export function LoyaltySettingsEditor({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="review_bonus">
-                  {isAr ? "مكافأة تقييم المنتجات" : "Product Review Bonus Points"}
-                </Label>
-                <Input
-                  id="review_bonus"
-                  type="number"
-                  min="0"
-                  value={form.review_bonus_points ?? 25}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      review_bonus_points: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="welcome_bonus">
-                  {isAr ? "مكافأة التسجيل والترحيب" : "Welcome / Sign-up Bonus Points"}
-                </Label>
-                <Input
-                  id="welcome_bonus"
-                  type="number"
-                  min="0"
-                  value={form.welcome_bonus_points ?? 20}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      welcome_bonus_points: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="referral_bonus">
-                  {isAr ? "مكافأة إحالة صديق" : "Referral Bonus Points"}
-                </Label>
-                <Input
-                  id="referral_bonus"
-                  type="number"
-                  min="0"
-                  value={form.referral_bonus_points ?? 100}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      referral_bonus_points: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground sm:col-span-2">
+                {isAr
+                  ? "تُضاف مع نقاط أول طلب للعميل يكتمل أو يُدفع."
+                  : "Added to the points of a customer's first order that is completed or paid."}
+              </p>
             </div>
           </Card>
 

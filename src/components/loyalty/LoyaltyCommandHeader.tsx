@@ -1,17 +1,18 @@
 import { Award, Sparkles, Settings2 } from "lucide-react";
 import { AdminPageAction, AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useI18n } from "@/lib/i18n";
+import type { LoyaltyProgramState } from "@/lib/loyalty-program";
 
 interface LoyaltyCommandHeaderProps {
   onOpenSettings?: () => void;
   onOpenAdjust?: () => void;
-  isEnabled: boolean;
+  state: LoyaltyProgramState;
 }
 
 export function LoyaltyCommandHeader({
   onOpenSettings,
   onOpenAdjust,
-  isEnabled,
+  state,
 }: LoyaltyCommandHeaderProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -23,12 +24,24 @@ export function LoyaltyCommandHeader({
       badges={
         <span
           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
-            isEnabled
+            state === "on"
               ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-              : "bg-muted text-muted-foreground border-border"
+              : state === "not_set_up"
+                ? "bg-warning/10 text-warning border-warning/30"
+                : "bg-muted text-muted-foreground border-border"
           }`}
         >
-          {isEnabled ? (isAr ? "مفعّل" : "Active") : isAr ? "معطّل" : "Disabled"}
+          {state === "on"
+            ? isAr
+              ? "مفعّل"
+              : "Active"
+            : state === "not_set_up"
+              ? isAr
+                ? "غير مُعدّ"
+                : "Not set up"
+              : isAr
+                ? "متوقف"
+                : "Off"}
         </span>
       }
       description={

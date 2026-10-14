@@ -18,6 +18,7 @@ export const loyaltyKeys = {
   tiers: (brandId: string) => [...loyaltyKeys.all(brandId), "tiers"] as const,
   ledger: (brandId: string) => [...loyaltyKeys.all(brandId), "ledger"] as const,
   summary: (brandId: string) => [...loyaltyKeys.all(brandId), "summary"] as const,
+  members: (brandId: string) => [...loyaltyKeys.all(brandId), "members"] as const,
   account: (brandId: string, customerId: string) =>
     [...loyaltyKeys.all(brandId), "account", customerId] as const,
   customerLedger: (brandId: string, customerId: string) =>
@@ -125,6 +126,21 @@ export async function fetchLoyaltySummary(brandId: string) {
   };
 }
 
+/** Every member of the programme with their points and tier, and the customer's name and phone. */
+export async function fetchLoyaltyMembers(brandId: string) {
+  return readAll((from, to) =>
+    supabase
+      .from("loyalty_accounts")
+      .select(
+        "customer_id, active_points, pending_points, lifetime_points, current_tier_key, customers(name, phone)",
+        { count: "exact" },
+      )
+      .eq("brand_id", brandId)
+      .order("id")
+      .range(from, to),
+  );
+}
+
 export const loyaltyQueries = {
   program: (brandId: string) =>
     queryOptions({
@@ -148,6 +164,12 @@ export const loyaltyQueries = {
     queryOptions({
       queryKey: loyaltyKeys.summary(brandId),
       queryFn: () => fetchLoyaltySummary(brandId),
+      enabled: Boolean(brandId),
+    }),
+  members: (brandId: string) =>
+    queryOptions({
+      queryKey: loyaltyKeys.members(brandId),
+      queryFn: () => fetchLoyaltyMembers(brandId),
       enabled: Boolean(brandId),
     }),
   account: (brandId: string, customerId: string) =>
