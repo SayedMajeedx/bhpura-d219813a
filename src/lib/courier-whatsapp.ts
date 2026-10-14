@@ -1,13 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export function normalizePhoneForWhatsApp(phoneStr: string | null | undefined): string {
-  if (!phoneStr) return "";
-  let clean = phoneStr.replace(/[^\d]/g, "");
-  clean = clean.replace(/^0+/, "");
-  if (clean.length === 8) return `973${clean}`;
-  if (clean.length === 9 && clean.startsWith("5")) return `966${clean}`;
-  return clean;
-}
+import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-phone";
+
+export { normalizePhoneForWhatsApp };
 
 export function generateCourierWhatsAppUrl(input: {
   order: any;

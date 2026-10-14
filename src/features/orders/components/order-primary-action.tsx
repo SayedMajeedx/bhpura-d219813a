@@ -29,7 +29,6 @@ export type OrderPrimaryActionContext = {
   approvingBenefit: boolean;
   brandId: string;
   isCreationMode: boolean;
-  isReadOnly: boolean;
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
   order: Order | null;
@@ -43,8 +42,11 @@ export type OrderPrimaryActionContext = {
 
 /**
  * The order's next workflow step as one button (send to workshop, pack, ship,
- * mark delivered, validate payment...). Returns null in creation or read-only
- * mode and when there is no next step, so callers can hide the slot.
+ * mark delivered, validate payment...). Returns null while the order is being
+ * created and when there is no next step, so callers can hide the slot. It is
+ * offered in view mode too: a step writes the order's stage on its own, not the
+ * editor's fields, and the list offers the same step without an unlock (hidden
+ * there, moving an order on a phone took an unlock first).
  */
 export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
   const {
@@ -52,7 +54,6 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     approvingBenefit,
     brandId,
     isCreationMode,
-    isReadOnly,
     items,
     lang,
     order,
@@ -62,7 +63,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     vocabulary,
     workshop,
   } = ctx;
-  if (isCreationMode || !order || isReadOnly) return null;
+  if (isCreationMode || !order) return null;
   const computedOrderType = detectOrderType(items);
   const workflow = getOrderWorkflow(
     { ...order, order_type: computedOrderType },

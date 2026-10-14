@@ -15,6 +15,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { OrderLineCard } from "@/features/orders/components/OrderLineCard";
 /** The order's lines, with add, search and barcode scan. */
 export function OrderItemsCard({
+  isReadOnly = false,
   addItem,
   addonDefaults,
   cameraStreamPromise,
@@ -42,6 +43,8 @@ export function OrderItemsCard({
   variantsQ,
   vocabulary,
 }: {
+  /** The order is open to view: its tools to add lines wait until it is opened for editing. */
+  isReadOnly?: boolean;
   addItem: () => void;
   addonDefaults: ReturnType<typeof variantAxisDefaultsFrom>;
   cameraStreamPromise: Promise<MediaStream> | null;
@@ -79,23 +82,26 @@ export function OrderItemsCard({
     >
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground font-semibold"
-            onClick={() => setProductSearchOpen(true)}
-          >
-            <Search className="h-3.5 w-3.5 me-1.5" />
-            {lang === "ar" ? "بحث المنتجات والـ SKU" : "Search Products & SKUs"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
-            <ScanLine className="h-3.5 w-3.5 me-1.5" />
-            {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
-          </Button>
-          <Button size="sm" variant="outline" onClick={addItem}>
-            <Plus className="h-3.5 w-3.5 me-1.5" /> {t("orderDetail.addLine")}
-          </Button>
-        </div>
+        {/* Shown only while editing: in view mode they were three greyed buttons above the lines. */}
+        {!isReadOnly && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground font-semibold"
+              onClick={() => setProductSearchOpen(true)}
+            >
+              <Search className="h-3.5 w-3.5 me-1.5" />
+              {lang === "ar" ? "بحث المنتجات والـ SKU" : "Search Products & SKUs"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
+              <ScanLine className="h-3.5 w-3.5 me-1.5" />
+              {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
+            </Button>
+            <Button size="sm" variant="outline" onClick={addItem}>
+              <Plus className="h-3.5 w-3.5 me-1.5" /> {t("orderDetail.addLine")}
+            </Button>
+          </div>
+        )}
       </div>
       {items.length === 0 && (
         <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>
@@ -111,6 +117,7 @@ export function OrderItemsCard({
             editingItemSheetIdx={editingItemSheetIdx}
             editingItems={editingItems}
             idx={idx}
+            isReadOnly={isReadOnly}
             it={it}
             items={items}
             lang={lang}

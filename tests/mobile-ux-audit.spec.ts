@@ -461,29 +461,23 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
     expect(routeA11y.hasDocumentOverflow, `Document-level overflow on ${route.path}`).toBe(false);
 
     if (route.name === "Order Detail") {
-      const orderActions = page.locator(
-        '[aria-label="Order actions"], [aria-label="إجراءات الطلب"]',
-      );
+      // The order's actions are its thumb bar at the foot of the screen (next step, WhatsApp,
+      // the rest in its menu), and the floating dock steps aside while the bar holds that
+      // slot: the two once sat one on the other.
+      const orderActions = page.getByRole("region", { name: /^(Order actions|إجراءات الطلب)$/ });
       const mobileNavigation = page.locator('[aria-label="Mobile Navigation"]');
+      await expect(orderActions, "Order actions must be in the phone's thumb bar").toBeVisible();
       await expect(
-        orderActions,
-        "Order actions must remain visible in the mobile summary",
-      ).toBeVisible();
-      await expect(mobileNavigation, "Mobile navigation must remain visible").toBeVisible();
-
-      const [actionBox, navigationBox, actionPosition] = await Promise.all([
-        orderActions.boundingBox(),
-        mobileNavigation.boundingBox(),
-        orderActions.evaluate((element) => getComputedStyle(element).position),
-      ]);
-
-      expect(actionPosition, "Order actions must stay in document flow").toBe("static");
+        mobileNavigation,
+        "The dock must step aside while the order's bar holds the bottom",
+      ).toHaveAttribute("aria-hidden", "true");
+      const actionBox = await orderActions.boundingBox();
+      const viewport = page.viewportSize();
       expect(actionBox, "Order actions must have measurable dimensions").not.toBeNull();
-      expect(navigationBox, "Mobile navigation must have measurable dimensions").not.toBeNull();
-      if (actionBox && navigationBox) {
+      if (actionBox && viewport) {
         expect(
-          actionBox.y + actionBox.height <= navigationBox.y,
-          "Order actions must not overlap the global mobile navigation",
+          actionBox.y + actionBox.height <= viewport.height + 1,
+          "Order actions must sit inside the screen",
         ).toBe(true);
       }
     }

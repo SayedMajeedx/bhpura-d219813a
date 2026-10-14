@@ -231,17 +231,11 @@ export function SalesAndActionsRow({
         </div>
 
         {actionNeededOrders.length === 0 ? (
-          <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1 my-auto">
-            <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
-            <p className="font-bold text-foreground">
-              {isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}
-            </p>
-            <p>
-              {isAr
-                ? "لا توجد طلبات تحتاج إلى إجراء فوري حاليًا."
-                : "No urgent pending merchant actions required."}
-            </p>
-          </div>
+          // One quiet line: the strip at the top of the dashboard already says the day is clear.
+          <p className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+            {isAr ? "لا طلبات تحتاج إجراء الآن." : "No order needs action now."}
+          </p>
         ) : (
           <div className="space-y-2 my-auto">
             {actionNeededOrders.map((o) => (

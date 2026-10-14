@@ -203,7 +203,7 @@ export function OrderFinancialCard({
                 <div className="flex min-w-0 items-center gap-2">
                   <Tag className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate font-mono font-bold">{appliedPromo.code}</span>
-                  <span>− {formatMoney(appliedPromo.amount, currency)}</span>
+                  <span>− {formatMoney(appliedPromo.amount, currency, lang)}</span>
                 </div>
                 <Button
                   type="button"
@@ -381,24 +381,26 @@ export function OrderFinancialCard({
       <div className="space-y-1 border-t border-border pt-3 text-sm">
         <SummaryRow
           label={t("orderDetail.subtotal")}
-          value={formatMoney(totals.subtotal, currency)}
+          value={formatMoney(totals.subtotal, currency, lang)}
         />
         <SummaryRow
           label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
-          value={`− ${formatMoney(totals.discount, currency)}`}
+          value={`− ${formatMoney(totals.discount, currency, lang)}`}
         />
         <SummaryRow
           label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
-          value={formatMoney(totals.taxAmount, currency)}
+          value={formatMoney(totals.taxAmount, currency, lang)}
         />
         <SummaryRow
           label={t("orderDetail.shipping")}
-          value={formatMoney(totals.shipping, currency)}
+          value={formatMoney(totals.shipping, currency, lang)}
         />
         <div className="flex justify-between items-center pt-2 border-t border-border">
           <span className="font-display text-lg">{t("orderDetail.total")}</span>
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg">{formatMoney(totals.total, currency)}</span>
+            <span className="font-display text-lg">
+              {formatMoney(totals.total, currency, lang)}
+            </span>
             <span
               className={`text-xs  px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
             >
@@ -410,11 +412,11 @@ export function OrderFinancialCard({
           <>
             <SummaryRow
               label={t("orderDetail.advancePaid")}
-              value={`− ${formatMoney(totals.advancePaid, currency)}`}
+              value={`− ${formatMoney(totals.advancePaid, currency, lang)}`}
             />
             <div className="flex justify-between pt-1 font-medium">
               <span>{t("orderDetail.remaining")}</span>
-              <span>{formatMoney(totals.remaining, currency)}</span>
+              <span>{formatMoney(totals.remaining, currency, lang)}</span>
             </div>
           </>
         )}
@@ -456,7 +458,7 @@ export function OrderFinancialCard({
                 </span>
               </span>
               <span className="font-mono text-sm font-extrabold text-primary">
-                {formatMoney(orderTotalCogs, currency)}
+                {formatMoney(orderTotalCogs, currency, lang)}
               </span>
             </div>
 
@@ -464,13 +466,13 @@ export function OrderFinancialCard({
               <div>
                 <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
                 <strong className="text-foreground">
-                  {formatMoney(productCogsTotal, currency)}
+                  {formatMoney(productCogsTotal, currency, lang)}
                 </strong>
               </div>
               <div>
                 <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
                 <strong className="text-foreground">
-                  {formatMoney(packagingCogsTotal, currency)}
+                  {formatMoney(packagingCogsTotal, currency, lang)}
                 </strong>
               </div>
             </div>
@@ -483,9 +485,9 @@ export function OrderFinancialCard({
                   : "text-emerald-600 dark:text-emerald-400",
               )}
             >
-              <span>{grossProfitLabel(totals.remaining, isAr ? "ar" : "en")}</span>
+              <span>{grossProfitLabel(totals.remaining, lang)}</span>
               <span className="font-mono text-sm font-extrabold">
-                {formatMoney(orderNetProfit, currency)}
+                {formatMoney(orderNetProfit, currency, lang)}
               </span>
             </div>
           </div>

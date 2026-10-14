@@ -241,7 +241,7 @@ export function OrderFulfillmentPanel({
                     className={`rounded-full px-2.5 py-1 font-medium ${order.cod_collected_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
                   >
                     {order.cod_collected_at
-                      ? `${lang === "ar" ? "تم استلام النقد" : "Cash received"}: ${formatMoney(Number(order.cod_collected_amount || 0), order.currency || "BHD")}`
+                      ? `${lang === "ar" ? "تم استلام النقد" : "Cash received"}: ${formatMoney(Number(order.cod_collected_amount || 0), order.currency || "BHD", lang)}`
                       : lang === "ar"
                         ? "النقد بانتظار التحصيل"
                         : "Cash collection pending"}
@@ -399,7 +399,7 @@ export function OrderFulfillmentPanel({
                   onChange={(shipping) => setOrder({ ...order, shipping })}
                 />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}
+                  {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD", lang)}
                 </p>
               </div>
             </div>

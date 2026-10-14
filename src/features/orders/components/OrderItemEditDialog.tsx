@@ -111,7 +111,7 @@ export function OrderItemEditDialog({
                   return (
                     <SelectItem key={v.id} value={v.id}>
                       {p.name} {v.size ? `· ${v.size}` : ""} {v.color ? `· ${v.color}` : ""} —{" "}
-                      {formatMoney(v.selling_price, currency)}
+                      {formatMoney(v.selling_price, currency, isAr ? "ar" : "en")}
                     </SelectItem>
                   );
                 })}

@@ -587,7 +587,6 @@ function OrderEditor() {
       approvingBenefit,
       brandId,
       isCreationMode,
-      isReadOnly,
       items,
       lang,
       order,
@@ -732,6 +731,7 @@ function OrderEditor() {
                 />
               )}
               <OrderItemsCard
+                isReadOnly={isReadOnly}
                 addItem={addItem}
                 addonDefaults={addonDefaults}
                 cameraStreamPromise={cameraStreamPromise}

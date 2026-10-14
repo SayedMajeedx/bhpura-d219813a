@@ -454,7 +454,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           {children}
 
           {/* Primary Action Button (e.g. Receive from Tailor, Approve Payment, Hand Over) */}
-          {!isReadOnly && <div className="hidden sm:block">{renderPrimaryAction()}</div>}
+          <div className="hidden sm:block">{renderPrimaryAction()}</div>
 
           {isEditing && (
             <Button
@@ -537,25 +537,39 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         </div>
       </div>
 
+      {/* On a phone the notice is one line with its own way in: the next step, WhatsApp and the
+          rest are in the thumb bar, so a second full-width "Edit order" here only pushed the
+          order's lines down. */}
       {isReadOnly && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3.5 py-2.5 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+        <div className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3.5 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200 sm:py-2.5">
           <Lock className="h-4 w-4 shrink-0" />
-          <span>
-            {isAr
-              ? "أنت في وضع العرض الآمن. الحقول مقفلة لمنع التعديل غير المقصود."
-              : "You are in safe view mode. Fields are locked to prevent accidental changes."}
+          <span className="min-w-0 flex-1">
+            <span className="sm:hidden">
+              {isAr ? "وضع العرض: الحقول مقفلة." : "View mode: fields are locked."}
+            </span>
+            <span className="hidden sm:inline">
+              {isAr
+                ? "أنت في وضع العرض الآمن. الحقول مقفلة لمنع التعديل غير المقصود."
+                : "You are in safe view mode. Fields are locked to prevent accidental changes."}
+            </span>
           </span>
+          {canUnlockEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onUnlock}
+              className="h-8 shrink-0 gap-1 rounded-lg border-amber-400/70 bg-background/70 px-2.5 text-xs font-bold sm:hidden"
+            >
+              <Unlock className="h-3.5 w-3.5" />
+              {isAr ? "تعديل" : "Edit"}
+            </Button>
+          )}
         </div>
       )}
 
-      <div className="flex sm:hidden" aria-label={isAr ? "إجراءات الطلب" : "Order actions"}>
-        {isReadOnly && canUnlockEditing && (
-          <Button type="button" onClick={onUnlock} className="w-full min-h-11 font-bold rounded-xl">
-            <Unlock className="h-4 w-4 me-1.5" />
-            {isAr ? "تعديل الطلب" : "Edit Order"}
-          </Button>
-        )}
-        {isEditing && (
+      {isEditing && (
+        <div className="flex sm:hidden">
           <Button
             type="button"
             variant="outline"
@@ -564,13 +578,8 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           >
             {isAr ? "إلغاء التعديل" : "Cancel Editing"}
           </Button>
-        )}
-        {!isEditing && (!isReadOnly || !canUnlockEditing) && (
-          <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
-            {renderPrimaryAction()}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <AlertDialog
         open={Boolean(pendingStatus)}
