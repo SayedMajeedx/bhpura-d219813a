@@ -313,7 +313,84 @@ function IncubatorFields({ isAr, editing }: { isAr: boolean; editing: Incubator 
         defaultValue={editing?.notes || ""}
         textarea
       />
+      <PickupFields isAr={isAr} editing={editing} />
     </>
+  );
+}
+
+/**
+ * A shopper may collect an order at this partner's shop. Partners do not use the system: the
+ * store arranges the pickup with them by hand, the checkout shows the address and the order takes
+ * its pieces from this partner.
+ */
+function PickupFields({ isAr, editing }: { isAr: boolean; editing: Incubator | null }) {
+  return (
+    <fieldset className="min-w-0 space-y-3 rounded-xl border border-border p-3">
+      <legend className="px-1 text-sm font-semibold">
+        {isAr ? "الاستلام من عند الشريك" : "Pickup at this partner"}
+      </legend>
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="pickup_enabled"
+          value="true"
+          defaultChecked={Boolean(editing?.pickup_enabled)}
+          className="mt-1 h-4 w-4 shrink-0 accent-primary"
+        />
+        <span>
+          {isAr
+            ? "يستلم الزبائن طلباتهم من عنده عندما تكون القطع عنده"
+            : "Shoppers can collect their order here when the pieces are here"}
+          <span className="block text-xs text-muted-foreground">
+            {isAr
+              ? "تتفقون على الاستلام بينكم؛ النظام يعرض العنوان عند الدفع ويحجز القطعة من عند الشريك."
+              : "You arrange it with the partner; the checkout shows the address and the order takes the piece from this partner."}
+          </span>
+        </span>
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field
+          label={isAr ? "العنوان بالعربية" : "Address (Arabic)"}
+          name="pickup_address_ar"
+          defaultValue={editing?.pickup_address_ar || ""}
+        />
+        <Field
+          label={isAr ? "العنوان بالإنجليزية" : "Address (English)"}
+          name="pickup_address_en"
+          defaultValue={editing?.pickup_address_en || ""}
+        />
+      </div>
+      <Field
+        label={isAr ? "رابط الموقع على الخريطة" : "Map link"}
+        name="pickup_location_url"
+        type="url"
+        dir="ltr"
+        placeholder="https://maps.app.goo.gl/..."
+        defaultValue={editing?.pickup_location_url || ""}
+      />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field
+          label={isAr ? "ملاحظات الاستلام بالعربية" : "Pickup notes (Arabic)"}
+          name="pickup_notes_ar"
+          defaultValue={editing?.pickup_notes_ar || ""}
+          textarea
+        />
+        <Field
+          label={isAr ? "ملاحظات الاستلام بالإنجليزية" : "Pickup notes (English)"}
+          name="pickup_notes_en"
+          defaultValue={editing?.pickup_notes_en || ""}
+          textarea
+        />
+      </div>
+      <Field
+        label={isAr ? "أيام جلب القطعة من الشريك إلى فرعك" : "Days to bring a piece to your branch"}
+        name="transfer_days"
+        type="number"
+        min="0"
+        max="60"
+        defaultValue={editing?.transfer_days != null ? String(editing.transfer_days) : ""}
+      />
+    </fieldset>
   );
 }
 

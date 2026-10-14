@@ -25,6 +25,14 @@ export function incubatorDetails(values: Values) {
     packaging_policy: text(values.packaging_policy) || "incubator",
     fixed_packaging_cost: number(values.fixed_packaging_cost),
     notes: optional(values.notes),
+    // Collected here: the store arranges it with the partner by hand; the checkout shows these.
+    pickup_enabled: text(values.pickup_enabled) === "true",
+    pickup_address_ar: optional(values.pickup_address_ar),
+    pickup_address_en: optional(values.pickup_address_en),
+    pickup_location_url: optional(values.pickup_location_url),
+    pickup_notes_ar: optional(values.pickup_notes_ar),
+    pickup_notes_en: optional(values.pickup_notes_en),
+    transfer_days: text(values.transfer_days) ? number(values.transfer_days) : null,
   };
 }
 
@@ -89,6 +97,20 @@ export function incubatorDetailsProblem(
     return lang === "ar"
       ? "نسبة العمولة لا تتجاوز 100"
       : "A commission percentage cannot exceed 100";
+  }
+  if (details.pickup_enabled && !details.pickup_address_ar && !details.pickup_address_en) {
+    return lang === "ar"
+      ? "اكتب عنوان الاستلام ليعرف الزبون أين يذهب"
+      : "Enter the pickup address, so a shopper knows where to go";
+  }
+  if (details.pickup_location_url && !/^https:\/\/\S+$/i.test(details.pickup_location_url)) {
+    return lang === "ar" ? "رابط الموقع يبدأ بـ https://" : "The map link starts with https://";
+  }
+  const transfer = details.transfer_days;
+  if (transfer !== null && (!Number.isInteger(transfer) || transfer < 0 || transfer > 60)) {
+    return lang === "ar"
+      ? "مدة جلب القطعة عدد أيام من 0 إلى 60"
+      : "The days to bring a piece are a number from 0 to 60";
   }
   const day = details.settlement_day;
   if (day !== null && (!Number.isInteger(day) || day < 1 || day > 31)) {

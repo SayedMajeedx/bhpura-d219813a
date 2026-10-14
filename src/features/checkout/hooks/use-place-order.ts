@@ -49,6 +49,7 @@ export function usePlaceOrder({
   benefitReceipt,
   branches,
   branchId,
+  partnerId = "",
   digitalChannel,
   digitalContact,
   appliedPromo,
@@ -83,6 +84,8 @@ export function usePlaceOrder({
   benefitReceipt: File | null;
   branches: readonly unknown[];
   branchId: string;
+  /** A partner's shop to collect at, instead of a branch. */
+  partnerId?: string;
   digitalChannel: "email" | "whatsapp";
   digitalContact: string;
   appliedPromo: AppliedPromo | null;
@@ -108,6 +111,7 @@ export function usePlaceOrder({
       benefitReceipt,
       branches,
       branchId,
+      partnerId,
       digitalChannel,
       digitalContact,
       appointment: Boolean(bookingOfCart(cart)),
@@ -147,6 +151,7 @@ export function usePlaceOrder({
             giftMessage,
             fulfillment,
             branchId,
+            partnerId,
             digitalChannel,
             digitalContact,
             appliedPromo,

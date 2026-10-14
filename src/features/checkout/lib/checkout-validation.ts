@@ -20,6 +20,7 @@ export function checkoutFormError({
   benefitReceipt,
   branches,
   branchId,
+  partnerId = "",
   digitalChannel,
   digitalContact,
   appointment = false,
@@ -33,6 +34,8 @@ export function checkoutFormError({
   benefitReceipt: File | null;
   branches: readonly unknown[];
   branchId: string;
+  /** A partner's shop chosen instead of a branch. */
+  partnerId?: string;
   digitalChannel: "email" | "whatsapp";
   digitalContact: string;
   /** A booking's checkout: its place came with the booking, so no address is asked. */
@@ -81,7 +84,7 @@ export function checkoutFormError({
       "Please attach the transfer receipt to confirm your order",
     );
   }
-  if (fulfillment === "pickup" && branches.length > 0 && !branchId) {
+  if (fulfillment === "pickup" && branches.length > 0 && !branchId && !partnerId) {
     return t("اختر الفرع", "Select a branch");
   }
   if (fulfillment === "digital") {

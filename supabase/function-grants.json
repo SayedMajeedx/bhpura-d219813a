@@ -576,6 +576,11 @@
       "authenticated": true,
       "reason": "Signed-in shopper or session helper: checks the session inside"
     },
+    "storefront_pickup_partners(p_brand_id uuid, p_items jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront read by design: the checkout asks which of a store's partners that take pickups hold a cart's pieces; it returns their names and pickup addresses, never a quantity, a cost or a contact"
+    },
     "storefront_whatsapp_updates_ready(p_brand_id uuid)": {
       "anon": true,
       "authenticated": true,

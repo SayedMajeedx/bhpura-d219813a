@@ -1,8 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Building2, Phone } from "lucide-react";
+import { Building2, MessageCircle, Phone } from "lucide-react";
 import { useBrand } from "@/lib/brand-context";
 import { incubatorsQueries } from "@/lib/data/incubators";
-import { pickupLines, type PartnerHold } from "@/features/incubators/lib/partner-stock";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
+import {
+  partnerPickupMessage,
+  pickupLines,
+  type PartnerHold,
+  type PickupLine,
+} from "@/features/incubators/lib/partner-stock";
 
 /** The rows as the rules read them (joined columns narrowed). */
 const asHolds = (rows: unknown[]) => rows as PartnerHold[];
@@ -29,6 +35,18 @@ export function PartnerPickupNotice({
   });
   const lines = pickupLines(holds.data ?? [], isAr ? "ar" : "en");
   if (lines.length === 0) return null;
+
+  // The shopper collects at the partner's shop: the store tells the partner (by hand, on WhatsApp).
+  const collected = lines.filter((line) => line.customerCollects);
+  if (collected.length > 0) {
+    return (
+      <CustomerCollectsNotice
+        lines={collected}
+        store={(isAr ? brand.name_ar : brand.name_en) || brand.name_en}
+        isAr={isAr}
+      />
+    );
+  }
 
   return (
     <div
@@ -65,6 +83,77 @@ export function PartnerPickupNotice({
         {isAr
           ? "مخزون المحل لم يكفِ، فأُخذت هذه القطع من مخزون الحاضنة وخُصمت من رصيدها."
           : "The store's own stock ran out, so these pieces were taken from the partner's stock and its count was lowered."}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The shopper chose to collect at a partner's shop (migration 20261014130000). Partners do not
+ * use the system: staff tell the partner which pieces to hand over, in a WhatsApp message a person
+ * sends, one per partner.
+ */
+function CustomerCollectsNotice({
+  lines,
+  store,
+  isAr,
+}: {
+  lines: readonly PickupLine[];
+  store: string;
+  isAr: boolean;
+}) {
+  const partners = [...new Set(lines.map((line) => line.partner))];
+  return (
+    <div
+      role="status"
+      className="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-3 text-start text-foreground"
+    >
+      <p className="flex items-center gap-2 text-sm font-bold">
+        <Building2 className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+        {isAr
+          ? "الزبون يستلم هذا الطلب من محل الشريك"
+          : "The customer collects this order at the partner's shop"}
+      </p>
+      {partners.map((partner) => {
+        const own = lines.filter((line) => line.partner === partner);
+        const chat = whatsappChatUrl(own[0]?.phone);
+        const message = partnerPickupMessage(own, store, isAr ? "ar" : "en");
+        return (
+          <div key={partner} className="mt-2 space-y-1.5 text-xs">
+            <p>
+              {isAr ? "عند" : "At"} <b dir="auto">{partner}</b>
+            </p>
+            <ul className="space-y-1">
+              {own.map((line) => (
+                <li key={line.key} className="min-w-0 break-words font-semibold" dir="auto">
+                  {line.quantity} × {line.piece}
+                </li>
+              ))}
+            </ul>
+            {chat ? (
+              <a
+                href={`${chat}?text=${encodeURIComponent(message)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 font-semibold text-emerald-700 dark:text-emerald-300"
+              >
+                <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                {isAr ? `أبلغ ${partner} على واتساب` : `Tell ${partner} on WhatsApp`}
+              </a>
+            ) : (
+              <p className="text-muted-foreground">
+                {isAr
+                  ? "لا يوجد رقم للشريك: أضفه في صفحة الحاضنات لإبلاغه من هنا."
+                  : "The partner has no number: add one on the partners' page to tell them from here."}
+              </p>
+            )}
+          </div>
+        );
+      })}
+      <p className="mt-2 text-xs text-muted-foreground">
+        {isAr
+          ? "القطع محجوزة من مخزون الشريك. اتفق معه على تسليمها للزبون عند حضوره."
+          : "The pieces are reserved from the partner's stock. Arrange with the partner to hand them over when the customer arrives."}
       </p>
     </div>
   );
