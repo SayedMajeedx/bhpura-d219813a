@@ -22,6 +22,7 @@ const { TeamCommandHeader } = await import("../src/components/team/TeamCommandHe
 const { ReturnsCommandHeader } = await import("../src/components/returns/ReturnsCommandHeader");
 const { OrderMobileCard } = await import("../src/components/orders/OrderMobileCard");
 const { OrdersScopeSwitcher } = await import("../src/components/orders/OrdersScopeSwitcher");
+const { UrgentOrdersBanner } = await import("../src/features/orders/components/UrgentOrdersBanner");
 
 describe("what an order's card says", () => {
   it("has no next step once handed over, cancelled or refunded", () => {
@@ -206,5 +207,34 @@ describe("the order filters", () => {
     expect(screen.getByRole("button", { name: /مكتملة/ })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: /مع المندوب/ }));
     expect(change).toHaveBeenCalledWith("courier");
+  });
+});
+
+describe("the orders that need action", () => {
+  it("are one line that opens their tab at its first page", () => {
+    const setTabFilter = vi.fn();
+    const setPage = vi.fn();
+    render(
+      <UrgentOrdersBanner
+        hasMadeToOrder={false}
+        lang="ar"
+        setPage={setPage}
+        setTabFilter={setTabFilter}
+        tabCounts={{
+          all: 20,
+          unpaid: 2,
+          action_required: 6,
+          to_prepare: 4,
+          shipped: 1,
+          completed: 7,
+        }}
+      />,
+    );
+    const line = screen.getByRole("button", { name: /6 طلب يحتاج إجراءً فورياً/ });
+    // The reasons wait for a wider screen; on a phone the line is the count and the way in.
+    expect(screen.getByText(/تحصيل عند الاستلام/)).toHaveClass("hidden");
+    fireEvent.click(line);
+    expect(setTabFilter).toHaveBeenCalledWith("action_required");
+    expect(setPage).toHaveBeenCalledWith(1);
   });
 });
