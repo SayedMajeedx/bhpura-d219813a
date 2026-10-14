@@ -9032,6 +9032,10 @@ export type Database = {
         Args: { p_courier_id: string; p_order_id: string };
         Returns: undefined;
       };
+      award_past_order_loyalty_points: {
+        Args: { p_brand_id: string };
+        Returns: Json;
+      };
       booking_calendar_feed: { Args: { p_token: string }; Returns: Json };
       booking_day_state: {
         Args: {
