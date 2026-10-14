@@ -25,6 +25,17 @@ export function pickupCartItems(cart: readonly CartItem[], madeToOrderIds: Reado
   }));
 }
 
+/**
+ * The store's branches a cart can be collected at. When a partner holds every piece and the
+ * store's own stock does not cover the cart, the pieces are at the partner: the partner is the
+ * place, and the branch is not offered (it was, so a shopper could choose a branch the piece was
+ * never at). A cart no single partner holds whole is collected at a branch, the pieces brought
+ * there first (the owner's choice; `branchPickupNote`).
+ */
+export function pickupBranchesOffered<T>(branches: readonly T[], info: PickupPartners): T[] {
+  return info.from_partner && info.partners.length > 0 ? [] : [...branches];
+}
+
 const arabicDays = (n: number) =>
   n === 1 ? "يوم واحد" : n === 2 ? "يومين" : n <= 10 ? `${n} أيام` : `${n} يوماً`;
 

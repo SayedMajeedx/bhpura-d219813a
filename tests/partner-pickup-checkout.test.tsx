@@ -31,7 +31,7 @@ const brandContext = {
 vi.mock("../src/lib/brand-context", () => brandContext);
 vi.mock("@/lib/brand-context", () => brandContext);
 
-const { pickupCartItems, branchPickupNote, partnerPickupText } =
+const { pickupCartItems, branchPickupNote, partnerPickupText, pickupBranchesOffered } =
   await import("../src/features/checkout/lib/pickup-places");
 const { placeStorefrontOrderArgs, placeOrderFailure } =
   await import("../src/features/checkout/lib/place-order");
@@ -85,6 +85,26 @@ describe("where a cart can be collected", () => {
     );
   });
 
+  it("offers no branch when the pieces are at a partner that holds them all (found on Pura's checkout)", () => {
+    const branches = [{ id: "b1" }];
+    // The store's stock does not cover the cart and Dar Lulwa holds it all: Dar Lulwa only.
+    expect(
+      pickupBranchesOffered(branches, { partners: [dar], from_partner: true, transfer_days: null }),
+    ).toEqual([]);
+    // No single partner holds it all: the branch, the pieces brought there first.
+    expect(
+      pickupBranchesOffered(branches, { partners: [], from_partner: true, transfer_days: 2 }),
+    ).toEqual(branches);
+    // The store covers the cart: its branch, and the partner as another choice.
+    expect(
+      pickupBranchesOffered(branches, {
+        partners: [dar],
+        from_partner: false,
+        transfer_days: null,
+      }),
+    ).toEqual(branches);
+  });
+
   it("reads a partner's address and notes in the shopper's language", () => {
     expect(partnerPickupText(dar, "ar")).toEqual({
       address: "المحرق، مجمع 208",
@@ -122,6 +142,18 @@ describe("the checkout's pickup card", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Dar Lulwa/ }));
     expect(setPartnerId).toHaveBeenCalledWith("p1");
+  });
+
+  it("shows only the partner's shop when no branch is offered", () => {
+    card({ branches: [], partnerId: "p1" });
+    expect(screen.getByText("Where to collect")).toBeInTheDocument();
+    expect(screen.queryByText("Pura Seef")).toBeNull();
+    expect(screen.queryByText("Or collect at a partner's shop")).toBeNull();
+    expect(screen.queryByText(/we bring them to the branch/)).toBeNull();
+    expect(screen.getByRole("button", { name: /Dar Lulwa/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("shows the branch only when no partner holds the whole cart", () => {
