@@ -20,6 +20,7 @@ const { OnboardingChecklistLine } =
 const { normalizePhoneForWhatsApp, whatsappChatUrl } = await import("../src/lib/whatsapp-phone");
 const { OrderStickyBottomBar } = await import("../src/components/orders/OrderStickyBottomBar");
 const { OrderItemsCard } = await import("../src/features/orders/components/OrderItemsCard");
+const { useBottomBarClaimed } = await import("../src/lib/bottom-bar-store");
 
 describe("the launch checklist on the dashboard", () => {
   it("is the whole card at first, one line once most of it is done, gone once dismissed", () => {
@@ -98,6 +99,22 @@ describe("the order's thumb bar on a phone", () => {
     render(<OrderStickyBottomBar lang="en" isReadOnly canUnlockEditing onUnlock={unlock} />);
     fireEvent.click(screen.getByRole("button", { name: /Edit Order/ }));
     expect(unlock).toHaveBeenCalledOnce();
+  });
+
+  it("holds the phone's bottom slot, so the dock steps aside, and gives it back", () => {
+    function Dock() {
+      return <span>{useBottomBarClaimed() ? "dock hidden" : "dock shown"}</span>;
+    }
+    const { rerender } = render(
+      <>
+        <Dock />
+        <OrderStickyBottomBar lang="en" />
+      </>,
+    );
+    expect(screen.getByText("dock hidden")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Order actions" })).toBeInTheDocument();
+    rerender(<Dock />);
+    expect(screen.getByText("dock shown")).toBeInTheDocument();
   });
 
   it("offers no chat without a number, nor while the order is being created", () => {
