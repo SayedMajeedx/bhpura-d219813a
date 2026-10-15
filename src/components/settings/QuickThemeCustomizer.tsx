@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ArrowLeftRight, Check, Sparkles, Tag, Palette } from "lucide-react";
+import { ArrowLeftRight, Sparkles, Tag, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -167,15 +167,12 @@ export interface QuickThemeCustomizerProps {
   primaryColor: string;
   secondaryColor: string;
   radius: string;
-  currentFontAr: string;
-  currentFontEn: string;
   badgeAccent?: string;
   logoUrl?: string | null;
   isAr: boolean;
   onPrimaryChange: (val: string) => void;
   onSecondaryChange: (val: string) => void;
   onRadiusChange: (val: string) => void;
-  onSelectFontPreset: (preset: FontMoodPreset) => void;
   onSwapColors: () => void;
   onBadgeAccentChange?: (val: string) => void;
   onExtractPalette?: (palette: ExtractedPalette) => void;
@@ -185,15 +182,12 @@ export function QuickThemeCustomizer({
   primaryColor,
   secondaryColor,
   radius,
-  currentFontAr,
-  currentFontEn,
   badgeAccent = "maroon",
   logoUrl,
   isAr,
   onPrimaryChange,
   onSecondaryChange,
   onRadiusChange,
-  onSelectFontPreset,
   onSwapColors,
   onBadgeAccentChange,
   onExtractPalette,
@@ -245,25 +239,6 @@ export function QuickThemeCustomizer({
       previewClass: "rounded-2xl",
     },
   ];
-
-  // Guarantee single active font preset at all times
-  const activePresetId = React.useMemo(() => {
-    const exact = FONT_MOOD_PRESETS.find(
-      (p) =>
-        p.fontAr.toLowerCase() === (currentFontAr || "").toLowerCase() &&
-        p.fontEn.toLowerCase() === (currentFontEn || "").toLowerCase(),
-    );
-    if (exact) return exact.id;
-    const matchAr = FONT_MOOD_PRESETS.find(
-      (p) => p.fontAr.toLowerCase() === (currentFontAr || "").toLowerCase(),
-    );
-    if (matchAr) return matchAr.id;
-    const matchEn = FONT_MOOD_PRESETS.find(
-      (p) => p.fontEn.toLowerCase() === (currentFontEn || "").toLowerCase(),
-    );
-    if (matchEn) return matchEn.id;
-    return "modern";
-  }, [currentFontAr, currentFontEn]);
 
   const badgePresets = [
     { id: "maroon", color: "#8C6D58", labelAr: "عنابي كلاسيكي", labelEn: "Classic Maroon" },
@@ -441,57 +416,7 @@ export function QuickThemeCustomizer({
         </div>
       </div>
 
-      {/* 4. Typography Mood Presets */}
-      <div className="space-y-3 border-t border-border-subtle pt-4">
-        <Label className="text-sm font-medium">
-          {isAr ? "3. نبرة وطابع الخطوط" : "3. Typography Mood"}
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {FONT_MOOD_PRESETS.map((preset) => {
-            const isSelected = activePresetId === preset.id;
-
-            return (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => onSelectFontPreset(preset)}
-                className={cn(
-                  "relative flex flex-col items-start gap-1 p-3.5 rounded-xl border-2 text-start transition-all cursor-pointer",
-                  isSelected
-                    ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
-                    : "border-border hover:border-muted-foreground/30 bg-card",
-                )}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span className="font-semibold text-sm text-foreground">
-                    {isAr ? preset.labelAr : preset.labelEn}
-                  </span>
-                  {isSelected && (
-                    <span className="size-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                      <Check className="size-3 stroke-[2.5]" />
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {isAr ? preset.descriptionAr : preset.descriptionEn}
-                </span>
-                <div className="mt-2 text-xs font-mono text-muted-foreground flex flex-col gap-1 w-full">
-                  <span className="px-1.5 py-0.5 rounded bg-muted text-xs truncate">
-                    Display: {preset.displayFontAr || preset.fontAr} /{" "}
-                    {preset.displayFontEn || preset.fontEn}
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded bg-muted/60 text-xs text-muted-foreground truncate">
-                    Body: {preset.bodyFontAr || preset.fontAr} /{" "}
-                    {preset.bodyFontEn || preset.fontEn}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Badges (the header's look is in the Header & footer group) */}
+      {/* 3. Badges (the header's look is in the Header & footer group; fonts are in Typography) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border-subtle pt-4">
         {/* Sale & Badge Accent */}
         {onBadgeAccentChange && (
