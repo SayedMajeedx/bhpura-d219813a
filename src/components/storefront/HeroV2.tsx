@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
+import {
+  useStorefront,
+  type Brand,
+  type HeroContentSlide,
+  type PublicSettings,
+} from "@/lib/storefront-context";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import {
@@ -48,8 +53,36 @@ type ResolvedSlide = {
   isImage: boolean;
 };
 
+/** The storefront's hero: the store's own settings, language and brand from the page. */
 export function HeroV2({ slides, background }: HeroV2Props) {
   const { settings, lang, brand } = useStorefront();
+  return (
+    <HeroV2View
+      slides={slides}
+      background={background}
+      settings={settings}
+      lang={lang}
+      brand={brand}
+    />
+  );
+}
+
+/**
+ * The hero itself, given everything it shows: the storefront passes its page's context, and the
+ * hero settings' live preview passes the draft being edited (src/routes/hero-preview.tsx), so the
+ * merchant sees the very hero the store will show.
+ */
+export function HeroV2View({
+  slides,
+  background,
+  settings,
+  lang,
+  brand,
+}: HeroV2Props & {
+  settings: PublicSettings;
+  lang: "ar" | "en";
+  brand: Brand;
+}) {
   const isAr = lang === "ar";
 
   const resolvedBg: HeroBackgroundInput = background ?? brand.hero_media?.background;
