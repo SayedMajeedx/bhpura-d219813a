@@ -1,5 +1,5 @@
 import React from "react";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The hero's headline as live text (found 2026-10-15: Pura's hero video carried its title in the
@@ -37,6 +37,8 @@ describe("a slide's phrases", () => {
       loops: 3,
       position: "bottom",
       size: "m",
+      positionMobile: "bottom",
+      sizeMobile: "m",
       align: "start",
     });
     expect(
@@ -54,6 +56,8 @@ describe("a slide's phrases", () => {
       loops: 1,
       position: "middle",
       size: "xl",
+      positionMobile: "middle",
+      sizeMobile: "xl",
       align: "center",
     });
     expect(headlineSettings({ text_animation: "spin" as never }).animation).toBe("blur_in");
@@ -191,7 +195,11 @@ describe("the headline's settings", () => {
     expect(screen.getByRole("button", { name: "Blur-in" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Mask reveal" }));
     expect(onChange).toHaveBeenCalledWith({ text_animation: "mask_reveal" });
-    fireEvent.click(screen.getByRole("button", { name: "Middle" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Position" })).getByRole("button", {
+        name: "Middle",
+      }),
+    );
     expect(onChange).toHaveBeenCalledWith({ text_position: "middle" });
   });
 });

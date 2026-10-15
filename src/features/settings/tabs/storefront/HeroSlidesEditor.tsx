@@ -16,6 +16,7 @@ import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { HeroHeadlineFields } from "./HeroHeadlineFields";
 import { HeroLivePreview } from "./HeroLivePreview";
 import { HeroSlideLookFields } from "./HeroLookFields";
+import { HeroContrastNote } from "./HeroContrastNote";
 import { HeroSlideRow } from "./HeroSlideRow";
 import { moveSlide, openAfterDelete, openAfterMove, slideRowTitle } from "./hero-slide-list";
 import type { HeroPreviewBrand } from "@/lib/hero-preview";
@@ -633,6 +634,23 @@ export function HeroSlidesEditor({
                     idPrefix={`slide-${slide.id || index}`}
                     slide={slide}
                     store={livePreview.settings}
+                    isAr={isAr}
+                    onChange={(patch) => update(index, patch)}
+                  />
+                )}
+                {isV2 && livePreview && (
+                  <HeroContrastNote
+                    slide={slide}
+                    store={livePreview.settings}
+                    framing={framing}
+                    imageUrl={
+                      resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).main
+                        ?.posterUrl ?? null
+                    }
+                    mobileImageUrl={
+                      resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).mobile
+                        ?.posterUrl ?? null
+                    }
                     isAr={isAr}
                     onChange={(patch) => update(index, patch)}
                   />
