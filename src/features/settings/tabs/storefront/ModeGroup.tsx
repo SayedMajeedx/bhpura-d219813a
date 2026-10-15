@@ -321,7 +321,10 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
           </div>
 
           {/* Advanced Inquiry Templates */}
-          <AdvancedOnly fieldName="storefront.mode.inquiry_templates">
+          <AdvancedOnly
+            fieldName="storefront.mode.inquiry_templates"
+            reason={isAr ? "نص رسائل الاستفسار عبر واتساب" : "The WhatsApp inquiry messages"}
+          >
             <div className="space-y-4 rounded-xl border border-border p-4 bg-muted/10">
               <div>
                 <h4 className="text-sm font-semibold text-foreground">

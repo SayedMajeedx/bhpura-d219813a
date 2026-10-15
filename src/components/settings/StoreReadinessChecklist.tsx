@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
   Sparkles,
@@ -29,6 +28,7 @@ import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
 import { catalogInsightQueries } from "@/lib/data/catalog";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { isServicesProfile } from "@/lib/store-profile";
+import { readinessFoldKey, readinessFolded } from "@/features/settings/lib/readiness-fold";
 
 /** Whether the policy has written terms in either language (counts as a policy page). */
 const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
@@ -561,8 +561,8 @@ export function StoreReadinessChecklist({
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100;
   const isAllComplete = completedCount === totalCount;
 
-  // Option 3: Collapsed preference with localStorage memory
-  const collapseStorageKey = `store-readiness-collapsed-${brandId}`;
+  // Folded to one line once half the steps are done, unless the merchant chose.
+  const collapseStorageKey = readinessFoldKey(brandId);
   const [userCollapsed, setUserCollapsed] = useState<boolean | null>(() => {
     try {
       if (typeof window !== "undefined") {
@@ -574,7 +574,11 @@ export function StoreReadinessChecklist({
     }
     return null;
   });
-  const collapsed = userCollapsed !== null ? userCollapsed : isAllComplete;
+  const collapsed = readinessFolded({
+    completed: completedCount,
+    total: totalCount,
+    choice: userCollapsed,
+  });
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -631,8 +635,8 @@ export function StoreReadinessChecklist({
         collapsed ? "p-3 sm:p-3.5" : "p-4 sm:p-5"
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isAllComplete
@@ -646,8 +650,8 @@ export function StoreReadinessChecklist({
               <Sparkles className="h-4.5 w-4.5" />
             )}
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
                 {isAr ? "جاهزية المتجر للانطلاق المباشر" : "Store Launch Readiness"}
               </h3>
@@ -658,10 +662,16 @@ export function StoreReadinessChecklist({
                     : "bg-amber-500/15 text-amber-800 dark:text-amber-200"
                 }`}
               >
-                {completedCount} / {totalCount} {isAr ? "مكتمل" : "completed"} ({progressPercent}%)
+                {collapsed
+                  ? `${completedCount} / ${totalCount}`
+                  : `${completedCount} / ${totalCount} ${isAr ? "مكتمل" : "completed"} (${progressPercent}%)`}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground font-normal leading-relaxed mt-0.5">
+            <p
+              className={`text-xs text-muted-foreground font-normal leading-relaxed mt-0.5 ${
+                collapsed ? "hidden" : ""
+              }`}
+            >
               {isAllComplete
                 ? isAr
                   ? "متجرك مستوفٍ لجميع المتطلبات الأساسية ومستعد لاستقبال العملاء والطلبات!"
@@ -673,21 +683,15 @@ export function StoreReadinessChecklist({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 self-end sm:self-center">
-          <Button asChild variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-medium">
-            <a href={`/${slug}`} target="_blank" rel="noopener noreferrer">
-              <Store className="h-3.5 w-3.5 text-primary" />
-              <span>{isAr ? "معاينة المتجر المباشر" : "Customer Preview"}</span>
-              <ExternalLink className="h-3 w-3 text-muted-foreground ms-0.5" />
-            </a>
-          </Button>
-
+        {/* The store's preview is in the page heading; this row only opens and folds the list. */}
+        <div className="flex shrink-0 items-center gap-1.5">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={toggleCollapsed}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+            aria-expanded={!collapsed}
+            className="h-9 w-9 p-0 text-muted-foreground hover:text-foreground"
             aria-label={
               collapsed
                 ? isAr

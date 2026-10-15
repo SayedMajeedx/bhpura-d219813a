@@ -11,13 +11,21 @@ interface AdvancedOnlyProps {
   labelEn?: string;
   fieldKey?: string;
   fieldName?: string;
+  /** What the fold holds, in the reader's language ("Section banners & backgrounds"). */
   reason?: string;
 }
 
-export function AdvancedOnly({ children, fallback, labelAr, labelEn }: AdvancedOnlyProps) {
-  const [level, setLevel] = useSettingsLevel();
+/**
+ * Options most stores leave alone, folded on the basic level. Each fold says what it holds (every
+ * fold once read "Additional advanced options available", so two folds side by side looked the
+ * same) and opens on its own: showing one fold no longer switched the whole page to advanced.
+ */
+export function AdvancedOnly({ children, fallback, labelAr, labelEn, reason }: AdvancedOnlyProps) {
+  const [level] = useSettingsLevel();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const [open, setOpen] = React.useState(false);
+  const panelId = React.useId();
 
   if (level === "advanced") {
     return <>{children}</>;
@@ -27,25 +35,34 @@ export function AdvancedOnly({ children, fallback, labelAr, labelEn }: AdvancedO
     return <>{fallback}</>;
   }
 
+  const what =
+    reason ||
+    (isAr ? labelAr : labelEn) ||
+    (isAr ? "خيارات تحكّم متقدمة إضافية" : "More advanced options");
+
   return (
-    <div className="py-2 px-3.5 my-2 rounded-xl border border-dashed border-border bg-muted/20 flex items-center justify-between text-xs text-muted-foreground transition-all">
-      <div className="flex items-center gap-2">
-        <SlidersHorizontal className="h-3.5 w-3.5 text-primary opacity-70" />
-        <span>
-          {isAr
-            ? labelAr || "خيارات تحكّم متقدمة إضافية متاحة"
-            : labelEn || "Additional advanced options available"}
-        </span>
+    <div className="my-2 space-y-3">
+      <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-3.5 py-2 text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2">
+          <SlidersHorizontal
+            className="h-3.5 w-3.5 shrink-0 text-primary opacity-70"
+            aria-hidden="true"
+          />
+          <span className="min-w-0 break-words">{what}</span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+          className="h-8 shrink-0 px-2 text-xs font-medium text-primary hover:bg-primary/10"
+        >
+          {open ? (isAr ? "إخفاء" : "Hide") : isAr ? "إظهار" : "Show"}
+        </Button>
       </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setLevel("advanced")}
-        className="h-6 text-xs text-primary font-medium hover:bg-primary/10 px-2"
-      >
-        {isAr ? "إظهار الخيارات المتقدمة" : "Show advanced"}
-      </Button>
+      {open && <div id={panelId}>{children}</div>}
     </div>
   );
 }

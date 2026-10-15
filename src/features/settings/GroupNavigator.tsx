@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
+import { replaceUrlQuietly } from "@/lib/quiet-url";
 import { Button } from "@/components/ui/button";
 import { SETTINGS_GROUPS, type SettingsTabId } from "./registry";
 
@@ -95,13 +96,25 @@ export function GroupNavigator({
     return l ? (isAr ? l.ar : l.en) : g.id;
   };
 
+  // The open group stays in view in the sideways row.
+  const listRef = React.useRef<HTMLUListElement>(null);
+  React.useEffect(() => {
+    const row = listRef.current;
+    const chip = row?.querySelector<HTMLElement>("[data-active]");
+    if (!row || !chip || row.scrollWidth <= row.clientWidth) return;
+    const rowBox = row.getBoundingClientRect();
+    const chipBox = chip.getBoundingClientRect();
+    row.scrollLeft += chipBox.left + chipBox.width / 2 - (rowBox.left + rowBox.width / 2);
+  }, [active.id]);
+
   const select = (id: string) => {
     setActiveGroup(id);
     writeStored(tab, id);
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.set("group", id);
-      window.history.replaceState({}, "", url.toString());
+      // The address mirrors the group; the router must not read it as a navigation.
+      replaceUrlQuietly(url.toString());
       // Bring the group header into view without scrolling the whole page back to the top.
       document
         .getElementById("settings-group-top")
@@ -116,12 +129,17 @@ export function GroupNavigator({
         aria-label={isAr ? "أقسام التبويب" : "Tab sections"}
         className="mb-4 lg:mb-0 lg:sticky lg:top-4"
       >
-        <ul role="tablist" className="flex flex-wrap gap-1.5 lg:flex-col lg:gap-1">
+        {/* One sideways row on a phone (whole labels; the storefront's nine wrapped to five rows). */}
+        <ul
+          ref={listRef}
+          role="tablist"
+          className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-0 lg:pb-0"
+        >
           {groups.map((g) => {
             const isActive = g.id === active.id;
             const Icon = g.icon;
             return (
-              <li key={g.id} className="lg:w-full">
+              <li key={g.id} className="shrink-0 lg:w-full" data-active={isActive || undefined}>
                 <Button
                   type="button"
                   role="tab"

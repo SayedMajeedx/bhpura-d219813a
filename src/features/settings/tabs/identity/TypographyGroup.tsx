@@ -100,7 +100,10 @@ export function TypographyGroup() {
       </Card>
 
       {/* 2. Advanced Typography Controls */}
-      <AdvancedOnly fieldName="identity.typography.advanced">
+      <AdvancedOnly
+        fieldName="identity.typography.advanced"
+        reason={isAr ? "خطوط مخصصة وأحجام وأوزان الخطوط" : "Custom fonts, sizes and weights"}
+      >
         <Card className="p-6 rounded-2xl border-border bg-card space-y-6">
           <div>
             <h4 className="font-semibold text-base">
