@@ -26,6 +26,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
+  HERO_ACTIONS_ALIGN_CLASS,
   HERO_TEXT_ALIGN_CLASS,
   HERO_TEXT_POSITION_CLASS,
   HERO_TEXT_POSITION_CLASS_SM,
@@ -503,7 +504,17 @@ export function HeroV2View({
                         {body}
                       </p>
                     )}
-                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                    <div
+                      className={`flex flex-wrap items-center gap-3 ${
+                        HERO_ACTIONS_ALIGN_CLASS[item.headline.align]
+                      } ${
+                        dense
+                          ? "pt-3 sm:pt-4"
+                          : desktopHeight === "cinematic"
+                            ? "pt-4 sm:pt-7"
+                            : "pt-4 sm:pt-6"
+                      }`}
+                    >
                       {button && (
                         <a
                           href={slide.button_href || "#products"}
