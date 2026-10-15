@@ -32,6 +32,7 @@ import {
   headlinePhrases,
   headlineSettings,
   heroScrim,
+  slideLook,
 } from "@/lib/hero-headline";
 import { HeroHeadline } from "@/components/storefront/HeroHeadline";
 
@@ -47,6 +48,7 @@ type ResolvedSlide = {
   button: string;
   phrases: string[];
   headline: ReturnType<typeof headlineSettings>;
+  look: ReturnType<typeof slideLook>;
   main: HeroMediaVariant | null;
   mobile: HeroMediaVariant | null;
   isVideo: boolean;
@@ -124,6 +126,8 @@ export function HeroV2View({
     // The headline: the slide's phrases (one after another), else its title as the only one.
     const phrases = headlinePhrases(slide, isAr ? "ar" : "en");
     const headline = headlineSettings(slide);
+    // The slide's own shade and text colour, else the store's.
+    const look = slideLook(slide, settings);
     return {
       slide,
       title,
@@ -131,6 +135,7 @@ export function HeroV2View({
       button,
       phrases,
       headline,
+      look,
       main: media.main,
       mobile: media.mobile,
       isVideo,
@@ -211,12 +216,6 @@ export function HeroV2View({
   }
 
   const accentColor = settings.storefront_accent_color || brand?.primary_color || "#3f121a";
-
-  // Merchant-tunable scrim: 0 = clear media, 100 = heavy vignette.
-  const overlayStrength = Math.min(100, Math.max(0, Number(settings.hero_overlay_strength ?? 45)));
-  const scrimBottom = (overlayStrength / 100) * 0.95;
-  const scrimMiddle = (overlayStrength / 100) * 0.45;
-  const heroTitleColor = settings.hero_title_color_v2?.trim() || undefined;
 
   // Responsive Hero Layout & Presentation Settings
   const isFullBleed = (settings.hero_layout ?? "full_bleed") === "full_bleed";
@@ -425,13 +424,20 @@ export function HeroV2View({
                 <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
-                    backgroundImage: heroScrim(item.headline.position, scrimBottom, scrimMiddle),
+                    backgroundImage: heroScrim(
+                      item.headline.position,
+                      item.look.strong,
+                      item.look.soft,
+                      item.look.tone,
+                    ),
                   }}
                 />
 
                 {/* Text / Action Content: where the store placed it, aligned as it chose. */}
                 <div
-                  className={`absolute inset-0 flex flex-col text-white z-10 pointer-events-none px-6 sm:px-10 ${
+                  className={`absolute inset-0 flex flex-col ${
+                    item.look.tone === "dark" ? "" : "text-white"
+                  } z-10 pointer-events-none px-6 sm:px-10 ${
                     HERO_TEXT_POSITION_CLASS[item.headline.position]
                   } ${HERO_TEXT_ALIGN_CLASS[item.headline.align]} ${
                     dense
@@ -440,6 +446,7 @@ export function HeroV2View({
                         ? "p-6 sm:p-12 pb-10 sm:pb-16"
                         : "p-4 sm:p-10 pb-8 sm:pb-14"
                   }`}
+                  style={item.look.tone === "dark" ? { color: item.look.titleColor } : undefined}
                 >
                   <div
                     className={`max-w-2xl pointer-events-auto ${
@@ -454,7 +461,9 @@ export function HeroV2View({
                         loops={item.headline.loops}
                         active={isActive && isInViewport}
                         dir={isAr ? "rtl" : "ltr"}
-                        className="font-bold tracking-tight text-white drop-shadow-md text-balance"
+                        className={`font-bold tracking-tight text-balance ${
+                          item.look.tone === "dark" ? "" : "text-white drop-shadow-md"
+                        }`}
                         style={{
                           fontSize: `calc(${
                             dense
@@ -464,7 +473,7 @@ export function HeroV2View({
                                 : "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)"
                           } * ${HERO_TEXT_SCALE[item.headline.size]})`,
                           lineHeight: 1.18,
-                          ...(heroTitleColor ? { color: heroTitleColor } : {}),
+                          ...(item.look.titleColor ? { color: item.look.titleColor } : {}),
                         }}
                       />
                     )}
@@ -474,7 +483,9 @@ export function HeroV2View({
                           dense
                             ? "text-xs sm:text-sm line-clamp-1 sm:line-clamp-2"
                             : "text-xs sm:text-base"
-                        } text-white/90 drop-shadow-sm max-w-xl`}
+                        } ${
+                          item.look.tone === "dark" ? "opacity-85" : "text-white/90 drop-shadow-sm"
+                        } max-w-xl`}
                       >
                         {body}
                       </p>
@@ -499,7 +510,11 @@ export function HeroV2View({
                             dense
                               ? "min-h-10 px-3.5 py-2 text-xs sm:text-sm"
                               : "min-h-11 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm"
-                          } items-center justify-center rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 font-semibold text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
+                          } ${
+                            item.look.tone === "dark"
+                              ? "bg-background/70 hover:bg-background/85 border-border text-foreground"
+                              : "bg-white/20 hover:bg-white/30 border-white/30 text-white"
+                          } items-center justify-center rounded-xl backdrop-blur-md border font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
                         >
                           {isAr ? "طلب مخصص" : "Bespoke Order"}
                         </a>
