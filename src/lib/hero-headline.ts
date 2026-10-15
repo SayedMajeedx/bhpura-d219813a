@@ -25,6 +25,9 @@ export type HeroHeadlineFields = {
   text_loops?: number;
   text_position?: HeroTextPosition;
   text_size?: HeroTextSize;
+  /** On a phone (below 640px) the text may sit and size differently; unset = as on a laptop. */
+  text_position_mobile?: HeroTextPosition;
+  text_size_mobile?: HeroTextSize;
   align?: HeroTextAlign;
   /** The slide's own look; each falls back to the store's (hero_overlay_strength, hero_title_color_v2). */
   text_tone?: HeroTextTone;
@@ -42,6 +45,8 @@ export type HeroHeadlineSlideFields = Pick<
   | "text_loops"
   | "text_position"
   | "text_size"
+  | "text_position_mobile"
+  | "text_size_mobile"
   | "text_tone"
   | "shade"
   | "text_color"
@@ -81,21 +86,24 @@ const clamp = (value: unknown, min: number, max: number, fallback: number) => {
 };
 
 /** A slide's headline settings, each with its default (blur-in, 3.5 s, 3 rounds, at the bottom). */
+const POSITIONS: readonly HeroTextPosition[] = ["top", "middle", "bottom"];
+const SIZES: readonly HeroTextSize[] = ["s", "m", "l", "xl"];
+const oneOf = <T extends string>(list: readonly T[], value: unknown): T | null =>
+  list.includes(value as T) ? (value as T) : null;
+
 export function headlineSettings(slide: HeroHeadlineFields) {
+  const position = oneOf(POSITIONS, slide.text_position) ?? "bottom";
+  const size = oneOf(SIZES, slide.text_size) ?? "m";
   return {
     animation: HERO_TEXT_ANIMATIONS.includes(slide.text_animation as HeroTextAnimation)
       ? (slide.text_animation as HeroTextAnimation)
       : "blur_in",
     seconds: clamp(slide.text_seconds, 2, 8, DEFAULT_TEXT_SECONDS),
     loops: Math.round(clamp(slide.text_loops, 1, 10, DEFAULT_TEXT_LOOPS)),
-    position: (["top", "middle", "bottom"] as const).includes(
-      slide.text_position as HeroTextPosition,
-    )
-      ? (slide.text_position as HeroTextPosition)
-      : "bottom",
-    size: (["s", "m", "l", "xl"] as const).includes(slide.text_size as HeroTextSize)
-      ? (slide.text_size as HeroTextSize)
-      : "m",
+    position,
+    size,
+    positionMobile: oneOf(POSITIONS, slide.text_position_mobile) ?? position,
+    sizeMobile: oneOf(SIZES, slide.text_size_mobile) ?? size,
     align: (["start", "center", "end"] as const).includes(slide.align as HeroTextAlign)
       ? (slide.align as HeroTextAlign)
       : "start",
@@ -151,6 +159,12 @@ export const HERO_TEXT_POSITION_CLASS: Record<HeroTextPosition, string> = {
   top: "justify-start",
   middle: "justify-center",
   bottom: "justify-end",
+};
+/** The same from 640px up, for a slide whose text sits elsewhere on a phone. */
+export const HERO_TEXT_POSITION_CLASS_SM: Record<HeroTextPosition, string> = {
+  top: "sm:justify-start",
+  middle: "sm:justify-center",
+  bottom: "sm:justify-end",
 };
 
 /** How the text block lines up, on the reading side ("start" is the right in Arabic). */
@@ -214,4 +228,19 @@ export function slideLook(
     strong: (shade / 100) * 0.95,
     soft: (shade / 100) * 0.45,
   };
+}
+
+/**
+ * How fast the phrases follow one another, in the words a merchant uses: seconds each phrase
+ * stays. A number the store typed that is none of them is its own pace.
+ */
+export const HERO_PACES = { calm: 5, medium: 3.5, lively: 2.5 } as const;
+export type HeroPace = keyof typeof HERO_PACES;
+
+export function paceOf(slide: Pick<HeroHeadlineFields, "text_seconds">): HeroPace | null {
+  const seconds = headlineSettings(slide).seconds;
+  const match = (Object.keys(HERO_PACES) as HeroPace[]).find(
+    (pace) => HERO_PACES[pace] === seconds,
+  );
+  return match ?? null;
 }

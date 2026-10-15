@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import {
   HERO_TEXT_ALIGN_CLASS,
   HERO_TEXT_POSITION_CLASS,
+  HERO_TEXT_POSITION_CLASS_SM,
   HERO_TEXT_SCALE,
   headlinePhrases,
   headlineSettings,
@@ -420,26 +421,35 @@ export function HeroV2View({
                   />
                 )}
 
-                {/* High-Contrast Luxury Vignette Scrim: darkest where the text sits. */}
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    backgroundImage: heroScrim(
-                      item.headline.position,
-                      item.look.strong,
-                      item.look.soft,
-                      item.look.tone,
-                    ),
-                  }}
-                />
+                {/* The shade, deepest where the text sits (on a phone, where it sits there). */}
+                {(item.headline.positionMobile === item.headline.position
+                  ? [{ position: item.headline.position, className: "" }]
+                  : [
+                      { position: item.headline.positionMobile, className: "sm:hidden" },
+                      { position: item.headline.position, className: "hidden sm:block" },
+                    ]
+                ).map((scrim) => (
+                  <div
+                    key={scrim.className || "all"}
+                    className={`absolute inset-0 pointer-events-none ${scrim.className}`}
+                    style={{
+                      backgroundImage: heroScrim(
+                        scrim.position,
+                        item.look.strong,
+                        item.look.soft,
+                        item.look.tone,
+                      ),
+                    }}
+                  />
+                ))}
 
                 {/* Text / Action Content: where the store placed it, aligned as it chose. */}
                 <div
                   className={`absolute inset-0 flex flex-col ${
                     item.look.tone === "dark" ? "" : "text-white"
                   } z-10 pointer-events-none px-6 sm:px-10 ${
-                    HERO_TEXT_POSITION_CLASS[item.headline.position]
-                  } ${HERO_TEXT_ALIGN_CLASS[item.headline.align]} ${
+                    HERO_TEXT_POSITION_CLASS[item.headline.positionMobile]
+                  } ${HERO_TEXT_POSITION_CLASS_SM[item.headline.position]} ${HERO_TEXT_ALIGN_CLASS[item.headline.align]} ${
                     dense
                       ? "p-4 sm:px-8 sm:py-4 pb-6 sm:pb-7"
                       : desktopHeight === "cinematic"
@@ -461,7 +471,7 @@ export function HeroV2View({
                         loops={item.headline.loops}
                         active={isActive && isInViewport}
                         dir={isAr ? "rtl" : "ltr"}
-                        className={`font-bold tracking-tight text-balance ${
+                        className={`font-bold tracking-tight text-balance [--hero-text-scale:var(--hero-scale-phone)] sm:[--hero-text-scale:var(--hero-scale-wide)] ${
                           item.look.tone === "dark" ? "" : "text-white drop-shadow-md"
                         }`}
                         style={{
@@ -471,7 +481,10 @@ export function HeroV2View({
                               : desktopHeight === "cinematic"
                                 ? "clamp(1.5rem, 1.2rem + 2.4vw, 3.2rem)"
                                 : "clamp(1.35rem, 1rem + 2.2vw, 2.75rem)"
-                          } * ${HERO_TEXT_SCALE[item.headline.size]})`,
+                          } * var(--hero-text-scale))`,
+                          ["--hero-scale-phone" as string]:
+                            HERO_TEXT_SCALE[item.headline.sizeMobile],
+                          ["--hero-scale-wide" as string]: HERO_TEXT_SCALE[item.headline.size],
                           lineHeight: 1.18,
                           ...(item.look.titleColor ? { color: item.look.titleColor } : {}),
                         }}

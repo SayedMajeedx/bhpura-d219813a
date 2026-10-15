@@ -6,7 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   DEFAULT_TEXT_LOOPS,
   DEFAULT_TEXT_SECONDS,
+  HERO_PACES,
   headlineSettings,
+  paceOf,
+  type HeroPace,
   type HeroHeadlineFields,
   type HeroTextAnimation,
   type HeroTextAlign,
@@ -39,6 +42,11 @@ const ALIGNS: { value: HeroTextAlign; ar: string; en: string }[] = [
   { value: "start", ar: "بداية السطر", en: "Start" },
   { value: "center", ar: "وسط", en: "Center" },
   { value: "end", ar: "نهاية السطر", en: "End" },
+];
+const PACES: { value: HeroPace; ar: string; en: string }[] = [
+  { value: "calm", ar: "هادئ", en: "Calm" },
+  { value: "medium", ar: "متوسط", en: "Medium" },
+  { value: "lively", ar: "حيوي", en: "Lively" },
 ];
 const SIZES: { value: HeroTextSize; label: string }[] = [
   { value: "s", label: "S" },
@@ -178,6 +186,16 @@ export function HeroHeadlineFields({
         onPick={(value) => onChange({ text_animation: value })}
       />
 
+      <Choices
+        label={isAr ? "الإيقاع" : "Pace"}
+        options={PACES.map((o) => ({
+          value: o.value,
+          label: `${isAr ? o.ar : o.en} · ${HERO_PACES[o.value]}${isAr ? "ث" : "s"}`,
+        }))}
+        value={paceOf(slide)}
+        onPick={(value) => onChange({ text_seconds: HERO_PACES[value] })}
+      />
+
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="min-w-0">
           <Label htmlFor={`${idPrefix}-hero-text-seconds`}>
@@ -227,6 +245,37 @@ export function HeroHeadlineFields({
         value={settings.size}
         onPick={(value) => onChange({ text_size: value })}
       />
+
+      <div className="min-w-0 space-y-3 border-t border-border pt-3">
+        <div>
+          <p className="text-sm font-medium">{isAr ? "على الجوال" : "On a phone"}</p>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "مكان وحجم مختلفان للشاشات الأصغر من 640px، أو كما على الكمبيوتر."
+              : "A different place and size below 640px, or as on a laptop."}
+          </p>
+        </div>
+        <Choices
+          label={isAr ? "مكان النص على الجوال" : "Position on a phone"}
+          options={[
+            { value: "same" as const, label: isAr ? "كالكمبيوتر" : "As on a laptop" },
+            ...POSITIONS.map((o) => ({ value: o.value, label: isAr ? o.ar : o.en })),
+          ]}
+          value={slide.text_position_mobile ? settings.positionMobile : "same"}
+          onPick={(value) =>
+            onChange({ text_position_mobile: value === "same" ? undefined : value })
+          }
+        />
+        <Choices
+          label={isAr ? "حجم العنوان على الجوال" : "Headline size on a phone"}
+          options={[
+            { value: "same" as const, label: isAr ? "كالكمبيوتر" : "As on a laptop" },
+            ...SIZES,
+          ]}
+          value={slide.text_size_mobile ? settings.sizeMobile : "same"}
+          onPick={(value) => onChange({ text_size_mobile: value === "same" ? undefined : value })}
+        />
+      </div>
     </fieldset>
   );
 }
@@ -239,7 +288,8 @@ function Choices<T extends string>({
 }: {
   label: string;
   options: { value: T; label: string }[];
-  value: T;
+  /** Null when none of the options is the current value (a number the store typed). */
+  value: T | null;
   onPick: (value: T) => void;
 }) {
   return (

@@ -45,12 +45,17 @@ describe("claiming a scheduled run", () => {
   });
 
   it("clears claims older than two days when an hour begins", async () => {
+    // Against the real clock (the cleanup reads now()): the other tests' claims, on fixed days,
+    // grow old as the calendar moves, so this one starts from an empty table and claims minutes
+    // of the last hour. Written with fixed days, it began failing two days after it was written.
+    const hour = Math.floor(Date.now() / 3_600_000) * 3_600_000;
     await db.exec(`
+      DELETE FROM public.scheduled_runs;
       INSERT INTO public.scheduled_runs (cron, run_minute) VALUES
         ('* * * * *', now() - interval '3 days'), ('* * * * *', now() - interval '1 day');
     `);
     // Not on the hour: nothing is cleared.
-    await claim("* * * * *", "2026-10-13T10:07:00Z");
+    await claim("* * * * *", new Date(hour - 3_600_000 + 7 * 60_000).toISOString());
     expect(
       (
         await db.query(
@@ -58,7 +63,7 @@ describe("claiming a scheduled run", () => {
         )
       ).rows,
     ).toHaveLength(1);
-    await claim("* * * * *", "2026-10-13T11:00:08Z");
+    await claim("* * * * *", new Date(hour + 8_000).toISOString());
     expect(
       (
         await db.query(
@@ -66,13 +71,13 @@ describe("claiming a scheduled run", () => {
         )
       ).rows,
     ).toHaveLength(0);
-    // The day-old claim and today's are kept.
+    // The day-old claim and this hour's two are kept.
     expect(
       Number(
         (await db.query<{ n: number }>("SELECT count(*)::int AS n FROM public.scheduled_runs"))
           .rows[0].n,
       ),
-    ).toBeGreaterThanOrEqual(5);
+    ).toBe(3);
   });
 
   it("is the server's only: a browser can neither claim nor read the claims", async () => {
