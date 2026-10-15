@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { Palette, Sliders } from "lucide-react";
 import {
   QuickThemeCustomizer,
@@ -10,7 +10,6 @@ import {
 import { ColorField } from "../../shared/ColorField";
 import { AdvancedOnly } from "../../FieldVisibility";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
-import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { useI18n } from "@/lib/i18n";
 import type { ExtractedPalette } from "@/lib/logo-palette";
 import { paletteToSettingsPatch } from "@/lib/brand-palette-apply";
@@ -19,9 +18,7 @@ export function PaletteGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { bs, setBs, patchBs } = useBrandSettingsFormContext();
-  // Footer colours are only read by the classic (simple) footer; the columns
-  // footer used by Storefront 2.0 derives its own surface from the theme.
-  const showFooterColours = resolveFooterVariant(bs) === "simple";
+  const { openGroup } = React.useContext(SettingsNavContext);
 
   const handleExtractPalette = (palette: ExtractedPalette) => {
     // Writes the full derived palette (header, footer, buttons, headings) plus
@@ -54,29 +51,35 @@ export function PaletteGroup() {
           </div>
         </div>
 
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-border p-3 text-xs text-muted-foreground">
+          <span className="min-w-0">
+            {isAr
+              ? "ألوان الترويسة والقائمة والتذييل مع بقية إعداداتها."
+              : "The header's, menu's and footer's colours are with the rest of their settings."}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => openGroup?.("storefront", "header_footer")}
+          >
+            {isAr ? "الترويسة والتذييل" : "Header & footer"}
+          </Button>
+        </div>
+
         <QuickThemeCustomizer
           primaryColor={bs.storefront_accent_color || "#8C6D58"}
           secondaryColor={bs.storefront_background_color || "#FAF8F5"}
           radius={bs.storefront_radius || "12px"}
           currentFontAr={bs.storefront_font_ar || "Cairo"}
           currentFontEn={bs.storefront_font_en || "Inter"}
-          headerGlass={bs.header_glass ?? true}
           badgeAccent={bs.badge_accent || "#E53E3E"}
-          headerBg={bs.header_bg}
-          headerFg={bs.header_fg}
-          footerBg={bs.footer_bg}
-          footerFg={bs.footer_fg}
           logoUrl={bs.logo_url}
           isAr={isAr}
           onPrimaryChange={(val) => setBs("storefront_accent_color", val)}
           onSecondaryChange={(val) => setBs("storefront_background_color", val)}
           onRadiusChange={(val) => setBs("storefront_radius", val)}
           onBadgeAccentChange={(val) => setBs("badge_accent", val)}
-          onHeaderGlassChange={(val) => setBs("header_glass", val)}
-          onHeaderBgChange={(val) => setBs("header_bg", val)}
-          onHeaderFgChange={(val) => setBs("header_fg", val)}
-          onFooterBgChange={(val) => setBs("footer_bg", val)}
-          onFooterFgChange={(val) => setBs("footer_fg", val)}
           onSelectFontPreset={handleFontPreset}
           onSwapColors={() => {
             const currentAccent = bs.storefront_accent_color || "#8C6D58";
@@ -212,67 +215,6 @@ export function PaletteGroup() {
                 label={isAr ? "نص دفع سلة الشراء" : "Cart Drawer Checkout Text"}
                 value={bs.cart_drawer_checkout_fg ?? null}
                 onChange={(v) => setBs("cart_drawer_checkout_fg", v)}
-              />
-            </div>
-          </div>
-
-          {/* Header, Menu & Footer */}
-          <div className="space-y-4 pt-4 border-t border-border">
-            <h5 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              {isAr ? "ألوان الرأس والقائمة والتذييل" : "Header, Menu & Footer"}
-            </h5>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <ColorField
-                label={isAr ? "خلفية الرأس" : "Header BG"}
-                value={bs.header_bg ?? null}
-                onChange={(v) => setBs("header_bg", v)}
-              />
-              <ColorField
-                label={isAr ? "نص وأيقونات الرأس" : "Header Text/Icons"}
-                value={bs.header_fg ?? null}
-                onChange={(v) => setBs("header_fg", v)}
-              />
-              <ColorField
-                label={isAr ? "خلفية القائمة الجانبية" : "Menu BG"}
-                value={bs.menu_bg ?? null}
-                onChange={(v) => setBs("menu_bg", v)}
-              />
-              <ColorField
-                label={isAr ? "نص القائمة الجانبية" : "Menu Text"}
-                value={bs.menu_fg ?? null}
-                onChange={(v) => setBs("menu_fg", v)}
-              />
-              {showFooterColours && (
-                <>
-                  <ColorField
-                    label={isAr ? "خلفية التذييل" : "Footer BG"}
-                    value={bs.footer_bg ?? null}
-                    onChange={(v) => setBs("footer_bg", v)}
-                  />
-                  <ColorField
-                    label={isAr ? "نص التذييل" : "Footer Text"}
-                    value={bs.footer_fg ?? null}
-                    onChange={(v) => setBs("footer_fg", v)}
-                  />
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-muted/10 mt-3">
-              <div>
-                <Label htmlFor="header_glass" className="font-semibold text-sm">
-                  {isAr ? "تأثير زجاجي شفاف لشريط الرأس (Glassmorphism)" : "Header Glassmorphism"}
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr
-                    ? "تأثير ضبابي أنيق لشريط التنقل العلوي عند التمرير"
-                    : "Elegant frosted blur overlay on storefront header"}
-                </p>
-              </div>
-              <Switch
-                id="header_glass"
-                checked={bs.header_glass ?? true}
-                onCheckedChange={(val) => setBs("header_glass", val)}
               />
             </div>
           </div>

@@ -1,5 +1,4 @@
 import { useI18n } from "@/lib/i18n";
-import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -23,9 +22,7 @@ type BoolKey =
   | "pdp_image_zoom"
   | "social_proof_enabled"
   | "motion_enabled"
-  | "back_in_stock_enabled"
-  | "newsletter_enabled"
-  | "footer_show_payment_methods";
+  | "back_in_stock_enabled";
 
 const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hintEn: string }> = [
   {
@@ -91,29 +88,9 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
     hintAr: "نموذج بدل زر الشراء عند نفاد المخزون",
     hintEn: "Form instead of the buy button when sold out",
   },
-  {
-    key: "newsletter_enabled",
-    ar: "اشتراك النشرة في التذييل",
-    en: "Footer newsletter signup",
-    hintAr: "واتساب أو بريد — يغذّي حملات الواتساب",
-    hintEn: "WhatsApp or email — feeds WhatsApp campaigns",
-  },
-  {
-    key: "footer_show_payment_methods",
-    ar: "أيقونات طرق الدفع في التذييل",
-    en: "Payment icons in footer",
-    hintAr: "بنفت، فيزا، ماستركارد، الدفع عند الاستلام",
-    hintEn: "Benefit, Visa, Mastercard, COD",
-  },
 ];
 
 const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
-  {
-    // The home page's sections (trust bar, brand story, recently viewed) are in the Home page group.
-    ar: "المتجر كله",
-    en: "Whole store",
-    keys: ["motion_enabled"],
-  },
   {
     ar: "بطاقة المنتج",
     en: "Product card",
@@ -135,15 +112,16 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
     ],
   },
   {
-    ar: "التذييل",
-    en: "Footer",
-    keys: ["newsletter_enabled", "footer_show_payment_methods"],
+    ar: "المتجر كله",
+    en: "Whole store",
+    keys: ["motion_enabled"],
   },
 ];
 
 /**
- * Storefront 2.0 options. Every column added by the storefront_v2 migration is
- * editable here so merchants can tune or disable each new behaviour.
+ * The new look's product card and product page: what a card shows, what the product page and a
+ * category's page offer, and the scroll motion. The home page's sections are in the Home page
+ * group and the footer's options in the Header & footer group; this group held them all.
  */
 export function DesignV2Group() {
   const { lang } = useI18n();
@@ -157,15 +135,13 @@ export function DesignV2Group() {
       <div>
         <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
           <Sparkles className="size-4 text-primary" />
-          <span>
-            {isAr ? "خيارات المظهر الجديد (Storefront 2.0)" : "New look options (Storefront 2.0)"}
-          </span>
+          <span>{isAr ? "بطاقة المنتج وصفحته" : "Product card & page"}</span>
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
           {isV2
             ? isAr
-              ? "تحكّم في كل ميزة من ميزات المظهر الجديد. كل الخيارات مفعّلة افتراضياً."
-              : "Tune every feature of the new look. Everything is on by default."
+              ? "ما تعرضه بطاقة المنتج، وما تقدّمه صفحة المنتج وصفحات الأقسام. كلها مفعّلة افتراضياً."
+              : "What a product card shows, and what the product page and category pages offer. Everything is on by default."
             : isAr
               ? 'هذه الخيارات تعمل بعد تفعيل المظهر الجديد من بطاقة "ترقية المظهر" أعلاه.'
               : 'These options apply once the new look is enabled from the "Upgrade design" card above.'}
@@ -215,25 +191,6 @@ export function DesignV2Group() {
       {/* Selects & numbers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-border">
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium">{isAr ? "تخطيط التذييل" : "Footer layout"}</Label>
-          <Select
-            // Legacy rows stored the simple footer as "minimal"; normalise so the
-            // control reflects what the storefront actually renders.
-            value={resolveFooterVariant(bs)}
-            onValueChange={(val) => setBs({ footer_layout: val })}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="simple">{isAr ? "بسيط (الحالي)" : "Minimal (current)"}</SelectItem>
-              <SelectItem value="columns">
-                {isAr ? "أعمدة (بريميوم)" : "Columns (premium)"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
           <Label className="text-xs font-medium">
             {isAr ? 'شارة "جديد" لمدة (أيام)' : '"New" badge for (days)'}
           </Label>
@@ -269,34 +226,6 @@ export function DesignV2Group() {
               </SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      {/* Newsletter titles */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border">
-        <div>
-          <Label className="text-xs font-medium">
-            {isAr ? "عنوان الاشتراك (عربي)" : "Newsletter title (Arabic)"}
-          </Label>
-          <Input
-            dir="rtl"
-            className="mt-1 h-9 text-xs"
-            placeholder="اشترك لتصلك أحدث المنتجات والعروض"
-            value={bs.newsletter_title_ar ?? ""}
-            onChange={(e) => setBs({ newsletter_title_ar: e.target.value || null })}
-          />
-        </div>
-        <div>
-          <Label className="text-xs font-medium">
-            {isAr ? "عنوان الاشتراك (إنجليزي)" : "Newsletter title (English)"}
-          </Label>
-          <Input
-            dir="ltr"
-            className="mt-1 h-9 text-xs"
-            placeholder="Be the first to see new arrivals"
-            value={bs.newsletter_title_en ?? ""}
-            onChange={(e) => setBs({ newsletter_title_en: e.target.value || null })}
-          />
         </div>
       </div>
 

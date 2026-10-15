@@ -25,6 +25,8 @@ export interface GroupDef {
 interface SettingsNavValue {
   activeGroup: string | null;
   setActiveGroup: (group: string | null) => void;
+  /** Opens a group of another tab (a group that points to where a setting now lives). */
+  openGroup?: (tab: SettingsTabId, group: string) => void;
 }
 
 export const SettingsNavContext = React.createContext<SettingsNavValue>({
@@ -83,9 +85,12 @@ export function GroupNavigator({
           return stored && ids.includes(stored) ? stored : ids[0];
         })();
 
-  // Keep context + storage in sync with what is actually shown.
+  // Keep context + storage in sync with what is shown. A group that was asked for (an address, a
+  // link from another group) is kept even while the list does not have it yet: the new look's
+  // group joins the list once the store's settings say it is on the new look, and replacing the
+  // request then sent a link to "Product card & page" to the first group for good.
   React.useEffect(() => {
-    if (resolved !== activeGroup) setActiveGroup(resolved);
+    if (activeGroup === null) setActiveGroup(resolved);
     writeStored(tab, resolved);
   }, [resolved, activeGroup, setActiveGroup, tab]);
 
