@@ -14,6 +14,7 @@ import {
   homeGridProducts,
   homeMerchandising,
   homeSectionBackgrounds,
+  promoAreaShows,
 } from "@/features/storefront-home/lib/home-products";
 import { PromoCards } from "@/features/storefront-home/components/PromoCards";
 import {
@@ -138,7 +139,9 @@ function StoreHome() {
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
           <PromoCards />
           <div className="space-y-8 sm:space-y-12">
-            <SkeletonMerchandisingSection label={["وصل حديثاً", "New arrivals"]} />
+            {settings.show_new_arrivals && (
+              <SkeletonMerchandisingSection label={["وصل حديثاً", "New arrivals"]} />
+            )}
             <SkeletonMerchandisingSection label={["الأكثر مبيعاً", "Best sellers"]} />
           </div>
           <div className="mt-8 pt-6 sm:pt-8 border-t border-border">
@@ -169,12 +172,20 @@ function StoreHome() {
       <HeroBanner />
       {showTrustBarBelowHero && <TrustBar />}
       <BookingInvite />
-      <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-          <PromoCards />
-          {!activeCat && <MerchandisingSection kind="new" products={newest} />}
-        </div>
-      </section>
+      {/* Left out when it has nothing: drawn empty, its background and padding were a bare band. */}
+      {promoAreaShows({
+        cards: settings.home_promo_cards,
+        showNewArrivals: settings.show_new_arrivals,
+        newest,
+        activeCat,
+      }) && (
+        <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+            <PromoCards />
+            {!activeCat && <MerchandisingSection kind="new" products={newest} />}
+          </div>
+        </section>
+      )}
       {!activeCat && (
         <div>
           <MerchandisingSection kind="best" products={bestSellers} />

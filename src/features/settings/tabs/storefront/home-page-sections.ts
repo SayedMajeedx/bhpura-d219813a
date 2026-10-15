@@ -1,3 +1,5 @@
+import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
+
 /**
  * The storefront's home page, section by section, in the order a shopper scrolls it
  * (`src/routes/$slug.index.tsx`). Its settings were in four groups: the trust bar's switch and
@@ -70,13 +72,28 @@ export function homeSectionOn(id: HomeSectionId, bs: Settings): boolean | null {
   }
 }
 
-/** The promo cards the storefront shows: one with a picture or a title (`PromoCards`). */
+const promoCards = (bs: Settings) =>
+  (Array.isArray(bs.home_promo_cards) ? bs.home_promo_cards.slice(0, 4) : []).map((card) =>
+    card && typeof card === "object" ? (card as Settings) : null,
+  );
+
+/** The promo cards the storefront shows: the storefront's own rule (`promoCardsToShow`). */
 export function filledPromoCards(bs: Settings): number {
-  const cards = Array.isArray(bs.home_promo_cards) ? bs.home_promo_cards.slice(0, 4) : [];
-  const filled = (value: unknown) => Boolean(String(value ?? "").trim());
-  return cards.filter((card) => {
-    if (!card || typeof card !== "object") return false;
-    const c = card as Settings;
-    return filled(c.image_url) || filled(c.title_en) || filled(c.title_ar);
-  }).length;
+  return promoCardsToShow(promoCards(bs) as { image_url?: string }[]).length;
+}
+
+/**
+ * Cards the store started (a link or a colour) that show nothing, having no picture and no
+ * title: Pura had two (with two more holding only a colour), and its home page drew an empty band
+ * where they would be.
+ */
+export function startedPromoCards(bs: Settings): number {
+  const shown = new Set(promoCardsToShow(promoCards(bs) as { image_url?: string }[]));
+  return promoCards(bs).filter(
+    (card) =>
+      card &&
+      !shown.has(card as { image_url?: string }) &&
+      typeof card.href === "string" &&
+      card.href.trim().length > 0,
+  ).length;
 }
