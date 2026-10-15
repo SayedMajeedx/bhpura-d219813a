@@ -14,6 +14,8 @@ import {
 import { ResponsiveImage, OptimizedVideo } from "@/components/responsive-media";
 import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { HeroHeadlineFields } from "./HeroHeadlineFields";
+import { HeroLivePreview } from "./HeroLivePreview";
+import type { HeroPreviewBrand } from "@/lib/hero-preview";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
@@ -107,6 +109,15 @@ export interface HeroSlidesEditorProps {
   /** Storefront hero settings, so previews match what shoppers will see. */
   framing?: HeroFramingSettings;
   background?: HeroBackgroundInput;
+  /**
+   * The store's design version, brand and settings being edited. On the V2 hero every slide has
+   * its animated headline, line and button, and the preview is the store's own hero.
+   */
+  livePreview?: {
+    version: number;
+    brand: HeroPreviewBrand;
+    settings: Record<string, unknown>;
+  };
 }
 
 export function HeroSlidesEditor({
@@ -121,7 +132,9 @@ export function HeroSlidesEditor({
   primaryColor,
   framing = {},
   background,
+  livePreview,
 }: HeroSlidesEditorProps) {
+  const isV2 = livePreview?.version === 2;
   const { lang } = useI18n();
   const isAr = propIsAr ?? lang === "ar";
   const [internalUploading, setInternalUploading] = React.useState(false);
@@ -454,7 +467,7 @@ export function HeroSlidesEditor({
             </div>
           )}
 
-          {slide.type !== "text" && (
+          {!isV2 && slide.type !== "text" && (
             <div>
               <Label>{isAr ? "رابط الشريحة عند الضغط" : "Slide click link"}</Label>
               <Input
@@ -466,7 +479,7 @@ export function HeroSlidesEditor({
             </div>
           )}
 
-          {slide.type === "text" && (
+          {!isV2 && slide.type === "text" && (
             <>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
@@ -537,12 +550,15 @@ export function HeroSlidesEditor({
             </>
           )}
 
-          <HeroHeadlineFields
-            idPrefix={`slide-${slide.id || index}`}
-            slide={slide}
-            isAr={isAr}
-            onChange={(patch) => update(index, patch)}
-          />
+          {isV2 && (
+            <HeroHeadlineFields
+              idPrefix={`slide-${slide.id || index}`}
+              slide={slide}
+              isAr={isAr}
+              onChange={(patch) => update(index, patch)}
+              withText
+            />
+          )}
 
           <HeroFocalPointPicker
             imageUrl={
@@ -562,7 +578,17 @@ export function HeroSlidesEditor({
             isAr={isAr}
           />
 
-          <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
+          {isV2 && livePreview ? (
+            <HeroLivePreview
+              brand={livePreview.brand}
+              settings={livePreview.settings}
+              slide={slide as unknown as Record<string, unknown>}
+              background={(background as Record<string, unknown> | null | undefined) ?? null}
+              isAr={isAr}
+            />
+          ) : (
+            <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
+          )}
         </div>
       ))}
 

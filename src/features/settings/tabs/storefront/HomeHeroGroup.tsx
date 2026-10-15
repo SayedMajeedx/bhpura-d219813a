@@ -773,6 +773,17 @@ export function HomeHeroGroup() {
             mobileRatio: bs.hero_aspect_mobile || DEFAULT_HERO_MOBILE,
             desktopHeight: bs.hero_height_desktop || "standard",
           }}
+          livePreview={{
+            version: isV2 ? 2 : 1,
+            brand: {
+              id: brandId,
+              slug: String(brand.slug ?? ""),
+              name_en: String(brand.name_en ?? ""),
+              name_ar: brand.name_ar ?? null,
+              primary_color: brand.primary_color ?? null,
+            },
+            settings: bs as Record<string, unknown>,
+          }}
         />
       </div>
 

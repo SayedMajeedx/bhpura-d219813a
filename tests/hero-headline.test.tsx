@@ -184,7 +184,10 @@ describe("the headline's settings", () => {
     fireEvent.change(screen.getByLabelText("Phrases — English"), {
       target: { value: "The story begins\nPURA LINE" },
     });
-    expect(onChange).toHaveBeenCalledWith({ phrases_en: ["The story begins", "PURA LINE"] });
+    expect(onChange).toHaveBeenCalledWith({
+      phrases_en: ["The story begins", "PURA LINE"],
+      title_en: "",
+    });
     expect(screen.getByRole("button", { name: "Blur-in" })).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByRole("button", { name: "Mask reveal" }));
     expect(onChange).toHaveBeenCalledWith({ text_animation: "mask_reveal" });

@@ -13,6 +13,16 @@ import {
   type HeroTextPosition,
   type HeroTextSize,
 } from "@/lib/hero-headline";
+import { phraseCountNote } from "@/lib/hero-preview";
+
+/** What the slide's text is made of: its headline, the line under it and its button. */
+type SlideText = HeroHeadlineFields & {
+  body_ar?: string;
+  body_en?: string;
+  button_ar?: string;
+  button_en?: string;
+  button_href?: string;
+};
 
 const ANIMATIONS: { value: HeroTextAnimation; ar: string; en: string }[] = [
   { value: "blur_in", ar: "ظهور ناعم بضبابية", en: "Blur-in" },
@@ -50,14 +60,24 @@ export function HeroHeadlineFields({
   slide,
   isAr,
   onChange,
+  withText = false,
 }: {
   /** Unique per slide, so each field's label points at its own field. */
   idPrefix: string;
-  slide: HeroHeadlineFields;
+  slide: SlideText;
   isAr: boolean;
-  onChange: (patch: Partial<HeroHeadlineFields>) => void;
+  onChange: (patch: Partial<SlideText>) => void;
+  /** The line under the headline and the button, for every kind of slide (the V2 hero). */
+  withText?: boolean;
 }) {
   const settings = headlineSettings(slide);
+  // A slide written before phrases existed opens with its title as the first phrase.
+  const phrasesOf = (lang: "ar" | "en") => {
+    const list = lang === "ar" ? slide.phrases_ar : slide.phrases_en;
+    if (list && list.length > 0) return list.join("\n");
+    return (lang === "ar" ? slide.title_ar : slide.title_en) ?? "";
+  };
+  const countNote = phraseCountNote(slide, isAr ? "ar" : "en");
   return (
     <fieldset className="min-w-0 space-y-3 rounded-xl border border-border p-3">
       <legend className="px-1 text-sm font-semibold">
@@ -77,8 +97,10 @@ export function HeroHeadlineFields({
             id={`${idPrefix}-hero-phrases-ar`}
             dir="rtl"
             rows={3}
-            value={(slide.phrases_ar ?? []).join("\n")}
-            onChange={(event) => onChange({ phrases_ar: linesOf(event.target.value) })}
+            value={phrasesOf("ar")}
+            onChange={(event) =>
+              onChange({ phrases_ar: linesOf(event.target.value), title_ar: "" })
+            }
           />
         </div>
         <div className="min-w-0">
@@ -89,11 +111,65 @@ export function HeroHeadlineFields({
             id={`${idPrefix}-hero-phrases-en`}
             dir="ltr"
             rows={3}
-            value={(slide.phrases_en ?? []).join("\n")}
-            onChange={(event) => onChange({ phrases_en: linesOf(event.target.value) })}
+            value={phrasesOf("en")}
+            onChange={(event) =>
+              onChange({ phrases_en: linesOf(event.target.value), title_en: "" })
+            }
           />
         </div>
       </div>
+
+      {countNote && (
+        <p className="rounded-md bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">
+          {countNote}
+        </p>
+      )}
+
+      {withText && (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <TextField
+              id={`${idPrefix}-body-ar`}
+              label={isAr ? "السطر تحت العنوان — عربي" : "Line under the headline — Arabic"}
+              dir="rtl"
+              value={slide.body_ar ?? ""}
+              onChange={(value) => onChange({ body_ar: value })}
+              multiline
+            />
+            <TextField
+              id={`${idPrefix}-body-en`}
+              label={isAr ? "السطر تحت العنوان — إنجليزي" : "Line under the headline — English"}
+              dir="ltr"
+              value={slide.body_en ?? ""}
+              onChange={(value) => onChange({ body_en: value })}
+              multiline
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <TextField
+              id={`${idPrefix}-button-ar`}
+              label={isAr ? "نص الزر — عربي" : "Button — Arabic"}
+              dir="rtl"
+              value={slide.button_ar ?? ""}
+              onChange={(value) => onChange({ button_ar: value })}
+            />
+            <TextField
+              id={`${idPrefix}-button-en`}
+              label={isAr ? "نص الزر — إنجليزي" : "Button — English"}
+              dir="ltr"
+              value={slide.button_en ?? ""}
+              onChange={(value) => onChange({ button_en: value })}
+            />
+            <TextField
+              id={`${idPrefix}-button-href`}
+              label={isAr ? "رابط الزر" : "Button link"}
+              dir="ltr"
+              value={slide.button_href ?? ""}
+              onChange={(value) => onChange({ button_href: value })}
+            />
+          </div>
+        </>
+      )}
 
       <Choices
         label={isAr ? "أسلوب الظهور" : "Entrance"}
@@ -183,6 +259,39 @@ function Choices<T extends string>({
           </Button>
         ))}
       </div>
+    </div>
+  );
+}
+
+function TextField({
+  id,
+  label,
+  dir,
+  value,
+  onChange,
+  multiline = false,
+}: {
+  id: string;
+  label: string;
+  dir: "rtl" | "ltr";
+  value: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <Label htmlFor={id}>{label}</Label>
+      {multiline ? (
+        <Textarea
+          id={id}
+          dir={dir}
+          rows={2}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+      ) : (
+        <Input id={id} dir={dir} value={value} onChange={(event) => onChange(event.target.value)} />
+      )}
     </div>
   );
 }

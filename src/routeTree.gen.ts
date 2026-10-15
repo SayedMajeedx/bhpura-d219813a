@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FirstLoginRouteImport } from './routes/first-login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as GrantRouteImport } from './routes/grant'
+import { Route as HeroPreviewRouteImport } from './routes/hero-preview'
 import { Route as OnboardRouteImport } from './routes/onboard'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
@@ -132,6 +133,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
 const GrantRoute = GrantRouteImport.update({
   id: '/grant',
   path: '/grant',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HeroPreviewRoute = HeroPreviewRouteImport.update({
+  id: '/hero-preview',
+  path: '/hero-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardRoute = OnboardRouteImport.update({
@@ -613,6 +619,7 @@ export interface FileRoutesByFullPath {
   '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -703,6 +710,7 @@ export interface FileRoutesByTo {
   '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -794,6 +802,7 @@ export interface FileRoutesById {
   '/first-login': typeof FirstLoginRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/grant': typeof GrantRoute
+  '/hero-preview': typeof HeroPreviewRoute
   '/onboard': typeof OnboardRoute
   '/reset-password': typeof ResetPasswordRoute
   '/$slug/$category': typeof SlugCategoryRoute
@@ -887,6 +896,7 @@ export interface FileRouteTypes {
     | '/first-login'
     | '/forgot-password'
     | '/grant'
+    | '/hero-preview'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -977,6 +987,7 @@ export interface FileRouteTypes {
     | '/first-login'
     | '/forgot-password'
     | '/grant'
+    | '/hero-preview'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/first-login'
     | '/forgot-password'
     | '/grant'
+    | '/hero-preview'
     | '/onboard'
     | '/reset-password'
     | '/$slug/$category'
@@ -1160,6 +1172,7 @@ export interface RootRouteChildren {
   FirstLoginRoute: typeof FirstLoginRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   GrantRoute: typeof GrantRoute
+  HeroPreviewRoute: typeof HeroPreviewRoute
   OnboardRoute: typeof OnboardRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   BSlugRoute: typeof BSlugRoute
@@ -1227,6 +1240,13 @@ declare module '@tanstack/react-router' {
       path: '/grant'
       fullPath: '/grant'
       preLoaderRoute: typeof GrantRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hero-preview': {
+      id: '/hero-preview'
+      path: '/hero-preview'
+      fullPath: '/hero-preview'
+      preLoaderRoute: typeof HeroPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboard': {
@@ -2044,6 +2064,7 @@ const rootRouteChildren: RootRouteChildren = {
   FirstLoginRoute: FirstLoginRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   GrantRoute: GrantRoute,
+  HeroPreviewRoute: HeroPreviewRoute,
   OnboardRoute: OnboardRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   BSlugRoute: BSlugRoute,
