@@ -48,18 +48,18 @@ const ARABIC_FONT_PRESETS = [
 ];
 
 /**
- * Invoice titles, section visibility toggles, table header colours, page colours,
- * and invoice typography (Arabic + Latin fonts, size, custom font upload).
- * Restores every invoice control that existed on the legacy settings page.
+ * The invoice's own controls, by part: its title and the sections it shows ("content"), its page
+ * and product table colours ("colours"), and its fonts ("fonts": Arabic and Latin, size, an
+ * uploaded font). The fonts were hidden behind an "inherit the store's fonts" switch that nothing
+ * on the invoice read.
  */
-export function InvoiceLayoutControls() {
+export function InvoiceLayoutControls({ part }: { part: "content" | "colours" | "fonts" }) {
   const { lang, t } = useI18n();
   const isAr = lang === "ar";
   const { form, setBs, brandId } = useBrandSettingsFormContext();
   const bs = form.bs;
   const fontInput = useRef<HTMLInputElement>(null);
   const [uploadingFont, setUploadingFont] = useState(false);
-  const inheritFont = bs.invoice_inherit_brand_font ?? true;
 
   const handleFontUpload = async (file: File) => {
     try {
@@ -97,87 +97,99 @@ export function InvoiceLayoutControls() {
 
   return (
     <div className="space-y-5">
-      {/* Titles */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <Label className="text-xs font-semibold">{isAr ? "عنوان الفاتورة" : "Invoice title"}</Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-muted-foreground">{isAr ? "بالعربية" : "Arabic"}</Label>
-            <Input
-              dir="rtl"
-              className="mt-1 h-9 text-xs"
-              placeholder="فاتورة ضريبية"
-              value={bs.invoice_title_ar ?? ""}
-              onChange={(e) => setBs({ invoice_title_ar: e.target.value || null })}
-            />
-          </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">
-              {isAr ? "بالإنجليزية" : "English"}
+      {part === "content" && (
+        <>
+          {/* Titles */}
+          <div className="space-y-2 pt-2 border-t border-border">
+            <Label className="text-xs font-semibold">
+              {isAr ? "عنوان الفاتورة" : "Invoice title"}
             </Label>
-            <Input
-              dir="ltr"
-              className="mt-1 h-9 text-xs"
-              placeholder="Tax Invoice"
-              value={bs.invoice_title_en ?? ""}
-              onChange={(e) => setBs({ invoice_title_en: e.target.value || null })}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">
+                  {isAr ? "بالعربية" : "Arabic"}
+                </Label>
+                <Input
+                  dir="rtl"
+                  className="mt-1 h-9 text-xs"
+                  placeholder="فاتورة ضريبية"
+                  value={bs.invoice_title_ar ?? ""}
+                  onChange={(e) => setBs({ invoice_title_ar: e.target.value || null })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">
+                  {isAr ? "بالإنجليزية" : "English"}
+                </Label>
+                <Input
+                  dir="ltr"
+                  className="mt-1 h-9 text-xs"
+                  placeholder="Tax Invoice"
+                  value={bs.invoice_title_en ?? ""}
+                  onChange={(e) => setBs({ invoice_title_en: e.target.value || null })}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Visibility toggles */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <Label className="text-xs font-semibold">
-          {isAr ? "الأقسام الظاهرة في الفاتورة" : "Sections shown on the invoice"}
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {toggles.map((item) => (
-            <label
-              key={item.key}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-xs cursor-pointer"
-            >
-              <span>{isAr ? item.ar : item.en}</span>
-              <Switch
-                checked={bs[item.key] ?? true}
-                onCheckedChange={(checked) => setBs({ [item.key]: checked })}
+          {/* Visibility toggles */}
+          <div className="space-y-2 pt-2 border-t border-border">
+            <Label className="text-xs font-semibold">
+              {isAr ? "الأقسام الظاهرة في الفاتورة" : "Sections shown on the invoice"}
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {toggles.map((item) => (
+                <label
+                  key={item.key}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-xs cursor-pointer"
+                >
+                  <span>{isAr ? item.ar : item.en}</span>
+                  <Switch
+                    checked={bs[item.key] ?? true}
+                    onCheckedChange={(checked) => setBs({ [item.key]: checked })}
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {part === "colours" && (
+        <>
+          {/* Page + table colours */}
+          <div className="space-y-2 pt-2 border-t border-border">
+            <Label className="text-xs font-semibold">
+              {isAr ? "ألوان الصفحة وجدول المنتجات" : "Page & product table colours"}
+            </Label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <ColorField
+                label={isAr ? "خلفية الفاتورة" : "Page background"}
+                value={bs.background_color || "#ffffff"}
+                onChange={(val) => setBs({ background_color: val || "#ffffff" })}
               />
-            </label>
-          ))}
-        </div>
-      </div>
+              <ColorField
+                label={t("settings.textColor")}
+                value={bs.text_color || "#1c1917"}
+                onChange={(val) => setBs({ text_color: val || "#1c1917" })}
+              />
+              <ColorField
+                label={isAr ? "خلفية رأس الجدول" : "Table header background"}
+                value={bs.invoice_table_header_bg || "#f8fafc"}
+                onChange={(val) => setBs({ invoice_table_header_bg: val })}
+              />
+              <ColorField
+                label={isAr ? "نص رأس الجدول" : "Table header text"}
+                value={bs.invoice_table_header_fg || "#111111"}
+                onChange={(val) => setBs({ invoice_table_header_fg: val })}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
-      {/* Page + table colours */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <Label className="text-xs font-semibold">
-          {isAr ? "ألوان الصفحة وجدول المنتجات" : "Page & product table colours"}
-        </Label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <ColorField
-            label={isAr ? "خلفية الفاتورة" : "Page background"}
-            value={bs.background_color || "#ffffff"}
-            onChange={(val) => setBs({ background_color: val || "#ffffff" })}
-          />
-          <ColorField
-            label={t("settings.textColor")}
-            value={bs.text_color || "#1c1917"}
-            onChange={(val) => setBs({ text_color: val || "#1c1917" })}
-          />
-          <ColorField
-            label={isAr ? "خلفية رأس الجدول" : "Table header background"}
-            value={bs.invoice_table_header_bg || "#f8fafc"}
-            onChange={(val) => setBs({ invoice_table_header_bg: val })}
-          />
-          <ColorField
-            label={isAr ? "نص رأس الجدول" : "Table header text"}
-            value={bs.invoice_table_header_fg || "#111111"}
-            onChange={(val) => setBs({ invoice_table_header_fg: val })}
-          />
-        </div>
-      </div>
-
-      {/* Typography (only when not inheriting brand fonts) */}
-      {!inheritFont && (
+      {/* Typography */}
+      {part === "fonts" && (
         <div className="space-y-4 pt-2 border-t border-border">
           <Label className="text-xs font-semibold flex items-center gap-1.5">
             <Type className="size-3.5 text-primary" />
