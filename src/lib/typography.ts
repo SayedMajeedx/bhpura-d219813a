@@ -210,6 +210,35 @@ export const SELF_HOSTED_FAMILIES = new Set([
   "29LT Azer",
 ]);
 
+/** Families every browser has: nothing to load. */
+const SYSTEM_FAMILIES = new Set(["Arial", "Georgia", "Times New Roman", "serif", "sans-serif"]);
+
+/**
+ * The library families the storefront loads from Google Fonts (the pickers' and the font pairs'
+ * own; a typed name outside them would not load).
+ */
+export const LIBRARY_FAMILIES = new Set([
+  "Cairo",
+  "Alexandria",
+  "Amiri",
+  "Almarai",
+  "Aref Ruqaa",
+  "Changa",
+  "Montserrat",
+  "Poppins",
+  "Playfair Display",
+]);
+
+/** Whether the storefront can show a font: an uploaded file, a bundled, system or library family. */
+export function fontCanLoad(source: FontSource | null | undefined): boolean {
+  if (!source) return false;
+  if (source.url) return true;
+  const family = source.family?.trim() ?? "";
+  return (
+    SELF_HOSTED_FAMILIES.has(family) || SYSTEM_FAMILIES.has(family) || LIBRARY_FAMILIES.has(family)
+  );
+}
+
 const isGoogleCandidate = (source?: FontSource) => {
   if (!source || source.url) return false;
   const fam = source.family?.trim();
@@ -465,10 +494,37 @@ export type StorefrontFontSettings = {
 };
 
 /**
- * The typography a store's pages use: the typography editor's settings, with
- * the simple English and Arabic font pickers taking over body and display
- * when they are set (the pickers were synced to win on 2026-09-09). Shared by
- * the storefront and the content studio, so both show the same fonts.
+ * Whether the store chose its own heading font for a language: one saved in the typography
+ * settings that is not simply its text font (an uploaded file, or another family) and that can
+ * load. A heading saved equal to the text font, or none saved, follows the text font.
+ */
+function choseHeadingFont(raw: unknown, language: TypographyLanguage, display: FontSource) {
+  const roles = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const entry = (role: string) => {
+    const byLanguage = roles[role];
+    const value =
+      byLanguage && typeof byLanguage === "object"
+        ? (byLanguage as Record<string, unknown>)[language]
+        : null;
+    return value && typeof value === "object" ? (value as Partial<FontSource>) : null;
+  };
+  const saved = entry("display");
+  const savedFamily = typeof saved?.family === "string" ? saved.family.trim() : "";
+  if (!savedFamily) return false;
+  const bodyFamily = entry("body")?.family;
+  const differs =
+    Boolean(saved?.url) ||
+    savedFamily !== (typeof bodyFamily === "string" ? bodyFamily.trim() : "");
+  return differs && fontCanLoad(display);
+}
+
+/**
+ * The typography a store's pages use: the typography editor's settings, with the simple English
+ * and Arabic font pickers setting the text (they were synced to win on 2026-09-09, when the
+ * editor's saved fonts hid them). Headings follow the text font unless the store chose its own
+ * heading font that can load (`choseHeadingFont`): the pickers once took the headings too, so a
+ * heading font a store chose, Pura's 29LT Azer and its uploaded English face, never showed.
+ * Shared by the storefront and the content studio, so both show the same fonts.
  */
 export function resolveStorefrontTypography(
   s: StorefrontFontSettings | null | undefined,
@@ -488,14 +544,18 @@ export function resolveStorefrontTypography(
       family: s.storefront_font_ar,
       url: s.storefront_font_ar_url ?? null,
     };
-    storefrontTypography.display.ar = storefrontTypography.body.ar;
+    if (!choseHeadingFont(s.storefront_typography, "ar", storefrontTypography.display.ar)) {
+      storefrontTypography.display.ar = storefrontTypography.body.ar;
+    }
   }
   if (s?.storefront_font_en) {
     storefrontTypography.body.en = {
       family: s.storefront_font_en,
       url: s.storefront_font_en_url ?? null,
     };
-    storefrontTypography.display.en = storefrontTypography.body.en;
+    if (!choseHeadingFont(s.storefront_typography, "en", storefrontTypography.display.en)) {
+      storefrontTypography.display.en = storefrontTypography.body.en;
+    }
   }
   return storefrontTypography;
 }

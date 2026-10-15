@@ -20,17 +20,50 @@ describe("displayFont", () => {
 });
 
 describe("resolveStorefrontTypography (shared with the storefront)", () => {
-  it("lets the simple font pickers set both body and display", () => {
-    const typography = resolveStorefrontTypography({
+  it("lets the simple font pickers set the text, and the headings unless the store chose its own", () => {
+    // No heading font of its own: headings follow the picked text font.
+    const plain = resolveStorefrontTypography({
+      storefront_font_en: "Plus Jakarta Sans",
+      storefront_font_ar: "Readex Pro",
+    });
+    expect(plain.body.ar.family).toBe("Readex Pro");
+    expect(plain.display.ar.family).toBe("Readex Pro");
+    expect(plain.display.en.family).toBe("Plus Jakarta Sans");
+  });
+
+  it("shows the heading fonts a store chose (Pura's 29LT Azer and its uploaded face)", () => {
+    const url = "https://media.boutq.store/brands/b/font/heading.bin";
+    const pura = resolveStorefrontTypography({
       storefront_font_en: "Plus Jakarta Sans",
       storefront_font_ar: "Readex Pro",
       storefront_typography: {
-        display: { ar: { family: "29LT Azer", url: null }, en: { family: "Inter", url: null } },
+        body: { ar: { family: "Readex Pro", url: null }, en: { family: "Plus Jakarta Sans" } },
+        display: {
+          ar: { family: "29LT Azer", url: null },
+          en: { family: "Custom — English", url },
+        },
       },
     });
-    expect(typography.display.ar.family).toBe("Readex Pro");
-    expect(typography.display.en.family).toBe("Plus Jakarta Sans");
-    expect(typography.body.ar.family).toBe("Readex Pro");
+    expect(pura.body.ar.family).toBe("Readex Pro");
+    expect(pura.display.ar.family).toBe("29LT Azer");
+    expect(pura.display.en.url).toBe(url);
+  });
+
+  it("follows the text font when the saved heading is the text font, or cannot load", () => {
+    const same = resolveStorefrontTypography({
+      storefront_font_ar: "Readex Pro",
+      storefront_typography: {
+        body: { ar: { family: "Tajawal", url: null } },
+        display: { ar: { family: "Tajawal", url: null } },
+      },
+    });
+    // Saved equal to the text font: it follows the picker that moved on since.
+    expect(same.display.ar.family).toBe("Readex Pro");
+    const unknown = resolveStorefrontTypography({
+      storefront_font_ar: "Readex Pro",
+      storefront_typography: { display: { ar: { family: "A Font Nobody Loads", url: null } } },
+    });
+    expect(unknown.display.ar.family).toBe("Readex Pro");
   });
 
   it("falls back to the storefront's defaults", () => {

@@ -3,34 +3,25 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { Palette, Sliders } from "lucide-react";
-import {
-  QuickThemeCustomizer,
-  type FontMoodPreset,
-} from "@/components/settings/QuickThemeCustomizer";
+import { QuickThemeCustomizer } from "@/components/settings/QuickThemeCustomizer";
 import { ColorField } from "../../shared/ColorField";
 import { AdvancedOnly } from "../../FieldVisibility";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
+import { LookSample } from "./LookSample";
 import type { ExtractedPalette } from "@/lib/logo-palette";
 import { paletteToSettingsPatch } from "@/lib/brand-palette-apply";
 
 export function PaletteGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { bs, setBs, patchBs } = useBrandSettingsFormContext();
+  const { bs, setBs, patchBs, form } = useBrandSettingsFormContext();
   const { openGroup } = React.useContext(SettingsNavContext);
 
   const handleExtractPalette = (palette: ExtractedPalette) => {
     // Writes the full derived palette (header, footer, buttons, headings) plus
     // brand_palette metadata so the readiness checklist can see the logo source.
     patchBs(paletteToSettingsPatch(palette, "logo") as any);
-  };
-
-  const handleFontPreset = (preset: FontMoodPreset) => {
-    patchBs({
-      storefront_font_ar: preset.fontAr,
-      storefront_font_en: preset.fontEn,
-    });
   };
 
   return (
@@ -67,12 +58,13 @@ export function PaletteGroup() {
           </Button>
         </div>
 
+        <div className="mb-5">
+          <LookSample brand={form.brand} settings={bs as Record<string, unknown>} isAr={isAr} />
+        </div>
         <QuickThemeCustomizer
           primaryColor={bs.storefront_accent_color || "#8C6D58"}
           secondaryColor={bs.storefront_background_color || "#FAF8F5"}
           radius={bs.storefront_radius || "12px"}
-          currentFontAr={bs.storefront_font_ar || "Cairo"}
-          currentFontEn={bs.storefront_font_en || "Inter"}
           badgeAccent={bs.badge_accent || "#E53E3E"}
           logoUrl={bs.logo_url}
           isAr={isAr}
@@ -80,7 +72,6 @@ export function PaletteGroup() {
           onSecondaryChange={(val) => setBs("storefront_background_color", val)}
           onRadiusChange={(val) => setBs("storefront_radius", val)}
           onBadgeAccentChange={(val) => setBs("badge_accent", val)}
-          onSelectFontPreset={handleFontPreset}
           onSwapColors={() => {
             const currentAccent = bs.storefront_accent_color || "#8C6D58";
             const currentBg = bs.storefront_background_color || "#FAF8F5";

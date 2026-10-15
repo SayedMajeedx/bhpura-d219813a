@@ -2,38 +2,28 @@ import * as React from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Type } from "lucide-react";
 import { AdvancedOnly } from "../../FieldVisibility";
-import {
-  TypographyAdvancedControls,
-  STOREFRONT_AR_FONTS,
-  STOREFRONT_EN_FONTS,
-} from "./TypographyAdvancedControls";
+import { TypographyAdvancedControls } from "./TypographyAdvancedControls";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
+import { LookSample } from "./LookSample";
+import { FontPickers } from "./FontPickers";
 import {
   defaultAdminTypography,
-  defaultStorefrontTypography,
   normalizeTypography,
+  resolveStorefrontTypography,
   type TypographyConfig,
 } from "@/lib/typography";
 
 export function TypographyGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { bs, setBs } = useBrandSettingsFormContext();
+  const { bs, setBs, patchBs, form } = useBrandSettingsFormContext();
 
-  const storefrontTypography: TypographyConfig = normalizeTypography(
-    bs.storefront_typography as any,
-    defaultStorefrontTypography(),
-  );
+  // What the storefront shows, so a change made here never saves a font the store did not see
+  // (defaults filled in would have saved "29LT Zarid Display" as a chosen heading font).
+  const storefrontTypography: TypographyConfig = resolveStorefrontTypography(bs);
 
   const adminTypography: TypographyConfig = normalizeTypography(
     bs.admin_typography as any,
@@ -58,45 +48,14 @@ export function TypographyGroup() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>{isAr ? "الخط العربي الأساسي" : "Primary Arabic Font"}</Label>
-            <Select
-              value={bs.storefront_font_ar || "Cairo"}
-              onValueChange={(val) => setBs("storefront_font_ar", val)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STOREFRONT_AR_FONTS.map((font) => (
-                  <SelectItem key={font} value={font}>
-                    <span style={{ fontFamily: font }}>{font}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{isAr ? "الخط الإنجليزي الأساسي" : "Primary English Font"}</Label>
-            <Select
-              value={bs.storefront_font_en || "Inter"}
-              onValueChange={(val) => setBs("storefront_font_en", val)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STOREFRONT_EN_FONTS.map((font) => (
-                  <SelectItem key={font} value={font}>
-                    <span style={{ fontFamily: font }}>{font}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="mb-5">
+          <LookSample brand={form.brand} settings={bs as Record<string, unknown>} isAr={isAr} />
         </div>
+        <FontPickers
+          bs={bs as Record<string, unknown>}
+          isAr={isAr}
+          onChange={(patch) => patchBs(patch)}
+        />
       </Card>
 
       {/* 2. Advanced Typography Controls */}
@@ -144,7 +103,17 @@ export function TypographyGroup() {
           <TypographyAdvancedControls
             title={isAr ? "نظام خطوط المتجر (Storefront)" : "Storefront Typography Roles"}
             config={storefrontTypography}
-            onChange={(cfg) => setBs("storefront_typography", cfg as any)}
+            // The text font chosen here is the picker's too: the storefront reads the picker first,
+            // so a text font set only here never showed.
+            onChange={(cfg) =>
+              setBs({
+                storefront_typography: cfg as any,
+                storefront_font_ar: cfg.body.ar.family,
+                storefront_font_ar_url: cfg.body.ar.url,
+                storefront_font_en: cfg.body.en.family,
+                storefront_font_en_url: cfg.body.en.url,
+              })
+            }
             isAr={isAr}
             namespace="Storefront"
           />
