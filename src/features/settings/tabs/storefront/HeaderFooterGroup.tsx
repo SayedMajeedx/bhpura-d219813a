@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
@@ -6,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
+import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { AlignCenter, AlignLeft, AlignRight, Sparkles } from "lucide-react";
 
 export function HeaderFooterGroup() {
@@ -17,7 +18,7 @@ export function HeaderFooterGroup() {
   // "Show store name in footer" is only read by the classic (simple) footer.
   // A Storefront 2.0 brand that keeps footer_layout = "simple" still gets it.
   const footerVariant = resolveFooterVariant(bs);
-  const brand = form.brand;
+  const { setActiveGroup } = React.useContext(SettingsNavContext);
 
   const headerLogoSize = bs.logo_size ?? 36;
   const footerLogoSize = bs.footer_logo_size ?? 28;
@@ -165,17 +166,21 @@ export function HeaderFooterGroup() {
           </div>
         )}
 
-        {/* Footer Trust Badges Editor */}
-        <div className="pt-2">
-          <TrustBadgesEditor
-            value={bs.trust_badges as any}
-            onChange={(val) => setBs({ trust_badges: val as any })}
-            isAr={isAr}
-            footerBg={bs.footer_bg}
-            footerFg={bs.footer_fg}
-            vertical={(brand as any)?.store_vertical}
-            settings={bs as any}
-          />
+        {/* The trust badges are edited with the trust bar, in the Home page group. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-border p-3.5 text-xs text-muted-foreground">
+          <span className="min-w-0">
+            {isAr
+              ? "شارات الثقة تُعدَّل مع شريط الثقة في الصفحة الرئيسية."
+              : "The trust badges are edited with the trust bar, in the Home page group."}
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setActiveGroup("home_sections")}
+          >
+            {isAr ? "فتح الصفحة الرئيسية" : "Open Home page"}
+          </Button>
         </div>
 
         {/* Advanced Footer Logo Scale */}

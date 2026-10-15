@@ -107,19 +107,28 @@ export function GroupNavigator({
     row.scrollLeft += chipBox.left + chipBox.width / 2 - (rowBox.left + rowBox.width / 2);
   }, [active.id]);
 
-  const select = (id: string) => {
-    setActiveGroup(id);
-    writeStored(tab, id);
-    if (typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("group", id);
-      // The address mirrors the group; the router must not read it as a navigation.
+  // The address follows the open group, however it was opened (its button, or a link from another
+  // group: the Home page's hero row); the router must not read it as a navigation. A group opened
+  // after the first is brought into view without scrolling the whole page back to the top.
+  const shown = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("group") !== active.id) {
+      url.searchParams.set("group", active.id);
       replaceUrlQuietly(url.toString());
-      // Bring the group header into view without scrolling the whole page back to the top.
+    }
+    if (shown.current !== null && shown.current !== active.id) {
       document
         .getElementById("settings-group-top")
         ?.scrollIntoView({ block: "start", behavior: "auto" });
     }
+    shown.current = active.id;
+  }, [active.id]);
+
+  const select = (id: string) => {
+    setActiveGroup(id);
+    writeStored(tab, id);
   };
 
   return (

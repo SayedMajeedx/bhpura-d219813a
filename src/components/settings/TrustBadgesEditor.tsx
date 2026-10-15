@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   TrustBadgesConfig,
@@ -20,7 +19,6 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
-  ShieldCheck,
   Eye,
   Sparkles,
   Smartphone,
@@ -56,13 +54,8 @@ export function TrustBadgesEditor({
 }: TrustBadgesEditorProps) {
   const value = stored ?? NO_BADGES;
   const items = value.items || [];
-  const isEnabled = value.enabled ?? true;
   const { addons } = useAddons();
   const suggestedIcons = useMemo(() => trustBadgeSuggestionsFrom(addons), [addons]);
-
-  const handleToggleGlobal = (enabled: boolean) => {
-    onChange({ ...value, enabled });
-  };
 
   const handleAddItem = () => {
     if (items.length >= 8) return;
@@ -111,359 +104,317 @@ export function TrustBadgesEditor({
   };
 
   return (
-    <div
-      className="space-y-5 rounded-xl border border-border p-4 bg-card shadow-sm"
-      dir={isAr ? "rtl" : "ltr"}
-    >
-      {/* Top Header & Global Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-sm">
-              {isAr
-                ? "شارات الطمأنينة والأمان في التذييل (Trust Badges)"
-                : "Footer Reassurance & Trust Badges"}
-            </h3>
-            <Badge variant="outline" className="text-xs font-normal border-primary/40 text-primary">
-              {isAr ? "شريط الفوتر" : "Footer Reassurance"}
-            </Badge>
+    // Shown and hidden by the trust bar's own switch (the Home page group's row), which also
+    // turns this config on: one switch for one bar.
+    <div className="space-y-5" dir={isAr ? "rtl" : "ltr"}>
+      {/* Quick Dynamic Generator & Niche Presets */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+            <Wand2 className="h-3.5 w-3.5" />
+            <span>
+              {isAr ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً" : "Tailor Badges to Your Niche"}
+            </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "تخصيص الشارات والأيقونات المعروضة أسفل صفحة المتجر لتعزيز ثقة العميل (أصالة وجودة المنتجات، طرق الدفع المعتمدة، التشفير، التوصيل)."
-              : "Customize the reassurance badges and icons shown at the bottom of your storefront to boost customer confidence."}
-          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => handleGenerateDynamicBadges()}
+            className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Sparkles className="h-3 w-3" />
+            <span>{isAr ? "توليد حسب نشاط متجري" : "Auto-Generate for My Store"}</span>
+          </Button>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center bg-muted/40 p-2 rounded-xl border border-border-subtle">
-          <Label htmlFor="toggle-trust-badges" className="text-xs font-medium cursor-pointer">
-            {isAr ? "إظهار شريط الشارات" : "Show Badges Bar"}
-          </Label>
-          <Switch
-            id="toggle-trust-badges"
-            checked={isEnabled}
-            onCheckedChange={handleToggleGlobal}
-          />
+        {/* Quick Niche Presets */}
+        <div className="flex flex-wrap items-center gap-1.5 pt-1">
+          <span className="text-xs text-muted-foreground me-1 font-medium">
+            {isAr ? "قوالب الأنشطة الجاهزة:" : "Ready presets:"}
+          </span>
+          {STORE_VERTICALS.map((verticalId) => ({
+            id: verticalId,
+            labelAr: VERTICAL_LABELS[verticalId].ar,
+            labelEn: VERTICAL_LABELS[verticalId].en,
+            icon: resolveTrustBadgeIcon(VERTICAL_ICON_NAMES[verticalId]) ?? Sparkles,
+          })).map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <Button
+                key={preset.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => handleGenerateDynamicBadges(preset.id)}
+                className="h-6 text-xs px-2 py-0.5 rounded-lg border border-border-subtle hover:border-primary/40 hover:bg-background"
+              >
+                <Icon className="h-2.5 w-2.5 me-1 text-muted-foreground" />
+                <span>{isAr ? preset.labelAr : preset.labelEn}</span>
+              </Button>
+            );
+          })}
         </div>
       </div>
 
-      {isEnabled && (
-        <>
-          {/* Quick Dynamic Generator & Niche Presets */}
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2.5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
-                <Wand2 className="h-3.5 w-3.5" />
-                <span>
-                  {isAr
-                    ? "توليد شارات تناسب نوع نشاط المتجر تلقائياً"
-                    : "Tailor Badges to Your Niche"}
-                </span>
+      {/* Badges List */}
+      <div className="space-y-3">
+        {items.length === 0 ? (
+          <div className="text-center py-8 rounded-xl border border-dashed border-border p-6 bg-muted/20 space-y-2">
+            <Sparkles className="h-6 w-6 text-muted-foreground mx-auto" />
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "لم تتم إضافة شارات بعد. اضغط أدناه لإضافة شارتك الأولى."
+                : "No badges configured yet. Click below to add your first."}
+            </p>
+          </div>
+        ) : (
+          items.map((item, index) => (
+            <div
+              key={item.id || index}
+              className={cn(
+                "rounded-xl border p-3.5 bg-background/60 transition-all space-y-3",
+                item.enabled
+                  ? "border-border shadow-2xs"
+                  : "border-border-subtle opacity-60 bg-muted/20",
+              )}
+            >
+              {/* Item Row 1: Ordering + Icon Selector + Active Switch + Delete */}
+              <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  {/* Order Controls */}
+                  <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5 border border-border-subtle">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === 0}
+                      onClick={() => handleMove(index, "up")}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      title={isAr ? "تحريك لأعلى" : "Move up"}
+                    >
+                      <ArrowUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      disabled={index === items.length - 1}
+                      onClick={() => handleMove(index, "down")}
+                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      title={isAr ? "تحريك لأسفل" : "Move down"}
+                    >
+                      <ArrowDown className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  <span className="text-xs font-medium text-muted-foreground min-w-[20px]">
+                    #{index + 1}
+                  </span>
+
+                  {/* Searchable Icon Dropdown */}
+                  <TrustBadgeIconPicker
+                    value={item.icon}
+                    onChange={(iconKey) => handleUpdateItem(index, { icon: iconKey })}
+                    colorId={item.color}
+                    isAr={isAr}
+                  />
+                </div>
+
+                <div className="flex items-center gap-3">
+                  {/* Color Presets */}
+                  <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border-subtle">
+                    {BADGE_COLOR_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleUpdateItem(index, { color: preset.id })}
+                        title={isAr ? preset.label_ar : preset.label_en}
+                        className={cn(
+                          "h-5 w-5 rounded-full transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring",
+                          item.color === preset.id
+                            ? "ring-2 ring-primary ring-offset-1 scale-110"
+                            : "opacity-70 hover:opacity-100",
+                        )}
+                        style={{ backgroundColor: preset.dotColor }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Toggle Active */}
+                  <div className="flex items-center gap-1.5">
+                    <Switch
+                      checked={item.enabled}
+                      onCheckedChange={(checked) => handleUpdateItem(index, { enabled: checked })}
+                      aria-label={isAr ? "تفعيل الشارة" : "Toggle badge"}
+                    />
+                  </div>
+
+                  {/* Remove Button */}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveItem(index)}
+                    className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                    title={isAr ? "حذف الشارة" : "Remove badge"}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
+
+              {/* Item Row 2: Bilingual Text Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div dir="rtl" className="space-y-1">
+                  <Label className="text-xs text-muted-foreground font-medium">
+                    {isAr ? "النص بالعربية" : "Arabic Text"}
+                  </Label>
+                  <Input
+                    value={item.text_ar || ""}
+                    onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
+                    placeholder={
+                      isAr
+                        ? "مثال: محاصيل مختصة طازجة / جودة أصلية مضمونة"
+                        : "e.g. Specialty Roasted Beans / 100% Authentic Quality"
+                    }
+                    className="h-9 text-xs text-end bg-background border-border"
+                  />
+                </div>
+                <div dir="ltr" className="space-y-1">
+                  <Label className="text-xs text-muted-foreground font-medium">
+                    {isAr ? "النص بالإنجليزية" : "English Text"}
+                  </Label>
+                  <Input
+                    value={item.text_en || ""}
+                    onChange={(e) => handleUpdateItem(index, { text_en: e.target.value })}
+                    placeholder="e.g. Specialty Roasted Beans / 100% Authentic Quality"
+                    className="h-9 text-xs text-start bg-background border-border"
+                  />
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add Badge Button */}
+      {items.length < 8 && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleAddItem}
+          className="w-full gap-2 border-dashed border-border py-2 text-xs font-medium hover:border-primary/50"
+        >
+          <Plus className="h-3.5 w-3.5 text-primary" />
+          <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
+          <span className="text-xs text-muted-foreground font-normal">({items.length}/8)</span>
+        </Button>
+      )}
+
+      {/* Suggested Badges from Installed Addons */}
+      {suggestedIcons.length > 0 && items.length < 8 && (
+        <div className="rounded-xl border border-border-subtle bg-muted/20 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span>
+              {isAr
+                ? "شارات مقترحة بناءً على الإضافات المثبتة:"
+                : "Suggested for your installed add-ons:"}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {suggestedIcons.map((iconName) => (
               <Button
+                key={iconName}
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => handleGenerateDynamicBadges()}
-                className="h-7 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                onClick={() => {
+                  if (items.length >= 8) return;
+                  const newItem: TrustBadgeItem = {
+                    id: `badge-${Date.now()}-${iconName}`,
+                    icon: iconName,
+                    text_ar: isAr ? "جودة وأصالة مضمونة" : "Guaranteed Authenticity",
+                    text_en: "Guaranteed Authenticity & Quality",
+                    color: "amber",
+                    enabled: true,
+                  };
+                  onChange({ ...value, items: [...items, newItem] });
+                }}
+                className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted font-normal"
               >
-                <Sparkles className="h-3 w-3" />
-                <span>{isAr ? "توليد حسب نشاط متجري" : "Auto-Generate for My Store"}</span>
+                {renderTrustBadgeIcon(iconName, "h-3.5 w-3.5", "amber")}
+                <span>{iconName}</span>
               </Button>
-            </div>
-
-            {/* Quick Niche Presets */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1">
-              <span className="text-xs text-muted-foreground me-1 font-medium">
-                {isAr ? "قوالب الأنشطة الجاهزة:" : "Ready presets:"}
-              </span>
-              {STORE_VERTICALS.map((verticalId) => ({
-                id: verticalId,
-                labelAr: VERTICAL_LABELS[verticalId].ar,
-                labelEn: VERTICAL_LABELS[verticalId].en,
-                icon: resolveTrustBadgeIcon(VERTICAL_ICON_NAMES[verticalId]) ?? Sparkles,
-              })).map((preset) => {
-                const Icon = preset.icon;
-                return (
-                  <Button
-                    key={preset.id}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleGenerateDynamicBadges(preset.id)}
-                    className="h-6 text-xs px-2 py-0.5 rounded-lg border border-border-subtle hover:border-primary/40 hover:bg-background"
-                  >
-                    <Icon className="h-2.5 w-2.5 me-1 text-muted-foreground" />
-                    <span>{isAr ? preset.labelAr : preset.labelEn}</span>
-                  </Button>
-                );
-              })}
-            </div>
+            ))}
           </div>
-
-          {/* Badges List */}
-          <div className="space-y-3">
-            {items.length === 0 ? (
-              <div className="text-center py-8 rounded-xl border border-dashed border-border p-6 bg-muted/20 space-y-2">
-                <Sparkles className="h-6 w-6 text-muted-foreground mx-auto" />
-                <p className="text-xs text-muted-foreground">
-                  {isAr
-                    ? "لم تتم إضافة شارات بعد. اضغط أدناه لإضافة شارتك الأولى."
-                    : "No badges configured yet. Click below to add your first."}
-                </p>
-              </div>
-            ) : (
-              items.map((item, index) => (
-                <div
-                  key={item.id || index}
-                  className={cn(
-                    "rounded-xl border p-3.5 bg-background/60 transition-all space-y-3",
-                    item.enabled
-                      ? "border-border shadow-2xs"
-                      : "border-border-subtle opacity-60 bg-muted/20",
-                  )}
-                >
-                  {/* Item Row 1: Ordering + Icon Selector + Active Switch + Delete */}
-                  <div className="flex flex-wrap items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-2">
-                      {/* Order Controls */}
-                      <div className="flex items-center gap-0.5 bg-muted/60 rounded-lg p-0.5 border border-border-subtle">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={index === 0}
-                          onClick={() => handleMove(index, "up")}
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          title={isAr ? "تحريك لأعلى" : "Move up"}
-                        >
-                          <ArrowUp className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          disabled={index === items.length - 1}
-                          onClick={() => handleMove(index, "down")}
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          title={isAr ? "تحريك لأسفل" : "Move down"}
-                        >
-                          <ArrowDown className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-
-                      <span className="text-xs font-medium text-muted-foreground min-w-[20px]">
-                        #{index + 1}
-                      </span>
-
-                      {/* Searchable Icon Dropdown */}
-                      <TrustBadgeIconPicker
-                        value={item.icon}
-                        onChange={(iconKey) => handleUpdateItem(index, { icon: iconKey })}
-                        colorId={item.color}
-                        isAr={isAr}
-                      />
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      {/* Color Presets */}
-                      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg border border-border-subtle">
-                        {BADGE_COLOR_PRESETS.map((preset) => (
-                          <button
-                            key={preset.id}
-                            type="button"
-                            onClick={() => handleUpdateItem(index, { color: preset.id })}
-                            title={isAr ? preset.label_ar : preset.label_en}
-                            className={cn(
-                              "h-5 w-5 rounded-full transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring",
-                              item.color === preset.id
-                                ? "ring-2 ring-primary ring-offset-1 scale-110"
-                                : "opacity-70 hover:opacity-100",
-                            )}
-                            style={{ backgroundColor: preset.dotColor }}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Toggle Active */}
-                      <div className="flex items-center gap-1.5">
-                        <Switch
-                          checked={item.enabled}
-                          onCheckedChange={(checked) =>
-                            handleUpdateItem(index, { enabled: checked })
-                          }
-                          aria-label={isAr ? "تفعيل الشارة" : "Toggle badge"}
-                        />
-                      </div>
-
-                      {/* Remove Button */}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveItem(index)}
-                        className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
-                        title={isAr ? "حذف الشارة" : "Remove badge"}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Item Row 2: Bilingual Text Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    <div dir="rtl" className="space-y-1">
-                      <Label className="text-xs text-muted-foreground font-medium">
-                        {isAr ? "النص بالعربية" : "Arabic Text"}
-                      </Label>
-                      <Input
-                        value={item.text_ar || ""}
-                        onChange={(e) => handleUpdateItem(index, { text_ar: e.target.value })}
-                        placeholder={
-                          isAr
-                            ? "مثال: محاصيل مختصة طازجة / جودة أصلية مضمونة"
-                            : "e.g. Specialty Roasted Beans / 100% Authentic Quality"
-                        }
-                        className="h-9 text-xs text-end bg-background border-border"
-                      />
-                    </div>
-                    <div dir="ltr" className="space-y-1">
-                      <Label className="text-xs text-muted-foreground font-medium">
-                        {isAr ? "النص بالإنجليزية" : "English Text"}
-                      </Label>
-                      <Input
-                        value={item.text_en || ""}
-                        onChange={(e) => handleUpdateItem(index, { text_en: e.target.value })}
-                        placeholder="e.g. Specialty Roasted Beans / 100% Authentic Quality"
-                        className="h-9 text-xs text-start bg-background border-border"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Add Badge Button */}
-          {items.length < 8 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleAddItem}
-              className="w-full gap-2 border-dashed border-border py-2 text-xs font-medium hover:border-primary/50"
-            >
-              <Plus className="h-3.5 w-3.5 text-primary" />
-              <span>{isAr ? "إضافة شارة طمأنينة جديدة" : "Add New Trust Badge"}</span>
-              <span className="text-xs text-muted-foreground font-normal">({items.length}/8)</span>
-            </Button>
-          )}
-
-          {/* Suggested Badges from Installed Addons */}
-          {suggestedIcons.length > 0 && items.length < 8 && (
-            <div className="rounded-xl border border-border-subtle bg-muted/20 p-3 space-y-2">
-              <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span>
-                  {isAr
-                    ? "شارات مقترحة بناءً على الإضافات المثبتة:"
-                    : "Suggested for your installed add-ons:"}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                {suggestedIcons.map((iconName) => (
-                  <Button
-                    key={iconName}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      if (items.length >= 8) return;
-                      const newItem: TrustBadgeItem = {
-                        id: `badge-${Date.now()}-${iconName}`,
-                        icon: iconName,
-                        text_ar: isAr ? "جودة وأصالة مضمونة" : "Guaranteed Authenticity",
-                        text_en: "Guaranteed Authenticity & Quality",
-                        color: "amber",
-                        enabled: true,
-                      };
-                      onChange({ ...value, items: [...items, newItem] });
-                    }}
-                    className="h-8 text-xs gap-1.5 px-2.5 bg-background hover:bg-muted font-normal"
-                  >
-                    {renderTrustBadgeIcon(iconName, "h-3.5 w-3.5", "amber")}
-                    <span>{iconName}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Live Storefront Preview */}
-          <div className="mt-4 rounded-xl border border-border-strong bg-muted/20 p-3.5 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
-                <Eye className="h-3.5 w-3.5 text-primary" />
-                {isAr ? "معاينة حية لشكل الفوتر بالمتجر" : "Live Storefront Footer Preview"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {isAr ? "تنعكس فورياً على المتجر" : "Reflected live on storefront"}
-              </span>
-            </div>
-
-            {/* Simulated Desktop Preview */}
-            <div
-              className="rounded-xl border border-white/10 p-4 overflow-hidden"
-              style={{
-                backgroundColor: footerBg || "#121212",
-                color: footerFg || "#ffffff",
-              }}
-            >
-              <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
-                <Monitor className="h-3 w-3" />
-                {isAr ? "العرض على الكمبيوتر (Desktop)" : "Desktop View"}
-              </div>
-
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 max-w-3xl mx-auto">
-                {items
-                  .filter((b) => b.enabled)
-                  .map((badge, idx) => (
-                    <div key={badge.id || idx} className="inline-flex items-center gap-1.5">
-                      {renderTrustBadgeIcon(badge.icon, "h-3.5 w-3.5", badge.color)}
-                      <span className="opacity-95">
-                        {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-
-              {/* Simulated Mobile Preview */}
-              <div className="mt-4 pt-3 border-t border-white/10">
-                <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
-                  <Smartphone className="h-3 w-3" />
-                  {isAr ? "العرض على شاشة الجوال (Mobile Grid)" : "Mobile Grid View"}
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs max-w-sm mx-auto">
-                  {items
-                    .filter((b) => b.enabled)
-                    .map((badge, idx) => (
-                      <div
-                        key={badge.id || idx}
-                        className="rounded-xl border border-white/10 bg-white/5 p-2.5 flex flex-col items-center justify-center text-center gap-1.5 min-h-[64px]"
-                      >
-                        {renderTrustBadgeIcon(badge.icon, "h-4 w-4", badge.color)}
-                        <span className="text-xs font-medium opacity-95 line-clamp-2">
-                          {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
+        </div>
       )}
+
+      {/* Live Storefront Preview */}
+      <div className="mt-4 rounded-xl border border-border-strong bg-muted/20 p-3.5 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+            <Eye className="h-3.5 w-3.5 text-primary" />
+            {isAr ? "معاينة حية لشكل الفوتر بالمتجر" : "Live Storefront Footer Preview"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {isAr ? "تنعكس فورياً على المتجر" : "Reflected live on storefront"}
+          </span>
+        </div>
+
+        {/* Simulated Desktop Preview */}
+        <div
+          className="rounded-xl border border-white/10 p-4 overflow-hidden"
+          style={{
+            backgroundColor: footerBg || "#121212",
+            color: footerFg || "#ffffff",
+          }}
+        >
+          <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
+            <Monitor className="h-3 w-3" />
+            {isAr ? "العرض على الكمبيوتر (Desktop)" : "Desktop View"}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 max-w-3xl mx-auto">
+            {items
+              .filter((b) => b.enabled)
+              .map((badge, idx) => (
+                <div key={badge.id || idx} className="inline-flex items-center gap-1.5">
+                  {renderTrustBadgeIcon(badge.icon, "h-3.5 w-3.5", badge.color)}
+                  <span className="opacity-95">
+                    {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
+                  </span>
+                </div>
+              ))}
+          </div>
+
+          {/* Simulated Mobile Preview */}
+          <div className="mt-4 pt-3 border-t border-white/10">
+            <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
+              <Smartphone className="h-3 w-3" />
+              {isAr ? "العرض على شاشة الجوال (Mobile Grid)" : "Mobile Grid View"}
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs max-w-sm mx-auto">
+              {items
+                .filter((b) => b.enabled)
+                .map((badge, idx) => (
+                  <div
+                    key={badge.id || idx}
+                    className="rounded-xl border border-white/10 bg-white/5 p-2.5 flex flex-col items-center justify-center text-center gap-1.5 min-h-[64px]"
+                  >
+                    {renderTrustBadgeIcon(badge.icon, "h-4 w-4", badge.color)}
+                    <span className="text-xs font-medium opacity-95 line-clamp-2">
+                      {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

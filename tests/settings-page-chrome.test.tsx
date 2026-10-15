@@ -140,6 +140,6 @@ describe("the trust badges editor", () => {
   it("opens for a store that never saved its badges", () => {
     const onChange = vi.fn();
     show(<TrustBadgesEditor value={null} onChange={onChange} isAr={false} />);
-    expect(screen.getAllByRole("switch").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /Auto-Generate for My Store/ })).toBeInTheDocument();
   });
 });

@@ -1,14 +1,10 @@
-import { useRef, useState } from "react";
-import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
-import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -16,10 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ImagePlus, Loader2, Sparkles, Trash2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 type BoolKey =
-  | "trust_bar_enabled"
   | "product_card_hover_image"
   | "product_card_color_dots"
   | "product_card_quick_add"
@@ -27,21 +22,12 @@ type BoolKey =
   | "category_filters_enabled"
   | "pdp_image_zoom"
   | "social_proof_enabled"
-  | "recently_viewed_enabled"
   | "motion_enabled"
   | "back_in_stock_enabled"
-  | "brand_story_enabled"
   | "newsletter_enabled"
   | "footer_show_payment_methods";
 
 const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hintEn: string }> = [
-  {
-    key: "trust_bar_enabled",
-    ar: "شريط الثقة",
-    en: "Trust bar",
-    hintAr: "توصيل، استبدال، دفع آمن تحت الهيرو",
-    hintEn: "Delivery, returns, secure payment below the hero",
-  },
   {
     key: "product_card_hover_image",
     ar: "صورة ثانية عند المرور",
@@ -92,13 +78,6 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
     hintEn: '"Purchased N times" on product page from real orders',
   },
   {
-    key: "recently_viewed_enabled",
-    ar: "شوهد مؤخراً",
-    en: "Recently viewed",
-    hintAr: "آخر المنتجات التي تصفحها العميل",
-    hintEn: "Products the customer viewed recently",
-  },
-  {
     key: "motion_enabled",
     ar: "حركة الظهور عند التمرير",
     en: "Scroll-reveal motion",
@@ -111,13 +90,6 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
     en: "Back-in-stock alerts",
     hintAr: "نموذج بدل زر الشراء عند نفاد المخزون",
     hintEn: "Form instead of the buy button when sold out",
-  },
-  {
-    key: "brand_story_enabled",
-    ar: "قسم قصتنا",
-    en: "Brand story section",
-    hintAr: "النبذة مع صورة تحريرية في الرئيسية",
-    hintEn: "About text with an editorial image on the homepage",
   },
   {
     key: "newsletter_enabled",
@@ -137,9 +109,10 @@ const TOGGLES: Array<{ key: BoolKey; ar: string; en: string; hintAr: string; hin
 
 const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
   {
-    ar: "الصفحة الرئيسية",
-    en: "Homepage",
-    keys: ["trust_bar_enabled", "brand_story_enabled", "recently_viewed_enabled", "motion_enabled"],
+    // The home page's sections (trust bar, brand story, recently viewed) are in the Home page group.
+    ar: "المتجر كله",
+    en: "Whole store",
+    keys: ["motion_enabled"],
   },
   {
     ar: "بطاقة المنتج",
@@ -175,24 +148,9 @@ const TOGGLE_SECTIONS: Array<{ ar: string; en: string; keys: BoolKey[] }> = [
 export function DesignV2Group() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { form, setBs, brandId } = useBrandSettingsFormContext();
+  const { form, setBs } = useBrandSettingsFormContext();
   const bs = form.bs;
-  const storyInput = useRef<HTMLInputElement>(null);
-  const [uploadingStory, setUploadingStory] = useState(false);
   const isV2 = bs.storefront_design_version === 2;
-
-  const uploadStoryImage = async (file: File) => {
-    try {
-      setUploadingStory(true);
-      const url = await uploadPublicMedia(brandId, file, "hero");
-      setBs({ brand_story_image_url: url });
-      toast.success(isAr ? "تم رفع الصورة — لا تنسَ الحفظ" : "Image uploaded — remember to save");
-    } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل رفع الصورة" : "Upload failed"));
-    } finally {
-      setUploadingStory(false);
-    }
-  };
 
   return (
     <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
@@ -256,24 +214,6 @@ export function DesignV2Group() {
 
       {/* Selects & numbers */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2 border-t border-border">
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium">
-            {isAr ? "موضع شريط الثقة" : "Trust bar position"}
-          </Label>
-          <Select
-            value={bs.trust_bar_position || "below_hero"}
-            onValueChange={(val) => setBs({ trust_bar_position: val })}
-          >
-            <SelectTrigger className="h-9 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="below_hero">{isAr ? "تحت الهيرو" : "Below hero"}</SelectItem>
-              <SelectItem value="above_footer">{isAr ? "فوق التذييل" : "Above footer"}</SelectItem>
-              <SelectItem value="both">{isAr ? "الاثنان" : "Both"}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">{isAr ? "تخطيط التذييل" : "Footer layout"}</Label>
           <Select
@@ -358,76 +298,6 @@ export function DesignV2Group() {
             onChange={(e) => setBs({ newsletter_title_en: e.target.value || null })}
           />
         </div>
-      </div>
-
-      {/* Brand story image */}
-      <div className="space-y-2 pt-2 border-t border-border">
-        <Label className="text-xs font-medium">
-          {isAr ? "صورة قسم قصتنا" : "Brand story image"}
-        </Label>
-        <input
-          ref={storyInput}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) void uploadStoryImage(file);
-            e.target.value = "";
-          }}
-        />
-        {bs.brand_story_image_url ? (
-          <div className="flex items-center gap-3">
-            <img
-              src={bs.brand_story_image_url}
-              alt=""
-              className="h-16 w-24 rounded-md object-cover border border-border"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs"
-              disabled={uploadingStory}
-              onClick={() => storyInput.current?.click()}
-            >
-              {uploadingStory ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : isAr ? (
-                "استبدال"
-              ) : (
-                "Replace"
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs text-destructive"
-              onClick={() => setBs({ brand_story_image_url: null })}
-            >
-              <Trash2 className="size-3.5 me-1" />
-              {isAr ? "إزالة" : "Remove"}
-            </Button>
-          </div>
-        ) : (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-16 w-full border-dashed border-2 text-xs gap-2"
-            disabled={uploadingStory}
-            onClick={() => storyInput.current?.click()}
-          >
-            {uploadingStory ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <ImagePlus className="size-4 text-muted-foreground" />
-            )}
-            {isAr
-              ? "رفع صورة (تُستخدم صورة الهيرو إن تُركت فارغة)"
-              : "Upload image (hero poster is used if empty)"}
-          </Button>
-        )}
       </div>
 
       {/* Fabric & care / specifications text (PDP accordion) */}
