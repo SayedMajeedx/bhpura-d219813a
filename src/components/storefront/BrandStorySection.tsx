@@ -52,10 +52,16 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
           ? bgMedia?.posterUrl
           : null;
 
+  // A still, never a video file: a video slide gives its poster (an <img> cannot show an MP4).
+  const firstSlide = brand.hero_media?.slides?.[0];
+  const slideStill =
+    firstSlide?.media_poster_url ||
+    (firstSlide && firstSlide.type !== "video" ? firstSlide.media_url : null);
+
   const imageUrl =
     settings?.brand_story_image_url ||
     settings?.category_banner_background_url ||
-    brand.hero_media?.slides?.[0]?.media_url ||
+    slideStill ||
     bgImageFallback ||
     brand.logo_url;
 

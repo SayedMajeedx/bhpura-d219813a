@@ -5,8 +5,6 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import type { EditorialSectionConfig, HomepageEditorialSections } from "@/lib/storefront-context";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { ColorField } from "@/features/settings/shared/ColorField";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
 
@@ -19,36 +17,6 @@ const EMPTY_SECTION: EditorialSectionConfig = {
   background_image_url: "",
 };
 
-const SECTION_META: Array<{
-  key: EditorialKey;
-  ar: string;
-  en: string;
-  hintAr: string;
-  hintEn: string;
-}> = [
-  {
-    key: "best",
-    ar: "الأكثر مبيعاً",
-    en: "Best Sellers",
-    hintAr: "لافتة عريضة تظهر فوق منتجات الأكثر مبيعاً",
-    hintEn: "Full-width banner above the best sellers rail",
-  },
-  {
-    key: "sale",
-    ar: "التنزيلات والعروض",
-    en: "Sale & Offers",
-    hintAr: "يظهر فقط عند وجود منتجات مخفّضة",
-    hintEn: "Shown only when discounted products exist",
-  },
-  {
-    key: "trending",
-    ar: "الرائج الآن",
-    en: "Trending Now",
-    hintAr: "المنتجات الأعلى تفاعلاً هذا الأسبوع",
-    hintEn: "Most viewed products this week",
-  },
-];
-
 function normalize(raw: unknown): HomepageEditorialSections {
   const source = raw && typeof raw === "object" ? (raw as Partial<HomepageEditorialSections>) : {};
   return {
@@ -59,12 +27,12 @@ function normalize(raw: unknown): HomepageEditorialSections {
 }
 
 /**
- * Per-section editor for the homepage editorial rails (best / sale / trending):
- * visibility, full-width banner image, background image and background colour.
- * Writes `homepage_editorial_sections` and keeps `trending_banner_background_url`
- * in sync for the legacy storefront reader.
+ * The home page's editorial rails (best / sale / trending): whether each shows, its full-width
+ * banner, and a picture or colour behind its products. Writes `homepage_editorial_sections`, and
+ * keeps the two older columns it replaced in step (`show_best_sellers`,
+ * `trending_banner_background_url`), so each is written from here only.
  */
-export function EditorialSectionsEditor() {
+export function useEditorialSections() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, setBs, brandId } = useBrandSettingsFormContext();
@@ -105,71 +73,52 @@ export function EditorialSectionsEditor() {
     }
   };
 
+  return { sections, patchSection, upload, uploading };
+}
+
+/** One rail's banner, the picture behind its products and its background colour. */
+export function EditorialSectionFields({
+  kind,
+  editorial,
+  isAr,
+}: {
+  kind: EditorialKey;
+  editorial: ReturnType<typeof useEditorialSections>;
+  isAr: boolean;
+}) {
+  const section = editorial.sections[kind];
   return (
-    <div className="space-y-3">
-      <div>
-        <Label className="text-xs font-semibold">
-          {isAr ? "لافتات الأقسام الرئيسية" : "Homepage section banners"}
-        </Label>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {isAr
-            ? "لكل قسم: إظهار/إخفاء، صورة لافتة عريضة، صورة وخلفية ملونة خلف المنتجات."
-            : "Per section: visibility, a full-width banner image, and an optional background image/colour behind the products."}
-        </p>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {SECTION_META.map((meta) => {
-          const section = sections[meta.key];
-          return (
-            <div
-              key={meta.key}
-              className="space-y-3 rounded-xl border border-border p-3.5 bg-background"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <Label className="cursor-pointer text-xs font-semibold">
-                    {isAr ? meta.ar : meta.en}
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {isAr ? meta.hintAr : meta.hintEn}
-                  </p>
-                </div>
-                <Switch
-                  checked={section.enabled}
-                  onCheckedChange={(checked) => patchSection(meta.key, { enabled: checked })}
-                />
-              </div>
-              <SectionBannerPicker
-                title={isAr ? "صورة اللافتة" : "Banner image"}
-                imageUrl={section.banner_image_url}
-                isUploading={uploading === `${meta.key}:banner_image_url`}
-                onUpload={(file) => upload(meta.key, "banner_image_url", file)}
-                onRemove={() => patchSection(meta.key, { banner_image_url: "" })}
-                isAr={isAr}
-              />
-              <SectionBannerPicker
-                title={isAr ? "صورة الخلفية خلف المنتجات" : "Background image behind products"}
-                imageUrl={section.background_image_url}
-                isUploading={uploading === `${meta.key}:background_image_url`}
-                onUpload={(file) => upload(meta.key, "background_image_url", file)}
-                onRemove={() => patchSection(meta.key, { background_image_url: "" })}
-                isAr={isAr}
-                compact
-              />
-              <ColorField
-                label={isAr ? "لون خلفية القسم" : "Section background colour"}
-                value={section.background_color || null}
-                onChange={(val) => patchSection(meta.key, { background_color: val ?? "" })}
-              />
-            </div>
-          );
-        })}
+    <div className="grid gap-4 sm:grid-cols-2">
+      <SectionBannerPicker
+        title={isAr ? "لافتة عريضة فوق القسم" : "Wide banner above the section"}
+        imageUrl={section.banner_image_url}
+        isUploading={editorial.uploading === `${kind}:banner_image_url`}
+        onUpload={(file) => editorial.upload(kind, "banner_image_url", file)}
+        onRemove={() => editorial.patchSection(kind, { banner_image_url: "" })}
+        isAr={isAr}
+      />
+      <div className="space-y-3">
+        <SectionBannerPicker
+          title={isAr ? "صورة الخلفية خلف المنتجات" : "Background image behind products"}
+          imageUrl={section.background_image_url}
+          isUploading={editorial.uploading === `${kind}:background_image_url`}
+          onUpload={(file) => editorial.upload(kind, "background_image_url", file)}
+          onRemove={() => editorial.patchSection(kind, { background_image_url: "" })}
+          isAr={isAr}
+          compact
+        />
+        <ColorField
+          label={isAr ? "لون خلفية القسم" : "Section background colour"}
+          value={section.background_color || null}
+          onChange={(val) => editorial.patchSection(kind, { background_color: val ?? "" })}
+        />
       </div>
     </div>
   );
 }
 
-function SectionBannerPicker({
+/** A wide picture: upload, replace or remove. */
+export function SectionBannerPicker({
   title,
   imageUrl,
   isUploading,

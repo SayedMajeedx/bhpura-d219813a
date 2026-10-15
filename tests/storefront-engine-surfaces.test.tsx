@@ -63,8 +63,12 @@ const navigator = {
     </ul>
   ),
 };
-vi.mock("../src/features/settings/GroupNavigator", () => navigator);
-vi.mock("@/features/settings/GroupNavigator", () => navigator);
+const navigatorModule = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  ...navigator,
+});
+vi.mock("../src/features/settings/GroupNavigator", (io) => navigatorModule(io));
+vi.mock("@/features/settings/GroupNavigator", (io) => navigatorModule(io));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
   useNavigate: () => vi.fn(),

@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useState } from "react";
 import { isStorefrontV2 } from "@/lib/storefront-engine";
 import { aspectFromSize, prepareHeroImage, probeMediaAspect } from "@/lib/media-aspect";
@@ -5,6 +6,7 @@ import { DEFAULT_HERO_MOBILE, heroPhoneShare, isSmartFitSetting } from "@/lib/he
 import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
+import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -66,6 +68,7 @@ export function HomeHeroGroup() {
   const slides = heroMedia.slides ?? [];
   // On the V2 hero each slide carries its own headline: the store-wide title shows only without one.
   const titleFromSlides = isV2 && slides.length > 0;
+  const { setActiveGroup } = React.useContext(SettingsNavContext);
 
   const updateBackground = (bg: MediaItem | null) => {
     setBrand({
@@ -397,69 +400,65 @@ export function HomeHeroGroup() {
         </AdvancedOnly>
       </div>
 
-      {/* 2. Hero Title & About Visibility */}
-      <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
-        <div>
-          <h3 className="text-base font-semibold text-foreground">
-            {titleFromSlides
-              ? isAr
-                ? "نبذة المتجر"
-                : "Store story"
-              : isAr
-                ? "عنوان الواجهة والنبذة الترحيبية"
-                : "Hero Title & Story"}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {titleFromSlides
-              ? isAr
-                ? "تظهر في قسم قصة المتجر وأسفل الموقع. لكل شريحة عنوانها، فلا يظهر عنوان عام للواجهة."
-                : "Shown in the brand story section and the footer. Each slide has its own headline, so there is no store-wide hero title."
-              : isV2
+      {/* 2. Hero Title & About Visibility: a V2 slide carries its own text */}
+      {!titleFromSlides && (
+        <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
+          <div>
+            <h3 className="text-base font-semibold text-foreground">
+              {isV2
                 ? isAr
-                  ? "يظهران في الواجهة ما دام لا توجد شرائح، والنبذة تظهر أيضاً في قصة المتجر وأسفل الموقع."
-                  : "Shown in the hero while there are no slides; the story also appears in the brand story section and the footer."
+                  ? "عنوان الواجهة"
+                  : "Hero title"
+                : isAr
+                  ? "عنوان الواجهة والنبذة الترحيبية"
+                  : "Hero Title & Story"}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isV2
+                ? isAr
+                  ? "يظهر في الواجهة ما دامت لا توجد شرائح. السطر تحته هو قصة المتجر، وتُعدَّل في الصفحة الرئيسية."
+                  : "Shown in the hero while there are no slides. The line under it is your store's story, edited in the Home page group."
                 : isAr
                   ? "تحكم في النصوص والنبذة الترويجية التي تظهر في الواجهة الأولى للزوار."
                   : "Manage the hero headline and brand story displayed to first-time visitors."}
-          </p>
-        </div>
-
-        {!isV2 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
-              <div>
-                <Label className="cursor-pointer text-xs font-semibold">
-                  {isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero"}
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr ? "عرض عنوان الواجهة في الهيرو" : "Display hero title"}
-                </p>
-              </div>
-              <Switch
-                checked={bs.show_hero_title ?? true}
-                onCheckedChange={(checked) => setBs({ show_hero_title: checked })}
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
-              <div>
-                <Label className="cursor-pointer text-xs font-semibold">
-                  {isAr ? "إظهار النبذة في الواجهة" : "Show about text in hero"}
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr ? "عرض نبذة البراند أسفل العنوان" : "Display brand story under headline"}
-                </p>
-              </div>
-              <Switch
-                checked={bs.show_hero_about ?? true}
-                onCheckedChange={(checked) => setBs({ show_hero_about: checked })}
-              />
-            </div>
+            </p>
           </div>
-        )}
 
-        {/* Hero Title Inputs */}
-        {!titleFromSlides && (
+          {!isV2 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
+                <div>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr ? "عرض عنوان الواجهة في الهيرو" : "Display hero title"}
+                  </p>
+                </div>
+                <Switch
+                  checked={bs.show_hero_title ?? true}
+                  onCheckedChange={(checked) => setBs({ show_hero_title: checked })}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
+                <div>
+                  <Label className="cursor-pointer text-xs font-semibold">
+                    {isAr ? "إظهار النبذة في الواجهة" : "Show about text in hero"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr ? "عرض نبذة البراند أسفل العنوان" : "Display brand story under headline"}
+                  </p>
+                </div>
+                <Switch
+                  checked={bs.show_hero_about ?? true}
+                  onCheckedChange={(checked) => setBs({ show_hero_about: checked })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Hero Title Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div dir="rtl">
               <Label className="text-xs font-medium">
@@ -489,116 +488,126 @@ export function HomeHeroGroup() {
               />
             </div>
           </div>
-        )}
 
-        {/* About Story Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div dir="rtl">
-            <Label className="text-xs font-medium">
-              {isAr
-                ? titleFromSlides
-                  ? "نبذة عن المتجر (عربي)"
-                  : "نبذة عن المتجر بالواجهة (عربي)"
-                : "About Story (Arabic)"}
-            </Label>
-            <Textarea
-              className="mt-1.5 text-end text-xs min-h-[72px]"
-              value={brand.about_ar ?? ""}
-              placeholder={isAr ? "قصة علامتك التجارية ونبذة ترحيبية بالعملاء..." : "Story..."}
-              onChange={(e) => setBrand({ about_ar: e.target.value || null })}
-            />
-          </div>
-
-          <div dir="ltr">
-            <Label className="text-xs font-medium">
-              {isAr
-                ? titleFromSlides
-                  ? "نبذة عن المتجر (إنجليزي)"
-                  : "نبذة عن المتجر بالواجهة (إنجليزي)"
-                : "About Story (English)"}
-            </Label>
-            <Textarea
-              className="mt-1.5 text-start text-xs min-h-[72px]"
-              value={brand.about_en ?? ""}
-              placeholder="Your boutique story and welcoming introduction..."
-              onChange={(e) => setBrand({ about_en: e.target.value || null })}
-            />
-          </div>
-        </div>
-
-        {/* Advanced Title Tuning — classic hero only */}
-        {!isV2 && (
-          <AdvancedOnly
-            fieldKey="hero_title_size"
-            reason={
-              isAr ? "تخصيص مقاس ومحاذاة ولون عنوان الواجهة" : "Customize hero title typography"
-            }
-          >
-            <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="size-4 text-primary" />
-                <h4 className="text-xs font-semibold">
-                  {isAr ? "تنسيقات عنوان الواجهة المتقدمة" : "Advanced Hero Title Styling"}
-                </h4>
+          {/* About Story Inputs: the classic hero's; the new look edits it as the brand story. */}
+          {isV2 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-border p-3.5 text-xs text-muted-foreground">
+              <span className="min-w-0">
+                {isAr
+                  ? "قصة المتجر تُعدَّل في الصفحة الرئيسية ← قصة المتجر."
+                  : "Your store's story is edited in Home page → Brand story."}
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveGroup("home_sections")}
+              >
+                {isAr ? "فتح الصفحة الرئيسية" : "Open Home page"}
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div dir="rtl">
+                <Label className="text-xs font-medium">
+                  {isAr ? "نبذة عن المتجر بالواجهة (عربي)" : "About Story (Arabic)"}
+                </Label>
+                <Textarea
+                  className="mt-1.5 text-end text-xs min-h-[72px]"
+                  value={brand.about_ar ?? ""}
+                  placeholder={isAr ? "قصة علامتك التجارية ونبذة ترحيبية بالعملاء..." : "Story..."}
+                  onChange={(e) => setBrand({ about_ar: e.target.value || null })}
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <Label className="text-xs font-medium">
-                    {isAr ? "حجم الخط (px)" : "Font Size (px)"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={20}
-                    max={96}
-                    className="mt-1.5 text-xs h-9"
-                    value={bs.hero_title_size ?? 40}
-                    onChange={(e) =>
-                      setBs({
-                        hero_title_size: Math.max(20, Math.min(96, Number(e.target.value) || 40)),
-                      })
-                    }
-                  />
+              <div dir="ltr">
+                <Label className="text-xs font-medium">
+                  {isAr ? "نبذة عن المتجر بالواجهة (إنجليزي)" : "About Story (English)"}
+                </Label>
+                <Textarea
+                  className="mt-1.5 text-start text-xs min-h-[72px]"
+                  value={brand.about_en ?? ""}
+                  placeholder="Your boutique story and welcoming introduction..."
+                  onChange={(e) => setBrand({ about_en: e.target.value || null })}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Advanced Title Tuning — classic hero only */}
+          {!isV2 && (
+            <AdvancedOnly
+              fieldKey="hero_title_size"
+              reason={
+                isAr ? "تخصيص مقاس ومحاذاة ولون عنوان الواجهة" : "Customize hero title typography"
+              }
+            >
+              <div className="rounded-xl border border-border p-4 bg-muted/5 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="size-4 text-primary" />
+                  <h4 className="text-xs font-semibold">
+                    {isAr ? "تنسيقات عنوان الواجهة المتقدمة" : "Advanced Hero Title Styling"}
+                  </h4>
                 </div>
 
-                <div>
-                  <ColorField
-                    label={isAr ? "لون العنوان" : "Title Color"}
-                    value={bs.hero_title_color ?? null}
-                    onChange={(val) => setBs({ hero_title_color: val })}
-                  />
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs font-medium">
+                      {isAr ? "حجم الخط (px)" : "Font Size (px)"}
+                    </Label>
+                    <Input
+                      type="number"
+                      min={20}
+                      max={96}
+                      className="mt-1.5 text-xs h-9"
+                      value={bs.hero_title_size ?? 40}
+                      onChange={(e) =>
+                        setBs({
+                          hero_title_size: Math.max(20, Math.min(96, Number(e.target.value) || 40)),
+                        })
+                      }
+                    />
+                  </div>
 
-                <div>
-                  <Label className="text-xs font-medium">
-                    {isAr ? "محاذاة العنوان" : "Title Alignment"}
-                  </Label>
-                  <div className="mt-1.5 flex gap-1.5">
-                    {(["start", "center", "end"] as const).map((align) => (
-                      <Button
-                        key={align}
-                        type="button"
-                        size="sm"
-                        variant={bs.hero_title_align === align ? "default" : "outline"}
-                        className="flex-1 text-xs h-9"
-                        onClick={() => setBs({ hero_title_align: align })}
-                      >
-                        {isAr
-                          ? align === "start"
-                            ? "البداية"
-                            : align === "center"
-                              ? "الوسط"
-                              : "النهاية"
-                          : align}
-                      </Button>
-                    ))}
+                  <div>
+                    <ColorField
+                      label={isAr ? "لون العنوان" : "Title Color"}
+                      value={bs.hero_title_color ?? null}
+                      onChange={(val) => setBs({ hero_title_color: val })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-medium">
+                      {isAr ? "محاذاة العنوان" : "Title Alignment"}
+                    </Label>
+                    <div className="mt-1.5 flex gap-1.5">
+                      {(["start", "center", "end"] as const).map((align) => (
+                        <Button
+                          key={align}
+                          type="button"
+                          size="sm"
+                          variant={bs.hero_title_align === align ? "default" : "outline"}
+                          className="flex-1 text-xs h-9"
+                          onClick={() => setBs({ hero_title_align: align })}
+                        >
+                          {isAr
+                            ? align === "start"
+                              ? "البداية"
+                              : align === "center"
+                                ? "الوسط"
+                                : "النهاية"
+                            : align}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </AdvancedOnly>
-        )}
-      </div>
+            </AdvancedOnly>
+          )}
+        </div>
+      )}
 
       {/* 2. Hero Background (Fixed Canvas) */}
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
