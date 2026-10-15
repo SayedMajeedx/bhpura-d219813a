@@ -4,7 +4,6 @@ import { useI18n } from "@/lib/i18n";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
-import { ColorField } from "@/features/settings/shared/ColorField";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -331,34 +330,6 @@ export function DesignV2Group() {
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      {/* Hero overlay + title colour */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-border">
-        <div className="space-y-1.5">
-          <Label className="text-xs font-medium">
-            {isAr ? "قوة التعتيم فوق الهيرو (%)" : "Hero overlay strength (%)"}
-          </Label>
-          <Input
-            type="range"
-            min={0}
-            max={80}
-            step={5}
-            value={bs.hero_overlay_strength ?? 45}
-            onChange={(e) => setBs({ hero_overlay_strength: Number(e.target.value) })}
-            aria-valuetext={`${bs.hero_overlay_strength ?? 45}%`}
-          />
-          <p className="text-xs text-muted-foreground">{bs.hero_overlay_strength ?? 45}%</p>
-        </div>
-        <ColorField
-          label={
-            isAr
-              ? "لون عنوان الهيرو (فارغ = تلقائي مقروء)"
-              : "Hero title colour (empty = auto readable)"
-          }
-          value={bs.hero_title_color_v2 || null}
-          onChange={(val) => setBs({ hero_title_color_v2: val })}
-        />
       </div>
 
       {/* Newsletter titles */}

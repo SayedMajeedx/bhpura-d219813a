@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Trash2, Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,9 @@ import { ResponsiveImage, OptimizedVideo } from "@/components/responsive-media";
 import { HeroSlideLivePreview, type HeroSlide } from "./HeroSlideLivePreview";
 import { HeroHeadlineFields } from "./HeroHeadlineFields";
 import { HeroLivePreview } from "./HeroLivePreview";
+import { HeroSlideLookFields } from "./HeroLookFields";
+import { HeroSlideRow } from "./HeroSlideRow";
+import { moveSlide, openAfterDelete, openAfterMove, slideRowTitle } from "./hero-slide-list";
 import type { HeroPreviewBrand } from "@/lib/hero-preview";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
@@ -163,6 +166,43 @@ export function HeroSlidesEditor({
     handleUpdateSlides(updated);
   };
 
+  // One slide open at a time; the rest fold to a row each. A lone slide starts open.
+  const [openSlide, setOpenSlide] = React.useState<number | null>(slides.length === 1 ? 0 : null);
+  const dragFrom = React.useRef<number | null>(null);
+  const [dropTarget, setDropTarget] = React.useState<number | null>(null);
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= slides.length || from === to) return;
+    handleUpdateSlides(moveSlide(slides, from, to));
+    setOpenSlide((open) => openAfterMove(open, from, to));
+  };
+  const remove = (index: number) => {
+    handleUpdateSlides(slides.filter((_, itemIndex) => itemIndex !== index));
+    setOpenSlide((open) => openAfterDelete(open, index));
+  };
+  const dragProps = (index: number): React.HTMLAttributes<HTMLDivElement> => ({
+    draggable: true,
+    onDragStart: (event) => {
+      dragFrom.current = index;
+      event.dataTransfer.effectAllowed = "move";
+    },
+    onDragOver: (event) => {
+      if (dragFrom.current === null) return;
+      event.preventDefault();
+      setDropTarget(index);
+    },
+    onDragLeave: () => setDropTarget((target) => (target === index ? null : target)),
+    onDrop: (event) => {
+      event.preventDefault();
+      if (dragFrom.current !== null) move(dragFrom.current, index);
+      dragFrom.current = null;
+      setDropTarget(null);
+    },
+    onDragEnd: () => {
+      dragFrom.current = null;
+      setDropTarget(null);
+    },
+  });
+
   const uploadMedia = async (
     file: File,
     index: number,
@@ -283,7 +323,10 @@ export function HeroSlidesEditor({
           variant="outline"
           size="sm"
           disabled={slides.length >= 5}
-          onClick={() => handleUpdateSlides([...slides, emptyHeroSlide()])}
+          onClick={() => {
+            handleUpdateSlides([...slides, emptyHeroSlide()]);
+            setOpenSlide(slides.length);
+          }}
         >
           {isAr ? "+ شريحة" : "+ Add slide"}
         </Button>
@@ -297,300 +340,339 @@ export function HeroSlidesEditor({
         </div>
       )}
 
-      {slides.map((slide, index) => (
-        <div key={slide.id} className="space-y-3 rounded-xl border border-border p-4 bg-muted/10">
-          <div className="flex items-center justify-between gap-3">
-            <strong className="text-sm">
-              {isAr ? `الشريحة ${index + 1}` : `Slide ${index + 1}`}
-            </strong>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() =>
-                handleUpdateSlides(slides.filter((_, itemIndex) => itemIndex !== index))
+      {slides.length > 1 && (
+        <p className="text-xs text-muted-foreground">
+          {isAr
+            ? "اضغط على شريحة لفتحها، واسحبها أو استخدم الأسهم لتغيير ترتيبها."
+            : "Tap a slide to open it; drag it or use the arrows to change the order."}
+        </p>
+      )}
+
+      {slides.map((slide, index) => {
+        const open = openSlide === index;
+        const panelId = `hero-slide-panel-${slide.id || index}`;
+        return (
+          <div
+            key={slide.id}
+            className={`space-y-3 rounded-xl border p-3 sm:p-4 bg-muted/10 ${
+              dropTarget === index ? "border-primary" : "border-border"
+            }`}
+          >
+            <HeroSlideRow
+              index={index}
+              count={slides.length}
+              kind={slide.type}
+              title={slideRowTitle(slide, isAr ? "ar" : "en")}
+              thumbnail={
+                slide.type === "text"
+                  ? null
+                  : (resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).main?.posterUrl ??
+                    null)
               }
-              aria-label={isAr ? "حذف" : "Delete"}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
+              open={open}
+              isAr={isAr}
+              panelId={panelId}
+              onToggle={() => setOpenSlide(open ? null : index)}
+              onMove={(to) => move(index, to)}
+              onDelete={() => remove(index)}
+              dragProps={dragProps(index)}
+            />
 
-          <div>
-            <Label>{isAr ? "نوع المحتوى" : "Content type"}</Label>
-            <Select
-              value={slide.type}
-              onValueChange={(value: "text" | "image" | "video") => update(index, { type: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
-                <SelectItem value="image">{isAr ? "صورة" : "Image"}</SelectItem>
-                <SelectItem value="video">{isAr ? "فيديو" : "Video"}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {slide.type !== "text" && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {(["en", "ar"] as const).map((language) => {
-                const mediaUrl =
-                  (language === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url;
-                const streamIframeUrl =
-                  language === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en;
-                const posterUrl =
-                  (language === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) ||
-                  mediaUrl;
-                return (
-                  <div
-                    key={language}
-                    className="space-y-2 rounded-lg border border-border bg-card p-3"
-                    dir={language === "ar" ? "rtl" : "ltr"}
+            {open && (
+              <div id={panelId} className="space-y-3 border-t border-border pt-3">
+                <div>
+                  <Label>{isAr ? "نوع المحتوى" : "Content type"}</Label>
+                  <Select
+                    value={slide.type}
+                    onValueChange={(value: "text" | "image" | "video") =>
+                      update(index, { type: value })
+                    }
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <Label>{language === "ar" ? "الوسائط العربية" : "English media"}</Label>
-                      <div className="flex items-center gap-1.5">
-                        {mediaUrl && slide.type === "video" && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs gap-1.5"
-                            disabled={uploading || optimizingKey === `${index}-${language}`}
-                            onClick={() =>
-                              handleOptimizeExistingSlideVideo(index, language, mediaUrl)
-                            }
-                          >
-                            {optimizingKey === `${index}-${language}` ? (
-                              <Loader2 className="size-3.5 animate-spin" />
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
+                      <SelectItem value="image">{isAr ? "صورة" : "Image"}</SelectItem>
+                      <SelectItem value="video">{isAr ? "فيديو" : "Video"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {slide.type !== "text" && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(["en", "ar"] as const).map((language) => {
+                      const mediaUrl =
+                        (language === "ar" ? slide.media_url_ar : slide.media_url_en) ||
+                        slide.media_url;
+                      const streamIframeUrl =
+                        language === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en;
+                      const posterUrl =
+                        (language === "ar"
+                          ? slide.media_poster_url_ar
+                          : slide.media_poster_url_en) || mediaUrl;
+                      return (
+                        <div
+                          key={language}
+                          className="space-y-2 rounded-lg border border-border bg-card p-3"
+                          dir={language === "ar" ? "rtl" : "ltr"}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <Label>{language === "ar" ? "الوسائط العربية" : "English media"}</Label>
+                            <div className="flex items-center gap-1.5">
+                              {mediaUrl && slide.type === "video" && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-7 text-xs gap-1.5"
+                                  disabled={uploading || optimizingKey === `${index}-${language}`}
+                                  onClick={() =>
+                                    handleOptimizeExistingSlideVideo(index, language, mediaUrl)
+                                  }
+                                >
+                                  {optimizingKey === `${index}-${language}` ? (
+                                    <Loader2 className="size-3.5 animate-spin" />
+                                  ) : (
+                                    <Sparkles className="size-3.5 text-primary" />
+                                  )}
+                                  <span>{isAr ? "ضغط وتحسين الفيديو" : "Compress"}</span>
+                                </Button>
+                              )}
+                              {mediaUrl && (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs text-destructive hover:bg-destructive/10"
+                                  onClick={() =>
+                                    update(
+                                      index,
+                                      language === "ar"
+                                        ? { media_url_ar: "", media_aspect_ar: undefined }
+                                        : { media_url_en: "", media_aspect_en: undefined },
+                                    )
+                                  }
+                                >
+                                  {language === "ar" ? "إزالة" : "Remove"}
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          {mediaUrl &&
+                            (slide.type === "video" ? (
+                              <OptimizedVideo
+                                src={streamIframeUrl ? undefined : mediaUrl}
+                                streamIframeUrl={streamIframeUrl}
+                                poster={posterUrl}
+                                className="aspect-video w-full rounded-lg bg-black object-cover"
+                                wrapperClassName="aspect-video w-full overflow-hidden rounded-lg bg-black"
+                              />
                             ) : (
-                              <Sparkles className="size-3.5 text-primary" />
-                            )}
-                            <span>{isAr ? "ضغط وتحسين الفيديو" : "Compress"}</span>
-                          </Button>
-                        )}
-                        {mediaUrl && (
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 text-xs text-destructive hover:bg-destructive/10"
-                            onClick={() =>
+                              <ResponsiveImage
+                                src={mediaUrl}
+                                preset="hero"
+                                alt=""
+                                className="aspect-video w-full rounded-lg object-cover"
+                              />
+                            ))}
+                          <label className="flex h-12 cursor-pointer items-center justify-center rounded-lg border border-dashed border-border px-4 text-sm text-muted-foreground hover:bg-secondary">
+                            {uploading
+                              ? "…"
+                              : language === "ar"
+                                ? "رفع وسائط عربية"
+                                : "Upload English media"}
+                            <input
+                              type="file"
+                              accept={
+                                slide.type === "video"
+                                  ? "video/mp4,video/webm,video/quicktime"
+                                  : "image/jpeg,image/png,image/webp"
+                              }
+                              className="hidden"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) void uploadMedia(file, index, language);
+                                event.target.value = "";
+                              }}
+                            />
+                          </label>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            {slide.type === "video"
+                              ? language === "ar"
+                                ? "أي أبعاد — تُعرض كاملة. الأفضل للكمبيوتر أفقي 16:9 | 15 ثانية | 100MB | MP4"
+                                : "Any shape — shown in full. Best for desktop: 16:9 | Max 15s | 100MB | MP4"
+                              : language === "ar"
+                                ? "أي أبعاد — تُحفظ كما هي. الأفضل للكمبيوتر 1920×1080 | JPG، PNG، WebP"
+                                : "Any shape — kept as uploaded. Best for desktop: 1920×1080 | JPG, PNG, WebP"}
+                          </p>
+                          <MobileVariantField
+                            slide={slide}
+                            language={language}
+                            isAr={isAr}
+                            uploading={uploading}
+                            onUpload={(file) => void uploadMedia(file, index, language, "mobile")}
+                            onRemove={() =>
                               update(
                                 index,
                                 language === "ar"
-                                  ? { media_url_ar: "", media_aspect_ar: undefined }
-                                  : { media_url_en: "", media_aspect_en: undefined },
+                                  ? {
+                                      media_url_mobile_ar: undefined,
+                                      media_poster_url_mobile_ar: undefined,
+                                      media_aspect_mobile_ar: undefined,
+                                    }
+                                  : {
+                                      media_url_mobile_en: undefined,
+                                      media_poster_url_mobile_en: undefined,
+                                      media_aspect_mobile_en: undefined,
+                                    },
                               )
                             }
-                          >
-                            {language === "ar" ? "إزالة" : "Remove"}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                    {mediaUrl &&
-                      (slide.type === "video" ? (
-                        <OptimizedVideo
-                          src={streamIframeUrl ? undefined : mediaUrl}
-                          streamIframeUrl={streamIframeUrl}
-                          poster={posterUrl}
-                          className="aspect-video w-full rounded-lg bg-black object-cover"
-                          wrapperClassName="aspect-video w-full overflow-hidden rounded-lg bg-black"
-                        />
-                      ) : (
-                        <ResponsiveImage
-                          src={mediaUrl}
-                          preset="hero"
-                          alt=""
-                          className="aspect-video w-full rounded-lg object-cover"
-                        />
-                      ))}
-                    <label className="flex h-12 cursor-pointer items-center justify-center rounded-lg border border-dashed border-border px-4 text-sm text-muted-foreground hover:bg-secondary">
-                      {uploading
-                        ? "…"
-                        : language === "ar"
-                          ? "رفع وسائط عربية"
-                          : "Upload English media"}
-                      <input
-                        type="file"
-                        accept={
-                          slide.type === "video"
-                            ? "video/mp4,video/webm,video/quicktime"
-                            : "image/jpeg,image/png,image/webp"
-                        }
-                        className="hidden"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) void uploadMedia(file, index, language);
-                          event.target.value = "";
-                        }}
-                      />
-                    </label>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      {slide.type === "video"
-                        ? language === "ar"
-                          ? "أي أبعاد — تُعرض كاملة. الأفضل للكمبيوتر أفقي 16:9 | 15 ثانية | 100MB | MP4"
-                          : "Any shape — shown in full. Best for desktop: 16:9 | Max 15s | 100MB | MP4"
-                        : language === "ar"
-                          ? "أي أبعاد — تُحفظ كما هي. الأفضل للكمبيوتر 1920×1080 | JPG، PNG، WebP"
-                          : "Any shape — kept as uploaded. Best for desktop: 1920×1080 | JPG, PNG, WebP"}
-                    </p>
-                    <MobileVariantField
-                      slide={slide}
-                      language={language}
-                      isAr={isAr}
-                      uploading={uploading}
-                      onUpload={(file) => void uploadMedia(file, index, language, "mobile")}
-                      onRemove={() =>
-                        update(
-                          index,
-                          language === "ar"
-                            ? {
-                                media_url_mobile_ar: undefined,
-                                media_poster_url_mobile_ar: undefined,
-                                media_aspect_mobile_ar: undefined,
-                              }
-                            : {
-                                media_url_mobile_en: undefined,
-                                media_poster_url_mobile_en: undefined,
-                                media_aspect_mobile_en: undefined,
-                              },
-                        )
-                      }
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {!isV2 && slide.type !== "text" && (
+                  <div>
+                    <Label>{isAr ? "رابط الشريحة عند الضغط" : "Slide click link"}</Label>
+                    <Input
+                      dir="ltr"
+                      value={slide.button_href}
+                      onChange={(event) => update(index, { button_href: event.target.value })}
+                      placeholder="#products"
                     />
                   </div>
-                );
-              })}
-            </div>
-          )}
+                )}
 
-          {!isV2 && slide.type !== "text" && (
-            <div>
-              <Label>{isAr ? "رابط الشريحة عند الضغط" : "Slide click link"}</Label>
-              <Input
-                dir="ltr"
-                value={slide.button_href}
-                onChange={(event) => update(index, { button_href: event.target.value })}
-                placeholder="#products"
-              />
-            </div>
-          )}
+                {!isV2 && slide.type === "text" && (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>العنوان — عربي</Label>
+                        <Input
+                          dir="rtl"
+                          value={slide.title_ar}
+                          onChange={(event) => update(index, { title_ar: event.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>العنوان — English</Label>
+                        <Input
+                          dir="ltr"
+                          value={slide.title_en}
+                          onChange={(event) => update(index, { title_en: event.target.value })}
+                        />
+                      </div>
+                    </div>
 
-          {!isV2 && slide.type === "text" && (
-            <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>العنوان — عربي</Label>
-                  <Input
-                    dir="rtl"
-                    value={slide.title_ar}
-                    onChange={(event) => update(index, { title_ar: event.target.value })}
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <Label>الوصف — عربي</Label>
+                        <Textarea
+                          dir="rtl"
+                          value={slide.body_ar}
+                          onChange={(event) => update(index, { body_ar: event.target.value })}
+                          rows={2}
+                        />
+                      </div>
+                      <div>
+                        <Label>الوصف — English</Label>
+                        <Textarea
+                          dir="ltr"
+                          value={slide.body_en}
+                          onChange={(event) => update(index, { body_en: event.target.value })}
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <Label>الزر — English</Label>
+                        <Input
+                          dir="ltr"
+                          value={slide.button_en}
+                          onChange={(event) => update(index, { button_en: event.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>الزر — عربي</Label>
+                        <Input
+                          dir="rtl"
+                          value={slide.button_ar}
+                          onChange={(event) => update(index, { button_ar: event.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>{isAr ? "رابط الزر" : "Button link"}</Label>
+                        <Input
+                          value={slide.button_href}
+                          onChange={(event) => update(index, { button_href: event.target.value })}
+                          placeholder="#products"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {isV2 && (
+                  <HeroHeadlineFields
+                    idPrefix={`slide-${slide.id || index}`}
+                    slide={slide}
+                    isAr={isAr}
+                    onChange={(patch) => update(index, patch)}
+                    withText
                   />
-                </div>
-                <div>
-                  <Label>العنوان — English</Label>
-                  <Input
-                    dir="ltr"
-                    value={slide.title_en}
-                    onChange={(event) => update(index, { title_en: event.target.value })}
+                )}
+
+                {isV2 && livePreview && (
+                  <HeroSlideLookFields
+                    idPrefix={`slide-${slide.id || index}`}
+                    slide={slide}
+                    store={livePreview.settings}
+                    isAr={isAr}
+                    onChange={(patch) => update(index, patch)}
                   />
-                </div>
+                )}
+
+                <HeroFocalPointPicker
+                  imageUrl={
+                    resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).main?.posterUrl ??
+                    null
+                  }
+                  slide={slide}
+                  fitSetting={framing.fit}
+                  isAr={isAr}
+                  onChange={(patch) => update(index, patch)}
+                />
+
+                <HeroFramePreview
+                  slides={slides}
+                  index={index}
+                  background={background}
+                  framing={framing}
+                  isAr={isAr}
+                />
+
+                {isV2 && livePreview ? (
+                  <HeroLivePreview
+                    brand={livePreview.brand}
+                    settings={livePreview.settings}
+                    slide={slide as unknown as Record<string, unknown>}
+                    background={(background as Record<string, unknown> | null | undefined) ?? null}
+                    isAr={isAr}
+                  />
+                ) : (
+                  <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
+                )}
               </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label>الوصف — عربي</Label>
-                  <Textarea
-                    dir="rtl"
-                    value={slide.body_ar}
-                    onChange={(event) => update(index, { body_ar: event.target.value })}
-                    rows={2}
-                  />
-                </div>
-                <div>
-                  <Label>الوصف — English</Label>
-                  <Textarea
-                    dir="ltr"
-                    value={slide.body_en}
-                    onChange={(event) => update(index, { body_en: event.target.value })}
-                    rows={2}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div>
-                  <Label>الزر — English</Label>
-                  <Input
-                    dir="ltr"
-                    value={slide.button_en}
-                    onChange={(event) => update(index, { button_en: event.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>الزر — عربي</Label>
-                  <Input
-                    dir="rtl"
-                    value={slide.button_ar}
-                    onChange={(event) => update(index, { button_ar: event.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>{isAr ? "رابط الزر" : "Button link"}</Label>
-                  <Input
-                    value={slide.button_href}
-                    onChange={(event) => update(index, { button_href: event.target.value })}
-                    placeholder="#products"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {isV2 && (
-            <HeroHeadlineFields
-              idPrefix={`slide-${slide.id || index}`}
-              slide={slide}
-              isAr={isAr}
-              onChange={(patch) => update(index, patch)}
-              withText
-            />
-          )}
-
-          <HeroFocalPointPicker
-            imageUrl={
-              resolveHeroSlideMedia(slide, isAr ? "ar" : "en", background).main?.posterUrl ?? null
-            }
-            slide={slide}
-            fitSetting={framing.fit}
-            isAr={isAr}
-            onChange={(patch) => update(index, patch)}
-          />
-
-          <HeroFramePreview
-            slides={slides}
-            index={index}
-            background={background}
-            framing={framing}
-            isAr={isAr}
-          />
-
-          {isV2 && livePreview ? (
-            <HeroLivePreview
-              brand={livePreview.brand}
-              settings={livePreview.settings}
-              slide={slide as unknown as Record<string, unknown>}
-              background={(background as Record<string, unknown> | null | undefined) ?? null}
-              isAr={isAr}
-            />
-          ) : (
-            <HeroSlideLivePreview slide={slide} isAr={isAr} color={slideAccentColor} />
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        );
+      })}
 
       <VideoOptimizerDialog
         open={!!pendingOptimizeVideo}

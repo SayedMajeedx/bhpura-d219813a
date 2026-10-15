@@ -9,6 +9,8 @@ export type HeroTextAnimation = "blur_in" | "rising_words" | "mask_reveal" | "no
 export type HeroTextPosition = "top" | "middle" | "bottom";
 export type HeroTextAlign = "start" | "center" | "end";
 export type HeroTextSize = "s" | "m" | "l" | "xl";
+/** Light text over a dark shade (a dark video), or dark text over a light shade (a light one). */
+export type HeroTextTone = "light" | "dark";
 
 /** What a slide may carry about its headline (all optional: a slide without them is as before). */
 export type HeroHeadlineFields = {
@@ -24,6 +26,10 @@ export type HeroHeadlineFields = {
   text_position?: HeroTextPosition;
   text_size?: HeroTextSize;
   align?: HeroTextAlign;
+  /** The slide's own look; each falls back to the store's (hero_overlay_strength, hero_title_color_v2). */
+  text_tone?: HeroTextTone;
+  shade?: number;
+  text_color?: string;
 };
 
 /** The headline fields a stored slide adds (the storefront's and the editor's slide types). */
@@ -36,6 +42,9 @@ export type HeroHeadlineSlideFields = Pick<
   | "text_loops"
   | "text_position"
   | "text_size"
+  | "text_tone"
+  | "shade"
+  | "text_color"
 >;
 
 export const HERO_TEXT_ANIMATIONS: readonly HeroTextAnimation[] = [
@@ -154,9 +163,18 @@ export const HERO_TEXT_ALIGN_CLASS: Record<HeroTextAlign, string> = {
 /** The headline's size against the frame's own (compact, standard, cinematic). */
 export const HERO_TEXT_SCALE: Record<HeroTextSize, number> = { s: 0.8, m: 1, l: 1.22, xl: 1.45 };
 
-/** The shade over the media, darkest where the text sits so it reads over any frame. */
-export function heroScrim(position: HeroTextPosition, strong: number, soft: number): string {
-  const shade = (alpha: number) => `rgba(0,0,0,${Number(alpha.toFixed(3))})`;
+/**
+ * The shade over the media, deepest where the text sits so it reads over any frame: black under
+ * light text, white under dark text (a light video).
+ */
+export function heroScrim(
+  position: HeroTextPosition,
+  strong: number,
+  soft: number,
+  tone: HeroTextTone = "light",
+): string {
+  const channel = tone === "dark" ? "255,255,255" : "0,0,0";
+  const shade = (alpha: number) => `rgba(${channel},${Number(alpha.toFixed(3))})`;
   if (position === "top") {
     return `linear-gradient(to bottom, ${shade(strong)}, ${shade(soft)} 45%, ${shade(0)})`;
   }
@@ -164,4 +182,36 @@ export function heroScrim(position: HeroTextPosition, strong: number, soft: numb
     return `linear-gradient(to bottom, ${shade(soft * 0.6)}, ${shade(strong * 0.85)} 50%, ${shade(soft * 0.6)})`;
   }
   return `linear-gradient(to top, ${shade(strong)}, ${shade(soft)} 45%, ${shade(0)})`;
+}
+
+/** The dark text of a light slide, unless the slide chose its own colour. */
+export const HERO_DARK_TEXT = "rgb(20, 20, 20)";
+
+/** One tap for the two common cases: a dark video (light text) and a light one (dark text). */
+export const HERO_LOOK_PRESETS = {
+  dark_video: { text_tone: "light", shade: 45, text_color: "" },
+  light_video: { text_tone: "dark", shade: 35, text_color: "" },
+} as const satisfies Record<string, Pick<HeroHeadlineFields, "text_tone" | "shade" | "text_color">>;
+
+/**
+ * How a slide's text and shade look: the slide's own choices, else the store's (the shade strength
+ * and title colour every slide shared before). A dark-text slide never takes the store's title
+ * colour, which was chosen for light text over a dark shade.
+ */
+export function slideLook(
+  slide: Pick<HeroHeadlineFields, "text_tone" | "shade" | "text_color">,
+  store: { hero_overlay_strength?: number | null; hero_title_color_v2?: string | null },
+) {
+  const tone: HeroTextTone = slide.text_tone === "dark" ? "dark" : "light";
+  const shade = clamp(slide.shade ?? store.hero_overlay_strength, 0, 100, 45);
+  const own = slide.text_color?.trim();
+  const titleColor =
+    own || (tone === "dark" ? HERO_DARK_TEXT : store.hero_title_color_v2?.trim() || undefined);
+  return {
+    tone,
+    shade,
+    titleColor,
+    strong: (shade / 100) * 0.95,
+    soft: (shade / 100) * 0.45,
+  };
 }

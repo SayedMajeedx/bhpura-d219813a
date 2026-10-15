@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
+import { HeroStoreLookFields } from "./HeroLookFields";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
@@ -63,6 +64,8 @@ export function HomeHeroGroup() {
 
   const backgroundMedia = heroMedia.background ?? null;
   const slides = heroMedia.slides ?? [];
+  // On the V2 hero each slide carries its own headline: the store-wide title shows only without one.
+  const titleFromSlides = isV2 && slides.length > 0;
 
   const updateBackground = (bg: MediaItem | null) => {
     setBrand({
@@ -398,12 +401,26 @@ export function HomeHeroGroup() {
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            {isAr ? "عنوان الواجهة والنبذة الترحيبية" : "Hero Title & Story"}
+            {titleFromSlides
+              ? isAr
+                ? "نبذة المتجر"
+                : "Store story"
+              : isAr
+                ? "عنوان الواجهة والنبذة الترحيبية"
+                : "Hero Title & Story"}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "تحكم في النصوص والنبذة الترويجية التي تظهر في الواجهة الأولى للزوار."
-              : "Manage the hero headline and brand story displayed to first-time visitors."}
+            {titleFromSlides
+              ? isAr
+                ? "تظهر في قسم قصة المتجر وأسفل الموقع. لكل شريحة عنوانها، فلا يظهر عنوان عام للواجهة."
+                : "Shown in the brand story section and the footer. Each slide has its own headline, so there is no store-wide hero title."
+              : isV2
+                ? isAr
+                  ? "يظهران في الواجهة ما دام لا توجد شرائح، والنبذة تظهر أيضاً في قصة المتجر وأسفل الموقع."
+                  : "Shown in the hero while there are no slides; the story also appears in the brand story section and the footer."
+                : isAr
+                  ? "تحكم في النصوص والنبذة الترويجية التي تظهر في الواجهة الأولى للزوار."
+                  : "Manage the hero headline and brand story displayed to first-time visitors."}
           </p>
         </div>
 
@@ -442,41 +459,47 @@ export function HomeHeroGroup() {
         )}
 
         {/* Hero Title Inputs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <div dir="rtl">
-            <Label className="text-xs font-medium">
-              {isAr ? "عنوان الواجهة (عربي)" : "Hero Title (Arabic)"}
-            </Label>
-            <Input
-              className="mt-1.5 text-end text-xs h-9"
-              value={bs.hero_title_ar ?? ""}
-              placeholder={
-                isAr ? "اترك فارغاً لاستخدام اسم المتجر بالعربية" : "Blank uses brand name"
-              }
-              onChange={(e) => setBs({ hero_title_ar: e.target.value || null })}
-            />
-          </div>
+        {!titleFromSlides && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div dir="rtl">
+              <Label className="text-xs font-medium">
+                {isAr ? "عنوان الواجهة (عربي)" : "Hero Title (Arabic)"}
+              </Label>
+              <Input
+                className="mt-1.5 text-end text-xs h-9"
+                value={bs.hero_title_ar ?? ""}
+                placeholder={
+                  isAr ? "اترك فارغاً لاستخدام اسم المتجر بالعربية" : "Blank uses brand name"
+                }
+                onChange={(e) => setBs({ hero_title_ar: e.target.value || null })}
+              />
+            </div>
 
-          <div dir="ltr">
-            <Label className="text-xs font-medium">
-              {isAr ? "عنوان الواجهة (إنجليزي)" : "Hero Title (English)"}
-            </Label>
-            <Input
-              className="mt-1.5 text-start text-xs h-9"
-              value={bs.hero_title_en ?? ""}
-              placeholder={
-                isAr ? "اترك فارغاً لاستخدام اسم المتجر بالإنجليزية" : "Blank uses brand name"
-              }
-              onChange={(e) => setBs({ hero_title_en: e.target.value || null })}
-            />
+            <div dir="ltr">
+              <Label className="text-xs font-medium">
+                {isAr ? "عنوان الواجهة (إنجليزي)" : "Hero Title (English)"}
+              </Label>
+              <Input
+                className="mt-1.5 text-start text-xs h-9"
+                value={bs.hero_title_en ?? ""}
+                placeholder={
+                  isAr ? "اترك فارغاً لاستخدام اسم المتجر بالإنجليزية" : "Blank uses brand name"
+                }
+                onChange={(e) => setBs({ hero_title_en: e.target.value || null })}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* About Story Inputs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div dir="rtl">
             <Label className="text-xs font-medium">
-              {isAr ? "نبذة عن المتجر بالواجهة (عربي)" : "About Story (Arabic)"}
+              {isAr
+                ? titleFromSlides
+                  ? "نبذة عن المتجر (عربي)"
+                  : "نبذة عن المتجر بالواجهة (عربي)"
+                : "About Story (Arabic)"}
             </Label>
             <Textarea
               className="mt-1.5 text-end text-xs min-h-[72px]"
@@ -488,7 +511,11 @@ export function HomeHeroGroup() {
 
           <div dir="ltr">
             <Label className="text-xs font-medium">
-              {isAr ? "نبذة عن المتجر بالواجهة (إنجليزي)" : "About Story (English)"}
+              {isAr
+                ? titleFromSlides
+                  ? "نبذة عن المتجر (إنجليزي)"
+                  : "نبذة عن المتجر بالواجهة (إنجليزي)"
+                : "About Story (English)"}
             </Label>
             <Textarea
               className="mt-1.5 text-start text-xs min-h-[72px]"
@@ -762,6 +789,24 @@ export function HomeHeroGroup() {
               : "Manage up to 5 rotating slides with background media, titles, and call-to-action buttons."}
           </p>
         </div>
+
+        {isV2 && (
+          <AdvancedOnly
+            fieldKey="hero_overlay_strength"
+            reason={
+              isAr ? "التعتيم ولون العنوان الافتراضي لكل الشرائح" : "Default shade and title colour"
+            }
+          >
+            <HeroStoreLookFields
+              store={{
+                hero_overlay_strength: bs.hero_overlay_strength,
+                hero_title_color_v2: bs.hero_title_color_v2,
+              }}
+              isAr={isAr}
+              onChange={(patch) => setBs(patch)}
+            />
+          </AdvancedOnly>
+        )}
 
         <HeroSlidesEditor
           brandId={brandId}
