@@ -212,3 +212,46 @@ export function homeSectionBackgrounds({
       : "var(--sf-background)";
   return { productsAreaBackground, promoAreaBackground };
 }
+
+type PromoCardFields = {
+  image_url?: string | null;
+  title_ar?: string | null;
+  title_en?: string | null;
+};
+
+const filled = (value: unknown) => typeof value === "string" && value.trim().length > 0;
+
+/**
+ * The promo cards that show: a card needs a picture or a title. A card with only a link or a
+ * colour shows nothing (Pura had four such cards). The settings count cards with the same rule.
+ */
+export function promoCardsToShow<T extends PromoCardFields>(
+  cards: ReadonlyArray<T | null | undefined> | null | undefined,
+): T[] {
+  return (cards ?? []).filter(
+    (card): card is T =>
+      Boolean(card) &&
+      (filled(card!.image_url) || filled(card!.title_en) || filled(card!.title_ar)),
+  );
+}
+
+/**
+ * Whether the area under the hero (the promo cards and the new arrivals) has anything to show.
+ * Its section carries a background and its own padding, so drawn empty it left a bare band
+ * between the hero and the next section (Pura: no cards that show, new arrivals off).
+ */
+export function promoAreaShows({
+  cards,
+  showNewArrivals,
+  newest,
+  activeCat,
+}: {
+  cards: ReadonlyArray<PromoCardFields | null | undefined> | null | undefined;
+  showNewArrivals: boolean | null | undefined;
+  newest: ReadonlyArray<unknown>;
+  activeCat: unknown;
+}): boolean {
+  if (promoCardsToShow(cards).length > 0) return true;
+  // The new arrivals rail shows on the whole shop only, when on and with a product (MerchandisingSection).
+  return !activeCat && Boolean(showNewArrivals) && newest.length > 0;
+}

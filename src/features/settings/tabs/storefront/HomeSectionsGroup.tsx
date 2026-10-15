@@ -34,6 +34,7 @@ import {
 import { PromoCardsEditor } from "./PromoCardsEditor";
 import {
   filledPromoCards,
+  startedPromoCards,
   homePageSections,
   homeSectionOn,
   type HomeSectionId,
@@ -155,6 +156,12 @@ export function HomeSectionsGroup() {
     if (on === false) return isAr ? "مخفي" : "Hidden";
     if (id === "promo_cards") {
       const filled = filledPromoCards(settings);
+      const started = startedPromoCards(settings);
+      if (filled === 0 && started > 0) {
+        return isAr
+          ? `${started} بطاقات لها رابط بلا صورة ولا عنوان: لا تظهر`
+          : `${started} cards have a link but no picture or title: they do not show`;
+      }
       return filled === 0
         ? isAr
           ? "لا بطاقات بعد: لا يظهر القسم"

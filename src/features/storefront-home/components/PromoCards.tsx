@@ -1,13 +1,12 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { StorefrontLink } from "@/features/storefront-home/components/StorefrontLink";
+import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
 
 /** The home page promo cards (image, title and link), the first image loaded eagerly. */
 export function PromoCards() {
   const { settings, lang } = useStorefront();
-  const cards = settings.home_promo_cards.filter(
-    (card) => card && (card.image_url || card.title_en || card.title_ar),
-  );
+  const cards = promoCardsToShow(settings.home_promo_cards);
   const firstImageIndex = cards.findIndex((card) => Boolean(card.image_url));
   if (!cards.length) return null;
   return (
