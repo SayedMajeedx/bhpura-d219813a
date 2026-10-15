@@ -174,6 +174,16 @@ export const HERO_TEXT_ALIGN_CLASS: Record<HeroTextAlign, string> = {
   end: "items-end text-end",
 };
 
+/**
+ * The buttons under the headline, lined up like it. The headline's box is as wide as its longest
+ * phrase, so a row left at its start sat at that box's edge, far from a short centred phrase.
+ */
+export const HERO_ACTIONS_ALIGN_CLASS: Record<HeroTextAlign, string> = {
+  start: "justify-start",
+  center: "justify-center",
+  end: "justify-end",
+};
+
 /** The headline's size against the frame's own (compact, standard, cinematic). */
 export const HERO_TEXT_SCALE: Record<HeroTextSize, number> = { s: 0.8, m: 1, l: 1.22, xl: 1.45 };
 

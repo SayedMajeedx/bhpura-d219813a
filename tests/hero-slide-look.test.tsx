@@ -83,6 +83,42 @@ describe("a slide's look", () => {
   });
 });
 
+describe("a slide's button", () => {
+  // Found 2026-10-15 on Pura: a centred headline with its button at the right edge, because the
+  // button row never followed the alignment and the headline's box is its longest phrase's width.
+  it("lines up with the headline, wherever the store aligned it", () => {
+    const slide = (id: string, align: string) => ({
+      id,
+      type: "text" as const,
+      title_en: "",
+      title_ar: "",
+      body_en: "",
+      body_ar: "",
+      media_url: "",
+      phrases_ar: ["اطلبي الآن", "قصة الفخامة تبدأ من هنا"],
+      button_ar: `تسوقي ${id}`,
+      button_href: "#products",
+      position: "middle",
+      align,
+    });
+    render(
+      <HeroV2View
+        slides={[slide("c", "center"), slide("s", "start"), slide("e", "end")]}
+        settings={{} as never}
+        lang="ar"
+        brand={{ id: "b1", slug: "pura", name_ar: "بيورا", primary_color: null } as never}
+      />,
+    );
+    const row = (id: string) =>
+      screen.getByRole("link", { name: `تسوقي ${id}`, hidden: true }).parentElement!;
+    expect(row("c").className).toContain("justify-center");
+    expect(row("s").className).toContain("justify-start");
+    expect(row("e").className).toContain("justify-end");
+    // Room between the headline and the button: more than the 8px the column's spacing gives.
+    expect(row("c").className).toMatch(/\bpt-4\b/);
+  });
+});
+
 describe("the slides as a list", () => {
   it("moves a slide and keeps the open one open wherever it went", () => {
     expect(moveSlide(["a", "b", "c"], 0, 2)).toEqual(["b", "c", "a"]);
