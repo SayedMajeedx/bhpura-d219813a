@@ -11,6 +11,7 @@ import { type SettingsTabId } from "@/features/settings/registry";
 import { SettingsHeader } from "@/features/settings/SettingsHeader";
 import { SettingsTabs } from "@/features/settings/SettingsTabs";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
+import { replaceUrlQuietly } from "@/lib/quiet-url";
 import { StoreReadinessChecklist } from "@/components/settings/StoreReadinessChecklist";
 import { SettingsStickySaveBar } from "@/components/settings/SettingsStickySaveBar";
 import { Card } from "@/components/ui/card";
@@ -49,8 +50,6 @@ function SettingsPageInner() {
     }
     return null;
   });
-  const navValue = useMemo(() => ({ activeGroup, setActiveGroup }), [activeGroup]);
-
   const handleTabChange = useCallback((tab: SettingsTabId, groupAnchor?: string) => {
     setActiveTab(tab);
     const group = groupAnchor ? groupAnchor.replace(/^group-/, "") : null;
@@ -60,9 +59,18 @@ function SettingsPageInner() {
       url.searchParams.set("tab", tab);
       if (group) url.searchParams.set("group", group);
       else url.searchParams.delete("group");
-      window.history.replaceState({}, "", url.toString());
+      // The address mirrors the tab; the router must not read it as a navigation.
+      replaceUrlQuietly(url.toString());
     }
   }, []);
+  const navValue = useMemo(
+    () => ({
+      activeGroup,
+      setActiveGroup,
+      openGroup: (tab: SettingsTabId, group: string) => handleTabChange(tab, group),
+    }),
+    [activeGroup, handleTabChange],
+  );
 
   // 1. TanStack Router navigation blocker when changes are unsaved (Phase 3)
   useBlocker({

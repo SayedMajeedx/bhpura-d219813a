@@ -135,8 +135,11 @@ describe("settings UI honours the scopes", () => {
     try {
       expect(shows(<HomeHeroGroup />, v1, "Show brand name in hero")).toBe(true);
       expect(shows(<HomeHeroGroup />, v2, "Show brand name in hero")).toBe(false);
-      expect(shows(<PaletteGroup />, v1, "Footer BG")).toBe(true);
-      expect(shows(<PaletteGroup />, v2, "Footer BG")).toBe(false);
+      // The footer's colours are with the footer; the columns footer does not read them.
+      const footer = { trust_badges: { items: [] } };
+      expect(shows(<HeaderFooterGroup />, { ...v1, ...footer }, "Footer colours")).toBe(true);
+      expect(shows(<HeaderFooterGroup />, { ...v2, ...footer }, "Footer colours")).toBe(false);
+      expect(shows(<PaletteGroup />, v1, "Footer BG")).toBe(false);
     } finally {
       localStorage.removeItem("boutq_settings_level");
     }

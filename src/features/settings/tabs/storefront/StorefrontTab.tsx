@@ -27,6 +27,8 @@ const GROUPS: GroupDef[] = [
   { id: "mode", icon: Store, render: () => <ModeGroup /> },
   { id: "home_hero", icon: LayoutTemplate, render: () => <HomeHeroGroup /> },
   { id: "home_sections", icon: LayoutGrid, render: () => <HomeSectionsGroup /> },
+  // The new look's product card and page (shown on the new look only).
+  { id: "design_v2", icon: Sparkles, render: () => <DesignV2Group /> },
   { id: "header_footer", icon: PanelTop, render: () => <HeaderFooterGroup /> },
   { id: "announcement", icon: Bell, render: () => <AnnouncementGroup /> },
   { id: "loader", icon: Loader2, render: () => <LoaderGroup /> },
@@ -37,7 +39,6 @@ const GROUPS: GroupDef[] = [
     icon: Wand2,
     render: () => <StorefrontDesignUpgradeCard />,
   },
-  { id: "design_v2", icon: Sparkles, render: () => <DesignV2Group /> },
 ];
 
 export function StorefrontTab() {

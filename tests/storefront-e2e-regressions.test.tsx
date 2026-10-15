@@ -19,7 +19,7 @@ const storefront = vi.hoisted(() => ({
   clearCart: () => undefined,
 }));
 const settingsForm = vi.hoisted(() => ({
-  form: { bs: {} as Record<string, unknown> },
+  form: { bs: {} as Record<string, unknown>, brand: { slug: "pura", primary_color: null } },
   setBs: vi.fn(),
   brandId: "b1",
 }));
@@ -73,7 +73,9 @@ vi.mock("@/components/storefront/FooterV2", () => stubs.footerV2);
 
 const { StoreShell } = await import("../src/features/storefront-shell/components/StoreShell");
 const { useStickyCtaOffset } = await import("../src/hooks/use-sticky-cta-offset");
-const { DesignV2Group } = await import("../src/features/settings/tabs/storefront/DesignV2Group");
+// The footer's layout is chosen with the rest of the footer (it was in the new look's options).
+const { HeaderFooterGroup } =
+  await import("../src/features/settings/tabs/storefront/HeaderFooterGroup");
 const { I18nProvider } = await import("../src/lib/i18n");
 const { defaultStorefrontTypography } = await import("../src/lib/typography");
 // The real banner and footer, imported past the shell's stubs.
@@ -150,33 +152,30 @@ describe("footer layout value mismatch", () => {
   });
 
   it("shows the footer the storefront renders and writes the canonical value", () => {
-    const footerSelect = () =>
-      screen
-        .getAllByRole("combobox")
-        .find((box) => /Minimal \(current\)|Columns \(premium\)/.test(box.textContent ?? ""))!;
+    const footerSelect = () => screen.getByLabelText("Footer layout");
     const open = () =>
       fireEvent.pointerDown(footerSelect(), { button: 0, ctrlKey: false, pointerType: "mouse" });
 
     settingsForm.form.bs = { storefront_design_version: 2, footer_layout: "minimal" };
     const legacy = render(
       <I18nProvider>
-        <DesignV2Group />
+        <HeaderFooterGroup />
       </I18nProvider>,
     );
-    expect(footerSelect()).toHaveTextContent("Minimal (current)");
+    expect(footerSelect()).toHaveTextContent("Minimal");
     open();
-    fireEvent.click(screen.getByRole("option", { name: "Columns (premium)" }));
+    fireEvent.click(screen.getByRole("option", { name: "Columns" }));
     expect(settingsForm.setBs).toHaveBeenCalledWith({ footer_layout: "columns" });
     legacy.unmount();
 
     settingsForm.form.bs = { storefront_design_version: 2, footer_layout: "columns" };
     render(
       <I18nProvider>
-        <DesignV2Group />
+        <HeaderFooterGroup />
       </I18nProvider>,
     );
     open();
-    fireEvent.click(screen.getByRole("option", { name: "Minimal (current)" }));
+    fireEvent.click(screen.getByRole("option", { name: "Minimal" }));
     expect(settingsForm.setBs).toHaveBeenLastCalledWith({ footer_layout: "simple" });
   });
 

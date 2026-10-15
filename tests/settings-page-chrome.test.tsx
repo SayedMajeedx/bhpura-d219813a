@@ -136,6 +136,34 @@ describe("the settings' groups", () => {
   });
 });
 
+describe("a link to a group", () => {
+  it("waits for a group the list does not have yet, instead of opening the first", () => {
+    function Page({ withProduct }: { withProduct: boolean }) {
+      const [activeGroup, setActiveGroup] = React.useState<string | null>("design_v2");
+      return (
+        <SettingsNavContext.Provider value={{ activeGroup, setActiveGroup }}>
+          <GroupNavigator
+            tab="storefront"
+            groups={[
+              { id: "mode", render: () => <p>Mode</p> },
+              ...(withProduct ? [{ id: "design_v2", render: () => <p>Product card</p> }] : []),
+            ]}
+          />
+        </SettingsNavContext.Provider>
+      );
+    }
+    const view = show(<Page withProduct={false} />);
+    expect(screen.getByText("Mode")).toBeInTheDocument();
+    // The store's settings arrive: it is on the new look, and the group it was sent to opens.
+    view.rerender(
+      <I18nProvider>
+        <Page withProduct />
+      </I18nProvider>,
+    );
+    expect(screen.getByText("Product card")).toBeInTheDocument();
+  });
+});
+
 describe("the trust badges editor", () => {
   it("opens for a store that never saved its badges", () => {
     const onChange = vi.fn();
