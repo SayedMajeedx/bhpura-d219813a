@@ -110,7 +110,14 @@ export function PaletteGroup() {
       </Card>
 
       {/* 2. Advanced Fine-grained Color Controls */}
-      <AdvancedOnly fieldName="identity.palette.advanced_colors">
+      <AdvancedOnly
+        fieldName="identity.palette.advanced_colors"
+        reason={
+          isAr
+            ? "ألوان دقيقة: النصوص، الأزرار، الترويسة والقائمة والتذييل"
+            : "Fine colours: text, buttons, header, menu and footer"
+        }
+      >
         <Card className="p-6 rounded-2xl border-border bg-card space-y-6">
           <div className="flex items-center gap-2 border-b border-border pb-3">
             <Sliders className="h-5 w-5 text-primary" />

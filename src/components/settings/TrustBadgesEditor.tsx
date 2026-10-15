@@ -32,7 +32,8 @@ import { useAddons } from "@/components/addons/AddonsProvider";
 import { trustBadgeSuggestionsFrom } from "@/lib/addons/addon-registry";
 
 interface TrustBadgesEditorProps {
-  value: TrustBadgesConfig;
+  /** The stored config; a store that never saved one has none. */
+  value: TrustBadgesConfig | null | undefined;
   onChange: (value: TrustBadgesConfig) => void;
   isAr?: boolean;
   footerBg?: string | null;
@@ -41,8 +42,11 @@ interface TrustBadgesEditorProps {
   settings?: Record<string, any> | null;
 }
 
+/** A store that never saved its badges: on, with none of its own yet. */
+const NO_BADGES: TrustBadgesConfig = { enabled: true, items: [] };
+
 export function TrustBadgesEditor({
-  value,
+  value: stored,
   onChange,
   isAr = true,
   footerBg,
@@ -50,6 +54,7 @@ export function TrustBadgesEditor({
   vertical,
   settings,
 }: TrustBadgesEditorProps) {
+  const value = stored ?? NO_BADGES;
   const items = value.items || [];
   const isEnabled = value.enabled ?? true;
   const { addons } = useAddons();

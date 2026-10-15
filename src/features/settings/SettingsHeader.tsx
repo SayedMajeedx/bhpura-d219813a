@@ -8,17 +8,8 @@ import { isSettingApplicable } from "@/lib/storefront-engine";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Compass,
-  Eye,
-  ExternalLink,
-  Loader2,
-  Save,
-  Search,
-  SlidersHorizontal,
-  Undo2,
-  X,
-} from "lucide-react";
+import { AdminPageAction, AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { Eye, Save, Search, Settings, SlidersHorizontal, Undo2, X } from "lucide-react";
 
 interface SettingsHeaderProps {
   activeTab: SettingsTabId;
@@ -37,9 +28,6 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  const brandDisplayName =
-    (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug || "Boutique";
 
   // Global Keyboard shortcut: Cmd+K or "/" to focus search; Escape to clear
   useEffect(() => {
@@ -103,126 +91,93 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
     }
   };
 
+  // One row on a phone, like every admin page's heading: the store's name is in the top bar, and
+  // saving is the bar at the screen's foot (the heading's save is for wider screens). The card it
+  // replaced took 560px of a phone before the settings' tabs.
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm space-y-4">
-      {/* Decorative gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/10 pointer-events-none" />
-
-      {/* Row 1: Brand Identifier & Action Controls */}
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-            <Compass className="size-3 shrink-0" />
-            <span>{isAr ? "لوحة تحكم الإعدادات" : "Settings Center"}</span>
-            <span className="ms-1 px-1.5 py-0.2 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-              {brandDisplayName}
-            </span>
-          </div>
-
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-            {isAr ? "إعدادات المتجر والعلامة التجارية" : "Store & Brand Settings"}
-          </h1>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
-            {isAr
-              ? "تحكّم بهوية متجرك، الصفحات، طرق الدفع والتوصيل، والفواتير من شاشة مركزية واحدة."
-              : "Centrally manage your brand identity, storefront pages, payments, fulfillment, and invoices."}
-          </p>
-        </div>
-
-        {/* Level Toggle & Save Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Store Preview (Opens in new tab) */}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            asChild
-            className="h-9 px-3 text-xs gap-1.5 rounded-xl hover:bg-muted"
-            title={isAr ? "معاينة المتجر في نافذة جديدة" : "Preview store in new tab"}
-          >
-            <a href={getStorefrontUrl(brand.slug)} target="_blank" rel="noopener noreferrer">
-              <Eye className="size-3.5 text-primary" />
-              <span>{isAr ? "معاينة المتجر" : "Store Preview"}</span>
-              <ExternalLink className="size-3 text-muted-foreground" />
-            </a>
-          </Button>
-
-          {/* Basic vs Advanced Page-Wide Switch (Owner Decision #3) */}
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-border bg-background/80 shadow-xs">
-            <SlidersHorizontal className="size-3.5 text-muted-foreground" />
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`text-xs font-semibold ${!isAdvanced ? "text-primary" : "text-muted-foreground"}`}
-              >
-                {isAr ? "أساسي" : "Basic"}
+    <div className="space-y-2">
+      <AdminPageHeader
+        icon={Settings}
+        title={isAr ? "الإعدادات" : "Settings"}
+        description={
+          isAr
+            ? "هوية متجرك، واجهته، الدفع والتوصيل، الفواتير والإشعارات."
+            : "Your store's identity, storefront, payments, delivery, invoices and notifications."
+        }
+        actions={
+          <>
+            <label className="flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold">
+              <SlidersHorizontal className="size-3.5 text-muted-foreground" aria-hidden="true" />
+              <span className={isAdvanced ? "text-primary" : "text-muted-foreground"}>
+                {isAr ? "متقدم" : "Advanced"}
               </span>
               <Switch
                 checked={isAdvanced}
                 onCheckedChange={toggleLevel}
-                aria-label="Toggle Basic or Advanced settings level"
+                aria-label={isAr ? "عرض الإعدادات المتقدمة" : "Show advanced settings"}
               />
-              <span
-                className={`text-xs font-semibold ${isAdvanced ? "text-primary" : "text-muted-foreground"}`}
+            </label>
+            <Button
+              asChild
+              variant="outline"
+              className="h-9 w-9 gap-1.5 px-0 text-xs font-bold shadow-2xs sm:w-auto sm:px-3.5"
+            >
+              <a
+                href={getStorefrontUrl(brand.slug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={isAr ? "معاينة المتجر" : "Store preview"}
               >
-                {isAr ? "متقدم" : "Advanced"}
-              </span>
-            </div>
-          </div>
+                <Eye className="size-4 text-primary" aria-hidden="true" />
+                <span className="hidden sm:inline">{isAr ? "معاينة المتجر" : "Store preview"}</span>
+              </a>
+            </Button>
+            {isDirty && (
+              <>
+                <AdminPageAction
+                  icon={Undo2}
+                  label={isAr ? "إلغاء التعديل" : "Discard"}
+                  variant="outline"
+                  iconOnPhone
+                  onClick={reset}
+                  disabled={isSaving}
+                  className="hidden sm:inline-flex"
+                />
+                <AdminPageAction
+                  icon={Save}
+                  label={
+                    isSaving
+                      ? isAr
+                        ? "جاري الحفظ..."
+                        : "Saving..."
+                      : isAr
+                        ? `حفظ التعديلات (${dirtyCount})`
+                        : `Save Changes (${dirtyCount})`
+                  }
+                  busy={isSaving}
+                  onClick={() => void save()}
+                  disabled={isSaving}
+                  className="hidden sm:inline-flex"
+                />
+              </>
+            )}
+          </>
+        }
+      />
 
-          {/* Atomic Save / Discard Actions */}
-          {isDirty && (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={reset}
-                disabled={isSaving}
-                className="h-9 px-3 text-xs gap-1"
-              >
-                <Undo2 className="size-3.5" />
-                <span>{isAr ? "إلغاء التعديل" : "Discard"}</span>
-              </Button>
-
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => void save()}
-                disabled={isSaving}
-                className="h-9 px-4 text-xs font-semibold gap-1.5 shadow-sm"
-              >
-                {isSaving ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Save className="size-3.5" />
-                )}
-                <span>
-                  {isSaving
-                    ? isAr
-                      ? "جاري الحفظ..."
-                      : "Saving..."
-                    : isAr
-                      ? `حفظ التعديلات (${dirtyCount})`
-                      : `Save Changes (${dirtyCount})`}
-                </span>
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Row 2: Universal Setting Search Bar */}
-      <div className="relative pt-1">
+      {/* Search across every setting */}
+      <div className="relative">
         <div className="relative flex items-center">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <Input
             ref={searchInputRef}
             className="ps-9 pe-16 h-9 text-xs bg-background/90 rounded-xl"
             value={searchQuery}
+            aria-label={isAr ? "ابحث في الإعدادات" : "Search settings"}
             placeholder={
               isAr
-                ? "ابحث في جميع الإعدادات (مثال: الشعار، الدفع، بنفت باي، الضريبة، الفاتورة...)"
-                : "Search all settings (e.g. logo, BenefitPay, currency, tax, invoice, terms)..."
+                ? "ابحث في الإعدادات: الشعار، بنفت باي، الضريبة..."
+                : "Search settings: logo, BenefitPay, tax..."
             }
             onChange={(e) => {
               setSearchQuery(e.target.value);
