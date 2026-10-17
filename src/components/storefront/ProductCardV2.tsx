@@ -251,7 +251,7 @@ export function ProductCardV2({
 
           {/* Desktop Quick Add Popover Overlay on Hover */}
           {!isOos && settings?.product_card_quick_add !== false && (
-            <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto">
+            <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
               <QuickAddPopover
                 product={product}
                 variants={variants}

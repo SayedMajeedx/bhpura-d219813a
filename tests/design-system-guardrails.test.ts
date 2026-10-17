@@ -288,3 +288,65 @@ describe("design system guardrails", () => {
     expect(guards).toContain("grid-auto-columns: minmax(0, 1fr);");
   });
 });
+
+describe("the phone layer (src/styles/mobile-native.css)", () => {
+  const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "..", rel), "utf-8");
+  const stylesheets = [
+    "src/styles.css",
+    ...fs
+      .readdirSync(path.resolve(__dirname, "../src/styles"))
+      .filter((name) => name.endsWith(".css"))
+      .map((name) => `src/styles/${name}`),
+  ];
+
+  /** The CSS with every `@media (...hover: hover...)` and reduced-motion block taken out. */
+  function outsideHoverQueries(css: string): string {
+    let out = "";
+    let i = 0;
+    while (i < css.length) {
+      const at = css.slice(i).search(/@media[^{]*(hover:\s*hover|prefers-reduced-motion)[^{]*\{/);
+      if (at < 0) return out + css.slice(i);
+      out += css.slice(i, i + at);
+      let j = i + at + css.slice(i + at).indexOf("{") + 1;
+      for (let depth = 1; depth > 0 && j < css.length; j++) {
+        if (css[j] === "{") depth++;
+        else if (css[j] === "}") depth--;
+      }
+      i = j;
+    }
+    return out;
+  }
+
+  it("keeps fields at 16px on a touch screen, so iOS does not zoom into them", () => {
+    // The admin's list searches were 12px: tapping one zoomed the page and left it zoomed.
+    expect(read("src/styles.css")).toContain('@import "./styles/mobile-native.css";');
+    const rules = read("src/styles/mobile-native.css");
+    expect(rules).toMatch(
+      /@media \(pointer: coarse\)\s*{[\s\S]*\[class\*="text-xs"\][\s\S]*font-size: 16px;/,
+    );
+    // Not in a layer: it has to beat the utility classes.
+    expect(rules.slice(0, rules.indexOf("@media (pointer: coarse)"))).not.toContain("@layer");
+  });
+
+  it("never takes zoom away", () => {
+    const sources = import.meta.glob("../src/**/*.{ts,tsx}", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const offenders = Object.entries(sources)
+      .filter(([, text]) => /maximum-scale|user-scalable\s*=\s*no/.test(text))
+      .map(([file]) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  it("moves an element on hover only for a mouse", () => {
+    // A finger has no hover: the browser keeps the first tap's :hover, so a card stayed lifted.
+    const offenders = stylesheets.flatMap((file) =>
+      [...outsideHoverQueries(read(file)).matchAll(/([^{}]*:hover[^{}]*)\{([^}]*)\}/g)]
+        .filter(([, , body]) => /transform:\s*(?!none)/.test(body))
+        .map(([, selector]) => `${file}: ${selector.trim()}`),
+    );
+    expect(offenders).toEqual([]);
+  });
+});

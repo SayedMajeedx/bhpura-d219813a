@@ -129,4 +129,13 @@ describe("a home page section's products", () => {
     expect(cards[0].parentElement?.className).not.toContain("md:justify-center");
     expect(cards[0].className).toContain("md:w-auto");
   });
+
+  it("stop on a card when swiped on a phone, and lay out as a grid from md", () => {
+    // The cards were `snap-start` in a row with no snap: a swipe stopped mid-card.
+    renderSection(5);
+    const row = screen.getAllByTestId("card")[0].parentElement!;
+    expect(row.className).toContain("snap-x snap-mandatory");
+    expect(row.className).toContain("overscroll-x-contain");
+    expect(row.className).toContain("md:snap-none");
+  });
 });

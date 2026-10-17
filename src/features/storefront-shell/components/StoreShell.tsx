@@ -72,7 +72,9 @@ export function StoreShell() {
           UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
       <div
-        className={`sticky top-0 z-40 ${isGlass ? "backdrop-blur-md" : ""}`}
+        // Its colour runs under the status bar of a store added to the home screen (the page
+        // is `viewport-fit=cover`); its content starts below it. Zero in a browser tab.
+        className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${isGlass ? "backdrop-blur-md" : ""}`}
         style={{
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",

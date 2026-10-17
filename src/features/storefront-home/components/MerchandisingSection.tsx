@@ -94,10 +94,12 @@ export function MerchandisingSection({
   const banner = SECTION_BANNER[resolveBannerSize(settings.storefront_banner_size)];
   const layout = railLayout(products.length);
 
+  // On a phone the row scrolls sideways: it stops on a card (each card is `snap-start`; the row
+  // had no snap, so a swipe stopped mid-card) and a swipe at its end does not move the page.
   const productGrid = (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className={`flex overflow-x-auto flex-nowrap gap-4 pb-4 ${railPhoneAlign(products.length)} ${RAIL_CONTAINER[layout]}`}
+      className={`flex overflow-x-auto overscroll-x-contain snap-x snap-mandatory md:snap-none flex-nowrap gap-4 pb-4 ${railPhoneAlign(products.length)} ${RAIL_CONTAINER[layout]}`}
     >
       {products.map((product) => (
         <ProductCard

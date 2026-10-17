@@ -178,8 +178,10 @@
   transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
-.auth-sheen:hover::after {
-  transform: translateX(120%);
+@media (hover: hover) and (pointer: fine) {
+  .auth-sheen:hover::after {
+    transform: translateX(120%);
+  }
 }
 
 @keyframes auth-pulse-dot {

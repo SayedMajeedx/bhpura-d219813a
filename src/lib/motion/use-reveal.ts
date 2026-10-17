@@ -50,7 +50,10 @@ function getPooledObserver(threshold: number, rootMargin: string): ObserverPoolE
  * Guarantees zero Cumulative Layout Shift (CLS) as space is preserved.
  */
 export function useReveal<T extends HTMLElement = HTMLDivElement>(options: UseRevealOptions = {}) {
-  const { threshold = 0.1, rootMargin = "0px 0px -40px 0px", disabled = false } = options;
+  // Shown as it comes on screen, and the whole width of the screen beside it: a card in a
+  // sideways rail is already shown when it is swiped to (it waited, a blank grey box, until it
+  // was 40px inside the screen).
+  const { threshold = 0.1, rootMargin = "0px 100% 0px 100%", disabled = false } = options;
   const ref = useRef<T | null>(null);
   const [isRevealed, setIsRevealed] = useState(false);
 

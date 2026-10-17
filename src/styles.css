@@ -5,6 +5,7 @@
 @source "../src";
 @import "tw-animate-css";
 @import "./styles/layout-guards.css";
+@import "./styles/mobile-native.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -692,11 +693,17 @@ html.is-embedded .hero-carousel-text-card a {
     box-shadow: inset 0 1px 0 0 var(--os-highlight);
   }
 
+  /* Transform and shadow only (`all` also animated colours and size), at 200ms on a strong
+     ease-out. A finger has no hover: the lift is for a mouse, the press is for everyone. */
   .os-interactive {
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      transform 0.2s cubic-bezier(0.23, 1, 0.32, 1),
+      box-shadow 0.2s cubic-bezier(0.23, 1, 0.32, 1);
   }
-  .os-interactive:hover {
-    transform: translateY(-2px) scale(1.02);
+  @media (hover: hover) and (pointer: fine) {
+    .os-interactive:hover {
+      transform: translateY(-2px) scale(1.02);
+    }
   }
   .os-interactive:active {
     transform: translateY(0) scale(0.98);
@@ -995,11 +1002,14 @@ html.is-embedded .hero-carousel-text-card a {
     box-shadow 0.25s ease;
 }
 
-.pkg-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 20px 40px -16px color-mix(in oklch, var(--primary) 60%, transparent),
-    0 2px 8px -2px color-mix(in oklch, var(--primary) 30%, transparent);
+/* A tap is not a hover: on a phone the lift stayed on after the tap. */
+@media (hover: hover) and (pointer: fine) {
+  .pkg-card:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 20px 40px -16px color-mix(in oklch, var(--primary) 60%, transparent),
+      0 2px 8px -2px color-mix(in oklch, var(--primary) 30%, transparent);
+  }
 }
 
 @keyframes pkgAura {
@@ -1148,9 +1158,11 @@ html.is-embedded .hero-carousel-text-card a {
     box-shadow 0.2s ease;
 }
 
-.rental-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+@media (hover: hover) and (pointer: fine) {
+  .rental-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+  }
 }
 
 .rental-card__tear {
