@@ -69,17 +69,73 @@ describe("homeMerchandising", () => {
     product("c"),
   ];
 
+  const none = { new: false, best: false, sale: false, trending: false };
+
   it("fills the rails from the products and the rankings", () => {
+    // No rail drawn, so none claims a product: each holds its whole list.
     const rails = homeMerchandising(
       products,
       [{ product_id: "c" }, { product_id: "sold-out" }, { product_id: "a" }],
       [{ product_id: "b" }],
+      none,
     );
     expect(ids(rails.newest)).toEqual(["a", "b", "c", "sold-out"]);
     // Ranked, with sold-out products last.
     expect(ids(rails.bestSellers)).toEqual(["c", "a", "sold-out"]);
     expect(ids(rails.saleProducts)).toEqual(["b"]);
     expect(ids(rails.trending)).toEqual(["b"]);
+  });
+
+  it("shows a product in one rail only: sale, then best sellers, trending, the newest", () => {
+    // Pura: 11 products drew 22 rail cards, the best sellers again under trending.
+    const rails = homeMerchandising(
+      products,
+      [{ product_id: "c" }, { product_id: "b" }],
+      [{ product_id: "b" }, { product_id: "c" }, { product_id: "a" }],
+    );
+    expect(ids(rails.saleProducts)).toEqual(["b"]);
+    expect(ids(rails.bestSellers)).toEqual(["c"]);
+    expect(ids(rails.trending)).toEqual(["a"]);
+    expect(ids(rails.newest)).toEqual(["sold-out"]);
+  });
+
+  it("lets a rail that is not drawn keep nothing from the others", () => {
+    // The removed July version counted the hidden new arrivals and emptied every other rail.
+    const rails = homeMerchandising(products, [{ product_id: "b" }, { product_id: "a" }], [], {
+      new: false,
+      best: true,
+      sale: false,
+      trending: true,
+    });
+    expect(ids(rails.bestSellers)).toEqual(["b", "a"]);
+  });
+
+  it("fills a rail up to 8 from its own list after the others took theirs", () => {
+    const many = Array.from({ length: 12 }, (_, i) => product(`p${i}`, { sale: i < 3 }));
+    const rails = homeMerchandising(many, undefined, undefined);
+    expect(ids(rails.saleProducts)).toEqual(["p0", "p1", "p2"]);
+    expect(ids(rails.newest)).toEqual(["p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10"]);
+  });
+
+  it("puts on sale only what can be bought at the lower price", () => {
+    // A sold-out size priced down does not put a product that is sold from stock on sale.
+    const soldOutSize = {
+      ...product("x"),
+      product_variants: [
+        {
+          id: "x1",
+          selling_price: 30,
+          original_price: null,
+          stock_main: 2,
+          size: "54",
+          color: null,
+        },
+        { id: "x2", selling_price: 23, original_price: 30, stock_main: 0, size: "56", color: null },
+      ],
+    } as ProductRow;
+    const madeToOrder = { ...soldOutSize, id: "y", is_made_to_order: true } as ProductRow;
+    const rails = homeMerchandising([soldOutSize, madeToOrder], undefined, undefined);
+    expect(ids(rails.saleProducts)).toEqual(["y"]);
   });
 
   it("shows at most 8 per rail", () => {

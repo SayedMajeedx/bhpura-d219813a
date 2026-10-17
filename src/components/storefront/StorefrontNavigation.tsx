@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
+import { cardPrice } from "@/lib/product-price";
 import {
   Search,
   Menu,
@@ -857,8 +858,10 @@ function SearchBar() {
                   <ul className="divide-y divide-border">
                     {results.map((p: any) => {
                       const displayName = pickName(lang, p);
-                      const price = p.product_variants?.[0]?.selling_price ?? 0;
-                      const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
+                      // What can be bought now, and its own discount (src/lib/product-price.ts).
+                      const shown = cardPrice(p, p.product_variants);
+                      const price = shown.from;
+                      const oldPrice = shown.was ?? 0;
                       const imageUrl =
                         p.image_url ||
                         p.media?.find((item: any) => item.type === "image")?.url ||

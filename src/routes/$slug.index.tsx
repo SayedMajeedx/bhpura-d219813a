@@ -96,10 +96,17 @@ function StoreHome() {
     initialData: loaderData.trendingRows,
   });
 
-  // Directly map merchandising sections with NO deduplication logic
+  // A product shows in one rail only, among the rails the page draws (the grid stays whole).
+  const editorialSections = settings.homepage_editorial_sections;
   const { newest, bestSellers, saleProducts, trending } = useMemo(
-    () => homeMerchandising(products ?? [], bestSellerRows, trendingRows),
-    [products, bestSellerRows, trendingRows],
+    () =>
+      homeMerchandising(products ?? [], bestSellerRows, trendingRows, {
+        new: Boolean(settings.show_new_arrivals),
+        best: editorialSections.best.enabled,
+        sale: editorialSections.sale.enabled,
+        trending: editorialSections.trending.enabled,
+      }),
+    [products, bestSellerRows, trendingRows, settings.show_new_arrivals, editorialSections],
   );
 
   const filtered = useMemo(

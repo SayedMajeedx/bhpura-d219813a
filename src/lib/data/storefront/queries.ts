@@ -11,6 +11,7 @@ import {
   QUICK_SEARCH_SELECT,
   RECOMMENDATION_SELECT,
 } from "./selects";
+import { productOnSale } from "@/lib/product-price";
 import type {
   BestSellerRow,
   ProductRow,
@@ -347,11 +348,7 @@ export async function fetchCategoryProducts(
   }
   const rows = data as unknown as ProductRow[];
   if (scope.kind !== "offers") return rows;
-  return rows.filter((product) =>
-    product.product_variants.some(
-      (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0),
-    ),
-  );
+  return rows.filter(productOnSale);
 }
 
 /* ------------------------------------------------------------------------- */

@@ -1,9 +1,10 @@
 import { hasAvailableStock, type ProductRow, type StorefrontCategory } from "@/lib/data/storefront";
 import type { PublicSettings } from "@/lib/storefront-context";
+import { productOnSale } from "@/lib/product-price";
 
 /**
  * The home page's product rules: available products first, the four rails
- * (new, best sellers, sale, trending), the grid filtered by the chosen
+ * (new, best sellers, sale, trending; a product in one rail only), the grid filtered by the chosen
  * category or collection, and the backgrounds that join the promo cards and
  * the product grid to the editorial sections next to them.
  */
@@ -35,55 +36,72 @@ export function availableFirst(products: ProductRow[]): ProductRow[] {
     .map(({ product }) => product);
 }
 
-/** Up to 8 products for each rail: newest, best sellers and trending by rank, and on sale. */
+/** Which rails the page draws: a rail that is not drawn claims no product. */
+export type ShownRails = Record<"new" | "best" | "sale" | "trending", boolean>;
+
+const ALL_RAILS: ShownRails = { new: true, best: true, sale: true, trending: true };
+
+/**
+ * Which rail keeps a product that two rails would show: a sale first (the store chose it, and
+ * it ends), then the best sellers and trending (ranked by orders and visits), then the newest.
+ */
+const CLAIM_ORDER = ["sale", "best", "trending", "new"] as const;
+
+const RAIL_SIZE = 8;
+
+/**
+ * Up to 8 products for each rail: newest, best sellers and trending by rank, and on sale. A
+ * product shows in one rail only, the first of `CLAIM_ORDER` that is drawn and wants it: with a
+ * small catalogue the rails all drew the same pieces (Pura: 11 products as 22 cards). Each rail
+ * still fills up to 8 from its own list, and the grid below is the whole catalogue, untouched.
+ * A rail left with nothing is not drawn (`MerchandisingSection`).
+ */
 export function homeMerchandising(
   products: ProductRow[],
   bestSellerRows: RankingRows,
   trendingRows: RankingRows,
+  shown: ShownRails = ALL_RAILS,
 ) {
   const list = availableFirst(products);
+  const ranked = (rows: RankingRows) => {
+    const rank = new Map(
+      (rows ?? []).map((row: any, index: number) => [String(row.product_id), index]),
+    );
+    return list
+      .filter((p) => rank.has(p.id))
+      .sort(
+        (a, b) =>
+          Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
+          ((rank.get(a.id) as number) ?? 99) - ((rank.get(b.id) as number) ?? 99),
+      );
+  };
 
-  // 1. New Arrivals
-  const newestList = list.slice(0, 8);
+  const candidates = {
+    new: list,
+    best: ranked(bestSellerRows),
+    sale: list.filter(productOnSale),
+    trending: ranked(trendingRows),
+  };
 
-  // 2. Best Sellers (mapped to RPC best sellers)
-  const bestIds = new Map(
-    (bestSellerRows ?? []).map((row: any, index: number) => [String(row.product_id), index]),
-  );
-  const bestSellersList = list
-    .filter((p) => bestIds.has(p.id))
-    .sort(
-      (a, b) =>
-        Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
-        ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
-    )
-    .slice(0, 8);
-
-  // 3. Sale (where original_price > selling_price)
-  const saleList = list
-    .filter((p) =>
-      p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0)),
-    )
-    .slice(0, 8);
-
-  // 4. Trending Now (mapped to RPC trending)
-  const trendingIds = new Map<string, number>(
-    (trendingRows ?? []).map((row: any, index: number) => [String(row.product_id), index]),
-  );
-  const trendingList = list
-    .filter((p) => trendingIds.has(p.id))
-    .sort(
-      (a, b) =>
-        Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
-        ((trendingIds.get(a.id) as number) ?? 99) - ((trendingIds.get(b.id) as number) ?? 99),
-    )
-    .slice(0, 8);
+  const claimed = new Set<string>();
+  const rails = { new: [], best: [], sale: [], trending: [] } as Record<
+    keyof ShownRails,
+    ProductRow[]
+  >;
+  for (const kind of CLAIM_ORDER) {
+    if (!shown[kind]) {
+      rails[kind] = candidates[kind].slice(0, RAIL_SIZE);
+      continue;
+    }
+    rails[kind] = candidates[kind].filter((p) => !claimed.has(p.id)).slice(0, RAIL_SIZE);
+    for (const p of rails[kind]) claimed.add(p.id);
+  }
 
   return {
-    newest: newestList,
-    bestSellers: bestSellersList,
-    saleProducts: saleList,
-    trending: trendingList,
+    newest: rails.new,
+    bestSellers: rails.best,
+    saleProducts: rails.sale,
+    trending: rails.trending,
   };
 }
 
@@ -132,13 +150,7 @@ export function homeGridProducts({
             ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
         );
     }
-    if (isSale) {
-      return list.filter((p) =>
-        p.product_variants.some(
-          (v) => Number(v.original_price || 0) > Number(v.selling_price || 0),
-        ),
-      );
-    }
+    if (isSale) return list.filter(productOnSale);
 
     // Filter recursively by the leaf selection (deepest active level)
     const leafSlug = activeCategorySlugs[activeCategorySlugs.length - 1];

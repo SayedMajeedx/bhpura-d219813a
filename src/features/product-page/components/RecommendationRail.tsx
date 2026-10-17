@@ -5,6 +5,7 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { type RecommendationProduct } from "@/lib/data/storefront";
+import { cardPrice } from "@/lib/product-price";
 
 export function RecommendationRail({
   title,
@@ -27,13 +28,8 @@ export function RecommendationRail({
         className={`-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:scroll-px-0 sm:gap-4 sm:px-0 [scrollbar-width:thin] ${railPhoneAlign(products.length)}`}
       >
         {products.map((item) => {
-          const variants = item.product_variants
-            .filter((variant) => Number(variant.selling_price || 0) >= 0)
-            .sort((a, b) => Number(a.selling_price) - Number(b.selling_price));
-          const discounted = variants.find(
-            (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0),
-          );
-          const priced = discounted ?? variants[0];
+          // What a shopper can buy now, and its own discount (src/lib/product-price.ts).
+          const price = cardPrice(item, item.product_variants);
           const media = Array.isArray(item.media)
             ? (item.media as Array<{ type: string; url: string }>)
             : [];
@@ -68,7 +64,7 @@ export function RecommendationRail({
               </div>
               <div className="mt-2 min-w-0">
                 <div className="line-clamp-2 min-h-10 text-sm font-medium leading-5">{name}</div>
-                {priced && (
+                {price.from > 0 && (
                   <div
                     className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-semibold"
                     style={{ color: "var(--sf-heading)" }}
@@ -79,10 +75,13 @@ export function RecommendationRail({
                       </span>
                     ) : (
                       <>
-                        <span>{formatPrice(Number(priced.selling_price), currency, lang)}</span>
-                        {Number(priced.original_price || 0) > Number(priced.selling_price) && (
+                        <span>
+                          {price.to > price.from ? `${t("من", "From")} ` : ""}
+                          {formatPrice(price.from, currency, lang)}
+                        </span>
+                        {price.was && (
                           <span className="font-normal text-muted-foreground line-through">
-                            {formatPrice(Number(priced.original_price), currency, lang)}
+                            {formatPrice(price.was, currency, lang)}
                           </span>
                         )}
                       </>

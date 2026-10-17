@@ -35,9 +35,12 @@ export const PRODUCT_DETAIL_SELECT =
 export const RECOMMENDATION_SELECT =
   "id, name, name_ar, name_en, category, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)";
 
-/** Instant search boxes. Type: `QuickSearchResult`. */
+/**
+ * Instant search boxes. Type: `QuickSearchResult`. The availability columns let a result's
+ * price come from what can be bought now (`cardPrice`, src/lib/product-price.ts).
+ */
 export const QUICK_SEARCH_SELECT =
-  "id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock)";
+  "id, name, name_ar, name_en, category, image_url, media, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, product_variants(id, selling_price, original_price, stock, stock_main, stock_incubator)";
 
 /** Every category surface: menus, home tiles, category pages, search. Type: `StorefrontCategory`. */
 export const CATEGORY_SELECT =
