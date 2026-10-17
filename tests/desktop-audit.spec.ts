@@ -261,6 +261,29 @@ async function evaluateSettled<T>(page: Page, fn: () => T): Promise<T> {
   }
 }
 
+/**
+ * Opens an admin page and waits until it has drawn: the app shell's <main>, or the sign-in page.
+ * On a cold dev server the first visits compile the route graph and Vite re-bundles packages it
+ * finds on the way; a page whose client entry was being re-bundled while it loaded ("Failed to
+ * fetch dynamically imported module") never starts and stays on the server's loading skeleton.
+ * The audit used to move on without waiting, and the third page (inventory) hung on it. Such a
+ * page is loaded once more; a built site has no re-bundling.
+ */
+async function openReady(page: Page, path: string) {
+  const ready = async () =>
+    (await page.locator("main").count()) > 0 || page.url().includes("/auth");
+  const response = await page.goto(path);
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await expect.poll(ready, { timeout: 30_000 }).toBe(true);
+      return response;
+    } catch (error) {
+      if (attempt >= 2) throw error;
+      await page.reload();
+    }
+  }
+}
+
 test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page }) => {
   // About twenty routes, each allowed up to 30 s on a cold dev server (the first
   // visit compiles its modules): a 120 s budget for all of them ran out first.
@@ -286,6 +309,8 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
         lower.includes("status of 401") ||
         lower.includes("status of 403") ||
         lower.includes("status of 404") ||
+        // The dev server re-bundling a package under a loading page (see openReady).
+        lower.includes("failed to fetch dynamically imported module") ||
         lower.includes("can't perform a react state update");
       if (!isNetworkNoise) {
         console.log(`[BROWSER ${msg.type().toUpperCase()}]`, text);
@@ -296,13 +321,14 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
 
   page.on("pageerror", (err) => {
     console.log("[PAGE UNCAUGHT ERROR]", err.message);
+    // The dev server re-bundling a package under a loading page (see openReady).
+    if (err.message.includes("Failed to fetch dynamically imported module")) return;
     consoleLogs.push({ type: "pageerror", text: err.message });
   });
 
   // 1. Audit Dashboard
   console.log("--- AUDITING DASHBOARD ---");
-  await page.goto("/admin/b/test-brand/dashboard");
-  await page.waitForLoadState("domcontentloaded");
+  await openReady(page, "/admin/b/test-brand/dashboard");
 
   const viewport = page.viewportSize();
   expect(viewport?.width).toBe(1920);
@@ -326,8 +352,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
 
   // 2. Audit Orders
   console.log("--- AUDITING ORDERS ---");
-  await page.goto("/admin/b/test-brand/orders");
-  await page.waitForLoadState("domcontentloaded");
+  await openReady(page, "/admin/b/test-brand/orders");
 
   // Check table row hover effects and layout
   const orderRows = page.locator("table tbody tr");
@@ -349,7 +374,7 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
 
   // 3. Audit Inventory (Products)
   console.log("--- AUDITING INVENTORY / PRODUCTS ---");
-  const invResponse = await page.goto("/admin/b/test-brand/inventory");
+  const invResponse = await openReady(page, "/admin/b/test-brand/inventory");
   expect(invResponse?.status() ?? 200).toBeLessThan(400);
   await page.waitForLoadState("domcontentloaded");
   await expect(page.locator("main").first()).toBeVisible();
@@ -369,13 +394,11 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
 
   // 4. Audit Analytics / Reports
   console.log("--- AUDITING REPORTS ---");
-  await page.goto("/admin/b/test-brand/reports");
-  await page.waitForLoadState("domcontentloaded");
+  await openReady(page, "/admin/b/test-brand/reports");
 
   // 5. Audit Settings
   console.log("--- AUDITING SETTINGS ---");
-  await page.goto("/admin/b/test-brand/settings");
-  await page.waitForLoadState("domcontentloaded");
+  await openReady(page, "/admin/b/test-brand/settings");
 
   const remainingAdminRoutes = [
     "/admin/b/test-brand/customers",

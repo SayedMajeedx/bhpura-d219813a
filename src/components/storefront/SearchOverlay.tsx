@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { storefrontQueries } from "@/lib/data/storefront";
@@ -7,7 +8,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { cardPrice } from "@/lib/product-price";
-import { Search, X, Sparkles, Clock, ArrowRight, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Search, X, Sparkles, Clock, ShoppingBag } from "lucide-react";
 
 /** How many products the overlay lists while typing. */
 const OVERLAY_RESULT_LIMIT = 10;
@@ -26,6 +27,16 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const [query, setQuery] = useState("");
+  // Drawn in the store's shell, not where it is mounted: the header that opens it is sticky with
+  // a backdrop blur and a transform, which makes it the box a `fixed` element is placed in, so
+  // the "full screen" search was the header's 79px with the page showing under it. The shell
+  // carries the store's colours and fonts and has no transform. Found once it opens, and kept.
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (isOpen && !host) {
+      setHost(document.querySelector<HTMLElement>(".storefront-shell") ?? document.body);
+    }
+  }, [isOpen, host]);
   const [debounced, setDebounced] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
@@ -152,43 +163,33 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
     });
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !host) return null;
 
-  const BackIcon = isAr ? ArrowRight : ArrowLeft;
-
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
       aria-label={t("البحث في المتجر", "Store Search")}
       dir={isAr ? "rtl" : "ltr"}
-      className="fixed inset-0 z-50 flex flex-col bg-background/98 backdrop-blur-xl animate-in fade-in duration-200"
+      // Solid, in the store's own background: at 98% with a full-screen blur the page ghosted
+      // through, and the blur is costly on a phone.
+      className="fixed inset-0 z-50 flex flex-col bg-background animate-in fade-in duration-200"
+      style={{ backgroundColor: settings?.background_color || undefined }}
     >
-      {/* 1. Header Search Bar */}
-      <div className="flex h-16 items-center gap-2 border-b border-border px-4 sm:px-6">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-11 w-11 shrink-0 rounded-full text-foreground hover:bg-muted"
-          aria-label={t("رجوع", "Back")}
-        >
-          <BackIcon className="h-5 w-5" />
-        </Button>
-
+      {/* 1. Header Search Bar: the field and one way out (Cancel, or Escape), below the notch. */}
+      <div className="flex min-h-16 items-center gap-2 border-b border-border px-4 pt-[env(safe-area-inset-top,0px)] sm:px-6">
         <form onSubmit={handleSubmit} className="flex-1 relative flex items-center min-w-0">
           <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" />
           <input
             ref={inputRef}
             type="search"
+            enterKeyHint="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t(
-              "ابحث عن أي قطعة، قماش، أو لون...",
-              "Search products, fabrics, colors...",
-            )}
-            className="h-11 w-full rounded-full border border-border bg-muted/50 ps-9 pe-9 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            placeholder={t("ابحث عن قطعة أو قماش…", "Search products, fabrics…")}
+            // Room for the clear button only while there is text to clear.
+            // The browser's own clear (x) for a search field is hidden: the field has its own.
+            className={`h-11 w-full appearance-none rounded-full border border-border bg-muted/50 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none ps-9 ${query ? "pe-11" : "pe-4"} text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
             autoComplete="off"
             autoCorrect="off"
             spellCheck={false}
@@ -214,7 +215,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           type="button"
           variant="ghost"
           onClick={onClose}
-          className="h-11 px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+          className="h-11 shrink-0 px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
         >
           {t("إلغاء", "Cancel")}
         </Button>
@@ -340,6 +341,14 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                   product.media?.find((item: any) => item.type === "image")?.url ||
                   null;
                 const hasDiscount = oldPrice > price;
+                // The category's name in the shopper's language (a product keeps its slug); none
+                // rather than a raw slug like "abayas".
+                const category = categories.find(
+                  (c) => c.slug === product.category || c.name_en === product.category,
+                );
+                const categoryName = category
+                  ? (isAr ? category.name_ar : null) || category.name_en
+                  : null;
 
                 return (
                   <li key={product.id}>
@@ -372,18 +381,17 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                         <h4 className="text-sm font-semibold text-foreground line-clamp-2 break-words group-hover:text-primary transition-colors">
                           {displayName}
                         </h4>
-                        {product.category && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {product.category}
-                          </p>
+                        {categoryName && (
+                          <p className="text-xs text-muted-foreground truncate">{categoryName}</p>
                         )}
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs font-bold text-primary">
-                            {formatPrice(price, settings.currency)}
+                            {shown.to > price ? `${t("من", "From")} ` : ""}
+                            {formatPrice(price, settings.currency, lang)}
                           </span>
                           {hasDiscount && (
                             <span className="text-xs text-muted-foreground line-through">
-                              {formatPrice(oldPrice, settings.currency)}
+                              {formatPrice(oldPrice, settings.currency, lang)}
                             </span>
                           )}
                         </div>
@@ -408,6 +416,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    host,
   );
 }
