@@ -351,6 +351,7 @@ export function OrderSummaryCard({
             <div className="flex gap-2">
               <Input
                 type="number"
+                inputMode="numeric"
                 min="1"
                 max={loyaltyAccount?.active_points}
                 placeholder={t("أدخل عدد النقاط...", "Enter points to redeem...")}

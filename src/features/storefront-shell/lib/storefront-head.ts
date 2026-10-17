@@ -10,6 +10,7 @@ import { jsonForScript } from "@/lib/seo/json-for-script";
 import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
+import { storefrontThemeColor } from "@/lib/theme-color";
 
 /**
  * The storefront's <head>: language and direction, title and description
@@ -134,6 +135,8 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: desc },
       { name: "twitter:image", content: img },
+      // The phone's status bar takes the store's header colour.
+      { name: "theme-color", content: storefrontThemeColor(settings?.header_bg) },
     ],
     links,
     scripts,

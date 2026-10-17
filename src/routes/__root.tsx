@@ -8,6 +8,7 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
+import { ADMIN_THEME_COLOR } from "@/lib/theme-color";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
@@ -82,6 +83,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // The phone's status bar takes the admin bar's colour; a store's pages set their own.
+      { name: "theme-color", content: ADMIN_THEME_COLOR.light },
       { title: "Boutq — Boutique Management" },
       {
         name: "description",

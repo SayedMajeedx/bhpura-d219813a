@@ -304,7 +304,9 @@ export function OsMobileNavigation({
   return (
     <>
       {/* Mobile Top Header */}
-      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm">
+      {/* Under the notch when the admin runs full screen (`viewport-fit=cover`), its content below
+          it; app-shell pads the page by the same amount. Zero in a browser tab and in the app. */}
+      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] flex items-center justify-between px-3 border-b border-[var(--os-border)] os-glass-strong text-foreground shadow-sm">
         <Sheet open={mobileOpen} onOpenChange={onOpenChangeMobile}>
           <SheetTrigger asChild>
             <Button
@@ -368,7 +370,7 @@ export function OsMobileNavigation({
                     onOpenChangeMobile(false);
                     setAppsHubOpen(true);
                   }}
-                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/10 to-amber-500/10 border border-primary/25 text-primary shadow-xs transition-all active:scale-[0.98]"
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/10 to-amber-500/10 border border-primary/25 text-primary shadow-xs transition active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
@@ -414,7 +416,7 @@ export function OsMobileNavigation({
                             params={item.params as any}
                             onClick={() => onOpenChangeMobile(false)}
                             className={cn(
-                              "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 active:scale-[0.98]",
+                              "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition duration-200 active:scale-[0.98]",
                               active
                                 ? "bg-primary text-primary-foreground font-semibold shadow-md border border-primary/30"
                                 : "text-foreground/90 hover:text-foreground hover:bg-card/40",
@@ -423,7 +425,7 @@ export function OsMobileNavigation({
                             <div className="flex items-center gap-3 min-w-0">
                               <div
                                 className={cn(
-                                  "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition-all",
+                                  "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition",
                                   active
                                     ? "bg-white/20 text-primary-foreground shadow-2xs"
                                     : "bg-primary/10 text-primary border border-primary/20",
@@ -452,7 +454,7 @@ export function OsMobileNavigation({
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold text-primary hover:bg-primary/10 border-primary/30 bg-primary/5 rounded-2xl transition-all"
+                  className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold text-primary hover:bg-primary/10 border-primary/30 bg-primary/5 rounded-2xl transition"
                   onClick={() => {
                     (window as any).ReactNativeWebView?.postMessage(
                       JSON.stringify({ type: "OPEN_NATIVE_TOOLS" }),
@@ -479,7 +481,7 @@ export function OsMobileNavigation({
                     variant={theme === "light" ? "default" : "ghost"}
                     onClick={() => setTheme("light")}
                     className={cn(
-                      "h-8 w-8 p-0 rounded-lg transition-all",
+                      "h-8 w-8 p-0 rounded-lg transition",
                       theme !== "light" && "text-muted-foreground hover:text-foreground",
                     )}
                     title={lang === "ar" ? "فاتح" : "Light"}
@@ -493,7 +495,7 @@ export function OsMobileNavigation({
                     variant={theme === "dark" ? "default" : "ghost"}
                     onClick={() => setTheme("dark")}
                     className={cn(
-                      "h-8 w-8 p-0 rounded-lg transition-all",
+                      "h-8 w-8 p-0 rounded-lg transition",
                       theme !== "dark" && "text-muted-foreground hover:text-foreground",
                     )}
                     title={lang === "ar" ? "داكن" : "Dark"}
@@ -507,7 +509,7 @@ export function OsMobileNavigation({
                     variant={theme === "system" ? "default" : "ghost"}
                     onClick={() => setTheme("system")}
                     className={cn(
-                      "h-8 w-8 p-0 rounded-lg transition-all",
+                      "h-8 w-8 p-0 rounded-lg transition",
                       theme !== "system" && "text-muted-foreground hover:text-foreground",
                     )}
                     title={lang === "ar" ? "تلقائي" : "Auto"}
@@ -525,7 +527,7 @@ export function OsMobileNavigation({
                     variant={lang === "ar" ? "default" : "ghost"}
                     onClick={() => onSetLang("ar")}
                     className={cn(
-                      "h-8 px-2.5 text-xs font-bold rounded-lg transition-all justify-center",
+                      "h-8 px-2.5 text-xs font-bold rounded-lg transition justify-center",
                       lang !== "ar" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -537,7 +539,7 @@ export function OsMobileNavigation({
                     variant={lang === "en" ? "default" : "ghost"}
                     onClick={() => onSetLang("en")}
                     className={cn(
-                      "h-8 px-2.5 text-xs font-bold rounded-lg transition-all justify-center",
+                      "h-8 px-2.5 text-xs font-bold rounded-lg transition justify-center",
                       lang !== "en" && "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -549,7 +551,7 @@ export function OsMobileNavigation({
               {/* Sign Out Action */}
               <Button
                 variant="outline"
-                className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold text-destructive hover:bg-destructive/15 border-destructive/30 bg-destructive/5 rounded-2xl transition-all"
+                className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold text-destructive hover:bg-destructive/15 border-destructive/30 bg-destructive/5 rounded-2xl transition"
                 onClick={onSignOut}
               >
                 <LogOut className="h-4 w-4" />

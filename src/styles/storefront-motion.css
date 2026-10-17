@@ -1,12 +1,14 @@
 /* Storefront 2.0 Motion System — Layer 3 */
 
 /* Base scroll reveal (Zero CLS impact: geometry is fixed, only opacity & translateY animate) */
+/* 300ms and 12px: a shopper scrolls past dozens of these, and at 450ms the cards they scrolled to
+   were still faint. */
 .sf-reveal {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(12px);
   transition:
-    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.3s cubic-bezier(0.23, 1, 0.32, 1),
+    transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
   will-change: opacity, transform;
 }
 

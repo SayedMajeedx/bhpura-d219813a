@@ -1,0 +1,46 @@
+/*
+ * Phone rules: the platform layer that decides whether the admin and a store feel installed or
+ * like a website on a phone. Each rule says why; tests/mobile-native.test.ts keeps them.
+ */
+
+/*
+ * iOS Safari zooms the page when a field under 16px takes focus and does not zoom back out, so
+ * the merchant is left on a cropped, drifted screen. The admin's list searches (orders,
+ * inventory, customers, settings) and two checkout fields were 12-14px. On a touch screen a field
+ * sized below 16px by its own class (or a native select, 13px by default) is 16px; a larger
+ * field keeps its size, and a mouse keeps the design's. This file is not in a layer, so it wins
+ * over the utility classes. Never fix this with `maximum-scale=1`: that takes zoom away from
+ * people who need it.
+ */
+@media (pointer: coarse) {
+  :is(input, textarea, select):is(
+    [class*="text-xs"],
+    [class*="text-sm"],
+    [class*="text-[10px]"],
+    [class*="text-[11px]"],
+    [class*="text-[12px]"],
+    [class*="text-[13px]"],
+    [class*="text-[14px]"],
+    [class*="text-[15px]"]
+  ),
+  select:not([class*="text-"]) {
+    font-size: 16px;
+  }
+}
+
+/*
+ * A control's label is not content: a long press on a button selected its words or opened the
+ * callout. Text that is content (an order number, an address) stays selectable. In the base
+ * layer, so a control's own class wins (a drag handle's `touch-none`, a `select-text`).
+ */
+@layer base {
+  button,
+  [role="button"],
+  [role="tab"] {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    /* Fires the tap at once: the element never double-tap-zooms. */
+    touch-action: manipulation;
+  }
+}

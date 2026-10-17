@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { ADMIN_THEME_COLOR, applyThemeColor } from "@/lib/theme-color";
 
 /**
  * Admin theme preference.
@@ -70,9 +71,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.classList.toggle("dark", resolvedTheme === "dark");
     // Native form controls and scrollbars follow this, not the class.
     root.style.colorScheme = resolvedTheme;
+    // The status bar follows the admin's theme, not only the OS setting.
+    const restoreThemeColor = applyThemeColor(ADMIN_THEME_COLOR[resolvedTheme]);
     return () => {
       root.classList.remove("dark");
       root.style.colorScheme = "";
+      restoreThemeColor();
     };
   }, [resolvedTheme]);
 
