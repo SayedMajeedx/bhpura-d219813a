@@ -73,14 +73,15 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")
   notFoundComponent: () => <OrderErrorBoundary />,
 });
 
-function OrderErrorBoundary({ error }: { error?: Error }) {
+function OrderErrorBoundary({ error }: { error?: unknown }) {
   const { slug } = Route.useParams();
+  const message = error instanceof Error ? error.message : "";
   return (
     <div className="p-8 max-w-lg mx-auto">
       <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-8 text-center space-y-3">
         <h2 className="text-xl font-display">Order</h2>
         <p className="text-muted-foreground">
-          {error?.message || "This order could not be loaded. It may have been deleted."}
+          {message || "This order could not be loaded. It may have been deleted."}
         </p>
         <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-primary underline">
           ← Back to orders
