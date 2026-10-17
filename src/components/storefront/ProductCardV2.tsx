@@ -12,6 +12,7 @@ import { QuickViewModal } from "@/components/storefront/QuickViewModal";
 import { useReveal } from "@/lib/motion/use-reveal";
 import { serviceLengthsText } from "@/lib/bookings/service-lengths";
 import { hasAvailableStock } from "@/lib/data/storefront";
+import { cardPrice } from "@/lib/product-price";
 
 export interface ProductCardV2Props {
   product: any;
@@ -76,12 +77,10 @@ export function ProductCardV2({
     mediaList.length > 1
       ? mediaList.find((m, i) => i > 0 && (m.type === "image" || !m.type))?.url || null
       : variants.find((v) => v.image_url && v.image_url !== primaryImage)?.image_url || null;
-  const prices = variants
-    .map((v) => Number(v.selling_price ?? v.price ?? product.base_price ?? 0))
-    .filter((p) => p > 0);
-  const minPrice = prices.length > 0 ? Math.min(...prices) : Number(product.base_price ?? 0);
-  const maxPrice = prices.length > 0 ? Math.max(...prices) : Number(product.base_price ?? 0);
-  const originalPrice = Number(product.original_price ?? 0);
+  // What a shopper can buy now, and its own discount (one rule: src/lib/product-price.ts).
+  const price = cardPrice(product, variants);
+  const minPrice = price.from;
+  const maxPrice = price.to;
 
   // Stock
   const hasVariants = variants.length > 0;
@@ -108,14 +107,17 @@ export function ProductCardV2({
     return diffDays <= newBadgeDays;
   })();
 
-  const isSale = originalPrice > minPrice;
-
   let badgeLabel: string | null = null;
   let badgeStyle = "bg-primary text-primary-foreground border-transparent";
 
-  if (isSale) {
-    const discountPct = Math.round(((originalPrice - minPrice) / originalPrice) * 100);
-    badgeLabel = discountPct > 0 ? `-${discountPct}%` : t("تخفيض", "Sale");
+  // The store's and the product's sale badge switches (as on the classic card).
+  const saleBadge =
+    price.onSale &&
+    settings?.global_sale_badges_enabled !== false &&
+    product.show_sale_badge !== false;
+
+  if (saleBadge) {
+    badgeLabel = price.percent ? `-${price.percent}%` : t("تخفيض", "Sale");
     badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
   } else if (isNewProduct) {
     badgeLabel = t("جديد", "New");
@@ -289,16 +291,23 @@ export function ProductCardV2({
               minPrice === maxPrice ? (
                 <>
                   <span>{formatPrice(minPrice, currency, lang)}</span>
-                  {originalPrice > minPrice && (
+                  {price.was && (
                     <span className="text-xs font-normal text-muted-foreground line-through">
-                      {formatPrice(originalPrice, currency, lang)}
+                      {formatPrice(price.was, currency, lang)}
                     </span>
                   )}
                 </>
               ) : (
-                <span>
-                  {t("من", "From")} {formatPrice(minPrice, currency, lang)}
-                </span>
+                <>
+                  <span>
+                    {t("من", "From")} {formatPrice(minPrice, currency, lang)}
+                  </span>
+                  {price.was && (
+                    <span className="text-xs font-normal text-muted-foreground line-through">
+                      {formatPrice(price.was, currency, lang)}
+                    </span>
+                  )}
+                </>
               )
             ) : (
               <span>{t("السعر عند الطلب", "Price on request")}</span>

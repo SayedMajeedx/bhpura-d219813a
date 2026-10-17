@@ -260,3 +260,55 @@ describe("Storefront 2.0 cards for made-to-order items and services", () => {
     expect(screen.queryByText(/hours/)).not.toBeInTheDocument();
   });
 });
+
+describe("Storefront 2.0 cards show a sale", () => {
+  // Pura's Sabika: two sizes at 23 (was 30) at a partner, one made to order at 30. The card read
+  // a `products.original_price` that does not exist, so no new-look card ever showed a sale.
+  const sabika = {
+    id: "p3",
+    name: "Sabika",
+    name_en: "Sabika",
+    base_price: 30,
+    image_url: null,
+    is_made_to_order: true,
+    product_variants: [
+      {
+        id: "v54",
+        size: "54",
+        selling_price: 23,
+        original_price: 30,
+        stock_main: 0,
+        stock_incubator: 1,
+      },
+      {
+        id: "v55",
+        size: "55",
+        selling_price: 23,
+        original_price: 30,
+        stock_main: 0,
+        stock_incubator: 1,
+      },
+      { id: "v56", size: "56", selling_price: 30, original_price: null, stock_main: 0 },
+    ],
+  };
+
+  it("strikes the was price beside a price range and shows the discount", () => {
+    storefront.settings = { storefront_design_version: 2 };
+    withI18n(<ProductCardV2 product={sabika} />);
+    expect(screen.getByText("-23%")).toBeInTheDocument();
+    const was = screen.getByText(/30\.000/);
+    expect(was).toHaveClass("line-through");
+    expect(screen.getByText(/From/)).toHaveTextContent(/23\.000/);
+  });
+
+  it("follows the store's and the product's sale badge switches", () => {
+    storefront.settings = { storefront_design_version: 2, global_sale_badges_enabled: false };
+    const card = withI18n(<ProductCardV2 product={sabika} />);
+    expect(screen.queryByText("-23%")).not.toBeInTheDocument();
+    card.unmount();
+
+    storefront.settings = { storefront_design_version: 2 };
+    withI18n(<ProductCardV2 product={{ ...sabika, show_sale_badge: false }} />);
+    expect(screen.queryByText("-23%")).not.toBeInTheDocument();
+  });
+});

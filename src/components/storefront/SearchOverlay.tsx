@@ -6,6 +6,7 @@ import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
+import { cardPrice } from "@/lib/product-price";
 import { Search, X, Sparkles, Clock, ArrowRight, ArrowLeft, ShoppingBag } from "lucide-react";
 
 /** How many products the overlay lists while typing. */
@@ -330,8 +331,10 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
             <ul className="divide-y divide-border/60">
               {results.map((product: any) => {
                 const displayName = pickName(lang, product);
-                const price = Number(product.product_variants?.[0]?.selling_price ?? 0);
-                const oldPrice = Number(product.product_variants?.[0]?.original_price ?? 0);
+                // What can be bought now, and its own discount (src/lib/product-price.ts).
+                const shown = cardPrice(product, product.product_variants);
+                const price = shown.from;
+                const oldPrice = shown.was ?? 0;
                 const imageUrl =
                   product.image_url ||
                   product.media?.find((item: any) => item.type === "image")?.url ||

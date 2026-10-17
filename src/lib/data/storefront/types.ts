@@ -177,11 +177,17 @@ export type QuickSearchResult = {
   category: string | null;
   image_url: string | null;
   media: Array<{ type: "image" | "video"; url: string }> | null;
+  is_made_to_order?: boolean | null;
+  made_to_order_available?: number | null;
+  made_to_order_paused_at?: string | null;
+  item_kind?: string | null;
   product_variants: Array<{
     id: string;
     selling_price: number;
     original_price: number | null;
     stock: number | null;
+    stock_main?: number | null;
+    stock_incubator?: number | null;
   }>;
 };
 

@@ -5,6 +5,7 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { hasAvailableStock, type ProductRow } from "@/lib/data/storefront";
+import { cardPrice } from "@/lib/product-price";
 import { Button } from "@/components/ui/button";
 
 import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
@@ -30,23 +31,11 @@ export function ProductCard({
   const pricedVariants = product.product_variants
     .filter((variant) => Number(variant.selling_price || 0) >= 0)
     .sort((a, b) => a.selling_price - b.selling_price);
-  const discountedVariant = pricedVariants.filter(
-    (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0),
-  )[0];
-  const displayVariant = discountedVariant ?? pricedVariants[0];
-  const variantPrices = pricedVariants.map((v) => Number(v.selling_price || 0));
-  const minPrice =
-    variantPrices.length > 0
-      ? Math.min(...variantPrices)
-      : Number(displayVariant?.selling_price || 0);
-  const maxPrice =
-    variantPrices.length > 0
-      ? Math.max(...variantPrices)
-      : Number(displayVariant?.selling_price || 0);
-  const originalPrice = discountedVariant ? Number(discountedVariant.original_price) : 0;
-  const discountPercent = discountedVariant
-    ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100)
-    : 0;
+  // What a shopper can buy now, and its own discount (one rule: src/lib/product-price.ts).
+  const price = cardPrice(product, product.product_variants);
+  const minPrice = price.from;
+  const maxPrice = price.to;
+  const originalPrice = price.was ?? 0;
   // One rule for the whole storefront: made-to-order items and services never run out.
   const oos = !hasAvailableStock(product);
 
@@ -69,12 +58,18 @@ export function ProductCard({
 
   if (
     shouldShowPrices(settings) &&
-    discountPercent > 0 &&
+    price.onSale &&
     settings.global_sale_badges_enabled &&
     product.show_sale_badge !== false
   ) {
     badgeStyle = "bg-primary text-primary-foreground border-primary";
-    badgeLabel = isAr ? `وفر ${discountPercent}%` : `Sale ${discountPercent}% off`;
+    badgeLabel = price.percent
+      ? isAr
+        ? `وفر ${price.percent}%`
+        : `Sale ${price.percent}% off`
+      : isAr
+        ? "تخفيض"
+        : "Sale";
   } else if (badge === "best") {
     badgeStyle = "bg-secondary text-secondary-foreground border-border";
     badgeLabel = isAr ? "الأكثر مبيعاً" : "Best Seller";
