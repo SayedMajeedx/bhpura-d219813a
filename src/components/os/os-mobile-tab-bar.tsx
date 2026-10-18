@@ -13,16 +13,17 @@ export interface OsMobileTabItem {
 export interface OsMobileTabBarProps {
   items: OsMobileTabItem[];
   className?: string;
+  lang?: "en" | "ar";
 }
 
-export function OsMobileTabBar({ items, className }: OsMobileTabBarProps) {
+export function OsMobileTabBar({ items, className, lang = "en" }: OsMobileTabBarProps) {
   return (
     <nav
       className={cn(
         "no-print fixed bottom-0 inset-x-0 z-40 md:hidden flex items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/60 dark:border-white/20 bg-white/40 dark:bg-black/45 shadow-[0_-8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-200",
         className,
       )}
-      aria-label="Mobile Navigation"
+      aria-label={lang === "ar" ? "التنقل" : "Navigation"}
     >
       {items.map((item) => {
         const Icon = item.icon;

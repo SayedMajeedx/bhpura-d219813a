@@ -139,7 +139,7 @@ export function DiscountsWorkQueue({
                           </span>
                         ) : (
                           <span className="text-primary font-extrabold text-sm">
-                            {formatMoney(p.discount_value, currency)}
+                            {formatMoney(p.discount_value, currency, lang)}
                           </span>
                         )}
                       </div>
@@ -152,7 +152,7 @@ export function DiscountsWorkQueue({
                           <span className="text-xs">
                             {isAr ? "الحد الأدنى:" : "Min order:"}{" "}
                             <b className="text-foreground">
-                              {formatMoney(p.minimum_order_amount, currency)}
+                              {formatMoney(p.minimum_order_amount, currency, lang)}
                             </b>
                           </span>
                         )}
@@ -160,7 +160,7 @@ export function DiscountsWorkQueue({
                           <span className="text-xs">
                             {isAr ? "أقصى خصم:" : "Max cap:"}{" "}
                             <b className="text-foreground">
-                              {formatMoney(p.maximum_discount_amount, currency)}
+                              {formatMoney(p.maximum_discount_amount, currency, lang)}
                             </b>
                           </span>
                         )}
@@ -238,7 +238,7 @@ export function DiscountsWorkQueue({
                             className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold"
                             dir="ltr"
                           >
-                            {formatMoney(revenue, currency)}
+                            {formatMoney(revenue, currency, lang)}
                           </span>
                         )}
                       </div>

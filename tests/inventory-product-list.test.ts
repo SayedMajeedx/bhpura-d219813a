@@ -223,6 +223,12 @@ describe("barcodeLabelsFor", () => {
       },
     ]);
   });
+
+  it("prints the price in the store's currency", () => {
+    // A label carried no currency, so formatMoney wrote BHD on every store's labels.
+    const [label] = barcodeLabelsFor([product()], [variant()], "Zh", "SAR");
+    expect(label.currency).toBe("SAR");
+  });
 });
 
 describe("duplication", () => {

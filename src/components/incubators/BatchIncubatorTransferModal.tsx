@@ -496,7 +496,7 @@ export function BatchIncubatorTransferModal({
                       {inc.name} — (
                       {inc.commission_type === "percentage"
                         ? `${inc.commission_value}% عمولة`
-                        : `${formatMoney(inc.commission_value, inc.currency || currency)} ثابت`}
+                        : `${formatMoney(inc.commission_value, inc.currency || currency, lang)} ثابت`}
                       )
                     </option>
                   ))}
@@ -689,7 +689,7 @@ export function BatchIncubatorTransferModal({
                           {groupTotalTransferQty} {isAr ? "محول" : "transferred"}
                         </Badge>
                         <span className="font-mono font-bold text-muted-foreground">
-                          {formatMoney(groupTotalValue, currency)}
+                          {formatMoney(groupTotalValue, currency, lang)}
                         </span>
                       </div>
 
@@ -920,7 +920,7 @@ export function BatchIncubatorTransferModal({
                 {isAr ? "القيمة التقديرية:" : "Total Value:"}
               </span>
               <span className="font-mono font-bold text-foreground text-sm">
-                {formatMoney(totalValue, currency)}
+                {formatMoney(totalValue, currency, lang)}
               </span>
             </div>
           </div>

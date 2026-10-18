@@ -306,6 +306,7 @@ export function barcodeLabelsFor(
   products: Array<Pick<Product, "id" | "name">>,
   variants: Array<Pick<Variant, "product_id" | "barcode" | "size" | "color" | "selling_price">>,
   businessName: string | null,
+  currency?: string | null,
 ): LabelData[] {
   const labels: LabelData[] = [];
   for (const p of products) {
@@ -317,6 +318,7 @@ export function barcodeLabelsFor(
         size: v.size,
         color: v.color,
         price: v.selling_price,
+        currency,
         businessName,
       });
     }

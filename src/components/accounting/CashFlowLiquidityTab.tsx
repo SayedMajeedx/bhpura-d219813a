@@ -170,7 +170,7 @@ export function CashFlowLiquidityTab() {
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-2">
-            {formatMoney(cashBoxAcc.balance || 0, currency)}
+            {formatMoney(cashBoxAcc.balance || 0, currency, lang)}
           </span>
         </Card>
 
@@ -189,7 +189,7 @@ export function CashFlowLiquidityTab() {
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-2">
-            {formatMoney(bankAcc.balance || 0, currency)}
+            {formatMoney(bankAcc.balance || 0, currency, lang)}
           </span>
         </Card>
 
@@ -220,7 +220,7 @@ export function CashFlowLiquidityTab() {
             </div>
           </div>
           <span className="text-xl font-extrabold text-primary mt-2">
-            {formatMoney(totalLiquidity, currency)}
+            {formatMoney(totalLiquidity, currency, lang)}
           </span>
         </Card>
       </div>
@@ -287,7 +287,7 @@ export function CashFlowLiquidityTab() {
 
                   <div className="flex items-center gap-3">
                     <span className="font-extrabold text-xs text-foreground">
-                      {formatMoney(o.total, currency)}
+                      {formatMoney(o.total, currency, lang)}
                     </span>
 
                     {/* Status Pill Switcher */}
@@ -351,7 +351,7 @@ export function CashFlowLiquidityTab() {
                 {isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}
               </span>
               <span className="font-bold text-sm text-foreground">
-                {formatMoney(cashBoxAcc.balance || 0, currency)}
+                {formatMoney(cashBoxAcc.balance || 0, currency, lang)}
               </span>
             </div>
 

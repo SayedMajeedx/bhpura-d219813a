@@ -142,7 +142,7 @@ export function ExpensesWorkQueue({
 
                   {/* Amount */}
                   <td className="p-3 align-middle text-end font-mono font-extrabold text-sm text-foreground whitespace-nowrap">
-                    {formatMoney(e.amount, e.currency || currency)}
+                    {formatMoney(e.amount, e.currency || currency, lang)}
                   </td>
 
                   {/* Actions */}

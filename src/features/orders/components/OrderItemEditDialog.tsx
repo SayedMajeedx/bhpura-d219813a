@@ -190,7 +190,7 @@ export function OrderItemEditDialog({
 
             <div>
               <Label className="text-xs font-semibold">
-                {isAr ? "تكلفة المنتج (COGS)" : "Product Cost (COGS)"}
+                {isAr ? "تكلفة المنتج" : "Product cost"}
               </Label>
               <Input
                 type="number"

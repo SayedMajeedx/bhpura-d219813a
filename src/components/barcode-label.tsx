@@ -48,6 +48,8 @@ export type LabelData = {
   size?: string | null;
   color?: string | null;
   price?: number | null;
+  /** The store's currency: a label printed without it said BHD in every store. */
+  currency?: string | null;
   businessName?: string | null;
 };
 
@@ -61,7 +63,11 @@ export function PrintableLabel({ data }: { data: LabelData }) {
       <div className="label-barcode">
         <BarcodeSvg value={data.code} height={70} width={2.2} fontSize={14} margin={8} />
       </div>
-      {data.price != null && <div className="label-price">{formatMoney(Number(data.price))}</div>}
+      {data.price != null && (
+        <div className="label-price">
+          {formatMoney(Number(data.price), data.currency || undefined)}
+        </div>
+      )}
     </div>
   );
 }
@@ -100,7 +106,7 @@ export function printLabels(labels: LabelData[]) {
         ${l.productName ? `<div class="barcode-product">${escapeHtml(l.productName)}</div>` : ""}
         <div class="barcode-details">
           <span>${escapeHtml([l.size, l.color].filter(Boolean).join(" · "))}</span>
-          ${l.price != null ? `<strong>${escapeHtml(formatMoney(Number(l.price)))}</strong>` : ""}
+          ${l.price != null ? `<strong>${escapeHtml(formatMoney(Number(l.price), l.currency || undefined))}</strong>` : ""}
         </div>
         <div class="barcode-image">${svgs[i] ?? ""}</div>
       </div>`;

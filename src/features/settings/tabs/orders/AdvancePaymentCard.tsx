@@ -60,7 +60,7 @@ export function AdvancePaymentCard() {
   const canPayOnline = bs.card_enabled === true || bs.benefit_enabled === true;
   const currency = bs.currency || "BHD";
   const rule = advanceRuleFrom(bs, ownRules);
-  const money = (n: number) => formatMoney(n, currency);
+  const money = (n: number) => formatMoney(n, currency, lang);
   const previews = (["delivery", "pickup"] as const).map((fulfillment) => ({
     fulfillment,
     lines: advanceLines(advanceForOrder(sample(fulfillment), rule), { isAr, money }),

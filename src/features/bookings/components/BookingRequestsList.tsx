@@ -43,7 +43,9 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
                   <span className="block text-muted-foreground">
                     {booking.customer_name || booking.customer_phone || booking.reference}
                     {" · "}
-                    <span dir="ltr">{formatMoney(Number(booking.total ?? 0), page.currency)}</span>
+                    <span dir="ltr">
+                      {formatMoney(Number(booking.total ?? 0), page.currency, isAr ? "ar" : "en")}
+                    </span>
                   </span>
                 </Button>
                 <Button asChild size="sm" className="h-8 text-xs">
@@ -96,7 +98,9 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
                       .filter(Boolean)
                       .join(isAr ? "، " : ", ")}
                     {" · "}
-                    <span dir="ltr">{formatMoney(Number(booking.total ?? 0), page.currency)}</span>
+                    <span dir="ltr">
+                      {formatMoney(Number(booking.total ?? 0), page.currency, isAr ? "ar" : "en")}
+                    </span>
                   </span>
                 </Button>
                 <div className="flex gap-2">

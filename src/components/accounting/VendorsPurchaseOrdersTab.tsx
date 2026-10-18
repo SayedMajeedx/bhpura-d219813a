@@ -171,7 +171,7 @@ export function VendorsPurchaseOrdersTab() {
             {isAr ? "التزامات الموردين والديون (Accounts Payable)" : "Total Accounts Payable"}
           </span>
           <span className="text-xl font-extrabold text-amber-500 mt-1 block">
-            {formatMoney(totalAccountsPayable, currency)}
+            {formatMoney(totalAccountsPayable, currency, lang)}
           </span>
         </div>
 
@@ -265,7 +265,7 @@ export function VendorsPurchaseOrdersTab() {
                         {isAr ? "الإجمالي:" : "Total:"}
                       </span>
                       <span className="font-extrabold text-sm text-foreground">
-                        {formatMoney(total, currency)}
+                        {formatMoney(total, currency, lang)}
                       </span>
                     </div>
                   </div>
@@ -275,13 +275,13 @@ export function VendorsPurchaseOrdersTab() {
                     <div className="flex items-center justify-between text-xs">
                       <span>
                         {isAr
-                          ? `المدفوع: ${formatMoney(paid, currency)}`
-                          : `Paid: ${formatMoney(paid, currency)}`}
+                          ? `المدفوع: ${formatMoney(paid, currency, lang)}`
+                          : `Paid: ${formatMoney(paid, currency, lang)}`}
                       </span>
                       <span className="font-bold text-amber-500">
                         {isAr
-                          ? `المتبقي: ${formatMoney(remaining, currency)}`
-                          : `Remaining: ${formatMoney(remaining, currency)}`}
+                          ? `المتبقي: ${formatMoney(remaining, currency, lang)}`
+                          : `Remaining: ${formatMoney(remaining, currency, lang)}`}
                       </span>
                     </div>
 

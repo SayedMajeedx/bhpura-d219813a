@@ -206,8 +206,8 @@ export function ProductBomModal({
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? `تحديد مواد التغليف المرفقة للمنتج (${productName}) خصم تلقائي وحساب تكلفة الـ COGS.`
-              : `Assign packaging materials to (${productName}) for automatic stock deduction & COGS calculation.`}
+              ? `تحديد مواد التغليف المرفقة للمنتج (${productName}) لخصمها من المخزون وحساب تكلفة الطلب تلقائياً.`
+              : `Choose the packaging that goes with ${productName}: it is taken from stock and counted in each order's cost.`}
           </p>
         </DialogHeader>
 
@@ -290,7 +290,7 @@ export function ProductBomModal({
                         {materials.map((m: any) => (
                           <option key={m.id} value={m.id}>
                             {isAr ? m.name_ar || m.name : m.name} (
-                            {formatMoney(m.unit_cost, currency)})
+                            {formatMoney(m.unit_cost, currency, lang)})
                           </option>
                         ))}
                       </select>
@@ -306,7 +306,7 @@ export function ProductBomModal({
                       </div>
 
                       <span className="text-xs font-semibold text-muted-foreground w-16 text-end">
-                        {formatMoney(matCost * item.quantity_per_unit, currency)}
+                        {formatMoney(matCost * item.quantity_per_unit, currency, lang)}
                       </span>
 
                       <Button
@@ -333,7 +333,7 @@ export function ProductBomModal({
                 {isAr ? "إجمالي تكلفة التغليف للقطعة:" : "Total Packaging Cost / Unit:"}
               </span>
               <span className="text-sm font-extrabold text-primary">
-                {formatMoney(totalCalculatedPackagingCost, currency)}
+                {formatMoney(totalCalculatedPackagingCost, currency, lang)}
               </span>
             </div>
           )}

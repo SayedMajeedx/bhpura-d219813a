@@ -137,7 +137,7 @@ export function reminderMessage({
   currency: string;
   link: string;
 }): string {
-  const amount = formatMoney(balance, currency);
+  const amount = formatMoney(balance, currency, isAr ? "ar" : "en");
   const hello = customerName
     ? isAr
       ? `مرحباً ${customerName}،`

@@ -213,16 +213,23 @@ describe("design system guardrails", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("writes an order's money in the reader's language on the order screens", () => {
+  it("writes money in the store's currency and the reader's language", () => {
     // `formatMoney(amount, currency)` with no language writes English ("BHD 30.000"): the order
-    // page did, in Arabic, beside a list that wrote "30.000 د.ب.". An order screen says which
-    // language it writes in. The invoice message (SendInvoiceDialog) keeps its own language.
-    const orderScreens = (rel: string) =>
-      (rel.startsWith("features/orders/") || rel.startsWith("components/orders/")) &&
-      rel !== "components/orders/SendInvoiceDialog.tsx";
+    // page did, in Arabic, beside a list that wrote "30.000 د.ب.", and so did the expenses page,
+    // the accounting tabs, a customer's page and the bookings (94 calls). `formatMoney(amount)`
+    // with no currency writes BHD in every store: the barcode label and an add-on's price did.
+    // Every call says both. Three write on purpose in a language of their own:
+    const ownLanguage = new Set([
+      // the invoice message, in the invoice's language
+      "components/orders/SendInvoiceDialog.tsx",
+      // `formatMoney` there is a parameter its caller passes
+      "lib/delivery-info.ts",
+      // a printed shelf label: the store's currency, one format for every reader
+      "components/barcode-label.tsx",
+    ]);
     const offenders: string[] = [];
     for (const { rel, source } of FILES) {
-      if (!orderScreens(rel)) continue;
+      if (ownLanguage.has(rel)) continue;
       for (const match of source.matchAll(/formatMoney\(([^()]|\([^()]*\))*\)/g)) {
         const args = match[0].slice("formatMoney(".length, -1);
         let depth = 0;
@@ -232,7 +239,7 @@ describe("design system guardrails", () => {
           else if (c === ")" || c === "]" || c === "}") depth -= 1;
           else if (c === "," && depth === 0) commas += 1;
         }
-        if (commas === 1) offenders.push(`${rel}: ${match[0]}`);
+        if (commas <= 1) offenders.push(`${rel}: ${match[0]}`);
       }
     }
     expect(offenders).toEqual([]);

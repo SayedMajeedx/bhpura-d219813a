@@ -435,8 +435,8 @@ export function OrderQuickViewModal({
                       <Package className="h-4 w-4 text-primary shrink-0" />
                       <span>
                         {isAr
-                          ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)"
-                          : "Direct Order COGS Breakdown"}
+                          ? "تكاليف الإنتاج والتغليف المباشرة للطلب"
+                          : "What this order cost to make and pack"}
                       </span>
                     </span>
                     <span className="font-mono text-sm font-extrabold text-primary">

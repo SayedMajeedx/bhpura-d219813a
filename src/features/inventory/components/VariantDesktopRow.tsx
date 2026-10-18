@@ -27,7 +27,7 @@ import {
   isMadeToOrderOnlyVariant,
 } from "@/features/inventory/components/MadeToOrderOnlyNote";
 import { PremiumCurrencyInput } from "@/features/inventory/components/PremiumCurrencyInput";
-import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { useMoneyLabel, useStoreCurrency } from "@/hooks/use-store-currency";
 
 export function VariantDesktopRow({
   v,
@@ -74,7 +74,8 @@ export function VariantDesktopRow({
   viewMode?: VariantViewMode;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
-  const money = useMoneyLabel("en");
+  const money = useMoneyLabel(isAr ? "ar" : "en");
+  const currency = useStoreCurrency(brand.id);
   const [sellingVal, setSellingVal] = useState(saleInputValue(v));
 
   useEffect(() => {
@@ -310,6 +311,7 @@ export function VariantDesktopRow({
                       size: v.size,
                       color: v.color,
                       price: v.selling_price,
+                      currency,
                       businessName,
                     }}
                   />
@@ -337,6 +339,7 @@ export function VariantDesktopRow({
                       size: v.size,
                       color: v.color,
                       price: v.selling_price,
+                      currency,
                       businessName,
                     }}
                   />

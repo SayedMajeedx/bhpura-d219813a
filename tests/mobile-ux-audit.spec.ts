@@ -465,7 +465,10 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
       // the rest in its menu), and the floating dock steps aside while the bar holds that
       // slot: the two once sat one on the other.
       const orderActions = page.getByRole("region", { name: /^(Order actions|إجراءات الطلب)$/ });
-      const mobileNavigation = page.locator('[aria-label="Mobile Navigation"]');
+      // The dock is named in the page's language ("Navigation" / «التنقل»).
+      const mobileNavigation = page.locator(
+        'nav[aria-label="Navigation"], nav[aria-label="التنقل"]',
+      );
       await expect(orderActions, "Order actions must be in the phone's thumb bar").toBeVisible();
       await expect(
         mobileNavigation,

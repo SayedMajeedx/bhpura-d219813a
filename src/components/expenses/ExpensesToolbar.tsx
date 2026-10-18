@@ -228,7 +228,7 @@ export function ExpensesToolbar({
         className="h-10 w-full text-xs font-bold gap-1.5 sm:h-9 sm:w-auto self-start sm:self-auto border-border-subtle hover:bg-muted/40"
       >
         <Download className="h-3.5 w-3.5 text-primary shrink-0" />
-        <span>{isAr ? "تصدير تكلفة المبيعات (COGS CSV)" : "Export COGS CSV"}</span>
+        <span>{isAr ? "تصدير تكلفة البضاعة (CSV)" : "Export cost of goods (CSV)"}</span>
       </Button>
     </div>
   );

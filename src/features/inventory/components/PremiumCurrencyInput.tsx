@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { pageLanguage } from "@/lib/page-language";
 
 export function PremiumCurrencyInput({
   value,
@@ -21,7 +22,8 @@ export function PremiumCurrencyInput({
   clearLabel?: string;
 }) {
   // The store's own currency, as a code beside the number.
-  const money = useMoneyLabel("en");
+  // The currency's tag in the reader's language («د.ب.» on an Arabic page, "BHD" on an English one).
+  const money = useMoneyLabel(pageLanguage());
   return (
     <div
       className="relative inline-flex items-center w-full min-w-[115px] max-w-[130px] shrink-0"

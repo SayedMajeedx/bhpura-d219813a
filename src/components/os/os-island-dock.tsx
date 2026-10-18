@@ -18,11 +18,16 @@ export interface OsIslandDockProps {
   isHidden?: boolean;
 }
 
-export function OsIslandDock({ items, className, isHidden = false }: OsIslandDockProps) {
+export function OsIslandDock({
+  items,
+  className,
+  lang = "en",
+  isHidden = false,
+}: OsIslandDockProps) {
   return (
     <nav
       role="navigation"
-      aria-label="Mobile Navigation"
+      aria-label={lang === "ar" ? "التنقل" : "Navigation"}
       aria-hidden={isHidden}
       className={cn(
         // Viewport fixed positioning & safe area clearance

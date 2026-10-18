@@ -216,7 +216,7 @@ export function NewBookingDialog({
                     />
                     <span className="flex-1">{name}</span>
                     <span className="text-xs text-muted-foreground" dir="ltr">
-                      {formatMoney(listedPrice(product), currency)}
+                      {formatMoney(listedPrice(product), currency, lang)}
                     </span>
                   </label>
                   {chosen && (
@@ -349,7 +349,7 @@ export function NewBookingDialog({
           {offer && (
             <div className="flex items-center justify-between border-t border-border pt-3 text-sm text-success">
               <span>{discountLabel(offer, isAr)}</span>
-              <span dir="ltr">− {formatMoney(offer.amount, currency)}</span>
+              <span dir="ltr">− {formatMoney(offer.amount, currency, lang)}</span>
             </div>
           )}
           <div
@@ -357,7 +357,7 @@ export function NewBookingDialog({
           >
             <span>{isAr ? "الإجمالي" : "Total"}</span>
             <span dir="ltr">
-              {formatMoney(bookingTotal(lines) - (offer?.amount ?? 0), currency)}
+              {formatMoney(bookingTotal(lines) - (offer?.amount ?? 0), currency, lang)}
             </span>
           </div>
           {problems.length > 0 && (

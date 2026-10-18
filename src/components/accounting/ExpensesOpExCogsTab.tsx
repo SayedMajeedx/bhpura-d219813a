@@ -297,7 +297,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             {isAr ? "إجمالي المصاريف والمشتريات المسجلة" : "Total Logged Purchases & Expenses"}
           </span>
           <span className="text-xl font-extrabold text-foreground mt-1">
-            {formatMoney(totalCogsAmount + totalOpexAmount, currency)}
+            {formatMoney(totalCogsAmount + totalOpexAmount, currency, lang)}
           </span>
         </Card>
 
@@ -311,11 +311,11 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                 variant="outline"
                 className="bg-primary/10 text-primary border-primary/20 text-xs"
               >
-                {isAr ? "أصل / مخزون" : "Asset COGS"}
+                {isAr ? "أصل / مخزون" : "Stock & materials"}
               </Badge>
             </div>
             <span className="text-xl font-extrabold text-primary mt-1">
-              {formatMoney(totalCogsAmount, currency)}
+              {formatMoney(totalCogsAmount, currency, lang)}
             </span>
             <p className="text-xs text-muted-foreground mt-1">
               {isAr
@@ -328,14 +328,14 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
         <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">
-              {isAr ? "مصاريف تشغيلية ثابتة (Monthly OpEx)" : "Fixed OpEx Overhead"}
+              {isAr ? "مصاريف تشغيلية ثابتة شهرياً" : "Fixed monthly running costs"}
             </span>
             <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
-              OpEx
+              {isAr ? "تشغيلية" : "Running"}
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-foreground mt-1">
-            {formatMoney(totalOpexAmount, currency)}
+            {formatMoney(totalOpexAmount, currency, lang)}
           </span>
           <p className="text-xs text-muted-foreground mt-1">
             {isAr
@@ -363,7 +363,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
               onClick={() => setActiveTypeFilter("cogs")}
               className="h-8 text-xs font-bold"
             >
-              {isAr ? "تكاليف مباشرة (COGS)" : "Direct COGS"}
+              {isAr ? "تكاليف مباشرة" : "Direct costs"}
             </Button>
           )}
           <Button
@@ -372,7 +372,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
             onClick={() => setActiveTypeFilter("opex")}
             className="h-8 text-xs font-bold"
           >
-            {isAr ? "مصاريف تشغيلية (OpEx)" : "OpEx Overhead"}
+            {isAr ? "مصاريف تشغيلية" : "Running costs"}
           </Button>
         </div>
 
@@ -414,7 +414,13 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                         variant="outline"
                         className={`text-xs ${isCogs ? "border-primary/30 text-primary" : "border-border text-muted-foreground"}`}
                       >
-                        {isCogs ? "COGS" : "OpEx"}
+                        {isCogs
+                          ? isAr
+                            ? "تكلفة مباشرة"
+                            : "Direct cost"
+                          : isAr
+                            ? "تشغيلية"
+                            : "Running cost"}
                       </Badge>
                       {exp.is_recurring && (
                         <Badge variant="secondary" className="text-xs gap-1">
@@ -435,7 +441,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                           <span>•</span>
                           <span className="font-semibold text-primary">
                             {exp.quantity} {exp.unit_type || (isAr ? "قطع" : "pcs")} (
-                            {formatMoney(exp.unit_cost, currency)}/
+                            {formatMoney(exp.unit_cost, currency, lang)}/
                             {exp.unit_type || (isAr ? "قطعة" : "unit")})
                           </span>
                         </>
@@ -455,7 +461,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
 
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-extrabold text-foreground">
-                    {formatMoney(exp.amount, currency)}
+                    {formatMoney(exp.amount, currency, lang)}
                   </span>
 
                   <div className="flex items-center gap-1">
@@ -518,14 +524,14 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                     onClick={() => setExpenseType("opex")}
                     className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "opex" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
                   >
-                    {isAr ? "مصاريف تشغيلية (OpEx)" : "OpEx / Overhead"}
+                    {isAr ? "مصاريف تشغيلية" : "Running costs"}
                   </button>
                   <button
                     type="button"
                     onClick={() => setExpenseType("cogs")}
                     className={`p-2.5 rounded-lg border text-center transition-all ${expenseType === "cogs" ? "border-primary bg-primary/10 text-primary font-bold" : "border-border text-muted-foreground"}`}
                   >
-                    {isAr ? "تكاليف إنتاج مباشرة (COGS)" : "Direct COGS"}
+                    {isAr ? "تكاليف إنتاج مباشرة" : "Direct production costs"}
                   </button>
                 </div>
               </div>
@@ -625,8 +631,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                     className="border-primary/40 bg-primary/10 text-primary font-bold text-xs py-0.5 px-2.5"
                   >
                     {isAr
-                      ? `تكلفة القطعة الواحدة: ${formatMoney(calculatedUnitCost, currency)}`
-                      : `Unit Cost: ${formatMoney(calculatedUnitCost, currency)}`}
+                      ? `تكلفة القطعة الواحدة: ${formatMoney(calculatedUnitCost, currency, lang)}`
+                      : `Unit Cost: ${formatMoney(calculatedUnitCost, currency, lang)}`}
                   </Badge>
                 </div>
               </div>

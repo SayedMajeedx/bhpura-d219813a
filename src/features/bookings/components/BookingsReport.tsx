@@ -84,11 +84,11 @@ export function BookingsReport({ page }: { page: BookingsPage }) {
         />
         <Figure
           label={isAr ? "الإيرادات" : "Revenue"}
-          value={formatMoney(report.revenue, currency)}
+          value={formatMoney(report.revenue, currency, lang)}
           hint={
             isAr
-              ? `متوسط الحجز ${formatMoney(report.averageValue, currency)}`
-              : `Average ${formatMoney(report.averageValue, currency)}`
+              ? `متوسط الحجز ${formatMoney(report.averageValue, currency, lang)}`
+              : `Average ${formatMoney(report.averageValue, currency, lang)}`
           }
         />
         <Figure
@@ -115,7 +115,7 @@ export function BookingsReport({ page }: { page: BookingsPage }) {
                     {isAr ? service.name_ar : service.name_en}
                     <span className="text-muted-foreground"> × {service.count}</span>
                   </span>
-                  <span dir="ltr">{formatMoney(service.revenue, currency)}</span>
+                  <span dir="ltr">{formatMoney(service.revenue, currency, lang)}</span>
                 </li>
               ))}
             </ol>

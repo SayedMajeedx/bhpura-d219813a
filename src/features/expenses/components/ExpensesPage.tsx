@@ -261,7 +261,7 @@ export function ExpensesPage() {
           className="h-9 text-xs font-bold gap-1.5 shrink-0"
         >
           <Receipt className="h-4 w-4" />
-          {lang === "ar" ? "المصاريف والتشغيل (OpEx vs COGS)" : "Expenses & OpEx"}
+          {lang === "ar" ? "المصاريف وتكلفة البضاعة" : "Expenses & cost of goods"}
         </Button>
         <Button
           variant={mainTab === "cash_flow" ? "default" : "ghost"}
