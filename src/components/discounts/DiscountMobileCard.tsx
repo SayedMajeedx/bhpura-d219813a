@@ -117,7 +117,7 @@ export function DiscountMobileCard({
           </span>
         ) : (
           <span className="text-primary font-extrabold text-sm">
-            {formatMoney(p.discount_value, currency)}
+            {formatMoney(p.discount_value, currency, lang)}
           </span>
         )}
       </div>

@@ -136,7 +136,15 @@ export function ProductsSection({
     handleShareProduct,
     printAll,
     printProductLabels,
-  } = useProductActions({ products, variants, variantsByProduct, businessName, isAr, onChanged });
+  } = useProductActions({
+    products,
+    variants,
+    variantsByProduct,
+    businessName,
+    currency,
+    isAr,
+    onChanged,
+  });
   const { customFieldPresets } = useProductDialogData(brandId);
   const bulk = useProductBulkActions({
     brandId,

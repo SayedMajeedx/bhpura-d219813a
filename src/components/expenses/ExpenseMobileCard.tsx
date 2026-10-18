@@ -47,7 +47,7 @@ export function ExpenseMobileCard({
         </span>
 
         <span className="font-mono font-extrabold text-sm text-foreground">
-          {formatMoney(e.amount, e.currency || currency)}
+          {formatMoney(e.amount, e.currency || currency, lang)}
         </span>
       </div>
 

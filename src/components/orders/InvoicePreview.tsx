@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
@@ -272,7 +273,9 @@ export default function InvoicePreview({
   const showBusinessName = (settings as any).invoice_show_business_name !== false;
   const showTerms = (settings as any).invoice_show_terms !== false;
 
-  const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
+  // Opens in the admin's language; the switch above it still shows the other.
+  const adminLang = useI18n().lang;
+  const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">(adminLang === "ar" ? "ar" : "en");
   const { vocabulary } = useVocabulary();
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";

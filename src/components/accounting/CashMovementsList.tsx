@@ -85,7 +85,7 @@ export function CashMovementsList({
                   }`}
                 >
                   {sign < 0 ? "−" : sign > 0 ? "+" : ""}
-                  {formatMoney(Number(movement.amount), currency)}
+                  {formatMoney(Number(movement.amount), currency, isAr ? "ar" : "en")}
                 </span>
               </Card>
             );

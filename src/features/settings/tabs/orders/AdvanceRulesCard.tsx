@@ -156,7 +156,7 @@ export function AdvanceRulesCard() {
                   <p className="text-xs text-muted-foreground">
                     {describeRule(ruleDefFromRow(rule), {
                       isAr,
-                      money: (n) => formatMoney(n, currency),
+                      money: (n) => formatMoney(n, currency, lang),
                       productName,
                       categoryName,
                     })}

@@ -182,7 +182,7 @@ function ReportsProducts() {
                           </div>
                           <div>
                             <dt className="text-xs text-muted-foreground">
-                              {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
+                              {lang === "ar" ? "تكلفة البضاعة" : "Cost of goods"}
                             </dt>
                             <dd className="mt-0.5 font-mono font-bold">
                               {p.is_missing_cost
@@ -233,7 +233,7 @@ function ReportsProducts() {
                           {lang === "ar" ? "صافي المبيعات" : "Net Sales"}
                         </TableHead>
                         <TableHead className="text-end">
-                          {lang === "ar" ? "تكلفة البضاعة" : "COGS"}
+                          {lang === "ar" ? "تكلفة البضاعة" : "Cost of goods"}
                         </TableHead>
                         <TableHead className="text-end">
                           {lang === "ar" ? "المخزون الحالي" : "Current Stock"}

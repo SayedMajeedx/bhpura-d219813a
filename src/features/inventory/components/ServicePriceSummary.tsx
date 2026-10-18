@@ -88,11 +88,11 @@ export function ServicePriceSummary({
                     : "Fixed price"}
               </span>
               <span dir="ltr" className="text-foreground">
-                {formatMoney(row.price, currency)}
+                {formatMoney(row.price, currency, isAr ? "ar" : "en")}
               </span>
               {row.was > row.price && (
                 <span dir="ltr" className="text-xs text-muted-foreground line-through">
-                  {formatMoney(row.was, currency)}
+                  {formatMoney(row.was, currency, isAr ? "ar" : "en")}
                 </span>
               )}
             </li>

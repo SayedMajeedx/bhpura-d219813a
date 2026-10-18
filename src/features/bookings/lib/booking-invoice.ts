@@ -82,7 +82,7 @@ export function invoiceMessage({
   invoice: BookingInvoice;
   link: string;
 }): string {
-  const total = formatMoney(invoice.total, invoice.currency);
+  const total = formatMoney(invoice.total, invoice.currency, isAr ? "ar" : "en");
   const greeting = customerName
     ? isAr
       ? `مرحباً ${customerName}،`
@@ -117,7 +117,7 @@ export function balanceReminderMessage({
   due: string | null;
   link: string;
 }): string {
-  const amount = formatMoney(balance, currency);
+  const amount = formatMoney(balance, currency, isAr ? "ar" : "en");
   const greeting = customerName
     ? isAr
       ? `مرحباً ${customerName}،`

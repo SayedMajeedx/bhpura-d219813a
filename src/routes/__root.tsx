@@ -154,6 +154,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // The page's language, as <html lang> says it: the toasts' region is named in it.
+  const pageLang = documentLanguage(useMatches()).lang;
   useEffect(() => {
     installNumericInputBehavior();
     // Enforce "Keep me logged in": if the user did not opt in and this is a
@@ -217,7 +219,7 @@ function RootComponent() {
       <I18nProvider>
         <ProfileProvider>
           <Outlet />
-          <Toaster />
+          <Toaster containerAriaLabel={pageLang === "ar" ? "الإشعارات" : "Notifications"} />
           <TruncationReveal />
         </ProfileProvider>
       </I18nProvider>

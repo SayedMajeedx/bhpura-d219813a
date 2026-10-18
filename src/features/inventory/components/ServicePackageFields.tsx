@@ -196,9 +196,10 @@ export function ServicePackageFields({
                       ? isAr
                         ? "سعر الخدمات منفصلة غير متاح لهذه المدة"
                         : "Services apart: not priced for this length"
-                      : `${isAr ? "منفصلة" : "Apart"} ${formatMoney(row.separate, currency)}`}
+                      : `${isAr ? "منفصلة" : "Apart"} ${formatMoney(row.separate, currency, isAr ? "ar" : "en")}`}
                     {" · "}
-                    {isAr ? "الباقة" : "Package"} {formatMoney(row.price, currency)}
+                    {isAr ? "الباقة" : "Package"}{" "}
+                    {formatMoney(row.price, currency, isAr ? "ar" : "en")}
                     {row.saving && (
                       <span className="ms-1.5 font-semibold text-success">
                         {isAr ? `توفير ${row.saving.percent}%` : `saves ${row.saving.percent}%`}

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { closeLabel as pageCloseLabel } from "@/lib/page-language";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
@@ -36,7 +37,7 @@ type DialogContentProps = React.ComponentPropsWithoutRef<typeof DialogPrimitive.
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   DialogContentProps
->(({ className, children, closeLabel = "Close", ...props }, ref) => (
+>(({ className, children, closeLabel, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <DialogPrimitive.Content
@@ -50,7 +51,7 @@ const DialogContent = React.forwardRef<
       {children}
       <DialogPrimitive.Close className="absolute end-3 top-3 z-50 grid h-8 w-8 cursor-pointer place-items-center rounded-md opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none data-[state=open]:text-muted-foreground">
         <X className="h-4 w-4" />
-        <span className="sr-only">{closeLabel}</span>
+        <span className="sr-only">{closeLabel ?? pageCloseLabel()}</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </DialogPortal>

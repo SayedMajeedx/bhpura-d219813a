@@ -251,8 +251,8 @@ export function PackagingMaterialsTab() {
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr
-              ? "إدارة المخزون الخام للعلب والأكياس والكروت وتحديد تكلفة الوحدة لحساب الـ COGS تلقائياً."
-              : "Track raw packaging stock (Boxes, Bags, Cards) & unit cost for automatic order COGS calculations."}
+              ? "إدارة المخزون الخام للعلب والأكياس والكروت وتحديد تكلفة الوحدة لحساب تكلفة كل طلب تلقائياً."
+              : "Track packaging stock (boxes, bags, cards) and its unit cost, so each order's cost is worked out for you."}
           </p>
         </div>
 
@@ -451,7 +451,7 @@ export function PackagingMaterialsTab() {
                         {isAr ? "تكلفة الوحدة" : "Unit Cost"}
                       </span>
                       <span className="font-extrabold text-primary text-sm">
-                        {formatMoney(item.unit_cost, currency)}
+                        {formatMoney(item.unit_cost, currency, lang)}
                       </span>
                     </div>
                   </div>

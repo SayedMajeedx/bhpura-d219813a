@@ -127,7 +127,7 @@ export function BookingInvoiceBlock({
             {badge.text}
           </span>
           <span className="font-semibold" dir="ltr">
-            {formatMoney(invoice.total, invoice.currency)}
+            {formatMoney(invoice.total, invoice.currency, isAr ? "ar" : "en")}
           </span>
         </span>
       </p>
