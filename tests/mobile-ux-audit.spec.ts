@@ -87,6 +87,9 @@ test.beforeEach(async ({ page }) => {
     };
     try {
       window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+      // A signed-in person who kept their session ("Keep me logged in"): without it the
+      // app signs a fresh browser out on load (src/lib/session-persistence.ts).
+      window.localStorage.setItem("boutq.auth.rememberMe", "1");
     } catch {
       /* ignore storage error */
     }
