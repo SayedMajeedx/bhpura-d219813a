@@ -1,9 +1,18 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getPublicInvoice } from "@/lib/public-invoice.functions";
 import { useState } from "react";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
 import { resolvePaymentStatus, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
+import {
+  displayPhone,
+  invoiceDate,
+  invoicePayment,
+  invoicePdfMethod,
+  invoiceTitle as titleOfInvoice,
+  showsTaxLine,
+} from "@/lib/invoice-display";
+import { InvoiceLineItems } from "@/components/orders/InvoiceLineItems";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
 import { getOrderCustomerEmail } from "@/lib/order-customer-snapshot";
 import {
@@ -16,8 +25,7 @@ import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
 import { policyLines } from "@/lib/bookings/policies";
 
 import { getReadableTextColor } from "@/lib/color-utils";
-import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -165,8 +173,11 @@ function PublicInvoice() {
   const logoY = Number(settings?.logo_y) || 0;
   const logoW = Math.max(20, Number(settings?.logo_width) || 160);
   const logoH = Math.max(20, Number(settings?.logo_height) || 64);
-  const invoiceTitle =
-    (isRTL ? settings?.invoice_title_ar : settings?.invoice_title_en) || L.invoice;
+  const invoiceTitle = titleOfInvoice(
+    isRTL ? settings?.invoice_title_ar : settings?.invoice_title_en,
+    settings?.vat_number,
+    lang,
+  );
   const items = order.order_items ?? [];
 
   const arabicFont = (settings as any)?.invoice_arabic_font_family || "Cairo";
@@ -243,15 +254,17 @@ function PublicInvoice() {
     <div
       dir={isRTL ? "rtl" : "ltr"}
       lang={lang}
-      className="min-h-screen bg-neutral-100 py-6 px-3 sm:py-10 sm:px-6"
+      className="min-h-screen bg-neutral-100 py-6 px-3 sm:py-10 sm:px-6 print:min-h-0 print:bg-transparent print:p-0"
     >
-      {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM. */}
-      <div className="mx-auto max-w-3xl">
+      {/* Download PDF prints this page to A4 (real text, every page). The invoice keeps the colours
+          the store chose; a line or the totals are not split across two pages. */}
+      <style>{`@media print{@page{size:A4;margin:12mm}.pdf-totals-row,.pdf-line-items tr{break-inside:avoid}}`}</style>
+      <div className="mx-auto max-w-3xl print:max-w-none">
         <div className="print:hidden mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold">{settings?.business_name}</p>
             <p className="text-xs text-neutral-500">
-              #{order.invoice_number} · {formatDate(order.created_at ?? order.order_date, locale)}
+              #{order.invoice_number} · {invoiceDate(order.created_at ?? order.order_date, lang)}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -294,6 +307,12 @@ function PublicInvoice() {
             <button
               onClick={async () => {
                 try {
+                  // The browser's own print to PDF: selectable text, every page, Arabic shaped
+                  // by the browser. Apps whose browser cannot print get a picture of the page.
+                  if (invoicePdfMethod(navigator.userAgent) === "print") {
+                    window.print();
+                    return;
+                  }
                   const el = document.querySelector<HTMLElement>(".invoice-card");
                   const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
                   await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
@@ -315,7 +334,7 @@ function PublicInvoice() {
         </div>
 
         <div
-          className="invoice-card pdf-invoice-root rounded-lg shadow-lg overflow-hidden"
+          className="invoice-card pdf-invoice-root rounded-lg shadow-lg overflow-hidden print:rounded-none print:shadow-none"
           style={{
             borderTop:
               template === "minimal"
@@ -325,6 +344,11 @@ function PublicInvoice() {
                   : `8px solid ${color}`,
             backgroundColor: bgColor,
             color: textColor,
+            // Figures of one width that sit on the line, in whatever font the store chose: amounts
+            // line up in their column (the display serif's old-style figures did not).
+            fontVariantNumeric: "lining-nums tabular-nums",
+            printColorAdjust: "exact",
+            WebkitPrintColorAdjust: "exact",
             fontSize: settings?.font_size ? `${settings.font_size}px` : undefined,
             fontFamily: settings?.font_url
               ? `'PublicInvoiceCustom', sans-serif`
@@ -382,7 +406,7 @@ function PublicInvoice() {
                         dir="ltr"
                         style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}
                       >
-                        {settings.phone}
+                        {displayPhone(settings.phone)}
                       </p>
                     )}
                     {settings?.email && (
@@ -428,7 +452,7 @@ function PublicInvoice() {
                   </span>
                 </div>
                 <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
-                  {L.date}: {formatDate(order.created_at ?? order.order_date, locale)}
+                  {L.date}: {invoiceDate(order.created_at ?? order.order_date, lang)}
                 </p>
                 {order.payment_method && (
                   <p className="text-xs mt-0.5" style={{ opacity: 0.75 }}>
@@ -461,7 +485,7 @@ function PublicInvoice() {
                     className="text-sm mt-0.5"
                     style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}
                   >
-                    {order.customers.phone}
+                    {displayPhone(order.customers.phone)}
                   </p>
                 )}
                 {getOrderCustomerEmail(order) && (
@@ -562,185 +586,17 @@ function PublicInvoice() {
               </div>
             )}
 
-            <div className="pdf-table-wrap -mx-2 sm:mx-0 overflow-x-auto">
-              <table className="pdf-line-items w-full min-w-[440px] text-sm mb-6">
-                <thead>
-                  <tr
-                    style={{
-                      backgroundColor: tableHeaderBg,
-                      color: tableHeaderFg,
-                      borderBottom: `1px solid ${dividerColor}`,
-                    }}
-                  >
-                    <th className="text-start p-3" style={{ color: tableHeaderFg }}>
-                      {L.desc}
-                    </th>
-                    <th className="text-end p-3 w-16" style={{ color: tableHeaderFg }}>
-                      {L.qty}
-                    </th>
-                    <th className="text-end p-3 w-24" style={{ color: tableHeaderFg }}>
-                      {L.unit}
-                    </th>
-                    <th className="text-end p-3 w-28" style={{ color: tableHeaderFg }}>
-                      {L.total}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((it: any, i: number) => {
-                    const rawDesc = it.products?.name || it.description || "—";
-                    const lines = rawDesc
-                      .split(/\r?\n/)
-                      .map((s: string) => s.trim())
-                      .filter(Boolean);
-                    const primaryTitle = lines[0] || "—";
-                    const secondaryParts = lines.slice(1);
-
-                    const axes = resolveAllVariantAxes({
-                      product: it.products,
-                      addonDefaults,
-                      lang: lang === "ar" ? "ar" : "en",
-                    });
-
-                    const hyphenParts = primaryTitle
-                      .split(/\s+[-–—]\s+/)
-                      .map((s: string) => s.trim())
-                      .filter(Boolean);
-                    let title = primaryTitle;
-                    let inlineDetails: string | null = null;
-
-                    if (hyphenParts.length > 1) {
-                      title = hyphenParts[0];
-                      inlineDetails = hyphenParts
-                        .slice(1)
-                        .map((p: string) => (/^\d+$/.test(p) ? `${axes.size.label} ${p}` : p))
-                        .join(" · ");
-                    }
-
-                    return (
-                      <tr
-                        key={i}
-                        className="border-b align-top"
-                        style={{ borderBottomColor: dividerColor }}
-                      >
-                        <td className="p-3">
-                          <div className="space-y-0.5">
-                            <p className="font-semibold" style={{ color: textColor }}>
-                              {title}
-                            </p>
-                            {inlineDetails && (
-                              <p className="text-xs" style={{ color: textColor, opacity: 0.82 }}>
-                                {inlineDetails}
-                              </p>
-                            )}
-                            {secondaryParts.length > 0 && (
-                              <div className="text-xs" style={{ color: textColor, opacity: 0.75 }}>
-                                {secondaryParts.map((l: string, li: number) => (
-                                  <div key={li}>{l}</div>
-                                ))}
-                              </div>
-                            )}
-                            {(() => {
-                              const itemColor =
-                                it.selected_variant?.color || it.product_variants?.color;
-                              const itemSize =
-                                it.selected_variant?.size || it.product_variants?.size;
-                              const itemFabric =
-                                it.selected_variant?.fabric || it.product_variants?.fabric;
-                              const isPlaceholder = isPlaceholderVariant(
-                                it.selected_variant || it.product_variants,
-                              );
-
-                              return (
-                                <>
-                                  {itemColor && axes.color.visible && (
-                                    <p
-                                      className="text-xs mt-0.5"
-                                      style={{ color: textColor, opacity: 0.75 }}
-                                    >
-                                      {axes.color.label}:{" "}
-                                      <span className="font-medium">{itemColor}</span>
-                                    </p>
-                                  )}
-                                  {itemSize && !isPlaceholder && axes.size.visible && (
-                                    <p
-                                      className="text-xs mt-0.5"
-                                      style={{ color: textColor, opacity: 0.75 }}
-                                    >
-                                      {axes.size.label}:{" "}
-                                      <span className="font-medium">{itemSize}</span>
-                                    </p>
-                                  )}
-                                  {itemFabric && axes.fabric.visible && (
-                                    <p
-                                      className="text-xs mt-0.5"
-                                      style={{ color: textColor, opacity: 0.75 }}
-                                    >
-                                      {axes.fabric.label}:{" "}
-                                      <span className="font-medium">{itemFabric}</span>
-                                    </p>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-                          {(it.customizations ?? []).length > 0 && (
-                            <ul
-                              className="mt-1 text-xs space-y-0.5"
-                              style={{ color: textColor, opacity: 0.75 }}
-                            >
-                              {it.customizations.map((c: any, ci: number) => (
-                                <li key={ci}>
-                                  + {c.name} ({money(c.price_delta)})
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                          {(it.custom_field_values ?? []).length > 0 && (
-                            <div
-                              className="mt-1 text-xs space-y-0.5"
-                              style={{ color: textColor, opacity: 0.75 }}
-                            >
-                              {it.custom_field_values.map((field: any, fi: number) => (
-                                <p key={fi}>
-                                  {(isRTL
-                                    ? field.label_ar || field.label_en
-                                    : field.label_en || field.label_ar) || field.key}
-                                  : {field.value}
-                                </p>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-3 text-end" style={{ color: textColor }}>
-                          {it.quantity}
-                        </td>
-                        <td className="p-3 text-end whitespace-nowrap" style={{ color: textColor }}>
-                          {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
-                            <span className="inline-flex flex-col items-end leading-tight">
-                              <span className="text-xs line-through" style={{ opacity: 0.6 }}>
-                                {money(Number(it.original_price) + Number(it.customization_total))}
-                              </span>
-                              <span>
-                                {money(Number(it.unit_price) + Number(it.customization_total))}
-                              </span>
-                            </span>
-                          ) : (
-                            money(Number(it.unit_price) + Number(it.customization_total))
-                          )}
-                        </td>
-                        <td
-                          className="p-3 text-end whitespace-nowrap font-semibold"
-                          style={{ color: textColor }}
-                        >
-                          {money(it.line_total)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <InvoiceLineItems
+              items={items}
+              lang={lang}
+              addonDefaults={addonDefaults}
+              money={money}
+              labels={{ desc: L.desc, qty: L.qty, unit: L.unit, total: L.total }}
+              textColor={textColor}
+              dividerColor={dividerColor}
+              headerBg={tableHeaderBg}
+              headerFg={tableHeaderFg}
+            />
 
             {/* Totals block stays on the physical left side in both languages. */}
             <div
@@ -755,12 +611,14 @@ function PublicInvoice() {
                   <span style={{ opacity: 0.75 }}>{L.subtotal}</span>
                   <span>{money(order.subtotal)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span style={{ opacity: 0.75 }}>
-                    {L.vat} ({order.tax_rate ?? 0}%)
-                  </span>
-                  <span>{money(order.tax_amount ?? 0)}</span>
-                </div>
+                {showsTaxLine(order, settings?.vat_number) && (
+                  <div className="flex justify-between">
+                    <span style={{ opacity: 0.75 }}>
+                      {L.vat} ({order.tax_rate ?? 0}%)
+                    </span>
+                    <span>{money(order.tax_amount ?? 0)}</span>
+                  </div>
+                )}
                 {Number(order.discount) > 0 && (
                   <div className="flex justify-between gap-4">
                     <span style={{ opacity: 0.75 }}>
@@ -783,8 +641,9 @@ function PublicInvoice() {
                     Number(order.total),
                     Number(order.advance_paid ?? 0),
                   );
-                  const advance = Number(order.advance_paid ?? 0);
-                  const remaining = Math.max(0, Number(order.total) - advance);
+                  // One payment state: a part payment shows what was paid and the balance; paid in
+                  // full is the badge alone (it read "advance paid", then "0.000 remaining").
+                  const payment = invoicePayment(order);
                   return (
                     <>
                       <div
@@ -820,20 +679,20 @@ function PublicInvoice() {
                           </span>
                         </div>
                       </div>
-                      {advance > 0 && (
+                      {payment.kind === "part_paid" && (
                         <>
                           <div className="flex justify-between pt-1">
                             <span style={{ opacity: 0.75 }}>
-                              {lang === "ar" ? "المبلغ المقدم المدفوع" : "Advance Paid"}
+                              {lang === "ar" ? "المدفوع" : "Paid"}
                             </span>
-                            <span>− {money(advance)}</span>
+                            <span>− {money(payment.paid)}</span>
                           </div>
                           <div
                             className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold"
                             style={{ backgroundColor: `${color}1a`, color }}
                           >
-                            <span>{lang === "ar" ? "المتبقي للاستحقاق" : "Remaining Due"}</span>
-                            <span>{money(remaining)}</span>
+                            <span>{lang === "ar" ? "المتبقي" : "Balance due"}</span>
+                            <span>{money(payment.remaining)}</span>
                           </div>
                         </>
                       )}
