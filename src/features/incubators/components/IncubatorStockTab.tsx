@@ -76,6 +76,11 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
             className="ps-9"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            aria-label={
+              isAr
+                ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"
+                : "Search by SKU, external code, or product"
+            }
             placeholder={
               isAr
                 ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"

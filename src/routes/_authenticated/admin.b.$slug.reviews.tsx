@@ -230,6 +230,11 @@ function CustomerReviewsPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
+                  aria-label={
+                    isAr
+                      ? "بحث بالعميل، الطلب أو التعليق..."
+                      : "Search customer, order, or comment..."
+                  }
                   placeholder={
                     isAr
                       ? "بحث بالعميل، الطلب أو التعليق..."

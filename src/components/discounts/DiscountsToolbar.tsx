@@ -58,6 +58,11 @@ export function DiscountsToolbar({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-label={
+              isAr
+                ? `ابحث برمز الخصم... (${shortcutLabel})`
+                : `Search by promo code... (${shortcutLabel})`
+            }
             placeholder={
               isAr
                 ? `ابحث برمز الخصم... (${shortcutLabel})`

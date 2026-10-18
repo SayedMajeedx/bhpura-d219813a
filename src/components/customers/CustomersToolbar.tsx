@@ -57,6 +57,9 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
           ref={searchInputRef}
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
+          aria-label={
+            isAr ? "ابحث باسم العميل أو رقم الهاتف..." : "Search customer name, phone, or email..."
+          }
           placeholder={
             isAr ? "ابحث باسم العميل أو رقم الهاتف..." : "Search customer name, phone, or email..."
           }

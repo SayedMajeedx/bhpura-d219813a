@@ -36,11 +36,11 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1 min-w-0">
-            <Label className="text-sm font-medium">
+            <Label htmlFor="campaign-template" className="text-sm font-medium">
               {isAr ? "اختر قالب الرسالة" : "Select Template"}
             </Label>
             <Select value={selectedId || undefined} onValueChange={onSelectTemplate}>
-              <SelectTrigger className="mt-1 text-start">
+              <SelectTrigger id="campaign-template" className="mt-1 text-start">
                 <SelectValue
                   placeholder={
                     templates.length === 0
@@ -94,8 +94,11 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
 
         {/* Message body */}
         <div>
-          <Label className="text-sm font-medium">{isAr ? "نص الرسالة" : "Broadcast message"}</Label>
+          <Label htmlFor="campaign-message" className="text-sm font-medium">
+            {isAr ? "نص الرسالة" : "Broadcast message"}
+          </Label>
           <Textarea
+            id="campaign-message"
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}

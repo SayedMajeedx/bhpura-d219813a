@@ -103,6 +103,7 @@ export function DiscountMobileCard({
           {statusBadge}
           <Switch
             checked={p.is_active}
+            aria-label={isAr ? `تفعيل ${p.code}` : `${p.code} active`}
             onCheckedChange={() => onToggleActive(p)}
             className="scale-80"
           />
