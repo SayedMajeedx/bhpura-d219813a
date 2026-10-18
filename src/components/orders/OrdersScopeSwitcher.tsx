@@ -8,6 +8,8 @@ export interface ScopeTab {
   label_ar: string;
   count: number;
   icon: LucideIcon;
+  /** Orders are waiting on the team here: the tab is drawn in amber while it is not open. */
+  urgent?: boolean;
 }
 
 interface OrdersScopeSwitcherProps {
@@ -41,7 +43,9 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
           "shrink-0",
           isActive
             ? "bg-primary text-primary-foreground shadow-2xs"
-            : "border border-border-subtle bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+            : tab.urgent
+              ? "border border-amber-500/40 bg-amber-500/10 text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
+              : "border border-border-subtle bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         )}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />

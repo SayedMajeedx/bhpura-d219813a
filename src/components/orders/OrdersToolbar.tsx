@@ -135,9 +135,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             aria-label={isAr ? "ابحث برقم الطلب أو اسم العميل" : "Search order # or customer"}
             placeholder={
-              isAr
-                ? "ابحث برقم الطلب أو اسم العميل..."
-                : `Search order # or customer${shortcutHint}`
+              isAr ? "ابحث برقم الطلب أو اسم العميل" : `Search order # or customer${shortcutHint}`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />
@@ -263,7 +261,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                 aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                 variant={activeFilterCount > 0 ? "default" : "outline"}
                 size="sm"
-                className="h-9 px-2.5 text-xs font-semibold"
+                className="h-9 pointer-coarse:h-11 px-2.5 text-xs font-semibold"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {activeFilterCount > 0 && (
