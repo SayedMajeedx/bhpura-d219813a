@@ -119,7 +119,7 @@ export function primaryKpisFor({
                     {
                       label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
                       value: `${financials.grossMarginPercent.toFixed(1)}%`,
-                      subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
+                      subValue: `${isAr ? "تكلفة المبيعات" : "Cost of goods"}: ${formatMoney(financials.cogs, currency, locale)}`,
                       icon: PiggyBank,
                       color: "text-blue-500",
                       border: "hover:border-blue-500/20",

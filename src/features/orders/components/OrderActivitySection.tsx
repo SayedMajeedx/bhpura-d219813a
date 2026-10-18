@@ -1,4 +1,3 @@
-import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { useBrand } from "@/lib/brand-context";
@@ -7,12 +6,10 @@ import type { Order } from "@/features/orders/types";
 /** The order's activity trail. */
 export function OrderActivitySection({
   brand,
-  lang,
   mobileTab,
   order,
 }: {
   brand: ReturnType<typeof useBrand>;
-  lang: ReturnType<typeof useI18n>["lang"];
   mobileTab: "items" | "customer" | "activity";
   order: Order;
 }) {
@@ -24,20 +21,9 @@ export function OrderActivitySection({
         mobileTab !== "activity" && "hidden sm:block",
       )}
     >
-      <details className="group overflow-hidden rounded-2xl border border-border-subtle bg-card/60 shadow-sm sm:hidden">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
-          <span>{lang === "ar" ? "سجل النشاطات" : "Activity history"}</span>
-          <span className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
-            +
-          </span>
-        </summary>
-        <div className="border-t border-border-subtle p-4">
-          <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
-        </div>
-      </details>
-      <div className="hidden sm:block">
-        <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
-      </div>
+      {/* One list for every width: a phone wrapped it in a fold titled "سجل النشاطات" over the
+          list's own heading with the same words, and the page drew it twice (two fetches). */}
+      <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
     </div>
   );
 }

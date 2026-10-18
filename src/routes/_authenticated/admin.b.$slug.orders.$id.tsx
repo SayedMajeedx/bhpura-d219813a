@@ -851,7 +851,7 @@ function OrderEditor() {
         />
 
         {/* Activity Trail Section Anchor */}
-        <OrderActivitySection brand={brand} lang={lang} mobileTab={mobileTab} order={order} />
+        <OrderActivitySection brand={brand} mobileTab={mobileTab} order={order} />
 
         <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
           <DialogContent

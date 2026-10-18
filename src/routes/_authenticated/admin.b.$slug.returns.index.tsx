@@ -185,11 +185,7 @@ function ReturnsIndexPage() {
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder={
-                  isAr
-                    ? "بحث برقم المرتجع، الفاتورة، أو العميل..."
-                    : "Search return #, invoice, customer..."
-                }
+                placeholder={isAr ? "ابحث برقم المرتجع أو العميل" : "Search return # or customer"}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="ps-9 h-9 text-xs"

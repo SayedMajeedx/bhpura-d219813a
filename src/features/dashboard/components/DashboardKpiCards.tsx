@@ -29,8 +29,10 @@ export function DashboardKpiCards({
             className={`relative overflow-hidden p-3 sm:p-4 transition-all duration-300 hover:shadow-md border border-border rounded-2xl bg-card ${k.border}`}
           >
             <div className="min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <p className="min-w-0 text-xs font-medium text-muted-foreground leading-tight line-clamp-2">
+              {/* On a phone the label has the card's width and the change sits under it: beside
+                  it, "الإيرادات وصافي الربح" was cut to "الإيرادات وصافي…". */}
+              <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                <p className="min-w-0 basis-full text-xs font-medium leading-tight text-muted-foreground break-words sm:flex-1 sm:basis-0">
                   {k.label}
                 </p>
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -77,7 +79,7 @@ export function DashboardKpiCards({
                   {k.value}
                 </p>
               </div>
-              <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground line-clamp-1">
+              <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground break-words">
                 {k.subValue}
               </p>
               {(k as any).breakdown && (

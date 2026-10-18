@@ -5,11 +5,13 @@ import {
   useRef,
   useState,
   useCallback,
+  useMemo,
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOut } from "@/lib/auth/session";
 import { useNavigate } from "@tanstack/react-router";
+import { keepIfSame, profileAuthAction } from "@/lib/profile-refresh";
 
 export type UserRole = "super_admin" | "admin" | "brand_admin" | "staff" | "courier";
 export type UserStatus = "active" | "inactive";
@@ -70,6 +72,10 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
   const mountedRef = useRef(false);
+  // Whose profile is held or being read, and the read in flight: the first load and the
+  // `INITIAL_SESSION` event share one request.
+  const knownUserRef = useRef<string | null>(null);
+  const inflightRef = useRef<{ userId: string; read: Promise<Profile | null> } | null>(null);
   const navigate = useNavigate();
 
   // Admin identities must be provisioned explicitly by an authorized admin.
@@ -112,6 +118,19 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     [ensureProfile],
   );
 
+  const loadProfileFor = useCallback(
+    (userId: string, email: string): Promise<Profile | null> => {
+      if (inflightRef.current?.userId === userId) return inflightRef.current.read;
+      knownUserRef.current = userId;
+      const read = ensureProfile(userId, email).finally(() => {
+        if (inflightRef.current?.read === read) inflightRef.current = null;
+      });
+      inflightRef.current = { userId, read };
+      return read;
+    },
+    [ensureProfile],
+  );
+
   const signOutAndRedirect = useCallback(async () => {
     await signOut();
     navigate({ to: "/auth" });
@@ -126,7 +145,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       return;
     }
     const p = await fetchProfile(user.id);
-    setProfile(p);
+    setProfile((held) => keepIfSame(held, p));
   }, [fetchProfile]);
 
   useEffect(() => {
@@ -143,9 +162,9 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const p = await fetchProfile(user.id);
+      const p = await loadProfileFor(user.id, user.email || "");
       if (!mounted) return;
-      setProfile(p);
+      if (knownUserRef.current === user.id) setProfile((held) => keepIfSame(held, p));
       setIsLoading(false);
     };
 
@@ -156,12 +175,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       window.setTimeout(() => {
         if (!mounted) return;
         (async () => {
-          if (event === "SIGNED_OUT" || !session) {
+          const action = profileAuthAction(event, session?.user.id, knownUserRef.current);
+          if (action === "keep") return;
+          if (action === "clear" || !session) {
+            knownUserRef.current = null;
             setProfile(null);
             return;
           }
-          const p = await fetchProfile(session.user.id);
-          if (mounted) setProfile(p);
+          const p = await loadProfileFor(session.user.id, session.user.email || "");
+          // A read for someone who has since signed out or changed is dropped.
+          if (mounted && knownUserRef.current === session.user.id) {
+            setProfile((held) => keepIfSame(held, p));
+          }
         })();
       }, 0);
     });
@@ -171,7 +196,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       mountedRef.current = false;
       sub.subscription.unsubscribe();
     };
-  }, [fetchProfile]);
+  }, [fetchProfile, loadProfileFor]);
 
   // Defensive: the fixed super admin is always treated as such client-side too.
   const emailIsSuperAdmin = profile?.email?.toLowerCase() === SUPER_ADMIN_EMAIL;
@@ -203,26 +228,38 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   // Only authorized roles or users with explicit financials permission can view financial data
   const canViewFinancials = isActive && (isAdmin || hasPermission("view_financials"));
 
-  return (
-    <ProfileContext.Provider
-      value={{
-        profile,
-        isLoading,
-        isAdmin,
-        isSuperAdmin,
-        isBrandAdmin,
-        isCourier,
-        isActive,
-        profileError,
-        canViewFinancials,
-        hasPermission,
-        refreshProfile,
-        signOutAndRedirect,
-      }}
-    >
-      {children}
-    </ProfileContext.Provider>
+  const value = useMemo(
+    () => ({
+      profile,
+      isLoading,
+      isAdmin,
+      isSuperAdmin,
+      isBrandAdmin,
+      isCourier,
+      isActive,
+      profileError,
+      canViewFinancials,
+      hasPermission,
+      refreshProfile,
+      signOutAndRedirect,
+    }),
+    [
+      profile,
+      isLoading,
+      isAdmin,
+      isSuperAdmin,
+      isBrandAdmin,
+      isCourier,
+      isActive,
+      profileError,
+      canViewFinancials,
+      hasPermission,
+      refreshProfile,
+      signOutAndRedirect,
+    ],
   );
+
+  return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
 
 export function useProfile() {

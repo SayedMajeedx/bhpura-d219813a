@@ -335,6 +335,17 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     expect(rules.slice(0, rules.indexOf("@media (pointer: coarse)"))).not.toContain("@layer");
   });
 
+  it("gives an admin control a finger's 44px on a touch screen, without redrawing it", () => {
+    // 58 of the inventory's 68 controls on a phone were under 44px (a row's buttons 32px, a
+    // checkbox 16px). The admin's controls take taps over an invisible box at least 44px each
+    // way; one placed over something else is left out, so it never takes taps meant for it.
+    const rules = read("src/styles/mobile-native.css");
+    const touch = rules.slice(rules.lastIndexOf("@media (pointer: coarse)"));
+    expect(touch).toContain(":root:has(.admin-typography)");
+    expect(touch).toMatch(/:not\([^)]*\[class\*="absolute"\]/);
+    expect(touch).toMatch(/width: max\(100%, 44px\);\s*height: max\(100%, 44px\);/);
+  });
+
   it("never takes zoom away", () => {
     const sources = import.meta.glob("../src/**/*.{ts,tsx}", {
       query: "?raw",

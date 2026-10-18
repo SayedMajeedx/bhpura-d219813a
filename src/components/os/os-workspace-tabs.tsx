@@ -51,7 +51,7 @@ export function OsWorkspaceTabs({
         className,
       )}
     >
-      <div className="max-w-full px-3 py-1.5 sm:px-4 flex items-center justify-between gap-3 overflow-hidden">
+      <div className="max-w-full px-3 py-1.5 pointer-coarse:py-1 sm:px-4 flex items-center justify-between gap-3 overflow-hidden">
         {/* Workspace Title & Badge (Desktop) */}
         <div className="hidden lg:flex items-center gap-2 shrink-0 pe-2.5 border-e border-border-subtle">
           {WorkspaceIcon && (
@@ -82,7 +82,7 @@ export function OsWorkspaceTabs({
                 params={tab.params as any}
                 preload="intent"
                 className={cn(
-                  "group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  "group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] pointer-coarse:min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-background/50 border border-border-subtle",

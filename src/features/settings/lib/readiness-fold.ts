@@ -25,3 +25,14 @@ export function readinessFolded({
  * every step was done) said nothing about the new one.
  */
 export const readinessFoldKey = (brandId: string) => `store-readiness-folded-v2-${brandId}`;
+
+/**
+ * Whether the identity tab's "Start here: logo → colour → font → kind of store" guide is still
+ * of use: while a step of the launch checklist that lives in that tab is open. A store whose
+ * checklist read 7/7 still had the guide above its settings, on every visit.
+ */
+export function identityGuideShown(
+  steps: readonly { tabId?: string; isComplete: boolean }[],
+): boolean {
+  return steps.some((step) => step.tabId === "identity" && !step.isComplete);
+}

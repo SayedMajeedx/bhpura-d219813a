@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { useShortcutHint } from "@/lib/platform-shortcut";
 
 type DatePreset = "today" | "week" | "month" | "custom";
 
@@ -45,7 +45,7 @@ export function ExpensesToolbar({
   onDownloadCogsCsv,
 }: ExpensesToolbarProps) {
   const isAr = lang === "ar";
-  const shortcutLabel = useCommandShortcutLabel();
+  const shortcutHint = useShortcutHint();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,8 +97,8 @@ export function ExpensesToolbar({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               isAr
-                ? `ابحث بالوصف أو المتجر... (${shortcutLabel})`
-                : `Search description or store... (${shortcutLabel})`
+                ? `ابحث بالوصف أو المتجر...${shortcutHint}`
+                : `Search description or store...${shortcutHint}`
             }
             className="ps-9 h-9 text-xs bg-background/80"
           />

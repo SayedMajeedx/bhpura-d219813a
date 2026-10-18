@@ -174,11 +174,7 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
             className="ps-9 pe-16 h-9 text-xs bg-background/90 rounded-xl"
             value={searchQuery}
             aria-label={isAr ? "ابحث في الإعدادات" : "Search settings"}
-            placeholder={
-              isAr
-                ? "ابحث في الإعدادات: الشعار، بنفت باي، الضريبة..."
-                : "Search settings: logo, BenefitPay, tax..."
-            }
+            placeholder={isAr ? "ابحث: الشعار، الضريبة، الدفع" : "Search: logo, tax, payments"}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setSearchOpen(true);

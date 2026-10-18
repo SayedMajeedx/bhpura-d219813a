@@ -9,7 +9,7 @@ import { CustomersWorkQueue } from "../src/components/customers/CustomersWorkQue
 import { InventoryMobileCard } from "../src/components/inventory/InventoryMobileCard";
 
 describe("Phase 7A responsive workspaces", () => {
-  test("inventory exposes two readable mobile scopes and an accessible overflow menu", () => {
+  test("inventory shows every scope once, in one row, with its whole label", () => {
     render(
       <InventoryScopeSwitcher
         lang="en"
@@ -35,9 +35,13 @@ describe("Phase 7A responsive workspaces", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "More inventory scopes" })).toBeDefined();
-    expect(screen.getAllByRole("button", { name: /All Products/ })).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: /Low Stock/ })).toHaveLength(2);
+    // A phone once had two cut tabs ("جميع المنـ…") and the rest behind a menu.
+    expect(screen.getByRole("group", { name: "Inventory views" })).toBeDefined();
+    expect(screen.queryByRole("button", { name: "More inventory scopes" })).toBeNull();
+    for (const name of [/All Products/, /Low Stock/, /Out of Stock/]) {
+      const tab = screen.getByRole("button", { name });
+      expect(tab.querySelector(".truncate")).toBeNull();
+    }
   });
 
   test("customer segments provide a localized overflow action", () => {

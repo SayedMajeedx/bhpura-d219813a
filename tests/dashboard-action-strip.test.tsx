@@ -31,7 +31,7 @@ describe("DashboardActionStrip", () => {
     expect(screen.getByText("7 مهام معلّقة")).toBeDefined();
   });
 
-  it("renders celebratory all-clear state when all queues are 0", () => {
+  it("says once, in one line, that nothing waits when all queues are 0", () => {
     render(
       <DashboardActionStrip
         slug="boutq-store"
@@ -42,9 +42,11 @@ describe("DashboardActionStrip", () => {
       />,
     );
 
-    expect(screen.getByText("ما الذي يتطلب انتباهك اليوم؟")).toBeDefined();
-    expect(screen.getByText("كل أمورك جاهزة ومنتظمة اليوم!")).toBeDefined();
-    expect(screen.queryByText("طلبات بانتظار التجهيز والشحن")).toBeNull();
+    // It once said so three times (the heading's line, a green card and its sentence).
+    const section = screen.getByRole("region", { name: "مهام اليوم العاجلة" });
+    expect(section.textContent).toBe("لا شيء يحتاج انتباهك اليوم");
+    expect(screen.queryByRole("heading")).toBeNull();
+    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("renders in English correctly", () => {
