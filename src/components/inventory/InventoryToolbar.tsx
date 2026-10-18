@@ -159,6 +159,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-label={isAr ? "ابحث باسم المنتج أو الباركود" : "Search name or barcode"}
             placeholder={
               isAr ? "ابحث باسم المنتج أو الباركود..." : `Search name or barcode${shortcutHint}`
             }

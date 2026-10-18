@@ -374,6 +374,7 @@ export function HeaderBrandingPanel({ studio }: { studio: ContentStudio }) {
             max="75"
             step="0.5"
             value={headerPosY}
+            aria-label={isAr ? "الموضع العمودي (من الأعلى)" : "Vertical position (Y)"}
             onChange={(e) => setHeaderPosY(parseFloat(e.target.value))}
             className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
           />
@@ -398,6 +399,7 @@ export function HeaderBrandingPanel({ studio }: { studio: ContentStudio }) {
             max="80"
             step="2"
             value={headerLogoHeight}
+            aria-label={isAr ? "ارتفاع الشعار" : "Logo height"}
             onChange={(e) => setHeaderLogoHeight(parseInt(e.target.value, 10))}
             className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
           />
@@ -422,6 +424,7 @@ export function HeaderBrandingPanel({ studio }: { studio: ContentStudio }) {
             max="1.4"
             step="0.05"
             value={headerScale}
+            aria-label={isAr ? "مقياس الترويسة الكاملة" : "Overall header scale"}
             onChange={(e) => setHeaderScale(parseFloat(e.target.value))}
             className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
           />

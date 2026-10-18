@@ -213,7 +213,8 @@ export function AddonStoreHero({
                     ? "w-6 bg-primary"
                     : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60",
                 )}
-                aria-label={`Slide ${idx + 1}`}
+                aria-label={isAr ? `الإضافة المميزة ${idx + 1}` : `Featured add-on ${idx + 1}`}
+                aria-current={idx === currentIndex ? "true" : undefined}
               />
             ))}
           </div>
@@ -223,6 +224,7 @@ export function AddonStoreHero({
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg"
+              aria-label={isAr ? "الإضافة السابقة" : "Previous add-on"}
               onClick={() =>
                 setCurrentIndex((prev) => (prev - 1 + featuredIds.length) % featuredIds.length)
               }
@@ -233,6 +235,7 @@ export function AddonStoreHero({
               variant="ghost"
               size="icon"
               className="h-7 w-7 rounded-lg"
+              aria-label={isAr ? "الإضافة التالية" : "Next add-on"}
               onClick={() => setCurrentIndex((prev) => (prev + 1) % featuredIds.length)}
             >
               {isAr ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}

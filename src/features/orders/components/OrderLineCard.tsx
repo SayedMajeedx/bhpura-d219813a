@@ -17,7 +17,7 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
-import type { Dispatch, SetStateAction } from "react";
+import { useId, type Dispatch, type SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 
@@ -71,6 +71,8 @@ export function OrderLineCard({
   variantsQ: OrderDetailData["variantsQ"];
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  // Each line's labels name its own fields (an order has several lines).
+  const fieldId = useId();
   const variant = it.variant_id
     ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
     : null;
@@ -171,7 +173,7 @@ export function OrderLineCard({
       {/* Desktop Full Inline Input Grid (>= 640px) */}
       <div className="hidden sm:grid sm:grid-cols-12 gap-3">
         <div className="sm:col-span-3">
-          <Label>{t("orderDetail.fromInventory")}</Label>
+          <Label htmlFor={`${fieldId}-variant`}>{t("orderDetail.fromInventory")}</Label>
           <Select
             value={it.variant_id ?? "custom"}
             onValueChange={(v) => {
@@ -182,7 +184,7 @@ export function OrderLineCard({
               }
             }}
           >
-            <SelectTrigger>
+            <SelectTrigger id={`${fieldId}-variant`}>
               <SelectValue placeholder={t("orderDetail.pickVariant")} />
             </SelectTrigger>
             <SelectContent>
@@ -207,11 +209,15 @@ export function OrderLineCard({
           </Select>
         </div>
         <div className="sm:col-span-3">
-          <Label className="text-xs text-muted-foreground mb-1 block">
+          <Label
+            htmlFor={`${fieldId}-description`}
+            className="text-xs text-muted-foreground mb-1 block"
+          >
             {t("orderDetail.description")}
           </Label>
           {editingItems[idx] ? (
             <Textarea
+              id={`${fieldId}-description`}
               rows={2}
               value={it.description}
               placeholder={isAr ? "اكتب اسم أو وصف البند المخصص..." : "Enter item description..."}
@@ -225,7 +231,7 @@ export function OrderLineCard({
           )}
         </div>
         <div className="sm:col-span-2">
-          <Label>{t("orderDetail.qty")}</Label>
+          <Label htmlFor={`${fieldId}-qty`}>{t("orderDetail.qty")}</Label>
           <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 shadow-2xs mt-1">
             <Button
               type="button"
@@ -242,6 +248,7 @@ export function OrderLineCard({
               <Minus className="h-3.5 w-3.5" />
             </Button>
             <Input
+              id={`${fieldId}-qty`}
               type="number"
               min={1}
               value={it.quantity}
@@ -261,11 +268,12 @@ export function OrderLineCard({
           </div>
         </div>
         <div className="sm:col-span-3">
-          <Label className="text-xs text-muted-foreground mb-1 block">
+          <Label htmlFor={`${fieldId}-price`} className="text-xs text-muted-foreground mb-1 block">
             {t("orderDetail.unitPrice")}
           </Label>
           {editingItems[idx] ? (
             <Input
+              id={`${fieldId}-price`}
               type="number"
               step="0.001"
               value={it.unit_price}

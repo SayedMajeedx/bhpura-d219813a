@@ -51,6 +51,7 @@ import {
 import { ALL_SIZE_GUIDE_TEMPLATES, ABAYA_GULF_TEMPLATE } from "../../lib/size-guide-templates";
 import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
 import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
+import { studioNames } from "@/addons/size-guides/lib/studio-names";
 
 type FormState = {
   id?: string;
@@ -118,6 +119,7 @@ export function SizeGuidesStudioPage() {
   const brandId = brand.id;
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const named = studioNames(isAr);
   const qc = useQueryClient();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -724,6 +726,7 @@ export function SizeGuidesStudioPage() {
                   </Label>
                   <Input
                     value={form.name_ar}
+                    aria-label={named.nameAr}
                     onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
                     placeholder="مثال: دليل مقاسات العبايات"
                     className="h-9 text-xs"
@@ -735,6 +738,7 @@ export function SizeGuidesStudioPage() {
                   </Label>
                   <Input
                     value={form.name_en}
+                    aria-label={named.nameEn}
                     onChange={(e) => setForm({ ...form, name_en: e.target.value })}
                     placeholder="e.g. Abaya Size Guide"
                     className="h-9 text-xs"
@@ -829,6 +833,7 @@ export function SizeGuidesStudioPage() {
                         <div className="flex-1 min-w-32">
                           <Input
                             value={col.label_ar}
+                            aria-label={named.columnLabelAr(idx)}
                             onChange={(e) => {
                               const next = [...form.columns];
                               next[idx].label_ar = e.target.value;
@@ -842,6 +847,7 @@ export function SizeGuidesStudioPage() {
                         <div className="flex-1 min-w-32">
                           <Input
                             value={col.label_en}
+                            aria-label={named.columnLabelEn(idx)}
                             onChange={(e) => {
                               const next = [...form.columns];
                               next[idx].label_en = e.target.value;
@@ -855,6 +861,7 @@ export function SizeGuidesStudioPage() {
                         <div className="w-32">
                           <select
                             value={col.kind}
+                            aria-label={named.columnKind(idx)}
                             onChange={(e) => {
                               const next = [...form.columns];
                               next[idx].kind = e.target.value as any;
@@ -876,6 +883,7 @@ export function SizeGuidesStudioPage() {
                           <div className="w-32">
                             <select
                               value={col.measurement_key || ""}
+                              aria-label={named.columnMeasure(idx)}
                               onChange={(e) => {
                                 const next = [...form.columns];
                                 next[idx].measurement_key = (e.target.value || undefined) as any;
@@ -903,6 +911,7 @@ export function SizeGuidesStudioPage() {
                             variant="ghost"
                             size="icon"
                             disabled={idx === 0}
+                            aria-label={named.moveUp(idx)}
                             onClick={() => {
                               const next = [...form.columns];
                               const temp = next[idx - 1];
@@ -919,6 +928,7 @@ export function SizeGuidesStudioPage() {
                             variant="ghost"
                             size="icon"
                             disabled={idx === form.columns.length - 1}
+                            aria-label={named.moveDown(idx)}
                             onClick={() => {
                               const next = [...form.columns];
                               const temp = next[idx + 1];
@@ -935,6 +945,7 @@ export function SizeGuidesStudioPage() {
                             variant="ghost"
                             size="icon"
                             disabled={form.columns.length <= 1}
+                            aria-label={named.deleteColumn(idx)}
                             onClick={() => {
                               const next = form.columns.filter((_, i) => i !== idx);
                               setForm({ ...form, columns: next });
@@ -1005,6 +1016,7 @@ export function SizeGuidesStudioPage() {
                           <td className="py-2 px-3 font-semibold">
                             <Input
                               value={row.size_label}
+                              aria-label={named.rowSize(rIdx)}
                               onChange={(e) => {
                                 const next = [...form.rows];
                                 next[rIdx].size_label = e.target.value;
@@ -1026,6 +1038,10 @@ export function SizeGuidesStudioPage() {
                                 <td key={col.key} className="py-2 px-2 text-center">
                                   <Input
                                     value={displayVal}
+                                    aria-label={named.cell(
+                                      (isAr ? col.label_ar : col.label_en) || col.key,
+                                      row.size_label || String(rIdx + 1),
+                                    )}
                                     onChange={(e) => {
                                       const next = [...form.rows];
                                       const valStr = e.target.value.trim();
@@ -1164,6 +1180,7 @@ export function SizeGuidesStudioPage() {
                             const next = form.how_to_measure.filter((_, i) => i !== sIdx);
                             setForm({ ...form, how_to_measure: next });
                           }}
+                          aria-label={named.deleteStep(sIdx)}
                           className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -1177,6 +1194,7 @@ export function SizeGuidesStudioPage() {
                           </Label>
                           <Input
                             value={step.title_ar}
+                            aria-label={named.stepTitleAr(sIdx)}
                             onChange={(e) => {
                               const next = [...form.how_to_measure];
                               next[sIdx].title_ar = e.target.value;
@@ -1191,6 +1209,7 @@ export function SizeGuidesStudioPage() {
                           </Label>
                           <Input
                             value={step.title_en}
+                            aria-label={named.stepTitleEn(sIdx)}
                             onChange={(e) => {
                               const next = [...form.how_to_measure];
                               next[sIdx].title_en = e.target.value;
@@ -1266,6 +1285,7 @@ export function SizeGuidesStudioPage() {
                         variant="destructive"
                         size="icon"
                         onClick={() => setForm({ ...form, diagram_url: null })}
+                        aria-label={named.removePicture}
                         className="absolute top-1 end-1 h-6 w-6 rounded-full"
                       >
                         <Trash2 className="h-3 w-3" />

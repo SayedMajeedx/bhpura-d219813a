@@ -250,11 +250,13 @@ export function OrderCustomerCard({
       />
       <div className="mt-4 grid grid-cols-1 gap-4">
         <div>
-          <Label>{t("orderDetail.notes")}</Label>
+          <Label htmlFor="order-notes">{t("orderDetail.notes")}</Label>
           <Textarea
+            id="order-notes"
             value={order.notes ?? ""}
             onChange={(e) => setOrder({ ...order, notes: e.target.value })}
             rows={3}
+            aria-label={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
             placeholder={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
           />
         </div>
@@ -267,6 +269,9 @@ export function OrderCustomerCard({
             value={order.delivery_notes ?? ""}
             onChange={(e) => setOrder({ ...order, delivery_notes: e.target.value })}
             rows={3}
+            aria-label={
+              lang === "ar" ? "ملاحظات السائق وسجل التوصيل" : "Driver notes and courier logs"
+            }
             placeholder={
               lang === "ar" ? "ملاحظات السائق وسجل التوصيل" : "Driver notes and courier logs"
             }
