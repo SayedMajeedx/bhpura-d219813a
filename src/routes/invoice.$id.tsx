@@ -604,7 +604,7 @@ function PublicInvoice() {
               style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}
             >
               <div
-                className="pdf-totals-block w-full sm:w-72 text-sm space-y-1.5"
+                className="pdf-totals-block w-full sm:w-80 text-sm space-y-1.5"
                 style={{ direction: isRTL ? "rtl" : "ltr" }}
               >
                 <div className="flex justify-between">
@@ -647,14 +647,14 @@ function PublicInvoice() {
                   return (
                     <>
                       <div
-                        className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
+                        className="flex justify-between items-center gap-3 py-2 px-2.5 rounded-lg mt-2 font-bold"
                         style={{
                           backgroundColor: secondaryColor,
                           border: `1.5px solid ${color}40`,
                         }}
                       >
                         <span
-                          className="text-base sm:text-lg"
+                          className="text-base sm:text-lg whitespace-nowrap"
                           style={{ color: surfaceCardTextColor }}
                         >
                           {lang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}

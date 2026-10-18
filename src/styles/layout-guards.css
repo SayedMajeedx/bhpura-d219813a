@@ -27,11 +27,14 @@
    * A name whose direction follows its own text (dir="auto"), so an English name on an Arabic
    * page is cut at its end ("Soft transparency…", not "…Soft transparency"), still sits at the
    * page's start edge: `text-start` would follow the name's direction and move it across.
+   * The edge is the parent's direction (`:dir()`, from the nearest `dir`), not any ancestor's:
+   * with `[dir="rtl"] .x` and `[dir="ltr"] .x` an Arabic invoice inside a page whose <html> is
+   * left to right matched both, the later rule won, and an English name sat on the left.
    */
-  [dir="rtl"] .text-page-start {
+  :dir(rtl) > .text-page-start {
     text-align: right;
   }
-  [dir="ltr"] .text-page-start {
+  :dir(ltr) > .text-page-start {
     text-align: left;
   }
 }
