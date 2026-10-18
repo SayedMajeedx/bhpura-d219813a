@@ -79,3 +79,39 @@
     }
   }
 }
+
+/*
+ * A field a finger opens is 44px tall too: the admin's searches, selects and inputs were 36px
+ * (32px in a dialog). On a touch screen a field, a native select and a dropdown's trigger in the
+ * admin are at least 44px; a mouse keeps the design's height. A button in the same row as a
+ * field (beside a search, a logo's address, a code to apply) is as tall, and a square icon
+ * button stays square, so the row stays even; a filter button kept in a wrapper of its own
+ * says so in its class (`pointer-coarse:h-11`).
+ */
+@media (pointer: coarse) {
+  :root:has(.admin-typography)
+    :is(
+      input:not(
+        [type="checkbox"],
+        [type="radio"],
+        [type="range"],
+        [type="file"],
+        [type="color"],
+        [type="hidden"]
+      ),
+      select,
+      [role="combobox"]
+    ) {
+    min-height: 44px;
+  }
+
+  :root:has(.admin-typography)
+    :is(.flex, .inline-flex):has(> :is(input, select, [role="combobox"]), > .relative > input)
+    > :is(button, [role="button"], a[class*="flex"]) {
+    min-height: 44px;
+
+    &:is([class~="w-8"], [class~="w-9"], [class~="w-10"], [class~="size-9"]) {
+      min-width: 44px;
+    }
+  }
+}

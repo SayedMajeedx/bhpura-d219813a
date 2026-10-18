@@ -118,7 +118,7 @@ export function DiscountsToolbar({
                 aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                 variant={activeFilterCount > 0 ? "default" : "outline"}
                 size="sm"
-                className="h-9 w-full gap-1.5 text-xs font-semibold bg-background/80 justify-center"
+                className="h-9 pointer-coarse:h-11 w-full gap-1.5 text-xs font-semibold bg-background/80 justify-center"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 <span>{isAr ? "التصفية" : "Filters"}</span>

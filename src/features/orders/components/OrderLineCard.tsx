@@ -232,7 +232,7 @@ export function OrderLineCard({
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor={`${fieldId}-qty`}>{t("orderDetail.qty")}</Label>
-          <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 shadow-2xs mt-1">
+          <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 pointer-coarse:h-auto shadow-2xs mt-1">
             <Button
               type="button"
               variant="ghost"

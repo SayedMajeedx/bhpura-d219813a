@@ -134,7 +134,7 @@ export function OrderItemEditDialog({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label className="text-xs font-semibold">{t("orderDetail.qty")}</Label>
-              <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 mt-1.5">
+              <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 pointer-coarse:h-auto mt-1.5">
                 <Button
                   type="button"
                   variant="ghost"

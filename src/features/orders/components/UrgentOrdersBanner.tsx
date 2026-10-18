@@ -7,8 +7,9 @@ import type { Dispatch, SetStateAction } from "react";
 
 /**
  * Nudge to open the 'Needs attention' tab when orders are waiting on the team:
- * one line that is itself the way in. On a phone it was a sentence with a
- * button under it, about 100px between the filters and the orders.
+ * one line that is itself the way in, with the reasons beside it. From `sm` up
+ * only: on a phone it repeated the first filter tab, right above it, which now
+ * turns amber itself (`urgent` in `orderQueueTabs`), and pushed the orders down.
  */
 export function UrgentOrdersBanner({
   hasMadeToOrder,
@@ -34,7 +35,7 @@ export function UrgentOrdersBanner({
         setTabFilter("action_required");
         setPage(1);
       }}
-      className="h-auto w-full justify-between gap-3 whitespace-normal rounded-xl border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-start text-xs font-medium text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
+      className="h-auto w-full justify-between max-sm:hidden gap-3 whitespace-normal rounded-xl border-amber-500/30 bg-amber-500/10 px-3.5 py-2 text-start text-xs font-medium text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
     >
       <span className="flex min-w-0 items-center gap-2">
         <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />

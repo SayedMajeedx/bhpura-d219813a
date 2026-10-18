@@ -17,6 +17,8 @@ export function orderQueueTabs(
       label_ar: "يحتاج متابعة",
       count: counts.action_required,
       icon: Clock3,
+      // Orders waiting on the team: the tab says so itself (on a phone it replaces the banner).
+      urgent: counts.action_required > 0,
     },
     {
       id: "unpaid",

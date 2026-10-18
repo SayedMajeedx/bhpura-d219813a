@@ -340,10 +340,24 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     // checkbox 16px). The admin's controls take taps over an invisible box at least 44px each
     // way; one placed over something else is left out, so it never takes taps meant for it.
     const rules = read("src/styles/mobile-native.css");
-    const touch = rules.slice(rules.lastIndexOf("@media (pointer: coarse)"));
+    const touch = rules.slice(
+      rules.indexOf("A finger needs 44px"),
+      rules.indexOf("A field a finger opens"),
+    );
     expect(touch).toContain(":root:has(.admin-typography)");
     expect(touch).toMatch(/:not\([^)]*\[class\*="absolute"\]/);
     expect(touch).toMatch(/width: max\(100%, 44px\);\s*height: max\(100%, 44px\);/);
+  });
+
+  it("makes an admin field, and a button in its row, 44px tall on a touch screen", () => {
+    // The admin's searches, selects and inputs were 36px on a phone (32px in a dialog); the
+    // filter button beside a search stayed 36px once the search grew, so the row was uneven.
+    const rules = read("src/styles/mobile-native.css");
+    const touch = rules.slice(rules.indexOf("A field a finger opens"));
+    expect(touch).toMatch(/:root:has\(\.admin-typography\)[\s\S]*select,[\s\S]*min-height: 44px;/);
+    expect(touch).toMatch(
+      /:has\(> :is\(input, select, \[role="combobox"\]\)[\s\S]*min-height: 44px;/,
+    );
   });
 
   it("never takes zoom away", () => {

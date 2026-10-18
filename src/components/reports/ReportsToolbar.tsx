@@ -120,7 +120,7 @@ export function ReportsToolbar({
                     aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                     variant="outline"
                     size="sm"
-                    className="h-10 w-full gap-1.5 text-xs font-semibold bg-background justify-center"
+                    className="h-10 pointer-coarse:h-11 w-full gap-1.5 text-xs font-semibold bg-background justify-center"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     <span>{isAr ? "العرض" : "View Options"}</span>

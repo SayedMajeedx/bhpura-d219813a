@@ -203,7 +203,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                 variant={activeFilterCount > 0 ? "default" : "outline"}
                 size="sm"
-                className="h-9 px-2.5 text-xs font-semibold"
+                className="h-9 pointer-coarse:h-11 px-2.5 text-xs font-semibold"
               >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {activeFilterCount > 0 && (
