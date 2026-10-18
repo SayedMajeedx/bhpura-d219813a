@@ -34,7 +34,7 @@ export function AdvanceReportView() {
   const summary = useMemo(() => summarizeAdvance(orders), [orders]);
   const owed = useMemo(() => owedRows(orders, new Date()), [orders]);
   const currency = summary.currency ?? "BHD";
-  const money = (value: number) => formatMoney(value, currency);
+  const money = (value: number) => formatMoney(value, currency, lang);
   const brandName = (isAr ? brand.name_ar : null) || brand.name_en;
 
   return (
@@ -179,7 +179,7 @@ export function AdvanceReportView() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold tabular-nums text-foreground">
-                          {formatMoney(row.balance, order.currency)}
+                          {formatMoney(row.balance, order.currency, lang)}
                         </span>
                         {link ? (
                           <Button asChild size="sm" variant="outline">

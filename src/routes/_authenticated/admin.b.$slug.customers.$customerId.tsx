@@ -397,13 +397,13 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "إجمالي المشتريات" : "Total Spend"}
                   </span>
                   <span className="text-xs font-bold font-mono text-primary">
-                    {formatMoney(totalSpent, currency)}
+                    {formatMoney(totalSpent, currency, lang)}
                   </span>
                   {pendingCollection > 0 && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 block mt-0.5">
                       {lang === "ar"
-                        ? `(معلق: ${formatMoney(pendingCollection, currency)})`
-                        : `(Pending: ${formatMoney(pendingCollection, currency)})`}
+                        ? `(معلق: ${formatMoney(pendingCollection, currency, lang)})`
+                        : `(Pending: ${formatMoney(pendingCollection, currency, lang)})`}
                     </span>
                   )}
                 </div>
@@ -412,7 +412,7 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "المبالغ المحصّلة" : "Total Paid"}
                   </span>
                   <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                    {formatMoney(totalPaid, currency)}
+                    {formatMoney(totalPaid, currency, lang)}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
@@ -428,7 +428,7 @@ function CustomerProfilePage() {
                     {lang === "ar" ? "متوسط الطلب" : "Avg Order (AOV)"}
                   </span>
                   <span className="text-xs font-bold font-mono text-foreground">
-                    {formatMoney(aov, currency)}
+                    {formatMoney(aov, currency, lang)}
                   </span>
                 </div>
                 <div className="rounded-lg bg-background/70 border border-border-subtle p-2 text-center">
@@ -560,7 +560,7 @@ function CustomerProfilePage() {
                           </p>
                         </div>
                         <p className="font-mono text-sm font-extrabold">
-                          {formatMoney(Number(order.total), order.currency || currency)}
+                          {formatMoney(Number(order.total), order.currency || currency, lang)}
                         </p>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 border-t border-border-subtle pt-2.5">
@@ -693,7 +693,7 @@ function CustomerProfilePage() {
                             </div>
                           </td>
                           <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
-                            {formatMoney(Number(order.total), order.currency || currency)}
+                            {formatMoney(Number(order.total), order.currency || currency, lang)}
                           </td>
                         </tr>
                       ))}

@@ -33,7 +33,7 @@ export function DeliveryShopperPreview({
     lang,
     returnPolicy: returnPolicyQ.data ?? null,
     pages: storedPages(pages),
-    formatMoney: (amount) => formatMoney(amount, settings.currency || "BHD"),
+    formatMoney: (amount) => formatMoney(amount, settings.currency || "BHD", lang),
   });
 
   return (

@@ -81,7 +81,7 @@ export function AdvanceTemplates({
                     .map((form) =>
                       describeRule(ruleDefFromForm(form), {
                         isAr,
-                        money: (n) => formatMoney(n, currency),
+                        money: (n) => formatMoney(n, currency, isAr ? "ar" : "en"),
                         productName: () => "",
                         categoryName: (slug) => slug,
                       }),

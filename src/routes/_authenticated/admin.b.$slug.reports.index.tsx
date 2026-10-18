@@ -250,7 +250,9 @@ function ReportsOverview() {
               value={money(grossProfit)}
               icon={<TrendingUp />}
               accent={grossProfit >= 0 ? "emerald" : "amber"}
-              description={lang === "ar" ? "بعد التكلفة والاسترجاعات" : "After COGS and refunds"}
+              description={
+                lang === "ar" ? "بعد التكلفة والاسترجاعات" : "After cost of goods and refunds"
+              }
             />
             <KpiCard
               title={lang === "ar" ? "هامش الربح" : "Gross margin"}
@@ -301,15 +303,18 @@ function ReportsOverview() {
             <DetailCard
               title={lang === "ar" ? "صحة بيانات التكلفة" : "Cost data health"}
               rows={[
-                [lang === "ar" ? "تكلفة البضاعة المعروفة" : "Known COGS", money(data.known_cogs)],
                 [
-                  lang === "ar" ? "تكلفة طلبات المتجر" : "Store orders COGS",
+                  lang === "ar" ? "تكلفة البضاعة المعروفة" : "Known cost of goods",
+                  money(data.known_cogs),
+                ],
+                [
+                  lang === "ar" ? "تكلفة طلبات المتجر" : "Cost of store orders",
                   money(data.product_cogs),
                 ],
                 ...(shows(modules.incubators, data.incubator_cogs)
                   ? ([
                       [
-                        lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Incubator sales COGS",
+                        lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Cost of partner sales",
                         money(data.incubator_cogs),
                       ],
                     ] as Array<[string, string | number]>)
@@ -317,7 +322,7 @@ function ReportsOverview() {
                 ...(shows(modules.packaging, data.packaging_cogs)
                   ? ([
                       [
-                        lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging COGS",
+                        lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging cost",
                         money(data.packaging_cogs),
                       ],
                     ] as Array<[string, string | number]>)

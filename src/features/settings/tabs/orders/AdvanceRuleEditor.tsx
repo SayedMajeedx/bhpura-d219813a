@@ -92,7 +92,7 @@ export function AdvanceRuleEditor({
   );
   const problem = form.value ? ruleFormError(form, isAr) : null;
   const invalid = ruleFormError(form, isAr) !== null;
-  const money = (n: number) => formatMoney(n, currency);
+  const money = (n: number) => formatMoney(n, currency, isAr ? "ar" : "en");
 
   const nameOf = (p: (typeof products)[number]) =>
     (isAr ? p.name_ar || p.name : p.name_en || p.name) ?? "";

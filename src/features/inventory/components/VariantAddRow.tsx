@@ -35,7 +35,7 @@ export function VariantAddRow({
   viewMode: VariantViewMode;
 }) {
   const t = useT();
-  const money = useMoneyLabel("en");
+  const money = useMoneyLabel(isAr ? "ar" : "en");
   const { barcodeLabel } = stockLabels(isAr);
   const {
     size: sizeAxis,

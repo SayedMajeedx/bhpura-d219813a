@@ -23,7 +23,7 @@ describe("Phase 7B responsive financial workspaces", () => {
     expect(screen.getByText("Total Revenue")).toBeDefined();
     expect(screen.getByText("Net Profit / Margin")).toBeDefined();
     expect(screen.getByText("Cost and expense details")).toBeDefined();
-    expect(screen.getAllByText("COGS").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Cost of goods").length).toBeGreaterThanOrEqual(2);
   });
 
   test("report KPI cards use compact mobile spacing while retaining desktop spacing", () => {

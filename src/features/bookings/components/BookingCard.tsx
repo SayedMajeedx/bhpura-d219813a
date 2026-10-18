@@ -139,7 +139,9 @@ export function BookingCard({
                 {included ? (
                   <span>{isAr ? "مشمولة" : "included"}</span>
                 ) : (
-                  <span dir="ltr">{formatMoney(Number(item.line_total ?? 0), currency)}</span>
+                  <span dir="ltr">
+                    {formatMoney(Number(item.line_total ?? 0), currency, isAr ? "ar" : "en")}
+                  </span>
                 )}
               </li>
             );
@@ -147,7 +149,9 @@ export function BookingCard({
           {Number(booking.travel_fee ?? 0) > 0 && (
             <li className="flex justify-between gap-2 text-muted-foreground">
               <span>{isAr ? "التنقل" : "Travel"}</span>
-              <span dir="ltr">{formatMoney(Number(booking.travel_fee), currency)}</span>
+              <span dir="ltr">
+                {formatMoney(Number(booking.travel_fee), currency, isAr ? "ar" : "en")}
+              </span>
             </li>
           )}
           {Number(booking.discount_amount ?? 0) > 0 && (
@@ -158,12 +162,16 @@ export function BookingCard({
                   : booking.discount_label_en || booking.discount_label_ar) ??
                   (isAr ? "خصم" : "Discount")}
               </span>
-              <span dir="ltr">− {formatMoney(Number(booking.discount_amount), currency)}</span>
+              <span dir="ltr">
+                − {formatMoney(Number(booking.discount_amount), currency, isAr ? "ar" : "en")}
+              </span>
             </li>
           )}
           <li className="flex justify-between gap-2 border-t border-border pt-1 font-semibold">
             <span>{isAr ? "الإجمالي" : "Total"}</span>
-            <span dir="ltr">{formatMoney(Number(booking.total ?? 0), currency)}</span>
+            <span dir="ltr">
+              {formatMoney(Number(booking.total ?? 0), currency, isAr ? "ar" : "en")}
+            </span>
           </li>
         </ul>
       )}
@@ -180,7 +188,9 @@ export function BookingCard({
         {Number(booking.deposit_amount ?? 0) > 0 && (
           <span>
             {isAr ? "عربون: " : "Deposit: "}
-            <span dir="ltr">{formatMoney(Number(booking.deposit_amount), currency)}</span>
+            <span dir="ltr">
+              {formatMoney(Number(booking.deposit_amount), currency, isAr ? "ar" : "en")}
+            </span>
           </span>
         )}
       </p>

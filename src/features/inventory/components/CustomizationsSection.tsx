@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +38,7 @@ export function CustomizationsSection({
 }) {
   const t = useT();
   const isAr = useI18n().lang === "ar";
+  const currency = useStoreCurrency(brandId);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("0");
   const [scope, setScope] = useState<"all" | "selected">("all");
@@ -307,7 +309,7 @@ export function CustomizationsSection({
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-sm">{i.name}</p>
                         <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
-                          + {formatMoney(Number(i.price_delta))}
+                          + {formatMoney(Number(i.price_delta), currency, isAr ? "ar" : "en")}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">

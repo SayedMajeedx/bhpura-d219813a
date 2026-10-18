@@ -37,18 +37,18 @@ export function ExpensesScopeSwitcher({
             <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalRevenue, currency)}
+            {formatMoney(totalRevenue, currency, lang)}
           </span>
         </div>
 
         {/* 2. COGS */}
         <div className="hidden flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs sm:flex">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "تكلفة البضاعة (COGS)" : "COGS"}</span>
+            <span>{isAr ? "تكلفة البضاعة" : "Cost of goods"}</span>
             <PackageCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
           </div>
           <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalCogs, currency)}
+            {formatMoney(totalCogs, currency, lang)}
           </span>
         </div>
 
@@ -59,7 +59,7 @@ export function ExpensesScopeSwitcher({
             <Wallet className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           </div>
           <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalOpex, currency)}
+            {formatMoney(totalOpex, currency, lang)}
           </span>
         </div>
 
@@ -70,7 +70,7 @@ export function ExpensesScopeSwitcher({
             <Receipt className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
           </div>
           <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(processingFees, currency)}
+            {formatMoney(processingFees, currency, lang)}
           </span>
         </div>
 
@@ -97,7 +97,7 @@ export function ExpensesScopeSwitcher({
                 : "text-rose-600 dark:text-rose-400",
             )}
           >
-            {formatMoney(netProfit, currency)}
+            {formatMoney(netProfit, currency, lang)}
           </span>
         </div>
       </div>
@@ -108,18 +108,18 @@ export function ExpensesScopeSwitcher({
         </summary>
         <div className="mt-2 grid gap-2">
           <MetricRow
-            label={isAr ? "تكلفة البضاعة" : "COGS"}
-            value={formatMoney(totalCogs, currency)}
+            label={isAr ? "تكلفة البضاعة" : "Cost of goods"}
+            value={formatMoney(totalCogs, currency, lang)}
             icon={<PackageCheck className="h-4 w-4 text-blue-600" />}
           />
           <MetricRow
             label={isAr ? "المصروفات التشغيلية" : "Operating expenses"}
-            value={formatMoney(totalOpex, currency)}
+            value={formatMoney(totalOpex, currency, lang)}
             icon={<Wallet className="h-4 w-4 text-amber-600" />}
           />
           <MetricRow
             label={isAr ? "رسوم بوابة الدفع" : "Gateway fees"}
-            value={formatMoney(processingFees, currency)}
+            value={formatMoney(processingFees, currency, lang)}
             icon={<Receipt className="h-4 w-4 text-purple-600" />}
           />
         </div>

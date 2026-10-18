@@ -28,6 +28,7 @@ export function useProductActions({
   variants,
   variantsByProduct,
   businessName,
+  currency,
   isAr,
   onChanged,
 }: {
@@ -35,6 +36,8 @@ export function useProductActions({
   variants: Variant[];
   variantsByProduct: Record<string, Variant[]>;
   businessName: string | null;
+  /** The store's currency, for the price on a printed label. */
+  currency?: string | null;
   isAr: boolean;
   onChanged: () => void;
 }) {
@@ -160,7 +163,7 @@ export function useProductActions({
       return;
     }
 
-    const labels = barcodeLabelsFor(fresh.products, fresh.variants, businessName);
+    const labels = barcodeLabelsFor(fresh.products, fresh.variants, businessName, currency);
     if (labels.length === 0) {
       toast.error(isAr ? "لا توجد باركودات للطباعة" : "No barcodes to print");
       return;
@@ -169,7 +172,12 @@ export function useProductActions({
   };
 
   const printProductLabels = (prod: Product) => {
-    const labels = barcodeLabelsFor([prod], variantsByProduct[prod.id] || [], businessName);
+    const labels = barcodeLabelsFor(
+      [prod],
+      variantsByProduct[prod.id] || [],
+      businessName,
+      currency,
+    );
     if (labels.length > 0) printLabels(labels);
     else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
   };
