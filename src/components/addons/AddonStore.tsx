@@ -526,6 +526,9 @@ export function AddonStore({
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label={
+              isAr ? "ابحث عن إضافة بالاسم أو الوظيفة..." : "Search add-ons by name or feature..."
+            }
             placeholder={
               isAr ? "ابحث عن إضافة بالاسم أو الوظيفة..." : "Search add-ons by name or feature..."
             }

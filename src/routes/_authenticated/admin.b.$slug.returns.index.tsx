@@ -185,6 +185,11 @@ function ReturnsIndexPage() {
               <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="text"
+                aria-label={
+                  isAr
+                    ? "بحث برقم المرتجع، الفاتورة، أو العميل..."
+                    : "Search return #, invoice, customer..."
+                }
                 placeholder={
                   isAr
                     ? "بحث برقم المرتجع، الفاتورة، أو العميل..."

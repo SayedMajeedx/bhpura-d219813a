@@ -123,6 +123,7 @@ export function AddonCardMicrosoftStore({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label={isAr ? `خيارات ${manifest.name.ar}` : `${manifest.name.en} options`}
                     className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
                   >
                     <MoreVertical className="h-4 w-4" />

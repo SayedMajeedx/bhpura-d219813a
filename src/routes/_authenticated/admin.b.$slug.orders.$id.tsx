@@ -762,8 +762,9 @@ function OrderEditor() {
               />
 
               <div className="lg:hidden">
-                <Label>{t("orderDetail.notes")}</Label>
+                <Label htmlFor="order-notes-narrow">{t("orderDetail.notes")}</Label>
                 <Textarea
+                  id="order-notes-narrow"
                   value={order.notes ?? ""}
                   onChange={(e) => setOrder({ ...order, notes: e.target.value })}
                   rows={5}

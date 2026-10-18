@@ -263,6 +263,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         variant="outline"
                         size="sm"
                         onClick={() => onDelete(cat.id)}
+                        aria-label={isAr ? "حذف القسم" : "Delete category"}
                         className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50"
                       >
                         <Trash2 className="h-3.5 w-3.5" />

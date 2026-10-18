@@ -133,6 +133,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-label={
+              isAr
+                ? "ابحث برقم الطلب أو اسم العميل..."
+                : `Search invoice, customer, or phone... (${shortcutLabel})`
+            }
             placeholder={
               isAr
                 ? "ابحث برقم الطلب أو اسم العميل..."

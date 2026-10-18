@@ -95,6 +95,11 @@ export function ExpensesToolbar({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
+            aria-label={
+              isAr
+                ? `ابحث بالوصف أو المتجر... (${shortcutLabel})`
+                : `Search description or store... (${shortcutLabel})`
+            }
             placeholder={
               isAr
                 ? `ابحث بالوصف أو المتجر... (${shortcutLabel})`

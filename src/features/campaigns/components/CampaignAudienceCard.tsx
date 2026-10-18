@@ -42,6 +42,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label={isAr ? "ابحث عن عميل..." : "Search customer..."}
               placeholder={isAr ? "ابحث عن عميل..." : "Search customer..."}
               className="ps-9 text-start bg-background/50 focus:bg-background transition-colors duration-200"
             />
