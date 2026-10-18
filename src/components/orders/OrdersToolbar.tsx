@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { useShortcutHint } from "@/lib/platform-shortcut";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
 export type PaymentMethodFilter = "all" | "benefit" | "cod" | "card";
@@ -100,7 +100,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   const isAr = lang === "ar";
   const { isInstalled } = useAddons();
   const hasMadeToOrder = isInstalled("made-to-order");
-  const shortcutLabel = useCommandShortcutLabel();
+  const shortcutHint = useShortcutHint();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fulfillmentOptions = useMemo(() => {
@@ -133,15 +133,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            aria-label={
-              isAr
-                ? "ابحث برقم الطلب أو اسم العميل..."
-                : `Search invoice, customer, or phone... (${shortcutLabel})`
-            }
+            aria-label={isAr ? "ابحث برقم الطلب أو اسم العميل" : "Search order # or customer"}
             placeholder={
               isAr
                 ? "ابحث برقم الطلب أو اسم العميل..."
-                : `Search invoice, customer, or phone... (${shortcutLabel})`
+                : `Search order # or customer${shortcutHint}`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />
@@ -368,6 +364,20 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border-subtle bg-muted/30 px-3 py-2">
+                  <label
+                    htmlFor="include-historical-toggle-sheet"
+                    className="text-xs font-bold text-muted-foreground"
+                  >
+                    {isAr ? "تضمين الطلبات المؤرشفة" : "Include archived orders"}
+                  </label>
+                  <Switch
+                    id="include-historical-toggle-sheet"
+                    checked={includeHistorical}
+                    onCheckedChange={onIncludeHistoricalChange}
+                  />
+                </div>
               </div>
             </SheetContent>
           </Sheet>
@@ -388,8 +398,8 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           </SelectContent>
         </Select>
 
-        {/* Historical Switch */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-subtle bg-muted/30 shrink-0">
+        {/* Historical Switch (in the filter sheet on a phone, so the search keeps the row) */}
+        <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border-subtle bg-muted/30 shrink-0">
           <Switch
             id="include-historical-toggle"
             aria-label={isAr ? "تضمين الطلبات المؤرشفة" : "Include archived orders"}

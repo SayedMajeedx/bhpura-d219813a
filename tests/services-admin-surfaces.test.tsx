@@ -201,7 +201,7 @@ describe("the dashboard's words", () => {
 
   it("say all is clear when nothing waits", () => {
     strip();
-    expect(screen.getByText(/All queues are clear/)).toBeInTheDocument();
+    expect(screen.getByText("Nothing needs your attention today")).toBeInTheDocument();
   });
 
   it("name the alerts tab for what it holds", () => {

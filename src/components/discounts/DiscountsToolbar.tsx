@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
-import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { useShortcutHint } from "@/lib/platform-shortcut";
 
 interface DiscountsToolbarProps {
   lang: "ar" | "en";
@@ -34,7 +34,7 @@ export function DiscountsToolbar({
   onClearFilters,
 }: DiscountsToolbarProps) {
   const isAr = lang === "ar";
-  const shortcutLabel = useCommandShortcutLabel();
+  const shortcutHint = useShortcutHint();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -58,15 +58,9 @@ export function DiscountsToolbar({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            aria-label={
-              isAr
-                ? `ابحث برمز الخصم... (${shortcutLabel})`
-                : `Search by promo code... (${shortcutLabel})`
-            }
+            aria-label={isAr ? "ابحث برمز الخصم" : "Search by promo code"}
             placeholder={
-              isAr
-                ? `ابحث برمز الخصم... (${shortcutLabel})`
-                : `Search by promo code... (${shortcutLabel})`
+              isAr ? `ابحث برمز الخصم...${shortcutHint}` : `Search by promo code...${shortcutHint}`
             }
             className="ps-9 h-9 text-xs bg-background/80"
           />

@@ -89,6 +89,9 @@ describe("the order header in safe view mode", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /Edit Order/ })[0]);
     expect(onUnlock).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: /Cancel Editing/ })).toBeNull();
+    // The notice is one line: on a phone the thumb bar holds "Edit order", and a button in the
+    // notice offered it a second time.
+    expect(screen.getAllByRole("button", { name: /^Edit/ })).toHaveLength(1);
   });
 
   it("offers no way to edit when the order cannot be reopened", () => {

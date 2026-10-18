@@ -44,3 +44,38 @@
     touch-action: manipulation;
   }
 }
+
+/*
+ * A finger needs 44px. In the admin on a phone 58 of the inventory's 68 controls were smaller (a
+ * row's buttons 32px, a checkbox 16px), and the rows are dense on purpose. On a touch screen a
+ * control in the admin (its dialogs too, which render outside the shell) takes taps over an
+ * invisible box at least 44px each way, centred on it; what it looks like does not change, and
+ * a mouse keeps the design's size. A control that draws its own `after:` keeps it, and one placed
+ * over something else (`absolute`, `fixed`: a field's clear button, a dialog's close) is left
+ * alone, so it never takes taps meant for what lies under it.
+ */
+@media (pointer: coarse) {
+  :root:has(.admin-typography)
+    :is(
+      button,
+      [role="button"],
+      [role="tab"],
+      [role="switch"],
+      [role="checkbox"],
+      [role="radio"],
+      [role="combobox"],
+      a[class*="flex"]
+    ):not([class*="after:"], [class*="absolute"], [class*="fixed"], [class*="sticky"]) {
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      translate: -50% -50%;
+    }
+  }
+}

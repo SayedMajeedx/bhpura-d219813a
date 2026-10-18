@@ -1,6 +1,12 @@
 import * as React from "react";
 import { useState, useContext } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
+import { useBrand } from "@/lib/brand-context";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { brandQueries } from "@/lib/data/brands";
+import { evaluateStoreReadiness } from "@/components/settings/StoreReadinessChecklist";
+import { identityGuideShown } from "@/features/settings/lib/readiness-fold";
 import { Button } from "@/components/ui/button";
 import { Sparkles, X, Palette, Image, Type, Compass, Phone } from "lucide-react";
 import {
@@ -45,7 +51,23 @@ function FirstVisitIntroBanner() {
     setActiveGroup(anchorId.replace(/^group-/, ""));
   };
 
-  if (dismissed) return null;
+  // The launch checklist's own reading, from the queries it already holds (no new request).
+  const brand = useBrand();
+  const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
+  const brandQ = useQuery(brandQueries.profile(brand.id));
+
+  if (dismissed || !settingsQ.data) return null;
+  const { items } = evaluateStoreReadiness({
+    businessSettings: settingsQ.data as Parameters<
+      typeof evaluateStoreReadiness
+    >[0]["businessSettings"],
+    brandLogoUrl: brandQ.data?.logo_url,
+    storeVertical: settingsQ.data.store_vertical,
+    // Products are not an identity step.
+    activeProductsCount: 0,
+    lang,
+  });
+  if (!identityGuideShown(items)) return null;
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-5 shadow-xs transition-all animate-in fade-in duration-300">

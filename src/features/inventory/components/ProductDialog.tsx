@@ -140,9 +140,11 @@ export function ProductDialog({
   });
 
   return (
-    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border-strong shadow-2xl bg-background overflow-hidden">
+    // On a phone the editor is the whole screen: a centred box left a strip of the page around
+    // it and its tab labels wrapped to two lines.
+    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border-strong shadow-2xl bg-background overflow-hidden max-sm:inset-0 max-sm:h-[100dvh] max-sm:max-h-[100dvh] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0">
       {/* Header with gradient bar and stepper indicators */}
-      <div className="relative border-b border-border-subtle bg-secondary/20 p-5 pb-4">
+      <div className="relative border-b border-border-subtle bg-secondary/20 p-5 pb-4 max-sm:px-4 max-sm:pt-[max(1.25rem,env(safe-area-inset-top))]">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -163,14 +165,15 @@ export function ProductDialog({
         </DialogHeader>
 
         {/* Stepper Tabs Bar */}
-        <div className="flex items-center gap-2 mt-4 bg-muted/60 p-1 rounded-xl">
+        <div className="flex items-center gap-2 mt-4 bg-muted/60 p-1 rounded-xl overflow-x-auto no-scrollbar overscroll-x-contain">
           <button
             type="button"
             onClick={(e) => {
               e.preventDefault();
               setActiveDialogTab("basic");
             }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+            aria-pressed={activeDialogTab === "basic"}
+            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
               activeDialogTab === "basic"
                 ? "bg-background text-primary shadow-sm scale-[0.98]"
                 : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
@@ -185,7 +188,8 @@ export function ProductDialog({
               e.preventDefault();
               setActiveDialogTab("media");
             }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+            aria-pressed={activeDialogTab === "media"}
+            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
               activeDialogTab === "media"
                 ? "bg-background text-primary shadow-sm scale-[0.98]"
                 : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
@@ -200,7 +204,8 @@ export function ProductDialog({
               e.preventDefault();
               setActiveDialogTab("customizer");
             }}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+            aria-pressed={activeDialogTab === "customizer"}
+            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
               activeDialogTab === "customizer"
                 ? "bg-background text-primary shadow-sm scale-[0.98]"
                 : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
@@ -221,7 +226,7 @@ export function ProductDialog({
       </div>
 
       {/* Wizard Content Block */}
-      <div className="flex-1 p-6 space-y-5 overflow-y-auto">
+      <div className="flex-1 p-6 space-y-5 overflow-y-auto overscroll-contain max-sm:p-4">
         {activeDialogTab === "basic" && (
           <ProductBasicTab
             t={t}
@@ -272,7 +277,7 @@ export function ProductDialog({
       </div>
 
       {/* Persistent Footer with back/next and global save actions */}
-      <div className="border-t border-border-subtle bg-secondary/20 px-6 py-4.5 flex items-center justify-between">
+      <div className="border-t border-border-subtle bg-secondary/20 px-6 py-4.5 flex items-center justify-between gap-2 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           {activeDialogTab !== "basic" && (
             <Button

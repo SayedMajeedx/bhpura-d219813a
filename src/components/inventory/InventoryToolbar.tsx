@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
-import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
+import { useShortcutHint } from "@/lib/platform-shortcut";
 import { ATTENTION_KEYS, attentionReason } from "@/features/inventory/lib/attention";
 
 interface CategoryOption {
@@ -67,7 +67,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   tracksStock = true,
 }) => {
   const isAr = lang === "ar";
-  const shortcutLabel = useCommandShortcutLabel();
+  const shortcutHint = useShortcutHint();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -159,15 +159,9 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            aria-label={
-              isAr
-                ? "ابحث باسم المنتج أو الباركود..."
-                : `Search product name, SKU, or barcode... (${shortcutLabel})`
-            }
+            aria-label={isAr ? "ابحث باسم المنتج أو الباركود" : "Search name or barcode"}
             placeholder={
-              isAr
-                ? "ابحث باسم المنتج أو الباركود..."
-                : `Search product name, SKU, or barcode... (${shortcutLabel})`
+              isAr ? "ابحث باسم المنتج أو الباركود..." : `Search name or barcode${shortcutHint}`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />

@@ -537,9 +537,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         </div>
       </div>
 
-      {/* On a phone the notice is one line with its own way in: the next step, WhatsApp and the
-          rest are in the thumb bar, so a second full-width "Edit order" here only pushed the
-          order's lines down. */}
+      {/* On a phone the notice is one line and nothing more: the thumb bar holds "Edit order"
+          (its main button, or its menu when the next step has that place), so a button here
+          offered it twice. */}
       {isReadOnly && (
         <div className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3.5 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200 sm:py-2.5">
           <Lock className="h-4 w-4 shrink-0" />
@@ -553,18 +553,6 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 : "You are in safe view mode. Fields are locked to prevent accidental changes."}
             </span>
           </span>
-          {canUnlockEditing && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onUnlock}
-              className="h-8 shrink-0 gap-1 rounded-lg border-amber-400/70 bg-background/70 px-2.5 text-xs font-bold sm:hidden"
-            >
-              <Unlock className="h-3.5 w-3.5" />
-              {isAr ? "تعديل" : "Edit"}
-            </Button>
-          )}
         </div>
       )}
 
