@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
+import { displayPhone, invoiceDate, invoicePayment, showsTaxLine } from "@/lib/invoice-display";
 import {
   getOrderCustomerName,
   getOrderCustomerPhone,
@@ -379,6 +380,7 @@ export default function InvoicePreview({
             color: text,
             fontFamily: family,
             fontSize: `${fontSize}px`,
+            fontVariantNumeric: "lining-nums tabular-nums",
             printColorAdjust: "exact",
             WebkitPrintColorAdjust: "exact",
           } as any
@@ -408,14 +410,8 @@ export default function InvoicePreview({
           {order.payment_status === "paid" ? (
             <div className="absolute top-[10%] right-[10%] md:right-[15%] rotate-[-12deg] select-none pointer-events-none opacity-20 print:opacity-30 z-10">
               <div className="border-[6px] border-double border-emerald-600 text-emerald-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
+                {/* No date: the order's last change is not when it was paid. */}
                 <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
-                {order.updated_at && (
-                  <span className="text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
-                    {new Date(order.updated_at).toLocaleDateString(
-                      invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
-                    )}
-                  </span>
-                )}
               </div>
             </div>
           ) : (
@@ -464,7 +460,7 @@ export default function InvoicePreview({
                       dir="ltr"
                       style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}
                     >
-                      {settings.phone}
+                      {displayPhone(settings.phone)}
                     </p>
                   )}
                   {settings.email && (
@@ -510,11 +506,7 @@ export default function InvoicePreview({
                 </span>
               </div>
               <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
-                {L.date}:{" "}
-                {formatDate(
-                  order.created_at ?? order.order_date,
-                  isRTL ? "ar-BH-u-nu-latn" : "en-BH",
-                )}
+                {L.date}: {invoiceDate(order.created_at ?? order.order_date, invoiceLang)}
               </p>
               {order.payment_method && (
                 <p className="text-xs" style={{ opacity: 0.75 }}>
@@ -853,12 +845,14 @@ export default function InvoicePreview({
                 <span style={{ opacity: 0.75 }}>{L.subtotal}</span>
                 <span>{money(order.subtotal)}</span>
               </div>
-              <div className="flex justify-between">
-                <span style={{ opacity: 0.75 }}>
-                  {L.vat} ({num(order.tax_rate ?? 0)}%)
-                </span>
-                <span>{money(order.tax_amount ?? 0)}</span>
-              </div>
+              {showsTaxLine(order, settings.vat_number) && (
+                <div className="flex justify-between">
+                  <span style={{ opacity: 0.75 }}>
+                    {L.vat} ({num(order.tax_rate ?? 0)}%)
+                  </span>
+                  <span>{money(order.tax_amount ?? 0)}</span>
+                </div>
+              )}
               {Number(order.discount) > 0 && (
                 <div className="flex justify-between gap-4">
                   <span style={{ opacity: 0.75 }}>
@@ -906,25 +900,29 @@ export default function InvoicePreview({
                   )}
                 </div>
               </div>
-              {Number(order.advance_paid) > 0 && (
-                <>
-                  <div className="flex justify-between pt-1">
-                    <span style={{ opacity: 0.75 }}>
-                      {invoiceLang === "ar" ? "المبلغ المقدم المدفوع" : "Advance Paid"}
-                    </span>
-                    <span>− {money(order.advance_paid)}</span>
-                  </div>
-                  <div
-                    className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold"
-                    style={{ backgroundColor: `${color}1a`, color }}
-                  >
-                    <span>{invoiceLang === "ar" ? "المتبقي للاستحقاق" : "Remaining Due"}</span>
-                    <span>
-                      {money(Math.max(0, Number(order.total) - Number(order.advance_paid)))}
-                    </span>
-                  </div>
-                </>
-              )}
+              {(() => {
+                // A part payment shows what was paid and the balance; paid in full says nothing
+                // more (it read "advance paid", then "0.000 remaining").
+                const payment = invoicePayment(order);
+                if (payment.kind !== "part_paid") return null;
+                return (
+                  <>
+                    <div className="flex justify-between pt-1">
+                      <span style={{ opacity: 0.75 }}>
+                        {invoiceLang === "ar" ? "المدفوع" : "Paid"}
+                      </span>
+                      <span>− {money(payment.paid)}</span>
+                    </div>
+                    <div
+                      className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold"
+                      style={{ backgroundColor: `${color}1a`, color }}
+                    >
+                      <span>{invoiceLang === "ar" ? "المتبقي" : "Balance due"}</span>
+                      <span>{money(payment.remaining)}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
