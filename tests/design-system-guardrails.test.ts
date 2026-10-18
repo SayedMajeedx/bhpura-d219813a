@@ -350,3 +350,17 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("a name's start edge (text-page-start)", () => {
+  it("follows its parent's direction, not any ancestor's", () => {
+    // `[dir="rtl"] .text-page-start` and `[dir="ltr"] .text-page-start` both matched an Arabic
+    // invoice inside a left-to-right <html>; the later rule won and "Abaya | Sahab" sat left.
+    const guards = fs.readFileSync(
+      path.resolve(__dirname, "../src/styles/layout-guards.css"),
+      "utf-8",
+    );
+    expect(guards).toMatch(/:dir\(rtl\) > \.text-page-start\s*{\s*text-align: right;/);
+    expect(guards).toMatch(/:dir\(ltr\) > \.text-page-start\s*{\s*text-align: left;/);
+    expect(guards).not.toMatch(/\[dir="(rtl|ltr)"\] \.text-page-start/);
+  });
+});

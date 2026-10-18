@@ -838,7 +838,7 @@ export default function InvoicePreview({
             style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}
           >
             <div
-              className="pdf-totals-block w-72 text-sm space-y-1.5"
+              className="pdf-totals-block w-80 max-w-full text-sm space-y-1.5"
               style={{ direction: isRTL ? "rtl" : "ltr" }}
             >
               <div className="flex justify-between">
@@ -869,11 +869,11 @@ export default function InvoicePreview({
                 </div>
               )}
               <div
-                className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
+                className="flex justify-between items-center gap-3 py-2 px-2.5 rounded-lg mt-2 font-bold"
                 style={{ backgroundColor: secondary, border: `1.5px solid ${color}40` }}
               >
                 <span
-                  className="font-display text-base sm:text-lg"
+                  className="font-display text-base sm:text-lg whitespace-nowrap"
                   style={{ color: surfaceCardTextColor }}
                 >
                   {invoiceLang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
