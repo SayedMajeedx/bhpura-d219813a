@@ -5877,6 +5877,7 @@ export type Database = {
       product_costs: {
         Row: {
           brand_id: string;
+          cost_parts: Json | null;
           cost_price: number;
           direct_packaging_cost: number;
           product_id: string;
@@ -5885,6 +5886,7 @@ export type Database = {
         };
         Insert: {
           brand_id: string;
+          cost_parts?: Json | null;
           cost_price?: number;
           direct_packaging_cost?: number;
           product_id: string;
@@ -5893,6 +5895,7 @@ export type Database = {
         };
         Update: {
           brand_id?: string;
+          cost_parts?: Json | null;
           cost_price?: number;
           direct_packaging_cost?: number;
           product_id?: string;
