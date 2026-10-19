@@ -24,6 +24,8 @@ export const supplierOrderKeys = {
     [...supplierOrderKeys.all(brandId), "detail", id] as const,
   receipts: (brandId: string, id: string) =>
     [...supplierOrderKeys.all(brandId), "receipts", id] as const,
+  payments: (brandId: string, id: string) =>
+    [...supplierOrderKeys.all(brandId), "payments", id] as const,
 };
 
 const ORDER_SELECT =
@@ -141,6 +143,35 @@ export async function fetchSupplierReceipts(
   }));
 }
 
+export type SupplierPayment = {
+  id: string;
+  amount: number;
+  paid_on: string;
+  note: string | null;
+  created_at: string;
+  voided_at: string | null;
+  void_reason: string | null;
+};
+
+/** The payments to the supplier of one order, the ones taken back included, oldest first. */
+export async function fetchSupplierPayments(
+  brandId: string,
+  orderId: string,
+): Promise<SupplierPayment[]> {
+  const rows = await readAll((from, to) =>
+    supabase
+      .from("purchase_order_payments")
+      .select("id, amount, paid_on, note, created_at, voided_at, void_reason", { count: "exact" })
+      .eq("brand_id", brandId)
+      .eq("po_id", orderId)
+      .order("paid_on")
+      .order("created_at")
+      .order("id")
+      .range(from, to),
+  );
+  return rows.map((row) => ({ ...row, amount: Number(row.amount) || 0 }));
+}
+
 export const supplierOrderQueries = {
   list: (brandId: string) =>
     queryOptions({
@@ -158,6 +189,12 @@ export const supplierOrderQueries = {
     queryOptions({
       queryKey: supplierOrderKeys.receipts(brandId, orderId),
       queryFn: () => fetchSupplierReceipts(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
+    }),
+  payments: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: supplierOrderKeys.payments(brandId, orderId),
+      queryFn: () => fetchSupplierPayments(brandId, orderId),
       enabled: Boolean(brandId && orderId),
     }),
 };
@@ -196,22 +233,17 @@ async function writeLines(orderId: string, plan: Pick<SavePlan, "insert" | "upda
 
 /**
  * A new order: written as a draft, its lines added, then placed (or left a draft). A failure
- * while adding the lines removes the draft, so no order is left without its lines.
+ * while adding the lines removes the draft, so no order is left without its lines. What was paid
+ * up front is a payment of its own (`recordSupplierPayment`), recorded once the order exists.
  */
 export async function createSupplierOrder(
   brandId: string,
   plan: SavePlan,
-  options: { place: boolean; paidNow: number },
+  options: { place: boolean },
 ): Promise<string> {
   const { data, error } = await supabase
     .from("purchase_orders")
-    .insert({
-      ...plan.order,
-      brand_id: brandId,
-      po_number: "",
-      status: "draft",
-      paid_amount: Math.max(0, options.paidNow),
-    })
+    .insert({ ...plan.order, brand_id: brandId, po_number: "", status: "draft" })
     .select("id")
     .single();
   if (error) throw error;
@@ -264,16 +296,33 @@ export async function deleteSupplierOrder(brandId: string, orderId: string) {
   if (!data?.length) throw new Error("PURCHASE_ORDER_NOT_FOUND");
 }
 
-/** Records what has been paid to the supplier in all (not an expense: see the migration). */
-export async function setSupplierOrderPaid(brandId: string, orderId: string, paid: number) {
-  const { data, error } = await supabase
-    .from("purchase_orders")
-    .update({ paid_amount: Math.max(0, paid) })
-    .eq("id", orderId)
-    .eq("brand_id", brandId)
-    .select("id");
+/**
+ * A payment to the supplier of an order (never more than is still owed; the database keeps the
+ * order's paid amount). Not an expense: the cost of goods is counted when a piece sells.
+ * `requestId` is one press of the button.
+ */
+export async function recordSupplierPayment(
+  orderId: string,
+  payment: { amount: number; paidOn: string; requestId: string; note: string | null },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("record_supplier_payment", {
+    p_po_id: orderId,
+    p_amount: payment.amount,
+    p_paid_on: payment.paidOn,
+    p_request_id: payment.requestId,
+    p_note: payment.note?.trim() || undefined,
+  });
   if (error) throw error;
-  if (!data?.length) throw new Error("PURCHASE_ORDER_NOT_FOUND");
+  return data as string;
+}
+
+/** Takes a payment back: it stays on record with the reason, and counts nowhere. */
+export async function voidSupplierPayment(paymentId: string, reason: string) {
+  const { error } = await supabase.rpc("void_supplier_payment", {
+    p_payment_id: paymentId,
+    p_reason: reason.trim(),
+  });
+  if (error) throw error;
 }
 
 /**

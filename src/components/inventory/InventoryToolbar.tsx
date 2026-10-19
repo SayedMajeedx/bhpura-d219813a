@@ -37,6 +37,8 @@ interface InventoryToolbarProps {
   onIssueChange?: (val: string) => void;
   /** False for a store that does not count stock: no stock sorts, no stock issues. */
   tracksStock?: boolean;
+  /** The reader may see costs: only then can a product be filtered by having no cost. */
+  showsCosts?: boolean;
 }
 
 const SORTS: Array<{ id: string; ar: string; en: string; stock?: boolean }> = [
@@ -65,6 +67,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   selectedIssue = "all",
   onIssueChange,
   tracksStock = true,
+  showsCosts = false,
 }) => {
   const isAr = lang === "ar";
   const shortcutHint = useShortcutHint();
@@ -82,9 +85,9 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   }, []);
 
   const sorts = SORTS.filter((sort) => tracksStock || !sort.stock);
-  const issues = ATTENTION_KEYS.filter((key) => tracksStock || !STOCK_ISSUES.has(key)).map(
-    attentionReason,
-  );
+  const issues = ATTENTION_KEYS.filter(
+    (key) => (tracksStock || !STOCK_ISSUES.has(key)) && (showsCosts || key !== "missing_cost"),
+  ).map(attentionReason);
   const categoryName = (id: string) => {
     const match = categories.find((cat) => cat.id === id);
     return match ? (isAr ? match.name_ar || match.name : match.name) : id;

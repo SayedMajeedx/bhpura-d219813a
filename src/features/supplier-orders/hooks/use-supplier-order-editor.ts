@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   createSupplierOrder,
   invalidateSupplierOrders,
+  recordSupplierPayment,
   updateSupplierOrder,
 } from "@/lib/data/supplier-orders";
 import {
@@ -17,7 +18,7 @@ import {
   type FormProduct,
   type SupplierOrderForm,
 } from "../lib/order-form";
-import type { SupplierOrder } from "../lib/order-state";
+import { localToday, type SupplierOrder } from "../lib/order-state";
 import { supplierOrderError } from "../lib/errors";
 import type { SupplierCatalog } from "./use-supplier-catalog";
 
@@ -46,6 +47,7 @@ export function useSupplierOrderEditor({
   const [paidNow, setPaidNow] = useState("");
   const [shownProblems, setShownProblems] = useState<FormProblem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [paidProblem, setPaidProblem] = useState(false);
   const figures = useMemo(() => formFigures(form), [form]);
 
   const addProduct = (productId: string) => {
@@ -83,7 +85,9 @@ export function useSupplierOrderEditor({
     const problems = formProblems(form);
     setShownProblems(problems);
     const paid = paidNow.trim() ? Number(paidNow) : 0;
-    if (problems.length > 0 || !Number.isFinite(paid) || paid < 0) {
+    const paidProblem = !Number.isFinite(paid) || paid < 0 || paid > figures.total;
+    setPaidProblem(paidProblem);
+    if (problems.length > 0 || paidProblem) {
       toast.error(isAr ? "راجع الحقول المعلّمة." : "Check the marked fields.");
       return;
     }
@@ -98,7 +102,24 @@ export function useSupplierOrderEditor({
         await updateSupplierOrder(brandId, order.id, plan);
         id = order.id;
       } else {
-        id = await createSupplierOrder(brandId, plan, { place, paidNow: paid });
+        id = await createSupplierOrder(brandId, plan, { place });
+        if (paid > 0) {
+          try {
+            await recordSupplierPayment(id, {
+              amount: paid,
+              paidOn: localToday(),
+              requestId: crypto.randomUUID(),
+              note: isAr ? "دفعة مقدمة" : "Paid up front",
+            });
+          } catch {
+            // The order is saved; only the payment is missing, and it can be recorded on it.
+            toast.error(
+              isAr
+                ? "حُفظت الطلبية، لكن لم تُسجَّل الدفعة المقدمة. سجّلها من صفحة الطلبية."
+                : "The order is saved, but the payment up front was not recorded. Record it on the order.",
+            );
+          }
+        }
       }
       await invalidateSupplierOrders(qc, brandId);
       toast.success(isAr ? "حُفظت الطلبية" : "Order saved");
@@ -116,6 +137,7 @@ export function useSupplierOrderEditor({
     figures,
     paidNow,
     setPaidNow,
+    paidProblem,
     problems: shownProblems,
     saving,
     addProduct,

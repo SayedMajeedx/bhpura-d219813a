@@ -4,6 +4,7 @@ import type { Product, Variant } from "@/features/inventory/types";
 import {
   hasPicture,
   productAttentionReasons,
+  productMissingCost,
   type AttentionFacts,
   type AttentionKey,
   type AttentionProduct,
@@ -84,12 +85,18 @@ export function productWeeklySalesFrom(
  * partners'), expected weekly sales and the lowest price a shopper can pay. The list used to
  * walk every variant again for every product, for every tab and every sort.
  */
-export type ProductFigures = { stock: number; weeklySales: number; lowestPrice: number };
+export type ProductFigures = {
+  stock: number;
+  weeklySales: number;
+  lowestPrice: number;
+  /** A size or the product has no cost (`productMissingCost`), for staff who may see costs. */
+  missingCost: boolean;
+};
 
-const NO_FIGURES: ProductFigures = { stock: 0, weeklySales: 0, lowestPrice: 0 };
+const NO_FIGURES: ProductFigures = { stock: 0, weeklySales: 0, lowestPrice: 0, missingCost: false };
 
 export function productFiguresFrom(
-  products: Array<Pick<Product, "id" | "base_price">>,
+  products: Array<Pick<Product, "id" | "base_price"> & Parameters<typeof productMissingCost>[0]>,
   variantsByProduct: Record<string, Variant[]>,
   salesByVariant: Map<string, number>,
   now: number = Date.now(),
@@ -104,6 +111,7 @@ export function productFiguresFrom(
         variants.length > 0
           ? Math.min(...variants.map((variant) => Number(variant.selling_price || 0)))
           : Number(product.base_price || 0),
+      missingCost: productMissingCost(product, variants),
     });
   }
   return figures;
@@ -177,6 +185,7 @@ export function filterInventoryProducts({
   lowStockUnits,
   lowestPrice,
   pricesMatter = true,
+  missingCost,
   lang = "en",
 }: {
   products: Product[];
@@ -192,6 +201,8 @@ export function filterInventoryProducts({
   lowStockUnits?: number;
   lowestPrice?: (productId: string) => number;
   pricesMatter?: boolean;
+  /** Whether a product has no cost; left out for staff who may not see costs. */
+  missingCost?: (productId: string) => boolean;
   lang?: "ar" | "en";
 }): Product[] {
   const reasonsOf = (product: Product) =>
@@ -201,6 +212,7 @@ export function filterInventoryProducts({
       lowStockUnits,
       lowestPrice: lowestPrice?.(product.id),
       pricesMatter,
+      missingCost: missingCost?.(product.id) ?? false,
     });
   const priceOf = (product: Product) =>
     lowestPrice ? lowestPrice(product.id) : Number(product.base_price || 0);

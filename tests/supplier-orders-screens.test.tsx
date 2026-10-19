@@ -11,6 +11,9 @@ const stubs = vi.hoisted(() => ({
   orders: [] as unknown[],
   order: null as unknown,
   receipts: [] as unknown[],
+  payments: [] as unknown[],
+  recordSupplierPayment: vi.fn(async () => "pay-1"),
+  voidSupplierPayment: vi.fn(async () => undefined),
   permissions: ["manage_inventory", "view_financials"],
   receiveSupplierOrder: vi.fn(async () => ({ status: "partially_received", repeated: false })),
   invalidateAfterReceipt: vi.fn(async () => undefined),
@@ -86,7 +89,10 @@ const mocks: Record<string, unknown> = {
       list: () => options("orders", () => stubs.orders),
       detail: () => options("order", () => stubs.order),
       receipts: () => options("receipts", () => stubs.receipts),
+      payments: () => options("payments", () => stubs.payments),
     },
+    recordSupplierPayment: stubs.recordSupplierPayment,
+    voidSupplierPayment: stubs.voidSupplierPayment,
     receiveSupplierOrder: stubs.receiveSupplierOrder,
     invalidateAfterReceipt: stubs.invalidateAfterReceipt,
     createSupplierOrder: stubs.createSupplierOrder,
@@ -94,7 +100,6 @@ const mocks: Record<string, unknown> = {
     invalidateSupplierOrders: stubs.invalidateSupplierOrders,
     setSupplierOrderStatus: vi.fn(),
     deleteSupplierOrder: vi.fn(),
-    setSupplierOrderPaid: vi.fn(),
   },
   "data/catalog": {
     catalogQueries: {
@@ -216,6 +221,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   stubs.permissions = ["manage_inventory", "view_financials"];
   stubs.receipts = [];
+  stubs.payments = [];
 });
 
 describe("the list", () => {
@@ -322,7 +328,8 @@ describe("a new order", () => {
         sort_order: 1,
       },
     ]);
-    expect(how).toEqual({ place: true, paidNow: 0 });
+    expect(how).toEqual({ place: true });
+    expect(stubs.recordSupplierPayment).not.toHaveBeenCalled();
     expect(stubs.navigate).toHaveBeenCalledWith(
       expect.objectContaining({ params: { slug: "pura", id: "po-new" }, replace: true }),
     );
@@ -333,5 +340,119 @@ describe("a new order", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Save order" }));
     expect(await screen.findByText("Choose who the order is from.")).toBeInTheDocument();
     expect(stubs.createSupplierOrder).not.toHaveBeenCalled();
+  });
+});
+
+const { SupplierOrdersDashboardLine } =
+  await import("../src/features/supplier-orders/components/SupplierOrdersDashboardLine");
+
+describe("paying a supplier", () => {
+  it("records a payment with its day, once per press, never past what is owed", async () => {
+    stubs.order = tailorOrder();
+    wrap(<SupplierOrderPage orderId="po1" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Record payment/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/You owe BHD 160\.000 of BHD 210\.000/)).toBeInTheDocument();
+    const save = within(dialog).getByRole("button", { name: "Record payment" });
+    fireEvent.change(within(dialog).getByLabelText(/Amount paid/), { target: { value: "161" } });
+    expect(save).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "All of it" }));
+    fireEvent.change(within(dialog).getByLabelText("Note"), { target: { value: "Cash" } });
+    fireEvent.click(save);
+    await waitFor(() => expect(stubs.recordSupplierPayment).toHaveBeenCalledTimes(1));
+    const [orderId, payment] = stubs.recordSupplierPayment.mock.calls[0] as unknown as [
+      string,
+      { amount: number; paidOn: string; requestId: string; note: string },
+    ];
+    expect(orderId).toBe("po1");
+    expect(payment).toMatchObject({ amount: 160, note: "Cash" });
+    expect(payment.paidOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(payment.requestId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("takes a payment back only with a reason, and shows what was taken back", async () => {
+    stubs.order = tailorOrder();
+    stubs.payments = [
+      {
+        id: "pay-1",
+        amount: 50,
+        paid_on: "2026-10-12",
+        note: "Deposit",
+        created_at: "",
+        voided_at: null,
+        void_reason: null,
+      },
+      {
+        id: "pay-0",
+        amount: 20,
+        paid_on: "2026-10-11",
+        note: null,
+        created_at: "",
+        voided_at: "2026-10-11T10:00:00Z",
+        void_reason: "Wrong order",
+      },
+    ];
+    wrap(<SupplierOrderPage orderId="po1" />);
+    expect(await screen.findByText(/Taken back: Wrong order/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Take back the payment of BHD\s50\.000/ }));
+    const dialog = await screen.findByRole("dialog");
+    const confirm = within(dialog).getByRole("button", { name: "Take it back" });
+    expect(confirm).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "Recorded twice" },
+    });
+    fireEvent.click(confirm);
+    await waitFor(() =>
+      expect(stubs.voidSupplierPayment).toHaveBeenCalledWith("pay-1", "Recorded twice"),
+    );
+  });
+});
+
+describe("a late order and what is owed", () => {
+  it("offers the supplier a message asking when it comes", async () => {
+    stubs.order = tailorOrder({ expected_at: "2020-01-01", vendor_phone: "39950016" });
+    wrap(<SupplierOrderPage orderId="po1" />);
+    const ask = await screen.findByRole("link", { name: /Ask the supplier when it comes/ });
+    const href = ask.getAttribute("href") ?? "";
+    expect(href.startsWith("https://wa.me/97339950016?text=")).toBe(true);
+    expect(decodeURIComponent(href.split("text=")[1])).toContain("PO-0001 (10 pieces to come)");
+  });
+
+  it("lists each supplier with what is owed", async () => {
+    stubs.orders = [
+      tailorOrder({ vendor_phone: "39950016" }),
+      tailorOrder({
+        id: "po2",
+        vendor_id: "silk",
+        vendor_name: "Silk house",
+        paid_amount: 210,
+        status: "received",
+      }),
+    ];
+    wrap(<SupplierOrdersPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Suppliers/ }));
+    expect(screen.getByText("Umm Ali")).toBeInTheDocument();
+    expect(screen.getByText("1 order awaiting delivery")).toBeInTheDocument();
+    expect(screen.queryByText("Silk house")).toBeNull();
+    expect(screen.getByRole("link", { name: "Chat with Umm Ali on WhatsApp" })).toHaveAttribute(
+      "href",
+      "https://wa.me/97339950016",
+    );
+  });
+
+  it("puts one line on the dashboard, and none when nothing is late or owed", async () => {
+    stubs.orders = [tailorOrder({ expected_at: "2020-01-01" })];
+    const { unmount } = wrap(
+      <SupplierOrdersDashboardLine brandId="b1" slug="pura" currency="BHD" lang="en" />,
+    );
+    expect(
+      await screen.findByText("1 supplier order is late · you owe suppliers BHD 160.000"),
+    ).toBeInTheDocument();
+    unmount();
+    stubs.orders = [tailorOrder({ paid_amount: 210 })];
+    const { container } = wrap(
+      <SupplierOrdersDashboardLine brandId="b1" slug="pura" currency="BHD" lang="en" />,
+    );
+    await waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 });

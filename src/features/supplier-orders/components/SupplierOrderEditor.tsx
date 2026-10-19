@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { SupplierOrder } from "../lib/order-state";
+import { piecesLabel, type SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import { useSupplierOrderEditor } from "../hooks/use-supplier-order-editor";
 import { usePhoneBottomBar } from "../hooks/use-phone-bottom-bar";
@@ -204,8 +204,16 @@ export function SupplierOrderEditor({
               value={editor.paidNow}
               onChange={(e) => editor.setPaidNow(e.target.value)}
               placeholder="0"
+              aria-invalid={editor.paidProblem || undefined}
               className="max-w-40 font-mono tabular-nums"
             />
+            {editor.paidProblem && (
+              <p className="text-xs text-destructive">
+                {isAr
+                  ? `اكتب مبلغاً لا يزيد على إجمالي الطلبية (${formatMoney(figures.total, currency, lang)}).`
+                  : `Type an amount up to the order's total (${formatMoney(figures.total, currency, lang)}).`}
+              </p>
+            )}
           </div>
         )}
       </Card>
@@ -214,7 +222,7 @@ export function SupplierOrderEditor({
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-muted-foreground">
-              {isAr ? `${figures.pieces} قطعة · الإجمالي` : `${figures.pieces} pieces · Total`}
+              {piecesLabel(figures.pieces, lang)} · {isAr ? "الإجمالي" : "Total"}
             </p>
             <p className="text-lg font-bold tabular-nums">
               {formatMoney(figures.total, currency, lang)}

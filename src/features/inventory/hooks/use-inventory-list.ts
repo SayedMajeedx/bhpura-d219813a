@@ -28,6 +28,7 @@ export function useInventoryList({
   initialView,
   lowStockUnits,
   pricesMatter,
+  costsKnown = false,
   lang,
 }: {
   products: Product[];
@@ -36,6 +37,8 @@ export function useInventoryList({
   initialView: InventoryView;
   lowStockUnits: number;
   pricesMatter: boolean;
+  /** The reader may see costs: only then is a product with no cost marked (zero for others). */
+  costsKnown?: boolean;
   lang: "ar" | "en";
 }) {
   const [view, setView] = useState<InventoryView>(initialView);
@@ -78,6 +81,10 @@ export function useInventoryList({
     [figures],
   );
   const lowestPrice = useCallback((id: string) => figuresOf(figures, id).lowestPrice, [figures]);
+  const missingCost = useCallback(
+    (id: string) => costsKnown && figuresOf(figures, id).missingCost,
+    [figures, costsKnown],
+  );
 
   const counts = useMemo(() => {
     const tally = {
@@ -92,6 +99,7 @@ export function useInventoryList({
     };
     for (const product of products) {
       const { stock, weeklySales, lowestPrice: price } = figuresOf(figures, product.id);
+      const noCost = missingCost(product.id);
       const status = productStockStatus(product, stock, weeklySales, lowStockUnits);
       if (status === "low") tally.low += 1;
       if (status === "out") tally.out += 1;
@@ -106,13 +114,14 @@ export function useInventoryList({
           lowStockUnits,
           lowestPrice: price,
           pricesMatter,
+          missingCost: noCost,
         })
       ) {
         tally.attention += 1;
       }
     }
     return tally;
-  }, [products, figures, lowStockUnits, pricesMatter]);
+  }, [products, figures, lowStockUnits, pricesMatter, missingCost]);
 
   const totals = useMemo(
     () => stockTotals(products, variantsByProduct),
@@ -135,6 +144,7 @@ export function useInventoryList({
         lowestPrice,
         lowStockUnits,
         pricesMatter,
+        missingCost,
         lang,
       }),
     [
@@ -150,6 +160,7 @@ export function useInventoryList({
       lowestPrice,
       lowStockUnits,
       pricesMatter,
+      missingCost,
       lang,
     ],
   );
@@ -177,6 +188,7 @@ export function useInventoryList({
     productStock,
     productWeeklySales,
     lowestPrice,
+    missingCost,
     counts,
     totals,
     filtered,

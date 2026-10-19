@@ -42,6 +42,7 @@ import { ActivityAndStockRow } from "@/features/dashboard/components/ActivityAnd
 import { SalesSeriesView } from "@/features/dashboard/components/SalesSeriesView";
 import { DiagnosticsView } from "@/features/dashboard/components/DiagnosticsView";
 import { OutreachDashboardLine } from "@/features/outreach/components/OutreachDashboardLine";
+import { SupplierOrdersDashboardLine } from "@/features/supplier-orders/components/SupplierOrdersDashboardLine";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -260,6 +261,16 @@ function Dashboard() {
 
       {/* Clients worth a message today: one line, the way in to the list. */}
       {hasPermission("manage_customers") && <OutreachDashboardLine slug={slug} isAr={isAr} />}
+
+      {/* A supplier's order late, or money owed to suppliers: one line, the way in. */}
+      {canViewFinancials && !isServicesProfile(storeProfile.modules) && (
+        <SupplierOrdersDashboardLine
+          brandId={brandId}
+          slug={slug}
+          currency={currency}
+          lang={isAr ? "ar" : "en"}
+        />
+      )}
 
       {storeProfile.modules.bookings && (
         <BookingsGlanceCard brandId={brandId} slug={slug} isAr={isAr} />
