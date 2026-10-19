@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { exportReportData } from "@/lib/reporting.functions";
+import { sanitizeReportRows } from "@/lib/report-export";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -88,7 +89,7 @@ function ReportsExport() {
         );
 
       const limit = formatType === "xlsx" ? 10_000 : 50_000;
-      const rows = sanitizeRows(raw.slice(0, limit));
+      const rows = sanitizeReportRows(raw.slice(0, limit));
       const fileName = `boutq_${reportType}_${format(new Date(), "yyyy-MM-dd")}.${formatType}`;
       if (formatType === "xlsx") {
         const { default: writeXlsxFile } = await import("write-excel-file/browser");
@@ -247,18 +248,6 @@ function ReportsExport() {
         </div>
       </aside>
     </div>
-  );
-}
-
-function sanitizeRows(rows: Record<string, unknown>[]) {
-  return rows.map((row) =>
-    Object.fromEntries(
-      Object.entries(row).flatMap(([key, value]) => {
-        if (/email|phone/i.test(key)) return [];
-        if (typeof value === "string" && /^[=+\-@]/.test(value)) return [[key, `'${value}`]];
-        return [[key, value]];
-      }),
-    ),
   );
 }
 

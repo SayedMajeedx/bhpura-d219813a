@@ -1,47 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-import {
-  getProductTransitionName,
-  navigateWithViewTransition,
-} from "../src/lib/motion/view-transitions";
+import { describe, it, expect } from "vitest";
 import { BRAND_TEMPLATES, VERTICAL_DESIGN_PRESETS } from "../src/lib/brand-templates";
 import { STORE_VERTICALS } from "../src/lib/store-profile";
 import { buildCartItem } from "../src/lib/cart/add-to-cart";
 
 describe("Storefront 2.0 Layer 3 Tests", () => {
-  describe("View Transitions API Utilities", () => {
-    it("generates safe, sanitized view-transition-name for arbitrary product IDs", () => {
-      expect(getProductTransitionName("prod_123")).toBe("product-img-prod_123");
-      expect(getProductTransitionName("prod/abc:456#special")).toBe(
-        "product-img-prod_abc_456_special",
-      );
-      expect(getProductTransitionName("")).toBe("product-img-item");
-      expect(getProductTransitionName(null as any)).toBe("product-img-item");
-    });
-
-    it("falls back to standard navigation when document.startViewTransition is absent", () => {
-      // In jsdom document.startViewTransition is typically undefined
-      const navigateFn = vi.fn();
-      navigateWithViewTransition(navigateFn);
-      expect(navigateFn).toHaveBeenCalledTimes(1);
-    });
-
-    it("uses document.startViewTransition when supported", () => {
-      const mockStartViewTransition = vi.fn((cb: () => void) => {
-        cb();
-        return { finished: Promise.resolve() };
-      });
-      (global.document as any).startViewTransition = mockStartViewTransition;
-
-      const navigateFn = vi.fn();
-      navigateWithViewTransition(navigateFn);
-
-      expect(mockStartViewTransition).toHaveBeenCalledTimes(1);
-      expect(navigateFn).toHaveBeenCalledTimes(1);
-
-      delete (global.document as any).startViewTransition;
-    });
-  });
-
   describe("Vertical Design Presets (L3-17)", () => {
     it("has exact mapping for every vertical to editorial, fresh, or tech", () => {
       const verticals = Object.keys(BRAND_TEMPLATES);

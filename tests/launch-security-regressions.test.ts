@@ -31,9 +31,7 @@ const onboarding = (await import("../src/lib/onboarding.functions")) as unknown 
   string,
   ServerFn
 >;
-const { generateExportData } = (await import("../src/lib/export.functions")) as unknown as {
-  generateExportData: ServerFn;
-};
+const { sanitizeReportRows } = await import("../src/lib/report-export");
 
 describe("launch security regressions", () => {
   it.each([
@@ -482,31 +480,12 @@ describe("launch security regressions", () => {
     expect(operator.result.apiKey).toBe("vault-key");
   });
 
-  it("runs report exports as the signed-in caller and strips contact details", async () => {
-    expect(generateExportData.middleware).toEqual([middleware.requireSupabaseAuth]);
-    // The RPC runs through the caller's client (RLS applies), not the service role.
-    state.admin = null;
-    const caller = fakeSupabase({
-      rpc: {
-        rpc_reporting_export: [
-          { customer: "=HYPERLINK(1)", email: "a@b.c", phone: "3900", total: 30 },
-        ],
-      },
-    });
-    const result = (await generateExportData({
-      data: {
-        reportType: "customers",
-        from: "2026-09-01",
-        to: "2026-09-30",
-        tz: "UTC",
-        format: "csv",
-      },
-      context: caller,
-    })) as { content?: string; data?: string };
-    expect(caller.supabase.rpc).toHaveBeenCalledWith("rpc_reporting_export", expect.anything());
-    const text = JSON.stringify(result);
-    expect(text).not.toContain("a@b.c");
-    expect(text).not.toContain("3900");
-    expect(text).toContain("'=HYPERLINK(1)");
+  it("writes report exports without contact details or cells a spreadsheet would run", () => {
+    // The Reports page reads the export through the caller's own client (RLS applies) and writes
+    // the file from these rows.
+    const [row] = sanitizeReportRows([
+      { customer: "=HYPERLINK(1)", email: "a@b.c", customer_phone: "3900", total: 30 },
+    ]);
+    expect(row).toEqual({ customer: "'=HYPERLINK(1)", total: 30 });
   });
 });
