@@ -17,11 +17,7 @@ export default defineConfig({
           output: {
             manualChunks(id) {
               if (id.includes("node_modules")) {
-                if (
-                  id.includes("@zxing") ||
-                  id.includes("html5-qrcode") ||
-                  id.includes("jsbarcode")
-                ) {
+                if (id.includes("@zxing") || id.includes("jsbarcode")) {
                   return "vendor-barcode";
                 }
                 if (id.includes("@supabase")) {
