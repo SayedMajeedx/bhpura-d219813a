@@ -66,6 +66,7 @@ import { toast } from "sonner";
 import { CustomerAddressManager } from "@/components/customer-address-manager";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { CustomerConsentCard } from "@/features/outreach/components/CustomerConsentCard";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -483,6 +484,7 @@ function CustomerProfilePage() {
               }
             />
           </Card>
+          <CustomerConsentCard brandId={brand.id} customerId={customerId} lang={lang} />
         </div>
 
         <div className="space-y-6">

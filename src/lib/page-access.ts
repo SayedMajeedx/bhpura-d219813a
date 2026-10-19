@@ -28,6 +28,7 @@ export const PAGE_ACCESS: Record<string, PageRule> = {
   customers: { permission: "manage_customers" },
   reviews: { permission: "manage_customers" },
   signups: { permission: "manage_customers" },
+  outreach: { permission: "manage_customers" },
 
   inventory: { permission: "manage_inventory" },
   incubators: { permission: "manage_inventory" },

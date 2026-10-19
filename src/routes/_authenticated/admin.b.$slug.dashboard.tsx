@@ -41,6 +41,7 @@ import { SalesAndActionsRow } from "@/features/dashboard/components/SalesAndActi
 import { ActivityAndStockRow } from "@/features/dashboard/components/ActivityAndStockRow";
 import { SalesSeriesView } from "@/features/dashboard/components/SalesSeriesView";
 import { DiagnosticsView } from "@/features/dashboard/components/DiagnosticsView";
+import { OutreachDashboardLine } from "@/features/outreach/components/OutreachDashboardLine";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -50,7 +51,7 @@ function Dashboard() {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { canViewFinancials } = useProfile();
+  const { canViewFinancials, hasPermission } = useProfile();
   const { isInstalled } = useAddons();
   const hasMadeToOrder = isInstalled("made-to-order");
   const { slug } = Route.useParams();
@@ -256,6 +257,9 @@ function Dashboard() {
         pendingReturnsCount={pendingReturnsQ.data ?? 0}
         appointmentsToCompleteCount={appointmentsToComplete}
       />
+
+      {/* Clients worth a message today: one line, the way in to the list. */}
+      {hasPermission("manage_customers") && <OutreachDashboardLine slug={slug} isAr={isAr} />}
 
       {storeProfile.modules.bookings && (
         <BookingsGlanceCard brandId={brandId} slug={slug} isAr={isAr} />

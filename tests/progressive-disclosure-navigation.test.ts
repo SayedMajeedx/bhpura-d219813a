@@ -49,6 +49,7 @@ describe("Progressive Disclosure & Modular Navigation", () => {
       "reviews",
       "incubators",
       "categories",
+      "outreach",
       "content-studio",
       "campaigns",
       "discounts",

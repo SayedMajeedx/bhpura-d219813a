@@ -49,6 +49,7 @@ const SCREENS = [
   "incubators",
   "loyalty",
   "signups",
+  "outreach",
   "returns",
   "reviews",
   "size-guides",
