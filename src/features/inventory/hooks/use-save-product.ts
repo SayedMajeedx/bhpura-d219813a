@@ -9,6 +9,7 @@ import {
   createProduct,
   createVariants,
   deleteVariants,
+  saveProductCost,
   setMadeToOrderLimit,
   syncVariantsWithProduct,
   updateProduct,
@@ -26,6 +27,7 @@ import {
   type ProductFormErrors,
 } from "@/features/inventory/lib/product-form";
 import { getCurrentUser } from "@/lib/auth/session";
+import { partsChanged, partsToSave } from "@/features/inventory/lib/cost-parts";
 import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
 import {
   serviceFromPrice,
@@ -232,6 +234,20 @@ export function useSaveProduct({
           });
         }
       }
+    }
+    // The cost's parts live on the product's cost, not in its columns: written after the product,
+    // only when they changed (the database writes their sum as the cost).
+    const savedId = product?.id ?? createdProductId;
+    const parts = partsToSave(form.cost_parts);
+    if (savedId && !isService && partsChanged(product?.cost_parts ?? null, parts)) {
+      await saveProductCost(brand.id, savedId, { parts }).catch((error: unknown) => {
+        toast.error(
+          isAr
+            ? "تم حفظ المنتج، لكن تعذر حفظ أجزاء التكلفة. افتحه وأعد المحاولة."
+            : "The product was saved, but the parts of its cost were not. Open it and try again.",
+          { description: getFriendlyErrorMessage(error) },
+        );
+      });
     }
     await commitMedia(product?.id ?? createdProductId);
     if (defaultVariantError) {

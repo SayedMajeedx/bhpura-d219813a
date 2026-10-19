@@ -96,10 +96,12 @@ export function useInventoryList({
       out: 0,
       featured: 0,
       madeToOrder: 0,
+      missingCost: 0,
     };
     for (const product of products) {
       const { stock, weeklySales, lowestPrice: price } = figuresOf(figures, product.id);
       const noCost = missingCost(product.id);
+      if (noCost) tally.missingCost += 1;
       const status = productStockStatus(product, stock, weeklySales, lowStockUnits);
       if (status === "low") tally.low += 1;
       if (status === "out") tally.out += 1;

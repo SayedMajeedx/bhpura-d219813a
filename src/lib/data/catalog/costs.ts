@@ -1,5 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { readAll } from "../read-all";
+import { storedParts, type CostPart } from "@/features/inventory/lib/cost-parts";
 
 /**
  * What a brand pays for its products. These rows are visible only to the brand's own staff who
@@ -18,13 +20,17 @@ export type ProductCost = {
   cost_price: number;
   direct_packaging_cost: number;
   vendor_id: string | null;
+  /** The cost in parts (its sum is `cost_price`), or null when it is one number. */
+  cost_parts: CostPart[] | null;
 };
 
 export async function fetchProductCosts(brandId: string): Promise<Map<string, ProductCost>> {
   const data = await readAll((from, to) =>
     supabase
       .from("product_costs")
-      .select("product_id, cost_price, direct_packaging_cost, vendor_id", { count: "exact" })
+      .select("product_id, cost_price, direct_packaging_cost, vendor_id, cost_parts", {
+        count: "exact",
+      })
       .eq("brand_id", brandId)
       .order("product_id")
       .range(from, to),
@@ -36,6 +42,7 @@ export async function fetchProductCosts(brandId: string): Promise<Map<string, Pr
         cost_price: Number(row.cost_price ?? 0),
         direct_packaging_cost: Number(row.direct_packaging_cost ?? 0),
         vendor_id: row.vendor_id ?? null,
+        cost_parts: storedParts(row.cost_parts),
       },
     ]),
   );
@@ -60,7 +67,12 @@ export function withProductCosts<T extends { id: string }>(
 ): Array<T & ProductCost> {
   return rows.map((row) => ({
     ...row,
-    ...(costs.get(row.id) ?? { cost_price: 0, direct_packaging_cost: 0, vendor_id: null }),
+    ...(costs.get(row.id) ?? {
+      cost_price: 0,
+      direct_packaging_cost: 0,
+      vendor_id: null,
+      cost_parts: null,
+    }),
   }));
 }
 
@@ -69,4 +81,26 @@ export function withVariantCosts<T extends { id: string }>(
   costs: ReadonlyMap<string, number>,
 ): Array<T & { cost_price: number }> {
   return rows.map((row) => ({ ...row, cost_price: costs.get(row.id) ?? 0 }));
+}
+
+/**
+ * A product's cost, as one number or in parts (the database writes their sum as the cost). The
+ * product's sizes that were following its cost move with it, and a size with a cost of its own
+ * keeps it (`product_costs_sizes_follow`). Staff who may see the store's finances only.
+ */
+export async function saveProductCost(
+  brandId: string,
+  productId: string,
+  cost: { amount: number } | { parts: CostPart[] | null },
+) {
+  const values =
+    "parts" in cost
+      ? { cost_parts: cost.parts as unknown as Json }
+      : { cost_price: cost.amount, cost_parts: null };
+  const { data, error } = await supabase
+    .from("product_costs")
+    .upsert({ product_id: productId, brand_id: brandId, ...values }, { onConflict: "product_id" })
+    .select("product_id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("PRODUCT_COST_NOT_SAVED");
 }

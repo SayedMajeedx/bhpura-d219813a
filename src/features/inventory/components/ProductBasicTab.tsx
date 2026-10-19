@@ -227,8 +227,11 @@ export function ProductBasicTab({
         isAr={isAr}
         isService={isService}
         value={form.cost_price}
+        parts={form.cost_parts}
+        currency={currency}
         error={errors.cost}
         onChange={(cost) => setForm({ ...form, cost_price: cost })}
+        onPartsChange={(parts, cost) => setForm({ ...form, cost_parts: parts, cost_price: cost })}
       />
       {!isService && (
         <SaleModeSection

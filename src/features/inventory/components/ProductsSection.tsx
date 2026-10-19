@@ -31,6 +31,7 @@ import type { InventoryView } from "@/features/inventory/lib/list-view";
 import type { AttentionKey } from "@/features/inventory/lib/attention";
 import { useInventoryList } from "@/features/inventory/hooks/use-inventory-list";
 import { StockOverviewStrip } from "@/features/inventory/components/StockOverviewStrip";
+import { MissingCostsLine } from "@/features/inventory/components/MissingCostsLine";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
 import { useProductBulkActions } from "@/features/inventory/hooks/use-product-bulk-actions";
@@ -263,6 +264,19 @@ export function ProductsSection({
           lowStockUnits={lowStockUnits}
           canEditLevel={canEditLowStockLevel}
           onSaveLevel={onSaveLowStockLevel}
+        />
+      )}
+
+      {canViewCosts && (
+        <MissingCostsLine
+          count={list.counts.missingCost}
+          products={products}
+          variantsByProduct={variantsByProduct}
+          lowestPrice={lowestPrice}
+          brandId={brandId}
+          currency={currency}
+          isAr={isAr}
+          onSaved={onChanged}
         />
       )}
 

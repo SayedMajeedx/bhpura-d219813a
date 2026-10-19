@@ -1,3 +1,5 @@
+import type { CostPart } from "@/features/inventory/lib/cost-parts";
+
 /** Row and form shapes shared by the inventory screens. */
 
 export type MediaItem = {
@@ -32,6 +34,8 @@ export type Product = {
   custom_fields: CustomField[] | null;
   base_price?: number | null;
   cost_price?: number | null;
+  /** The cost in parts (its sum is `cost_price`), or null when it is one number. */
+  cost_parts?: CostPart[] | null;
   variant_label_size_ar?: string | null;
   variant_label_size_en?: string | null;
   variant_label_color_ar?: string | null;
