@@ -6421,24 +6421,36 @@ export type Database = {
           id: string;
           line_total: number;
           po_id: string;
+          product_id: string | null;
           quantity: number;
+          received_quantity: number;
+          sort_order: number;
           unit_cost: number;
+          variant_id: string | null;
         };
         Insert: {
           description: string;
           id?: string;
           line_total?: number;
           po_id: string;
+          product_id?: string | null;
           quantity?: number;
+          received_quantity?: number;
+          sort_order?: number;
           unit_cost?: number;
+          variant_id?: string | null;
         };
         Update: {
           description?: string;
           id?: string;
           line_total?: number;
           po_id?: string;
+          product_id?: string | null;
           quantity?: number;
+          received_quantity?: number;
+          sort_order?: number;
           unit_cost?: number;
+          variant_id?: string | null;
         };
         Relationships: [
           {
@@ -6448,40 +6460,149 @@ export type Database = {
             referencedRelation: "purchase_orders";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      purchase_order_receipts: {
+        Row: {
+          brand_id: string;
+          cost_after: number;
+          cost_before: number;
+          id: string;
+          item_id: string;
+          note: string | null;
+          po_id: string;
+          quantity: number;
+          received_at: string;
+          received_by: string | null;
+          request_id: string;
+          stock_before: number;
+          unit_cost: number;
+          variant_id: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          cost_after: number;
+          cost_before: number;
+          id?: string;
+          item_id: string;
+          note?: string | null;
+          po_id: string;
+          quantity: number;
+          received_at?: string;
+          received_by?: string | null;
+          request_id: string;
+          stock_before: number;
+          unit_cost: number;
+          variant_id?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          cost_after?: number;
+          cost_before?: number;
+          id?: string;
+          item_id?: string;
+          note?: string | null;
+          po_id?: string;
+          quantity?: number;
+          received_at?: string;
+          received_by?: string | null;
+          request_id?: string;
+          stock_before?: number;
+          unit_cost?: number;
+          variant_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_receipts_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_receipts_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_receipts_po_id_fkey";
+            columns: ["po_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_receipts_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
         ];
       };
       purchase_orders: {
         Row: {
           brand_id: string;
           created_at: string;
+          created_by: string | null;
           due_date: string | null;
+          expected_at: string | null;
           id: string;
+          notes: string | null;
           paid_amount: number;
           po_number: string;
+          received_at: string | null;
           status: string;
           total_amount: number;
+          updated_at: string;
           vendor_id: string;
         };
         Insert: {
           brand_id: string;
           created_at?: string;
+          created_by?: string | null;
           due_date?: string | null;
+          expected_at?: string | null;
           id?: string;
+          notes?: string | null;
           paid_amount?: number;
           po_number: string;
+          received_at?: string | null;
           status?: string;
           total_amount?: number;
+          updated_at?: string;
           vendor_id: string;
         };
         Update: {
           brand_id?: string;
           created_at?: string;
+          created_by?: string | null;
           due_date?: string | null;
+          expected_at?: string | null;
           id?: string;
+          notes?: string | null;
           paid_amount?: number;
           po_number?: string;
+          received_at?: string | null;
           status?: string;
           total_amount?: number;
+          updated_at?: string;
           vendor_id?: string;
         };
         Relationships: [
@@ -10109,6 +10230,20 @@ export type Database = {
       prune_system_health_events: {
         Args: { p_retention_days?: number };
         Returns: number;
+      };
+      purchase_order_landed_unit_cost: {
+        Args: { p_item_id: string };
+        Returns: number;
+      };
+      purchase_order_refresh: { Args: { p_po_id: string }; Returns: undefined };
+      receive_purchase_order: {
+        Args: {
+          p_lines: Json;
+          p_note?: string;
+          p_po_id: string;
+          p_request_id: string;
+        };
+        Returns: Json;
       };
       reconcile_inventory: {
         Args: { p_brand_id?: string };

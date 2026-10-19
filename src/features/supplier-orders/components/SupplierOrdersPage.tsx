@@ -26,7 +26,7 @@ import { SupplierOrderCard } from "./SupplierOrderCard";
 import { cn } from "@/lib/utils";
 
 /**
- * Supplier orders: what was ordered from a tailor or a supplier, what has arrived, and what is
+ * Supplier orders: what was ordered from a supplier (a tailor, a workshop, a wholesaler), what has arrived, and what is
  * still owed. Receiving an order adds its pieces to the stock and sets their cost.
  */
 export function SupplierOrdersPage() {
@@ -75,8 +75,8 @@ export function SupplierOrdersPage() {
         }
         description={
           isAr
-            ? "ما طلبته من الخياط أو المورد، وما وصل منه، وكم بقي عليك. الاستلام يضيف القطع للمخزون ويحفظ تكلفتها."
-            : "What you ordered from a tailor or supplier, what has arrived and what you still owe. Receiving adds the pieces to stock and records their cost."
+            ? "ما طلبته من الموردين، وما وصل منه، وكم بقي عليك. الاستلام يضيف القطع للمخزون ويحفظ تكلفتها."
+            : "What you ordered from suppliers, what has arrived and what you still owe. Receiving adds the pieces to stock and records their cost."
         }
         actions={
           <AdminPageAction
@@ -177,7 +177,7 @@ function Figure({ label, value, tone }: { label: string; value: string; tone?: "
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd
         className={cn(
-          "mt-1 break-words text-base font-bold tabular-nums sm:text-lg",
+          "mt-1 break-words text-sm font-bold tabular-nums sm:text-lg",
           tone === "warning" ? "text-warning" : "text-foreground",
         )}
       >
@@ -194,8 +194,8 @@ function EmptyState({ isAr, slug }: { isAr: boolean; slug: string }) {
       <h2 className="font-bold">{isAr ? "لا توجد طلبيات بعد" : "No orders yet"}</h2>
       <p className="mx-auto max-w-md text-sm text-muted-foreground">
         {isAr
-          ? "عندما تطلب قطعاً من الخياط أو المورد، سجّلها هنا: المنتج والمقاسات والتكلفة. وعند وصولها اضغط «استلام» لتُضاف للمخزون بتكلفتها، فلا تُنسى التكاليف."
-          : "When you order pieces from a tailor or supplier, note them here: the product, its sizes and the cost. When they arrive, press Receive: they join your stock with their cost, so no cost is forgotten."}
+          ? "عندما تطلب قطعاً من مورد (خياط، مشغل، تاجر جملة)، سجّلها هنا: المنتج والمقاسات والتكلفة. وعند وصولها اضغط «استلام» لتُضاف للمخزون بتكلفتها، فلا تُنسى التكاليف."
+          : "When you order pieces from a supplier (a tailor, a workshop, a wholesaler), note them here: the product, its sizes and the cost. When they arrive, press Receive: they join your stock with their cost, so no cost is forgotten."}
       </p>
       <Link
         to="/admin/b/$slug/supplier-orders/$id"

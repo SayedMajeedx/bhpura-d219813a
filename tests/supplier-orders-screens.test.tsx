@@ -282,7 +282,7 @@ describe("a new order", () => {
   it("is a product with how many of each size, and offers no service", async () => {
     wrap(<SupplierOrderPage orderId="new" />);
     await screen.findByRole("option", { name: "Umm Ali" });
-    fireEvent.change(screen.getByLabelText("Supplier or tailor"), {
+    fireEvent.change(screen.getByLabelText("Supplier"), {
       target: { value: "tailor" },
     });
     fireEvent.click(screen.getByRole("button", { name: /Add product/ }));

@@ -157,7 +157,7 @@ export function SupplierOrderView({
                       <td dir="auto" className="py-1.5 text-page-start">
                         {catalog.sizeName(line.variant_id)}
                       </td>
-                      <td className="py-1.5 text-center tabular-nums">
+                      <td dir="ltr" className="whitespace-nowrap py-1.5 text-center tabular-nums">
                         <span
                           className={
                             line.received_quantity >= line.quantity ? "font-bold text-success" : ""
@@ -190,7 +190,7 @@ export function SupplierOrderView({
           <ul className="divide-y divide-border-subtle text-sm">
             {extras.map((line) => (
               <li key={line.id} className="flex min-w-0 justify-between gap-3 py-1.5">
-                <span dir="auto" className="break-words">
+                <span dir="auto" className="min-w-0 flex-1 break-words">
                   {line.description}
                 </span>
                 <span className="shrink-0 tabular-nums">{money(line.line_total)}</span>

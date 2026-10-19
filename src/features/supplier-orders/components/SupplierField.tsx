@@ -63,7 +63,7 @@ export function SupplierField({
 
   return (
     <div className="space-y-1">
-      <Label htmlFor={id}>{isAr ? "المورد أو الخياط" : "Supplier or tailor"}</Label>
+      <Label htmlFor={id}>{isAr ? "المورد" : "Supplier"}</Label>
       <div className="flex min-w-0 gap-2">
         <select
           id={id}
@@ -110,7 +110,7 @@ export function SupplierField({
                 id={`${id}-name`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={isAr ? "مثال: خياط أم علي" : "e.g. Umm Ali tailoring"}
+                placeholder={isAr ? "مثال: مشغل النور" : "e.g. Al Noor workshop"}
                 autoFocus
               />
             </div>

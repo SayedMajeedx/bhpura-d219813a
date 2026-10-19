@@ -391,8 +391,8 @@ export function getAdminNavItems({
       labelEn: "Supplier orders",
       labelAr: lang === "ar" ? "طلبيات الموردين" : "Supplier orders",
       descriptionEn:
-        "Orders from a tailor or supplier: what arrived, what it cost, what is still owed",
-      descriptionAr: "طلبيات الخياط والموردين: ما وصل منها، وتكلفة كل قطعة، وما بقي عليك",
+        "Orders from your suppliers: what arrived, what each piece cost, what is still owed",
+      descriptionAr: "طلبيات الموردين: ما وصل منها، وتكلفة كل قطعة، وما بقي عليك",
       icon: Scissors,
       permission: "view_financials",
       section: "operations",

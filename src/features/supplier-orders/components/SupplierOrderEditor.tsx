@@ -120,8 +120,8 @@ export function SupplierOrderEditor({
             <h2 className="font-bold">{isAr ? "تكاليف أخرى" : "Other costs"}</h2>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "قماش اشتريته بنفسك، توصيل، أو سعر الخياطة للدفعة كاملة: يُوزَّع على القطع لتكون تكلفة كل قطعة حقيقية."
-                : "Fabric you bought, delivery, or the tailoring price for the whole batch: shared over the pieces so each piece's cost is real."}
+                ? "خامات اشتريتها بنفسك، توصيل، أو سعر للدفعة كاملة: يُوزَّع على القطع لتكون تكلفة كل قطعة حقيقية."
+                : "Material you bought, delivery, or one price for the whole batch: shared over the pieces so each piece's cost is real."}
             </p>
           </div>
           <Button
@@ -189,7 +189,7 @@ export function SupplierOrderEditor({
             rows={2}
             maxLength={2000}
             placeholder={
-              isAr ? "القماش، الموديل، أي اتفاق مع الخياط" : "Fabric, model, anything agreed"
+              isAr ? "الخامة، الموديل، أي اتفاق مع المورد" : "Material, model, anything agreed"
             }
           />
         </div>
