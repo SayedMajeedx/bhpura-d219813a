@@ -39,6 +39,7 @@ function builder(table: string) {
       request.payload = payload;
       return chain;
     },
+    single: () => chain,
     eq: record("eq"),
     order: record("order"),
     range: record("range"),
@@ -77,12 +78,7 @@ beforeEach(() => {
 describe("the accounting tabs' reads", () => {
   it("sit under the brand's accounting prefix", () => {
     const q = accounting.accountingQueries;
-    for (const options of [
-      q.cashAccounts("b1"),
-      q.vendors("b1"),
-      q.vendorOptions("b1"),
-      q.purchaseOrders("b1"),
-    ]) {
+    for (const options of [q.cashAccounts("b1"), q.vendors("b1"), q.vendorOptions("b1")]) {
       expect(options.queryKey.slice(0, 2)).toEqual(["accounting", "b1"]);
     }
     // The vendors tab and the expense form's picker are two lists, one per column set.
@@ -93,49 +89,25 @@ describe("the accounting tabs' reads", () => {
     await accounting.fetchCashFlowAccounts("b1");
     await accounting.fetchVendors("b1");
     await accounting.fetchVendorOptions("b1");
-    await accounting.fetchPurchaseOrders("b1");
-    expect(requests.map((r) => r.table)).toEqual([
-      "cash_flow_accounts",
-      "vendors",
-      "vendors",
-      "purchase_orders",
-    ]);
+    expect(requests.map((r) => r.table)).toEqual(["cash_flow_accounts", "vendors", "vendors"]);
     for (const request of requests) expect(eqs(request)).toEqual([["brand_id", "b1"]]);
     expect(requests[2].select).toBe("id, name");
-    expect(requests[3].select).toBe("*, vendors(name)");
 
     respond = () => ({ data: null, error: denied });
-    await expect(accounting.fetchPurchaseOrders("b1")).rejects.toBe(denied);
+    await expect(accounting.fetchVendors("b1")).rejects.toBe(denied);
   });
 });
 
 describe("the accounting tabs' writes", () => {
-  it("stamp the brand on new rows", async () => {
-    await accounting.createVendor("b1", { name: "Silk Co" });
-    await accounting.createPurchaseOrder("b1", {
-      po_number: "PO-1234",
-      vendor_id: "v1",
-      total_amount: 100,
-    });
+  it("stamp the brand on a new vendor and give back its id", async () => {
+    respond = () => ({ data: { id: "v9" }, error: null });
+    await expect(accounting.createVendor("b1", { name: "Silk Co" })).resolves.toBe("v9");
     expect(
       requests.map((r) => [r.table, r.op, (r.payload as { brand_id: string }).brand_id]),
-    ).toEqual([
-      ["vendors", "insert", "b1"],
-      ["purchase_orders", "insert", "b1"],
-    ]);
-  });
-
-  it("update only the brand's own rows and throw on error", async () => {
-    await accounting.updatePurchaseOrder("b1", "po-1", { paid_amount: 20 });
-    expect(requests[0]).toMatchObject({ table: "purchase_orders", payload: { paid_amount: 20 } });
-    expect(eqs(requests[0])).toEqual([
-      ["id", "po-1"],
-      ["brand_id", "b1"],
-    ]);
+    ).toEqual([["vendors", "insert", "b1"]]);
 
     respond = () => ({ error: denied });
     await expect(accounting.createVendor("b1", { name: "x" })).rejects.toBe(denied);
-    await expect(accounting.updatePurchaseOrder("b1", "po-1", {})).rejects.toBe(denied);
   });
 
   it("refresh both vendor lists after a new vendor, and nothing else", async () => {
@@ -144,7 +116,7 @@ describe("the accounting tabs' writes", () => {
     for (const key of [
       q.vendors("b1").queryKey,
       q.vendorOptions("b1").queryKey,
-      q.purchaseOrders("b1").queryKey,
+      q.cashAccounts("b1").queryKey,
       q.vendors("b2").queryKey,
     ]) {
       qc.setQueryData(key, []);

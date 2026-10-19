@@ -27,6 +27,7 @@ import {
   Puzzle,
   Upload,
   Download,
+  Scissors,
   type LucideIcon,
 } from "lucide-react";
 
@@ -384,6 +385,22 @@ export function getAdminNavItems({
       tier: "modular",
     },
     {
+      id: "supplier-orders",
+      to: "/admin/b/$slug/supplier-orders",
+      params: { slug: activeSlug },
+      labelEn: "Supplier orders",
+      labelAr: lang === "ar" ? "طلبيات الموردين" : "Supplier orders",
+      descriptionEn:
+        "Orders from a tailor or supplier: what arrived, what it cost, what is still owed",
+      descriptionAr: "طلبيات الخياط والموردين: ما وصل منها، وتكلفة كل قطعة، وما بقي عليك",
+      icon: Scissors,
+      permission: "view_financials",
+      section: "operations",
+      category: "products_stock",
+      workspace: "catalog",
+      tier: "modular",
+    },
+    {
       id: "categories",
       to: "/admin/b/$slug/categories",
       params: { slug: activeSlug },
@@ -704,6 +721,8 @@ export function getAdminNavItems({
     if (item.id === "bookings" && !storeModules?.bookings) return false;
     // A store without stock or returns (a services store) has no use for these.
     if (item.id === "incubators" && storeModules?.incubators === false) return false;
+    // Orders of pieces from a supplier fill the stock: a store that keeps none has no use for it.
+    if (item.id === "supplier-orders" && services) return false;
     if (item.id === "returns" && storeModules?.returns === false) return false;
     if (storefrontMode === "catalog") {
       if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {

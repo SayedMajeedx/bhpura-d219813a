@@ -45,6 +45,12 @@ import { fetchInventoryMovements, type InventoryMovementRow } from "@/lib/data/c
 
 export type InventoryMovement = InventoryMovementRow;
 
+const PURCHASE_RECEIPT_LABEL = {
+  ar: "استلام من مورد",
+  en: "Received from supplier",
+  badgeClass: "bg-success-subtle text-success border-success/30",
+};
+
 const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string }> = {
   order_reservation: {
     ar: "حجز طلب",
@@ -388,7 +394,11 @@ export function InventoryHistorySheet({
               </TableHeader>
               <TableBody>
                 {movements.map((m) => {
-                  const meta = REASON_LABELS[m.reason] || {
+                  // Pieces that arrived from a supplier's order are an adjustment in the
+                  // ledger; they read as what they are.
+                  const meta = (m.reference_type === "purchase_order"
+                    ? PURCHASE_RECEIPT_LABEL
+                    : REASON_LABELS[m.reason]) || {
                     ar: m.reason,
                     en: m.reason,
                     badgeClass: "bg-muted text-muted-foreground border-border",
@@ -463,6 +473,15 @@ export function InventoryHistorySheet({
                             title={isAr ? "عرض تفاصيل الطلب" : "View order details"}
                           >
                             <span>#{order?.invoice_number || m.reference_id.slice(0, 8)}</span>
+                            <ExternalLink className="h-3 w-3" />
+                          </Link>
+                        ) : m.reference_type === "purchase_order" && m.reference_id ? (
+                          <Link
+                            to="/admin/b/$slug/supplier-orders/$id"
+                            params={{ slug, id: m.reference_id }}
+                            className="inline-flex items-center gap-1 text-primary hover:underline font-semibold"
+                          >
+                            <span>{isAr ? "طلبية المورد" : "Supplier order"}</span>
                             <ExternalLink className="h-3 w-3" />
                           </Link>
                         ) : m.reference_id ? (

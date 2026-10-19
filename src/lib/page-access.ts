@@ -41,6 +41,9 @@ export const PAGE_ACCESS: Record<string, PageRule> = {
   // Money: the report functions themselves ask for this permission.
   reports: { permission: "view_financials" },
   expenses: { permission: "view_financials" },
+  // A supplier's order holds its costs; receiving it also needs manage_inventory (checked by
+  // the database, and the button is shown only to those who have it).
+  "supplier-orders": { permission: "view_financials" },
 
   discounts: { permission: "manage_settings" },
   loyalty: { permission: "manage_settings" },
