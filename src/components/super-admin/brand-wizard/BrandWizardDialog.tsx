@@ -317,7 +317,7 @@ Password: ${data.owner_password || "(as provided)"}`;
                     if (isPassed) setCurrentStep(step.id);
                   }}
                   disabled={!isPassed && !isCurrent}
-                  className={`h-auto rounded-md flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
+                  className={`h-auto whitespace-normal rounded-md flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
                     isCurrent
                       ? "border-primary bg-primary/10 text-primary font-semibold"
                       : isPassed
