@@ -88,3 +88,17 @@ export function editorSnapshot(
 ) {
   return JSON.stringify({ pages, socials, titles });
 }
+
+/**
+ * Whether the editor holds changes: not while the store's pages are still loading (no snapshot
+ * yet). The screen once compared the empty editor with an empty snapshot and counted itself
+ * edited, so leaving it while it loaded asked "leave without saving?" and Save was enabled.
+ */
+export function editorDirty(
+  saved: string,
+  pages: EditablePage[],
+  socials: Array<{ name: string; url: string }>,
+  titles: FooterTitles,
+) {
+  return saved !== "" && saved !== editorSnapshot(pages, socials, titles);
+}

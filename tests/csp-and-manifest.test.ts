@@ -38,6 +38,16 @@ describe("CSP security headers and Manifest assets", () => {
     expect(connectSrc).toContain("https://*.facebook.com");
   });
 
+  it("lets a store's uploaded font load from the media host", () => {
+    // A font uploaded in the typography settings lives on media.boutq.store; the policy allowed
+    // only Google's fonts, so Pura's chosen admin font was blocked and never shown.
+    const content = fs.readFileSync(path.resolve(process.cwd(), "src/server.ts"), "utf-8");
+    const csp = content.match(/"Content-Security-Policy":\s*\n?\s*"([^"]+)"/)![1];
+    const fontSrc = csp.match(/font-src\s+([^;]+);/)![1];
+    expect(fontSrc).toContain("https://media.boutq.store");
+    expect(fontSrc).toContain("https://fonts.gstatic.com");
+  });
+
   it("detects SVG vs PNG icons correctly for manifest", () => {
     const isSvg = (url: string) => /\.svg(\?.*)?$/i.test(url);
 

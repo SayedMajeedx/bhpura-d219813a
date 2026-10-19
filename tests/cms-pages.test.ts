@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { storedFooterTitles, storedPageItems, storedPages } from "../src/lib/cms-pages";
+import {
+  storedFooterTitles,
+  storedPageItems,
+  storedPages,
+  termsPageSlug,
+} from "../src/lib/cms-pages";
 import {
   buildPagesPayload,
+  editorDirty,
   editorSnapshot,
   pagesSurvived,
 } from "../src/components/pages/pages-payload";
@@ -83,5 +89,29 @@ describe("editorSnapshot", () => {
     expect(editorSnapshot([page("a", "help")], [], titles)).toBe(base);
     expect(editorSnapshot([page("a", "company")], [], titles)).not.toBe(base);
     expect(editorSnapshot([page("a", "help")], [], { ...titles, helpEn: "x" })).not.toBe(base);
+  });
+});
+
+describe("editorDirty", () => {
+  it("is never edited while the pages load, and is once they differ from what was saved", () => {
+    // Before, the empty editor against an empty snapshot read as edited: leaving the screen
+    // while it loaded asked "leave without saving?" and Save was enabled.
+    expect(editorDirty("", [], [], titles)).toBe(false);
+    const saved = editorSnapshot([page("a", "help")], [], titles);
+    expect(editorDirty(saved, [page("a", "help")], [], titles)).toBe(false);
+    expect(editorDirty(saved, [page("a", "company")], [], titles)).toBe(true);
+  });
+});
+
+describe("termsPageSlug", () => {
+  it("finds the store's own terms page, by address or title, and nothing when there is none", () => {
+    // Checkout linked every store to terms-conditions; two stores had no such page.
+    expect(termsPageSlug([{ slug: "returns-refunds" }, { slug: "terms-conditions" }])).toBe(
+      "terms-conditions",
+    );
+    expect(termsPageSlug([{ slug: "policy", title_en: "Terms of sale" }])).toBe("policy");
+    expect(termsPageSlug([{ slug: "p1", title_ar: "الشروط والأحكام" }])).toBe("p1");
+    expect(termsPageSlug([{ slug: "size-guide", title_en: "Size guide" }])).toBeNull();
+    expect(termsPageSlug(null)).toBeNull();
   });
 });

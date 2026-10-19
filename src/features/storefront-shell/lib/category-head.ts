@@ -4,13 +4,17 @@ import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
 import { buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 
 /** The collections that are not rows in `categories` (see CategoryPage). */
-const SMART_NAMES: Record<string, { ar: string; en: string }> = {
+/** The built-in collections' names, for the page heading and the browser's title. */
+export const SMART_NAMES: Record<string, { ar: string; en: string }> = {
+  all: { ar: "كل المنتجات", en: "All products" },
   new: { ar: "وصل حديثاً", en: "New arrivals" },
   best: { ar: "الأكثر مبيعاً", en: "Most selling" },
   offers: { ar: "تنزيلات", en: "Sale" },
 };
 
-export function smartKindOf(slug: string): "new" | "best" | "offers" | null {
+export function smartKindOf(slug: string): "all" | "new" | "best" | "offers" | null {
+  // Every active product: the new-look footer's "All Products" link opened "Category unavailable".
+  if (["all", "all-products", "shop"].includes(slug)) return "all";
   if (["new-arrivals", "new"].includes(slug)) return "new";
   if (["most-selling", "best-sellers", "best-selling"].includes(slug)) return "best";
   if (["offers", "sale", "discounts"].includes(slug)) return "offers";

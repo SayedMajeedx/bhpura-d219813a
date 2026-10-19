@@ -48,7 +48,12 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { normalizeRichTextValue } from "@/lib/rich-text";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT } from "@/lib/seo";
 
-import { buildPagesPayload, editorSnapshot, pagesSurvived } from "@/components/pages/pages-payload";
+import {
+  buildPagesPayload,
+  editorDirty,
+  editorSnapshot,
+  pagesSurvived,
+} from "@/components/pages/pages-payload";
 import { FooterGroupTitlesCard, type FooterTitles } from "@/components/pages/FooterGroupTitlesCard";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
@@ -231,7 +236,7 @@ function PagesAndPolicies() {
     setSavedSnapshot(editorSnapshot(loadedPages, loadedSocials, loadedTitles));
   }, [data]);
 
-  const dirty = savedSnapshot !== editorSnapshot(pages, socials, footerTitles);
+  const dirty = editorDirty(savedSnapshot, pages, socials, footerTitles);
   useEffect(() => {
     if (!dirty) return;
     const warn = (event: BeforeUnloadEvent) => event.preventDefault();

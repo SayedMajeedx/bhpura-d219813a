@@ -1,3 +1,4 @@
+import { termsPageSlug } from "@/lib/cms-pages";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -554,6 +555,7 @@ function Checkout() {
 
       <div>
         <OrderSummaryCard
+          termsPage={termsPageSlug(settings.pages)}
           acceptedTerms={acceptedTerms}
           appliedPromo={appliedPromo}
           applyPromo={applyPromo}

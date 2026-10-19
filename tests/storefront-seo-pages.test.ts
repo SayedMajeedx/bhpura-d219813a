@@ -82,6 +82,18 @@ describe("category head", () => {
     expect(JSON.stringify((head as { scripts: unknown }).scripts)).toContain("BreadcrumbList");
   });
 
+  it("knows every active product as a collection, as the footer's All Products link opens it", () => {
+    // The new-look footer linked to /<store>/all, which was no category: "Category unavailable".
+    expect(smartKindOf("all")).toBe("all");
+    const head = categoryHead({
+      slug: "pura",
+      category: "all",
+      loaderData: { brand, category: null, initialLang: "en" },
+    }) as { meta?: Array<Record<string, string>> };
+    const title = head.meta?.find((tag) => tag.property === "og:title")?.content;
+    expect(title).toMatch(/^All products \| /);
+  });
+
   it("names a smart collection in the shopper's language", () => {
     expect(smartKindOf("best-sellers")).toBe("best");
     expect(smartKindOf("daily")).toBeNull();

@@ -298,6 +298,7 @@ export async function fetchTrendingRows(slug: string, limit: number): Promise<Tr
 
 /** What a category page lists: a smart collection or a set of category values. */
 export type CategoryProductsScope =
+  | { kind: "all" }
   | { kind: "best" }
   | { kind: "new" }
   | { kind: "offers" }
@@ -324,7 +325,7 @@ export async function fetchCategoryProducts(
   }
 
   const newSince = new Date(Date.now() - NEW_ARRIVALS_WINDOW_MS).toISOString();
-  // New arrivals and offers show the latest few; a category shows all of its products.
+  // New arrivals and offers show the latest few; a category, and "all", show every product.
   const cap = scope.kind === "new" ? 60 : scope.kind === "offers" ? 200 : null;
   const newestFirst = (counted: boolean) => {
     let query = supabase

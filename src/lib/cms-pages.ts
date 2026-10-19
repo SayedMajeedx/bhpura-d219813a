@@ -67,3 +67,26 @@ export function storedPages(raw: unknown): StoredPage[] {
     group: page.group === "company" ? "company" : "help",
   }));
 }
+
+/**
+ * The store's own terms page, for checkout's "I agree to the terms" link: one whose address or
+ * title names terms or conditions. Checkout linked every store to `terms-conditions`, a page two
+ * of the platform's stores did not have, so their shoppers opened "Category unavailable". Null
+ * when the store has none: the agreement then reads without a link.
+ */
+export function termsPageSlug(
+  pages:
+    | ReadonlyArray<{ slug?: string | null; title_en?: string | null; title_ar?: string | null }>
+    | null
+    | undefined,
+): string | null {
+  const isTerms = (page: {
+    slug?: string | null;
+    title_en?: string | null;
+    title_ar?: string | null;
+  }) =>
+    /terms|conditions/i.test(`${page.slug ?? ""} ${page.title_en ?? ""}`) ||
+    /الشروط|الأحكام/.test(page.title_ar ?? "");
+  const found = (pages ?? []).find((page) => page.slug && isTerms(page));
+  return found?.slug ?? null;
+}
