@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 /**
- * Pure calculation logic matching OrderQuickViewModal and admin order details.
+ * Pure calculation logic matching the admin order details.
  */
 interface OrderFinancialInput {
   subtotal: number;

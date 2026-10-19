@@ -1,6 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { isOrderDirty, orderItemFromRow } from "../src/features/orders/lib/order-editor";
 import { orderItemRow } from "../src/features/orders/lib/order-save";
@@ -55,8 +54,6 @@ const { Route: invoiceRoute } = (await import("../src/routes/invoice.$id")) as u
   Route: { options: { component: React.ComponentType } };
 };
 const { printThermalReceipt } = await import("../src/lib/thermal-print");
-const { OrderItemsSection } = await import("../src/components/orders/OrderItemsSection");
-const { OrderQuickViewModal } = await import("../src/components/orders/OrderQuickViewModal");
 
 const specs = { size: "52", color: "Black", fabric: "Crepe" };
 const fields = [{ key: "sleeve", label_ar: null, label_en: "Sleeve", value: "60" }];
@@ -167,35 +164,6 @@ describe("Custom Tailoring & Made-To-Order Specifications", () => {
     expect(html).toMatch(/Color: Black/);
     expect(html).toContain("Size / Option: 52");
     expect(html).toMatch(/Fabric: Crepe/);
-  });
-
-  it("displays custom variant specs in quick view modal and order items section", () => {
-    const order = {
-      id: "o1",
-      brand_id: "b1",
-      invoice_number: 1098,
-      currency: "BHD",
-      total: 30,
-      order_items: [line],
-    };
-    const items = render(<OrderItemsSection lang="en" order={order} />);
-    expect(screen.getByText("Black · 52 · Crepe")).toBeInTheDocument();
-    items.unmount();
-
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <OrderQuickViewModal
-          lang="en"
-          slug="pura"
-          order={order}
-          onClose={vi.fn()}
-          onCopyInvoice={vi.fn()}
-          onPrintThermal={vi.fn()}
-          onWhatsAppCustomer={vi.fn()}
-        />
-      </QueryClientProvider>,
-    );
-    expect(within(screen.getByRole("dialog")).getByText("Black · 52 · Crepe")).toBeInTheDocument();
   });
 
   it("accurately tracks form dirtiness for description, selected_variant, and custom fields", () => {

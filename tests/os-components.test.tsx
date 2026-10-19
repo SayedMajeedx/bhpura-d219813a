@@ -2,14 +2,12 @@ import React from "react";
 import { describe, expect, test } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ShoppingBag } from "lucide-react";
-import {
-  OsSurface,
-  OsPageHeader,
-  OsNavItem,
-  OsStatusPill,
-  OsEmptyState,
-  OsMobileTabBar,
-} from "../src/components/os";
+import { OsSurface } from "../src/components/os/os-surface";
+import { OsPageHeader } from "../src/components/os/os-page-header";
+import { OsNavItem } from "../src/components/os/os-nav-item";
+import { OsStatusPill } from "../src/components/os/os-status-pill";
+import { OsEmptyState } from "../src/components/os/os-empty-state";
+import { OsMobileTabBar } from "../src/components/os/os-mobile-tab-bar";
 
 describe("Boutq OS Reusable Components", () => {
   test("OsSurface renders variant classes correctly", () => {
