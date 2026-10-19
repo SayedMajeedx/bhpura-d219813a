@@ -18,7 +18,11 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
 import { resolveInitialLang } from "@/features/storefront-shell/lib/initial-lang";
-import { categoryHead, smartKindOf } from "@/features/storefront-shell/lib/category-head";
+import {
+  SMART_NAMES,
+  categoryHead,
+  smartKindOf,
+} from "@/features/storefront-shell/lib/category-head";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
@@ -131,10 +135,8 @@ function CategoryPage() {
     return {
       id: smartKind,
       slug: categorySlug,
-      name_en:
-        smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale",
-      name_ar:
-        smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات",
+      name_en: SMART_NAMES[smartKind].en,
+      name_ar: SMART_NAMES[smartKind].ar,
       parent_id: null,
       image_url: null,
       menu_icon_url: null,

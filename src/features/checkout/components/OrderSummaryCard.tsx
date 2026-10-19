@@ -65,6 +65,7 @@ export function OrderSummaryCard({
   submit,
   submitting,
   t,
+  termsPage = null,
 }: {
   acceptedTerms: boolean;
   appliedPromo: ReturnType<typeof usePromoCode>["appliedPromo"];
@@ -108,6 +109,8 @@ export function OrderSummaryCard({
   submit: ReturnType<typeof usePlaceOrder>["submit"];
   submitting: ReturnType<typeof usePlaceOrder>["submitting"];
   t: Storefront["t"];
+  /** The store's terms page (`termsPageSlug`), or null when it has none. */
+  termsPage?: string | null;
 }) {
   return (
     <Card className="p-5 sticky top-20 space-y-3">
@@ -403,13 +406,17 @@ export function OrderSummaryCard({
         />
         <span className="text-xs leading-relaxed text-muted-foreground">
           {t("أوافق على", "I agree to the")}{" "}
-          <Link
-            to="/$slug/$category"
-            params={{ slug: brand.slug, category: "terms-conditions" }}
-            className="font-semibold text-foreground underline underline-offset-2"
-          >
-            {t("الشروط والأحكام", "terms and conditions")}
-          </Link>{" "}
+          {termsPage ? (
+            <Link
+              to="/$slug/$category"
+              params={{ slug: brand.slug, category: termsPage }}
+              className="font-semibold text-foreground underline underline-offset-2"
+            >
+              {t("الشروط والأحكام", "terms and conditions")}
+            </Link>
+          ) : (
+            t("شروط المتجر وأحكامه", "store's terms and conditions")
+          )}{" "}
           {t(
             "وسياسة الخصوصية المعروضة ضمن خيارات الخصوصية.",
             "and the privacy policy available in Privacy Preferences.",
