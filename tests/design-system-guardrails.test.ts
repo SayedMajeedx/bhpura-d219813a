@@ -360,6 +360,30 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     );
   });
 
+  it("lets a card built on a button wrap its text", () => {
+    // The shared button style is whitespace-nowrap: the subscription page's PayPal and BenefitPay
+    // cards, and checkout's pickup branch with its store-written notes, ran out of their box.
+    const sources = import.meta.glob("../src/**/*.tsx", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const offenders: string[] = [];
+    for (const [file, text] of Object.entries(sources)) {
+      for (const start of text.matchAll(/<Button\b/g)) {
+        const end = text.indexOf("</Button>", start.index);
+        if (end < 0) continue;
+        const block = text.slice(start.index, end);
+        const cls = /className=(\{`[^`]*`|"[^"]*"|\{cn\([^)]*\))/s.exec(block);
+        if (!cls || !cls[1].includes("h-auto") || /whitespace-(normal|pre)/.test(cls[1])) continue;
+        if (/<(p|div)\b/.test(block.slice(cls.index + cls[0].length))) {
+          offenders.push(`${file}:${text.slice(0, start.index).split("\n").length}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   it("never takes zoom away", () => {
     const sources = import.meta.glob("../src/**/*.{ts,tsx}", {
       query: "?raw",

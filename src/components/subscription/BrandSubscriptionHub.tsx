@@ -59,6 +59,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
+import { purchasablePlans } from "@/lib/saas-billing/purchasable-plans";
 import { systemSettingsQueries } from "@/lib/data/system-settings";
 
 interface BrandSubscriptionHubProps {
@@ -280,9 +281,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     : null;
 
   // Filter eligible paid plans for upgrade
-  const upgradeEligiblePlans = allPlans.filter(
-    (p: any) => p.code !== "trial" && p.code !== "lifetime_founder" && p.is_active,
-  );
+  const upgradeEligiblePlans: any[] = purchasablePlans(allPlans);
 
   // Highest/recommended available plan (e.g. Pro or Growth)
   const defaultRecommendedPlan =
@@ -724,7 +723,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   type="button"
                   variant="outline"
                   onClick={() => setInlinePaymentMethod("paypal")}
-                  className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "paypal"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                       : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -762,7 +761,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   type="button"
                   variant="outline"
                   onClick={() => setInlinePaymentMethod("benefit")}
-                  className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "benefit"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                       : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -1402,115 +1401,111 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                 {/* Plans Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-                  {allPlans
-                    .filter((p) => p.code !== "lifetime_founder" && p.code !== "trial")
-                    .map((plan) => {
-                      const isCurrent = plan.id === currentPlan.id;
-                      const currentVer =
-                        (plan as any).versions?.find((v: any) => v.is_current) ||
-                        (plan as any).versions?.[0];
-                      const monthlyPrice = currentVer?.price_monthly ?? 0;
-                      const annualPrice = currentVer?.price_annual ?? 0;
-                      const currency = currentVer?.currency || "BHD";
-                      const effectivePrice =
-                        upgradeBillingInterval === "annual" ? annualPrice : monthlyPrice;
+                  {purchasablePlans(allPlans).map((plan) => {
+                    const isCurrent = plan.id === currentPlan.id;
+                    const currentVer =
+                      (plan as any).versions?.find((v: any) => v.is_current) ||
+                      (plan as any).versions?.[0];
+                    const monthlyPrice = currentVer?.price_monthly ?? 0;
+                    const annualPrice = currentVer?.price_annual ?? 0;
+                    const currency = currentVer?.currency || "BHD";
+                    const effectivePrice =
+                      upgradeBillingInterval === "annual" ? annualPrice : monthlyPrice;
 
-                      return (
-                        <div
-                          key={plan.id}
-                          className={`p-4 rounded-2xl border flex flex-col justify-between text-xs space-y-3 ${
-                            isCurrent
-                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                              : "border-border bg-card hover:border-border-strong"
-                          }`}
-                        >
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
+                    return (
+                      <div
+                        key={plan.id}
+                        className={`p-4 rounded-2xl border flex flex-col justify-between text-xs space-y-3 ${
+                          isCurrent
+                            ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                            : "border-border bg-card hover:border-border-strong"
+                        }`}
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Badge
+                              variant="outline"
+                              className={plan.badge_color || "bg-primary/10 text-primary font-bold"}
+                            >
+                              {plan.code}
+                            </Badge>
+                            {isCurrent && (
                               <Badge
                                 variant="outline"
-                                className={
-                                  plan.badge_color || "bg-primary/10 text-primary font-bold"
-                                }
+                                className="bg-emerald-500/10 text-emerald-600 font-bold text-xs"
                               >
-                                {plan.code}
+                                {isAr ? "خطتك الحالية" : "Current"}
                               </Badge>
-                              {isCurrent && (
-                                <Badge
-                                  variant="outline"
-                                  className="bg-emerald-500/10 text-emerald-600 font-bold text-xs"
-                                >
-                                  {isAr ? "خطتك الحالية" : "Current"}
-                                </Badge>
-                              )}
-                              {currentVer && (
-                                <span className="text-xs text-muted-foreground font-mono">
-                                  v{currentVer.version_number}
-                                </span>
-                              )}
-                            </div>
-                            <h4 className="text-base font-bold text-foreground">
-                              {isAr ? plan.name_ar : plan.name_en}
-                            </h4>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {isAr ? plan.description_ar : plan.description_en}
-                            </p>
+                            )}
+                            {currentVer && (
+                              <span className="text-xs text-muted-foreground font-mono">
+                                v{currentVer.version_number}
+                              </span>
+                            )}
                           </div>
-
-                          <div className="pt-2 border-t border-border-subtle space-y-3">
-                            <div className="font-mono text-sm font-bold text-foreground">
-                              {plan.code === "enterprise" ? (
-                                <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
-                              ) : currentVer ? (
-                                <div className="space-y-0.5">
-                                  <div className="flex items-baseline gap-1">
-                                    <span className="text-2xl font-black text-foreground">
-                                      {effectivePrice}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground font-normal">
-                                      {currency} /{" "}
-                                      {upgradeBillingInterval === "annual"
-                                        ? isAr
-                                          ? "سنوياً"
-                                          : "year"
-                                        : isAr
-                                          ? "شهرياً"
-                                          : "mo"}
-                                    </span>
-                                  </div>
-                                  {upgradeBillingInterval === "annual" &&
-                                    Number(monthlyPrice) > 0 && (
-                                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-                                        {isAr
-                                          ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
-                                          : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
-                                      </div>
-                                    )}
-                                </div>
-                              ) : (
-                                <span>{isAr ? "حسب العرض" : "On Request"}</span>
-                              )}
-                            </div>
-
-                            <Button
-                              type="button"
-                              variant={isCurrent ? "outline" : "default"}
-                              size="sm"
-                              disabled={isCurrent}
-                              onClick={() => setSelectedPlanForUpgrade(plan)}
-                              className="w-full font-bold text-xs min-h-[44px]"
-                            >
-                              {isCurrent
-                                ? isAr
-                                  ? "الخطة الحالية"
-                                  : "Current Plan"
-                                : isAr
-                                  ? "اختيار الباقة والمتابعة للدفع"
-                                  : "Select Plan & Pay"}
-                            </Button>
-                          </div>
+                          <h4 className="text-base font-bold text-foreground">
+                            {isAr ? plan.name_ar : plan.name_en}
+                          </h4>
+                          <p className="text-xs text-muted-foreground line-clamp-2">
+                            {isAr ? plan.description_ar : plan.description_en}
+                          </p>
                         </div>
-                      );
-                    })}
+
+                        <div className="pt-2 border-t border-border-subtle space-y-3">
+                          <div className="font-mono text-sm font-bold text-foreground">
+                            {plan.code === "enterprise" ? (
+                              <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
+                            ) : currentVer ? (
+                              <div className="space-y-0.5">
+                                <div className="flex items-baseline gap-1">
+                                  <span className="text-2xl font-black text-foreground">
+                                    {effectivePrice}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground font-normal">
+                                    {currency} /{" "}
+                                    {upgradeBillingInterval === "annual"
+                                      ? isAr
+                                        ? "سنوياً"
+                                        : "year"
+                                      : isAr
+                                        ? "شهرياً"
+                                        : "mo"}
+                                  </span>
+                                </div>
+                                {upgradeBillingInterval === "annual" &&
+                                  Number(monthlyPrice) > 0 && (
+                                    <div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+                                      {isAr
+                                        ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
+                                        : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
+                                    </div>
+                                  )}
+                              </div>
+                            ) : (
+                              <span>{isAr ? "حسب العرض" : "On Request"}</span>
+                            )}
+                          </div>
+
+                          <Button
+                            type="button"
+                            variant={isCurrent ? "outline" : "default"}
+                            size="sm"
+                            disabled={isCurrent}
+                            onClick={() => setSelectedPlanForUpgrade(plan)}
+                            className="w-full font-bold text-xs min-h-[44px]"
+                          >
+                            {isCurrent
+                              ? isAr
+                                ? "الخطة الحالية"
+                                : "Current Plan"
+                              : isAr
+                                ? "اختيار الباقة والمتابعة للدفع"
+                                : "Select Plan & Pay"}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             ) : (
@@ -1601,7 +1596,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         type="button"
                         variant="outline"
                         onClick={() => setDialogPaymentMethod("paypal")}
-                        className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "paypal"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                             : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -1632,7 +1627,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         type="button"
                         variant="outline"
                         onClick={() => setDialogPaymentMethod("benefit")}
-                        className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "benefit"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                             : "border-border-strong hover:border-border hover:bg-muted/30"
