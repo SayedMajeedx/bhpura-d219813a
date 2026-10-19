@@ -118,6 +118,62 @@ const orders = [
     ],
   },
 ];
+const vendors = [{ id: "vendor-1", brand_id: BRAND, name: LONG_PERSON, phone: "97312345678" }];
+/** A tailor's order, partly received, late and part paid, with a cost of the whole order. */
+const purchaseOrders = [
+  {
+    id: "po-1",
+    brand_id: BRAND,
+    po_number: "PO-0001",
+    status: "partially_received",
+    vendor_id: "vendor-1",
+    total_amount: 210,
+    paid_amount: 50,
+    expected_at: "2026-07-25",
+    received_at: null,
+    created_at: "2026-07-20T12:00:00Z",
+    notes: `${LONG_AR} ${UNBREAKABLE}`,
+    vendors: { name: LONG_PERSON, phone: "97312345678" },
+    purchase_order_items: [
+      {
+        id: "po-item-1",
+        variant_id: "var-1",
+        product_id: "prod-1",
+        description: LONG_EN,
+        quantity: 10,
+        received_quantity: 4,
+        unit_cost: 18,
+        line_total: 180,
+        sort_order: 0,
+      },
+      {
+        id: "po-item-2",
+        variant_id: null,
+        product_id: null,
+        description: `${LONG_AR} ${UNBREAKABLE}`,
+        quantity: 1,
+        received_quantity: 0,
+        unit_cost: 30,
+        line_total: 30,
+        sort_order: 1,
+      },
+    ],
+  },
+];
+const purchaseReceipts = [
+  {
+    id: "receipt-1",
+    item_id: "po-item-1",
+    variant_id: "var-1",
+    request_id: "00000000-0000-4000-8000-000000000001",
+    quantity: 4,
+    unit_cost: 21,
+    cost_before: 0,
+    cost_after: 21,
+    note: `${LONG_EN} ${UNBREAKABLE}`,
+    received_at: "2026-07-24T12:00:00Z",
+  },
+];
 const categories = [
   { id: "cat-1", brand_id: BRAND, name: LONG_EN, name_en: LONG_EN, name_ar: LONG_AR, slug: "long" },
 ];
@@ -202,6 +258,9 @@ export async function signInWithStressData(page: Page, lang: "ar" | "en") {
         },
       ]);
     }
+    if (url.includes("/purchase_order_receipts")) return answer(purchaseReceipts);
+    if (url.includes("/purchase_orders")) return answer(purchaseOrders);
+    if (url.includes("/vendors")) return answer(vendors);
     if (url.includes("/order_items")) return answer(orders[0].order_items);
     if (url.includes("/orders")) return answer(orders, { "content-range": "0-0/1" });
     if (url.includes("/customers")) return answer([customer], { "content-range": "0-0/1" });

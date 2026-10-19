@@ -1,12 +1,11 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { readAll } from "../read-all";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 /**
  * The expenses page's accounting tabs: cash accounts (cash box and bank) with
- * their transfer log, vendors and purchase orders. Expenses themselves live in
- * `@/lib/data/expenses`.
+ * their transfer log, and vendors. Expenses themselves live in `@/lib/data/expenses`;
+ * purchase orders are supplier orders, in `@/lib/data/supplier-orders`.
  *
  * Everything sits under `["accounting", brandId]`. Before, the cash accounts
  * were read by two tabs under one hand-built key, and the vendors under two
@@ -24,7 +23,6 @@ export const accountingKeys = {
   vendors: (brandId: string) => [...accountingKeys.all(brandId), "vendors"] as const,
   vendorList: (brandId: string) => [...accountingKeys.vendors(brandId), "list"] as const,
   vendorOptions: (brandId: string) => [...accountingKeys.vendors(brandId), "options"] as const,
-  purchaseOrders: (brandId: string) => [...accountingKeys.all(brandId), "purchase-orders"] as const,
 };
 
 /** The brand's cash accounts (a cash box and a bank account). */
@@ -74,19 +72,6 @@ export async function fetchVendorOptions(brandId: string) {
   return data ?? [];
 }
 
-/** Every purchase order of the brand with its vendor's name, newest first. */
-export async function fetchPurchaseOrders(brandId: string) {
-  return readAll((from, to) =>
-    supabase
-      .from("purchase_orders")
-      .select("*, vendors(name)", { count: "exact" })
-      .eq("brand_id", brandId)
-      .order("created_at", { ascending: false })
-      .order("id")
-      .range(from, to),
-  );
-}
-
 export const accountingQueries = {
   cashAccounts: (brandId: string) =>
     queryOptions({
@@ -108,11 +93,6 @@ export const accountingQueries = {
       queryKey: accountingKeys.vendorOptions(brandId),
       queryFn: () => fetchVendorOptions(brandId),
     }),
-  purchaseOrders: (brandId: string) =>
-    queryOptions({
-      queryKey: accountingKeys.purchaseOrders(brandId),
-      queryFn: () => fetchPurchaseOrders(brandId),
-    }),
 };
 
 /** The accounts' balances and their movements. */
@@ -123,10 +103,6 @@ export function invalidateCashAccounts(qc: QueryClient, brandId: string) {
 /** Both vendor lists (the vendors tab and the expense form's picker). */
 export function invalidateVendors(qc: QueryClient, brandId: string) {
   return qc.invalidateQueries({ queryKey: accountingKeys.vendors(brandId) });
-}
-
-export function invalidatePurchaseOrders(qc: QueryClient, brandId: string) {
-  return qc.invalidateQueries({ queryKey: accountingKeys.purchaseOrders(brandId) });
 }
 
 /** Why the database refused a transfer (the codes `transfer_cash_to_bank` raises). */
@@ -165,33 +141,18 @@ export async function transferCashToBank(brandId: string, amount: number, notes?
   return data;
 }
 
+/** Adds a vendor and returns its id (a supplier's order picks the new one at once). */
 export async function createVendor(
   brandId: string,
   vendor: Omit<TablesInsert<"vendors">, "brand_id">,
-) {
-  const { error } = await supabase.from("vendors").insert({ ...vendor, brand_id: brandId });
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("vendors")
+    .insert({ ...vendor, brand_id: brandId })
+    .select("id")
+    .single();
   if (error) throw error;
-}
-
-export async function createPurchaseOrder(
-  brandId: string,
-  order: Omit<TablesInsert<"purchase_orders">, "brand_id">,
-) {
-  const { error } = await supabase.from("purchase_orders").insert({ ...order, brand_id: brandId });
-  if (error) throw error;
-}
-
-export async function updatePurchaseOrder(
-  brandId: string,
-  orderId: string,
-  patch: TablesUpdate<"purchase_orders">,
-) {
-  const { error } = await supabase
-    .from("purchase_orders")
-    .update(patch)
-    .eq("id", orderId)
-    .eq("brand_id", brandId);
-  if (error) throw error;
+  return data.id;
 }
 
 export type CashAccountType = "cash_box" | "bank_account";

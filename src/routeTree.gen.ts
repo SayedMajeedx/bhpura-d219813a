@@ -101,6 +101,8 @@ import { Route as AuthenticatedAdminBSlugReportsProductsRouteImport } from './ro
 import { Route as AuthenticatedAdminBSlugReportsSalesRouteImport } from './routes/_authenticated/admin.b.$slug.reports.sales'
 import { Route as AuthenticatedAdminBSlugReturnsIndexRouteImport } from './routes/_authenticated/admin.b.$slug.returns.index'
 import { Route as AuthenticatedAdminBSlugReturnsIdRouteImport } from './routes/_authenticated/admin.b.$slug.returns.$id'
+import { Route as AuthenticatedAdminBSlugSupplierOrdersIndexRouteImport } from './routes/_authenticated/admin.b.$slug.supplier-orders.index'
+import { Route as AuthenticatedAdminBSlugSupplierOrdersIdRouteImport } from './routes/_authenticated/admin.b.$slug.supplier-orders.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -618,6 +620,18 @@ const AuthenticatedAdminBSlugReturnsIdRoute =
     path: '/returns/$id',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugSupplierOrdersIndexRoute =
+  AuthenticatedAdminBSlugSupplierOrdersIndexRouteImport.update({
+    id: '/supplier-orders/',
+    path: '/supplier-orders/',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
+const AuthenticatedAdminBSlugSupplierOrdersIdRoute =
+  AuthenticatedAdminBSlugSupplierOrdersIdRouteImport.update({
+    id: '/supplier-orders/$id',
+    path: '/supplier-orders/$id',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -708,9 +722,11 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
+  '/admin/b/$slug/supplier-orders/$id': typeof AuthenticatedAdminBSlugSupplierOrdersIdRoute
   '/admin/b/$slug/orders/': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/admin/b/$slug/reports/': typeof AuthenticatedAdminBSlugReportsIndexRoute
   '/admin/b/$slug/returns/': typeof AuthenticatedAdminBSlugReturnsIndexRoute
+  '/admin/b/$slug/supplier-orders/': typeof AuthenticatedAdminBSlugSupplierOrdersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -798,9 +814,11 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
+  '/admin/b/$slug/supplier-orders/$id': typeof AuthenticatedAdminBSlugSupplierOrdersIdRoute
   '/admin/b/$slug/orders': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsIndexRoute
   '/admin/b/$slug/returns': typeof AuthenticatedAdminBSlugReturnsIndexRoute
+  '/admin/b/$slug/supplier-orders': typeof AuthenticatedAdminBSlugSupplierOrdersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -893,9 +911,11 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/_authenticated/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/_authenticated/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
+  '/_authenticated/admin/b/$slug/supplier-orders/$id': typeof AuthenticatedAdminBSlugSupplierOrdersIdRoute
   '/_authenticated/admin/b/$slug/orders/': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/_authenticated/admin/b/$slug/reports/': typeof AuthenticatedAdminBSlugReportsIndexRoute
   '/_authenticated/admin/b/$slug/returns/': typeof AuthenticatedAdminBSlugReturnsIndexRoute
+  '/_authenticated/admin/b/$slug/supplier-orders/': typeof AuthenticatedAdminBSlugSupplierOrdersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -988,9 +1008,11 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
     | '/admin/b/$slug/returns/$id'
+    | '/admin/b/$slug/supplier-orders/$id'
     | '/admin/b/$slug/orders/'
     | '/admin/b/$slug/reports/'
     | '/admin/b/$slug/returns/'
+    | '/admin/b/$slug/supplier-orders/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1078,9 +1100,11 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
     | '/admin/b/$slug/returns/$id'
+    | '/admin/b/$slug/supplier-orders/$id'
     | '/admin/b/$slug/orders'
     | '/admin/b/$slug/reports'
     | '/admin/b/$slug/returns'
+    | '/admin/b/$slug/supplier-orders'
   id:
     | '__root__'
     | '/'
@@ -1172,9 +1196,11 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/reports/products'
     | '/_authenticated/admin/b/$slug/reports/sales'
     | '/_authenticated/admin/b/$slug/returns/$id'
+    | '/_authenticated/admin/b/$slug/supplier-orders/$id'
     | '/_authenticated/admin/b/$slug/orders/'
     | '/_authenticated/admin/b/$slug/reports/'
     | '/_authenticated/admin/b/$slug/returns/'
+    | '/_authenticated/admin/b/$slug/supplier-orders/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1850,6 +1876,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugReturnsIdRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/supplier-orders/': {
+      id: '/_authenticated/admin/b/$slug/supplier-orders/'
+      path: '/supplier-orders'
+      fullPath: '/admin/b/$slug/supplier-orders/'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugSupplierOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
+    '/_authenticated/admin/b/$slug/supplier-orders/$id': {
+      id: '/_authenticated/admin/b/$slug/supplier-orders/$id'
+      path: '/supplier-orders/$id'
+      fullPath: '/admin/b/$slug/supplier-orders/$id'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugSupplierOrdersIdRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
   }
 }
 
@@ -1969,8 +2009,10 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugTeamRoute: typeof AuthenticatedAdminBSlugTeamRoute
   AuthenticatedAdminBSlugOrdersIdRoute: typeof AuthenticatedAdminBSlugOrdersIdRoute
   AuthenticatedAdminBSlugReturnsIdRoute: typeof AuthenticatedAdminBSlugReturnsIdRoute
+  AuthenticatedAdminBSlugSupplierOrdersIdRoute: typeof AuthenticatedAdminBSlugSupplierOrdersIdRoute
   AuthenticatedAdminBSlugOrdersIndexRoute: typeof AuthenticatedAdminBSlugOrdersIndexRoute
   AuthenticatedAdminBSlugReturnsIndexRoute: typeof AuthenticatedAdminBSlugReturnsIndexRoute
+  AuthenticatedAdminBSlugSupplierOrdersIndexRoute: typeof AuthenticatedAdminBSlugSupplierOrdersIndexRoute
 }
 
 const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRouteChildren =
@@ -2018,10 +2060,14 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugOrdersIdRoute: AuthenticatedAdminBSlugOrdersIdRoute,
     AuthenticatedAdminBSlugReturnsIdRoute:
       AuthenticatedAdminBSlugReturnsIdRoute,
+    AuthenticatedAdminBSlugSupplierOrdersIdRoute:
+      AuthenticatedAdminBSlugSupplierOrdersIdRoute,
     AuthenticatedAdminBSlugOrdersIndexRoute:
       AuthenticatedAdminBSlugOrdersIndexRoute,
     AuthenticatedAdminBSlugReturnsIndexRoute:
       AuthenticatedAdminBSlugReturnsIndexRoute,
+    AuthenticatedAdminBSlugSupplierOrdersIndexRoute:
+      AuthenticatedAdminBSlugSupplierOrdersIndexRoute,
   }
 
 const AuthenticatedAdminBSlugRouteRouteWithChildren =

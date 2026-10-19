@@ -331,6 +331,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "receive_purchase_order(p_po_id uuid, p_lines jsonb, p_request_id uuid, p_note text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who manage the inventory and see the finances of the order's store: checked inside (can_access_brand, has_permission); one request id writes once"
+    },
     "reconcile_inventory(p_brand_id uuid)": {
       "anon": false,
       "authenticated": true,
