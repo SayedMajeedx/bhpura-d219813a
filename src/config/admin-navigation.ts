@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Award,
   BellRing,
+  MessagesSquare,
   Gift,
   ShoppingCart,
   Palette,
@@ -446,7 +447,23 @@ export function getAdminNavItems({
       workspace: "catalog",
     },
 
-    // 6. GROWTH & MARKETING (Content Studio, Campaigns, Discounts, Loyalty)
+    // 6. GROWTH & MARKETING (Clients to message, Content Studio, Campaigns, Discounts, Loyalty)
+    {
+      id: "outreach",
+      to: "/admin/b/$slug/outreach",
+      params: { slug: activeSlug },
+      labelEn: "Clients to Message",
+      labelAr: lang === "ar" ? "عملاء للتواصل اليوم" : "Clients to Message",
+      descriptionEn:
+        "Who is worth a message today and why, with the message written in their language",
+      descriptionAr: "من يستحق رسالة اليوم ولماذا، والرسالة مكتوبة بلغته",
+      icon: MessagesSquare,
+      permission: "manage_customers",
+      section: "growth_finance",
+      category: "customers_growth",
+      workspace: "growth",
+      tier: "modular",
+    },
     {
       id: "content-studio",
       to: "/admin/b/$slug/content-studio",
