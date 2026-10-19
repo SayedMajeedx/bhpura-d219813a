@@ -123,10 +123,13 @@ describe("the store's own low-stock level", () => {
 describe("one attention rule", () => {
   it("names every issue a product has, stock first", () => {
     const messy = product({ image_url: null, category: " ", is_active: false });
-    expect(keys(productAttentionReasons(messy, { stock: 3, lowestPrice: 0 }))).toEqual([
+    expect(
+      keys(productAttentionReasons(messy, { stock: 3, lowestPrice: 0, missingCost: true })),
+    ).toEqual([
       "low_stock",
       "missing_image",
       "missing_price",
+      "missing_cost",
       "missing_category",
       "hidden_with_stock",
     ]);
@@ -316,6 +319,7 @@ describe("the tabs and the toolbar", () => {
       "low_stock",
       "missing_image",
       "missing_price",
+      "missing_cost",
       "missing_category",
       "hidden_with_stock",
     ]);
@@ -354,13 +358,15 @@ describe("what the stock adds up to", () => {
 
   it("works each product's figures out once", () => {
     const figures = productFiguresFrom(products, byProduct, new Map([["v1", 9]]));
-    expect(figures.get("a")).toMatchObject({ stock: 6, lowestPrice: 20 });
+    // A size with no cost of its own costs what its product costs: "a" is not missing one.
+    expect(figures.get("a")).toMatchObject({ stock: 6, lowestPrice: 20, missingCost: false });
     expect(figures.get("a")?.weeklySales).toBeGreaterThan(0);
     // No variants: the product's own price.
     expect(productFiguresFrom([product({ id: "n" })], {}, new Map()).get("n")).toEqual({
       stock: 0,
       weeklySales: 0,
       lowestPrice: 30,
+      missingCost: true,
     });
   });
 

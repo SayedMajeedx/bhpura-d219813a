@@ -174,6 +174,26 @@ const purchaseReceipts = [
     received_at: "2026-07-24T12:00:00Z",
   },
 ];
+const purchasePayments = [
+  {
+    id: "payment-1",
+    amount: 50,
+    paid_on: "2026-07-20",
+    note: `${LONG_AR} ${UNBREAKABLE}`,
+    created_at: "2026-07-20T12:00:00Z",
+    voided_at: null,
+    void_reason: null,
+  },
+  {
+    id: "payment-0",
+    amount: 20,
+    paid_on: "2026-07-19",
+    note: null,
+    created_at: "2026-07-19T12:00:00Z",
+    voided_at: "2026-07-19T13:00:00Z",
+    void_reason: `${LONG_EN} ${UNBREAKABLE}`,
+  },
+];
 const categories = [
   { id: "cat-1", brand_id: BRAND, name: LONG_EN, name_en: LONG_EN, name_ar: LONG_AR, slug: "long" },
 ];
@@ -259,6 +279,7 @@ export async function signInWithStressData(page: Page, lang: "ar" | "en") {
       ]);
     }
     if (url.includes("/purchase_order_receipts")) return answer(purchaseReceipts);
+    if (url.includes("/purchase_order_payments")) return answer(purchasePayments);
     if (url.includes("/purchase_orders")) return answer(purchaseOrders);
     if (url.includes("/vendors")) return answer(vendors);
     if (url.includes("/order_items")) return answer(orders[0].order_items);

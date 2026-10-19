@@ -3,7 +3,7 @@ import { CalendarClock, ChevronLeft, ChevronRight } from "lucide-react";
 import { useBrand } from "@/lib/brand-context";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { isLate, paymentOf, piecesOf, type SupplierOrder } from "../lib/order-state";
+import { isLate, paymentOf, piecesLabel, piecesOf, type SupplierOrder } from "../lib/order-state";
 import { SupplierOrderStatusBadge } from "./SupplierOrderStatusBadge";
 
 /** One order in the list: who, what is still to come, what is still owed. */
@@ -45,7 +45,7 @@ export function SupplierOrderCard({
               {order.po_number}
             </span>
             {" · "}
-            {isAr ? `${pieces.ordered} قطعة` : `${pieces.ordered} pieces`}
+            {piecesLabel(pieces.ordered, lang)}
             {order.expected_at && order.status !== "received" && order.status !== "cancelled" && (
               <span className={cn("ms-2 inline-flex items-center gap-1", late && "text-warning")}>
                 <CalendarClock className="h-3 w-3" aria-hidden="true" />

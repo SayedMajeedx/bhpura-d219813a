@@ -1,3 +1,4 @@
+import { arCount } from "@/features/outreach/lib/outreach-messages";
 import { roundCost } from "./landed-cost";
 
 /**
@@ -57,14 +58,18 @@ export function piecesOf(order: Pick<SupplierOrder, "items">) {
 
 export type PaymentState = "paid" | "part" | "unpaid" | "nothing";
 
-/** What the order costs, what was paid and what is still owed to the supplier. */
+/**
+ * What the order costs, what was paid and what is still owed to the supplier; `credit` is what
+ * was paid beyond the order's value (a cancelled order paid for, or one lowered after a payment).
+ */
 export function paymentOf(order: Pick<SupplierOrder, "total_amount" | "paid_amount" | "status">) {
   const total = order.status === "cancelled" ? 0 : roundCost(Number(order.total_amount) || 0);
   const paid = roundCost(Number(order.paid_amount) || 0);
   const owed = Math.max(0, roundCost(total - paid));
+  const credit = Math.max(0, roundCost(paid - total));
   const state: PaymentState =
     total === 0 ? "nothing" : owed === 0 ? "paid" : paid > 0 ? "part" : "unpaid";
-  return { total, paid, owed, state };
+  return { total, paid, owed, credit, state };
 }
 
 /** Today on the reader's own calendar, as YYYY-MM-DD. */
@@ -131,4 +136,19 @@ export function ordersSummary(orders: readonly SupplierOrder[], today: string) {
     if (order.status !== "draft") owed += paymentOf(order).owed;
   }
   return { open, late, awaited, owed: roundCost(owed) };
+}
+
+/** "6 قطع", "قطعتان", "1 piece": a count of pieces as each language says it. */
+export function piecesLabel(n: number, lang: "ar" | "en"): string {
+  if (lang === "ar")
+    return arCount(n, { one: "قطعة واحدة", two: "قطعتان", few: "قطع", many: "قطعة" });
+  return `${n} ${n === 1 ? "piece" : "pieces"}`;
+}
+
+/** "3 طلبيات", "1 order": a count of orders as each language says it. */
+export function ordersLabel(n: number, lang: "ar" | "en"): string {
+  if (lang === "ar") {
+    return arCount(n, { one: "طلبية واحدة", two: "طلبيتان", few: "طلبيات", many: "طلبية" });
+  }
+  return `${n} ${n === 1 ? "order" : "orders"}`;
 }

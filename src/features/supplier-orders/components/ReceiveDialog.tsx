@@ -17,7 +17,7 @@ import { formatMoney } from "@/lib/format";
 import { invalidateAfterReceipt, receiveSupplierOrder } from "@/lib/data/supplier-orders";
 import { allRemaining, planReceive, receiveRows } from "../lib/receive-plan";
 import { supplierOrderError } from "../lib/errors";
-import type { SupplierOrder } from "../lib/order-state";
+import { piecesLabel, type SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 
 /** One press of "Receive": sent again (a retry, a double tap), it changes nothing. */
@@ -76,8 +76,8 @@ export function ReceiveDialog({
             ? "اكتمل استلام الطلبية وأُضيفت القطع للمخزون"
             : "Order received in full: the pieces are in stock"
           : isAr
-            ? `أُضيفت ${pieces} قطعة للمخزون`
-            : `${pieces} pieces added to stock`,
+            ? `أُضيفت ${piecesLabel(pieces, "ar")} للمخزون`
+            : `${piecesLabel(pieces, "en")} added to stock`,
       );
       reset();
       onOpenChange(false);
@@ -202,7 +202,9 @@ export function ReceiveDialog({
           </Button>
           <Button type="button" onClick={receive} disabled={!plan.ok || saving} className="gap-1.5">
             <PackageCheck className="h-4 w-4" aria-hidden="true" />
-            {isAr ? `إضافة ${pieces} قطعة للمخزون` : `Add ${pieces} pieces to stock`}
+            {isAr
+              ? `إضافة ${piecesLabel(pieces, "ar")} للمخزون`
+              : `Add ${piecesLabel(pieces, "en")} to stock`}
           </Button>
         </DialogFooter>
       </DialogContent>

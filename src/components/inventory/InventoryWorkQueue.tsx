@@ -71,6 +71,8 @@ interface InventoryWorkQueueProps {
   weeklySalesOf?: (productId: string) => number;
   /** False for a catalog that shows no prices. */
   pricesMatter?: boolean;
+  /** Whether a product has no cost (given only to staff who may see costs). */
+  missingCostOf?: (productId: string) => boolean;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -98,6 +100,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   lowStockUnits,
   weeklySalesOf,
   pricesMatter = true,
+  missingCostOf,
 }) => {
   const isAr = lang === "ar";
   const [internalExpandedProducts, setInternalExpandedProducts] = useState<Record<string, boolean>>(
@@ -229,6 +232,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                   lowStockUnits,
                   lowestPrice: minPrice,
                   pricesMatter,
+                  missingCost: missingCostOf?.(product.id) ?? false,
                 });
 
                 return (

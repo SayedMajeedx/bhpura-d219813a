@@ -17,12 +17,15 @@ import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import {
   localToday,
+  ordersLabel,
   ordersInTab,
   ordersSummary,
   sortOrders,
   type SupplierOrdersTab,
 } from "../lib/order-state";
 import { SupplierOrderCard } from "./SupplierOrderCard";
+import { SupplierBalancesList } from "./SupplierBalancesList";
+import { supplierBalances } from "../lib/payments";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,14 +41,18 @@ export function SupplierOrdersPage() {
   const currency = useStoreCurrency(brand.id);
   const ordersQ = useQuery(supplierOrderQueries.list(brand.id));
   const loadState = combinedLoadState([ordersQ]);
-  const [tab, setTab] = useState<SupplierOrdersTab>("open");
+  const [tab, setTab] = useState<SupplierOrdersTab | "suppliers">("open");
   const today = localToday();
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
   const summary = useMemo(() => ordersSummary(orders, today), [orders, today]);
-  const shown = useMemo(() => sortOrders(ordersInTab(orders, tab), today), [orders, tab, today]);
+  const shown = useMemo(
+    () => (tab === "suppliers" ? [] : sortOrders(ordersInTab(orders, tab), today)),
+    [orders, tab, today],
+  );
+  const balances = useMemo(() => supplierBalances(orders, today), [orders, today]);
 
-  const tabs: Array<{ id: SupplierOrdersTab; label: string; count: number }> = [
+  const tabs: Array<{ id: SupplierOrdersTab | "suppliers"; label: string; count: number }> = [
     {
       id: "open",
       label: isAr ? "قيد الانتظار" : "Waiting",
@@ -53,6 +60,7 @@ export function SupplierOrdersPage() {
     },
     { id: "done", label: isAr ? "منتهية" : "Done", count: ordersInTab(orders, "done").length },
     { id: "all", label: isAr ? "الكل" : "All", count: orders.length },
+    { id: "suppliers", label: isAr ? "الموردون" : "Suppliers", count: balances.length },
   ];
 
   const newOrder = () =>
@@ -69,7 +77,7 @@ export function SupplierOrdersPage() {
         badges={
           loadState === "ready" && summary.open > 0 ? (
             <AdminPageCount>
-              {isAr ? `${summary.open} بانتظار الاستلام` : `${summary.open} awaiting`}
+              {ordersLabel(summary.open, lang)} {isAr ? "بانتظار الاستلام" : "awaiting"}
             </AdminPageCount>
           ) : null
         }
@@ -146,7 +154,9 @@ export function SupplierOrdersPage() {
             ))}
           </div>
 
-          {shown.length === 0 ? (
+          {tab === "suppliers" ? (
+            <SupplierBalancesList balances={balances} currency={currency} lang={lang} />
+          ) : shown.length === 0 ? (
             <Card className="p-6 text-center text-sm text-muted-foreground">
               {tab === "open"
                 ? isAr

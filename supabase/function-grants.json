@@ -366,6 +366,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "record_supplier_payment(p_po_id uuid, p_amount numeric, p_paid_on date, p_request_id uuid, p_note text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who see the finances of the order's store: checked inside (can_access_brand, has_permission); never more than is owed; one request id writes once"
+    },
     "register_customer_push_device(p_brand_slug text, p_token text, p_enabled boolean, p_order_updates boolean, p_marketing boolean, p_platform text, p_device_name text, p_token_provider text)": {
       "anon": false,
       "authenticated": true,
@@ -640,6 +645,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (a session, can_access_brand and the manage_inventory permission)"
+    },
+    "void_supplier_payment(p_payment_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who see the finances of the payment's store: checked inside (can_access_brand, has_permission); the payment stays on record with who and why"
     }
   }
 }

@@ -13,12 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
-import { invalidateSupplierOrders, setSupplierOrderPaid } from "@/lib/data/supplier-orders";
-import { roundCost } from "../lib/landed-cost";
-import { paymentOf, type SupplierOrder } from "../lib/order-state";
+import { invalidateSupplierOrders, recordSupplierPayment } from "@/lib/data/supplier-orders";
+import { localToday, paymentOf, type SupplierOrder } from "../lib/order-state";
+import { paymentProblem } from "../lib/payments";
 import { supplierOrderError } from "../lib/errors";
 
-/** A payment to the supplier: added to what was paid, never more than is owed. */
+/** A payment to the supplier: its amount (never more than is owed), its day and a note. */
 export function PaymentDialog({
   open,
   onOpenChange,
@@ -40,19 +40,35 @@ export function PaymentDialog({
   const uid = useId();
   const qc = useQueryClient();
   const pay = paymentOf(order);
+  const today = localToday();
   const [amount, setAmount] = useState("");
+  const [paidOn, setPaidOn] = useState(today);
+  const [note, setNote] = useState("");
+  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
   const [saving, setSaving] = useState(false);
-  const value = Number(amount);
-  const valid = amount.trim() !== "" && Number.isFinite(value) && value > 0 && value <= pay.owed;
+  const problem = paymentProblem({ amount, paidOn, owed: pay.owed, today });
+  const money = (n: number) => formatMoney(n, currency, lang);
+
+  const reset = () => {
+    setAmount("");
+    setPaidOn(localToday());
+    setNote("");
+    setRequestId(crypto.randomUUID());
+  };
 
   const save = async () => {
-    if (!valid) return;
+    if (problem) return;
     setSaving(true);
     try {
-      await setSupplierOrderPaid(brandId, order.id, roundCost(pay.paid + value));
+      await recordSupplierPayment(order.id, {
+        amount: Number(amount),
+        paidOn,
+        requestId,
+        note: note || null,
+      });
       await invalidateSupplierOrders(qc, brandId);
       toast.success(isAr ? "سُجّلت الدفعة" : "Payment recorded");
-      setAmount("");
+      reset();
       onOpenChange(false);
     } catch (error) {
       toast.error(supplierOrderError(error, isAr));
@@ -61,28 +77,35 @@ export function PaymentDialog({
     }
   };
 
+  const typed = amount.trim() !== "";
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) reset();
+        onOpenChange(next);
+      }}
+    >
       <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-sm gap-3">
         <DialogHeader>
           <DialogTitle>{isAr ? "تسجيل دفعة للمورد" : "Record a payment"}</DialogTitle>
           <DialogDescription>
             {isAr
-              ? `الباقي عليك ${formatMoney(pay.owed, currency, lang)} من ${formatMoney(pay.total, currency, lang)}.`
-              : `You owe ${formatMoney(pay.owed, currency, lang)} of ${formatMoney(pay.total, currency, lang)}.`}
+              ? `الباقي عليك ${money(pay.owed)} من ${money(pay.total)}.`
+              : `You owe ${money(pay.owed)} of ${money(pay.total)}.`}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-1">
-          <Label htmlFor={uid}>
+          <Label htmlFor={`${uid}-amount`}>
             {isAr ? `المبلغ المدفوع (${moneyLabel})` : `Amount paid (${moneyLabel})`}
           </Label>
           <div className="flex min-w-0 gap-2">
             <Input
-              id={uid}
+              id={`${uid}-amount`}
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              aria-invalid={(amount.trim() !== "" && !valid) || undefined}
+              aria-invalid={(typed && problem === "amount") || undefined}
               className="min-w-0 flex-1 font-mono tabular-nums"
               autoFocus
             />
@@ -90,19 +113,49 @@ export function PaymentDialog({
               {isAr ? "كامل الباقي" : "All of it"}
             </Button>
           </div>
-          {amount.trim() !== "" && !valid && (
+          {typed && problem === "amount" && (
             <p className="text-xs text-destructive">
               {isAr
-                ? `اكتب مبلغاً أكبر من صفر ولا يزيد على ${formatMoney(pay.owed, currency, lang)}.`
-                : `Type an amount above zero and up to ${formatMoney(pay.owed, currency, lang)}.`}
+                ? `اكتب مبلغاً أكبر من صفر ولا يزيد على ${money(pay.owed)}.`
+                : `Type an amount above zero and up to ${money(pay.owed)}.`}
             </p>
           )}
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="min-w-0 space-y-1">
+            <Label htmlFor={`${uid}-date`}>{isAr ? "تاريخ الدفع" : "Paid on"}</Label>
+            <Input
+              id={`${uid}-date`}
+              type="date"
+              value={paidOn}
+              max={today}
+              onChange={(e) => setPaidOn(e.target.value)}
+              aria-invalid={problem === "date" || undefined}
+            />
+          </div>
+          <div className="min-w-0 space-y-1">
+            <Label htmlFor={`${uid}-note`}>{isAr ? "ملاحظة" : "Note"}</Label>
+            <Input
+              id={`${uid}-note`}
+              value={note}
+              maxLength={300}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={isAr ? "نقداً، تحويل…" : "Cash, transfer…"}
+            />
+          </div>
+        </div>
+        {problem === "date" && (
+          <p className="text-xs text-destructive">
+            {isAr
+              ? "اختر يوم الدفع، اليوم أو قبله."
+              : "Choose the day it was paid: today or before."}
+          </p>
+        )}
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {isAr ? "إلغاء" : "Cancel"}
           </Button>
-          <Button type="button" onClick={save} disabled={!valid || saving}>
+          <Button type="button" onClick={save} disabled={Boolean(problem) || saving}>
             {isAr ? "تسجيل الدفعة" : "Record payment"}
           </Button>
         </DialogFooter>

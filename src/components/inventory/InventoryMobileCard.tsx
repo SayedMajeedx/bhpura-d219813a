@@ -61,6 +61,8 @@ interface InventoryMobileCardProps {
   weeklySales?: number;
   /** False for a catalog that shows no prices. */
   pricesMatter?: boolean;
+  /** The product has no cost (given only to staff who may see costs). */
+  missingCost?: boolean;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -85,6 +87,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   lowStockUnits,
   weeklySales = 0,
   pricesMatter = true,
+  missingCost = false,
 }) => {
   const isAr = lang === "ar";
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -105,6 +108,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
     lowStockUnits,
     lowestPrice: minPrice,
     pricesMatter,
+    missingCost,
   });
 
   return (

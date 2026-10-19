@@ -6476,6 +6476,66 @@ export type Database = {
           },
         ];
       };
+      purchase_order_payments: {
+        Row: {
+          amount: number;
+          brand_id: string;
+          created_at: string;
+          id: string;
+          note: string | null;
+          paid_on: string;
+          po_id: string;
+          recorded_by: string | null;
+          request_id: string;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+        };
+        Insert: {
+          amount: number;
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          paid_on?: string;
+          po_id: string;
+          recorded_by?: string | null;
+          request_id: string;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Update: {
+          amount?: number;
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          note?: string | null;
+          paid_on?: string;
+          po_id?: string;
+          recorded_by?: string | null;
+          request_id?: string;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_payments_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_payments_po_id_fkey";
+            columns: ["po_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       purchase_order_receipts: {
         Row: {
           brand_id: string;
@@ -10236,6 +10296,10 @@ export type Database = {
         Returns: number;
       };
       purchase_order_refresh: { Args: { p_po_id: string }; Returns: undefined };
+      purchase_order_sync_paid: {
+        Args: { p_po_id: string };
+        Returns: undefined;
+      };
       receive_purchase_order: {
         Args: {
           p_lines: Json;
@@ -10332,6 +10396,16 @@ export type Database = {
       record_storefront_product_engagement: {
         Args: { p_brand_slug: string; p_event?: string; p_product_id: string };
         Returns: undefined;
+      };
+      record_supplier_payment: {
+        Args: {
+          p_amount: number;
+          p_note?: string;
+          p_paid_on: string;
+          p_po_id: string;
+          p_request_id: string;
+        };
+        Returns: string;
       };
       redeem_loyalty_points_for_order: {
         Args: { p_order_id: string; p_points: number };
@@ -11071,6 +11145,10 @@ export type Database = {
         Returns: Json;
       };
       void_incubator_payment: {
+        Args: { p_payment_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      void_supplier_payment: {
         Args: { p_payment_id: string; p_reason: string };
         Returns: undefined;
       };

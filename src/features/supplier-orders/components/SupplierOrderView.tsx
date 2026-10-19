@@ -1,19 +1,22 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Package } from "lucide-react";
+import { CalendarClock, MessageCircle, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { landedUnitCosts } from "../lib/landed-cost";
 import {
   isLate,
-  paymentOf,
+  piecesLabel,
   piecesOf,
   type SupplierOrder,
   type SupplierOrderLine,
 } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import { SupplierOrderStatusBadge } from "./SupplierOrderStatusBadge";
+import { PaymentsCard } from "./PaymentsCard";
+import { lateOrderMessage } from "../lib/payments";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 
 /** One order as it stands: its pieces and what arrived, its costs, its money and its arrivals. */
 export function SupplierOrderView({
@@ -22,6 +25,7 @@ export function SupplierOrderView({
   catalog,
   currency,
   today,
+  storeName,
   lang,
 }: {
   brandId: string;
@@ -29,12 +33,13 @@ export function SupplierOrderView({
   catalog: SupplierCatalog;
   currency: string;
   today: string;
+  /** The store's name, as a message to its supplier signs it. */
+  storeName: string;
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
   const locale = isAr ? "ar-BH" : "en-BH";
   const pieces = piecesOf(order);
-  const pay = paymentOf(order);
   const late = isLate(order, today);
   const receiptsQ = useQuery({
     ...supplierOrderQueries.receipts(brandId, order.id),
@@ -101,6 +106,19 @@ export function SupplierOrderView({
             {formatDate(order.expected_at, locale)}
           </p>
         )}
+        {late && whatsappChatUrl(order.vendor_phone) && (
+          <a
+            href={`${whatsappChatUrl(order.vendor_phone)}?text=${encodeURIComponent(
+              lateOrderMessage(order, storeName, lang),
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-border px-3 text-sm font-semibold hover:bg-muted"
+          >
+            <MessageCircle className="h-4 w-4 text-success" aria-hidden="true" />
+            {isAr ? "اسأل المورد عن موعدها" : "Ask the supplier when it comes"}
+          </a>
+        )}
         {order.notes && (
           <p
             dir="auto"
@@ -145,7 +163,9 @@ export function SupplierOrderView({
                 <thead className="text-xs text-muted-foreground">
                   <tr>
                     <th className="py-1 text-start font-medium">{isAr ? "المقاس" : "Size"}</th>
-                    <th className="py-1 text-center font-medium">{isAr ? "وصل" : "Arrived"}</th>
+                    <th className="px-3 py-1 text-center font-medium">
+                      {isAr ? "وصل" : "Arrived"}
+                    </th>
                     <th className="py-1 text-end font-medium">
                       {isAr ? "تكلفة القطعة" : "Cost a piece"}
                     </th>
@@ -157,7 +177,10 @@ export function SupplierOrderView({
                       <td dir="auto" className="py-1.5 text-page-start">
                         {catalog.sizeName(line.variant_id)}
                       </td>
-                      <td dir="ltr" className="whitespace-nowrap py-1.5 text-center tabular-nums">
+                      <td
+                        dir="ltr"
+                        className="whitespace-nowrap px-3 py-1.5 text-center tabular-nums"
+                      >
                         <span
                           className={
                             line.received_quantity >= line.quantity ? "font-bold text-success" : ""
@@ -200,30 +223,7 @@ export function SupplierOrderView({
         </Card>
       )}
 
-      <Card className="p-3 sm:p-4">
-        <dl className="grid grid-cols-3 gap-2 text-center">
-          <div>
-            <dt className="text-xs text-muted-foreground">{isAr ? "الإجمالي" : "Total"}</dt>
-            <dd className="font-bold tabular-nums">{money(pay.total)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">{isAr ? "المدفوع" : "Paid"}</dt>
-            <dd className="font-bold tabular-nums">{money(pay.paid)}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-muted-foreground">{isAr ? "الباقي" : "Owed"}</dt>
-            <dd
-              className={
-                pay.owed > 0
-                  ? "font-bold tabular-nums text-warning"
-                  : "font-bold tabular-nums text-success"
-              }
-            >
-              {money(pay.owed)}
-            </dd>
-          </div>
-        </dl>
-      </Card>
+      <PaymentsCard brandId={brandId} order={order} currency={currency} lang={lang} />
 
       {pieces.received > 0 && (receiptsQ.data?.length ?? 0) > 0 && (
         <Card className="space-y-1 p-3 sm:p-4">
@@ -249,7 +249,8 @@ export function SupplierOrderView({
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {isAr ? `+${receipt.quantity} قطعة · التكلفة ` : `+${receipt.quantity} · cost `}
+                    {`+${piecesLabel(receipt.quantity, lang)} · `}
+                    {isAr ? "التكلفة " : "cost "}
                     <strong className="text-foreground">{money(receipt.cost_after)}</strong>
                   </span>
                 </li>

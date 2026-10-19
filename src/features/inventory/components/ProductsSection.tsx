@@ -123,6 +123,7 @@ export function ProductsSection({
     initialView,
     lowStockUnits,
     pricesMatter,
+    costsKnown: canViewCosts,
     lang: isAr ? "ar" : "en",
   });
   const { view, variantsByProduct, salesByVariant, productStock, lowestPrice } = list;
@@ -286,6 +287,7 @@ export function ProductsSection({
         selectedIssue={view.issue}
         onIssueChange={(issue) => list.change({ issue: issue as "all" | AttentionKey })}
         tracksStock={storeProfile.modules.stock}
+        showsCosts={canViewCosts}
         activeFilterCount={list.activeFilterCount}
         onClearFilters={list.clearFilters}
       />
@@ -371,6 +373,7 @@ export function ProductsSection({
                 lowStockUnits={lowStockUnits}
                 weeklySales={list.productWeeklySales(p.id)}
                 pricesMatter={pricesMatter}
+                missingCost={list.missingCost(p.id)}
               />
             </div>
           );
@@ -407,6 +410,7 @@ export function ProductsSection({
           lowStockUnits={lowStockUnits}
           weeklySalesOf={list.productWeeklySales}
           pricesMatter={pricesMatter}
+          missingCostOf={list.missingCost}
         />
       </div>
 

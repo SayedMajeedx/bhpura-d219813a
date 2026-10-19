@@ -102,7 +102,7 @@ describe("an order's state", () => {
       items: order().items.map((l) => (l.id === "s" ? { ...l, received_quantity: 4 } : l)),
     });
     expect(piecesOf(o)).toEqual({ ordered: 10, received: 4, remaining: 6 });
-    expect(paymentOf(o)).toEqual({ total: 210, paid: 50, owed: 160, state: "part" });
+    expect(paymentOf(o)).toEqual({ total: 210, paid: 50, owed: 160, credit: 0, state: "part" });
     expect(paymentOf(order({ paid_amount: 210 })).state).toBe("paid");
     expect(paymentOf(order({ status: "cancelled" })).owed).toBe(0);
   });

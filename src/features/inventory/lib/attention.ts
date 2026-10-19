@@ -12,6 +12,7 @@ export type AttentionKey =
   | "low_stock"
   | "missing_image"
   | "missing_price"
+  | "missing_cost"
   | "missing_category"
   | "hidden_with_stock";
 
@@ -27,6 +28,7 @@ const REASONS: Record<AttentionKey, Omit<AttentionReason, "key">> = {
   low_stock: { label_ar: "مخزون منخفض", label_en: "Low Stock", tone: "warning" },
   missing_image: { label_ar: "نقص الصور", label_en: "No Image", tone: "warning" },
   missing_price: { label_ar: "بدون سعر", label_en: "No Price", tone: "warning" },
+  missing_cost: { label_ar: "بدون تكلفة", label_en: "No Cost", tone: "warning" },
   missing_category: { label_ar: "بدون تصنيف", label_en: "No Category", tone: "info" },
   hidden_with_stock: { label_ar: "مخفي ولديه مخزون", label_en: "Hidden with Stock", tone: "info" },
 };
@@ -73,6 +75,11 @@ export type AttentionFacts = {
   lowestPrice?: number | null;
   /** False for a catalog that shows no prices: a product with no price is then as meant. */
   pricesMatter?: boolean;
+  /**
+   * A size (or the product) has no cost, so its profit reads as its whole price. Given only to
+   * staff who may see costs: for anyone else every cost reads as zero (`productMissingCost`).
+   */
+  missingCost?: boolean;
 };
 
 /**
@@ -81,7 +88,14 @@ export type AttentionFacts = {
  */
 export function productAttentionReasons(
   product: AttentionProduct,
-  { stock, weeklySales = 0, lowStockUnits, lowestPrice, pricesMatter = true }: AttentionFacts,
+  {
+    stock,
+    weeklySales = 0,
+    lowStockUnits,
+    lowestPrice,
+    pricesMatter = true,
+    missingCost = false,
+  }: AttentionFacts,
 ): AttentionReason[] {
   const keys: AttentionKey[] = [];
   const status = productAvailability(product, stock, weeklySales, lowStockUnits).status;
@@ -91,7 +105,23 @@ export function productAttentionReasons(
   if (pricesMatter && lowestPrice !== undefined && lowestPrice !== null && !(lowestPrice > 0)) {
     keys.push("missing_price");
   }
+  if (missingCost) keys.push("missing_cost");
   if (!product.category?.trim()) keys.push("missing_category");
   if (!product.is_active && Number(stock || 0) > 0) keys.push("hidden_with_stock");
   return keys.map(attentionReason);
+}
+
+/**
+ * A product whose cost is not known: a size with no cost of its own while the product has none
+ * either (a size with no cost costs what its product costs, as the stock totals read it). A
+ * service and a package are left out: what they cost is time, not a piece bought. Only a reader
+ * who may see costs can tell (the costs read as zero for anyone else).
+ */
+export function productMissingCost(
+  product: { item_kind?: string | null; is_package?: boolean | null; cost_price?: number | null },
+  variants: ReadonlyArray<{ cost_price?: number | null }>,
+): boolean {
+  if (product.item_kind === "service" || product.is_package) return false;
+  if (Number(product.cost_price) > 0) return false;
+  return variants.length === 0 || variants.some((variant) => !(Number(variant.cost_price) > 0));
 }
