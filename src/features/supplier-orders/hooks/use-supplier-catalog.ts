@@ -23,6 +23,7 @@ export function useSupplierCatalog(brandId: string, lang: "ar" | "en") {
     return {
       queries: [productsQ, variantsQ],
       products,
+      variants,
       sizes: sizesByProduct(variants),
       productById,
       variantById,

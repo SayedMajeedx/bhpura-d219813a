@@ -32,7 +32,14 @@ export type FormCost = {
   itemId?: string;
   description: string;
   amount: string;
+  /** The rest of the supplier's bill, kept by the bill total (`lib/bill.ts`). */
+  rest?: boolean;
 };
+
+/** The rest of the supplier's bill, as its line is named in each language. */
+export const REST_OF_BILL = { ar: "باقي فاتورة المورد", en: "Rest of the supplier's bill" };
+const isRestLine = (description: string) =>
+  description === REST_OF_BILL.ar || description === REST_OF_BILL.en;
 
 export type SupplierOrderForm = {
   vendorId: string;
@@ -63,6 +70,7 @@ export function formFromOrder(order: SupplierOrder): SupplierOrderForm {
         itemId: line.id,
         description: line.description,
         amount: asText(line.quantity * line.unit_cost),
+        rest: isRestLine(line.description),
       });
       continue;
     }
