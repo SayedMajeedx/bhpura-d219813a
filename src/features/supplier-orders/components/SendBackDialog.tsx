@@ -30,16 +30,18 @@ import { supplierOrderError } from "../lib/errors";
 import { SupplierField } from "./SupplierField";
 
 /**
- * A customer's piece that came back goes to a tailor again: to be fixed, free (a fault: the
- * order waits for it again), or altered at the tailor's charge (added to the piece's cost when
- * it comes back; the order stays where it is). With what to do, which the tailor's message says.
+ * A customer's piece goes to a supplier again: one that came back, to be fixed, free (a fault:
+ * the order waits for it again), or any piece, a ready-made one too, to be altered at the
+ * supplier's charge (added to the piece's cost when it comes back; the order stays where it
+ * is). With what to do, which the supplier's message says.
  */
 export function SendBackDialog({
   open,
   onOpenChange,
   brandId,
   orderId,
-  line,
+  lines,
+  allowFix = true,
   defaultVendorId,
   lang,
   onSent,
@@ -48,8 +50,11 @@ export function SendBackDialog({
   onOpenChange: (open: boolean) => void;
   brandId: string;
   orderId: string;
-  line: { id: string; description: string; quantity: number };
-  /** The tailor who made it, or last had it. */
+  /** The piece, or the pieces to choose one from. */
+  lines: ReadonlyArray<{ id: string; description: string; quantity: number }>;
+  /** A fix is for a supplier's own work; a piece nobody made here is only altered. */
+  allowFix?: boolean;
+  /** The supplier who made it, or last had it; empty to choose. */
   defaultVendorId: string;
   lang: "ar" | "en";
   onSent?: () => void;
@@ -59,8 +64,10 @@ export function SendBackDialog({
   const qc = useQueryClient();
   const moneyLabel = useMoneyLabel(lang);
   const ordersQ = useQuery({ ...supplierOrderQueries.list(brandId), enabled: open });
+  const [lineId, setLineId] = useState(lines[0]?.id ?? "");
+  const line = lines.find((l) => l.id === lineId) ?? lines[0];
   const [form, setForm] = useState<BackForm>({
-    purpose: "fix",
+    purpose: allowFix ? "fix" : "alteration",
     vendorId: defaultVendorId,
     target: "new",
     expectedAt: "",
@@ -130,40 +137,71 @@ export function SendBackDialog({
         className="flex max-h-[92dvh] max-w-lg flex-col gap-3 overflow-hidden"
       >
         <DialogHeader>
-          <DialogTitle>{isAr ? "إرجاع القطعة للمورد" : "Back to the supplier"}</DialogTitle>
+          <DialogTitle>
+            {allowFix
+              ? isAr
+                ? "إرجاع القطعة للمورد"
+                : "Back to the supplier"
+              : isAr
+                ? "قطعة للتعديل"
+                : "A piece for an alteration"}
+          </DialogTitle>
           <DialogDescription dir="auto" className="break-words">
-            {line.description}
+            {lines.length === 1
+              ? line.description
+              : isAr
+                ? "عند المورد بأجرته إن وُجدت، تُضاف لتكلفة القطعة. الطلب يبقى في مرحلته."
+                : "At the supplier's charge, if any, added to the piece's cost. The order stays where it is."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="-mx-1 min-h-0 flex-1 space-y-3 overflow-y-auto px-1">
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-medium">
-              {isAr ? "لماذا ترجع" : "Why it goes back"}
-            </legend>
-            {choices.map((choice) => (
-              <label
-                key={choice.value}
-                className={cn(
-                  "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
-                  form.purpose === choice.value ? "border-primary bg-primary/5" : "border-border",
-                )}
+          {lines.length > 1 && (
+            <div className="space-y-1">
+              <Label htmlFor={`${uid}-piece`}>{isAr ? "أي قطعة" : "Which piece"}</Label>
+              <select
+                id={`${uid}-piece`}
+                value={lineId}
+                onChange={(e) => setLineId(e.target.value)}
+                className="h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm pointer-coarse:h-11"
               >
-                <input
-                  type="radio"
-                  name={`${uid}-purpose`}
-                  value={choice.value}
-                  checked={form.purpose === choice.value}
-                  onChange={() => set({ purpose: choice.value })}
-                  className="mt-1 h-4 w-4 accent-primary"
-                />
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold">{choice.title}</span>
-                  <span className="block text-xs text-muted-foreground">{choice.body}</span>
-                </span>
-              </label>
-            ))}
-          </fieldset>
+                {lines.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.description}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {allowFix && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">
+                {isAr ? "لماذا ترجع" : "Why it goes back"}
+              </legend>
+              {choices.map((choice) => (
+                <label
+                  key={choice.value}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-lg border p-3",
+                    form.purpose === choice.value ? "border-primary bg-primary/5" : "border-border",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`${uid}-purpose`}
+                    value={choice.value}
+                    checked={form.purpose === choice.value}
+                    onChange={() => set({ purpose: choice.value })}
+                    className="mt-1 h-4 w-4 accent-primary"
+                  />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">{choice.title}</span>
+                    <span className="block text-xs text-muted-foreground">{choice.body}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
 
           <div className="space-y-1">
             <Label htmlFor={`${uid}-note`}>

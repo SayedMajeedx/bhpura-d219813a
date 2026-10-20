@@ -5,6 +5,7 @@ import {
   orderPieceStates,
   piecePurpose,
   piecesAwaitingChoice,
+  readyToAlter,
   releaseChoices,
   tailorPieceLines,
   type BackForm,
@@ -184,5 +185,20 @@ describe("a piece back to a supplier", () => {
       piecePurpose(null),
       piecePurpose("x"),
     ]).toEqual(["fix", "alteration", "make", "make"]);
+  });
+});
+
+describe("a ready-made piece", () => {
+  it("is a piece to alter; a service is not, and a piece with a supplier is not offered twice", () => {
+    const lines = tailorPieceLines([
+      { id: "dress", title: "Ready dress", quantity: 1, products: { item_kind: "physical" } },
+      { id: "fitting", description: "Fitting", product: { item_kind: "service" } },
+      { id: "abaya", description: "Black abaya · custom" },
+    ]);
+    expect(lines).toEqual([
+      { id: "dress", description: "Ready dress", quantity: 1 },
+      { id: "abaya", description: "Black abaya · custom", quantity: 1 },
+    ]);
+    expect(readyToAlter(lines, [{ order_item_id: "abaya" }]).map((l) => l.id)).toEqual(["dress"]);
   });
 });

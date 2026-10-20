@@ -7,7 +7,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { useProfileOptional } from "@/lib/profile-context";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { piecesBySupplierOrder } from "../lib/customer-pieces";
-import { orderPieceStates, purposeLabel } from "../lib/after-sending";
+import { orderPieceStates, purposeLabel, readyToAlter } from "../lib/after-sending";
 import { piecesLabel } from "../lib/order-state";
 import { SendBackDialog } from "./SendBackDialog";
 
@@ -16,7 +16,9 @@ type OrderLine = { id: string; description: string; quantity: number };
 /**
  * On a customer's order: which supplier has its pieces, on which supplier order, what they cost
  * and how many have come back; a piece that came back can go back to a supplier, to be fixed
- * (free) or altered. Staff who may see costs only; nothing when no piece was sent.
+ * (free) or altered, and a store that makes to order can send any other piece, a ready-made
+ * one too, for an alteration. Staff who may see costs only; nothing when there is nothing to
+ * show or offer.
  */
 export function OrderTailorPieces({
   brandId,
@@ -24,6 +26,7 @@ export function OrderTailorPieces({
   orderId,
   lines,
   cancelled,
+  offerAlteration = false,
   currency,
   lang,
 }: {
@@ -34,6 +37,8 @@ export function OrderTailorPieces({
   lines: readonly OrderLine[];
   /** The order was cancelled: its pieces with suppliers wait for the store's choice there. */
   cancelled: boolean;
+  /** The store alters pieces (it makes to order): offered for the pieces never sent. */
+  offerAlteration?: boolean;
   currency: string;
   lang: "ar" | "en";
 }) {
@@ -50,46 +55,54 @@ export function OrderTailorPieces({
   const groups = useMemo(() => piecesBySupplierOrder(piecesQ.data ?? []), [piecesQ.data]);
   const states = useMemo(() => orderPieceStates(lines, piecesQ.data ?? []), [lines, piecesQ.data]);
   const [sendingBack, setSendingBack] = useState<(typeof states)[number] | null>(null);
-  if (!canViewFinancials || groups.length === 0) return null;
+  const [altering, setAltering] = useState(false);
+  const ready = useMemo(
+    () => (offerAlteration && canSend && !cancelled ? readyToAlter(lines, piecesQ.data ?? []) : []),
+    [offerAlteration, canSend, cancelled, lines, piecesQ.data],
+  );
+  if (!canViewFinancials || piecesQ.isLoading) return null;
+  if (groups.length === 0 && ready.length === 0) return null;
 
   return (
     <div className="mb-4 space-y-2">
-      <ul className="space-y-2">
-        {groups.map((group) => (
-          <li
-            key={group.poId}
-            className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-subtle p-3 text-sm"
-          >
-            <Scissors className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0 flex-1">
-              <span dir="auto" className="break-words font-semibold">
-                {isAr ? `عند ${group.vendorName}` : `With ${group.vendorName}`}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {isAr
-                  ? `وصل ${group.arrived} من ${piecesLabel(group.pieces, "ar")}`
-                  : `${group.arrived} of ${piecesLabel(group.pieces, "en")} back`}
-                {" · "}
-                {formatMoney(group.cost, currency, lang)}
-                {group.expectedAt && group.arrived < group.pieces && (
-                  <>
-                    {" · "}
-                    {isAr ? "موعدها " : "due "}
-                    {formatDate(group.expectedAt, isAr ? "ar-BH" : "en-BH")}
-                  </>
-                )}
-              </span>
-            </span>
-            <Link
-              to="/admin/b/$slug/supplier-orders/$id"
-              params={{ slug, id: group.poId }}
-              className="inline-flex min-h-9 shrink-0 items-center font-mono text-xs font-semibold text-primary hover:underline"
+      {groups.length > 0 && (
+        <ul className="space-y-2">
+          {groups.map((group) => (
+            <li
+              key={group.poId}
+              className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-subtle p-3 text-sm"
             >
-              {group.poNumber}
-            </Link>
-          </li>
-        ))}
-      </ul>
+              <Scissors className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0 flex-1">
+                <span dir="auto" className="break-words font-semibold">
+                  {isAr ? `عند ${group.vendorName}` : `With ${group.vendorName}`}
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  {isAr
+                    ? `وصل ${group.arrived} من ${piecesLabel(group.pieces, "ar")}`
+                    : `${group.arrived} of ${piecesLabel(group.pieces, "en")} back`}
+                  {" · "}
+                  {formatMoney(group.cost, currency, lang)}
+                  {group.expectedAt && group.arrived < group.pieces && (
+                    <>
+                      {" · "}
+                      {isAr ? "موعدها " : "due "}
+                      {formatDate(group.expectedAt, isAr ? "ar-BH" : "en-BH")}
+                    </>
+                  )}
+                </span>
+              </span>
+              <Link
+                to="/admin/b/$slug/supplier-orders/$id"
+                params={{ slug, id: group.poId }}
+                className="inline-flex min-h-9 shrink-0 items-center font-mono text-xs font-semibold text-primary hover:underline"
+              >
+                {group.poNumber}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       {cancelled ? (
         <p className="flex items-start gap-2 rounded-lg bg-warning/10 p-2.5 text-xs font-semibold">
@@ -138,13 +151,39 @@ export function OrderTailorPieces({
         </ul>
       )}
 
+      {ready.length > 0 && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-9 gap-1.5"
+          onClick={() => setAltering(true)}
+        >
+          <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
+          {isAr ? "أرسل قطعة للتعديل" : "Send a piece for alteration"}
+        </Button>
+      )}
+
+      {altering && (
+        <SendBackDialog
+          open={altering}
+          onOpenChange={setAltering}
+          brandId={brandId}
+          orderId={orderId}
+          lines={ready}
+          allowFix={false}
+          defaultVendorId=""
+          lang={lang}
+        />
+      )}
+
       {sendingBack && (
         <SendBackDialog
           open={Boolean(sendingBack)}
           onOpenChange={(next) => !next && setSendingBack(null)}
           brandId={brandId}
           orderId={orderId}
-          line={sendingBack.line}
+          lines={[sendingBack.line]}
           defaultVendorId={sendingBack.lastVendorId}
           lang={lang}
         />
