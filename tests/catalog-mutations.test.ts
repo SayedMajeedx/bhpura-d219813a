@@ -141,10 +141,11 @@ describe("variant writes", () => {
     expect(filters(requests[2], "in")).toEqual([["id", ["v3"]]]);
   });
 
-  it("make a product's variants follow its cost and regular price, keeping sale prices", async () => {
-    await catalog.syncVariantsWithProduct("b1", "p1", { cost_price: 4, base_price: 20 });
+  it("make a product's variants follow its regular price, keeping sale prices", async () => {
+    await catalog.syncVariantsWithProduct("b1", "p1", { base_price: 20 });
+    // No cost is written: the database moves a size with its product's cost only when it was
+    // following it, so a size's own cost survives a save of the product.
     expect(requests.map((r) => r.payload)).toEqual([
-      { cost_price: 4 },
       { selling_price: 20, original_price: null },
       { original_price: 20 },
     ]);
@@ -155,12 +156,12 @@ describe("variant writes", () => {
       ]);
     }
     // A service's per-length variants keep their own prices.
-    expect(filters(requests[1], "is")).toEqual([
+    expect(filters(requests[0], "is")).toEqual([
       ["duration_minutes", null],
       ["original_price", null],
     ]);
-    expect(filters(requests[2], "is")).toEqual([["duration_minutes", null]]);
-    expect(filters(requests[2], "not")).toEqual([["original_price", "is", null]]);
+    expect(filters(requests[1], "is")).toEqual([["duration_minutes", null]]);
+    expect(filters(requests[1], "not")).toEqual([["original_price", "is", null]]);
   });
 
   it("stop following the product at the first failing step", async () => {
@@ -168,10 +169,10 @@ describe("variant writes", () => {
       (request.payload as { selling_price?: number }).selling_price === 20
         ? { error: denied }
         : { error: null };
-    await expect(
-      catalog.syncVariantsWithProduct("b1", "p1", { cost_price: 4, base_price: 20 }),
-    ).rejects.toBe(denied);
-    expect(requests).toHaveLength(2);
+    await expect(catalog.syncVariantsWithProduct("b1", "p1", { base_price: 20 })).rejects.toBe(
+      denied,
+    );
+    expect(requests).toHaveLength(1);
   });
 
   it("change stock through the ledger function as a manual adjustment", async () => {

@@ -115,9 +115,8 @@ export async function updateVariants(brandId: string, variantIds: string[], patc
 }
 
 /**
- * After the product editor saves, its variants follow the product: every
- * variant takes the product's cost; variants not on sale take the regular
- * price; variants on sale keep their sale price and take the regular price as
+ * After the product editor saves, its variants follow the product's price:
+ * variants not on sale take the regular price; variants on sale keep their sale price and take the regular price as
  * the struck-through one. Stops at the first failing step. A service's
  * per-length variants (duration_minutes set) keep their own prices: they were
  * overwritten with the base price on every save before.
@@ -125,14 +124,12 @@ export async function updateVariants(brandId: string, variantIds: string[], patc
 export async function syncVariantsWithProduct(
   brandId: string,
   productId: string,
-  product: { cost_price: number; base_price: number },
+  product: { base_price: number },
 ) {
   const forProduct = () => supabase.from("product_variants");
-  const cost = await forProduct()
-    .update({ cost_price: product.cost_price })
-    .eq("product_id", productId)
-    .eq("brand_id", brandId);
-  if (cost.error) throw cost.error;
+  // The sizes' costs are not written here: the database moves a size with its product's cost
+  // only when it was following it (`product_costs_sizes_follow`, migration 20261019120000).
+  // Copying the cost onto every size wiped a size's own cost on every save of the product.
   const inherited = await forProduct()
     .update({ selling_price: product.base_price, original_price: null })
     .eq("product_id", productId)

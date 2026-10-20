@@ -1,4 +1,5 @@
 import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
+import { partProblems, rowsFrom } from "@/features/inventory/lib/cost-parts";
 import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
@@ -38,6 +39,8 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     category: product?.category ?? "",
     base_price: product?.base_price ? String(product.base_price) : "0",
     cost_price: product?.cost_price ? String(product.cost_price) : "0",
+    // The cost in parts (null: one number); saved on the product's cost, never in its columns.
+    cost_parts: rowsFrom(product?.cost_parts ?? null),
     image_url: product?.image_url ?? "",
     is_active: product ? product.is_active : true,
     initial_stock: "0",
@@ -123,6 +126,11 @@ export function validateProductForm(form: ProductForm, isAr: boolean): ProductFo
     newErrors.cost = isAr
       ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً"
       : "Enter a valid non-negative cost or leave empty";
+  }
+  if (form.cost_parts && partProblems(form.cost_parts).size > 0) {
+    newErrors.cost = isAr
+      ? "لكل جزء من التكلفة اسم ومبلغ (صفر أو أكثر)."
+      : "Each part of the cost needs a name and an amount (zero or more).";
   }
   if (form.item_kind !== "service" && form.is_made_to_order) {
     const limit = parseMadeToOrderLimit(form.made_to_order_limit);
