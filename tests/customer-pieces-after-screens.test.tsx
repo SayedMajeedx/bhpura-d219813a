@@ -268,3 +268,72 @@ describe("a piece that came back", () => {
     expect(screen.queryByRole("button", { name: /back to the supplier/ })).toBeNull();
   });
 });
+
+describe("a ready-made piece", () => {
+  it("goes for an alteration from an order with nothing sent, in a store that makes to order", async () => {
+    const ready = [
+      { id: "oi-1", description: "Black abaya · custom", quantity: 1 },
+      { id: "oi-7", description: "Ready dress", quantity: 1 },
+    ];
+    wrap(
+      <OrderTailorPieces
+        brandId="b1"
+        slug="pura"
+        orderId="o-1"
+        lines={ready}
+        cancelled={false}
+        offerAlteration
+        currency="BHD"
+        lang="en"
+      />,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Send a piece for alteration" }));
+    const dialog = await screen.findByRole("dialog");
+    // The custom abaya is already with a supplier: only the dress is offered, and no free fix.
+    expect(
+      within(dialog).getByRole("heading", { name: "A piece for an alteration" }),
+    ).toBeInTheDocument();
+    expect(within(dialog).queryByRole("radio")).toBeNull();
+    expect(within(dialog).queryByLabelText("Which piece")).toBeNull();
+    expect(dialog).toHaveTextContent("Ready dress");
+    await within(dialog).findByRole("option", { name: "Atelier Noor" });
+    fireEvent.change(within(dialog).getByLabelText("Supplier"), { target: { value: "fixer" } });
+    fireEvent.change(within(dialog).getByLabelText("What to change"), {
+      target: { value: "Take in the waist" },
+    });
+    fireEvent.change(within(dialog).getByLabelText(/charge a piece/), { target: { value: "2" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }));
+    await waitFor(() =>
+      expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith(
+        "o-1",
+        expect.objectContaining({
+          vendorId: "fixer",
+          lines: [
+            {
+              order_item_id: "oi-7",
+              unit_cost: 2,
+              purpose: "alteration",
+              note: "Take in the waist",
+            },
+          ],
+        }),
+      ),
+    );
+  });
+
+  it("is not offered where the store does not make to order", async () => {
+    wrap(
+      <OrderTailorPieces
+        brandId="b1"
+        slug="pura"
+        orderId="o-1"
+        lines={[{ id: "oi-7", description: "Ready dress", quantity: 1 }]}
+        cancelled={false}
+        currency="BHD"
+        lang="en"
+      />,
+    );
+    await waitFor(() => expect(screen.queryByText("Ready dress")).toBeNull());
+    expect(screen.queryByRole("button", { name: "Send a piece for alteration" })).toBeNull();
+  });
+});

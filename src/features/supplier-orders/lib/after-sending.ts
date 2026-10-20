@@ -51,18 +51,39 @@ export function piecesAwaitingChoice(orders: readonly SupplierOrder[]) {
 
 // -- Back to a tailor: a fix or an alteration ---------------------------------------------------
 
-/** An order's saved lines as the pieces list names them. */
-export function tailorPieceLines(
-  items:
-    | ReadonlyArray<{ id?: string | null; description?: string | null; quantity?: number | null }>
-    | null
-    | undefined,
-) {
-  return (items ?? []).flatMap((item) =>
-    item.id
-      ? [{ id: item.id, description: item.description ?? "", quantity: item.quantity || 1 }]
-      : [],
-  );
+type OrderItemLike = {
+  id?: string | null;
+  description?: string | null;
+  title?: string | null;
+  name?: string | null;
+  quantity?: number | null;
+  product?: { item_kind?: string | null } | null;
+  products?: { item_kind?: string | null } | null;
+};
+
+/**
+ * An order's saved lines as the pieces list names them: the pieces a supplier can make, fix or
+ * alter. A service is never one.
+ */
+export function tailorPieceLines(items: ReadonlyArray<OrderItemLike> | null | undefined) {
+  return (items ?? []).flatMap((item) => {
+    const kind = (item.product ?? item.products)?.item_kind;
+    if (!item.id || kind === "service") return [];
+    const description = item.description || item.title || item.name || "";
+    return [{ id: item.id, description, quantity: item.quantity || 1 }];
+  });
+}
+
+/**
+ * The order's pieces that never went to a supplier (a ready-made piece, or one made in the
+ * store): they may go for an alteration, not for a free fix (nobody's work to put right).
+ */
+export function readyToAlter<L extends { id: string }>(
+  lines: readonly L[],
+  sent: readonly Pick<SentPiece, "order_item_id">[],
+): L[] {
+  const withSupplier = new Set(sent.map((piece) => piece.order_item_id));
+  return lines.filter((line) => !withSupplier.has(line.id));
 }
 
 export type SentPiece = {
