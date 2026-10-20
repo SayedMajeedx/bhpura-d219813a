@@ -82,6 +82,33 @@ export function sendRequest(form: SendForm) {
   };
 }
 
+/** A customer's order and the lines of it that may go to the tailor in one send. */
+export type SendGroup = {
+  orderId: string;
+  /** Its number, to head its pieces when several orders go at once. */
+  invoice?: number | string | null;
+  lines: readonly CustomerLine[];
+};
+
+/**
+ * One send of pieces from several customers' orders: one `send_order_to_supplier` per order, in
+ * order, the first making the supplier order (or naming an open one) and the rest joining it.
+ * Orders with no piece chosen are left out.
+ */
+export function sendBatches(form: SendForm, groups: readonly SendGroup[]) {
+  const request = sendRequest(form);
+  const chosen = new Map(request.lines.map((line) => [line.order_item_id, line]));
+  return groups
+    .map((group) => ({
+      orderId: group.orderId,
+      lines: group.lines.flatMap((line) => {
+        const picked = line.id ? chosen.get(line.id) : undefined;
+        return picked ? [picked] : [];
+      }),
+    }))
+    .filter((batch) => batch.lines.length > 0);
+}
+
 /** The supplier orders a customer's pieces can join: this supplier's, not yet fully arrived. */
 export function openOrdersOf<
   O extends { vendor_id: string; status: SupplierOrderStatus; created_at: string },

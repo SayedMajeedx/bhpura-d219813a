@@ -25,6 +25,10 @@ import {
 } from "../lib/order-state";
 import { SupplierOrderCard } from "./SupplierOrderCard";
 import { SupplierBalancesList } from "./SupplierBalancesList";
+import { PiecesToMakeTab } from "./PiecesToMakeTab";
+import { usePiecesToMake } from "../hooks/use-pieces-to-make";
+import { useProfile } from "@/lib/profile-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { supplierBalances } from "../lib/payments";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +36,8 @@ import { cn } from "@/lib/utils";
  * Supplier orders: what was ordered from a supplier (a tailor, a workshop, a wholesaler), what has arrived, and what is
  * still owed. Receiving an order adds its pieces to the stock and sets their cost.
  */
+type PageTab = SupplierOrdersTab | "suppliers" | "pieces";
+
 export function SupplierOrdersPage() {
   const { lang: rawLang } = useI18n();
   const lang = rawLang === "ar" ? "ar" : "en";
@@ -41,23 +47,39 @@ export function SupplierOrdersPage() {
   const currency = useStoreCurrency(brand.id);
   const ordersQ = useQuery(supplierOrderQueries.list(brand.id));
   const loadState = combinedLoadState([ordersQ]);
-  const [tab, setTab] = useState<SupplierOrdersTab | "suppliers">("open");
+  const [tab, setTab] = useState<PageTab>("open");
+  // Customers' made-to-order pieces waiting for the workshop: a store that makes to order, read
+  // by staff who handle orders (they send them).
+  const { hasPermission } = useProfile();
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
+  const makes = Boolean(storeProfile.modules.made_to_order) && hasPermission("manage_orders");
+  const waiting = usePiecesToMake(brand.id, makes);
   const today = localToday();
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
   const summary = useMemo(() => ordersSummary(orders, today), [orders, today]);
   const shown = useMemo(
-    () => (tab === "suppliers" ? [] : sortOrders(ordersInTab(orders, tab), today)),
+    () =>
+      tab === "suppliers" || tab === "pieces" ? [] : sortOrders(ordersInTab(orders, tab), today),
     [orders, tab, today],
   );
   const balances = useMemo(() => supplierBalances(orders, today), [orders, today]);
 
-  const tabs: Array<{ id: SupplierOrdersTab | "suppliers"; label: string; count: number }> = [
+  const tabs: Array<{ id: PageTab; label: string; count: number }> = [
     {
       id: "open",
       label: isAr ? "قيد الانتظار" : "Waiting",
       count: ordersInTab(orders, "open").length,
     },
+    ...(makes
+      ? [
+          {
+            id: "pieces" as const,
+            label: isAr ? "قطع للتفصيل" : "Pieces to make",
+            count: waiting.pieces,
+          },
+        ]
+      : []),
     { id: "done", label: isAr ? "منتهية" : "Done", count: ordersInTab(orders, "done").length },
     { id: "all", label: isAr ? "الكل" : "All", count: orders.length },
     { id: "suppliers", label: isAr ? "الموردون" : "Suppliers", count: balances.length },
@@ -109,7 +131,7 @@ export function SupplierOrdersPage() {
           }
           queries={[ordersQ]}
         />
-      ) : orders.length === 0 ? (
+      ) : orders.length === 0 && !(makes && waiting.pieces > 0) ? (
         <EmptyState isAr={isAr} slug={brand.slug} />
       ) : (
         <>
@@ -154,7 +176,9 @@ export function SupplierOrdersPage() {
             ))}
           </div>
 
-          {tab === "suppliers" ? (
+          {tab === "pieces" ? (
+            <PiecesToMakeTab currency={currency} lang={lang} />
+          ) : tab === "suppliers" ? (
             <SupplierBalancesList balances={balances} currency={currency} lang={lang} />
           ) : shown.length === 0 ? (
             <Card className="p-6 text-center text-sm text-muted-foreground">

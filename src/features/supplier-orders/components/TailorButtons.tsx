@@ -83,11 +83,10 @@ function TrackedSend({
           open={open}
           onOpenChange={setOpen}
           brandId={brandId}
-          orderId={orderId}
-          lines={lines}
+          groups={[{ orderId, lines }]}
           currency={currency}
           lang={lang}
-          onSent={onSent}
+          onSent={() => onSent()}
           onPlainSend={onPlainSend}
           title={title}
         />

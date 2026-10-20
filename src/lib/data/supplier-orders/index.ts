@@ -31,6 +31,8 @@ export const supplierOrderKeys = {
     [...supplierOrderKeys.all(brandId), "order-pieces", ...orderItemIds] as const,
   lastPrices: (brandId: string, vendorId: string, productIds: readonly string[]) =>
     [...supplierOrderKeys.all(brandId), "last-prices", vendorId, ...productIds] as const,
+  pieceDetails: (brandId: string, orderItemIds: readonly string[]) =>
+    [...supplierOrderKeys.all(brandId), "piece-details", ...orderItemIds] as const,
 };
 
 const ORDER_SELECT =
@@ -289,6 +291,25 @@ export async function fetchLastSupplierPrices(
   return new Map([...newest].map(([id, { cost }]) => [id, cost]));
 }
 
+/**
+ * What makes each customer's piece (its options, the customer's measurements and notes for the
+ * workshop, extras), for the message to the supplier. Only what the job sheet reads: no name,
+ * number or address of the customer.
+ */
+export async function fetchCustomerPieceDetails(brandId: string, orderItemIds: readonly string[]) {
+  if (orderItemIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("order_items")
+    .select(
+      "id, product_id, variant_id, description, quantity, location, selected_variant, custom_field_values, customizations",
+    )
+    .eq("brand_id", brandId)
+    .in("id", [...orderItemIds])
+    .limit(500);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export const supplierOrderQueries = {
   list: (brandId: string) =>
     queryOptions({
@@ -319,6 +340,12 @@ export const supplierOrderQueries = {
       queryKey: supplierOrderKeys.lastPrices(brandId, vendorId, productIds),
       queryFn: () => fetchLastSupplierPrices(brandId, vendorId, productIds),
       enabled: Boolean(brandId && vendorId) && productIds.length > 0,
+    }),
+  pieceDetails: (brandId: string, orderItemIds: readonly string[]) =>
+    queryOptions({
+      queryKey: supplierOrderKeys.pieceDetails(brandId, orderItemIds),
+      queryFn: () => fetchCustomerPieceDetails(brandId, orderItemIds),
+      enabled: Boolean(brandId) && orderItemIds.length > 0,
     }),
   payments: (brandId: string, orderId: string) =>
     queryOptions({

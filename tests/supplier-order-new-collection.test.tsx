@@ -66,6 +66,11 @@ const mocks: Record<string, unknown> = {
     useBrandOptional: () => ({ id: "b1", slug: "pura" }),
   },
   i18n: { useI18n: () => ({ lang: "en" }) },
+  // A store that does not make to order: no pieces-to-make tab, so no orders are read.
+  "store-profile": { useAdminStoreProfile: () => ({ profile: { addons: [], modules: {} } }) },
+  "data/orders": {
+    ordersQueries: { list: () => ({ queryKey: ["orders"], queryFn: async () => [] }) },
+  },
   "profile-context": { useProfile: () => ({ isAdmin: true, hasPermission: () => true }) },
   session: { getCurrentUser: async () => ({ id: "u1" }) },
   entitlements: { useEntitlements: () => ({ entitlements: { limits: { "products.limit": -1 } } }) },
@@ -78,6 +83,10 @@ vi.mock("../src/lib/data/accounting", () => mocks["data/accounting"]);
 vi.mock("@/lib/data/accounting", () => mocks["data/accounting"]);
 vi.mock("../src/lib/data/business-settings", () => mocks["data/business-settings"]);
 vi.mock("@/lib/data/business-settings", () => mocks["data/business-settings"]);
+vi.mock("../src/hooks/use-store-profile", () => mocks["store-profile"]);
+vi.mock("@/hooks/use-store-profile", () => mocks["store-profile"]);
+vi.mock("../src/lib/data/orders", () => mocks["data/orders"]);
+vi.mock("@/lib/data/orders", () => mocks["data/orders"]);
 vi.mock("../src/lib/brand-context", () => mocks["brand-context"]);
 vi.mock("@/lib/brand-context", () => mocks["brand-context"]);
 vi.mock("../src/lib/i18n", () => mocks.i18n);
