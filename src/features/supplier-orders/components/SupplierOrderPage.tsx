@@ -36,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useBrand } from "@/lib/brand-context";
+import { formatMoney } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useMoneyLabel, useStoreCurrency } from "@/hooks/use-store-currency";
@@ -89,6 +90,9 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
   const open = order ? isOpen(order) : false;
   const nothingArrived = pieces?.received === 0;
   const editable = order && order.status !== "received" && order.status !== "cancelled";
+  // Delete was asked for an order that has payments: it is offered to be cancelled instead.
+  const heldByPayments = confirming === "delete" && (pay?.paid ?? 0) > 0;
+  const cancelInstead = heldByPayments && order?.status !== "cancelled";
   usePhoneBottomBar("supplier-order-actions", Boolean(order) && !showEditor);
 
   const toList = () =>
@@ -292,47 +296,63 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
         </>
       ) : null}
 
+      {/* An order with payments is not deleted (their record would be lost): the database refuses
+          it, so the dialog says why and offers to cancel it instead, which keeps it on record. */}
       <AlertDialog open={confirming !== null} onOpenChange={(next) => !next && setConfirming(null)}>
         <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {confirming === "delete"
+              {heldByPayments
                 ? isAr
-                  ? "حذف الطلبية؟"
-                  : "Delete this order?"
-                : isAr
-                  ? "إلغاء الطلبية؟"
-                  : "Cancel this order?"}
+                  ? "لا تُحذف طلبية عليها دفعات"
+                  : "An order with payments is not deleted"
+                : confirming === "delete"
+                  ? isAr
+                    ? "حذف الطلبية؟"
+                    : "Delete this order?"
+                  : isAr
+                    ? "إلغاء الطلبية؟"
+                    : "Cancel this order?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirming === "delete"
+              {heldByPayments && pay
                 ? isAr
-                  ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
-                  : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
-                : isAr
-                  ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
-                  : "The order stays on record as cancelled, and nothing is awaited from it."}
+                  ? `دفعت ${formatMoney(pay.paid, currency, lang)} على هذه الطلبية، وحذفها يمحو سجل الدفعة. ${cancelInstead ? "ألغِ الطلبية لتبقى في السجل ملغاة، أو " : ""}ألغِ الدفعة أولاً من قائمة الدفعات ثم احذفها.`
+                  : `You paid ${formatMoney(pay.paid, currency, lang)} on this order, and deleting it would erase that payment's record. ${cancelInstead ? "Cancel the order to keep it on record, or take" : "Take"} the payment back first in the payments list, then delete it.`
+                : confirming === "delete"
+                  ? isAr
+                    ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
+                    : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
+                  : isAr
+                    ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
+                    : "The order stays on record as cancelled, and nothing is awaited from it."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{isAr ? "تراجع" : "Keep it"}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={busy}
-              onClick={(e) => {
-                e.preventDefault();
-                if (confirming === "delete") void remove();
-                else void cancel();
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {confirming === "delete"
-                ? isAr
-                  ? "حذف"
-                  : "Delete"
-                : isAr
-                  ? "إلغاء الطلبية"
-                  : "Cancel order"}
-            </AlertDialogAction>
+            {(!heldByPayments || cancelInstead) && (
+              <AlertDialogAction
+                disabled={busy}
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (confirming === "delete" && !heldByPayments) void remove();
+                  else void cancel();
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {heldByPayments
+                  ? isAr
+                    ? "إلغاء الطلبية بدلاً من ذلك"
+                    : "Cancel the order instead"
+                  : confirming === "delete"
+                    ? isAr
+                      ? "حذف"
+                      : "Delete"
+                    : isAr
+                      ? "إلغاء الطلبية"
+                      : "Cancel order"}
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

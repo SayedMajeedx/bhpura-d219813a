@@ -7,6 +7,7 @@ import {
 } from "../src/features/supplier-orders/lib/bill";
 import {
   formFigures,
+  startingSizes,
   type SupplierOrderForm,
 } from "../src/features/supplier-orders/lib/order-form";
 import {
@@ -154,5 +155,14 @@ describe("a new product from the order", () => {
     ]);
     // No size chosen: one size, the placeholder every one-size product has.
     expect(newProductSizes({ ...form, sizes: [] }, true).map((s) => s.size)).toEqual(["قياسي"]);
+  });
+});
+
+describe("a product joining the order", () => {
+  it("starts at one piece of each size, the least it can be ordered at", () => {
+    expect(startingSizes(["s", "m"])).toEqual({
+      s: { quantity: "1", received: 0 },
+      m: { quantity: "1", received: 0 },
+    });
   });
 });
