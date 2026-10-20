@@ -6426,11 +6426,14 @@ export type Database = {
           order_item_id: string | null;
           po_id: string;
           product_id: string | null;
+          purpose: string;
           quantity: number;
           received_quantity: number;
+          released_order_item_id: string | null;
           sort_order: number;
           unit_cost: number;
           variant_id: string | null;
+          work_note: string | null;
         };
         Insert: {
           description: string;
@@ -6439,11 +6442,14 @@ export type Database = {
           order_item_id?: string | null;
           po_id: string;
           product_id?: string | null;
+          purpose?: string;
           quantity?: number;
           received_quantity?: number;
+          released_order_item_id?: string | null;
           sort_order?: number;
           unit_cost?: number;
           variant_id?: string | null;
+          work_note?: string | null;
         };
         Update: {
           description?: string;
@@ -6452,11 +6458,14 @@ export type Database = {
           order_item_id?: string | null;
           po_id?: string;
           product_id?: string | null;
+          purpose?: string;
           quantity?: number;
           received_quantity?: number;
+          released_order_item_id?: string | null;
           sort_order?: number;
           unit_cost?: number;
           variant_id?: string | null;
+          work_note?: string | null;
         };
         Relationships: [
           {
@@ -6478,6 +6487,13 @@ export type Database = {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_items_released_order_item_id_fkey";
+            columns: ["released_order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
             referencedColumns: ["id"];
           },
           {
@@ -10450,6 +10466,10 @@ export type Database = {
       reject_benefit_payment:
         | { Args: { p_order_id: string }; Returns: Json }
         | { Args: { p_order_id: string; p_reason: string }; Returns: Json };
+      release_customer_piece: {
+        Args: { p_choice: string; p_item_id: string };
+        Returns: string;
+      };
       release_due_loyalty_points: { Args: never; Returns: number };
       reorder_categories: {
         Args: { p_brand_id: string; p_category_ids: string[] };
