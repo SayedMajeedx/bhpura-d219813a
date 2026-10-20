@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Ban,
+  MessageCircle,
   MoreHorizontal,
   PackageCheck,
   Pencil,
@@ -54,6 +55,7 @@ import { SupplierOrderEditor } from "./SupplierOrderEditor";
 import { SupplierOrderView } from "./SupplierOrderView";
 import { ReceiveDialog } from "./ReceiveDialog";
 import { PaymentDialog } from "./PaymentDialog";
+import { SupplierMessageDialog } from "./SupplierMessageDialog";
 
 type Confirming = "cancel" | "delete" | null;
 
@@ -78,6 +80,7 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
   const [editing, setEditing] = useState(false);
   const [receiving, setReceiving] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [messaging, setMessaging] = useState(false);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [busy, setBusy] = useState(false);
   const order = orderQ.data ?? null;
@@ -162,17 +165,32 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
         title={<span dir="auto">{title}</span>}
         actions={
           order && !showEditor ? (
-            <OrderMenu
-              isAr={isAr}
-              canEdit={Boolean(editable)}
-              canPlace={order.status === "draft"}
-              canCancel={Boolean(nothingArrived) && order.status !== "cancelled"}
-              canDelete={Boolean(nothingArrived)}
-              onEdit={() => setEditing(true)}
-              onPlace={place}
-              onCancel={() => setConfirming("cancel")}
-              onDelete={() => setConfirming("delete")}
-            />
+            <div className="flex items-center gap-2">
+              {order.status !== "cancelled" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setMessaging(true)}
+                  className="h-9 gap-1.5"
+                  aria-label={isAr ? "رسالة للمورد على واتساب" : "Message the supplier on WhatsApp"}
+                >
+                  <MessageCircle className="h-4 w-4 text-success" aria-hidden="true" />
+                  <span className="hidden sm:inline">{isAr ? "رسالة للمورد" : "Message"}</span>
+                </Button>
+              )}
+              <OrderMenu
+                isAr={isAr}
+                canEdit={Boolean(editable)}
+                canPlace={order.status === "draft"}
+                canCancel={Boolean(nothingArrived) && order.status !== "cancelled"}
+                canDelete={Boolean(nothingArrived)}
+                onEdit={() => setEditing(true)}
+                onPlace={place}
+                onCancel={() => setConfirming("cancel")}
+                onDelete={() => setConfirming("delete")}
+              />
+            </div>
           ) : undefined
         }
       />
@@ -284,6 +302,21 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
             currency={currency}
             lang={lang}
           />
+          {messaging && (
+            <SupplierMessageDialog
+              open={messaging}
+              onOpenChange={setMessaging}
+              brandId={brand.id}
+              order={order}
+              catalog={catalog}
+              storeName={
+                (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ||
+                brand.slug
+              }
+              currency={currency}
+              lang={lang}
+            />
+          )}
           <PaymentDialog
             open={paying}
             onOpenChange={setPaying}

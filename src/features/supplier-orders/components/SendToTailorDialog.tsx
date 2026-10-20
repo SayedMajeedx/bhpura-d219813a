@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { Fragment, useEffect, useId, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, Scissors } from "lucide-react";
 import { toast } from "sonner";
@@ -25,10 +25,12 @@ import {
   linesToSend,
   openOrdersOf,
   sendProblems,
+  sendBatches,
   sendRequest,
   suggestedCost,
-  type CustomerLine,
   type SendForm,
+  type SendGroup,
+  customerOrderName,
 } from "../lib/customer-pieces";
 import { piecesLabel, piecesOf } from "../lib/order-state";
 import { supplierOrderError } from "../lib/errors";
@@ -45,8 +47,7 @@ export function SendToTailorDialog({
   open,
   onOpenChange,
   brandId,
-  orderId,
-  lines,
+  groups,
   currency,
   lang,
   onSent,
@@ -58,20 +59,21 @@ export function SendToTailorDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   brandId: string;
-  orderId: string;
-  lines: readonly CustomerLine[];
+  /** The customers' orders whose pieces may go: one from an order's page, several from the list. */
+  groups: readonly SendGroup[];
   currency: string;
   lang: "ar" | "en";
-  /** After the send: the order's own follow-up (tell the customer, the activity, a refresh). */
-  onSent: () => Promise<void> | void;
-  /** Marks the order sent with no supplier order, as before. */
-  onPlainSend: () => Promise<void> | void;
+  /** After the send, with the supplier order's id: the follow-up (tell, log, refresh, open). */
+  onSent: (poId: string | null) => Promise<void> | void;
+  /** Marks the order sent with no supplier order, as before (an order's page only). */
+  onPlainSend?: () => Promise<void> | void;
 }) {
   const isAr = lang === "ar";
   const uid = useId();
   const qc = useQueryClient();
   const moneyLabel = useMoneyLabel(lang);
   const catalog = useSupplierCatalog(brandId, lang);
+  const lines = useMemo(() => groups.flatMap((g) => g.lines), [groups]);
   const lineIds = useMemo(() => lines.map((l) => l.id).filter(Boolean) as string[], [lines]);
   const sentQ = useQuery({ ...supplierOrderQueries.orderPieces(brandId, lineIds), enabled: open });
   const ordersQ = useQuery({ ...supplierOrderQueries.list(brandId), enabled: open });
@@ -127,19 +129,40 @@ export function SendToTailorDialog({
     setTried(true);
     if (sendProblems(form).length > 0) return;
     setSaving(true);
+    // One order at a time: the first makes (or names) the supplier order, the rest join it.
+    const request = sendRequest(form);
+    let poId = request.poId;
+    let sentOrders = 0;
     try {
-      await sendOrderToSupplier(orderId, sendRequest(form));
+      for (const batch of sendBatches(form, groups)) {
+        poId = await sendOrderToSupplier(batch.orderId, {
+          vendorId: request.vendorId,
+          poId,
+          expectedAt: poId ? null : request.expectedAt,
+          lines: batch.lines,
+        });
+        sentOrders += 1;
+      }
       await invalidateSupplierOrders(qc, brandId);
-      await onSent();
+      await onSent(poId);
       onOpenChange(false);
     } catch (error) {
-      toast.error(supplierOrderError(error, isAr));
+      await invalidateSupplierOrders(qc, brandId);
+      toast.error(supplierOrderError(error, isAr), {
+        description:
+          sentOrders > 0
+            ? isAr
+              ? `أُرسلت قطع ${sentOrders} من الطلبات قبل التوقف، وهي في طلبية المورد.`
+              : `The pieces of ${sentOrders} ${sentOrders === 1 ? "order were" : "orders were"} sent before it stopped; they are on the supplier order.`
+            : undefined,
+      });
     } finally {
       setSaving(false);
     }
   };
 
   const plain = async () => {
+    if (!onPlainSend) return;
     setSaving(true);
     try {
       await onPlainSend();
@@ -219,57 +242,70 @@ export function SendToTailorDialog({
             {toSend.length === 0 ? (
               <p className="rounded-lg bg-muted/60 p-3 text-sm text-muted-foreground">
                 {isAr
-                  ? "كل قطع هذا الطلب عند مورد بالفعل."
-                  : "Every piece of this order is already with a supplier."}
+                  ? "كل هذه القطع عند مورد بالفعل."
+                  : "Every one of these pieces is already with a supplier."}
               </p>
             ) : (
-              toSend.map((line) => {
+              toSend.map((line, index) => {
                 const piece = form.pieces[line.id] ?? { send: true, cost: "" };
+                // Several orders at once: each order's pieces under its number.
+                const group = groups.find((g) => g.lines.some((l) => l.id === line.id));
+                const firstOfGroup =
+                  groups.length > 1 &&
+                  group &&
+                  !toSend.slice(0, index).some((l) => group.lines.some((g) => g.id === l.id));
                 return (
-                  <div
-                    key={line.id}
-                    className="flex min-w-0 items-center gap-3 rounded-lg border border-border-subtle p-2.5"
-                  >
-                    <Checkbox
-                      checked={piece.send}
-                      onCheckedChange={(checked) =>
-                        setForm((f) => ({
-                          ...f,
-                          pieces: { ...f.pieces, [line.id]: { ...piece, send: checked === true } },
-                        }))
-                      }
-                      aria-label={isAr ? `أرسل ${line.description}` : `Send ${line.description}`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        dir="auto"
-                        className="text-page-start line-clamp-2 break-words text-sm font-semibold"
-                      >
-                        {line.description}
+                  <Fragment key={line.id}>
+                    {firstOfGroup && (
+                      <p className="pt-1 text-xs font-bold text-muted-foreground">
+                        {customerOrderName(group.invoice ?? null, isAr)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {piecesLabel(line.quantity, lang)}
-                      </p>
+                    )}
+                    <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border-subtle p-2.5">
+                      <Checkbox
+                        checked={piece.send}
+                        onCheckedChange={(checked) =>
+                          setForm((f) => ({
+                            ...f,
+                            pieces: {
+                              ...f.pieces,
+                              [line.id]: { ...piece, send: checked === true },
+                            },
+                          }))
+                        }
+                        aria-label={isAr ? `أرسل ${line.description}` : `Send ${line.description}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          dir="auto"
+                          className="text-page-start line-clamp-2 break-words text-sm font-semibold"
+                        >
+                          {line.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {piecesLabel(line.quantity, lang)}
+                        </p>
+                      </div>
+                      <Input
+                        aria-label={
+                          isAr ? `تكلفة ${line.description}` : `Cost of ${line.description}`
+                        }
+                        inputMode="decimal"
+                        value={piece.cost}
+                        placeholder="0.000"
+                        disabled={!piece.send}
+                        onChange={(e) => {
+                          setTyped((t) => new Set(t).add(line.id));
+                          setForm((f) => ({
+                            ...f,
+                            pieces: { ...f.pieces, [line.id]: { ...piece, cost: e.target.value } },
+                          }));
+                        }}
+                        aria-invalid={costProblem(line.id) || undefined}
+                        className="w-24 shrink-0 font-mono tabular-nums"
+                      />
                     </div>
-                    <Input
-                      aria-label={
-                        isAr ? `تكلفة ${line.description}` : `Cost of ${line.description}`
-                      }
-                      inputMode="decimal"
-                      value={piece.cost}
-                      placeholder="0.000"
-                      disabled={!piece.send}
-                      onChange={(e) => {
-                        setTyped((t) => new Set(t).add(line.id));
-                        setForm((f) => ({
-                          ...f,
-                          pieces: { ...f.pieces, [line.id]: { ...piece, cost: e.target.value } },
-                        }));
-                      }}
-                      aria-invalid={costProblem(line.id) || undefined}
-                      className="w-24 shrink-0 font-mono tabular-nums"
-                    />
-                  </div>
+                  </Fragment>
                 );
               })
             )}
@@ -296,14 +332,18 @@ export function SendToTailorDialog({
         </div>
 
         <DialogFooter className="flex-wrap gap-2 border-t border-border-subtle pt-3 sm:justify-between">
-          <button
-            type="button"
-            onClick={plain}
-            disabled={saving}
-            className="min-h-10 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-          >
-            {isAr ? "حوّل الطلب للورشة بدون مورد" : "Mark as sent, with no supplier"}
-          </button>
+          {onPlainSend ? (
+            <button
+              type="button"
+              onClick={plain}
+              disabled={saving}
+              className="min-h-10 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              {isAr ? "حوّل الطلب للورشة بدون مورد" : "Mark as sent, with no supplier"}
+            </button>
+          ) : (
+            <span />
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"

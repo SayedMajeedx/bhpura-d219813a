@@ -28,6 +28,8 @@ export interface OrderItemForTypeDetection {
   notes?: string | null;
   is_tailoring?: boolean | null;
   item_type?: string | null;
+  /** `custom`: the order builder's mark for a piece made to order (no stock is taken for it). */
+  location?: string | null;
 }
 
 export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
@@ -36,6 +38,12 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
 
   // Custom item explicitly created as a bespoke line item
   if (item.variant_id === "custom") return true;
+
+  // A piece made to order, in a standard size too: the order builder marks it `custom` (it is
+  // made, not taken from stock), and the job sheet reads it the same way (`isWorkshopLine`).
+  // Without this an order of a made-to-order piece with no measurements never offered
+  // "Send to workshop".
+  if (item.location === "custom") return true;
 
   // Check custom fields or measurements
   const fields = item.custom_fields ?? item.custom_field_values ?? [];
