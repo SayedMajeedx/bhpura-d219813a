@@ -95,6 +95,14 @@ export function formFromOrder(order: SupplierOrder): SupplierOrderForm {
   };
 }
 
+/**
+ * A product's sizes as it joins the order: one piece of each, the least an order of it can be.
+ * A size the store does not want is set to 0 (or emptied), and is then not ordered.
+ */
+export function startingSizes(variantIds: readonly string[]): Record<string, FormSize> {
+  return Object.fromEntries(variantIds.map((id) => [id, { quantity: "1", received: 0 }]));
+}
+
 /** A product's cost can no longer change once one of its sizes has received pieces. */
 export const costLocked = (product: FormProduct) =>
   Object.values(product.sizes).some((size) => size.received > 0);

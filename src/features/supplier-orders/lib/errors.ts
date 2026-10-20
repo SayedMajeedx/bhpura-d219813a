@@ -1,8 +1,9 @@
 /**
  * What a refusal from the database means, in the reader's language: never a bare code.
- * The codes are raised by migration `20261019100000` and the accounting triggers.
+ * The codes are raised by migrations `20261019100000` and `20261019110000` and the accounting
+ * triggers; `tests/supplier-order-errors.test.ts` fails on a code raised with no words here.
  */
-const WORDS: Array<[code: string, ar: string, en: string]> = [
+export const WORDS: Array<[code: string, ar: string, en: string]> = [
   [
     "RECEIVE_MORE_THAN_ORDERED",
     "الكمية المستلمة أكثر من المتبقي في الطلبية. عدّل الطلبية أولاً إن وصل أكثر.",
@@ -33,6 +34,48 @@ const WORDS: Array<[code: string, ar: string, en: string]> = [
     "هذا المورد أو المنتج لا يتبع هذا المتجر.",
     "This supplier or product does not belong to this store.",
   ],
+  [
+    "PURCHASE_ORDER_HAS_PAYMENTS",
+    "على هذه الطلبية دفعات مسجّلة، فلا تُحذف حتى لا يضيع سجلها. ألغِ الدفعات أولاً من قائمة الدفعات، أو ألغِ الطلبية لتبقى في السجل.",
+    "This order has payments recorded, so it is not deleted (their record would be lost). Take the payments back first, or cancel the order to keep it on record.",
+  ],
+  [
+    "PAYMENT_MORE_THAN_OWED",
+    "المبلغ أكثر من الباقي على هذه الطلبية.",
+    "The amount is more than is still owed on this order.",
+  ],
+  [
+    "INVALID_PAYMENT_AMOUNT",
+    "اكتب مبلغاً أكبر من صفر، بثلاث خانات عشرية على الأكثر.",
+    "Type an amount above zero, with at most three decimals.",
+  ],
+  [
+    "INVALID_PAYMENT_DATE",
+    "اختر يوم الدفع، اليوم أو قبله.",
+    "Choose the day it was paid: today or before.",
+  ],
+  ["VOID_REASON_REQUIRED", "اكتب سبب إلغاء الدفعة.", "Type why the payment is taken back."],
+  [
+    "PAYMENT_NOT_FOUND",
+    "لم تعد هذه الدفعة موجودة. حدّث الصفحة.",
+    "This payment no longer exists. Refresh the page.",
+  ],
+  [
+    "PURCHASE_ORDER_LINE_HAS_NO_PIECE",
+    "هذا السطر تكلفة على الطلبية، ليس قطعاً تُستلم.",
+    "This line is a cost of the order, not pieces to receive.",
+  ],
+  [
+    "PURCHASE_ORDER_LINE_TWICE",
+    "ظهر المقاس نفسه مرتين في الاستلام. حدّث الصفحة وأعد المحاولة.",
+    "The same size appeared twice in the receipt. Refresh the page and try again.",
+  ],
+  [
+    "PURCHASE_ORDER_STATE_IS_THE_DATABASES",
+    "حالة الطلبية تتغير بالاستلام وحده. حدّث الصفحة.",
+    "An order's state changes by receiving it. Refresh the page.",
+  ],
+  ["REQUEST_ID_REQUIRED", "تعذر الإرسال، حاول مرة أخرى.", "Could not send. Please try again."],
   ["INVALID_QUANTITY", "اكتب عدداً صحيحاً من القطع.", "Type a whole number of pieces."],
   ["NOTHING_TO_RECEIVE", "اكتب كم قطعة وصلت.", "Type how many pieces arrived."],
   ["NOT_AUTHORIZED", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],

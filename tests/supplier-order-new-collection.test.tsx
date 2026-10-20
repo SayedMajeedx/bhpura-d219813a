@@ -177,7 +177,10 @@ describe("a new collection from a tailor", () => {
     ]);
 
     // The product is in the order with its sizes; how many of each, then the tailor's bill.
-    fireEvent.change(await screen.findByLabelText(/^52\s*0 in stock/), { target: { value: "4" } });
+    // Each size of the new product starts at one piece, once the catalog has read it.
+    await waitFor(() => expect(screen.getByLabelText(/^52\s*0 in stock/)).toHaveValue("1"));
+    expect(screen.getByLabelText(/^54\s*0 in stock/)).toHaveValue("1");
+    fireEvent.change(screen.getByLabelText(/^52\s*0 in stock/), { target: { value: "4" } });
     fireEvent.change(screen.getByLabelText(/^54\s*0 in stock/), { target: { value: "6" } });
     fireEvent.change(screen.getByLabelText(/Bill total/), { target: { value: "600" } });
     expect(screen.getByText(/Share BHD\s600\.000 over 10 pieces/)).toBeInTheDocument();
@@ -201,8 +204,11 @@ describe("a new collection from a tailor", () => {
     fireEvent.click(screen.getByRole("button", { name: "From my products" }));
     fireEvent.click(within(await screen.findByRole("dialog")).getByText("Black abaya"));
     fireEvent.change(await screen.findByLabelText(/Cost per piece/), { target: { value: "20" } });
+    // A store product's sizes start at one piece each too.
+    expect(screen.getByLabelText(/^56\s*2 in stock/)).toHaveValue("1");
     fireEvent.change(screen.getByLabelText(/^52\s*2 in stock/), { target: { value: "5" } });
-    fireEvent.change(screen.getByLabelText(/Bill total/), { target: { value: "130" } });
+    // The other three sizes start at one piece each: 8 pieces at 20 = 160.
+    fireEvent.change(screen.getByLabelText(/Bill total/), { target: { value: "190" } });
     expect(
       screen.getByText(/BHD\s30\.000 on the bill is not in the order yet/),
     ).toBeInTheDocument();

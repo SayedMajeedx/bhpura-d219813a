@@ -456,3 +456,37 @@ describe("a late order and what is owed", () => {
     await waitFor(() => expect(container).toBeEmptyDOMElement());
   });
 });
+
+describe("deleting an order", () => {
+  const supplierData = mocks["data/supplier-orders"] as {
+    deleteSupplierOrder: ReturnType<typeof vi.fn>;
+    setSupplierOrderStatus: ReturnType<typeof vi.fn>;
+  };
+  const openDelete = async () => {
+    const menu = await screen.findByRole("button", { name: "Order options" });
+    fireEvent.keyDown(menu, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Delete/ }));
+    return screen.findByRole("alertdialog");
+  };
+
+  it("with a payment says why it is kept, and offers to cancel it instead", async () => {
+    stubs.order = tailorOrder({ paid_amount: 12 });
+    wrap(<SupplierOrderPage orderId="po1" />);
+    const dialog = await openDelete();
+    expect(within(dialog).getByText("An order with payments is not deleted")).toBeInTheDocument();
+    expect(within(dialog).getByText(/You paid BHD\s12\.000 on this order/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel the order instead" }));
+    await waitFor(() =>
+      expect(supplierData.setSupplierOrderStatus).toHaveBeenCalledWith("b1", "po1", "cancelled"),
+    );
+    expect(supplierData.deleteSupplierOrder).not.toHaveBeenCalled();
+  });
+
+  it("with no payment deletes it", async () => {
+    stubs.order = tailorOrder({ paid_amount: 0 });
+    wrap(<SupplierOrderPage orderId="po1" />);
+    const dialog = await openDelete();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
+    await waitFor(() => expect(supplierData.deleteSupplierOrder).toHaveBeenCalledWith("b1", "po1"));
+  });
+});

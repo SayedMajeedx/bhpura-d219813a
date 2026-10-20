@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -13,6 +13,7 @@ import {
   formKey,
   formProblems,
   formFromOrder,
+  startingSizes,
   planSave,
   type FormProblem,
   type FormProduct,
@@ -58,10 +59,25 @@ export function useSupplierOrderEditor({
       productId,
       // The cost it was last bought at, as a start: the supplier's price is usually the same.
       unitCost: cost > 0 ? String(cost) : "",
-      sizes: Object.fromEntries(sizes.map((v) => [v.id, { quantity: "", received: 0 }])),
+      sizes: startingSizes(sizes.map((v) => v.id)),
     };
     setForm((f) => ({ ...f, products: [...f.products, product] }));
   };
+
+  // A product made from the order joins it before the catalog has read its sizes: they start at
+  // one piece each as soon as they are known. (A saved order's product always has its sizes.)
+  useEffect(() => {
+    setForm((f) => {
+      let changed = false;
+      const products = f.products.map((p) => {
+        const sizes = catalog.sizes.get(p.productId);
+        if (Object.keys(p.sizes).length > 0 || !sizes?.length) return p;
+        changed = true;
+        return { ...p, sizes: startingSizes(sizes.map((v) => v.id)) };
+      });
+      return changed ? { ...f, products } : f;
+    });
+  }, [catalog.sizes]);
 
   const setProduct = (key: string, next: FormProduct) =>
     setForm((f) => ({ ...f, products: f.products.map((p) => (p.key === key ? next : p)) }));
