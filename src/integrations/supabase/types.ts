@@ -6423,6 +6423,7 @@ export type Database = {
           description: string;
           id: string;
           line_total: number;
+          order_item_id: string | null;
           po_id: string;
           product_id: string | null;
           quantity: number;
@@ -6435,6 +6436,7 @@ export type Database = {
           description: string;
           id?: string;
           line_total?: number;
+          order_item_id?: string | null;
           po_id: string;
           product_id?: string | null;
           quantity?: number;
@@ -6447,6 +6449,7 @@ export type Database = {
           description?: string;
           id?: string;
           line_total?: number;
+          order_item_id?: string | null;
           po_id?: string;
           product_id?: string | null;
           quantity?: number;
@@ -6456,6 +6459,13 @@ export type Database = {
           variant_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "purchase_order_items_po_id_fkey";
             columns: ["po_id"];
@@ -10892,6 +10902,16 @@ export type Database = {
           p_notes: string;
           p_provider: string;
           p_webhook_secret: string;
+        };
+        Returns: string;
+      };
+      send_order_to_supplier: {
+        Args: {
+          p_expected_at?: string;
+          p_lines: Json;
+          p_order_id: string;
+          p_po_id: string;
+          p_vendor_id: string;
         };
         Returns: string;
       };

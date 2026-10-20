@@ -500,7 +500,8 @@ export async function sendOrderToSupplier(
   const { data, error } = await supabase.rpc("send_order_to_supplier", {
     p_order_id: orderId,
     p_vendor_id: send.vendorId,
-    p_po_id: send.poId ?? undefined,
+    // Null makes a new order: the function takes it, though the generated type names a string.
+    p_po_id: send.poId as string,
     p_lines: send.lines,
     p_expected_at: send.expectedAt ?? undefined,
   });
