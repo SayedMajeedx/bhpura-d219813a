@@ -22,7 +22,18 @@ export type SupplierOrderLine = {
   /** The customer's order line this piece is made for, when it is a customer's piece. */
   order_item_id?: string | null;
   /** That customer's order, to link to it (staff who cannot read orders see none). */
-  customer_order?: { id: string; invoice_number: number | string | null } | null;
+  customer_order?: {
+    id: string;
+    invoice_number: number | string | null;
+    /** Cancelled, refunded, voided or failed: the piece waits for the store's choice. */
+    cancelled?: boolean;
+  } | null;
+  /** Made (the default), back to be fixed, or altered: a customer's piece only. */
+  purpose?: "make" | "fix" | "alteration";
+  /** What to fix or change. */
+  work_note?: string | null;
+  /** A cancelled customer's piece kept for sale: whose it was. */
+  released_order_item_id?: string | null;
 };
 
 /** A line that is a piece: a size of the store's, or a customer's piece. */

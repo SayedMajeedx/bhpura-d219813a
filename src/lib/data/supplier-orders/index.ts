@@ -8,6 +8,8 @@ import type {
   SupplierOrderStatus,
 } from "@/features/supplier-orders/lib/order-state";
 import type { LineValues, SavePlan } from "@/features/supplier-orders/lib/order-form";
+import { piecePurpose, type PiecePurpose } from "@/features/supplier-orders/lib/after-sending";
+import { orderReleased } from "@/lib/order-released";
 
 /**
  * Supplier orders (a tailor's order): the `purchase_orders` of a store with their lines, what
@@ -36,7 +38,7 @@ export const supplierOrderKeys = {
 };
 
 const ORDER_SELECT =
-  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, order_items(order_id, orders(invoice_number)))";
+  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, purpose, work_note, released_order_item_id, order_items(order_id, orders(invoice_number, status, payment_status)))";
 
 type OrderRow = {
   id: string;
@@ -51,10 +53,15 @@ type OrderRow = {
   notes: string | null;
   vendors: { name: string; phone: string | null } | null;
   purchase_order_items: Array<
-    Omit<SupplierOrderLine, "unit_cost" | "line_total" | "customer_order"> & {
+    Omit<SupplierOrderLine, "unit_cost" | "line_total" | "customer_order" | "purpose"> & {
+      purpose: string | null;
       order_items?: {
         order_id: string;
-        orders: { invoice_number: number | string | null } | null;
+        orders: {
+          invoice_number: number | string | null;
+          status: string | null;
+          payment_status: string | null;
+        } | null;
       } | null;
       unit_cost: number | string;
       line_total: number | string;
@@ -81,10 +88,15 @@ function toOrder(row: OrderRow): SupplierOrder {
         ...line,
         unit_cost: Number(line.unit_cost) || 0,
         line_total: Number(line.line_total) || 0,
+        purpose: piecePurpose(line.purpose),
         customer_order: customerLine
           ? {
               id: customerLine.order_id,
               invoice_number: customerLine.orders?.invoice_number ?? null,
+              cancelled: orderReleased(
+                customerLine.orders?.status,
+                customerLine.orders?.payment_status,
+              ),
             }
           : null,
       }))
@@ -195,6 +207,8 @@ export type OrderSupplierPiece = {
   quantity: number;
   received_quantity: number;
   unit_cost: number;
+  purpose: PiecePurpose;
+  work_note: string | null;
   po_id: string;
   po_number: string;
   po_status: SupplierOrderStatus;
@@ -215,7 +229,7 @@ export async function fetchOrderSupplierPieces(
   const { data, error } = await supabase
     .from("purchase_order_items")
     .select(
-      "id, order_item_id, quantity, received_quantity, unit_cost, po_id, purchase_orders!inner(po_number, status, expected_at, brand_id, vendor_id, vendors(name))",
+      "id, order_item_id, quantity, received_quantity, unit_cost, purpose, work_note, po_id, purchase_orders!inner(po_number, status, expected_at, brand_id, vendor_id, vendors(name))",
     )
     .in("order_item_id", [...orderItemIds])
     .eq("purchase_orders.brand_id", brandId)
@@ -228,6 +242,8 @@ export async function fetchOrderSupplierPieces(
     quantity: number;
     received_quantity: number;
     unit_cost: number | string;
+    purpose: string | null;
+    work_note: string | null;
     po_id: string;
     purchase_orders: {
       po_number: string;
@@ -243,6 +259,8 @@ export async function fetchOrderSupplierPieces(
     quantity: row.quantity,
     received_quantity: row.received_quantity,
     unit_cost: Number(row.unit_cost) || 0,
+    purpose: piecePurpose(row.purpose),
+    work_note: row.work_note,
     po_id: row.po_id,
     po_number: row.purchase_orders.po_number,
     po_status: row.purchase_orders.status as SupplierOrderStatus,
@@ -520,7 +538,13 @@ export async function sendOrderToSupplier(
   send: {
     vendorId: string;
     poId: string | null;
-    lines: Array<{ order_item_id: string; unit_cost: number }>;
+    lines: Array<{
+      order_item_id: string;
+      unit_cost: number;
+      /** Made (the default), back to be fixed, or altered; with what to do. */
+      purpose?: PiecePurpose;
+      note?: string;
+    }>;
     expectedAt: string | null;
   },
 ): Promise<string> {
@@ -534,4 +558,17 @@ export async function sendOrderToSupplier(
   });
   if (error) throw error;
   return data as string;
+}
+
+/**
+ * A customer cancelled after their piece was sent: stop it with the supplier (not arrived yet:
+ * nothing is owed for it), or keep it for sale as a size of the store's (it joins the stock when
+ * it arrives, or now if it already has).
+ */
+export async function releaseCustomerPiece(itemId: string, choice: "stop" | "stock") {
+  const { error } = await supabase.rpc("release_customer_piece", {
+    p_item_id: itemId,
+    p_choice: choice,
+  });
+  if (error) throw error;
 }

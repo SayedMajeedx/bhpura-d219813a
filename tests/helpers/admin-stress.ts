@@ -151,7 +151,11 @@ const purchaseOrders = [
         variant_id: "var-1",
         product_id: "prod-1",
         order_item_id: "item-1",
-        order_items: { order_id: "order-1", orders: { invoice_number: 1001 } },
+        // The customer cancelled: the piece waits for the store's choice.
+        order_items: {
+          order_id: "order-1",
+          orders: { invoice_number: 1001, status: "cancelled", payment_status: "refunded" },
+        },
         description: `${LONG_AR} ${UNBREAKABLE}`,
         quantity: 1,
         received_quantity: 0,

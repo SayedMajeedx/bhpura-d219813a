@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import ledgerFunctions from "../../supabase/migrations/20260926110000_inventory_ledger_functions.sql?raw";
 import reconciliation from "../../supabase/migrations/20260926130000_inventory_reconciliation_job.sql?raw";
 import partnerStock from "../../supabase/migrations/20261012160000_partner_stock_has_one_source.sql?raw";
+import orderStateMachine from "../../supabase/migrations/20260926120000_order_inventory_state_machine.sql?raw";
 
 /**
  * A real Postgres (PGlite) for supplier orders: the real stock ledger, its direct-write guard and
@@ -73,6 +74,7 @@ const SCHEMA = `
   CREATE TABLE public.orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL,
     status text DEFAULT 'confirmed', fulfillment_status text DEFAULT 'NEEDS_PACKING',
+    payment_status text DEFAULT 'paid', payment_method text DEFAULT 'card',
     updated_at timestamptz DEFAULT now()
   );
   CREATE TABLE public.order_items (
@@ -215,6 +217,8 @@ export async function openSupplierOrdersDb(migrations: string[]) {
     BEFORE UPDATE OF stock_main, stock_incubator ON public.product_variants
     FOR EACH ROW EXECUTE FUNCTION public.trg_guard_product_variants_stock_update()`);
   await db.exec(functionOf(reconciliation, "reconcile_inventory"));
+  // Whether an order is cancelled: the stock engine's own reading of it.
+  await db.exec(functionOf(orderStateMachine, "order_inventory_desired_state"));
   for (const sql of migrations) await db.exec(sql);
   await db.exec(GRANTS);
 

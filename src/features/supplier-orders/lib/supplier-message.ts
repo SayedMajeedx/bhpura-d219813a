@@ -20,6 +20,8 @@ export type MessagePiece = {
   extras: string[];
   /** The price agreed for one piece. */
   unitCost: number;
+  /** A piece back for a fix or an alteration: what to do, first thing the tailor reads. */
+  work?: { purpose: "fix" | "alteration"; note: string | null } | null;
 };
 
 /** "28/10/2026": a day as a message writes it, in Western digits. */
@@ -63,6 +65,17 @@ export function supplierMessage({
 
   const body = pieces.map((piece, index) => {
     const lines = [`${index + 1}) ${piece.title} × ${piece.quantity}`];
+    if (piece.work) {
+      const what =
+        piece.work.purpose === "fix"
+          ? isAr
+            ? "للتصليح"
+            : "To fix"
+          : isAr
+            ? "للتعديل"
+            : "To alter";
+      lines.push(piece.work.note ? `${what}: ${piece.work.note}` : what);
+    }
     if (piece.options.length) lines.push(rows(piece.options));
     if (piece.details.length) lines.push(rows(piece.details));
     if (piece.notes.length) lines.push(`${isAr ? "ملاحظات" : "Notes"}: ${piece.notes.join(" · ")}`);
@@ -103,6 +116,10 @@ export function messagePieces(
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((line) => {
       const sheet = line.order_item_id ? read.customerPiece(line.order_item_id) : null;
+      const work =
+        line.purpose === "fix" || line.purpose === "alteration"
+          ? { purpose: line.purpose, note: line.work_note ?? null }
+          : null;
       if (sheet) {
         return {
           title: sheet.title,
@@ -112,6 +129,7 @@ export function messagePieces(
           notes: sheet.notes,
           extras: sheet.extras,
           unitCost: line.unit_cost,
+          work,
         };
       }
       return {
@@ -125,6 +143,7 @@ export function messagePieces(
         notes: [],
         extras: [],
         unitCost: line.unit_cost,
+        work,
       };
     });
 }
