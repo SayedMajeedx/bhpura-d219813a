@@ -76,6 +76,33 @@ export const WORDS: Array<[code: string, ar: string, en: string]> = [
     "An order's state changes by receiving it. Refresh the page.",
   ],
   ["REQUEST_ID_REQUIRED", "تعذر الإرسال، حاول مرة أخرى.", "Could not send. Please try again."],
+  [
+    "CUSTOMER_PIECE_IS_SENT_FROM_ITS_ORDER",
+    "قطعة الزبون تُرسل من طلبه، ولا يتغير منها هنا إلا سعرها.",
+    "A customer's piece is sent from their order; only its price changes here.",
+  ],
+  [
+    "ORDER_LINE_ALREADY_WITH_SUPPLIER",
+    "هذه القطعة عند مورد آخر في طلبية مفتوحة.",
+    "This piece is already with a supplier on an open order.",
+  ],
+  [
+    "SUPPLIER_NOT_FOUND",
+    "هذا المورد غير موجود في متجرك. اختر مورداً آخر.",
+    "This supplier is not in your store. Choose another one.",
+  ],
+  ["NOTHING_TO_SEND", "اختر قطعة واحدة على الأقل.", "Choose at least one piece."],
+  [
+    "INVALID_PIECE_COST",
+    "اكتب تكلفة القطعة رقماً، صفراً أو أكثر.",
+    "Type the piece's cost as a number, zero or more.",
+  ],
+  [
+    "ORDER_LINE_NOT_FOUND",
+    "تغيّر طلب الزبون. حدّث الصفحة وأعد المحاولة.",
+    "The customer's order changed. Refresh the page and try again.",
+  ],
+  ["ORDER_NOT_FOUND", "لم يعد طلب الزبون موجوداً.", "The customer's order no longer exists."],
   ["INVALID_QUANTITY", "اكتب عدداً صحيحاً من القطع.", "Type a whole number of pieces."],
   ["NOTHING_TO_RECEIVE", "اكتب كم قطعة وصلت.", "Type how many pieces arrived."],
   ["NOT_AUTHORIZED", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],

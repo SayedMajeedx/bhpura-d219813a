@@ -19,7 +19,15 @@ export type SupplierOrderLine = {
   unit_cost: number;
   line_total: number;
   sort_order: number;
+  /** The customer's order line this piece is made for, when it is a customer's piece. */
+  order_item_id?: string | null;
+  /** That customer's order, to link to it (staff who cannot read orders see none). */
+  customer_order?: { id: string; invoice_number: number | string | null } | null;
 };
+
+/** A line that is a piece: a size of the store's, or a customer's piece. */
+export const isPieceLine = (line: Pick<SupplierOrderLine, "variant_id" | "order_item_id">) =>
+  Boolean(line.variant_id || line.order_item_id);
 
 export type SupplierOrder = {
   id: string;
@@ -49,7 +57,7 @@ export function piecesOf(order: Pick<SupplierOrder, "items">) {
   let ordered = 0;
   let received = 0;
   for (const line of order.items) {
-    if (!line.variant_id) continue;
+    if (!isPieceLine(line)) continue;
     ordered += line.quantity;
     received += line.received_quantity;
   }

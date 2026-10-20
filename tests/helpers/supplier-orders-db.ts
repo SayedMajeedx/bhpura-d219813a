@@ -70,6 +70,17 @@ const SCHEMA = `
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL, name text NOT NULL,
     created_at timestamptz NOT NULL DEFAULT now()
   );
+  CREATE TABLE public.orders (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL,
+    status text DEFAULT 'confirmed', fulfillment_status text DEFAULT 'NEEDS_PACKING',
+    updated_at timestamptz DEFAULT now()
+  );
+  CREATE TABLE public.order_items (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+    brand_id uuid, product_id uuid, variant_id uuid, quantity integer NOT NULL DEFAULT 1,
+    unit_cost numeric, description text, location text
+  );
   CREATE TABLE public.purchase_orders (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     brand_id uuid NOT NULL REFERENCES public.brands(id) ON DELETE CASCADE,

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { OrderTailorPieces } from "@/features/supplier-orders/components/OrderTailorPieces";
 import { Card } from "@/components/ui/card";
 import {
   FileText,
@@ -194,6 +195,17 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
           </p>
         </div>
       </div>
+
+      {/* Which tailor has the order's pieces, on which supplier order (staff who see costs). */}
+      {onPrintJobSheet && (
+        <OrderTailorPieces
+          brandId={brandId}
+          slug={slug}
+          lineIds={(items ?? []).map((it: { id?: string }) => it.id).filter(Boolean) as string[]}
+          currency={currency}
+          lang={lang}
+        />
+      )}
 
       {/* The workshop's job sheet: only for an order with a made-to-order piece */}
       {onPrintJobSheet && (

@@ -556,6 +556,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "send_order_to_supplier(p_order_id uuid, p_vendor_id uuid, p_po_id uuid, p_lines jsonb, p_expected_at date)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders and see the finances of the order's store: checked inside (can_access_brand, has_permission); the supplier and the supplier order must be the store's; a line is never sent twice"
+    },
     "set_booking_discount(p_booking_id uuid, p_amount numeric, p_label text)": {
       "anon": false,
       "authenticated": true,

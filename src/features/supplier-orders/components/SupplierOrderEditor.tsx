@@ -54,7 +54,11 @@ export function SupplierOrderEditor({
   );
   const priceOf = (productId: string) =>
     Number(catalog.productById.get(productId)?.base_price ?? 0) || 0;
-  const taken = useMemo(() => new Set(form.products.map((p) => p.productId)), [form.products]);
+  // A customer's piece of a product does not stop the store ordering that product for stock.
+  const taken = useMemo(
+    () => new Set(form.products.filter((p) => !p.customer).map((p) => p.productId)),
+    [form.products],
+  );
   const isNew = !order;
   const canDraft = isNew;
   usePhoneBottomBar("supplier-order-editor");

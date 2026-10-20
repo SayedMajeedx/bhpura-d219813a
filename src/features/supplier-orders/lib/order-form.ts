@@ -23,8 +23,19 @@ export type FormProduct = {
   key: string;
   productId: string;
   unitCost: string;
-  /** By variant id. */
+  /** By variant id (for a customer's piece, by its line's id). */
   sizes: Record<string, FormSize>;
+  /**
+   * A customer's piece, sent from their order: one line, its size and quantity fixed by the
+   * order (only its price changes here), never stock.
+   */
+  customer?: {
+    itemId: string;
+    variantId: string | null;
+    label: string;
+    orderId: string | null;
+    invoice: number | string | null;
+  };
 };
 
 export type FormCost = {
@@ -64,6 +75,28 @@ export function formFromOrder(order: SupplierOrder): SupplierOrderForm {
   const costs: FormCost[] = [];
   const sorted = [...order.items].sort((a, b) => a.sort_order - b.sort_order);
   for (const line of sorted) {
+    if (line.order_item_id) {
+      products.push({
+        key: formKey(),
+        productId: line.product_id ?? "",
+        unitCost: asText(line.unit_cost),
+        sizes: {
+          [line.id]: {
+            itemId: line.id,
+            quantity: String(line.quantity),
+            received: line.received_quantity,
+          },
+        },
+        customer: {
+          itemId: line.id,
+          variantId: line.variant_id,
+          label: line.description,
+          orderId: line.customer_order?.id ?? null,
+          invoice: line.customer_order?.invoice_number ?? null,
+        },
+      });
+      continue;
+    }
     if (!line.variant_id) {
       costs.push({
         key: formKey(),
@@ -75,7 +108,7 @@ export function formFromOrder(order: SupplierOrder): SupplierOrderForm {
       continue;
     }
     const productId = line.product_id ?? "";
-    let group = products.find((p) => p.productId === productId);
+    let group = products.find((p) => p.productId === productId && !p.customer);
     if (!group) {
       group = { key: formKey(), productId, unitCost: asText(line.unit_cost), sizes: {} };
       products.push(group);
@@ -193,6 +226,19 @@ export function planSave(
   const wanted: Array<LineValues & { id?: string }> = [];
   for (const product of form.products) {
     const unit = roundCost(Math.max(0, amountOf(product.unitCost) || 0));
+    if (product.customer) {
+      // A customer's piece keeps its line: only its price is the editor's.
+      const size = product.sizes[product.customer.itemId];
+      wanted.push({
+        id: product.customer.itemId,
+        variant_id: product.customer.variantId,
+        description: product.customer.label,
+        quantity: piecesOf(size?.quantity ?? "1") || 1,
+        unit_cost: unit,
+        sort_order: wanted.length,
+      });
+      continue;
+    }
     for (const [variantId, size] of Object.entries(product.sizes)) {
       const quantity = piecesOf(size.quantity) || 0;
       if (quantity <= 0) continue;
