@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { PackagePlus, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { useSupplierOrderEditor } from "../hooks/use-supplier-order-editor";
 import { usePhoneBottomBar } from "../hooks/use-phone-bottom-bar";
 import { ProductLinesCard } from "./ProductLinesCard";
 import { ProductPickerDialog } from "./ProductPickerDialog";
+import { NewProductDialog } from "./NewProductDialog";
+import { BillTotalCard } from "./BillTotalCard";
 import { SupplierField } from "./SupplierField";
 
 /**
@@ -44,6 +46,14 @@ export function SupplierOrderEditor({
   const editor = useSupplierOrderEditor({ brandId, order, catalog, lang, onSaved });
   const { form, setForm, figures, problems } = editor;
   const [picking, setPicking] = useState(false);
+  // A product not in the store yet: the name typed in the search, while its dialog is open.
+  const [newProductName, setNewProductName] = useState<string | null>(null);
+  // A saved order's total is its bill (the rest of the bill is one of its lines).
+  const [billText, setBillText] = useState(() =>
+    order && order.total_amount > 0 ? String(order.total_amount) : "",
+  );
+  const priceOf = (productId: string) =>
+    Number(catalog.productById.get(productId)?.base_price ?? 0) || 0;
   const taken = useMemo(() => new Set(form.products.map((p) => p.productId)), [form.products]);
   const isNew = !order;
   const canDraft = isNew;
@@ -83,19 +93,48 @@ export function SupplierOrderEditor({
           </Button>
         </div>
         {form.products.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => setPicking(true)}
+          <div
             className={cn(
-              "w-full rounded-xl border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground",
-              problems.some((p) => p.field === "pieces") &&
-                "border-destructive/60 text-destructive",
+              "space-y-3 rounded-xl border-2 border-dashed border-border p-4 text-sm sm:p-5",
+              problems.some((p) => p.field === "pieces") && "border-destructive/60",
             )}
           >
-            {isAr
-              ? "اختر المنتج الذي طلبته، ثم اكتب كم قطعة من كل مقاس."
-              : "Choose the product you ordered, then type how many of each size."}
-          </button>
+            <ol className="space-y-1.5 text-muted-foreground">
+              <li>
+                <strong className="text-foreground">1.</strong>{" "}
+                {isAr
+                  ? "أضف المنتج الذي طلبته: من منتجات متجرك، أو منتجاً جديداً لم يدخل المتجر بعد."
+                  : "Add the product you ordered: one of your store's, or a new one that is not in it yet."}
+              </li>
+              <li>
+                <strong className="text-foreground">2.</strong>{" "}
+                {isAr
+                  ? "اكتب تكلفة القطعة عليك، وكم قطعة من كل مقاس."
+                  : "Type what one piece costs you, and how many of each size."}
+              </li>
+              <li>
+                <strong className="text-foreground">3.</strong>{" "}
+                {isAr
+                  ? "أو اكتب إجمالي فاتورة المورد بالأسفل، ويوزّعه النظام على القطع."
+                  : "Or type the supplier's bill total below, and it is shared over the pieces."}
+              </li>
+            </ol>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={() => setPicking(true)} className="gap-1.5">
+                <Search className="h-4 w-4" aria-hidden="true" />
+                {isAr ? "من منتجاتي" : "From my products"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setNewProductName("")}
+                className="gap-1.5"
+              >
+                <PackagePlus className="h-4 w-4" aria-hidden="true" />
+                {isAr ? "منتج جديد" : "New product"}
+              </Button>
+            </div>
+          </div>
         ) : (
           form.products.map((product) => (
             <ProductLinesCard
@@ -113,6 +152,17 @@ export function SupplierOrderEditor({
           ))
         )}
       </section>
+
+      <BillTotalCard
+        form={form}
+        onForm={(next) => setForm(next)}
+        billText={billText}
+        onBillText={setBillText}
+        priceOf={priceOf}
+        currency={currency}
+        moneyLabel={moneyLabel}
+        lang={lang}
+      />
 
       <Card className="space-y-2 p-3 sm:p-4">
         <div className="flex items-start justify-between gap-2">
@@ -265,6 +315,20 @@ export function SupplierOrderEditor({
           editor.addProduct(productId);
           setPicking(false);
         }}
+        onNewProduct={(name) => {
+          setPicking(false);
+          setNewProductName(name);
+        }}
+      />
+      <NewProductDialog
+        open={newProductName !== null}
+        onOpenChange={(open) => !open && setNewProductName(null)}
+        brandId={brandId}
+        startName={newProductName ?? ""}
+        catalogVariants={catalog.variants}
+        moneyLabel={moneyLabel}
+        lang={lang}
+        onCreated={(productId) => editor.addProduct(productId)}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Package, Search } from "lucide-react";
+import { Package, Plus, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ export function ProductPickerDialog({
   catalog,
   taken,
   onPick,
+  onNewProduct,
   lang,
 }: {
   open: boolean;
@@ -28,6 +29,8 @@ export function ProductPickerDialog({
   catalog: SupplierCatalog;
   taken: ReadonlySet<string>;
   onPick: (productId: string) => void;
+  /** A product that is not in the store yet, starting from what was typed in the search. */
+  onNewProduct: (name: string) => void;
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
@@ -51,10 +54,37 @@ export function ProductPickerDialog({
           <DialogTitle>{isAr ? "إضافة منتج للطلبية" : "Add a product to the order"}</DialogTitle>
           <DialogDescription>
             {isAr
-              ? "اختر المنتج، ثم اكتب كم قطعة من كل مقاس."
-              : "Choose the product, then type how many of each size."}
+              ? "اختر منتجاً من متجرك، أو أنشئ منتجاً جديداً لم يدخل المتجر بعد."
+              : "Choose a product from your store, or make a new one that is not in it yet."}
           </DialogDescription>
         </DialogHeader>
+        <button
+          type="button"
+          onClick={() => {
+            onNewProduct(query);
+            setQuery("");
+          }}
+          className="flex w-full min-w-0 items-center gap-3 rounded-lg border border-dashed border-primary/40 p-2.5 text-start hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <Plus className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">
+              {isAr ? "منتج جديد" : "New product"}
+              {query.trim() && (
+                <span dir="auto" className="font-normal">
+                  {isAr ? `: «${query.trim()}»` : `: “${query.trim()}”`}
+                </span>
+              )}
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              {isAr
+                ? "تشكيلة جديدة: الاسم والمقاسات والسعر، ويبقى مخفياً عن المتجر"
+                : "A new collection: name, sizes and price, kept hidden from the store"}
+            </span>
+          </span>
+        </button>
         <div className="relative">
           <Search
             className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
