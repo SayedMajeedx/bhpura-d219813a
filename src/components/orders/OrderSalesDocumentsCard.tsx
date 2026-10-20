@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { OrderTailorPieces } from "@/features/supplier-orders/components/OrderTailorPieces";
+import { tailorPieceLines } from "@/features/supplier-orders/lib/after-sending";
+import { orderReleased } from "@/lib/order-released";
 import { Card } from "@/components/ui/card";
 import {
   FileText,
@@ -201,7 +203,9 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         <OrderTailorPieces
           brandId={brandId}
           slug={slug}
-          lineIds={(items ?? []).map((it: { id?: string }) => it.id).filter(Boolean) as string[]}
+          orderId={order.id}
+          lines={tailorPieceLines(items)}
+          cancelled={orderReleased(order.status, order.payment_status)}
           currency={currency}
           lang={lang}
         />

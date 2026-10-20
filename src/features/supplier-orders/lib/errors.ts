@@ -83,9 +83,31 @@ export const WORDS: Array<[code: string, ar: string, en: string]> = [
   ],
   [
     "ORDER_LINE_ALREADY_WITH_SUPPLIER",
-    "هذه القطعة عند مورد آخر في طلبية مفتوحة.",
-    "This piece is already with a supplier on an open order.",
+    "هذه القطعة عند مورد الآن في طلبية مفتوحة: تُرسل مرة أخرى بعد رجوعها.",
+    "This piece is with a supplier now, on an open order: it goes again once it is back.",
   ],
+  [
+    "ORDER_NOT_CANCELLED",
+    "طلب الزبون غير ملغى: القطعة له.",
+    "The customer's order is not cancelled: the piece is theirs.",
+  ],
+  [
+    "ORDER_CANCELLED",
+    "طلب الزبون ملغى، فلا تُرسل قطعه.",
+    "The customer's order is cancelled, so its pieces are not sent.",
+  ],
+  [
+    "PIECE_ALREADY_ARRIVED",
+    "وصلت القطعة من المورد، فلا تُوقف. احتفظ بها للبيع.",
+    "The piece has arrived, so it cannot be stopped. Keep it for sale instead.",
+  ],
+  [
+    "PIECE_HAS_NO_SIZE",
+    "هذه القطعة بلا مقاس من مقاسات المتجر، فلا تدخل المخزون.",
+    "This piece has none of the store's sizes, so it cannot join the stock.",
+  ],
+  ["INVALID_PURPOSE", "تعذر الإرسال، حدّث الصفحة.", "Could not send. Refresh the page."],
+  ["INVALID_CHOICE", "تعذر الحفظ، حدّث الصفحة.", "Could not save. Refresh the page."],
   [
     "SUPPLIER_NOT_FOUND",
     "هذا المورد غير موجود في متجرك. اختر مورداً آخر.",

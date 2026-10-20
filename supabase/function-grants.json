@@ -391,6 +391,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "release_customer_piece(p_item_id uuid, p_choice text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders and see the finances of the store: checked inside (can_access_brand, has_permission; manage_inventory to keep a piece for sale); only for a piece of a cancelled order"
+    },
     "replace_order_items(p_order_id uuid, p_items jsonb)": {
       "anon": false,
       "authenticated": true,

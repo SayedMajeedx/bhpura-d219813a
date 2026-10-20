@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import orders from "../supabase/migrations/20261019100000_supplier_orders_receive_into_stock.sql?raw";
 import payments from "../supabase/migrations/20261019110000_supplier_payments.sql?raw";
 import customerPieces from "../supabase/migrations/20261020100000_customer_pieces_to_supplier.sql?raw";
+import afterSending from "../supabase/migrations/20261021100000_customer_pieces_cancel_fix_alteration.sql?raw";
 import { WORDS, supplierOrderError } from "../src/features/supplier-orders/lib/errors";
 
 // A refusal from the database reaches the merchant in words, never as "Could not save": an order
@@ -14,7 +15,14 @@ const raised = (sql: string) =>
 
 describe("the supplier orders' refusals", () => {
   it("each have words of their own", () => {
-    const codes = [...new Set([...raised(orders), ...raised(payments), ...raised(customerPieces)])];
+    const codes = [
+      ...new Set([
+        ...raised(orders),
+        ...raised(payments),
+        ...raised(customerPieces),
+        ...raised(afterSending),
+      ]),
+    ];
     expect(codes.length).toBeGreaterThan(15);
     const unworded = codes.filter((code) => !WORDS.some(([key]) => code.includes(key)));
     expect(unworded).toEqual([]);

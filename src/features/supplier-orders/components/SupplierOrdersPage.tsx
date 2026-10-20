@@ -26,6 +26,7 @@ import {
 import { SupplierOrderCard } from "./SupplierOrderCard";
 import { SupplierBalancesList } from "./SupplierBalancesList";
 import { PiecesToMakeTab } from "./PiecesToMakeTab";
+import { CancelledPiecesNotice } from "./CancelledPiecesNotice";
 import { usePiecesToMake } from "../hooks/use-pieces-to-make";
 import { useProfile } from "@/lib/profile-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -150,6 +151,8 @@ export function SupplierOrdersPage() {
               value={formatMoney(summary.owed, currency, lang)}
             />
           </dl>
+
+          <CancelledPiecesNotice orders={orders} slug={brand.slug} lang={lang} />
 
           <div
             role="tablist"
