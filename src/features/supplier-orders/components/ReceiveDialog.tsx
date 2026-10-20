@@ -17,6 +17,7 @@ import { formatMoney } from "@/lib/format";
 import { invalidateAfterReceipt, receiveSupplierOrder } from "@/lib/data/supplier-orders";
 import { allRemaining, planReceive, receiveRows } from "../lib/receive-plan";
 import { supplierOrderError } from "../lib/errors";
+import { customerOrderName } from "../lib/customer-pieces";
 import { piecesLabel, type SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 
@@ -111,7 +112,7 @@ export function ReceiveDialog({
             const fieldId = `${uid}-${row.itemId}`;
             const preview = previews.get(row.itemId);
             const bad = !plan.ok && "itemId" in plan && plan.itemId === row.itemId;
-            const variant = catalog.variantById.get(row.variantId);
+            const variant = row.variantId ? catalog.variantById.get(row.variantId) : undefined;
             return (
               <li key={row.itemId} className="rounded-lg border border-border-subtle p-2.5">
                 <div className="flex min-w-0 items-center gap-3">
@@ -120,10 +121,12 @@ export function ReceiveDialog({
                       dir="auto"
                       className="text-page-start line-clamp-2 break-words text-sm font-semibold"
                     >
-                      {catalog.productName(variant?.product_id)}
+                      {row.customer ? row.customer.label : catalog.productName(variant?.product_id)}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {catalog.sizeName(row.variantId)}
+                      {row.customer
+                        ? customerOrderName(row.customer.invoice, isAr)
+                        : catalog.sizeName(row.variantId)}
                       {" · "}
                       {isAr
                         ? `باقي ${row.remaining} من ${row.ordered}`
@@ -150,7 +153,17 @@ export function ReceiveDialog({
                         : "A whole number of pieces."}
                   </p>
                 )}
-                {preview && (
+                {preview && row.customer && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    {isAr
+                      ? "لا تدخل المخزون: هي مباعة للزبون. تكلفتها على طلبه "
+                      : "Not added to stock: it is sold to the customer. Its cost on their order "}
+                    <strong className="text-foreground">
+                      {formatMoney(preview.costAfter, currency, lang)}
+                    </strong>
+                  </p>
+                )}
+                {preview && !row.customer && (
                   <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       {isAr ? "المخزون" : "Stock"} {row.onHand}

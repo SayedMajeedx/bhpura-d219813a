@@ -1,11 +1,13 @@
 import { useId } from "react";
-import { Lock, Package, Trash2 } from "lucide-react";
+import { Lock, Package, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { costLocked, type FormProblem, type FormProduct } from "../lib/order-form";
+import { customerOrderName } from "../lib/customer-pieces";
+import { piecesLabel } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 
 /** One product of a supplier's order: its cost per piece and how many of each size. */
@@ -50,6 +52,54 @@ export function ProductLinesCard({
         [variantId]: { ...(product.sizes[variantId] ?? { received: 0 }), quantity },
       },
     });
+
+  // A customer's piece, sent from their order: its price is all this card changes.
+  if (product.customer) {
+    const size = product.sizes[product.customer.itemId];
+    return (
+      <Card className="space-y-2 border-primary/30 p-3 sm:p-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+            <UserRound className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-primary">
+              {customerOrderName(product.customer.invoice, isAr)}
+            </p>
+            <h3 dir="auto" className="text-page-start line-clamp-2 break-words font-bold">
+              {product.customer.label}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {piecesLabel(Number(size?.quantity) || 1, lang)}
+              {(size?.received ?? 0) > 0 &&
+                (isAr ? ` · وصل ${size?.received}` : ` · ${size?.received} arrived`)}
+            </p>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label htmlFor={`${uid}-cost`} className="text-xs font-semibold">
+            {isAr ? `تكلفة القطعة (${moneyLabel})` : `Cost per piece (${moneyLabel})`}
+          </label>
+          <Input
+            id={`${uid}-cost`}
+            inputMode="decimal"
+            value={product.unitCost}
+            disabled={locked}
+            onChange={(e) => onChange({ ...product, unitCost: e.target.value })}
+            aria-invalid={costProblem || undefined}
+            className="max-w-40 font-mono tabular-nums"
+          />
+          {perPiece !== undefined && perPiece !== unit && (
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? `مع نصيبها من التكاليف الأخرى: ${formatMoney(perPiece, currency, lang)}`
+                : `With its share of the other costs: ${formatMoney(perPiece, currency, lang)}`}
+            </p>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn("space-y-3 p-3 sm:p-4", emptyProblem && "border-destructive/50")}>

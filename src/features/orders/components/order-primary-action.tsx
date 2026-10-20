@@ -23,6 +23,10 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { courierCompleteDelivery, invalidateOrders, updateOrder } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { workshopActionLabels } from "@/lib/store-vocabulary";
+import {
+  ReceiveFromTailorButton,
+  SendToTailorButton,
+} from "@/features/supplier-orders/components/TailorButtons";
 
 export type OrderPrimaryActionContext = {
   approveBenefitPayment: () => Promise<void>;
@@ -91,87 +95,106 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
   };
 
   if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
+    // After the stage moves (on a supplier's order or as a stage alone): tell, log, refresh.
+    const afterSend = async () => {
+      toast.success(
+        vocabulary.sent_to_workshop_success[lang] ||
+          (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
+        workshop?.tellCustomerWorkStarted
+          ? {
+              duration: 12000,
+              action: {
+                label: lang === "ar" ? "أبلغ العميل واتساب" : "Tell the customer",
+                onClick: workshop.tellCustomerWorkStarted,
+              },
+            }
+          : undefined,
+      );
+      await logActivity({
+        action: "status_change",
+        order_id: order.id,
+        en: "Sent order to workshop for processing",
+        ar: "تحويل الطلب إلى الورشة للتجهيز",
+      });
+      await orderQ.refetch();
+      invalidateOrders(qc, brandId);
+      invalidateActivityLogs(qc);
+    };
+    const plainSend = async () => {
+      try {
+        await updateOrder(brandId, order.id, {
+          status: "sent_to_tailor",
+          fulfillment_status: "SENT_TO_TAILOR",
+          updated_at: new Date().toISOString(),
+        });
+        await afterSend();
+      } catch (err: unknown) {
+        toast.error(
+          getFriendlyErrorMessage(err) ||
+            (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+        );
+      }
+    };
     return (
-      <Button
+      <SendToTailorButton
+        brandId={brandId}
+        orderId={order.id}
+        lines={items}
+        lang={lang === "ar" ? "ar" : "en"}
         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-        onClick={async () => {
-          try {
-            await updateOrder(brandId, order.id, {
-              status: "sent_to_tailor",
-              fulfillment_status: "SENT_TO_TAILOR",
-              updated_at: new Date().toISOString(),
-            });
-            toast.success(
-              vocabulary.sent_to_workshop_success[lang] ||
-                (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
-              workshop?.tellCustomerWorkStarted
-                ? {
-                    duration: 12000,
-                    action: {
-                      label: lang === "ar" ? "أبلغ العميل واتساب" : "Tell the customer",
-                      onClick: workshop.tellCustomerWorkStarted,
-                    },
-                  }
-                : undefined,
-            );
-            await logActivity({
-              action: "status_change",
-              order_id: order.id,
-              en: "Sent order to workshop for processing",
-              ar: "تحويل الطلب إلى الورشة للتجهيز",
-            });
-            await orderQ.refetch();
-            invalidateOrders(qc, brandId);
-            invalidateActivityLogs(qc);
-          } catch (err: unknown) {
-            toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-            );
-          }
-        }}
+        onPlainSend={plainSend}
+        onSent={afterSend}
+        title={workshopActionLabels(vocabulary, lang).send}
       >
         <Scissors className="h-4 w-4 me-1.5" />
         {workshopActionLabels(vocabulary, lang).send}
-      </Button>
+      </SendToTailorButton>
     );
   }
 
   if (storeProfile.modules.made_to_order && workflow.nextAction === "receive_from_tailor") {
+    const afterReceive = async () => {
+      toast.success(
+        vocabulary.received_from_workshop_success[lang] ||
+          (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
+      );
+      await logActivity({
+        action: "status_change",
+        order_id: order.id,
+        en: "Received customized order from workshop",
+        ar: "تم استلام الطلب الجاهز من الورشة",
+      });
+      await orderQ.refetch();
+      invalidateOrders(qc, brandId);
+      invalidateActivityLogs(qc);
+    };
+    const plainReceive = async () => {
+      try {
+        await updateOrder(brandId, order.id, {
+          status: "received_from_tailor",
+          fulfillment_status: "RECEIVED_FROM_TAILOR",
+          updated_at: new Date().toISOString(),
+        });
+        await afterReceive();
+      } catch (err: unknown) {
+        toast.error(
+          getFriendlyErrorMessage(err) ||
+            (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+        );
+      }
+    };
     return (
-      <Button
+      <ReceiveFromTailorButton
+        brandId={brandId}
+        lines={items}
+        lang={lang === "ar" ? "ar" : "en"}
         className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-        onClick={async () => {
-          try {
-            await updateOrder(brandId, order.id, {
-              status: "received_from_tailor",
-              fulfillment_status: "RECEIVED_FROM_TAILOR",
-              updated_at: new Date().toISOString(),
-            });
-            toast.success(
-              vocabulary.received_from_workshop_success[lang] ||
-                (lang === "ar" ? "تم استلام الطلب من الورشة وتجهيزه" : "Received from workshop"),
-            );
-            await logActivity({
-              action: "status_change",
-              order_id: order.id,
-              en: "Received customized order from workshop",
-              ar: "تم استلام الطلب الجاهز من الورشة",
-            });
-            await orderQ.refetch();
-            invalidateOrders(qc, brandId);
-            invalidateActivityLogs(qc);
-          } catch (err: unknown) {
-            toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
-            );
-          }
-        }}
+        onPlainReceive={plainReceive}
+        onReceived={afterReceive}
       >
         <PackageCheck className="h-4 w-4 me-1.5" />
         {workshopActionLabels(vocabulary, lang).receive}
-      </Button>
+      </ReceiveFromTailorButton>
     );
   }
 

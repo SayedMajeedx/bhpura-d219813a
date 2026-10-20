@@ -262,6 +262,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>;
 }
 
+/**
+ * The profile when there is one (a part that also renders outside the admin's provider, such as
+ * an order's documents in a preview, reads null and leaves out what needs the signed-in person).
+ */
+export function useProfileOptional() {
+  return useContext(ProfileContext);
+}
+
 export function useProfile() {
   const ctx = useContext(ProfileContext);
   if (!ctx) {

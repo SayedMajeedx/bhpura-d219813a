@@ -1,5 +1,5 @@
 import { averageCost, landedUnitCosts } from "./landed-cost";
-import type { SupplierOrderLine } from "./order-state";
+import { isPieceLine, type SupplierOrderLine } from "./order-state";
 
 /**
  * Receiving a supplier's order: how many of each size arrived now, and what that does to the
@@ -9,7 +9,13 @@ import type { SupplierOrderLine } from "./order-state";
 
 export type ReceiveRow = {
   itemId: string;
-  variantId: string;
+  /** The size received into stock; null for a customer's piece with no size of its own. */
+  variantId: string | null;
+  /**
+   * A customer's piece: it never joins the stock (it is sold already); its order line takes the
+   * cost. The customer's order, to name it.
+   */
+  customer: { orderId: string | null; invoice: number | string | null; label: string } | null;
   ordered: number;
   received: number;
   remaining: number;
@@ -28,19 +34,27 @@ export function receiveRows(
   const landed = landedUnitCosts(
     items.map((line) => ({
       id: line.id,
-      isPiece: Boolean(line.variant_id),
+      isPiece: isPieceLine(line),
       quantity: line.quantity,
       unitCost: Number(line.unit_cost) || 0,
     })),
   );
   return [...items]
     .sort((a, b) => a.sort_order - b.sort_order)
-    .filter((line) => line.variant_id && line.received_quantity < line.quantity)
+    .filter((line) => isPieceLine(line) && line.received_quantity < line.quantity)
     .map((line) => {
-      const now = shelf.get(line.variant_id as string);
+      const isCustomer = Boolean(line.order_item_id);
+      const now = !isCustomer && line.variant_id ? shelf.get(line.variant_id) : undefined;
       return {
         itemId: line.id,
-        variantId: line.variant_id as string,
+        variantId: line.variant_id,
+        customer: isCustomer
+          ? {
+              orderId: line.customer_order?.id ?? null,
+              invoice: line.customer_order?.invoice_number ?? null,
+              label: line.description,
+            }
+          : null,
         ordered: line.quantity,
         received: line.received_quantity,
         remaining: line.quantity - line.received_quantity,
@@ -85,17 +99,22 @@ export function planReceive(
     if (quantity === 0) continue;
     if (quantity > row.remaining) return { ok: false, problem: "too_many", itemId: row.itemId };
     lines.push({ item_id: row.itemId, quantity });
-    preview.push({
-      itemId: row.itemId,
-      quantity,
-      stockAfter: Math.max(0, row.onHand) + quantity,
-      costAfter: averageCost({
-        onHand: row.onHand,
-        costBefore: row.costBefore,
-        received: quantity,
-        unitCost: row.unitCost,
-      }),
-    });
+    preview.push(
+      row.customer
+        ? // A customer's piece: no stock moves; its order line takes this cost.
+          { itemId: row.itemId, quantity, stockAfter: row.onHand, costAfter: row.unitCost }
+        : {
+            itemId: row.itemId,
+            quantity,
+            stockAfter: Math.max(0, row.onHand) + quantity,
+            costAfter: averageCost({
+              onHand: row.onHand,
+              costBefore: row.costBefore,
+              received: quantity,
+              unitCost: row.unitCost,
+            }),
+          },
+    );
   }
   if (lines.length === 0) return { ok: false, problem: "nothing" };
   return { ok: true, lines, preview };

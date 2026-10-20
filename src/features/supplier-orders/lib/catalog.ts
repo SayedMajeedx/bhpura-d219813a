@@ -14,6 +14,8 @@ export type CatalogProduct = {
   image_url: string | null;
   /** The product's regular selling price (sharing a bill by price reads it). */
   base_price?: number | null;
+  /** What a piece costs the store (staff who may see costs only). */
+  cost_price?: number | null;
   item_kind?: string | null;
   is_package?: boolean | null;
   tracks_inventory?: boolean | null;

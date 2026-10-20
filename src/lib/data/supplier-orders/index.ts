@@ -26,10 +26,15 @@ export const supplierOrderKeys = {
     [...supplierOrderKeys.all(brandId), "receipts", id] as const,
   payments: (brandId: string, id: string) =>
     [...supplierOrderKeys.all(brandId), "payments", id] as const,
+  /** A customer's order's pieces with suppliers (by its order lines). */
+  orderPieces: (brandId: string, orderItemIds: readonly string[]) =>
+    [...supplierOrderKeys.all(brandId), "order-pieces", ...orderItemIds] as const,
+  lastPrices: (brandId: string, vendorId: string, productIds: readonly string[]) =>
+    [...supplierOrderKeys.all(brandId), "last-prices", vendorId, ...productIds] as const,
 };
 
 const ORDER_SELECT =
-  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, description, quantity, received_quantity, unit_cost, line_total, sort_order)";
+  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, order_items(order_id, orders(invoice_number)))";
 
 type OrderRow = {
   id: string;
@@ -44,7 +49,11 @@ type OrderRow = {
   notes: string | null;
   vendors: { name: string; phone: string | null } | null;
   purchase_order_items: Array<
-    Omit<SupplierOrderLine, "unit_cost" | "line_total"> & {
+    Omit<SupplierOrderLine, "unit_cost" | "line_total" | "customer_order"> & {
+      order_items?: {
+        order_id: string;
+        orders: { invoice_number: number | string | null } | null;
+      } | null;
       unit_cost: number | string;
       line_total: number | string;
     }
@@ -66,10 +75,16 @@ function toOrder(row: OrderRow): SupplierOrder {
     created_at: row.created_at,
     notes: row.notes,
     items: (row.purchase_order_items ?? [])
-      .map((line) => ({
+      .map(({ order_items: customerLine, ...line }) => ({
         ...line,
         unit_cost: Number(line.unit_cost) || 0,
         line_total: Number(line.line_total) || 0,
+        customer_order: customerLine
+          ? {
+              id: customerLine.order_id,
+              invoice_number: customerLine.orders?.invoice_number ?? null,
+            }
+          : null,
       }))
       .sort((a, b) => a.sort_order - b.sort_order),
   };
@@ -172,6 +187,108 @@ export async function fetchSupplierPayments(
   return rows.map((row) => ({ ...row, amount: Number(row.amount) || 0 }));
 }
 
+export type OrderSupplierPiece = {
+  id: string;
+  order_item_id: string;
+  quantity: number;
+  received_quantity: number;
+  unit_cost: number;
+  po_id: string;
+  po_number: string;
+  po_status: SupplierOrderStatus;
+  expected_at: string | null;
+  vendor_id: string;
+  vendor_name: string;
+};
+
+/**
+ * Where a customer's order's pieces are with suppliers: each sent line with its supplier order
+ * (a cancelled one is left out: the piece is no longer awaited from it).
+ */
+export async function fetchOrderSupplierPieces(
+  brandId: string,
+  orderItemIds: readonly string[],
+): Promise<OrderSupplierPiece[]> {
+  if (orderItemIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from("purchase_order_items")
+    .select(
+      "id, order_item_id, quantity, received_quantity, unit_cost, po_id, purchase_orders!inner(po_number, status, expected_at, brand_id, vendor_id, vendors(name))",
+    )
+    .in("order_item_id", [...orderItemIds])
+    .eq("purchase_orders.brand_id", brandId)
+    .neq("purchase_orders.status", "cancelled")
+    .limit(200);
+  if (error) throw error;
+  type Row = {
+    id: string;
+    order_item_id: string;
+    quantity: number;
+    received_quantity: number;
+    unit_cost: number | string;
+    po_id: string;
+    purchase_orders: {
+      po_number: string;
+      status: string;
+      expected_at: string | null;
+      vendor_id: string;
+      vendors: { name: string } | null;
+    };
+  };
+  return ((data ?? []) as unknown as Row[]).map((row) => ({
+    id: row.id,
+    order_item_id: row.order_item_id,
+    quantity: row.quantity,
+    received_quantity: row.received_quantity,
+    unit_cost: Number(row.unit_cost) || 0,
+    po_id: row.po_id,
+    po_number: row.purchase_orders.po_number,
+    po_status: row.purchase_orders.status as SupplierOrderStatus,
+    expected_at: row.purchase_orders.expected_at,
+    vendor_id: row.purchase_orders.vendor_id,
+    vendor_name: row.purchase_orders.vendors?.name ?? "",
+  }));
+}
+
+/**
+ * What this supplier last charged for each of these products (a piece's price on its newest
+ * order), as a start for what they charge this time: a tailor's price changes, so it is only
+ * a suggestion.
+ */
+export async function fetchLastSupplierPrices(
+  brandId: string,
+  vendorId: string,
+  productIds: readonly string[],
+): Promise<Map<string, number>> {
+  if (!vendorId || productIds.length === 0) return new Map();
+  const { data, error } = await supabase
+    .from("purchase_order_items")
+    .select("product_id, unit_cost, purchase_orders!inner(created_at, brand_id, vendor_id, status)")
+    .in("product_id", [...productIds])
+    .eq("purchase_orders.brand_id", brandId)
+    .eq("purchase_orders.vendor_id", vendorId)
+    .neq("purchase_orders.status", "cancelled")
+    .gt("unit_cost", 0)
+    .limit(500);
+  if (error) throw error;
+  type Row = {
+    product_id: string;
+    unit_cost: number | string;
+    purchase_orders: { created_at: string };
+  };
+  const newest = new Map<string, { at: string; cost: number }>();
+  for (const row of (data ?? []) as unknown as Row[]) {
+    const seen = newest.get(row.product_id);
+    if (!seen || row.purchase_orders.created_at > seen.at) {
+      newest.set(row.product_id, {
+        at: row.purchase_orders.created_at,
+        cost: Number(row.unit_cost),
+      });
+    }
+  }
+  return new Map([...newest].map(([id, { cost }]) => [id, cost]));
+}
+
 export const supplierOrderQueries = {
   list: (brandId: string) =>
     queryOptions({
@@ -190,6 +307,18 @@ export const supplierOrderQueries = {
       queryKey: supplierOrderKeys.receipts(brandId, orderId),
       queryFn: () => fetchSupplierReceipts(brandId, orderId),
       enabled: Boolean(brandId && orderId),
+    }),
+  orderPieces: (brandId: string, orderItemIds: readonly string[]) =>
+    queryOptions({
+      queryKey: supplierOrderKeys.orderPieces(brandId, orderItemIds),
+      queryFn: () => fetchOrderSupplierPieces(brandId, orderItemIds),
+      enabled: Boolean(brandId) && orderItemIds.length > 0,
+    }),
+  lastPrices: (brandId: string, vendorId: string, productIds: readonly string[]) =>
+    queryOptions({
+      queryKey: supplierOrderKeys.lastPrices(brandId, vendorId, productIds),
+      queryFn: () => fetchLastSupplierPrices(brandId, vendorId, productIds),
+      enabled: Boolean(brandId && vendorId) && productIds.length > 0,
     }),
   payments: (brandId: string, orderId: string) =>
     queryOptions({
@@ -352,4 +481,30 @@ export function invalidateAfterReceipt(qc: QueryClient, brandId: string) {
     qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) }),
     qc.invalidateQueries({ queryKey: catalogKeys.products(brandId) }),
   ]);
+}
+
+/**
+ * Sends a customer's workshop lines to a supplier in one transaction: on one of the supplier's
+ * open orders (`poId`) or a new one due `expectedAt`, each at the price the tailor asked this
+ * time; the customer's order moves to "sent to the workshop". Returns the supplier order's id.
+ */
+export async function sendOrderToSupplier(
+  orderId: string,
+  send: {
+    vendorId: string;
+    poId: string | null;
+    lines: Array<{ order_item_id: string; unit_cost: number }>;
+    expectedAt: string | null;
+  },
+): Promise<string> {
+  const { data, error } = await supabase.rpc("send_order_to_supplier", {
+    p_order_id: orderId,
+    p_vendor_id: send.vendorId,
+    // Null makes a new order: the function takes it, though the generated type names a string.
+    p_po_id: send.poId as string,
+    p_lines: send.lines,
+    p_expected_at: send.expectedAt ?? undefined,
+  });
+  if (error) throw error;
+  return data as string;
 }

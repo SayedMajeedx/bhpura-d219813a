@@ -147,6 +147,19 @@ const purchaseOrders = [
         sort_order: 0,
       },
       {
+        id: "po-item-customer",
+        variant_id: "var-1",
+        product_id: "prod-1",
+        order_item_id: "item-1",
+        order_items: { order_id: "order-1", orders: { invoice_number: 1001 } },
+        description: `${LONG_AR} ${UNBREAKABLE}`,
+        quantity: 1,
+        received_quantity: 0,
+        unit_cost: 18,
+        line_total: 18,
+        sort_order: 2,
+      },
+      {
         id: "po-item-2",
         variant_id: null,
         product_id: null,
@@ -205,7 +218,17 @@ const user = {
   aud: "authenticated",
 };
 
-export async function signInWithStressData(page: Page, lang: "ar" | "en") {
+/** Small changes to the fake store for one look (an order paid, a store that makes to order). */
+export type StressTweaks = {
+  order?: (order: Record<string, unknown>) => Record<string, unknown>;
+  settings?: (settings: Record<string, unknown>) => Record<string, unknown>;
+};
+
+export async function signInWithStressData(
+  page: Page,
+  lang: "ar" | "en",
+  tweaks: StressTweaks = {},
+) {
   await page.addInitScript(
     ({ user, lang }) => {
       const session = {
@@ -267,23 +290,24 @@ export async function signInWithStressData(page: Page, lang: "ar" | "en") {
       ]);
     }
     if (url.includes("/business_settings")) {
-      return answer([
-        {
-          id: "setting-1",
-          brand_id: BRAND,
-          business_name: brand.name_en,
-          currency: "BHD",
-          card_processing_fee: 2.5,
-          benefit_processing_fee: 1,
-        },
-      ]);
+      const settings = {
+        id: "setting-1",
+        brand_id: BRAND,
+        business_name: brand.name_en,
+        currency: "BHD",
+        card_processing_fee: 2.5,
+        benefit_processing_fee: 1,
+      };
+      return answer([tweaks.settings ? tweaks.settings(settings) : settings]);
     }
     if (url.includes("/purchase_order_receipts")) return answer(purchaseReceipts);
     if (url.includes("/purchase_order_payments")) return answer(purchasePayments);
     if (url.includes("/purchase_orders")) return answer(purchaseOrders);
     if (url.includes("/vendors")) return answer(vendors);
     if (url.includes("/order_items")) return answer(orders[0].order_items);
-    if (url.includes("/orders")) return answer(orders, { "content-range": "0-0/1" });
+    if (url.includes("/orders")) {
+      return answer(tweaks.order ? orders.map(tweaks.order) : orders, { "content-range": "0-0/1" });
+    }
     if (url.includes("/customers")) return answer([customer], { "content-range": "0-0/1" });
     if (url.includes("/product_variants")) return answer(variants);
     if (url.includes("/products")) return answer(products);

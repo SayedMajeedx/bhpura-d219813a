@@ -1,12 +1,16 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { useBrand } from "@/lib/brand-context";
 import { CalendarClock, MessageCircle, Package } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { landedUnitCosts } from "../lib/landed-cost";
+import { customerOrderName } from "../lib/customer-pieces";
 import {
   isLate,
+  isPieceLine,
   piecesLabel,
   piecesOf,
   type SupplierOrder,
@@ -38,6 +42,7 @@ export function SupplierOrderView({
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
+  const brand = useBrand();
   const locale = isAr ? "ar-BH" : "en-BH";
   const pieces = piecesOf(order);
   const late = isLate(order, today);
@@ -50,7 +55,7 @@ export function SupplierOrderView({
       landedUnitCosts(
         order.items.map((line) => ({
           id: line.id,
-          isPiece: Boolean(line.variant_id),
+          isPiece: isPieceLine(line),
           quantity: line.quantity,
           unitCost: line.unit_cost,
         })),
@@ -60,13 +65,14 @@ export function SupplierOrderView({
   const groups = useMemo(() => {
     const map = new Map<string, SupplierOrderLine[]>();
     for (const line of order.items) {
-      if (!line.variant_id) continue;
+      if (!line.variant_id || line.order_item_id) continue;
       const key = line.product_id ?? line.id;
       map.set(key, [...(map.get(key) ?? []), line]);
     }
     return [...map.entries()];
   }, [order.items]);
-  const extras = order.items.filter((line) => !line.variant_id);
+  const extras = order.items.filter((line) => !isPieceLine(line));
+  const customerLines = order.items.filter((line) => line.order_item_id);
   const money = (n: number) => formatMoney(n, currency, lang);
 
   return (
@@ -200,6 +206,51 @@ export function SupplierOrderView({
             </Card>
           );
         })}
+        {customerLines.length > 0 && (
+          <Card className="p-3 sm:p-4">
+            <h3 className="mb-2 font-bold">{isAr ? "قطع الزبائن" : "Customer pieces"}</h3>
+            <ul className="divide-y divide-border-subtle text-sm">
+              {customerLines.map((line) => (
+                <li key={line.id} className="flex min-w-0 items-center gap-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p
+                      dir="auto"
+                      className="text-page-start line-clamp-2 break-words font-semibold"
+                    >
+                      {line.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {line.customer_order ? (
+                        <Link
+                          to="/admin/b/$slug/orders/$id"
+                          params={{ slug: brand.slug, id: line.customer_order.id }}
+                          className="text-primary hover:underline"
+                        >
+                          {customerOrderName(line.customer_order.invoice_number, isAr)}
+                        </Link>
+                      ) : (
+                        customerOrderName(null, isAr)
+                      )}
+                    </p>
+                  </div>
+                  <span dir="ltr" className="shrink-0 whitespace-nowrap px-2 tabular-nums">
+                    <span
+                      className={
+                        line.received_quantity >= line.quantity ? "font-bold text-success" : ""
+                      }
+                    >
+                      {line.received_quantity}
+                    </span>
+                    <span className="text-muted-foreground"> / {line.quantity}</span>
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    {money(landed.get(line.id) ?? line.unit_cost)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
       </section>
 
       {extras.length > 0 && (
