@@ -38,7 +38,7 @@ export const supplierOrderKeys = {
 };
 
 const ORDER_SELECT =
-  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, purpose, work_note, released_order_item_id, order_items(order_id, orders(invoice_number, status, payment_status)))";
+  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, purpose, work_note, released_order_item_id, order_items!purchase_order_items_order_item_id_fkey(order_id, orders(invoice_number, status, payment_status)))";
 
 type OrderRow = {
   id: string;
