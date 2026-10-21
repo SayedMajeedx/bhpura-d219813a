@@ -191,6 +191,25 @@ export async function fetchReportingMargins(
   return data ?? [];
 }
 
+/**
+ * What customers and partner shops owe the store today (`rpc_reporting_receivables`): each open
+ * order with when it was handed over, and each partner's due and overdue. `today` is the
+ * reader's own calendar day (`YYYY-MM-DD`).
+ */
+export async function fetchReportingReceivables(
+  today: string,
+  tz: string,
+  brandSlug?: string,
+): Promise<unknown> {
+  const { data, error } = await supabase.rpc("rpc_reporting_receivables", {
+    p_today: today,
+    p_tz: tz,
+    p_brand_slug: brandSlug || undefined,
+  });
+  if (error) throw error;
+  return data ?? {};
+}
+
 // Sales metrics
 export async function fetchReportingSales(
   range: DateRange,

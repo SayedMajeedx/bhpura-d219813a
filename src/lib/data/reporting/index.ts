@@ -6,6 +6,7 @@ import {
   fetchReportingOverview,
   fetchReportingMargins,
   fetchReportingPeriods,
+  fetchReportingReceivables,
   fetchReportingProducts,
   fetchReportingSales,
   type ReportInterval,
@@ -76,6 +77,8 @@ export const reportingKeys = {
     ] as const,
   margins: (slug: string, range: DateRange, includeHistorical: boolean) =>
     [...reportingKeys.all(slug), "margins", ...iso(range), includeHistorical] as const,
+  receivables: (slug: string, today: string, timezone: string) =>
+    [...reportingKeys.all(slug), "receivables", today, timezone] as const,
   incubatorSales: (slug: string) => [...reportingKeys.all(slug), "incubator-sales"] as const,
   /** Catalog inquiries by brand, optionally within a date range (ISO strings). */
   catalogInquiries: (brandId: string, from?: string, to?: string) =>
@@ -120,6 +123,13 @@ export type IncubatorSalesBucket = {
 };
 
 export const reportingQueries = {
+  /** What customers and partner shops owe today: `readReceivables` reads it. */
+  receivables: (slug: string, today: string, timezone: string) =>
+    queryOptions({
+      queryKey: reportingKeys.receivables(slug, today, timezone),
+      queryFn: () => fetchReportingReceivables(today, timezone, slug),
+      enabled: Boolean(slug && today),
+    }),
   /** Margin by product for a period: `marginRows` reads it. */
   margins: (slug: string, range: DateRange | undefined, includeHistorical: boolean) =>
     queryOptions({

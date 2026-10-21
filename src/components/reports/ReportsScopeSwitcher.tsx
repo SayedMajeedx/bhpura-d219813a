@@ -9,6 +9,7 @@ import {
   MoreHorizontal,
   Table2,
   Percent,
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -44,6 +45,13 @@ const navItems = [
     icon: Percent,
     en: "Margins",
     ar: "الهوامش",
+  },
+  {
+    id: "balances",
+    path: "/admin/b/$slug/reports/balances",
+    icon: HandCoins,
+    en: "Customer balances",
+    ar: "أرصدة العملاء",
   },
   {
     id: "sales",
