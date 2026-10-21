@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useI18n } from "@/lib/i18n";
+import { wholeDays } from "@/lib/reports-view";
 
 interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
   date: DateRange | undefined;
@@ -45,7 +46,8 @@ export function DatePickerWithRange({ className, date, setDate }: DatePickerWith
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            // Whole days: the calendar gives midnights, which would leave the last day out.
+            onSelect={(range) => setDate(wholeDays(range))}
             numberOfMonths={1}
           />
         </PopoverContent>

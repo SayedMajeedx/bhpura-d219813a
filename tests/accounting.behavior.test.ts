@@ -229,4 +229,35 @@ describe("Accounting & Financial Statements Behavioral Suite", () => {
       expect(statement.unreconciledTransfersAmount).toBe(0);
     });
   });
+  describe("which orders are revenue", () => {
+    it("counts every order that counts as sold, as the Reports overview does", () => {
+      const orders = [
+        {
+          id: "made",
+          status: "in_production",
+          payment_status: "partially_paid",
+          total: 50,
+          order_items: [],
+        },
+        { id: "packing", status: "packing", payment_status: "pending", total: 20, order_items: [] },
+        { id: "done", status: "completed", payment_status: "paid", total: 30, order_items: [] },
+        {
+          id: "waiting",
+          status: "pending_verification",
+          payment_status: "pending",
+          total: 15,
+          order_items: [],
+        },
+        {
+          id: "cancelled",
+          status: "cancelled",
+          payment_status: "paid",
+          total: 40,
+          order_items: [],
+        },
+        { id: "returned", status: "returned", payment_status: "paid", total: 25, order_items: [] },
+      ];
+      expect(calculateIncomeStatement(orders, [], 0, 0, []).grossRevenue).toBe(100);
+    });
+  });
 });

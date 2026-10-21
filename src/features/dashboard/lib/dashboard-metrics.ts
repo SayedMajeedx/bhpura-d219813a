@@ -2,6 +2,7 @@ import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { isSoldFromStock } from "@/lib/product-availability";
+import { countsAsSold } from "@/lib/data/orders/sold-orders";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 
 /**
@@ -16,17 +17,13 @@ type Rows<K extends keyof DashboardData> = DashboardData[K] extends { data: infe
   : never;
 export type DashboardOrders = Rows<"ordersQ">;
 
-/** Paid orders that were not cancelled, refunded or archived: the revenue base. */
-export function paidRevenueOrders(orders: DashboardOrders): DashboardOrders {
-  return orders.filter((o) => {
-    const status = String(o.status || "").toLowerCase();
-    const fulfillment = String(o.fulfillment_status || "").toLowerCase();
-    return (
-      String(o.payment_status || "").toLowerCase() === "paid" &&
-      !["cancelled", "canceled", "refunded", "archived_historical"].includes(status) &&
-      !["cancelled", "canceled", "refunded"].includes(fulfillment)
-    );
-  });
+/**
+ * The orders that are revenue: every order that counts as sold, paid in full or not yet (an
+ * advance, cash still to collect), as the Reports overview counts them (`order_counts_as_sold`).
+ * Only paid orders counted before, so an order paid by its advance was missing.
+ */
+export function revenueOrders(orders: DashboardOrders): DashboardOrders {
+  return orders.filter((o) => countsAsSold(o.status));
 }
 
 /** Up to 5 open orders whose workflow needs the merchant's attention. */

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { countsAsSold } from "@/lib/data/orders/sold-orders";
 
 export interface IncomeStatementData {
   grossRevenue: number;
@@ -38,25 +39,9 @@ export function calculateIncomeStatement(
   returns: any[] = [],
   options?: { defaultPackagingCost?: number; bomEnabled?: boolean },
 ): IncomeStatementData {
-  const confirmedOrders = orders.filter((o) => {
-    const st = String(o.status || "").toLowerCase();
-    const fSt = String(o.fulfillment_status || "").toLowerCase();
-    const pSt = String(o.payment_status || "").toLowerCase();
-    if (st === "cancelled" || st === "canceled" || st === "refunded") return false;
-    return (
-      [
-        "confirmed",
-        "paid",
-        "shipped",
-        "completed",
-        "delivered",
-        "ready_for_pickup",
-        "picked_up",
-      ].includes(st) ||
-      ["paid", "completed"].includes(pSt) ||
-      ["completed", "delivered", "fulfilled", "shipped", "picked_up"].includes(fSt)
-    );
-  });
+  // Every order that counts as sold, as the Reports overview counts them (a list of the
+  // statuses that count left out orders being made, packed or at the tailor unless paid).
+  const confirmedOrders = orders.filter((o) => countsAsSold(o.status));
 
   const grossRevenue = confirmedOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
   const returnsDiscounts = returns

@@ -85,7 +85,7 @@ Measured on `main` after Phase 7. The budgets in `tests/maintainability-ratchet.
 | `as never`                |        40        |      0      | Types regenerated from production (Phase 3).                                                                                                                           |
 | `eslint-disable`          |        10        |     10      | Unchanged (frozen).                                                                                                                                                    |
 | Direct Supabase calls     |   392 (406\*)    |     24      | Screens read and write through `src/lib/data/*` (Phase 4); left: server routes and one realtime channel.                                                               |
-| `readFileSync` test files |        71        |     43      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                                                     |
+| `readFileSync` test files |        71        |     42      | Feature tests run the code (Phase 6); left: SQL / edge-function contracts and architecture guards.                                                                     |
 | Files over 1,000 lines    |        31        |     11      | Big screens split into `src/features/*` (Phase 5); the rest split when touched (the review story dialog, 09-28).                                                       |
 | Tests                     |      1,078       |    1,599    |                                                                                                                                                                        |
 

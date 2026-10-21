@@ -32,6 +32,7 @@ import {
 import { reportingQueries } from "@/lib/data/reporting";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
   component: ReportsOverview,
@@ -46,7 +47,9 @@ const shows = (enabled: boolean, value: unknown) => enabled || Number(value || 0
 function ReportsOverview() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
-  const { modules } = useAdminStoreProfile(useBrand().id).profile;
+  const brandId = useBrand().id;
+  const { modules } = useAdminStoreProfile(brandId).profile;
+  const storeCurrency = useStoreCurrency(brandId);
   const [date, setDate] = useState<DateRange | undefined>(defaultReportRange);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
@@ -79,7 +82,8 @@ function ReportsOverview() {
     ? selectedCurrency
     : currencies[0];
   const data = rows.find((row: any) => row.currency === effectiveCurrency) as any;
-  const money = (value: unknown) => formatMoney(Number(value || 0), data?.currency || "BHD", lang);
+  const money = (value: unknown) =>
+    formatMoney(Number(value || 0), data?.currency || storeCurrency, lang);
   const netRevenue = Number(data?.net_revenue ?? data?.paid_order_value ?? 0);
   const netMerchandise = Number(data?.net_merchandise_after_returns ?? data?.net_merch_sales ?? 0);
   const grossProfit =
@@ -172,10 +176,14 @@ function ReportsOverview() {
           )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              title={lang === "ar" ? "قيمة المبيعات المكتملة" : "Completed sales value"}
+              title={lang === "ar" ? "المبيعات" : "Sales"}
               value={money(data.paid_order_value)}
               icon={<Banknote />}
-              description={lang === "ar" ? "الإيراد المحصل" : "Revenue collected"}
+              description={
+                lang === "ar"
+                  ? "كل طلب بيع في الفترة، دُفع أو لم يُدفع بعد"
+                  : "Every order sold in the period, paid or not yet"
+              }
               trend={trend(
                 Number(data.paid_order_value || 0),
                 Number(previousData?.paid_order_value || 0),
@@ -189,7 +197,7 @@ function ReportsOverview() {
               description={lang === "ar" ? "بعد الخصومات" : "After discounts"}
             />
             <KpiCard
-              title={lang === "ar" ? "عمليات البيع المكتملة" : "Completed sales"}
+              title={lang === "ar" ? "الطلبات المبيعة" : "Orders sold"}
               value={Number(data.paid_order_count || 0)}
               icon={<PackageCheck />}
               accent="blue"
@@ -273,7 +281,14 @@ function ReportsOverview() {
             <DetailCard
               title={lang === "ar" ? "تفاصيل التحصيل" : "Collection details"}
               rows={[
-                [lang === "ar" ? "المبالغ الجزئية" : "Partial amounts", money(data.partial_amount)],
+                [
+                  lang === "ar" ? "المحصّل من هذه المبيعات" : "Collected on these sales",
+                  money(data.collected),
+                ],
+                [
+                  lang === "ar" ? "باقي على العملاء" : "Still owed by customers",
+                  money(data.owed_by_customers),
+                ],
                 [lang === "ar" ? "المبالغ المستردة" : "Refunded total", money(data.refunded_total)],
                 ...(shows(
                   modules.incubators,

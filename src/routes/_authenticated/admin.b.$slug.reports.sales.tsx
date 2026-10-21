@@ -29,6 +29,8 @@ import {
   YAxis,
 } from "recharts";
 import { reportingQueries } from "@/lib/data/reporting";
+import { useBrand } from "@/lib/brand-context";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/sales")({
   component: ReportsSales,
@@ -42,6 +44,7 @@ function ReportsSales() {
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const storeCurrency = useStoreCurrency(useBrand().id);
 
   const query = useQuery(
     reportingQueries.sales(
@@ -64,13 +67,16 @@ function ReportsSales() {
       .sort((a, b) => new Date(a.time_bucket).getTime() - new Date(b.time_bucket).getTime())
       .map((row) => ({
         ...row,
-        displayDate: new Date(row.time_bucket).toLocaleDateString("en-GB", {
-          day: interval === "year" ? undefined : "2-digit",
-          month: "short",
-          year: interval === "year" ? "numeric" : undefined,
-        }),
+        displayDate: new Date(row.time_bucket).toLocaleDateString(
+          lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
+          {
+            day: interval === "year" ? undefined : "2-digit",
+            month: "short",
+            year: interval === "year" ? "numeric" : undefined,
+          },
+        ),
       }));
-  }, [query.data, interval, selectedCurrency]);
+  }, [query.data, interval, selectedCurrency, lang]);
 
   const currencies = useMemo(
     () =>
@@ -82,7 +88,7 @@ function ReportsSales() {
     [query.data],
   );
 
-  const currency = chartData[0]?.currency || "BHD";
+  const currency = chartData[0]?.currency || storeCurrency;
   const totalRevenue = chartData.reduce((sum, row) => sum + Number(row.pov || 0), 0);
   const totalMerchandise = chartData.reduce((sum, row) => sum + Number(row.net_merch || 0), 0);
   const orderCount = chartData.reduce(
@@ -132,9 +138,14 @@ function ReportsSales() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <KpiCard
-              title={lang === "ar" ? "إجمالي المبيعات" : "Total revenue"}
+              title={lang === "ar" ? "إجمالي المبيعات" : "Total sales"}
               value={formatMoney(totalRevenue, currency, lang)}
               icon={<Banknote />}
+              description={
+                lang === "ar"
+                  ? "قبل المرتجعات، وتطرحها النظرة العامة"
+                  : "Before returns: the overview deducts them"
+              }
             />
             <KpiCard
               title={lang === "ar" ? "صافي مبيعات المنتجات" : "Net merchandise"}
