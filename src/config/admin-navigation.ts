@@ -216,7 +216,7 @@ const ITEMS: ItemDef[] = [
     labelEn: "Products",
     labelAr: "المنتجات",
     descriptionEn: "Products, sizes and colours, stock, made to order, and prices",
-    descriptionAr: "المنتجات، المقاسات والألوان، المخزون، التفصيل حسب الطلب، والأسعار",
+    descriptionAr: "المنتجات، المقاسات والألوان، المخزون، الصنع حسب الطلب، والأسعار",
     icon: Package,
     permission: "manage_inventory",
     workspace: "products",
