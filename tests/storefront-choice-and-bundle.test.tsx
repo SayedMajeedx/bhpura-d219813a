@@ -282,7 +282,9 @@ describe("the bundle on the page", () => {
 });
 
 describe("marketing consent", () => {
-  it("is never assumed when a cart is recorded", async () => {
+  // A cart recorded with no answer starts without consent in the database
+  // (tests/abandoned-cart-recording-migration.test.ts).
+  it("is never assumed when a cart is recorded: no answer is sent as none", async () => {
     await syncStorefrontCartActivity({
       brandId: "b1",
       sessionId: "s1",
@@ -290,6 +292,20 @@ describe("marketing consent", () => {
       subtotal: 8,
     });
     expect(rpc).toHaveBeenCalledWith(
+      "rpc_record_or_update_cart_activity",
+      expect.objectContaining({ p_marketing_consent: null }),
+    );
+  });
+
+  it("sends the shopper's no as a no, so an unticked box withdraws consent", async () => {
+    await syncStorefrontCartActivity({
+      brandId: "b1",
+      sessionId: "s1",
+      cartItems: [{ product_id: "p1", qty: 1 } as never],
+      subtotal: 8,
+      marketingConsent: false,
+    });
+    expect(rpc).toHaveBeenLastCalledWith(
       "rpc_record_or_update_cart_activity",
       expect.objectContaining({ p_marketing_consent: false }),
     );
