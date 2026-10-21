@@ -137,6 +137,35 @@ describe("what the client asked for", () => {
     expect(today.map((card) => card.key)).toEqual(["cart:1"]);
   });
 
+  it("never offers a cart the shopper emptied, ordered or asked to stop", () => {
+    const cart = (id: string, status: string) => ({
+      id,
+      customer_id: null,
+      guest_name: "Noor",
+      guest_phone: `3300001${id}`,
+      marketing_consent: true,
+      last_activity_at: hoursAgo(5),
+      recovered_at: null,
+      status,
+      cart_items: [{ title: "فستان", size: "52", quantity: 1 }],
+      subtotal: 45,
+      currency: "BHD",
+      recovery_token: `t${id}`,
+    });
+    const { today } = outreachToday(
+      input({
+        carts: [
+          cart("1", "abandoned"),
+          cart("2", "expired"), // emptied by the shopper: the items are kept for history only
+          cart("3", "converted"), // went straight to checkout
+          cart("4", "unsubscribed"),
+          cart("5", "recovering"),
+        ],
+      }),
+    );
+    expect(today.map((card) => card.key).sort()).toEqual(["cart:1", "cart:5"]);
+  });
+
   it("follows a first order up three to ten days after it was handed over", () => {
     const { today } = outreachToday(
       input({

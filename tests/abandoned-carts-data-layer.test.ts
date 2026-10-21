@@ -52,7 +52,6 @@ vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
 
 const carts = await import("../src/lib/data/abandoned-carts");
-const { DEFAULT_ABANDONED_SEQUENCES } = await import("../src/lib/abandoned-carts.types");
 
 const denied = { message: "denied" };
 const eqs = (request: Request) =>
@@ -66,12 +65,7 @@ beforeEach(() => {
 describe("the abandoned-carts screen's reads", () => {
   it("sit under the brand's prefix and wait for a brand", () => {
     const q = carts.abandonedCartsQueries;
-    for (const options of [
-      q.settings("b1"),
-      q.sequences("b1"),
-      q.carts("b1"),
-      q.dispatchLogs("b1"),
-    ]) {
+    for (const options of [q.settings("b1"), q.carts("b1")]) {
       expect(options.queryKey.slice(0, 2)).toEqual(["abandoned-carts", "b1"]);
     }
     expect(q.carts("").enabled).toBe(false);
@@ -83,15 +77,18 @@ describe("the abandoned-carts screen's reads", () => {
       error: null,
     });
     expect(await carts.fetchAbandonedCartSettings("b1")).toBeNull();
-    await carts.fetchRecoverySequences("b1");
     await carts.fetchAbandonedCarts("b1");
-    await carts.fetchDispatchLogs("b1");
     for (const request of requests) expect(eqs(request)).toEqual([["brand_id", "b1"]]);
-    expect(requests[1].filters).toContainEqual(["order", "step_number", { ascending: true }]);
-    expect(requests[2].select).toBe("*, customers(name, email, phone)");
-    expect(requests[2].filters).toContainEqual(["limit", 200]);
-    expect(requests[3].filters).toContainEqual(["order", "sent_at", { ascending: false }]);
-    expect(requests[3].filters).toContainEqual(["limit", 100]);
+    // Each cart with its customer and the order it became (what a recovery brought in).
+    expect(requests[1].select).toBe(
+      "*, customers(name, email, phone), orders(total, status, currency)",
+    );
+    expect(requests[1].filters).toContainEqual(["limit", 200]);
+    // Nothing reads the tables of an automatic sender that never existed.
+    expect(requests.map((r) => r.table)).toEqual([
+      "brand_abandoned_cart_settings",
+      "abandoned_carts",
+    ]);
   });
 
   it("list only carts that still hold items", async () => {
@@ -108,7 +105,7 @@ describe("the abandoned-carts screen's reads", () => {
 
   it("throw a failed read", async () => {
     respond = () => ({ data: null, error: denied });
-    await expect(carts.fetchDispatchLogs("b1")).rejects.toBe(denied);
+    await expect(carts.fetchAbandonedCarts("b1")).rejects.toBe(denied);
     await expect(carts.fetchAbandonedCartSettings("b1")).rejects.toBe(denied);
   });
 });
@@ -125,39 +122,14 @@ describe("the abandoned-carts screen's writes", () => {
     expect((requests[0].payload as { updated_at: string }).updated_at).toMatch(/^\d{4}-/);
   });
 
-  it("create the default steps and save one step, matched by step number", async () => {
-    await carts.createDefaultRecoverySequences("b1");
-    const defaults = requests[0].payload as Array<{ brand_id: string; step_number: number }>;
-    expect(defaults).toHaveLength(DEFAULT_ABANDONED_SEQUENCES.length);
-    expect(defaults.every((row) => row.brand_id === "b1")).toBe(true);
-    expect(requests[0].options).toEqual({ onConflict: "brand_id,step_number" });
-
-    const step = {
-      ...DEFAULT_ABANDONED_SEQUENCES[0],
-      id: "s1",
-      brand_id: "b1",
-      created_at: "",
-      updated_at: "",
-    };
-    await carts.saveRecoverySequence("b1", step);
-    expect(requests[1]).toMatchObject({
-      table: "abandoned_cart_sequences",
-      payload: { id: "s1", brand_id: "b1", step_number: step.step_number },
-      options: { onConflict: "brand_id,step_number" },
-    });
-
-    respond = () => ({ error: denied });
-    await expect(carts.saveRecoverySequence("b1", step)).rejects.toBe(denied);
-  });
-
   it("refresh only the part of the screen that changed", async () => {
     const qc = new QueryClient();
     const spy = vi.spyOn(qc, "invalidateQueries");
     await carts.invalidateAbandonedCartSettings(qc, "b1");
-    await carts.invalidateRecoverySequences(qc, "b1");
+    await carts.invalidateAbandonedCarts(qc, "b1");
     expect(spy.mock.calls.map(([f]) => f?.queryKey)).toEqual([
       ["abandoned-carts", "b1", "settings"],
-      ["abandoned-carts", "b1", "sequences"],
+      ["abandoned-carts", "b1", "carts"],
     ]);
   });
 });
