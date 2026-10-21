@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { readAll } from "@/lib/data/read-all";
+import { composeOverviewRows, type ComposedOverviewRow } from "@/lib/reporting-compose";
 
 export type DateRange = {
   from: Date;
@@ -116,27 +117,7 @@ export async function fetchReportingOverview(
   if (cogsResponse.error && cogsResponse.error.code !== "PGRST202") {
     throw cogsResponse.error;
   }
-  const cogsRows = Array.isArray(cogsResponse.data) ? cogsResponse.data : [];
-  const incubatorByCurrency = new Map(
-    (incubator.summary || []).map((row: any) => [row.currency, row]),
-  );
-  const baseRows = Array.isArray(data) ? data : [];
-  for (const row of incubator.summary || []) {
-    if (!baseRows.some((base: any) => base.currency === row.currency)) {
-      baseRows.push({ currency: row.currency });
-    }
-  }
-  for (const row of refundRows) {
-    if (!baseRows.some((base: any) => base.currency === row.currency)) {
-      baseRows.push({ currency: row.currency });
-    }
-  }
-  for (const row of cogsRows) {
-    if (!baseRows.some((base: any) => base.currency === row.currency)) {
-      baseRows.push({ currency: row.currency });
-    }
-  }
-  let feeRows: any[] = [];
+  let feeRows: unknown = [];
   try {
     const { data: res, error: feeError } = await (supabase as any).rpc(
       "rpc_reporting_processing_fees",
@@ -153,61 +134,42 @@ export async function fetchReportingOverview(
   } catch (e) {
     console.warn("rpc_reporting_processing_fees soft error:", e);
   }
-  const feesByCurrency = new Map(
-    (Array.isArray(feeRows) ? feeRows : []).map((row: any) => [
-      row.currency,
-      Number(row.processing_fees || 0),
-    ]),
-  );
-  const refundsByCurrency = new Map(refundRows.map((row: any) => [row.currency, row]));
-  const cogsByCurrency = new Map(cogsRows.map((row: any) => [row.currency, row]));
-  return baseRows.map((row: any) => {
-    const consignment: any = incubatorByCurrency.get(row.currency) || {};
-    const processingFees = feesByCurrency.get(row.currency) ?? 0;
-    const manualExpenses = Number(row.expenses || 0);
-    const incubatorCommissions = Number(consignment.commission_amount || 0);
-    const refunds: any = refundsByCurrency.get(row.currency) || {};
-    const orderCogs: any = cogsByCurrency.get(row.currency) || {};
-    const paidOrderValue =
-      Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0);
-    const netMerchandise = Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0);
-    return {
-      ...row,
-      paid_order_value: paidOrderValue,
-      gross_merch_sales: Number(row.gross_merch_sales || 0) + Number(consignment.gross_amount || 0),
-      net_merch_sales: netMerchandise,
-      refunded_total: Number(refunds.refunded_total ?? row.refunded_total ?? 0),
-      refunded_merchandise: Number(refunds.refunded_merchandise || 0),
-      net_revenue: paidOrderValue - Number(refunds.revenue_deduction || 0),
-      net_merchandise_after_returns: netMerchandise - Number(refunds.merchandise_deduction || 0),
-      paid_order_count: Number(row.paid_order_count || 0) + Number(consignment.sale_count || 0),
-      // What was paid on the period's sales: by customers on store orders, by partners on theirs.
-      // What partners still owe is incubator_receivables; owed_by_customers is store orders only.
-      collected: Number(row.collected || 0) + Number(consignment.collected || 0),
-      owed_by_customers: Number(row.owed_by_customers || 0),
-      product_cogs: Number(orderCogs.product_cogs || 0),
-      packaging_cogs: Number(orderCogs.packaging_cogs || 0),
-      incubator_cogs: Number(consignment.cogs || 0),
-      missing_product_link_count: Number(orderCogs.missing_product_link_count || 0),
-      zero_packaging_item_count: Number(orderCogs.zero_packaging_item_count || 0),
-      known_cogs:
-        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0),
-      known_cogs_after_returns: Math.max(
-        0,
-        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) +
-          Number(consignment.cogs || 0) -
-          Number(refunds.returned_cogs_reversal || 0),
-      ),
-      returned_cogs_reversal: Number(refunds.returned_cogs_reversal || 0),
-      manual_expenses: manualExpenses,
-      processing_fees: processingFees,
-      incubator_commissions: incubatorCommissions,
-      incubator_sales: Number(consignment.gross_amount || 0),
-      incubator_receivables: Number(consignment.receivables || 0),
-      incubator_collected: Number(consignment.collected || 0),
-      expenses: manualExpenses + processingFees + incubatorCommissions,
-    };
+  return composeOverviewRows({
+    overview: data,
+    returns: refundRows,
+    cogs: cogsResponse.data,
+    fees: feeRows,
+    incubatorSummary: incubator.summary,
   });
+}
+
+/**
+ * The overview's figures for several periods in one request (`rpc_reporting_periods`, at most
+ * 36), each put together by the overview's own rule: the monthly statement.
+ */
+export async function fetchReportingPeriods(
+  ranges: DateRange[],
+  tz: string,
+  includeHistorical: boolean = false,
+  brandSlug?: string,
+): Promise<ComposedOverviewRow[][]> {
+  const { data, error } = await supabase.rpc("rpc_reporting_periods", {
+    p_periods: ranges.map((r) => ({ from: r.from.toISOString(), to: r.to.toISOString() })),
+    p_tz: tz,
+    p_include_historical: includeHistorical,
+    p_brand_slug: brandSlug || undefined,
+  });
+  if (error) throw error;
+  const periods = (Array.isArray(data) ? data : []) as Array<Record<string, unknown>>;
+  return periods.map((period) =>
+    composeOverviewRows({
+      overview: period.overview,
+      returns: period.returns,
+      cogs: period.cogs,
+      fees: period.fees,
+      incubatorSummary: period.incubator_summary,
+    }),
+  );
 }
 
 // Sales metrics

@@ -4,6 +4,7 @@ import {
   fetchCatalogInquiriesReporting,
   fetchReportingCustomers,
   fetchReportingOverview,
+  fetchReportingPeriods,
   fetchReportingProducts,
   fetchReportingSales,
   type ReportInterval,
@@ -63,6 +64,15 @@ export const reportingKeys = {
     ] as const,
   customers: (slug: string, range: DateRange, timezone: string, includeHistorical: boolean) =>
     [...reportingKeys.all(slug), "customers", ...iso(range), timezone, includeHistorical] as const,
+  /** Several periods at once (the monthly statement): each period's start, in order. */
+  periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
+    [
+      ...reportingKeys.overviews(slug),
+      "periods",
+      ranges.map((r) => iso(r).join("/")).join(","),
+      timezone,
+      includeHistorical,
+    ] as const,
   incubatorSales: (slug: string) => [...reportingKeys.all(slug), "incubator-sales"] as const,
   /** Catalog inquiries by brand, optionally within a date range (ISO strings). */
   catalogInquiries: (brandId: string, from?: string, to?: string) =>
@@ -107,6 +117,13 @@ export type IncubatorSalesBucket = {
 };
 
 export const reportingQueries = {
+  /** The overview's figures for each period, in one request (`rpc_reporting_periods`). */
+  periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
+    queryOptions({
+      queryKey: reportingKeys.periods(slug, ranges, timezone, includeHistorical),
+      queryFn: () => fetchReportingPeriods(ranges, timezone, includeHistorical, slug),
+      enabled: Boolean(slug) && ranges.length > 0,
+    }),
   /** Waits for a range; screens add their own `retry`, `staleTime` and `enabled`. */
   overview: (
     slug: string,
