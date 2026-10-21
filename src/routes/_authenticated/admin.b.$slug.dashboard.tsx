@@ -30,7 +30,7 @@ import {
   inventoryIntelFor,
   ordersNeedingAction,
   ordersToPrepareCount,
-  paidRevenueOrders,
+  revenueOrders,
   appointmentsToCompleteCount,
 } from "@/features/dashboard/lib/dashboard-metrics";
 import { isServicesProfile } from "@/lib/store-profile";
@@ -99,8 +99,8 @@ function Dashboard() {
     previousAccountingRow,
   } = useDashboardData({ brandId, slug, canViewFinancials });
 
-  // Filter confirmed/completed orders for revenue reporting
-  const validRevenueOrders = useMemo(() => paidRevenueOrders(ordersQ.data ?? []), [ordersQ.data]);
+  // The orders that count as sold, as the Reports overview counts them
+  const validRevenueOrders = useMemo(() => revenueOrders(ordersQ.data ?? []), [ordersQ.data]);
 
   // Operational Actionable Orders (Orders needing triage/action)
   const actionNeededOrders = useMemo(

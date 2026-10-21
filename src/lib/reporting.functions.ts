@@ -181,6 +181,10 @@ export async function fetchReportingOverview(
       net_revenue: paidOrderValue - Number(refunds.revenue_deduction || 0),
       net_merchandise_after_returns: netMerchandise - Number(refunds.merchandise_deduction || 0),
       paid_order_count: Number(row.paid_order_count || 0) + Number(consignment.sale_count || 0),
+      // What was paid on the period's sales: by customers on store orders, by partners on theirs.
+      // What partners still owe is incubator_receivables; owed_by_customers is store orders only.
+      collected: Number(row.collected || 0) + Number(consignment.collected || 0),
+      owed_by_customers: Number(row.owed_by_customers || 0),
       product_cogs: Number(orderCogs.product_cogs || 0),
       packaging_cogs: Number(orderCogs.packaging_cogs || 0),
       incubator_cogs: Number(consignment.cogs || 0),
@@ -237,6 +241,7 @@ export async function fetchReportingSales(
       existing.net_merch = Number(existing.net_merch || 0) + Number(row.gross_amount || 0);
       existing.paid_order_count =
         Number(existing.paid_order_count || 0) + Number(row.sale_count || 0);
+      existing.collected = Number(existing.collected || 0) + Number(row.paid_amount || 0);
     } else {
       series.push({
         time_bucket: row.time_bucket,
@@ -244,6 +249,7 @@ export async function fetchReportingSales(
         pov: row.gross_amount,
         net_merch: row.gross_amount,
         paid_order_count: row.sale_count,
+        collected: row.paid_amount,
       });
     }
   }
@@ -305,12 +311,8 @@ export async function fetchReportingProducts(
         Number(existing.net_merch_sales || 0) + Number(sale.net_merch_sales || 0);
       existing.known_cogs = Number(existing.known_cogs || 0) + Number(sale.known_cogs || 0);
     } else {
-      rows.push({
-        ...sale,
-        is_missing_cost: false,
-        is_out_of_stock: Number(sale.current_stock || 0) <= 0,
-        is_low_stock: Number(sale.current_stock || 0) > 0 && Number(sale.current_stock || 0) <= 5,
-      });
+      // A size sold only through partners: its stock is read by the screen's availability rule.
+      rows.push({ ...sale, is_missing_cost: false });
     }
   }
   return rows.sort((a: any, b: any) =>

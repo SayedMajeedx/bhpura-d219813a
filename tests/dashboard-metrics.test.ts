@@ -3,7 +3,7 @@ import {
   customerSegments,
   dashboardFinancials,
   inventoryIntelFor,
-  paidRevenueOrders,
+  revenueOrders,
   type DashboardOrders,
 } from "../src/features/dashboard/lib/dashboard-metrics";
 import { primaryKpisFor } from "../src/features/dashboard/lib/dashboard-kpis";
@@ -26,16 +26,18 @@ const order = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-describe("paidRevenueOrders", () => {
-  it("keeps paid orders that were not cancelled, refunded or archived", () => {
+describe("revenueOrders", () => {
+  it("keeps every order that counts as sold, paid or not yet, as the Reports overview does", () => {
     const orders = [
       order({ id: "paid" }),
-      order({ id: "unpaid", payment_status: "pending" }),
+      order({ id: "advance", payment_status: "partially_paid", status: "in_production" }),
+      order({ id: "cash-to-collect", payment_status: "pending", status: "completed" }),
+      order({ id: "awaiting-transfer", payment_status: "pending", status: "pending_verification" }),
       order({ id: "cancelled", status: "Cancelled" }),
       order({ id: "archived", status: "archived_historical" }),
-      order({ id: "refunded", fulfillment_status: "refunded" }),
+      order({ id: "returned", status: "returned" }),
     ] as DashboardOrders;
-    expect(paidRevenueOrders(orders).map((o) => o.id)).toEqual(["paid"]);
+    expect(revenueOrders(orders).map((o) => o.id)).toEqual(["paid", "advance", "cash-to-collect"]);
   });
 });
 
