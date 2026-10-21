@@ -1,17 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  ArrowUpRight,
-  Search,
-  Compass,
-  Boxes,
-  Zap,
-  Sliders,
-  X,
-  Layers,
-  Wallet,
-  Puzzle,
-} from "lucide-react";
+import { ArrowUpRight, Search, Compass, X, Layers, Puzzle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { type AdminNavItemConfig } from "@/config/admin-navigation";
+import {
+  ADMIN_WORKSPACES,
+  type AdminNavItemConfig,
+  type AdminWorkspaceId,
+} from "@/config/admin-navigation";
 
 export interface OsAppsHubModalProps {
   open: boolean;
@@ -33,7 +26,7 @@ export interface OsAppsHubModalProps {
   onPinnedChange?: (pinnedIds: string[]) => void;
 }
 
-type CategoryTab = "all" | "operations" | "catalog" | "growth" | "finance" | "store_setup";
+type CategoryTab = "all" | AdminWorkspaceId;
 
 export function OsAppsHubModal({
   open,
@@ -47,61 +40,28 @@ export function OsAppsHubModal({
   const [searchQuery, setSearchQuery] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState<CategoryTab>("all");
 
-  // Modular items only (tier === 'modular' or unassigned to core)
-  const modularItems = React.useMemo(() => {
-    return navItems.filter((item) => {
-      if (item.tier === "modular") return true;
-      if (item.id === "dashboard") return false;
-      return true;
-    });
-  }, [navItems]);
+  // Every page but the dashboard, in the menu's workspaces (the one definition).
+  const modularItems = React.useMemo(
+    () => navItems.filter((item) => item.id !== "dashboard"),
+    [navItems],
+  );
 
-  // Categories config
   const categories = [
-    {
-      id: "all" as const,
-      label: isAr ? "الكل" : "All",
-      count: modularItems.length,
-      icon: Compass,
-    },
-    {
-      id: "operations" as const,
-      label: isAr ? "العمليات والطلبات" : "Operations",
-      count: modularItems.filter((i) => (i.workspace || i.category) === "operations").length,
-      icon: Layers,
-    },
-    {
-      id: "catalog" as const,
-      label: isAr ? "الكتالوج والمخزون" : "Catalog & Stock",
-      count: modularItems.filter((i) => (i.workspace || i.category) === "catalog").length,
-      icon: Boxes,
-    },
-    {
-      id: "growth" as const,
-      label: isAr ? "العملاء والنمو" : "Customers & Growth",
-      count: modularItems.filter((i) => (i.workspace || i.category) === "growth").length,
-      icon: Zap,
-    },
-    {
-      id: "finance" as const,
-      label: isAr ? "المالية والتقارير" : "Finance & Reports",
-      count: modularItems.filter((i) => (i.workspace || i.category) === "finance").length,
-      icon: Wallet,
-    },
-    {
-      id: "store_setup" as const,
-      label: isAr ? "إعداد المتجر" : "Store Setup",
-      count: modularItems.filter((i) => (i.workspace || i.category) === "store_setup").length,
-      icon: Sliders,
-    },
-  ];
+    { id: "all" as const, label: isAr ? "الكل" : "All", count: modularItems.length, icon: Compass },
+    ...ADMIN_WORKSPACES.map((workspace) => ({
+      id: workspace.id,
+      label: isAr ? workspace.labelAr : workspace.labelEn,
+      count: modularItems.filter((item) => item.workspace === workspace.id).length,
+      icon: workspace.icon,
+    })),
+  ].filter((category) => category.id === "all" || category.count > 0);
 
   // Filtered items
   const filteredItems = React.useMemo(() => {
     return modularItems.filter((item) => {
       // Category match
       if (selectedCategory !== "all") {
-        if ((item.workspace || item.category) !== selectedCategory) {
+        if (item.workspace !== selectedCategory) {
           return false;
         }
       }
@@ -147,7 +107,7 @@ export function OsAppsHubModal({
             </div>
             <div className="min-w-0 pt-0.5">
               <DialogTitle className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-                {isAr ? "دليل مساحات العمل والأدوات" : "Workspaces & Tools Directory"}
+                {isAr ? "كل الأدوات" : "All tools"}
               </DialogTitle>
               <DialogDescription className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
                 {isAr

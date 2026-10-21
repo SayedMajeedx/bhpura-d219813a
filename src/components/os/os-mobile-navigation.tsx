@@ -3,10 +3,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Menu,
   LogOut,
-  LayoutDashboard,
-  ReceiptText,
-  Package,
-  Users,
   Grid,
   X,
   Store,
@@ -27,7 +23,13 @@ import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
-import { type AdminNavItemConfig } from "@/config/admin-navigation";
+import {
+  adminNavGroups,
+  dockWorkspaces,
+  isNavItemActive,
+  type AdminNavItemConfig,
+} from "@/config/admin-navigation";
+import { OsNavMore } from "./os-nav-more";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
@@ -110,86 +112,24 @@ export function OsMobileNavigation({
       return [];
     }
 
-    const homeItem = navItems.find((i) => i.id === "dashboard") ?? {
-      id: "dashboard",
-      icon: LayoutDashboard,
-      label: lang === "ar" ? "الرئيسية" : "Home",
-      target: `/admin/b/${activeSlug}/dashboard`,
-    };
-
-    const ordersItem = navItems.find((i) => i.id === "orders") ?? {
-      id: "orders",
-      icon: ReceiptText,
-      label: lang === "ar" ? "الطلبات" : "Orders",
-      target: `/admin/b/${activeSlug}/orders`,
-    };
-
-    const inventoryItem = navItems.find((i) => i.id === "inventory") ?? {
-      id: "inventory",
-      icon: Package,
-      label: lang === "ar" ? "المخزون" : "Inventory",
-      target: `/admin/b/${activeSlug}/inventory`,
-    };
-
-    const customersItem = navItems.find((i) => i.id === "customers") ?? {
-      id: "customers",
-      icon: Users,
-      label: lang === "ar" ? "العملاء" : "Customers",
-      target: `/admin/b/${activeSlug}/customers`,
-    };
-
-    const items: OsMobileTabItem[] = [
-      {
-        id: "home",
-        icon: homeItem.icon ?? LayoutDashboard,
-        label: lang === "ar" ? "الرئيسية" : "Home",
-        active: pathname.includes("/dashboard"),
-        onClick: () => navigate({ to: `/admin/b/$slug/dashboard`, params: { slug: activeSlug } }),
-      },
-      {
-        id: "orders",
-        icon: ordersItem.icon ?? ReceiptText,
-        label: lang === "ar" ? "العمليات" : "Operations",
-        active:
-          pathname.includes("/orders") ||
-          pathname.includes("/abandoned-carts") ||
-          pathname.includes("/returns"),
-        onClick: () => navigate({ to: `/admin/b/$slug/orders`, params: { slug: activeSlug } }),
-      },
-      {
-        id: "inventory",
-        icon: inventoryItem.icon ?? Package,
-        label: lang === "ar" ? "الكتالوج" : "Catalog",
-        active:
-          pathname.includes("/inventory") ||
-          pathname.includes("/categories") ||
-          pathname.includes("/incubators") ||
-          pathname.includes("/size-guides") ||
-          pathname.includes("/import") ||
-          pathname.includes("/export"),
-        onClick: () => navigate({ to: `/admin/b/$slug/inventory`, params: { slug: activeSlug } }),
-      },
-      {
-        id: "customers",
-        icon: customersItem.icon ?? Users,
-        label: lang === "ar" ? "النمو" : "Growth",
-        active:
-          pathname.includes("/customers") ||
-          pathname.includes("/reviews") ||
-          pathname.includes("/campaigns") ||
-          pathname.includes("/discounts") ||
-          pathname.includes("/loyalty") ||
-          pathname.includes("/content-studio"),
-        onClick: () => navigate({ to: `/admin/b/$slug/customers`, params: { slug: activeSlug } }),
-      },
-      {
-        id: "more",
-        icon: Grid,
-        label: lang === "ar" ? "المزيد" : "More",
-        active: mobileOpen,
-        onClick: () => onOpenChangeMobile(!mobileOpen),
-      },
-    ];
+    // The daily workspaces the person has a page in, from the menu's one definition: each opens
+    // its first page and is lit while any of its pages is open (no list of addresses to keep).
+    const items: OsMobileTabItem[] = dockWorkspaces(navItems, pathname).map(
+      ({ workspace, first, active }) => ({
+        id: workspace.id,
+        icon: workspace.icon,
+        label: lang === "ar" ? workspace.shortLabelAr : workspace.shortLabelEn,
+        active,
+        onClick: () => navigate({ to: first.to as any, params: first.params as any }),
+      }),
+    );
+    items.push({
+      id: "more",
+      icon: Grid,
+      label: lang === "ar" ? "المزيد" : "More",
+      active: mobileOpen,
+      onClick: () => onOpenChangeMobile(!mobileOpen),
+    });
 
     return items;
   }, [
@@ -213,8 +153,7 @@ export function OsMobileNavigation({
           labelEn: "Manage Brands & Tenants",
           labelAr: "إدارة العلامات والمتاجر",
           icon: Store,
-          category: "today",
-          section: "overview",
+          workspace: "home",
         },
         {
           id: "requests",
@@ -222,8 +161,7 @@ export function OsMobileNavigation({
           labelEn: "Tenant Requests",
           labelAr: "طلبات الانضمام والاشتراكات",
           icon: ClockIcon,
-          category: "today",
-          section: "overview",
+          workspace: "home",
         },
         {
           id: "grants",
@@ -231,8 +169,7 @@ export function OsMobileNavigation({
           labelEn: "Grant Surveys",
           labelAr: "مبادرة الـ 6 شهور",
           icon: Crown,
-          category: "today",
-          section: "overview",
+          workspace: "home",
         },
         {
           id: "health",
@@ -240,8 +177,7 @@ export function OsMobileNavigation({
           labelEn: "System Health",
           labelAr: "صحة النظام",
           icon: Activity,
-          category: "today",
-          section: "overview",
+          workspace: "home",
         },
         {
           id: "settings",
@@ -249,8 +185,7 @@ export function OsMobileNavigation({
           labelEn: "Platform Settings",
           labelAr: "إعدادات المنصة",
           icon: Settings,
-          category: "today",
-          section: "overview",
+          workspace: "home",
         },
       ];
       return [
@@ -258,48 +193,54 @@ export function OsMobileNavigation({
           id: "super_admin",
           title: lang === "ar" ? "إدارة المنصة" : "Platform Management",
           items: superItems,
+          more: [] as AdminNavItemConfig[],
         },
       ];
     }
 
-    const operations = navItems.filter(
-      (item) => (item.workspace || item.category) === "operations",
-    );
-    const catalog = navItems.filter((item) => (item.workspace || item.category) === "catalog");
-    const growth = navItems.filter((item) => (item.workspace || item.category) === "growth");
-    const finance = navItems.filter((item) => (item.workspace || item.category) === "finance");
-    const storeSetup = navItems.filter(
-      (item) => (item.workspace || item.category) === "store_setup",
-    );
-
-    return [
-      {
-        id: "operations",
-        title: lang === "ar" ? "الطلبات والعمليات" : "Operations & Orders",
-        items: operations,
-      },
-      {
-        id: "catalog",
-        title: lang === "ar" ? "الكتالوج والمخزون" : "Catalog & Stock",
-        items: catalog,
-      },
-      {
-        id: "growth",
-        title: lang === "ar" ? "العملاء والنمو" : "Customers & Growth",
-        items: growth,
-      },
-      {
-        id: "finance",
-        title: lang === "ar" ? "المالية والتقارير" : "Finance & Reports",
-        items: finance,
-      },
-      {
-        id: "store_setup",
-        title: lang === "ar" ? "إعداد المتجر" : "Store Setup",
-        items: storeSetup,
-      },
-    ].filter((g) => g.items.length > 0);
+    return adminNavGroups(navItems).map((group) => ({
+      id: group.id,
+      title: lang === "ar" ? group.labelAr : group.labelEn,
+      items: group.items,
+      more: group.more,
+    }));
   }, [activeSlug, isSuperAdmin, navItems, lang]);
+
+  // One page in the menu sheet.
+  const sheetLink = (item: AdminNavItemConfig) => {
+    const active = isNavItemActive(item, pathname);
+    const Icon = item.icon;
+    const label = lang === "ar" ? item.labelAr : item.labelEn;
+    return (
+      <Link
+        key={item.id}
+        to={item.to as any}
+        params={item.params as any}
+        onClick={() => onOpenChangeMobile(false)}
+        className={cn(
+          "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition duration-200 active:scale-[0.98]",
+          active
+            ? "bg-primary text-primary-foreground font-semibold shadow-md border border-primary/30"
+            : "text-foreground/90 hover:text-foreground hover:bg-card/40",
+        )}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div
+            className={cn(
+              "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition",
+              active
+                ? "bg-white/20 text-primary-foreground shadow-2xs"
+                : "bg-primary/10 text-primary border border-primary/20",
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </div>
+          <span className="truncate">{label}</span>
+        </div>
+        {active && <span className="h-2 w-2 rounded-full bg-primary-foreground shadow-2xs" />}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -378,12 +319,12 @@ export function OsMobileNavigation({
                     </div>
                     <div className="text-start">
                       <div className="text-xs font-bold font-heading">
-                        {lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}
+                        {lang === "ar" ? "كل الأدوات" : "All tools"}
                       </div>
                       <div className="text-xs text-muted-foreground">
                         {lang === "ar"
-                          ? "استعرض وشاهد شرح وتفعيل كافة الأدوات"
-                          : "Explore, guide, and manage all tools"}
+                          ? "كل صفحات المتجر، مع ما تفيد به كل منها"
+                          : "Every page of the store, with what each is for"}
                       </div>
                     </div>
                   </div>
@@ -394,7 +335,7 @@ export function OsMobileNavigation({
               )}
 
               {navGroups.map((group) => {
-                if (group.items.length === 0) return null;
+                if (group.items.length + group.more.length === 0) return null;
                 return (
                   <div key={group.id} className="space-y-1.5">
                     <div className="text-xs font-semibold text-muted-foreground px-2 flex items-center gap-1.5">
@@ -403,44 +344,18 @@ export function OsMobileNavigation({
                     </div>
 
                     <div className="space-y-1 bg-card/30 backdrop-blur-md rounded-2xl p-1.5 border border-border shadow-2xs">
-                      {group.items.map((item) => {
-                        const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                        const active = pathname.startsWith(targetPath);
-                        const Icon = item.icon;
-                        const label = lang === "ar" ? item.labelAr : item.labelEn;
-
-                        return (
-                          <Link
-                            key={item.id}
-                            to={item.to as any}
-                            params={item.params as any}
-                            onClick={() => onOpenChangeMobile(false)}
-                            className={cn(
-                              "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium transition duration-200 active:scale-[0.98]",
-                              active
-                                ? "bg-primary text-primary-foreground font-semibold shadow-md border border-primary/30"
-                                : "text-foreground/90 hover:text-foreground hover:bg-card/40",
-                            )}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div
-                                className={cn(
-                                  "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 transition",
-                                  active
-                                    ? "bg-white/20 text-primary-foreground shadow-2xs"
-                                    : "bg-primary/10 text-primary border border-primary/20",
-                                )}
-                              >
-                                <Icon className="h-4 w-4" />
-                              </div>
-                              <span className="truncate">{label}</span>
-                            </div>
-                            {active && (
-                              <span className="h-2 w-2 rounded-full bg-primary-foreground shadow-2xs" />
-                            )}
-                          </Link>
-                        );
-                      })}
+                      {group.items.map(sheetLink)}
+                      {group.more.length > 0 && (
+                        <OsNavMore
+                          count={group.more.length}
+                          containsActive={group.more.some((item) =>
+                            isNavItemActive(item, pathname),
+                          )}
+                          lang={lang}
+                        >
+                          {group.more.map(sheetLink)}
+                        </OsNavMore>
+                      )}
                     </div>
                   </div>
                 );

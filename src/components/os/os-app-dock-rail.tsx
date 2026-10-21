@@ -5,7 +5,11 @@ import { cn } from "@/lib/utils";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
-import { type AdminNavItemConfig } from "@/config/admin-navigation";
+import {
+  adminNavGroups,
+  workspaceOfPath,
+  type AdminNavItemConfig,
+} from "@/config/admin-navigation";
 
 export interface OsAppDockRailProps {
   brandLabel: string;
@@ -34,9 +38,9 @@ export function OsAppDockRail({
 }: OsAppDockRailProps) {
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
-  // Primary Rail Items (Top 6 Core Modules)
-  const primaryRailIds = ["dashboard", "orders", "inventory", "customers", "reports", "settings"];
-  const primaryItems = navItems.filter((i) => primaryRailIds.includes(i.id));
+  // One page per workspace: its first, from the menu's one definition.
+  const primaryItems = adminNavGroups(navItems).map((group) => group.items[0] ?? group.more[0]);
+  const openWorkspace = workspaceOfPath(navItems, pathname);
 
   return (
     <>
@@ -81,8 +85,8 @@ export function OsAppDockRail({
             className="flex flex-col items-center gap-2.5 w-full px-2"
           >
             {primaryItems.map((item) => {
-              const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-              const active = pathname.startsWith(targetPath);
+              // Lit while any page of its workspace is open.
+              const active = openWorkspace === item.workspace;
               const label = lang === "ar" ? item.labelAr : item.labelEn;
               const Icon = item.icon;
 
@@ -128,8 +132,8 @@ export function OsAppDockRail({
             <button
               type="button"
               onClick={() => setAppsHubOpen(true)}
-              title={lang === "ar" ? "مركز التطبيقات والأدوات" : "Apps & Tools Hub"}
-              aria-label={lang === "ar" ? "مركز التطبيقات والأدوات" : "Apps & Tools Hub"}
+              title={lang === "ar" ? "كل الأدوات" : "All tools"}
+              aria-label={lang === "ar" ? "كل الأدوات" : "All tools"}
               className="relative group h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-amber-500/15 hover:from-primary/30 hover:to-amber-500/25 text-primary border border-primary/30 hover:border-primary/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm shadow-primary/10 cursor-pointer"
             >
               <Boxes className="h-5 w-5 transition-transform duration-300 group-hover:rotate-6" />
@@ -138,7 +142,7 @@ export function OsAppDockRail({
               {/* Tooltip */}
               <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-3 py-1.5 rounded-xl bg-popover text-popover-foreground text-xs font-semibold shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border-strong flex items-center gap-1.5">
                 <Boxes className="h-3.5 w-3.5 text-primary" />
-                <span>{lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}</span>
+                <span>{lang === "ar" ? "كل الأدوات" : "All tools"}</span>
               </div>
             </button>
           )}

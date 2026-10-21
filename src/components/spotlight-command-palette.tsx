@@ -16,38 +16,32 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import {
-  LayoutDashboard,
   Package,
-  Users,
   ReceiptText,
-  Settings,
   Megaphone,
   Wallet,
   BadgePercent,
-  BarChart,
   Plus,
   Store,
   Languages,
-  RotateCcw,
-  Award,
-  ShoppingCart,
 } from "lucide-react";
 import { fetchBrandIdBySlug } from "@/lib/data/brands";
 import { searchProducts } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import type { AdminNavItemConfig } from "@/config/admin-navigation";
 
 export function SpotlightCommandPalette({
   open,
   onOpenChange,
   services = false,
-  hasReturns = true,
+  pages = [],
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** A services store: it adds services and has no stock. */
   services?: boolean;
-  /** The store takes returns (the Returns page is in its menu). */
-  hasReturns?: boolean;
+  /** The menu's pages for this person (`getAdminNavItems`). */
+  pages?: AdminNavItemConfig[];
 }) {
   const navigate = useNavigate();
   const routeParams = useParams({ strict: false }) as { slug?: string };
@@ -98,78 +92,13 @@ export function SpotlightCommandPalette({
     callback();
   };
 
-  const navItems = [
-    {
-      label: isAr ? "لوحة التحكم" : "Dashboard",
-      icon: LayoutDashboard,
-      to: "/admin/b/$slug/dashboard",
-    },
-    {
-      label: isAr ? "الطلبات والفواتير" : "Orders & Invoices",
-      icon: ReceiptText,
-      to: "/admin/b/$slug/orders",
-    },
-    ...(hasReturns
-      ? [
-          {
-            label: isAr ? "المرتجعات والاستبدال" : "Returns & Exchanges",
-            icon: RotateCcw,
-            to: "/admin/b/$slug/returns",
-          },
-        ]
-      : []),
-    {
-      label: services
-        ? isAr
-          ? "إدارة الخدمات"
-          : "Services"
-        : isAr
-          ? "إدارة المخزون والمنتجات"
-          : "Products & Inventory",
-      icon: Package,
-      to: "/admin/b/$slug/inventory",
-    },
-    {
-      label: isAr ? "قاعدة العملاء" : "Customer Database",
-      icon: Users,
-      to: "/admin/b/$slug/customers",
-    },
-    {
-      label: isAr ? "حملات الواتساب" : "WhatsApp Campaigns",
-      icon: Megaphone,
-      to: "/admin/b/$slug/campaigns",
-    },
-    {
-      label: isAr ? "رموز الخصم" : "Discount Codes",
-      icon: BadgePercent,
-      to: "/admin/b/$slug/discounts",
-    },
-    {
-      label: isAr ? "برنامج الولاء والمكافآت" : "Loyalty & Rewards",
-      icon: Award,
-      to: "/admin/b/$slug/loyalty",
-    },
-    {
-      label: isAr ? "السلات المتروكة والاستعادة" : "Abandoned Carts",
-      icon: ShoppingCart,
-      to: "/admin/b/$slug/abandoned-carts",
-    },
-    {
-      label: isAr ? "سجل المصروفات" : "Expenses",
-      icon: Wallet,
-      to: "/admin/b/$slug/expenses",
-    },
-    {
-      label: isAr ? "التقارير والتحليلات" : "Reports & Analytics",
-      icon: BarChart,
-      to: "/admin/b/$slug/reports",
-    },
-    {
-      label: isAr ? "إعدادات المتجر" : "Store Settings",
-      icon: Settings,
-      to: "/admin/b/$slug/settings",
-    },
-  ];
+  // The pages of the menu this person may open, from its one definition (the palette once
+  // listed its own pages, with no permission or store rule).
+  const navItems = pages.map((page) => ({
+    label: isAr ? page.labelAr : page.labelEn,
+    to: page.to,
+    icon: page.icon,
+  }));
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange} commandProps={{ shouldFilter: false }}>

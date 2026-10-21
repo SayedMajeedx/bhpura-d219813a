@@ -6,7 +6,12 @@ import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsNavItem } from "./os-nav-item";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
-import { ADMIN_WORKSPACES, type AdminNavItemConfig } from "@/config/admin-navigation";
+import {
+  adminNavGroups,
+  isNavItemActive,
+  type AdminNavItemConfig,
+} from "@/config/admin-navigation";
+import { OsNavMore } from "./os-nav-more";
 
 export interface OsSidebarProps {
   brandLabel: string;
@@ -45,23 +50,29 @@ export function OsSidebar({
   // Group items
   const isPlatformMode = !activeSlug && isSuperAdmin;
 
-  const jobGroups = React.useMemo(() => {
-    if (isPlatformMode || isCourier) return [];
-    return ADMIN_WORKSPACES.map((group) => {
-      const items = navItems.filter((i) => (i.workspace || i.category || "today") === group.id);
-      if (group.id === "store_setup") {
-        items.sort((a, b) => (a.id === "settings" ? -1 : b.id === "settings" ? 1 : 0));
-      } else if (group.id === "catalog") {
-        items.sort((a, b) => (a.id === "inventory" ? -1 : b.id === "inventory" ? 1 : 0));
-      } else if (group.id === "operations") {
-        items.sort((a, b) => (a.id === "orders" ? -1 : b.id === "orders" ? 1 : 0));
-      }
-      return {
-        ...group,
-        items,
-      };
-    }).filter((g) => g.items.length > 0);
-  }, [navItems, isPlatformMode, isCourier]);
+  // The menu's workspaces, from the one definition (`adminNavGroups`).
+  const jobGroups = React.useMemo(
+    () => (isPlatformMode || isCourier ? [] : adminNavGroups(navItems)),
+    [navItems, isPlatformMode, isCourier],
+  );
+  const isActive = (item: AdminNavItemConfig) => isNavItemActive(item, pathname);
+  const linkTo = (item: AdminNavItemConfig, compact: boolean) => (
+    <Link
+      key={item.id}
+      to={item.to as any}
+      params={item.params as any}
+      preload="intent"
+      className="block"
+    >
+      <OsNavItem
+        icon={item.icon}
+        label={isAr ? item.labelAr : item.labelEn}
+        active={isActive(item)}
+        collapsed={compact}
+        badge={item.badge}
+      />
+    </Link>
+  );
 
   return (
     <>
@@ -148,115 +159,50 @@ export function OsSidebar({
           {/* Courier or Super Admin Platform Mode */}
           {isPlatformMode || isCourier ? (
             <div className="flex flex-col gap-1">
-              {navItems.map((item) => {
-                const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                const active = pathname.startsWith(targetPath);
-                const label = isAr ? item.labelAr : item.labelEn;
-
-                return (
-                  <Link
-                    key={item.id}
-                    to={item.to as any}
-                    params={item.params as any}
-                    preload="intent"
-                    className="block"
-                  >
-                    <OsNavItem
-                      icon={item.icon}
-                      label={label}
-                      active={active}
-                      collapsed={collapsed}
-                      badge={item.badge}
-                    />
-                  </Link>
-                );
-              })}
+              {navItems.map((item) => linkTo(item, collapsed))}
             </div>
           ) : !collapsed ? (
-            /* Expanded: 6 Master Workspaces */
+            /* Expanded: the workspaces, each with its rare pages folded under "More tools" */
             <div className="space-y-4">
               {jobGroups.map((group) => {
                 const GroupIcon = group.icon;
-                const isCurrentWorkspace = group.items.some((i) => {
-                  const targetPath = i.to.replace("$slug", i.params?.slug ?? "");
-                  return pathname.startsWith(targetPath);
-                });
+                const isCurrentWorkspace = [...group.items, ...group.more].some(isActive);
 
                 return (
                   <div key={group.id} className="space-y-1">
                     <div
                       className={cn(
-                        "flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-bold tracking-wider transition-colors",
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors",
                         isCurrentWorkspace ? "text-primary bg-primary/10" : "text-muted-foreground",
                       )}
                     >
-                      <span className="flex items-center gap-1.5 truncate uppercase">
-                        {GroupIcon && <GroupIcon className="h-3 w-3 shrink-0" />}
-                        <span>{isAr ? group.labelAr : group.labelEn}</span>
-                      </span>
-                      <span className="text-xs font-semibold opacity-70 px-1.5 py-0.5 rounded bg-muted/60">
-                        {group.items.length}
-                      </span>
+                      {GroupIcon && <GroupIcon className="h-3 w-3 shrink-0" />}
+                      <span className="truncate">{isAr ? group.labelAr : group.labelEn}</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      {group.items.map((item) => {
-                        const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                        const active = pathname.startsWith(targetPath);
-                        const label = isAr ? item.labelAr : item.labelEn;
-
-                        return (
-                          <Link
-                            key={item.id}
-                            to={item.to as any}
-                            params={item.params as any}
-                            preload="intent"
-                            className="block"
-                          >
-                            <OsNavItem
-                              icon={item.icon}
-                              label={label}
-                              active={active}
-                              collapsed={false}
-                              badge={item.badge}
-                            />
-                          </Link>
-                        );
-                      })}
+                      {group.items.map((item) => linkTo(item, false))}
                     </div>
+                    {group.more.length > 0 && (
+                      <OsNavMore
+                        count={group.more.length}
+                        containsActive={group.more.some(isActive)}
+                        lang={lang}
+                      >
+                        {group.more.map((item) => linkTo(item, false))}
+                      </OsNavMore>
+                    )}
                   </div>
                 );
               })}
             </div>
           ) : (
-            /* Collapsed: Icon-only Workspaces */
+            /* Collapsed: every page's icon, workspace by workspace */
             <div className="flex flex-col gap-2">
               {jobGroups.map((group, groupIdx) => (
                 <React.Fragment key={group.id}>
                   {groupIdx > 0 && <div className="h-px bg-border/40 mx-2 my-1" />}
                   <div className="flex flex-col gap-1">
-                    {group.items.map((item) => {
-                      const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
-                      const active = pathname.startsWith(targetPath);
-                      const label = isAr ? item.labelAr : item.labelEn;
-
-                      return (
-                        <Link
-                          key={item.id}
-                          to={item.to as any}
-                          params={item.params as any}
-                          preload="intent"
-                          className="block"
-                        >
-                          <OsNavItem
-                            icon={item.icon}
-                            label={label}
-                            active={active}
-                            collapsed={true}
-                            badge={item.badge}
-                          />
-                        </Link>
-                      );
-                    })}
+                    {[...group.items, ...group.more].map((item) => linkTo(item, true))}
                   </div>
                 </React.Fragment>
               ))}
@@ -275,7 +221,7 @@ export function OsSidebar({
               >
                 <div className="flex items-center gap-2">
                   <Boxes className="h-4 w-4 text-primary" />
-                  <span>{isAr ? "دليل مساحات العمل والأدوات" : "Workspaces Directory"}</span>
+                  <span>{isAr ? "كل الأدوات" : "All tools"}</span>
                 </div>
                 <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
                   {navItems.length}
@@ -286,7 +232,7 @@ export function OsSidebar({
                 <button
                   type="button"
                   onClick={() => setAppsHubModalOpen(true)}
-                  title={isAr ? "دليل مساحات العمل والأدوات" : "Workspaces Directory"}
+                  title={isAr ? "كل الأدوات" : "All tools"}
                   className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all shadow-2xs border border-primary/20"
                 >
                   <Boxes className="h-4 w-4" />

@@ -37,7 +37,7 @@ describe("review management dashboard", () => {
     expect(metrics.lowCount).toBe(1);
   });
 
-  it("adds the customer reviews destination to operations navigation", () => {
+  it("adds the customer reviews destination to the customers workspace", () => {
     const items = getAdminNavItems({
       activeSlug: "pura",
       isCourier: false,
@@ -49,7 +49,8 @@ describe("review management dashboard", () => {
     expect(items.find((item) => item.id === "reviews")).toMatchObject({
       to: "/admin/b/$slug/reviews",
       params: { slug: "pura" },
-      labelAr: "تقييمات العملاء",
+      labelAr: "التقييمات",
+      workspace: "customers",
     });
   });
 

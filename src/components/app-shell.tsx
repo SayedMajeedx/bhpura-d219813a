@@ -596,7 +596,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         open={spotlightOpen}
         onOpenChange={setSpotlightOpen}
         services={servicesStore}
-        hasReturns={storeProfile.modules.returns}
+        pages={navItems}
       />
     </div>
   );
