@@ -4,6 +4,7 @@ import {
   fetchCatalogInquiriesReporting,
   fetchReportingCustomers,
   fetchReportingOverview,
+  fetchReportingMargins,
   fetchReportingPeriods,
   fetchReportingProducts,
   fetchReportingSales,
@@ -73,6 +74,8 @@ export const reportingKeys = {
       timezone,
       includeHistorical,
     ] as const,
+  margins: (slug: string, range: DateRange, includeHistorical: boolean) =>
+    [...reportingKeys.all(slug), "margins", ...iso(range), includeHistorical] as const,
   incubatorSales: (slug: string) => [...reportingKeys.all(slug), "incubator-sales"] as const,
   /** Catalog inquiries by brand, optionally within a date range (ISO strings). */
   catalogInquiries: (brandId: string, from?: string, to?: string) =>
@@ -117,6 +120,15 @@ export type IncubatorSalesBucket = {
 };
 
 export const reportingQueries = {
+  /** Margin by product for a period: `marginRows` reads it. */
+  margins: (slug: string, range: DateRange | undefined, includeHistorical: boolean) =>
+    queryOptions({
+      queryKey: range
+        ? reportingKeys.margins(slug, range, includeHistorical)
+        : [...reportingKeys.all(slug), "margins", "pending"],
+      queryFn: () => fetchReportingMargins(range!, includeHistorical, slug),
+      enabled: Boolean(slug && range),
+    }),
   /** The overview's figures for each period, in one request (`rpc_reporting_periods`). */
   periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
     queryOptions({

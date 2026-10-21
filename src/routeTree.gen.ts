@@ -97,6 +97,7 @@ import { Route as AuthenticatedAdminBSlugReportsIndexRouteImport } from './route
 import { Route as AuthenticatedAdminBSlugReportsAdvanceRouteImport } from './routes/_authenticated/admin.b.$slug.reports.advance'
 import { Route as AuthenticatedAdminBSlugReportsCustomersRouteImport } from './routes/_authenticated/admin.b.$slug.reports.customers'
 import { Route as AuthenticatedAdminBSlugReportsExportRouteImport } from './routes/_authenticated/admin.b.$slug.reports.export'
+import { Route as AuthenticatedAdminBSlugReportsMarginsRouteImport } from './routes/_authenticated/admin.b.$slug.reports.margins'
 import { Route as AuthenticatedAdminBSlugReportsProductsRouteImport } from './routes/_authenticated/admin.b.$slug.reports.products'
 import { Route as AuthenticatedAdminBSlugReportsSalesRouteImport } from './routes/_authenticated/admin.b.$slug.reports.sales'
 import { Route as AuthenticatedAdminBSlugReportsStatementRouteImport } from './routes/_authenticated/admin.b.$slug.reports.statement'
@@ -597,6 +598,12 @@ const AuthenticatedAdminBSlugReportsExportRoute =
     path: '/export',
     getParentRoute: () => AuthenticatedAdminBSlugReportsRoute,
   } as any)
+const AuthenticatedAdminBSlugReportsMarginsRoute =
+  AuthenticatedAdminBSlugReportsMarginsRouteImport.update({
+    id: '/margins',
+    path: '/margins',
+    getParentRoute: () => AuthenticatedAdminBSlugReportsRoute,
+  } as any)
 const AuthenticatedAdminBSlugReportsProductsRoute =
   AuthenticatedAdminBSlugReportsProductsRouteImport.update({
     id: '/products',
@@ -726,6 +733,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
   '/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
   '/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
+  '/admin/b/$slug/reports/margins': typeof AuthenticatedAdminBSlugReportsMarginsRoute
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/admin/b/$slug/reports/statement': typeof AuthenticatedAdminBSlugReportsStatementRoute
@@ -819,6 +827,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
   '/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
   '/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
+  '/admin/b/$slug/reports/margins': typeof AuthenticatedAdminBSlugReportsMarginsRoute
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/admin/b/$slug/reports/statement': typeof AuthenticatedAdminBSlugReportsStatementRoute
@@ -917,6 +926,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
   '/_authenticated/admin/b/$slug/reports/customers': typeof AuthenticatedAdminBSlugReportsCustomersRoute
   '/_authenticated/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
+  '/_authenticated/admin/b/$slug/reports/margins': typeof AuthenticatedAdminBSlugReportsMarginsRoute
   '/_authenticated/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/_authenticated/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
   '/_authenticated/admin/b/$slug/reports/statement': typeof AuthenticatedAdminBSlugReportsStatementRoute
@@ -1015,6 +1025,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/advance'
     | '/admin/b/$slug/reports/customers'
     | '/admin/b/$slug/reports/export'
+    | '/admin/b/$slug/reports/margins'
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
     | '/admin/b/$slug/reports/statement'
@@ -1108,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/advance'
     | '/admin/b/$slug/reports/customers'
     | '/admin/b/$slug/reports/export'
+    | '/admin/b/$slug/reports/margins'
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
     | '/admin/b/$slug/reports/statement'
@@ -1205,6 +1217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/reports/advance'
     | '/_authenticated/admin/b/$slug/reports/customers'
     | '/_authenticated/admin/b/$slug/reports/export'
+    | '/_authenticated/admin/b/$slug/reports/margins'
     | '/_authenticated/admin/b/$slug/reports/products'
     | '/_authenticated/admin/b/$slug/reports/sales'
     | '/_authenticated/admin/b/$slug/reports/statement'
@@ -1861,6 +1874,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugReportsExportRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugReportsRoute
     }
+    '/_authenticated/admin/b/$slug/reports/margins': {
+      id: '/_authenticated/admin/b/$slug/reports/margins'
+      path: '/margins'
+      fullPath: '/admin/b/$slug/reports/margins'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugReportsMarginsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugReportsRoute
+    }
     '/_authenticated/admin/b/$slug/reports/products': {
       id: '/_authenticated/admin/b/$slug/reports/products'
       path: '/products'
@@ -1974,6 +1994,7 @@ interface AuthenticatedAdminBSlugReportsRouteChildren {
   AuthenticatedAdminBSlugReportsAdvanceRoute: typeof AuthenticatedAdminBSlugReportsAdvanceRoute
   AuthenticatedAdminBSlugReportsCustomersRoute: typeof AuthenticatedAdminBSlugReportsCustomersRoute
   AuthenticatedAdminBSlugReportsExportRoute: typeof AuthenticatedAdminBSlugReportsExportRoute
+  AuthenticatedAdminBSlugReportsMarginsRoute: typeof AuthenticatedAdminBSlugReportsMarginsRoute
   AuthenticatedAdminBSlugReportsProductsRoute: typeof AuthenticatedAdminBSlugReportsProductsRoute
   AuthenticatedAdminBSlugReportsSalesRoute: typeof AuthenticatedAdminBSlugReportsSalesRoute
   AuthenticatedAdminBSlugReportsStatementRoute: typeof AuthenticatedAdminBSlugReportsStatementRoute
@@ -1988,6 +2009,8 @@ const AuthenticatedAdminBSlugReportsRouteChildren: AuthenticatedAdminBSlugReport
       AuthenticatedAdminBSlugReportsCustomersRoute,
     AuthenticatedAdminBSlugReportsExportRoute:
       AuthenticatedAdminBSlugReportsExportRoute,
+    AuthenticatedAdminBSlugReportsMarginsRoute:
+      AuthenticatedAdminBSlugReportsMarginsRoute,
     AuthenticatedAdminBSlugReportsProductsRoute:
       AuthenticatedAdminBSlugReportsProductsRoute,
     AuthenticatedAdminBSlugReportsSalesRoute:

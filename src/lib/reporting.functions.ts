@@ -172,6 +172,25 @@ export async function fetchReportingPeriods(
   );
 }
 
+/**
+ * Margin by product for a period (`rpc_reporting_margins`): units, gross sales, discounts,
+ * returns and cost of goods per product and currency, adding up to the statement's figures.
+ */
+export async function fetchReportingMargins(
+  range: DateRange,
+  includeHistorical: boolean = false,
+  brandSlug?: string,
+): Promise<unknown> {
+  const { data, error } = await supabase.rpc("rpc_reporting_margins", {
+    p_start_date: range.from.toISOString(),
+    p_end_date: range.to.toISOString(),
+    p_include_historical: includeHistorical,
+    p_brand_slug: brandSlug || undefined,
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 // Sales metrics
 export async function fetchReportingSales(
   range: DateRange,

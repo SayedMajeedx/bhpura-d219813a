@@ -8,6 +8,7 @@ import {
   Download,
   MoreHorizontal,
   Table2,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -36,6 +37,13 @@ const navItems = [
     icon: Table2,
     en: "Monthly statement",
     ar: "القائمة الشهرية",
+  },
+  {
+    id: "margins",
+    path: "/admin/b/$slug/reports/margins",
+    icon: Percent,
+    en: "Margins",
+    ar: "الهوامش",
   },
   {
     id: "sales",
