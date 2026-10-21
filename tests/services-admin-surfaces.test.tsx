@@ -247,12 +247,12 @@ describe("the admin's names for a services store's catalog and orders", () => {
       storeModules: resolveStoreModules({ store_vertical: vertical }),
     });
 
-  it("call the catalog 'Services' for a services store, and keep 'Inventory' for a shop", () => {
+  it("call the catalog 'Services' for a services store, and 'Products' for a shop", () => {
     const services = nav("services").find((item) => item.id === "inventory");
     expect(services?.labelEn).toBe("Services");
     expect(services?.labelAr).toBe("الخدمات");
     expect(services?.descriptionEn).not.toMatch(/stock|variants/i);
-    expect(nav("fashion").find((item) => item.id === "inventory")?.labelEn).toBe("Inventory");
+    expect(nav("fashion").find((item) => item.id === "inventory")?.labelEn).toBe("Products");
   });
 
   it("leave out what a services store does not use, and keep Bookings", () => {

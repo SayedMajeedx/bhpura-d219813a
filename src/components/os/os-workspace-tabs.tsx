@@ -1,12 +1,7 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import {
-  type AdminNavItemConfig,
-  getWorkspaceCategory,
-  getWorkspaceGroup,
-  getWorkspaceSubTabs,
-} from "@/config/admin-navigation";
+import { type AdminNavItemConfig, workspaceTabs } from "@/config/admin-navigation";
 
 export interface OsWorkspaceTabsProps {
   navItems: AdminNavItemConfig[];
@@ -24,20 +19,18 @@ export function OsWorkspaceTabs({
   className,
 }: OsWorkspaceTabsProps) {
   const isAr = lang === "ar";
-  const category = React.useMemo(
-    () => getWorkspaceCategory(pathname, navItems),
-    [pathname, navItems],
+  // The open workspace's pages in view (and a folded page while it is the one open).
+  const {
+    workspace: workspaceGroup,
+    items,
+    activeItem,
+  } = React.useMemo(
+    () => workspaceTabs(navItems, pathname, activeSlug),
+    [navItems, pathname, activeSlug],
   );
 
-  const workspaceGroup = React.useMemo(() => getWorkspaceGroup(category), [category]);
-
-  const { items, activeItem } = React.useMemo(() => {
-    if (!category) return { items: [], activeItem: undefined };
-    return getWorkspaceSubTabs(navItems, category, pathname, activeSlug);
-  }, [navItems, category, pathname, activeSlug]);
-
-  // If there's only 1 item (e.g. Dashboard) or no matching category, do not render extra tabs
-  if (!category || items.length <= 1) {
+  // One page, or a page outside the menu: no tabs.
+  if (!workspaceGroup || items.length <= 1) {
     return null;
   }
 
@@ -70,8 +63,7 @@ export function OsWorkspaceTabs({
         {/* Scrollable Tab Strip */}
         <div className="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 overscroll-contain">
           {items.map((tab) => {
-            const targetPath = tab.to.replace("$slug", tab.params?.slug ?? activeSlug ?? "");
-            const isActive = tab.id === activeItem?.id || pathname.startsWith(targetPath);
+            const isActive = tab.id === activeItem?.id;
             const TabIcon = tab.icon;
             const label = isAr ? tab.labelAr : tab.labelEn;
 
