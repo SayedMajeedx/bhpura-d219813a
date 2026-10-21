@@ -276,7 +276,11 @@ export async function signInWithStressData(
         body: JSON.stringify(single ? (rows[0] ?? null) : rows),
       });
 
-    if (url.includes("/rpc/")) return answer([]);
+    if (url.includes("/rpc/")) {
+      // The finance reports, with large figures and names that do not wrap.
+      const body = JSON.stringify(stressReport(url, route.request().postDataJSON()));
+      return route.fulfill({ status: 200, contentType: "application/json", body });
+    }
     if (url.includes("/brands")) return answer([brand]);
     if (url.includes("/profiles")) {
       return answer([
@@ -318,4 +322,82 @@ export async function signInWithStressData(
     if (url.includes("/categories")) return answer(categories);
     return answer([]);
   });
+}
+
+/** The finance reports' functions, answered with long names and large figures; others empty. */
+function stressReport(url: string, body: unknown): unknown {
+  const args = (body ?? {}) as { p_periods?: unknown[] };
+  if (url.includes("/rpc/rpc_reporting_periods")) {
+    return (args.p_periods ?? []).map((_, i) => ({
+      overview: [
+        {
+          currency: "BHD",
+          paid_order_value: 98765.432 + i,
+          gross_merch_sales: 123456.789 + i,
+          discounts: 12345.678,
+          net_merch_sales: 111111.111 + i,
+          shipping_collected: 2345.5,
+          vat_collected: 9876.5,
+          collected: 87654.321,
+          owed_by_customers: 11111.111,
+          paid_order_count: 1234,
+          known_cogs: 55555.555,
+          missing_cost_item_count: 3,
+          expenses: 22222.222,
+        },
+      ],
+      returns: [{ currency: "BHD", revenue_deduction: 1234.5, merchandise_deduction: 1200 }],
+      cogs: [{ currency: "BHD", known_cogs: 55555.555 }],
+      fees: [{ currency: "BHD", processing_fees: 1111.111 }],
+      incubator_summary: [{ currency: "BHD", gross_amount: 4321, commission_amount: 432.1 }],
+    }));
+  }
+  if (url.includes("/rpc/rpc_reporting_margins")) {
+    return [LONG_EN, LONG_AR, UNBREAKABLE].map((name, i) => ({
+      currency: "BHD",
+      product_id: `prod-${i}`,
+      product_name: name,
+      product_name_ar: name,
+      category: "abayas",
+      category_name: LONG_EN,
+      category_name_ar: LONG_AR,
+      units: 1234,
+      partner_units: 56,
+      gross_sales: 123456.789,
+      partner_sales: 4321,
+      discounts: 1234.5,
+      returns: 432.1,
+      cost_of_goods: 55555.555,
+      missing_cost_units: i === 2 ? 1 : 0,
+    }));
+  }
+  if (url.includes("/rpc/rpc_reporting_receivables")) {
+    return {
+      customers: [0, 40, 75, 200].map((days, i) => ({
+        id: `order-${i}`,
+        invoice_number: 1001 + i,
+        public_invoice_token: "token-1",
+        created_at: "2026-06-01T12:00:00Z",
+        handed_over_at: i === 0 ? null : new Date(Date.now() - days * 86_400_000).toISOString(),
+        currency: "BHD",
+        total: 98765.432,
+        collected: 1000,
+        balance: 97765.432,
+        customer_id: i < 2 ? "cust-1" : `cust-${i}`,
+        customer_name: i === 3 ? UNBREAKABLE : LONG_PERSON,
+        customer_phone: "97312345678",
+      })),
+      partners: [
+        {
+          id: "inc-1",
+          name: LONG_EN,
+          currency: "BHD",
+          due: 12345.678,
+          overdue: 2345.5,
+          next_settlement: "2026-11-01",
+        },
+      ],
+    };
+  }
+  return [];
 }

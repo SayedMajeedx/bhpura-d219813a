@@ -516,6 +516,11 @@
       "authenticated": true,
       "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
     },
+    "rpc_reporting_month_pack(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
+    },
     "rpc_reporting_order_cogs(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_include_historical boolean, p_brand_slug text)": {
       "anon": false,
       "authenticated": true,

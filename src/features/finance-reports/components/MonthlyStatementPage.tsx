@@ -28,6 +28,7 @@ import {
 } from "../lib/statement";
 import { STATEMENT_WORDS, statementSheet } from "../lib/statement-sheet";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
+import { MonthPackDialog } from "./MonthPackDialog";
 
 const PRESET_WORDS: Record<StatementPreset, { en: string; ar: string }> = {
   last12: { en: "Last 12 months", ar: "آخر 12 شهراً" },
@@ -158,6 +159,7 @@ export function MonthlyStatementPage({ slug }: { slug: string }) {
           <Download className="h-4 w-4" aria-hidden="true" />
           {isAr ? "تنزيل Excel" : "Download Excel"}
         </Button>
+        <MonthPackDialog slug={slug} currency={currency} lang={lang} />
       </Card>
 
       {state === "failed" ? (
@@ -301,7 +303,7 @@ function StatementRow({
             (line.kind === "item" || muted) && "ps-6",
           )}
         >
-          {line.label[lang]}
+          <span className="block w-32 whitespace-normal sm:w-56">{line.label[lang]}</span>
         </th>
         {line.values.map((value, i) => (
           <td

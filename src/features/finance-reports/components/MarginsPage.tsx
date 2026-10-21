@@ -337,25 +337,27 @@ function MarginRowView({
   const isAr = lang === "ar";
   return (
     <tr className="border-t border-border-subtle">
-      <th scope="row" className="sticky start-0 z-10 max-w-64 bg-card px-3 py-1.5 text-start">
-        <span dir="auto" className="text-page-start line-clamp-2 break-words font-semibold">
-          {line.name}
-          {line.missingCost && (
-            <span
-              className="ms-1 text-warning"
-              title={isAr ? "بعض القطع بلا تكلفة مسجلة" : "Some pieces have no cost recorded"}
-            >
-              !
+      <th scope="row" className="sticky start-0 z-10 bg-card px-3 py-1.5 text-start">
+        <span className="block w-36 whitespace-normal sm:w-64">
+          <span dir="auto" className="text-page-start line-clamp-2 break-words font-semibold">
+            {line.name}
+            {line.missingCost && (
+              <span
+                className="ms-1 text-warning"
+                title={isAr ? "بعض القطع بلا تكلفة مسجلة" : "Some pieces have no cost recorded"}
+              >
+                !
+              </span>
+            )}
+          </span>
+          {(line.category || line.products !== undefined) && (
+            <span className="line-clamp-2 block break-words text-xs font-normal text-muted-foreground">
+              {line.category ?? (isAr ? `${line.products} منتجات` : `${line.products} products`)}
+              {line.partnerUnits > 0 &&
+                ` · ${isAr ? `${line.partnerUnits} في المحلات الشريكة` : `${line.partnerUnits} at partner shops`}`}
             </span>
           )}
         </span>
-        {(line.category || line.products !== undefined) && (
-          <span className="block text-xs font-normal text-muted-foreground">
-            {line.category ?? (isAr ? `${line.products} منتجات` : `${line.products} products`)}
-            {line.partnerUnits > 0 &&
-              ` · ${isAr ? `${line.partnerUnits} في المحلات الشريكة` : `${line.partnerUnits} at partner shops`}`}
-          </span>
-        )}
       </th>
       <td className="px-3 py-1.5 text-end">{accountingFigure(line.units, 0)}</td>
       <td className="px-3 py-1.5 text-end">{money(line.netSales)}</td>

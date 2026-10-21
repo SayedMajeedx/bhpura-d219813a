@@ -210,6 +210,26 @@ export async function fetchReportingReceivables(
   return data ?? {};
 }
 
+/**
+ * The month's detail for the accountant's month pack (`rpc_reporting_month_pack`): sales,
+ * partner shops' sales and payments, returns, expenses, supplier payments and what is owed to
+ * suppliers, and stock at cost today.
+ */
+export async function fetchReportingMonthPack(
+  range: DateRange,
+  tz: string,
+  brandSlug?: string,
+): Promise<unknown> {
+  const { data, error } = await supabase.rpc("rpc_reporting_month_pack", {
+    p_start_date: range.from.toISOString(),
+    p_end_date: range.to.toISOString(),
+    p_tz: tz,
+    p_brand_slug: brandSlug || undefined,
+  });
+  if (error) throw error;
+  return data ?? {};
+}
+
 // Sales metrics
 export async function fetchReportingSales(
   range: DateRange,

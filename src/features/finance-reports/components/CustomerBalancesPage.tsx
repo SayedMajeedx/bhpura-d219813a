@@ -302,7 +302,7 @@ function CustomerRow({
           type="button"
           onClick={onToggle}
           aria-expanded={open}
-          className="flex min-h-9 max-w-64 items-center gap-1.5 text-start"
+          className="flex min-h-9 w-40 items-center gap-1.5 text-start sm:w-64"
         >
           <ChevronDown
             className={cn("h-4 w-4 shrink-0 transition-transform", open && "rotate-180")}
