@@ -17,11 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { AlertCircle, PackageX, MessageCircle } from "lucide-react";
+import { AlertCircle, MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { reportingQueries } from "@/lib/data/reporting";
 import { useLowStockLevel } from "@/hooks/use-low-stock-level";
-import { isLowStock } from "@/lib/inventory-health";
+import { ReportStockBadge } from "@/components/reports/ReportStockBadge";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/products")({
   component: ReportsProducts,
@@ -55,8 +55,6 @@ function ReportsProducts() {
   const brand = useBrand();
   // The store's own level decides the "low" mark, as on the inventory list.
   const lowStockUnits = useLowStockLevel(brand?.id ?? "");
-  const isLow = (row: { current_stock?: number | null }) =>
-    isLowStock(Number(row.current_stock || 0), 0, lowStockUnits);
 
   const { data: inquiriesData } = useQuery(
     reportingQueries.catalogInquiries(
@@ -195,15 +193,11 @@ function ReportsProducts() {
                           <span className="text-xs text-muted-foreground">
                             {lang === "ar" ? "المخزون الحالي" : "Current stock"}
                           </span>
-                          {p.is_out_of_stock ? (
-                            <Badge variant="destructive">
-                              <PackageX className="me-1 h-3 w-3" />0
-                            </Badge>
-                          ) : (
-                            <Badge variant={isLow(p) ? "secondary" : "outline"}>
-                              {p.current_stock}
-                            </Badge>
-                          )}
+                          <ReportStockBadge
+                            row={p}
+                            lowStockUnits={lowStockUnits}
+                            lang={lang === "ar" ? "ar" : "en"}
+                          />
                         </div>
                         {p.is_missing_cost && (
                           <p className="mt-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-800">
@@ -297,20 +291,11 @@ function ReportsProducts() {
                             </TableCell>
                             <TableCell className="text-end">
                               <div className="flex items-center justify-end gap-2">
-                                {p.is_out_of_stock ? (
-                                  <Badge variant="destructive" className="flex gap-1">
-                                    <PackageX className="w-3 h-3" /> 0
-                                  </Badge>
-                                ) : isLow(p) ? (
-                                  <Badge
-                                    variant="secondary"
-                                    className="text-amber-500 border-amber-500/20 bg-amber-500/10"
-                                  >
-                                    {p.current_stock}
-                                  </Badge>
-                                ) : (
-                                  <span>{p.current_stock}</span>
-                                )}
+                                <ReportStockBadge
+                                  row={p}
+                                  lowStockUnits={lowStockUnits}
+                                  lang={lang === "ar" ? "ar" : "en"}
+                                />
                               </div>
                             </TableCell>
                           </TableRow>
