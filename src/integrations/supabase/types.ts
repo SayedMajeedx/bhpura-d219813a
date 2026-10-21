@@ -10804,6 +10804,24 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpc_reporting_margins: {
+        Args: {
+          p_brand_slug?: string;
+          p_end_date: string;
+          p_include_historical?: boolean;
+          p_start_date: string;
+        };
+        Returns: Json;
+      };
+      rpc_reporting_month_pack: {
+        Args: {
+          p_brand_slug?: string;
+          p_end_date: string;
+          p_start_date: string;
+          p_tz?: string;
+        };
+        Returns: Json;
+      };
       rpc_reporting_order_cogs: {
         Args: {
           p_brand_slug?: string;
@@ -10819,6 +10837,15 @@ export type Database = {
           p_end_date: string;
           p_include_historical?: boolean;
           p_start_date: string;
+          p_tz?: string;
+        };
+        Returns: Json;
+      };
+      rpc_reporting_periods: {
+        Args: {
+          p_brand_slug?: string;
+          p_include_historical?: boolean;
+          p_periods: Json;
           p_tz?: string;
         };
         Returns: Json;
@@ -10867,6 +10894,10 @@ export type Database = {
             };
             Returns: Json;
           };
+      rpc_reporting_receivables: {
+        Args: { p_brand_slug?: string; p_today: string; p_tz?: string };
+        Returns: Json;
+      };
       rpc_reporting_sales:
         | {
             Args: {
