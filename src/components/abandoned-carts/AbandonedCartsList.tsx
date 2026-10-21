@@ -21,16 +21,23 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Search, MessageSquare, Link2, CheckCircle2, RefreshCw } from "lucide-react";
-import type { AbandonedCart } from "@/lib/abandoned-carts.types";
 import { generateCartRecoveryCoupon } from "@/lib/abandoned-carts.functions";
+import type { AbandonedCartWithCustomer } from "@/lib/data/abandoned-carts";
+import { cartChatUrl, isLeftCart, type RecoveryCode } from "@/lib/abandoned-cart-recovery";
+import { cartReminderMessage } from "@/features/outreach/lib/outreach-messages";
+import { cartLines, guessLang } from "@/features/outreach/lib/outreach";
+import { getStorefrontUrl } from "@/lib/storefront-url";
+import { formatMoney } from "@/lib/format";
+
+type CartRow = AbandonedCartWithCustomer;
 
 interface AbandonedCartsListProps {
-  carts: (AbandonedCart & {
-    customers?: { name: string; email: string; phone: string } | null;
-  })[];
+  carts: CartRow[];
   brandSlug: string;
   brandName: string;
   brandId: string;
+  /** The code the store chose to offer with a reminder, or none. */
+  recoveryCode: RecoveryCode | null;
   isLoading: boolean;
   onRefresh: () => void;
 }
@@ -40,6 +47,7 @@ export function AbandonedCartsList({
   brandSlug,
   brandName,
   brandId,
+  recoveryCode,
   isLoading,
   onRefresh,
 }: AbandonedCartsListProps) {
@@ -115,55 +123,68 @@ export function AbandonedCartsList({
     }
   };
 
+  // The storefront's own address (its domain when it has one), not the admin's.
+  const recoveryLink = (token: string, code?: string | null) => {
+    const query = `?recover=${encodeURIComponent(token)}${code ? `&coupon=${encodeURIComponent(code)}` : ""}`;
+    const link = getStorefrontUrl(brandSlug, `/checkout${query}`);
+    return link.startsWith("http") ? link : `${window.location.origin}${link}`;
+  };
+
   const handleCopyLink = (token: string) => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const recoveryUrl = `${origin}/${brandSlug}/checkout?recover=${token}`;
-    navigator.clipboard.writeText(recoveryUrl);
+    navigator.clipboard.writeText(recoveryLink(token));
     toast.success(isAr ? "تم نسخ رابط استعادة السلة" : "Recovery link copied to clipboard");
   };
 
-  const handleSendWhatsApp = async (cart: AbandonedCart) => {
-    const phone = cart.guest_phone || (cart as any).customers?.phone;
-    if (!phone) {
-      toast.error(isAr ? "لا يوجد رقم هاتف مسجل لهذه السلة" : "No phone number recorded");
+  // A person sends the reminder, only to a shopper who agreed to hear about the cart. A code is
+  // made only when asked for, once per cart, with the store's own discount.
+  const handleSendWhatsApp = async (cart: CartRow, withCode: boolean) => {
+    const chat = cartChatUrl(cart);
+    if (!chat) {
+      toast.error(
+        isAr
+          ? "لم يوافق صاحب السلة على الرسائل، أو لا يوجد رقم واتساب"
+          : "The shopper did not agree to messages, or left no WhatsApp number",
+      );
       return;
     }
 
     try {
       setGeneratingForCartId(cart.id);
-      // Generate single-use discount coupon if not already present
-      let couponCode = cart.recovery_discount_code;
-      if (!couponCode) {
-        couponCode = await generateCartRecoveryCoupon({
-          brandId,
-          cartId: cart.id,
-          discountType: "percentage",
-          discountValue: 10,
-        });
+      let code: string | null = null;
+      if (withCode && recoveryCode) {
+        code =
+          cart.recovery_discount_code ||
+          (await generateCartRecoveryCoupon({
+            brandId,
+            cartId: cart.id,
+            discountType: recoveryCode.type,
+            discountValue: recoveryCode.value,
+            expiryHours: recoveryCode.expiryHours,
+          }));
       }
-
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const recoveryUrl = `${origin}/${brandSlug}/checkout?recover=${cart.recovery_token}${
-        couponCode ? `&coupon=${couponCode}` : ""
-      }`;
-
-      const name =
-        cart.guest_name ||
-        (cart as any).customers?.name ||
-        (isAr ? "عزيزنا العميل" : "Valued Customer");
-      const message = isAr
-        ? `مرحباً ${name}، لاحظنا أنك تركت منتجات في سلتك لدى ${brandName}. إليك كود خصم خاص 10% [${couponCode}] لإتمام طلبك الآن: ${recoveryUrl}`
-        : `Hi ${name}, you left items in your cart at ${brandName}. Here is an exclusive 10% discount code [${couponCode}] to complete your order: ${recoveryUrl}`;
-
-      const cleanedPhone = phone.replace(/[^0-9]/g, "");
-      const waUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(message)}`;
-      window.open(waUrl, "_blank");
-
-      toast.success(
-        isAr ? "تم فتح محادثة الواتساب مع كود الخصم" : "Opened WhatsApp with recovery offer",
+      const name = cart.guest_name || cart.customers?.name || null;
+      const message = cartReminderMessage(
+        {
+          name,
+          lines: cartLines(cart.cart_items),
+          subtotal: Number(cart.subtotal) || 0,
+          currency: cart.currency,
+          token: cart.recovery_token,
+          code,
+        },
+        guessLang(name),
+        {
+          storeName: brandName,
+          cartLink: (token) => recoveryLink(token, code),
+          money: (amount, currency, l) => formatMoney(amount, currency || cart.currency, l),
+        },
       );
-    } catch (err: any) {
-      toast.error(err.message || "Failed to generate recovery message");
+      window.open(`${chat}?text=${encodeURIComponent(message)}`, "_blank");
+      toast.success(isAr ? "تم فتح محادثة الواتساب" : "Opened WhatsApp");
+    } catch (err) {
+      toast.error(
+        (err as Error).message || (isAr ? "تعذر إنشاء الكود" : "The code could not be made"),
+      );
     } finally {
       setGeneratingForCartId(null);
     }
@@ -307,7 +328,7 @@ export function AbandonedCartsList({
                       </TableCell>
 
                       <TableCell className="font-mono text-sm font-bold text-foreground">
-                        {Number(cart.subtotal).toFixed(3)} {cart.currency || "BHD"}
+                        {formatMoney(Number(cart.subtotal) || 0, cart.currency, lang)}
                       </TableCell>
 
                       <TableCell>{getStatusBadge(cart.status)}</TableCell>
@@ -331,24 +352,44 @@ export function AbandonedCartsList({
                             size="icon"
                             onClick={() => handleCopyLink(cart.recovery_token)}
                             title={isAr ? "نسخ رابط السلة" : "Copy Recovery Link"}
+                            aria-label={
+                              isAr ? `نسخ رابط سلة ${name}` : `Copy the cart link for ${name}`
+                            }
                             className="h-8 w-8 text-muted-foreground hover:text-foreground"
                           >
                             <Link2 className="h-4 w-4" />
                           </Button>
 
-                          {phone &&
-                            (cart.status === "abandoned" || cart.status === "recovering") && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleSendWhatsApp(cart)}
-                                disabled={generatingForCartId === cart.id}
-                                className="min-h-[36px] gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
-                              >
-                                <MessageSquare className="h-3.5 w-3.5" />
-                                <span>{isAr ? "استعادة واتساب" : "WhatsApp"}</span>
-                              </Button>
-                            )}
+                          {isLeftCart(cart) &&
+                            (cartChatUrl(cart) ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleSendWhatsApp(cart, false)}
+                                  disabled={generatingForCartId === cart.id}
+                                  className="min-h-[36px] gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <span>{isAr ? "واتساب" : "WhatsApp"}</span>
+                                </Button>
+                                {recoveryCode && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleSendWhatsApp(cart, true)}
+                                    disabled={generatingForCartId === cart.id}
+                                    className="min-h-[36px] text-xs"
+                                  >
+                                    {isAr ? "مع كود" : "With a code"}
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {isAr ? "لم يوافق على الرسائل" : "No consent to messages"}
+                              </span>
+                            ))}
                         </div>
                       </TableCell>
                     </TableRow>

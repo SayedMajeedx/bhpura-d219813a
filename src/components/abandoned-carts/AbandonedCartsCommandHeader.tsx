@@ -31,8 +31,8 @@ export function AbandonedCartsCommandHeader({
       }
       description={
         isAr
-          ? "استعادة الإيرادات المفقودة تلقائياً عبر رسائل ذكية (WhatsApp/Email) مع أكواد خصم حصرية مخصصة."
-          : "Recover lost revenue with intelligent multi-channel sequences and dynamic single-use discounts."
+          ? "السلات التي تُركت دون طلب. ترسل أنت التذكير عبر واتساب لمن وافق على ذلك، ولا يُرسل شيء تلقائياً."
+          : "Carts left without an order. You send a WhatsApp reminder to shoppers who agreed to it; nothing is sent automatically."
       }
       actions={
         onOpenSettings && (

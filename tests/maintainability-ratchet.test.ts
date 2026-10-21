@@ -32,7 +32,7 @@ const BUDGETS = {
   // List reads with no bound of their own (no readAll, limit, range, single row or id list). The
   // API cuts such a read at its row limit without saying so. What is left is settings-sized
   // tables and one parent's rows (an order's history, a customer's addresses).
-  unboundedListReads: 96,
+  unboundedListReads: 95,
   filesOver1000: 11,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,

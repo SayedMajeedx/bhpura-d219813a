@@ -1,5 +1,6 @@
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-phone";
 import { countsAsSold } from "@/lib/data/orders/sold-orders";
+import { isOpenCart } from "@/lib/abandoned-cart-recovery";
 import { madeToOrderLimit } from "@/lib/product-availability";
 import {
   waitingGroups,
@@ -182,7 +183,7 @@ const isPlaceholder = (value: string | null | undefined) =>
 
 const time = (value: string | null | undefined) => (value ? Date.parse(value) : NaN);
 
-function cartLines(items: unknown): OutreachCartLine[] {
+export function cartLines(items: unknown): OutreachCartLine[] {
   if (!Array.isArray(items)) return [];
   return items
     .map((raw) => {
@@ -271,7 +272,9 @@ export function outreachToday(input: OutreachInput): {
 
   // 2. The cart they left, while they agreed to hear about it.
   for (const cart of input.carts) {
-    if (cart.recovered_at || cart.status === "recovered" || !cart.recovery_token) continue;
+    // Only a cart still open: not ordered (recovered, converted), not emptied by the shopper
+    // (expired), not stopped (unsubscribed).
+    if (cart.recovered_at || !isOpenCart(cart) || !cart.recovery_token) continue;
     const age = now - time(cart.last_activity_at);
     if (!(age >= CART_FROM && age <= CART_UNTIL)) continue;
     const customer = cart.customer_id ? byId.get(cart.customer_id) : undefined;

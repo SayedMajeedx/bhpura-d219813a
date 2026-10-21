@@ -62,6 +62,37 @@ const listOf = (names: string[], lang: "ar" | "en") => {
   return `${head}${lang === "ar" ? " و" : " and "}${names[names.length - 1]}`;
 };
 
+/** A left cart, as both Clients to message and the abandoned-carts screen write it. */
+export type CartReminder = {
+  name: string | null;
+  lines: readonly { name: string; size: string | null }[];
+  subtotal: number;
+  currency: string | null;
+  token: string;
+  /** A code the store chose to offer, already made for this cart. */
+  code?: string | null;
+};
+
+export function cartReminderMessage(
+  cart: CartReminder,
+  lang: "ar" | "en",
+  ctx: Pick<MessageContext, "storeName" | "cartLink" | "money">,
+): string {
+  const hi = greeting(cart.name, lang);
+  const store = ctx.storeName;
+  const names = cart.lines.map((line) => (line.size ? `${line.name} (${line.size})` : line.name));
+  const total = ctx.money(cart.subtotal, cart.currency, lang);
+  const link = ctx.cartLink(cart.token);
+  const code = cart.code
+    ? lang === "ar"
+      ? `\nكود خصم خاص لهذه السلة: ${cart.code}`
+      : `\nA code for this cart: ${cart.code}`
+    : "";
+  return lang === "ar"
+    ? `${hi} سلتك في ${store} ما زالت محفوظة: ${listOf(names, lang)}، بمجموع ${total}.${code}\nلإكمال الطلب: ${link}`
+    : `${hi} your cart at ${store} is still saved: ${listOf(names, lang)}, ${total} in all.${code}\nTo complete your order: ${link}`;
+}
+
 export function outreachMessage(
   card: OutreachCard,
   lang: "ar" | "en",
@@ -80,16 +111,8 @@ export function outreachMessage(
         ? `${hi} ${piece} صار متوفراً من جديد في ${store}.\n${link}`
         : `${hi} ${piece} is back in stock at ${store}.\n${link}`;
     }
-    case "cart": {
-      const names = detail.lines.map((line) =>
-        line.size ? `${line.name} (${line.size})` : line.name,
-      );
-      const total = ctx.money(detail.subtotal, detail.currency, lang);
-      const link = ctx.cartLink(detail.token);
-      return lang === "ar"
-        ? `${hi} سلتك في ${store} ما زالت محفوظة: ${listOf(names, lang)}، بمجموع ${total}.\nلإكمال الطلب: ${link}`
-        : `${hi} your cart at ${store} is still saved: ${listOf(names, lang)}, ${total} in all.\nTo complete your order: ${link}`;
-    }
+    case "cart":
+      return cartReminderMessage({ name: card.name, ...detail }, lang, ctx);
     case "aftercare":
       return lang === "ar"
         ? `${hi} شكراً لاختيارك ${store}. نتمنى أن يكون كل شيء على ما يرام، وإذا احتجت أي شيء نحن هنا.`
