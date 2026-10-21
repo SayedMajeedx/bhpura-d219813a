@@ -88,6 +88,12 @@ export function AbandonedCartsList({
             {isAr ? "تمت الاستعادة بنجاح" : "Recovered"}
           </span>
         );
+      case "converted":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+            {isAr ? "صار طلباً مباشرة" : "Ordered"}
+          </span>
+        );
       case "expired":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
@@ -195,6 +201,7 @@ export function AbandonedCartsList({
               <SelectItem value="active">{isAr ? "نشطة" : "Active"}</SelectItem>
               <SelectItem value="recovering">{isAr ? "قيد المتابعة" : "Recovering"}</SelectItem>
               <SelectItem value="recovered">{isAr ? "تمت الاستعادة" : "Recovered"}</SelectItem>
+              <SelectItem value="converted">{isAr ? "صار طلباً مباشرة" : "Ordered"}</SelectItem>
               <SelectItem value="expired">{isAr ? "تم إفراغها" : "Cleared"}</SelectItem>
               <SelectItem value="unsubscribed">
                 {isAr ? "أوقف المتابعة" : "Unsubscribed"}

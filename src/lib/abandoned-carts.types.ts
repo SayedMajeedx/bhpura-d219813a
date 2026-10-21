@@ -1,5 +1,13 @@
 export type CartRecoveryStatus =
-  "active" | "abandoned" | "recovering" | "recovered" | "expired" | "unsubscribed";
+  | "active"
+  | "abandoned"
+  | "recovering"
+  /** Abandoned, then ordered. */
+  | "recovered"
+  /** Ordered without ever being abandoned. */
+  | "converted"
+  | "expired"
+  | "unsubscribed";
 
 export type RecoveryChannel = "whatsapp" | "email" | "push";
 

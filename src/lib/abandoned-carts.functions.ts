@@ -14,8 +14,9 @@ export async function syncStorefrontCartActivity({
   cartItems,
   subtotal,
   currency = "BHD",
-  // Consent is never assumed (the database defaults it to false too).
-  marketingConsent = false,
+  // The shopper's answer at checkout. Left out (the storefront's background sync asks
+  // nothing), the database keeps the last answer; a new cart starts without consent.
+  marketingConsent,
 }: {
   brandId: string;
   sessionId: string;
@@ -28,6 +29,8 @@ export async function syncStorefrontCartActivity({
   currency?: string;
   marketingConsent?: boolean;
 }) {
+  // The database takes the customer from the signed-in account and the currency from the
+  // store; customerId and currency are sent for older database versions only.
   try {
     if (cartItems.length === 0) {
       const { data, error } = await (supabase.rpc as any)("rpc_close_storefront_cart_session", {
@@ -51,7 +54,7 @@ export async function syncStorefrontCartActivity({
       p_cart_items: cartItems,
       p_subtotal: subtotal,
       p_currency: currency,
-      p_marketing_consent: marketingConsent,
+      p_marketing_consent: marketingConsent ?? null,
     });
 
     if (error) {

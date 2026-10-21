@@ -439,7 +439,7 @@
     "rpc_close_storefront_cart_session(p_brand_id uuid, p_session_id text)": {
       "anon": true,
       "authenticated": true,
-      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+      "reason": "Storefront: closes only the caller's own cart session (the session id is the browser's secret); writes nothing new"
     },
     "rpc_create_exchange_replacement_order(p_brand_id uuid, p_return_id uuid, p_replacement_items jsonb)": {
       "anon": true,
@@ -474,7 +474,7 @@
     "rpc_mark_cart_recovered_on_order(p_brand_id uuid, p_order_id uuid, p_customer_id uuid, p_session_id text, p_guest_email text, p_guest_phone text)": {
       "anon": true,
       "authenticated": true,
-      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+      "reason": "Storefront: only for an order of that store placed on the storefront in the last hour; closes that session's carts and the order's own customer's, never by a contact the caller names (migration 20261021130000)"
     },
     "rpc_process_return_refund(p_brand_id uuid, p_return_id uuid, p_refund_method text, p_refund_amount numeric, p_refund_reference text, p_notes text)": {
       "anon": true,
@@ -484,7 +484,7 @@
     "rpc_record_or_update_cart_activity(p_brand_id uuid, p_session_id text, p_customer_id uuid, p_guest_email text, p_guest_phone text, p_guest_name text, p_cart_items jsonb, p_subtotal numeric, p_currency text, p_marketing_consent boolean)": {
       "anon": true,
       "authenticated": true,
-      "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+      "reason": "Storefront: one bounded row per store and session (100 lines, 64 KB, short contact fields, the store's currency), 300 new carts per store per 10 minutes; the customer is the signed-in shopper's own record, never the id sent (migration 20261021130000)"
     },
     "rpc_reporting_customers(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_include_historical boolean, p_limit integer, p_offset integer)": {
       "anon": false,
