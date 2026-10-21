@@ -10180,6 +10180,7 @@ export type Database = {
         Returns: number;
       };
       order_advance_due: { Args: { p_order_id: string }; Returns: number };
+      order_counts_as_sold: { Args: { p_status: string }; Returns: boolean };
       order_incubator_sync: {
         Args: {
           p_brand_id: string;
@@ -10480,6 +10481,10 @@ export type Database = {
         Returns: undefined;
       };
       reporting_brand_id: { Args: { p_brand_slug?: string }; Returns: string };
+      reporting_counts_order: {
+        Args: { p_include_historical: boolean; p_status: string };
+        Returns: boolean;
+      };
       reprice_order_totals: { Args: { p_order_id: string }; Returns: undefined };
       request_booking: {
         Args: {
