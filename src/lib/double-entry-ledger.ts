@@ -1,20 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { countsAsSold } from "@/lib/data/orders/sold-orders";
-
-export interface IncomeStatementData {
-  grossRevenue: number;
-  returnsDiscounts: number;
-  netRevenue: number;
-  productCogs: number;
-  packagingBomCogs: number;
-  totalCogs: number;
-  grossProfit: number;
-  grossMarginPercent: number;
-  operatingExpenses: number; // OpEx (Rent, Salaries, Marketing, Incubator)
-  paymentProcessingFees: number; // Gateway fees (Tap, Benefit, Card)
-  netOperatingProfit: number;
-  netProfitMarginPercent: number;
-}
 
 export interface CashFlowStatementData {
   cashBoxBalance: number;
@@ -25,95 +9,6 @@ export interface CashFlowStatementData {
   netCashFlow: number;
   unreconciledTransfersCount: number;
   unreconciledTransfersAmount: number;
-}
-
-/**
- * Calculates Income Statement (P&L) strictly following the formula:
- * Net Profit = Revenue - Total COGS (Products + Packaging BOM) - OpEx - Gateway Fees
- */
-export function calculateIncomeStatement(
-  orders: any[],
-  expenses: any[],
-  cardFeePercent: number = 0,
-  benefitFeePercent: number = 0,
-  returns: any[] = [],
-  options?: { defaultPackagingCost?: number; bomEnabled?: boolean },
-): IncomeStatementData {
-  // Every order that counts as sold, as the Reports overview counts them (a list of the
-  // statuses that count left out orders being made, packed or at the tailor unless paid).
-  const confirmedOrders = orders.filter((o) => countsAsSold(o.status));
-
-  const grossRevenue = confirmedOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-  const returnsDiscounts = returns
-    .filter((r) => r.refund_status === "processed" || r.status === "refunded")
-    .reduce((sum, r) => sum + Number(r.net_refund_amount || 0), 0);
-  const netRevenue = Math.max(0, grossRevenue - returnsDiscounts);
-
-  let productCogs = 0;
-  let packagingBomCogs = 0;
-
-  confirmedOrders.forEach((order) => {
-    const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up"].includes(
-      String(order.fulfillment_status || order.status || "").toLowerCase(),
-    );
-    (order.order_items ?? []).forEach((item: any) => {
-      const qty = Number(item.quantity || 0);
-      const unitCost = Number(item.unit_cost || 0);
-      let packagingCost = Number(item.packaging_cost_snapshot ?? item.packaging_cost ?? 0);
-      if (packagingCost <= 0 && options?.defaultPackagingCost) {
-        packagingCost = options.defaultPackagingCost;
-      }
-
-      productCogs += unitCost * qty;
-      if (isFulfilled && options?.bomEnabled !== false) {
-        packagingBomCogs += packagingCost * qty;
-      }
-    });
-  });
-
-  const totalOrderCogs = productCogs + packagingBomCogs;
-  const grossProfit = netRevenue - totalOrderCogs;
-  const grossMarginPercent = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
-
-  let operatingExpenses = 0; // Fixed OpEx (Rent, Salaries, Marketing, Utilities)
-
-  expenses.forEach((e) => {
-    // Bulk packaging purchases ("cogs" expenses) are an inventory asset, not a
-    // period expense: they reach the P&L through packagingBomCogs as orders ship.
-    if (e.expense_type === "cogs") return;
-    operatingExpenses += Number(e.amount || 0);
-  });
-
-  // Calculate gateway processing fees
-  let paymentProcessingFees = 0;
-  confirmedOrders.forEach((o) => {
-    const totalVal = Number(o.total || 0);
-    if (o.payment_method === "card") {
-      paymentProcessingFees += totalVal * (cardFeePercent / 100);
-    } else if (o.payment_method === "benefit") {
-      paymentProcessingFees += totalVal * (benefitFeePercent / 100);
-    }
-  });
-
-  // Net Operating Profit = Revenue - Total Order COGS - OpEx - Gateway Fees
-  const netOperatingProfit =
-    netRevenue - totalOrderCogs - operatingExpenses - paymentProcessingFees;
-  const netProfitMarginPercent = netRevenue > 0 ? (netOperatingProfit / netRevenue) * 100 : 0;
-
-  return {
-    grossRevenue: Number(grossRevenue.toFixed(3)),
-    returnsDiscounts: Number(returnsDiscounts.toFixed(3)),
-    netRevenue: Number(netRevenue.toFixed(3)),
-    productCogs: Number(productCogs.toFixed(3)),
-    packagingBomCogs: Number(packagingBomCogs.toFixed(3)),
-    totalCogs: Number(totalOrderCogs.toFixed(3)),
-    grossProfit: Number(grossProfit.toFixed(3)),
-    grossMarginPercent: Number(grossMarginPercent.toFixed(1)),
-    operatingExpenses: Number(operatingExpenses.toFixed(3)),
-    paymentProcessingFees: Number(paymentProcessingFees.toFixed(3)),
-    netOperatingProfit: Number(netOperatingProfit.toFixed(3)),
-    netProfitMarginPercent: Number(netProfitMarginPercent.toFixed(1)),
-  };
 }
 
 /**

@@ -352,6 +352,21 @@ function stressReport(url: string, body: unknown): unknown {
       incubator_summary: [{ currency: "BHD", gross_amount: 4321, commission_amount: 432.1 }],
     }));
   }
+  if (url.includes("/rpc/rpc_reporting_overview")) {
+    return [
+      {
+        currency: "BHD",
+        paid_order_value: 98765.432,
+        gross_merch_sales: 123456.789,
+        discounts: 12345.678,
+        net_merch_sales: 111111.111,
+        paid_order_count: 1234,
+        known_cogs: 55555.555,
+        missing_cost_item_count: 3,
+        expenses: 22222.222,
+      },
+    ];
+  }
   if (url.includes("/rpc/rpc_reporting_margins")) {
     return [LONG_EN, LONG_AR, UNBREAKABLE].map((name, i) => ({
       currency: "BHD",

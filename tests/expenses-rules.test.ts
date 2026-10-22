@@ -7,13 +7,8 @@ import {
   filterExpenses,
   scanFailureMessage,
 } from "../src/features/expenses/lib/expense-list";
-import {
-  costOfGoods,
-  manualOpexOf,
-  netProfitOf,
-  paymentProcessingFeesOf,
-  totalRevenueOf,
-} from "../src/features/expenses/lib/profit-and-loss";
+import { periodFigures, reportRangeOfDays } from "../src/features/expenses/lib/profit-and-loss";
+import { composeOverviewRows, overviewProfit } from "../src/lib/reporting-compose";
 
 // The expenses page's rules, moved out of the page as they were: the period a preset covers,
 // what the list shows, the cost-of-goods download, and the profit and loss strip.
@@ -148,70 +143,57 @@ describe("a receipt that could not be scanned", () => {
 });
 
 describe("the profit and loss strip", () => {
-  const noCatalog = { products: [], variants: [], bomItems: [], materials: [] };
-  const orders = [
-    {
-      total: 100,
-      payment_method: "card",
-      fulfillment_status: "DELIVERED",
-      order_items: [
-        { quantity: 2, unit_cost: 10, packaging_cost_snapshot: 0.5 },
-        { quantity: 1, unit_cost: 5, packaging_cost_snapshot: 0.25 },
-      ],
-    },
-    {
-      total: 50,
-      payment_method: "benefit",
-      fulfillment_status: "NEEDS_PACKING",
-      status: "confirmed",
-      order_items: [{ quantity: 1, unit_cost: 20, packaging_cost_snapshot: 0.5 }],
-    },
-    { total: "30", payment_method: "cod", order_items: null },
-  ];
-
-  it("adds up what the period's orders brought in", () => {
-    expect(totalRevenueOf(orders)).toBe(180);
-    expect(totalRevenueOf([])).toBe(0);
+  // The Reports' figures for a period: store sales, a partner shop's sale, a return, packaging,
+  // fees, a partner's commission and running costs.
+  const rows = composeOverviewRows({
+    overview: [
+      {
+        currency: "BHD",
+        gross_merch_sales: 220,
+        discounts: 20,
+        net_merch_sales: 200,
+        paid_order_value: 230,
+        paid_order_count: 4,
+        expenses: 30,
+        missing_cost_item_count: 1,
+      },
+    ],
+    returns: [{ currency: "BHD", merchandise_deduction: 20, returned_cogs_reversal: 8 }],
+    cogs: [{ currency: "BHD", known_cogs: 72, product_cogs: 65, packaging_cogs: 7 }],
+    fees: [{ currency: "BHD", processing_fees: 5 }],
+    incubatorSummary: [{ currency: "BHD", gross_amount: 50, cogs: 20, commission_amount: 10 }],
   });
 
-  it("counts every sold line's cost, and packaging only for orders that have left", () => {
-    expect(costOfGoods(orders, noCatalog, true)).toEqual({
-      productCogs: 45,
-      packagingBomCogs: 1.25,
-      totalCogs: 46.25,
+  it("is the Reports' own figures for the period, operating profit included", () => {
+    const figures = periodFigures(rows, "BHD")!;
+    expect(figures).toMatchObject({
+      netSales: 230,
+      productCost: 65,
+      packagingCost: 7,
+      partnerCost: 20,
+      costOfGoods: 84,
+      runningCosts: 30,
+      paymentFees: 5,
+      partnerCommissions: 10,
+      operatingCosts: 45,
+      operatingProfit: 101,
+      missingCosts: 1,
     });
+    // Exactly the overview's and the monthly statement's reading of the same row.
+    const overview = overviewProfit(rows[0]);
+    expect(figures.operatingProfit).toBe(overview.operatingProfit);
+    expect(figures.grossMargin).toBe(overview.grossMargin);
   });
 
-  it("counts no packaging for a store that does not use its bill of materials", () => {
-    expect(costOfGoods(orders, noCatalog, false)).toEqual({
-      productCogs: 45,
-      packagingBomCogs: 0,
-      totalCogs: 45,
-    });
+  it("is nothing until the figures arrive, and zero in a currency the period has no sale in", () => {
+    expect(periodFigures(undefined, "BHD")).toBeNull();
+    expect(periodFigures(rows, "SAR")).toMatchObject({ netSales: 0, operatingProfit: 0 });
   });
 
-  it("takes the store's own percentage of card and BenefitPay orders as fees", () => {
-    expect(paymentProcessingFeesOf(orders, 2.5, 1)).toBeCloseTo(3);
-    expect(paymentProcessingFeesOf(orders, 0, 0)).toBe(0);
-  });
-
-  it("counts as running costs every expense that is not a stock purchase", () => {
-    expect(
-      manualOpexOf([
-        { expense_type: "opex", amount: 40 },
-        { expense_type: null, amount: "10" },
-        { expense_type: "cogs", amount: 500 },
-        { amount: 5 },
-      ]),
-    ).toBe(55);
-  });
-
-  it("works out net profit and its margin, and no margin when nothing was sold", () => {
-    expect(
-      netProfitOf({ totalRevenue: 180, totalCogs: 46.25, manualOpex: 55, processingFees: 3 }),
-    ).toEqual({ totalOpex: 58, netProfit: 75.75, marginPercentage: (75.75 / 180) * 100 });
-    expect(
-      netProfitOf({ totalRevenue: 0, totalCogs: 0, manualOpex: 20, processingFees: 0 }),
-    ).toEqual({ totalOpex: 20, netProfit: -20, marginPercentage: 0 });
+  it("covers the page's days as the Reports do: from the first midnight to the last moment", () => {
+    const range = reportRangeOfDays("2026-10-01", "2026-10-31")!;
+    expect(range.from).toEqual(new Date(2026, 9, 1));
+    expect(range.to).toEqual(new Date(new Date(2026, 10, 1).getTime() - 1));
+    expect(reportRangeOfDays("", "2026-10-31")).toBeUndefined();
   });
 });

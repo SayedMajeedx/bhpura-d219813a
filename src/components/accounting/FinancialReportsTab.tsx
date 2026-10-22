@@ -7,28 +7,38 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Printer, PieChart, Calculator, Info } from "lucide-react";
-import { formatMoney } from "@/lib/format";
-import { calculateIncomeStatement, calculateCashFlowStatement } from "@/lib/double-entry-ledger";
-import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { formatDate, formatMoney } from "@/lib/format";
+import { calculateCashFlowStatement } from "@/lib/double-entry-ledger";
+import { Link } from "@tanstack/react-router";
+import type { PeriodFigures } from "@/features/expenses/lib/profit-and-loss";
 import { expensesQueries } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
 import { accountingQueries } from "@/lib/data/accounting";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
-import { useMoneyLabel } from "@/hooks/use-store-currency";
 
-export function FinancialReportsTab() {
+/**
+ * The expenses page's accounting statements: the income statement is the Reports' own figures
+ * for the page's period (`figures`, as the strip above shows them), and the cash flow statement
+ * the store's cash accounts.
+ */
+export function FinancialReportsTab({
+  slug,
+  range,
+  figures,
+}: {
+  slug: string;
+  /** The page's period; the statement covers these days. */
+  range: { from: Date; to: Date } | undefined;
+  figures: PeriodFigures | null;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
   const currency = useStoreCurrency(brandId);
-  const money = useMoneyLabel(isAr ? "ar" : "en");
   const { modules } = useAdminStoreProfile(brandId).profile;
 
   const [reportType, setActiveReportType] = useState<"pnl" | "cash_flow">("pnl");
-
-  // Business settings (fees, BOM)
-  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
   // Every order with its lines (shared with the dashboard)
   const ordersQ = useQuery(ordersQueries.finance(brandId));
@@ -42,39 +52,44 @@ export function FinancialReportsTab() {
   const orders: any[] = ordersQ.data ?? [];
   const expenses: any[] = expensesQ.data ?? [];
   const accounts: any[] = accountsQ.data ?? [];
-  const settings: any = settingsQ.data ?? { card_processing_fee: 0, benefit_processing_fee: 0 };
-
-  const pnl = calculateIncomeStatement(
-    orders,
-    expenses,
-    Number(settings.card_processing_fee || 0),
-    Number(settings.benefit_processing_fee || 0),
-    [],
-    { bomEnabled: settings.bom_enabled !== false },
-  );
+  const period = range
+    ? `${formatDate(range.from, isAr ? "ar-BH" : "en-BH")} – ${formatDate(range.to, isAr ? "ar-BH" : "en-BH")}`
+    : "";
+  const f = figures;
 
   const cashFlow = calculateCashFlowStatement(accounts, orders, expenses);
 
   const handleExportCSV = () => {
     let rows: string[][] = [];
     if (reportType === "pnl") {
-      rows = [
-        ["INCOME STATEMENT / PROFIT & LOSS REPORT", currency],
-        ["Gross Revenue (المبيعات والإيرادات الإجمالية)", String(pnl.grossRevenue)],
-        ["Product COGS (تكلفة المنتجات المباعة)", String(pnl.productCogs)],
-        ["Packaging BOM COGS (تكلفة مواد التغليف والعلب المستهلكة)", String(pnl.packagingBomCogs)],
-        [
-          "Total COGS - Product & BOM Packaging (إجمالي تكلفة المبيعات والتغليف)",
-          String(pnl.totalCogs),
-        ],
-        ["Gross Profit (إجمالي الربح)", String(pnl.grossProfit)],
-        [
-          "Operating Expenses - OpEx (المصاريف التشغيلية والأجور والإيجار)",
-          String(pnl.operatingExpenses),
-        ],
-        ["Payment Gateway Fees (رسوم بوابات الدفع)", String(pnl.paymentProcessingFees)],
-        ["NET OPERATING PROFIT (صافي الربح النهائي)", String(pnl.netOperatingProfit)],
-      ];
+      if (!f) return;
+      rows = isAr
+        ? [
+            ["قائمة الدخل", currency, period],
+            ["صافي المبيعات", String(f.netSales)],
+            ["تكلفة المنتجات", String(f.productCost)],
+            ["تكلفة التغليف", String(f.packagingCost)],
+            ["تكلفة ما بيع في المحلات الشريكة", String(f.partnerCost)],
+            ["تكلفة البضاعة", String(f.costOfGoods)],
+            ["مجمل الربح", String(f.grossProfit)],
+            ["المصاريف التشغيلية", String(f.runningCosts)],
+            ["رسوم الدفع", String(f.paymentFees)],
+            ["عمولات المحلات الشريكة", String(f.partnerCommissions)],
+            ["الربح التشغيلي", String(f.operatingProfit)],
+          ]
+        : [
+            ["Income statement", currency, period],
+            ["Net sales", String(f.netSales)],
+            ["Product cost", String(f.productCost)],
+            ["Packaging cost", String(f.packagingCost)],
+            ["Cost of partner shops' sales", String(f.partnerCost)],
+            ["Cost of goods", String(f.costOfGoods)],
+            ["Gross profit", String(f.grossProfit)],
+            ["Running costs", String(f.runningCosts)],
+            ["Payment fees", String(f.paymentFees)],
+            ["Partner shops' commission", String(f.partnerCommissions)],
+            ["Operating profit", String(f.operatingProfit)],
+          ];
     } else {
       rows = [
         ["CASH FLOW & LIQUIDITY STATEMENT", currency],
@@ -152,134 +167,14 @@ export function FinancialReportsTab() {
 
       {/* Main Report View */}
       {reportType === "pnl" ? (
-        <div className="space-y-6">
-          {/* Formula Display Alert */}
-          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center gap-3">
-            <Info className="h-5 w-5 text-primary shrink-0" />
-            <div className="text-xs">
-              <span className="font-bold text-foreground block">
-                {isAr ? "كيف يُحسب صافي الربح:" : "How net profit is worked out:"}
-              </span>
-              <p className="text-muted-foreground mt-0.5">
-                {isAr
-                  ? "صافي الربح = الإيرادات − تكلفة البضاعة (المنتجات والتغليف) − المصاريف التشغيلية − رسوم الدفع"
-                  : "Net profit = revenue − cost of goods (products and packaging) − running costs − payment fees"}
-              </p>
-            </div>
-          </div>
-
-          {/* P&L Statement Structured Table */}
-          <Card className="p-6 border-border space-y-6">
-            <div className="border-b border-border pb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-extrabold text-foreground">
-                  {isAr
-                    ? "قائمة الدخل والأرباح والخسائر (Income Statement / P&L)"
-                    : "Income Statement (P&L)"}
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {isAr ? `جميع المبالغ بالدينار البحريني ${money}` : `All amounts in ${money}`}
-                </span>
-              </div>
-              <Badge
-                variant="outline"
-                className="bg-primary/10 text-primary border-primary/20 font-mono text-xs"
-              >
-                Margin: {pnl.netProfitMarginPercent}%
-              </Badge>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              {/* Gross Revenue */}
-              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
-                <span className="font-bold text-foreground">
-                  {isAr ? "إجمالي المبيعات والإيرادات (Revenue)" : "Gross Revenue"}
-                </span>
-                <span className="font-extrabold text-foreground text-base">
-                  {formatMoney(pnl.grossRevenue, currency, lang)}
-                </span>
-              </div>
-
-              {/* COGS Breakdown */}
-              <div className="ps-4 pe-4 space-y-1.5 py-1 text-xs text-muted-foreground">
-                <div className="flex justify-between">
-                  <span>{isAr ? "• تكلفة المنتجات المباعة" : "• Cost of products sold"}</span>
-                  <span className="font-mono">{formatMoney(pnl.productCogs, currency, lang)}</span>
-                </div>
-                {(modules.packaging || pnl.packagingBomCogs !== 0) && (
-                  <div className="flex justify-between">
-                    <span>{isAr ? "• تكلفة مواد التغليف والعلب" : "• Packaging cost"}</span>
-                    <span className="font-mono">
-                      {formatMoney(pnl.packagingBomCogs, currency, lang)}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Total COGS */}
-              <div className="flex items-center justify-between py-2 border-b border-border-subtle bg-muted/20 px-3 rounded-lg">
-                <span className="font-bold text-foreground">
-                  {isAr ? "إجمالي تكلفة المبيعات" : "Total cost of goods"}
-                </span>
-                <span className="font-extrabold text-amber-500">
-                  - {formatMoney(pnl.totalCogs, currency, lang)}
-                </span>
-              </div>
-
-              {/* Gross Profit */}
-              <div className="flex items-center justify-between py-2.5 border-b border-border bg-primary/5 px-3 rounded-lg">
-                <span className="font-extrabold text-foreground">
-                  {isAr ? "إجمالي الربح (Gross Profit)" : "Gross Profit"}
-                </span>
-                <span className="font-extrabold text-primary text-base">
-                  {formatMoney(pnl.grossProfit, currency, lang)}
-                </span>
-              </div>
-
-              {/* OpEx Breakdown */}
-              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
-                <span className="font-medium text-foreground">
-                  {isAr
-                    ? "المصاريف التشغيلية والأجور والإيجارات"
-                    : "Running costs (wages, rent and the rest)"}
-                </span>
-                <span className="font-bold text-muted-foreground">
-                  - {formatMoney(pnl.operatingExpenses, currency, lang)}
-                </span>
-              </div>
-
-              {/* Payment Processing Fees */}
-              <div className="flex items-center justify-between py-2 border-b border-border-subtle">
-                <span className="font-medium text-foreground">
-                  {isAr
-                    ? "عمولات بوابات الدفع الإلكترونية (Gateway Fees)"
-                    : "Payment Processing Fees"}
-                </span>
-                <span className="font-bold text-muted-foreground">
-                  - {formatMoney(pnl.paymentProcessingFees, currency, lang)}
-                </span>
-              </div>
-
-              {/* NET PROFIT FINAL */}
-              <div className="flex items-center justify-between py-4 bg-primary text-primary-foreground p-4 rounded-xl shadow-lg mt-4">
-                <div>
-                  <span className="text-xs uppercase opacity-90 block">
-                    {isAr ? "صافي الربح النهائي (Net Operating Profit)" : "Net Operating Profit"}
-                  </span>
-                  <span className="text-2xl font-black">
-                    {formatMoney(pnl.netOperatingProfit, currency, lang)}
-                  </span>
-                </div>
-                <div className="text-end">
-                  <span className="text-xs opacity-90 block">
-                    {isAr ? "هامش صافي الربح" : "Net Margin"}
-                  </span>
-                  <span className="text-lg font-bold">{pnl.netProfitMarginPercent}%</span>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </div>
+        <IncomeStatement
+          figures={f}
+          currency={currency}
+          lang={lang}
+          period={period}
+          slug={slug}
+          showPackaging={Boolean(modules.packaging)}
+        />
       ) : (
         /* Cash Flow Statement */
         <Card className="p-6 border-border space-y-6">
@@ -337,5 +232,116 @@ export function FinancialReportsTab() {
         </Card>
       )}
     </div>
+  );
+}
+
+/** The income statement for the period: the Reports' figures, laid out as a statement. */
+function IncomeStatement({
+  figures: f,
+  currency,
+  lang,
+  period,
+  slug,
+  showPackaging,
+}: {
+  figures: PeriodFigures | null;
+  currency: string;
+  lang: string;
+  period: string;
+  slug: string;
+  showPackaging: boolean;
+}) {
+  const isAr = lang === "ar";
+  const money = (value: number) => formatMoney(value, currency, lang);
+  if (!f) {
+    return (
+      <Card className="p-6 text-center text-sm text-muted-foreground">
+        {isAr ? "جارٍ التحميل…" : "Loading…"}
+      </Card>
+    );
+  }
+  const row = (label: string, value: number, deduction = false, strong = false) => (
+    <div
+      className={
+        strong
+          ? "flex items-center justify-between gap-3 border-b border-border py-2.5 font-bold"
+          : "flex items-center justify-between gap-3 border-b border-border-subtle py-2"
+      }
+    >
+      <span>{label}</span>
+      <span className="font-mono tabular-nums">
+        {deduction ? `(${money(value)})` : money(value)}
+      </span>
+    </div>
+  );
+  const detail = (label: string, value: number) => (
+    <div className="flex justify-between gap-3 ps-4 text-xs text-muted-foreground">
+      <span>{label}</span>
+      <span className="font-mono tabular-nums">{money(value)}</span>
+    </div>
+  );
+  return (
+    <Card className="space-y-4 border-border p-4 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border pb-3">
+        <div className="min-w-0">
+          <h2 className="text-base font-extrabold text-foreground">
+            {isAr ? "قائمة الدخل" : "Income statement"}
+          </h2>
+          <span className="text-xs text-muted-foreground">
+            {period} · {currency}
+          </span>
+        </div>
+        <Badge
+          variant="outline"
+          className="border-primary/20 bg-primary/10 font-mono text-xs text-primary"
+        >
+          {isAr ? "الهامش التشغيلي" : "Operating margin"} {f.operatingMargin.toFixed(1)}%
+        </Badge>
+      </div>
+      <div className="space-y-1.5 text-sm">
+        {row(isAr ? "صافي المبيعات" : "Net sales", f.netSales, false, true)}
+        {detail(isAr ? "• تكلفة المنتجات" : "• Product cost", f.productCost)}
+        {(showPackaging || f.packagingCost !== 0) &&
+          detail(isAr ? "• تكلفة التغليف" : "• Packaging cost", f.packagingCost)}
+        {f.partnerCost !== 0 &&
+          detail(
+            isAr ? "• تكلفة ما بيع في المحلات الشريكة" : "• Cost of partner shops' sales",
+            f.partnerCost,
+          )}
+        {row(isAr ? "تكلفة البضاعة" : "Cost of goods", f.costOfGoods, true)}
+        {row(isAr ? "مجمل الربح" : "Gross profit", f.grossProfit, false, true)}
+        {row(isAr ? "المصاريف التشغيلية" : "Running costs", f.runningCosts, true)}
+        {row(isAr ? "رسوم الدفع" : "Payment fees", f.paymentFees, true)}
+        {f.partnerCommissions !== 0 &&
+          row(
+            isAr ? "عمولات المحلات الشريكة" : "Partner shops' commission",
+            f.partnerCommissions,
+            true,
+          )}
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-primary p-4 text-primary-foreground">
+          <span className="font-bold">{isAr ? "الربح التشغيلي" : "Operating profit"}</span>
+          <span className="font-mono text-lg font-black tabular-nums">
+            {money(f.operatingProfit)}
+          </span>
+        </div>
+        {f.missingCosts > 0 && (
+          <p className="flex items-start gap-1.5 pt-1 text-xs text-warning">
+            <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {isAr
+              ? `${f.missingCosts} قطعة مبيعة بلا تكلفة مسجلة: الربح أعلى من حقيقته بقدر تكلفتها.`
+              : `${f.missingCosts} pieces sold with no cost recorded: profit is overstated by their cost.`}
+          </p>
+        )}
+      </div>
+      <Link
+        to="/admin/b/$slug/reports/statement"
+        params={{ slug }}
+        className="inline-flex min-h-9 items-center text-xs font-semibold text-primary hover:underline"
+      >
+        {isAr
+          ? "نفس أرقام التقارير. القائمة الشهرية، شهراً بشهر"
+          : "The same figures as Reports. The monthly statement, month by month"}
+      </Link>
+    </Card>
   );
 }
