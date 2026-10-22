@@ -1,11 +1,13 @@
 import { jsonForScript } from "@/lib/seo/json-for-script";
+import { availabilityOf } from "@/lib/product-availability";
+import { cardPrice, type PricedProduct, type PricedVariant } from "@/lib/product-price";
 import {
   buildBreadcrumbsSchema,
   buildProductSchema,
   type SeoBrandInfo,
 } from "@/lib/seo/structured-data";
 
-type HeadProduct = {
+type HeadProduct = PricedProduct & {
   id: string;
   name?: string | null;
   name_ar?: string | null;
@@ -14,10 +16,9 @@ type HeadProduct = {
   description_ar?: string | null;
   description_en?: string | null;
   base_price?: number | null;
-  original_price?: number | null;
   image_url?: string | null;
   media?: unknown;
-  product_variants?: Array<{ id: string; selling_price?: number | null }> | null;
+  product_variants?: Array<PricedVariant & { id: string }> | null;
 };
 
 const mediaUrl = (item: unknown) =>
@@ -32,7 +33,13 @@ export function productHead({
   loaderData,
   params,
 }: {
-  loaderData?: { product?: unknown; brand?: unknown; initialLang?: unknown };
+  loaderData?: {
+    product?: unknown;
+    brand?: unknown;
+    initialLang?: unknown;
+    currency?: unknown;
+    showPrices?: unknown;
+  };
   params: { slug: string; id: string };
 }) {
   const product = loaderData?.product as HeadProduct | null | undefined;
@@ -49,6 +56,10 @@ export function productHead({
   const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
   const image = product.image_url || undefined;
 
+  // The price and availability the cards and the shopping feed say, so Google reads one story:
+  // the cheapest size a shopper can buy now (and the dearest, when they differ).
+  const variants = product.product_variants ?? [];
+  const price = cardPrice(product, variants);
   const productSchema = buildProductSchema(
     {
       id: product.id,
@@ -56,9 +67,12 @@ export function productHead({
       name_ar: product.name_ar || product.name || undefined,
       description_en: product.description_en || product.description,
       description_ar: product.description_ar || product.description,
-      price: Number(product.base_price ?? product.product_variants?.[0]?.selling_price ?? 0),
-      sale_price: product.original_price ? Number(product.base_price) : undefined,
-      sku: product.product_variants?.[0]?.id || product.id,
+      price: price.from,
+      high_price: price.to,
+      in_stock: availabilityOf(product, variants).sellable,
+      currency: typeof loaderData?.currency === "string" ? loaderData.currency : null,
+      show_price: loaderData?.showPrices !== false,
+      sku: variants[0]?.id || product.id,
       primary_image_url: product.image_url,
       images: Array.isArray(product.media)
         ? product.media.map(mediaUrl).filter((url): url is string => Boolean(url))

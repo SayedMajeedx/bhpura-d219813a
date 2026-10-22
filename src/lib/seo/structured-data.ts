@@ -36,6 +36,14 @@ export interface SeoProductInfo {
   is_active?: boolean;
   stock?: number | null;
   manage_stock?: boolean;
+  /** The dearest size a shopper can buy now, when sizes differ in price (an AggregateOffer). */
+  high_price?: number | null;
+  /** Whether a shopper can buy it now, by the one availability rule; wins over `stock`. */
+  in_stock?: boolean;
+  /** The store's currency; wins over `settings.currency`. */
+  currency?: string | null;
+  /** False when the store hides its prices: no offer is published. */
+  show_price?: boolean;
 }
 
 export interface SeoBreadcrumbItem {
@@ -161,10 +169,16 @@ export function buildProductSchema(
       : product.price;
 
   const isOutOfStock =
-    product.manage_stock &&
-    product.stock !== null &&
-    product.stock !== undefined &&
-    product.stock <= 0;
+    product.in_stock !== undefined
+      ? !product.in_stock
+      : product.manage_stock &&
+        product.stock !== null &&
+        product.stock !== undefined &&
+        product.stock <= 0;
+  const currency = product.currency || settings?.currency || "BHD";
+  const high = Number(product.high_price ?? 0);
+  const ranged = high > effectivePrice;
+  const sellerName = settings?.business_name || brand?.name_ar || brand?.name_en || "Store";
 
   return {
     "@context": "https://schema.org",
@@ -178,19 +192,24 @@ export function buildProductSchema(
       "@type": "Brand",
       name: settings?.business_name || brand?.name_ar || brand?.name_en || "Store",
     },
-    offers: {
-      "@type": "Offer",
-      url: productUrl,
-      priceCurrency: settings?.currency || "BHD",
-      price: effectivePrice,
-      priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      itemCondition: "https://schema.org/NewCondition",
-      availability: isOutOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock",
-      seller: {
-        "@type": "Organization",
-        name: settings?.business_name || brand?.name_ar || brand?.name_en || "Store",
-      },
-    },
+    ...(product.show_price === false
+      ? {}
+      : {
+          offers: {
+            "@type": ranged ? "AggregateOffer" : "Offer",
+            url: productUrl,
+            priceCurrency: currency,
+            ...(ranged ? { lowPrice: effectivePrice, highPrice: high } : { price: effectivePrice }),
+            priceValidUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+              .toISOString()
+              .split("T")[0],
+            itemCondition: "https://schema.org/NewCondition",
+            availability: isOutOfStock
+              ? "https://schema.org/OutOfStock"
+              : "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: sellerName },
+          },
+        }),
   };
 }
 

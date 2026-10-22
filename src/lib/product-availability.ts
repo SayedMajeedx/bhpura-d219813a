@@ -92,6 +92,20 @@ export function madeToOrderLimit(product: AvailabilityProduct | null | undefined
   return { left, paused, closed: paused || left === 0 };
 }
 
+/**
+ * Whether a shopper can buy this one variant now: it has ready pieces, or the product is made
+ * when ordered (while making is open) or is a service. The cards' prices and the shopping feed
+ * read it, so a sold-out size is never advertised as available.
+ */
+export function variantSellable(
+  product: AvailabilityProduct,
+  variant: AvailabilityVariant,
+): boolean {
+  if (product.item_kind === "service") return true;
+  if (product.is_made_to_order && !madeToOrderLimit(product).closed) return true;
+  return readyUnitsOf([variant]) > 0;
+}
+
 /** Whether ready stock is what decides if the product can be bought. */
 export function isSoldFromStock(product: AvailabilityProduct): boolean {
   return !product.is_made_to_order && product.item_kind !== "service";

@@ -61,11 +61,17 @@ export function handleRobotsRequest(request: Request): Response {
   });
 }
 
+/** The address the request came in on ("https://pura.boutq.store"), for links back to it. */
+export function storeOrigin(request: Request): string {
+  const url = new URL(request.url);
+  return `${url.protocol}//${request.headers.get("x-forwarded-host") || url.host}`;
+}
+
 /**
- * Resolves the brand slug for a sitemap request: an explicit /{slug}/sitemap.xml
+ * Resolves the store for a sitemap or feed request: an explicit /{slug}/sitemap.xml
  * path wins; otherwise the *.boutq.store subdomain or a mapped custom domain.
  */
-async function resolveSitemapBrand(
+export async function resolveStoreBrand(
   request: Request,
   explicitSlug: string | null,
 ): Promise<{ id: string; slug: string } | null> {
@@ -114,7 +120,7 @@ export async function handleSitemapRequest(
   const url = new URL(request.url);
   const origin = `${url.protocol}//${hostnameOf(request)}`;
 
-  const brand = await resolveSitemapBrand(request, explicitSlug);
+  const brand = await resolveStoreBrand(request, explicitSlug);
   if (!brand) {
     return new Response("Not found", {
       status: 404,

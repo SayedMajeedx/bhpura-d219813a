@@ -220,6 +220,16 @@ export default {
         );
       }
 
+      // The shopping feed Google Merchant Center and Meta Commerce Manager fetch.
+      const feedMatch = url.pathname.match(/^\/(?:([a-z0-9-]+)\/)?products\.xml$/i);
+      if (feedMatch) {
+        const { handleProductFeedRequest } = await import("./lib/seo/product-feed.server");
+        return withSecurityHeaders(
+          await handleProductFeedRequest(request, feedMatch[1] ?? null),
+          correlationId,
+        );
+      }
+
       if (url.pathname === "/api/public/webhooks/meta-whatsapp") {
         const { handleMetaWhatsAppWebhook } = await import("./lib/meta-whatsapp.server");
         return withSecurityHeaders(
