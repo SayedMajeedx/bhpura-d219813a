@@ -90,6 +90,16 @@ export type SceneData = {
   /** Customer Favourite: the store's average rating, how many reviews, and what they praise. */
   rating?: { average: number; count: number; highlights: string[] } | null;
   /**
+   * Coming Soon: the launch day (its weekday and date; null while the store
+   * has no date yet), the hour when one is given, and whether the piece's
+   * name stays a secret.
+   */
+  launch?: {
+    when: { day: string; date: string } | null;
+    time: string | null;
+    secret: boolean;
+  } | null;
+  /**
    * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
    * and down), what it is (the fabric or finish) and a note (the occasion).
    * Null outside that template.

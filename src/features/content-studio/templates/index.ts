@@ -12,6 +12,7 @@ import { boldPoster } from "@/features/content-studio/templates/bold-poster";
 import { menuBoard } from "@/features/content-studio/templates/menu-board";
 import { bundleSet } from "@/features/content-studio/templates/bundle-set";
 import { lastChance } from "@/features/content-studio/templates/last-chance";
+import { comingSoon } from "@/features/content-studio/templates/coming-soon";
 import { backInStock } from "@/features/content-studio/templates/back-in-stock";
 import { customerFavourite } from "@/features/content-studio/templates/customer-favourite";
 
@@ -22,6 +23,7 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   boldPoster,
   editorialCover,
   priceDrop,
+  comingSoon,
   lastChance,
   backInStock,
   customerFavourite,

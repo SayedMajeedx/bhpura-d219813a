@@ -5,14 +5,21 @@ import { catalogInsightQueries, catalogQueries } from "@/lib/data/catalog";
 import {
   extractSnappySnippet,
   firstImage,
+  studioProducts,
   type Product,
 } from "@/features/content-studio/lib/studio-content";
 
 /**
  * The chosen product, its variants and media, and the price and description the
- * studio uses for it.
+ * studio uses for it. The products are the live ones; with `includeHidden`
+ * (Coming Soon) the ones hidden from the store come first, as what a teaser
+ * is for.
  */
-export function useStudioProduct(brandId: string, isAr: boolean) {
+export function useStudioProduct(
+  brandId: string,
+  isAr: boolean,
+  { includeHidden = false }: { includeHidden?: boolean } = {},
+) {
   const [productId, setProductId] = useState("");
 
   const productsQ = useQuery({
@@ -22,7 +29,11 @@ export function useStudioProduct(brandId: string, isAr: boolean) {
   // Prices, stock and images per variant, from the shared catalog.
   const variantsQ = useQuery(catalogQueries.variants(brandId));
   const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
-  const products = productsQ.data ?? [];
+  const allProducts = productsQ.data;
+  const products = useMemo(
+    () => studioProducts(allProducts ?? [], includeHidden),
+    [allProducts, includeHidden],
+  );
   const selected = products.find((product) => product.id === productId) ?? products[0];
 
   type StudioMediaItem = {

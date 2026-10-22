@@ -117,8 +117,8 @@ export function useTemplateScene({
   detail: SceneData["detail"];
   /** The Occasion Pack's greeting, or null outside it. */
   occasion: SceneData["occasion"];
-  /** Last Chance's day, Back in Stock's shelf and Customer Favourite's rating (null outside them). */
-  moments: Pick<SceneData, "deadline" | "restock" | "rating">;
+  /** Last Chance's day, Back in Stock's shelf, Customer Favourite's rating, Coming Soon's launch (null outside them). */
+  moments: Pick<SceneData, "deadline" | "restock" | "rating" | "launch">;
   logoScale: number;
   logoTint: LogoTint;
   /** The store's headline faces, when the merchant uses them (null: the studio's). */
