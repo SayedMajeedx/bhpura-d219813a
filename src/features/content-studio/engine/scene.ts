@@ -1,5 +1,6 @@
 import type { FORMATS } from "@/features/content-studio/lib/studio-content";
 import type { OccasionId } from "@/features/content-studio/lib/occasions";
+import type { OrderStep } from "@/features/content-studio/lib/how-to-order";
 
 export type FormatKey = keyof typeof FORMATS;
 
@@ -99,6 +100,8 @@ export type SceneData = {
     time: string | null;
     secret: boolean;
   } | null;
+  /** How to Order: the store's steps, from its own settings (null outside it). */
+  orderSteps?: OrderStep[] | null;
   /**
    * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
    * and down), what it is (the fabric or finish) and a note (the occasion).

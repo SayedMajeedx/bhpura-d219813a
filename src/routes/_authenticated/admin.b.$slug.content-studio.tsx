@@ -18,6 +18,7 @@ import { DetailPointPicker } from "@/features/content-studio/components/DetailPo
 import { OccasionPanel } from "@/features/content-studio/components/OccasionPanel";
 import { MomentPanel } from "@/features/content-studio/components/MomentPanel";
 import { LaunchPanel } from "@/features/content-studio/components/LaunchPanel";
+import { HowToOrderPanel } from "@/features/content-studio/components/HowToOrderPanel";
 import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
@@ -91,6 +92,8 @@ function ContentStudioPage() {
             <MomentPanel studio={studio} />
             {/* Coming Soon's launch day and secret. */}
             <LaunchPanel studio={studio} />
+            {/* How to Order's steps, from the store's settings. */}
+            <HowToOrderPanel studio={studio} />
 
             <FormatStylePicker studio={studio} />
 

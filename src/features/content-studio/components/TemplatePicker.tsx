@@ -13,11 +13,21 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
  * templates, ordered for the kind of store with the best few suggested.
  */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
-  const { isAr, templateId, setTemplateId, sale, run, storeProfile, buildScene, occasionPreview } =
-    studio;
+  const {
+    isAr,
+    templateId,
+    setTemplateId,
+    sale,
+    run,
+    storeProfile,
+    buildScene,
+    occasionPreview,
+    orderStepsPreview,
+  } = studio;
   const [hovered, setHovered] = useState<string | null>(null);
   // Each thumbnail draws the studio's own post as a 4:5 miniature; the
-  // Occasion Pack's shows the coming occasion even while it is not chosen.
+  // Occasion Pack's shows the coming occasion and How to Order's the store's
+  // own steps, even while they are not chosen.
   const thumbScene = useMemo(
     () =>
       (id: string) =>
@@ -25,8 +35,9 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
         ...buildScene(width, height),
         format: "portrait",
         ...(id === "occasion-pack" ? { occasion: occasionPreview } : {}),
+        ...(id === "how-to-order" ? { orderSteps: orderStepsPreview } : {}),
       }),
-    [buildScene, occasionPreview],
+    [buildScene, occasionPreview, orderStepsPreview],
   );
   const scenes = useMemo(
     () =>

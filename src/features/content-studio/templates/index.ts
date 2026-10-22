@@ -13,6 +13,7 @@ import { menuBoard } from "@/features/content-studio/templates/menu-board";
 import { bundleSet } from "@/features/content-studio/templates/bundle-set";
 import { lastChance } from "@/features/content-studio/templates/last-chance";
 import { comingSoon } from "@/features/content-studio/templates/coming-soon";
+import { howToOrder } from "@/features/content-studio/templates/how-to-order";
 import { backInStock } from "@/features/content-studio/templates/back-in-stock";
 import { customerFavourite } from "@/features/content-studio/templates/customer-favourite";
 
@@ -27,6 +28,7 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   lastChance,
   backInStock,
   customerFavourite,
+  howToOrder,
   swatchRun,
   detailZoom,
   lookbookCarousel,

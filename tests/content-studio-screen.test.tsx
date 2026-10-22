@@ -145,6 +145,15 @@ const settings = async (importOriginal: () => Promise<object>) => {
         currency: "BHD",
         storefront_accent_color: "#1f4e5f",
         storefront_background_color: "#ffffff",
+        // How the store sells, for How to Order.
+        whatsapp_number: "+973 3300 0000",
+        card_enabled: true,
+        benefit_enabled: true,
+        cod_enabled: false,
+        delivery_enabled: true,
+        delivery_fee: 2,
+        delivery_estimate_en: "Tomorrow in Bahrain",
+        pickup_enabled: false,
       }),
     },
   };
@@ -658,6 +667,32 @@ describe("the content studio", () => {
     // With no date yet, the post says only that something is coming.
     fireEvent.click(screen.getByRole("switch", { name: "The launch day is set" }));
     expect(screen.queryByLabelText("Launch day")).not.toBeInTheDocument();
+  });
+
+  it("says how to order from the store's own settings, and leaves the number out when asked", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /^How to Order/ }));
+    expect(await screen.findByText("Card · BenefitPay")).toBeInTheDocument();
+    // The store's fee is for Bahrain, as checkout charges it; abroad is a shipping zone.
+    expect(screen.getByText("Delivery in Bahrain 2.000 BHD")).toBeInTheDocument();
+    expect(screen.getByText("Tomorrow in Bahrain")).toBeInTheDocument();
+    // Cash on delivery is off in this store, so the story never offers it.
+    expect(screen.queryByText(/Cash on delivery/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("switch", { name: "Show the WhatsApp number" }));
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      {
+        template: { id: string };
+        scene: { orderSteps: Array<{ key: string; lines: string[][] }> };
+      },
+    ];
+    expect(template.id).toBe("how-to-order");
+    expect(scene.orderSteps.map((step) => step.key)).toEqual(["choose", "pay", "receive"]);
+    expect(scene.orderSteps[0].lines).toEqual([["From the link in our bio"]]);
   });
 
   it("zooms into the detail the merchant taps, named from the product's fabric", async () => {
