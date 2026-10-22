@@ -9,7 +9,8 @@ import {
  * How to Order's steps, from the store's settings as they are now, and
  * whether its WhatsApp number is shown. Nothing to choose beyond that: a
  * change to how the store sells is made in its settings, and the story
- * follows.
+ * follows. The steps are worked out even while another template is chosen
+ * (`orderStepsPreview`), so the picker's thumbnail shows this store's own.
  */
 export function useHowToOrder({
   active,
@@ -28,18 +29,17 @@ export function useHowToOrder({
   const whatsappNumber = settings?.whatsapp_number?.trim() || null;
   const makingWord = t("made_to_order", lang);
 
-  const orderSteps = useMemo(
+  const orderStepsPreview = useMemo(
     () =>
-      active
-        ? howToOrderSteps(settings, {
-            lang,
-            currencyLabel: currencySymbol,
-            whatsapp: showWhatsapp ? whatsappNumber : null,
-            makingWord,
-          })
-        : null,
-    [active, settings, lang, currencySymbol, showWhatsapp, whatsappNumber, makingWord],
+      howToOrderSteps(settings, {
+        lang,
+        currencyLabel: currencySymbol,
+        whatsapp: showWhatsapp ? whatsappNumber : null,
+        makingWord,
+      }),
+    [settings, lang, currencySymbol, showWhatsapp, whatsappNumber, makingWord],
   );
+  const orderSteps = active ? orderStepsPreview : null;
 
-  return { orderSteps, whatsappNumber, showWhatsapp, setShowWhatsapp };
+  return { orderSteps, orderStepsPreview, whatsappNumber, showWhatsapp, setShowWhatsapp };
 }
