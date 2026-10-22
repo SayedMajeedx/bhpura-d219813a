@@ -10,11 +10,15 @@ export function toWesternDigits(value: string): string {
     .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
 }
 
+/** How many decimals a currency is written with: three for the dinars and the rial, else two. */
+export function moneyFractionDigits(currency = "BHD") {
+  return ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(currency.toUpperCase()) ? 3 : 2;
+}
+
 export function formatMoney(amount: number, currency = "BHD", locale = "en-BH") {
   const n = Number(amount || 0);
   const normalizedCurrency = currency.toUpperCase();
-  const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
-  const fractionDigits = isThreeDecimals ? 3 : 2;
+  const fractionDigits = moneyFractionDigits(normalizedCurrency);
   try {
     return cachedNumberFormat(westernNumeralLocale(locale), {
       style: "currency",

@@ -511,6 +511,16 @@
       "authenticated": true,
       "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
     },
+    "rpc_reporting_margins(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_include_historical boolean, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
+    },
+    "rpc_reporting_month_pack(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
+    },
     "rpc_reporting_order_cogs(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_include_historical boolean, p_brand_slug text)": {
       "anon": false,
       "authenticated": true,
@@ -540,6 +550,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_receivables(p_today date, p_tz text, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
     },
     "rpc_reporting_sales(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_interval text, p_tz text, p_include_historical boolean, p_brand_slug text)": {
       "anon": false,

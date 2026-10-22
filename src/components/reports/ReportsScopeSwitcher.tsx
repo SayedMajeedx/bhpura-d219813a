@@ -7,6 +7,9 @@ import {
   Wallet,
   Download,
   MoreHorizontal,
+  Table2,
+  Percent,
+  HandCoins,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -28,6 +31,27 @@ const navItems = [
     icon: BarChart3,
     en: "Overview",
     ar: "نظرة عامة",
+  },
+  {
+    id: "statement",
+    path: "/admin/b/$slug/reports/statement",
+    icon: Table2,
+    en: "Monthly statement",
+    ar: "القائمة الشهرية",
+  },
+  {
+    id: "margins",
+    path: "/admin/b/$slug/reports/margins",
+    icon: Percent,
+    en: "Margins",
+    ar: "الهوامش",
+  },
+  {
+    id: "balances",
+    path: "/admin/b/$slug/reports/balances",
+    icon: HandCoins,
+    en: "Customer balances",
+    ar: "أرصدة العملاء",
   },
   {
     id: "sales",
@@ -134,7 +158,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
               aria-label={isAr ? "المزيد من التقارير" : "More reports"}
               className={cn(
                 "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground",
-                !["overview", "sales"].includes(activeId) &&
+                !["overview", "statement"].includes(activeId) &&
                   "border-primary/30 bg-primary/10 text-primary",
               )}
             >

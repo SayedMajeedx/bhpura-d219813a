@@ -6,6 +6,7 @@ import { defaultReportRange } from "@/lib/reports-view";
 import { useI18n } from "@/lib/i18n";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
+import { overviewProfit } from "@/lib/reporting-compose";
 import { formatMoney } from "@/lib/format";
 import {
   Banknote,
@@ -85,11 +86,7 @@ function ReportsOverview() {
   const money = (value: unknown) =>
     formatMoney(Number(value || 0), data?.currency || storeCurrency, lang);
   const netRevenue = Number(data?.net_revenue ?? data?.paid_order_value ?? 0);
-  const netMerchandise = Number(data?.net_merchandise_after_returns ?? data?.net_merch_sales ?? 0);
-  const grossProfit =
-    netMerchandise - Number(data?.known_cogs_after_returns ?? data?.known_cogs ?? 0);
-  const netProfit = grossProfit - Number(data?.expenses || 0);
-  const grossMargin = netMerchandise > 0 ? (grossProfit / netMerchandise) * 100 : 0;
+  const { grossProfit, grossMargin, operatingProfit: netProfit } = overviewProfit(data);
   const averageOrderValue =
     Number(data?.paid_order_count || 0) > 0 ? netRevenue / Number(data.paid_order_count) : 0;
   const previousRows = Array.isArray(previousQuery.data) ? previousQuery.data : [];
@@ -97,10 +94,7 @@ function ReportsOverview() {
   const previousNetRevenue = Number(
     previousData?.net_revenue ?? previousData?.paid_order_value ?? 0,
   );
-  const previousGrossProfit =
-    Number(previousData?.net_merchandise_after_returns ?? previousData?.net_merch_sales ?? 0) -
-    Number(previousData?.known_cogs_after_returns ?? previousData?.known_cogs ?? 0);
-  const previousNetProfit = previousGrossProfit - Number(previousData?.expenses || 0);
+  const { operatingProfit: previousNetProfit } = overviewProfit(previousData);
   const trend = (current: number, previous: number) =>
     previous === 0
       ? undefined

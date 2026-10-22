@@ -4,6 +4,10 @@ import {
   fetchCatalogInquiriesReporting,
   fetchReportingCustomers,
   fetchReportingOverview,
+  fetchReportingMargins,
+  fetchReportingMonthPack,
+  fetchReportingPeriods,
+  fetchReportingReceivables,
   fetchReportingProducts,
   fetchReportingSales,
   type ReportInterval,
@@ -63,6 +67,21 @@ export const reportingKeys = {
     ] as const,
   customers: (slug: string, range: DateRange, timezone: string, includeHistorical: boolean) =>
     [...reportingKeys.all(slug), "customers", ...iso(range), timezone, includeHistorical] as const,
+  /** Several periods at once (the monthly statement): each period's start, in order. */
+  periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
+    [
+      ...reportingKeys.overviews(slug),
+      "periods",
+      ranges.map((r) => iso(r).join("/")).join(","),
+      timezone,
+      includeHistorical,
+    ] as const,
+  margins: (slug: string, range: DateRange, includeHistorical: boolean) =>
+    [...reportingKeys.all(slug), "margins", ...iso(range), includeHistorical] as const,
+  receivables: (slug: string, today: string, timezone: string) =>
+    [...reportingKeys.all(slug), "receivables", today, timezone] as const,
+  monthPack: (slug: string, range: DateRange, timezone: string) =>
+    [...reportingKeys.all(slug), "month-pack", ...iso(range), timezone] as const,
   incubatorSales: (slug: string) => [...reportingKeys.all(slug), "incubator-sales"] as const,
   /** Catalog inquiries by brand, optionally within a date range (ISO strings). */
   catalogInquiries: (brandId: string, from?: string, to?: string) =>
@@ -107,6 +126,35 @@ export type IncubatorSalesBucket = {
 };
 
 export const reportingQueries = {
+  /** The month's detail for the accountant's month pack. */
+  monthPack: (slug: string, range: DateRange, timezone: string) =>
+    queryOptions({
+      queryKey: reportingKeys.monthPack(slug, range, timezone),
+      queryFn: () => fetchReportingMonthPack(range, timezone, slug),
+    }),
+  /** What customers and partner shops owe today: `readReceivables` reads it. */
+  receivables: (slug: string, today: string, timezone: string) =>
+    queryOptions({
+      queryKey: reportingKeys.receivables(slug, today, timezone),
+      queryFn: () => fetchReportingReceivables(today, timezone, slug),
+      enabled: Boolean(slug && today),
+    }),
+  /** Margin by product for a period: `marginRows` reads it. */
+  margins: (slug: string, range: DateRange | undefined, includeHistorical: boolean) =>
+    queryOptions({
+      queryKey: range
+        ? reportingKeys.margins(slug, range, includeHistorical)
+        : [...reportingKeys.all(slug), "margins", "pending"],
+      queryFn: () => fetchReportingMargins(range!, includeHistorical, slug),
+      enabled: Boolean(slug && range),
+    }),
+  /** The overview's figures for each period, in one request (`rpc_reporting_periods`). */
+  periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
+    queryOptions({
+      queryKey: reportingKeys.periods(slug, ranges, timezone, includeHistorical),
+      queryFn: () => fetchReportingPeriods(ranges, timezone, includeHistorical, slug),
+      enabled: Boolean(slug) && ranges.length > 0,
+    }),
   /** Waits for a range; screens add their own `retry`, `staleTime` and `enabled`. */
   overview: (
     slug: string,
