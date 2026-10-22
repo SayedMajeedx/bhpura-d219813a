@@ -1,6 +1,5 @@
 import {
-  madeToOrderLimit,
-  readyUnitsOf,
+  variantSellable,
   type AvailabilityProduct,
   type AvailabilityVariant,
 } from "@/lib/product-availability";
@@ -52,7 +51,8 @@ const num = (value: unknown) => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const sellingPrice = (variant: PricedVariant, product: PricedProduct) =>
+/** What the variant sells for now (its own price, else the product's base price). */
+export const sellingPrice = (variant: PricedVariant, product: PricedProduct) =>
   num(variant.selling_price ?? variant.price ?? product.base_price);
 
 /** The variant is priced below its own original price. */
@@ -67,12 +67,8 @@ export function buyableVariants<V extends PricedVariant>(
   variants: readonly V[] | null | undefined,
 ): V[] {
   const list = [...(variants ?? [])];
-  const madeWhenOrdered =
-    product.item_kind === "service" ||
-    (Boolean(product.is_made_to_order) && !madeToOrderLimit(product).closed);
-  if (madeWhenOrdered) return list;
-  const inStock = list.filter((variant) => readyUnitsOf([variant]) > 0);
-  return inStock.length > 0 ? inStock : list;
+  const sellable = list.filter((variant) => variantSellable(product, variant));
+  return sellable.length > 0 ? sellable : list;
 }
 
 /** The price a card shows for a product, from the variants a shopper can buy now. */

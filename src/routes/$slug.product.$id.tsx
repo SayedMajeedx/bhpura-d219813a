@@ -148,6 +148,12 @@ export const Route = createFileRoute("/$slug/product/$id")({
       bestSellerRows: await bestSellersRequest,
       socialProofCount: await socialProofRequest,
       initialLang,
+      // For the page's Google data: the store's currency, and whether it shows prices at all.
+      currency: layout.settings?.currency ?? null,
+      showPrices: !(
+        layout.settings?.storefront_mode === "catalog" &&
+        layout.settings?.catalog_show_prices === false
+      ),
     };
   },
   head: productHead,
@@ -164,6 +170,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       }
     | undefined;
   const params = Route.useParams() as any;
+  // A link may name a size (`?variant=`, the shopping feed's links do): the page opens on it.
+  const linkedVariantId = (Route.useSearch() as { variant?: string }).variant ?? null;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } =
     useStorefront();
@@ -353,6 +361,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   );
 
   useVariantSelectionSync({
+    linkedVariantId,
     variants,
     variantId,
     setVariantId,

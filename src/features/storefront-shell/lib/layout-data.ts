@@ -16,6 +16,9 @@ export type StoreLayoutData = {
     pages?: Array<Record<string, unknown>>;
     favicon_url?: string | null;
     logo_url?: string | null;
+    currency?: string | null;
+    storefront_mode?: string | null;
+    catalog_show_prices?: boolean | null;
   } | null;
   bootstrapData: StorefrontPageData | null;
   isSuspended: boolean;

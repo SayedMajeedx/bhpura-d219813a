@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import type { StorefrontVariant as Variant } from "@/lib/data/storefront";
 import { chosenVariant } from "@/features/product-page/lib/variant-options";
 
@@ -6,8 +6,11 @@ import { chosenVariant } from "@/features/product-page/lib/variant-options";
  * Keeps the product page's option pickers and the chosen variant in step:
  * an axis with one value is pre-selected, a product with one variant selects
  * it, and a variant is chosen only once every option is (see chosenVariant).
+ * A link that names a size (`?variant=`, as the shopping feed's links do)
+ * opens on that size: the shopper chose it on Instagram or Google.
  */
 export function useVariantSelectionSync({
+  linkedVariantId,
   variants,
   variantId,
   setVariantId,
@@ -27,6 +30,8 @@ export function useVariantSelectionSync({
   selectedOptionFive,
   setSelectedOptionFive,
 }: {
+  /** The size a link to the page named, chosen once when the page opens. */
+  linkedVariantId?: string | null;
   variants: Variant[];
   variantId: string | null;
   setVariantId: Dispatch<SetStateAction<string | null>>;
@@ -76,6 +81,28 @@ export function useVariantSelectionSync({
       setSelectedOptionFive(uniqueFive[0]);
     }
   }, [uniqueFive, selectedOptionFive, setSelectedOptionFive]);
+
+  // A link that names a size opens on it, once.
+  const linkApplied = useRef(false);
+  useEffect(() => {
+    if (linkApplied.current || !linkedVariantId) return;
+    const linked = variants.find((variant) => variant.id === linkedVariantId);
+    if (!linked) return;
+    linkApplied.current = true;
+    setSelectedColor(linked.color ?? null);
+    setSelectedSize(linked.size ?? null);
+    setSelectedFabric(linked.fabric ?? null);
+    setSelectedOptionFour(linked.option_four ?? null);
+    setSelectedOptionFive(linked.option_five ?? null);
+  }, [
+    linkedVariantId,
+    variants,
+    setSelectedColor,
+    setSelectedSize,
+    setSelectedFabric,
+    setSelectedOptionFour,
+    setSelectedOptionFive,
+  ]);
 
   // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
