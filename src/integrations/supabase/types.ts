@@ -5257,34 +5257,43 @@ export type Database = {
           brand_id: string;
           comment: string | null;
           created_at: string;
+          hidden_at: string | null;
+          hidden_by: string | null;
           highlights: string[];
           id: string;
           order_id: string;
           rating: number;
           request_id: string;
           reward_code: string;
+          show_on_store: boolean;
         };
         Insert: {
           brand_id: string;
           comment?: string | null;
           created_at?: string;
+          hidden_at?: string | null;
+          hidden_by?: string | null;
           highlights?: string[];
           id?: string;
           order_id: string;
           rating: number;
           request_id: string;
           reward_code?: string;
+          show_on_store?: boolean;
         };
         Update: {
           brand_id?: string;
           comment?: string | null;
           created_at?: string;
+          hidden_at?: string | null;
+          hidden_by?: string | null;
           highlights?: string[];
           id?: string;
           order_id?: string;
           rating?: number;
           request_id?: string;
           reward_code?: string;
+          show_on_store?: boolean;
         };
         Relationships: [
           {
@@ -10083,6 +10092,7 @@ export type Database = {
           comment: string;
           customer_name: string;
           customer_phone: string;
+          hidden_at: string;
           highlights: string[];
           invoice_number: number;
           order_id: string;
@@ -10092,6 +10102,7 @@ export type Database = {
           review_id: string;
           reviewed_at: string;
           reward_code: string;
+          show_on_store: boolean;
         }[];
       };
       list_integration_credentials: {
@@ -11086,6 +11097,10 @@ export type Database = {
         Args: { p_paused: boolean; p_product_id: string };
         Returns: boolean;
       };
+      set_order_review_hidden: {
+        Args: { p_hidden: boolean; p_review_id: string };
+        Returns: undefined;
+      };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
       snapshot_order_packaging_cogs: {
@@ -11111,6 +11126,10 @@ export type Database = {
       };
       storefront_pickup_partners: {
         Args: { p_brand_id: string; p_items: Json };
+        Returns: Json;
+      };
+      storefront_product_reviews: {
+        Args: { p_brand_slug: string; p_limit?: number; p_product_id: string };
         Returns: Json;
       };
       storefront_user_owns_customer: {
@@ -11142,6 +11161,7 @@ export type Database = {
           p_comment?: string;
           p_highlights?: string[];
           p_rating: number;
+          p_show_on_store?: boolean;
           p_token: string;
         };
         Returns: string;

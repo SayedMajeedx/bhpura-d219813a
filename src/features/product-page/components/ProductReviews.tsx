@@ -21,7 +21,7 @@ function Stars({ rating, size = "size-4" }: { rating: number; size?: string }) {
           key={value}
           className={cn(
             size,
-            value <= Math.round(rating) ? "fill-current text-primary" : "text-muted-foreground/40",
+            value <= Math.round(rating) ? "fill-current text-primary" : "text-border-strong",
           )}
         />
       ))}
