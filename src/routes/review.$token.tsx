@@ -9,6 +9,7 @@ import {
   submitPublicOrderReview,
   type ReviewRefusal,
 } from "@/lib/data/reviews";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +41,8 @@ function ReviewPage() {
   const [rating, setRating] = useState(0);
   const [highlights, setHighlights] = useState<string[]>([]);
   const [comment, setComment] = useState("");
+  // Whether the review may be shown on the store (first name only): asked, never assumed.
+  const [showOnStore, setShowOnStore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [rewardCode, setRewardCode] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -62,6 +65,7 @@ function ReviewPage() {
         rating,
         highlights,
         comment: comment.trim() || null,
+        showOnStore,
       });
       setRewardCode(String(reward || "THANKU10"));
     } catch (error) {
@@ -202,6 +206,22 @@ function ReviewPage() {
               placeholder="كلمة بسيطة تسعدنا وتساعدنا نتطور..."
               className="min-h-20 resize-none"
             />
+          </div>
+        )}
+        {rating > 0 && (
+          <div className="flex items-start gap-3 rounded-lg border border-border p-3">
+            <Checkbox
+              id="review-show-on-store"
+              checked={showOnStore}
+              onCheckedChange={(value) => setShowOnStore(value === true)}
+              className="mt-0.5"
+            />
+            <label htmlFor="review-show-on-store" className="space-y-0.5 text-sm">
+              <span className="block font-semibold">أوافق على عرض تقييمي في المتجر</span>
+              <span className="block text-xs text-muted-foreground">
+                باسمي الأول فقط. اختياري، والخصم لك في الحالتين.
+              </span>
+            </label>
           </div>
         )}
         {submitError ? (

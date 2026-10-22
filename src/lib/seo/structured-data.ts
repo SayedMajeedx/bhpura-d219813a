@@ -44,6 +44,8 @@ export interface SeoProductInfo {
   currency?: string | null;
   /** False when the store hides its prices: no offer is published. */
   show_price?: boolean;
+  /** The stars its page shows: every review of an order that held it. */
+  rating?: { average: number; count: number } | null;
 }
 
 export interface SeoBreadcrumbItem {
@@ -192,6 +194,17 @@ export function buildProductSchema(
       "@type": "Brand",
       name: settings?.business_name || brand?.name_ar || brand?.name_en || "Store",
     },
+    ...(product.rating && product.rating.count > 0 && product.rating.average > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating.average,
+            reviewCount: product.rating.count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
     ...(product.show_price === false
       ? {}
       : {

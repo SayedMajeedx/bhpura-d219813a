@@ -11,6 +11,10 @@ export type OrderReviewAdminRow = {
   reward_code: string;
   reviewed_at: string;
   request_sent_at: string | null;
+  /** The customer agreed to the review being shown on the store. */
+  show_on_store?: boolean | null;
+  /** When the store hid the review's words from its product pages. */
+  hidden_at?: string | null;
 };
 
 export const REVIEW_HIGHLIGHT_LABELS: Record<string, { ar: string; en: string }> = {
@@ -20,6 +24,17 @@ export const REVIEW_HIGHLIGHT_LABELS: Record<string, { ar: string; en: string }>
   delivery: { ar: "التوصيل", en: "Delivery" },
   service: { ar: "التعامل والخدمة", en: "Service" },
 };
+
+/**
+ * Where a review stands on the store's product pages: its words shown (the customer agreed),
+ * hidden by the store, or private (the customer did not agree). Its stars count in every case.
+ */
+export function reviewStoreState(
+  review: Pick<OrderReviewAdminRow, "show_on_store" | "hidden_at">,
+): "shown" | "hidden" | "private" {
+  if (!review.show_on_store) return "private";
+  return review.hidden_at ? "hidden" : "shown";
+}
 
 export function calculateReviewMetrics(reviews: OrderReviewAdminRow[]) {
   const total = reviews.length;
