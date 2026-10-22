@@ -19,6 +19,7 @@ import { OccasionPanel } from "@/features/content-studio/components/OccasionPane
 import { MomentPanel } from "@/features/content-studio/components/MomentPanel";
 import { LaunchPanel } from "@/features/content-studio/components/LaunchPanel";
 import { HowToOrderPanel } from "@/features/content-studio/components/HowToOrderPanel";
+import { MadeForYouPanel } from "@/features/content-studio/components/MadeForYouPanel";
 import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
   component: ContentStudioPage,
@@ -94,6 +95,8 @@ function ContentStudioPage() {
             <LaunchPanel studio={studio} />
             {/* How to Order's steps, from the store's settings. */}
             <HowToOrderPanel studio={studio} />
+            {/* Made for You's made-to-order pieces and making time. */}
+            <MadeForYouPanel studio={studio} />
 
             <FormatStylePicker studio={studio} />
 

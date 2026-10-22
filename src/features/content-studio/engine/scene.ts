@@ -102,6 +102,8 @@ export type SceneData = {
   } | null;
   /** How to Order: the store's steps, from its own settings (null outside it). */
   orderSteps?: OrderStep[] | null;
+  /** Made for You: its three chapters, each a title and a line (null outside it). */
+  making?: { beats: Array<{ title: string; line: string }> } | null;
   /**
    * The detail Detail Zoom pushes into: a point on the photo (0 to 1 across
    * and down), what it is (the fabric or finish) and a note (the occasion).

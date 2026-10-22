@@ -15,6 +15,8 @@ export type Product = {
   occasion?: string | null;
   /** False for a product hidden from the store (offered only to Coming Soon). */
   is_active?: boolean | null;
+  /** A piece made after it is ordered (Made for You suggests these). */
+  is_made_to_order?: boolean | null;
 };
 
 export const FORMATS = CREATIVE_FORMATS;

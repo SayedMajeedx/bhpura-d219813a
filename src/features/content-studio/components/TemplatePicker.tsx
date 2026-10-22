@@ -23,11 +23,12 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
     buildScene,
     occasionPreview,
     orderStepsPreview,
+    makingPreview,
   } = studio;
   const [hovered, setHovered] = useState<string | null>(null);
   // Each thumbnail draws the studio's own post as a 4:5 miniature; the
-  // Occasion Pack's shows the coming occasion and How to Order's the store's
-  // own steps, even while they are not chosen.
+  // Occasion Pack's shows the coming occasion, How to Order's the store's own
+  // steps and Made for You's its craft, even while they are not chosen.
   const thumbScene = useMemo(
     () =>
       (id: string) =>
@@ -36,8 +37,9 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
         format: "portrait",
         ...(id === "occasion-pack" ? { occasion: occasionPreview } : {}),
         ...(id === "how-to-order" ? { orderSteps: orderStepsPreview } : {}),
+        ...(id === "made-for-you" ? { making: makingPreview } : {}),
       }),
-    [buildScene, occasionPreview, orderStepsPreview],
+    [buildScene, occasionPreview, orderStepsPreview, makingPreview],
   );
   const scenes = useMemo(
     () =>
