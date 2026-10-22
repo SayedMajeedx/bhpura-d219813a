@@ -6,7 +6,9 @@ import { madeForYouBeats } from "@/features/content-studio/lib/made-for-you";
 /**
  * Made for You's three chapters: the words of the store's craft, and the
  * making time it wrote for made-to-order pieces (the piece's name when it
- * wrote none). The time is changed in the store's settings, not here.
+ * wrote none). The time is changed in the store's settings, not here. The
+ * chapters are worked out even while another template is chosen
+ * (`makingPreview`), so the picker's thumbnail speaks the store's craft.
  */
 export function useMadeForYou({
   active,
@@ -23,12 +25,10 @@ export function useMadeForYou({
 }) {
   const lang = isAr ? "ar" : "en";
   const makingTime = settings ? tailoredEstimate(settings, lang) : null;
-  const making = useMemo<SceneData["making"]>(
-    () =>
-      active
-        ? { beats: madeForYouBeats({ vertical, lang, time: makingTime, name: productName }) }
-        : null,
-    [active, vertical, lang, makingTime, productName],
+  const makingPreview = useMemo<NonNullable<SceneData["making"]>>(
+    () => ({ beats: madeForYouBeats({ vertical, lang, time: makingTime, name: productName }) }),
+    [vertical, lang, makingTime, productName],
   );
-  return { making, makingTime };
+  const making = active ? makingPreview : null;
+  return { making, makingPreview, makingTime };
 }
