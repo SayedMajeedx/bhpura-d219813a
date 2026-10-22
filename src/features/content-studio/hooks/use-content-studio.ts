@@ -30,6 +30,7 @@ import { useStoreFonts } from "@/features/content-studio/hooks/use-store-fonts";
 import { useMoments } from "@/features/content-studio/hooks/use-moments";
 import { useLaunch } from "@/features/content-studio/hooks/use-launch";
 import { useHowToOrder } from "@/features/content-studio/hooks/use-how-to-order";
+import { useMadeForYou } from "@/features/content-studio/hooks/use-made-for-you";
 import {
   readDraftFormat,
   readDraftSettings,
@@ -163,11 +164,11 @@ export function useContentStudio(slug: string) {
     isAr,
     handle: instagram,
   });
-  // Reel Cut and Coming Soon cut between the product's photos; the others never load them.
+  // Reel Cut, Coming Soon and Made for You cut between the product's photos; the others never load them.
   const { productMediaList, photo: chosenPhoto } = product;
   const shotUrls = useMemo(
     () =>
-      templateId === "reel-cut" || templateId === "coming-soon"
+      templateId === "reel-cut" || templateId === "coming-soon" || templateId === "made-for-you"
         ? reelShotUrls(productMediaList, chosenPhoto)
         : [],
     [templateId, productMediaList, chosenPhoto],
@@ -183,6 +184,13 @@ export function useContentStudio(slug: string) {
     currencySymbol,
   });
   const launch = useLaunch({ active: templateId === "coming-soon", isAr });
+  const madeForYou = useMadeForYou({
+    active: templateId === "made-for-you",
+    settings: settingsQ.data,
+    vertical: storeProfile.vertical,
+    isAr,
+    productName,
+  });
   const howToOrder = useHowToOrder({
     active: templateId === "how-to-order",
     settings: settingsQ.data,
@@ -196,8 +204,16 @@ export function useContentStudio(slug: string) {
       rating: moments.rating,
       launch: launch.launch,
       orderSteps: howToOrder.orderSteps,
+      making: madeForYou.making,
     }),
-    [moments.deadline, moments.restock, moments.rating, launch.launch, howToOrder.orderSteps],
+    [
+      moments.deadline,
+      moments.restock,
+      moments.rating,
+      launch.launch,
+      howToOrder.orderSteps,
+      madeForYou.making,
+    ],
   );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
@@ -397,6 +413,7 @@ export function useContentStudio(slug: string) {
     ...moments,
     ...launch,
     ...howToOrder,
+    ...madeForYou,
     ...batch,
     ...drafts,
     ...product,

@@ -66,6 +66,7 @@ const products = [
     base_price: 42,
     fabric_type: "Silk",
     occasion: "Evening",
+    is_made_to_order: true,
   },
   {
     id: "p2",
@@ -153,6 +154,7 @@ const settings = async (importOriginal: () => Promise<object>) => {
         delivery_enabled: true,
         delivery_fee: 2,
         delivery_estimate_en: "Tomorrow in Bahrain",
+        delivery_estimate_tailored_en: "Ready in 12 days",
         pickup_enabled: false,
       }),
     },
@@ -691,8 +693,33 @@ describe("the content studio", () => {
       },
     ];
     expect(template.id).toBe("how-to-order");
-    expect(scene.orderSteps.map((step) => step.key)).toEqual(["choose", "pay", "receive"]);
+    // The store wrote a making time for made-to-order pieces, so the story says it last.
+    expect(scene.orderSteps.map((step) => step.key)).toEqual([
+      "choose",
+      "pay",
+      "receive",
+      "making",
+    ]);
     expect(scene.orderSteps[0].lines).toEqual([["From the link in our bio"]]);
+  });
+
+  it("tells a made-to-order piece in chapters, ending on the store's own making time", async () => {
+    await renderStudio();
+    fireEvent.click(screen.getByRole("radio", { name: /^Made for You/ }));
+    // The store's made-to-order pieces are offered first.
+    expect(await screen.findByRole("button", { name: "Silk Abaya" })).toBeInTheDocument();
+    expect(screen.getByText(/"Ready in 12 days"/)).toBeInTheDocument();
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: { making: { beats: Array<{ line: string }> } } },
+    ];
+    expect(template.id).toBe("made-for-you");
+    expect(scene.making.beats).toHaveLength(3);
+    expect(scene.making.beats[2].line).toBe("Ready in 12 days");
   });
 
   it("zooms into the detail the merchant taps, named from the product's fabric", async () => {
