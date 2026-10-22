@@ -57,8 +57,8 @@ const WORDS = {
     transfer: "Bank transfer",
     cod: "Cash on delivery",
     receive: "Receive",
-    delivery: "Delivery",
-    freeDelivery: "Free delivery",
+    delivery: "Delivery in Bahrain",
+    freeDelivery: "Free delivery in Bahrain",
     pickup: "Or pick up from us",
     pickupOnly: "Pick up from us",
     abroad: "We also ship to",
@@ -77,8 +77,8 @@ const WORDS = {
     transfer: "تحويل بنكي",
     cod: "الدفع عند الاستلام",
     receive: "الاستلام",
-    delivery: "التوصيل",
-    freeDelivery: "توصيل مجاني",
+    delivery: "التوصيل داخل البحرين",
+    freeDelivery: "توصيل مجاني داخل البحرين",
     pickup: "أو الاستلام من عندنا",
     pickupOnly: "الاستلام من عندنا",
     abroad: "ونشحن إلى",
@@ -198,7 +198,10 @@ export function howToOrderSteps(
     }
   }
 
-  // How it arrives.
+  // How it arrives. The store's own fee is for Bahrain, as checkout charges it
+  // ("Bahrain (Domestic)", with Bahrain's address form); every other country
+  // is a shipping zone. Saying where keeps a follower abroad from reading it
+  // as their fee.
   const receive: StepLine[] = [];
   const delivers = s.delivery_enabled !== false;
   if (delivers) {

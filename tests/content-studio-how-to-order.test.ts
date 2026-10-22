@@ -46,7 +46,11 @@ describe("the steps", () => {
       {
         key: "receive",
         title: "Receive",
-        lines: [["Delivery", "2.000 BHD"], ["1-2 days in Bahrain"], ["Or pick up from us"]],
+        lines: [
+          ["Delivery in Bahrain", "2.000 BHD"],
+          ["1-2 days in Bahrain"],
+          ["Or pick up from us"],
+        ],
       },
     ]);
   });
@@ -85,7 +89,7 @@ describe("the steps", () => {
       shipping_zones: [zone(["SA", "KW", "AE", "QA"])],
     });
     expect(steps.find((step) => step.key === "receive")?.lines).toEqual([
-      ["Free delivery"],
+      ["Free delivery in Bahrain"],
       ["We also ship to Saudi Arabia, Kuwait, UAE and more"],
     ]);
   });
@@ -150,7 +154,7 @@ describe("placing the steps", () => {
 
   it("keeps a word and its amount on one line, apart", () => {
     const { placed } = placeSteps(steps, { top: 0, k: 1, u: 1, textW: 100, measureAt });
-    expect(placed[2].lines[0]).toEqual(["Delivery", "2.000 BHD"]);
+    expect(placed[2].lines[0]).toEqual(["Delivery in Bahrain", "2.000 BHD"]);
   });
 });
 

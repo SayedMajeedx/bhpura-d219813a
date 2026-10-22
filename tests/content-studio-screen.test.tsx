@@ -673,7 +673,8 @@ describe("the content studio", () => {
     await renderStudio();
     fireEvent.click(screen.getByRole("radio", { name: /^How to Order/ }));
     expect(await screen.findByText("Card · BenefitPay")).toBeInTheDocument();
-    expect(screen.getByText("Delivery 2.000 BHD")).toBeInTheDocument();
+    // The store's fee is for Bahrain, as checkout charges it; abroad is a shipping zone.
+    expect(screen.getByText("Delivery in Bahrain 2.000 BHD")).toBeInTheDocument();
     expect(screen.getByText("Tomorrow in Bahrain")).toBeInTheDocument();
     // Cash on delivery is off in this store, so the story never offers it.
     expect(screen.queryByText(/Cash on delivery/)).not.toBeInTheDocument();
