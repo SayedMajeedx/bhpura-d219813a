@@ -1,4 +1,15 @@
 import { useState, useMemo, useEffect } from "react";
+import {
+  allAvailable,
+  overAvailable,
+  sameOfEach,
+  tickSizes,
+  tickedCount,
+  transferRows,
+  type BatchTransferProduct,
+  type BatchTransferVariant,
+  type TransferRowState,
+} from "@/features/incubators/lib/batch-transfer";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { batchTransferRefusal } from "@/features/incubators/lib/errors";
 import {
@@ -42,27 +53,7 @@ import { catalogKeys } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 
-export interface BatchTransferProduct {
-  id: string;
-  name: string;
-  name_ar?: string | null;
-  category?: string | null;
-  base_price?: number | string | null;
-}
-
-export interface BatchTransferVariant {
-  id: string;
-  product_id: string;
-  sku?: string | null;
-  barcode?: string | null;
-  size?: string | null;
-  color?: string | null;
-  stock_main: number;
-  stock_incubator: number;
-  selling_price: number;
-  cost_price?: number;
-  incubator_inventory?: Array<{ quantity: number; incubator_id?: string }>;
-}
+export type { BatchTransferProduct, BatchTransferVariant };
 
 export interface BatchIncubatorTransferModalProps {
   open: boolean;
@@ -72,28 +63,11 @@ export interface BatchIncubatorTransferModalProps {
   allVariants?: BatchTransferVariant[];
   onSuccess?: () => void;
   initialIncubatorId?: string | null;
-}
-
-interface TransferRowState {
-  variantId: string;
-  productId: string;
-  productName: string;
-  category: string;
-  variantLabel: string;
-  size: string;
-  color: string;
-  sku: string;
-  barcode: string;
-  stockMain: number;
-  stockIncubator: number;
-  unallocatedInc: number;
-  allocatedInc: number;
-  totalAvailable: number;
-  sellingPrice: number;
-  transferQty: number;
-  consignmentPrice: number;
-  externalCode: string;
-  selected: boolean;
+  /**
+   * Tick the listed products' sizes that have pieces when the screen opens: for products the
+   * merchant chose (the inventory's selection), not for the partner page's whole catalog.
+   */
+  preselect?: boolean;
 }
 
 /** The modal's own variant type over the typed rows. */
@@ -107,6 +81,7 @@ export function BatchIncubatorTransferModal({
   allVariants,
   onSuccess,
   initialIncubatorId,
+  preselect = false,
 }: BatchIncubatorTransferModalProps) {
   const brand = useBrand();
   const brandId = brand.id;
@@ -167,54 +142,7 @@ export function BatchIncubatorTransferModal({
       availableVariants = fetchedVariantsQ.data;
     }
 
-    const prodMap = new Map<string, BatchTransferProduct>();
-    targetProducts.forEach((p) => prodMap.set(p.id, p));
-
-    const newRows: TransferRowState[] = availableVariants.map((v) => {
-      const prod = prodMap.get(v.product_id);
-      const pName = (isAr ? prod?.name_ar || prod?.name : prod?.name) || prod?.name || "";
-      const cat = prod?.category || "";
-      const variantParts = [v.size, v.color].filter(Boolean);
-      const vLabel =
-        variantParts.length > 0 ? variantParts.join(" / ") : isAr ? "النسخة القياسية" : "Standard";
-      const mainStock = Number(v.stock_main || 0);
-      const incStock = Number(v.stock_incubator || 0);
-
-      // Calculate already allocated incubator quantities
-      const allocatedInc = Array.isArray(v.incubator_inventory)
-        ? v.incubator_inventory.reduce(
-            (sum: number, item: any) => sum + Number(item.quantity || 0),
-            0,
-          )
-        : 0;
-
-      // Unallocated incubator stock that can be assigned directly
-      const unallocatedInc = Math.max(0, incStock - allocatedInc);
-      const totalAvailable = mainStock + unallocatedInc;
-      const sPrice = Number(v.selling_price || prod?.base_price || 0);
-
-      return {
-        variantId: v.id,
-        productId: v.product_id,
-        productName: pName,
-        category: cat,
-        variantLabel: vLabel,
-        size: v.size || "",
-        color: v.color || "",
-        sku: v.sku || v.id.slice(0, 8),
-        barcode: v.barcode || "",
-        stockMain: mainStock,
-        stockIncubator: incStock,
-        unallocatedInc,
-        allocatedInc,
-        totalAvailable,
-        sellingPrice: sPrice,
-        transferQty: totalAvailable > 0 ? totalAvailable : 1,
-        consignmentPrice: sPrice,
-        externalCode: "",
-        selected: true,
-      };
-    });
+    const newRows = transferRows(availableVariants, targetProducts, isAr, preselect);
 
     setRows(newRows);
     // Expand all products by default
@@ -228,6 +156,7 @@ export function BatchIncubatorTransferModal({
     fetchedVariantsQ.data,
     isAr,
     productIds,
+    preselect,
   ]);
 
   // Row update helpers
@@ -235,11 +164,8 @@ export function BatchIncubatorTransferModal({
     setRows((prev) => prev.map((r) => (r.variantId === variantId ? { ...r, ...patch } : r)));
   };
 
-  const toggleProductSelection = (productId: string, select: boolean) => {
-    setRows((prev) =>
-      prev.map((r) => (r.productId === productId ? { ...r, selected: select } : r)),
-    );
-  };
+  /** Ticks or unticks the sizes named (a sold-out size is never ticked). */
+  const tick = (ids: string[], on: boolean) => setRows((prev) => tickSizes(prev, new Set(ids), on));
 
   const toggleProductAccordion = (productId: string) => {
     setExpandedProductIds((prev) => {
@@ -264,26 +190,14 @@ export function BatchIncubatorTransferModal({
 
   // Quick preset actions
   const handleTransferAllAvailableStock = () => {
-    setRows((prev) =>
-      prev.map((r) => ({
-        ...r,
-        transferQty: Math.max(0, r.totalAvailable),
-        selected: r.totalAvailable > 0,
-      })),
-    );
+    setRows((prev) => allAvailable(prev));
     toast.info(
       isAr ? "تم ضبط الكميات لكامل المخزون المتوفر" : "Quantities set to all available stock",
     );
   };
 
   const handleSetUniformQty = (qty: number) => {
-    setRows((prev) =>
-      prev.map((r) => ({
-        ...r,
-        transferQty: qty,
-        selected: true,
-      })),
-    );
+    setRows((prev) => sameOfEach(prev, qty));
     toast.info(
       isAr ? `تم ضبط الكمية (${qty}) لجميع المتغيرات` : `Set uniform quantity (${qty}) for all`,
     );
@@ -347,9 +261,13 @@ export function BatchIncubatorTransferModal({
       })
       .filter(Boolean) as typeof groups;
   }, [rows, searchQuery]);
+  // What the search shows: "Select all" and "Deselect all" act on these sizes.
+  const shownRows = useMemo(() => productGroups.flatMap((group) => group.rows), [productGroups]);
+  const shownCount = tickedCount(shownRows);
 
   // Calculated totals for active rows
   const activeRows = useMemo(() => rows.filter((r) => r.selected && r.transferQty > 0), [rows]);
+  const tooMany = useMemo(() => overAvailable(rows), [rows]);
   const totalPieces = useMemo(
     () => activeRows.reduce((sum, r) => sum + r.transferQty, 0),
     [activeRows],
@@ -563,6 +481,41 @@ export function BatchIncubatorTransferModal({
               <Badge variant="outline" className="text-xs font-mono px-2 py-1">
                 {productGroups.length} {isAr ? "منتج" : "products"}
               </Badge>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {isAr
+                  ? `${shownCount.ticked} من ${shownCount.tickable} مقاس`
+                  : `${shownCount.ticked} of ${shownCount.tickable} sizes`}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={shownCount.ticked === shownCount.tickable}
+                onClick={() =>
+                  tick(
+                    shownRows.map((row) => row.variantId),
+                    true,
+                  )
+                }
+                className="h-7 text-xs px-2"
+              >
+                {isAr ? "تحديد الكل" : "Select all"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={shownCount.ticked === 0}
+                onClick={() =>
+                  tick(
+                    shownRows.map((row) => row.variantId),
+                    false,
+                  )
+                }
+                className="h-7 text-xs px-2"
+              >
+                {isAr ? "إلغاء التحديد" : "Deselect all"}
+              </Button>
               <div className="flex items-center gap-1">
                 <Button
                   type="button"
@@ -615,7 +568,9 @@ export function BatchIncubatorTransferModal({
             productGroups.map((group) => {
               const isExpanded = expandedProductIds.has(group.productId);
               const groupRows = group.rows;
-              const allSelected = groupRows.every((r) => r.selected);
+              // A product's box ticks its sizes that have pieces; sold-out ones never count.
+              const tickable = groupRows.filter((r) => r.totalAvailable > 0);
+              const allSelected = tickable.length > 0 && tickable.every((r) => r.selected);
               const someSelected = groupRows.some((r) => r.selected);
               const groupTotalAvailable = groupRows.reduce((sum, r) => sum + r.totalAvailable, 0);
               const groupTotalTransferQty = groupRows.reduce(
@@ -638,9 +593,20 @@ export function BatchIncubatorTransferModal({
                       {/* Checkbox for whole product */}
                       <button
                         type="button"
-                        onClick={() => toggleProductSelection(group.productId, !allSelected)}
-                        className="text-primary hover:opacity-80 p-0.5 rounded cursor-pointer"
-                        title={isAr ? "تحديد كل النسخ" : "Select all variants"}
+                        disabled={tickable.length === 0}
+                        aria-pressed={allSelected}
+                        onClick={() =>
+                          tick(
+                            tickable.map((r) => r.variantId),
+                            !allSelected,
+                          )
+                        }
+                        className="text-primary hover:opacity-80 p-0.5 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label={
+                          isAr
+                            ? `تحديد مقاسات ${group.productName} المتوفرة`
+                            : `Select the sizes of ${group.productName} in stock`
+                        }
                       >
                         {allSelected ? (
                           <CheckSquare className="h-4 w-4" />
@@ -748,12 +714,18 @@ export function BatchIncubatorTransferModal({
                                   <input
                                     type="checkbox"
                                     checked={row.selected}
-                                    onChange={(e) =>
-                                      updateRowByVariantId(row.variantId, {
-                                        selected: e.target.checked,
-                                      })
+                                    disabled={isZeroStock}
+                                    onChange={(e) => tick([row.variantId], e.target.checked)}
+                                    aria-label={
+                                      isZeroStock
+                                        ? isAr
+                                          ? `${group.productName} ${row.variantLabel}: لا توجد قطع للتحويل`
+                                          : `${group.productName} ${row.variantLabel}: nothing to transfer`
+                                        : isAr
+                                          ? `تحويل ${group.productName} ${row.variantLabel}`
+                                          : `Transfer ${group.productName} ${row.variantLabel}`
                                     }
-                                    className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                                    className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer disabled:cursor-not-allowed"
                                   />
                                 </td>
 
@@ -906,7 +878,14 @@ export function BatchIncubatorTransferModal({
 
         {/* Footer: Summary Metrics & Action Buttons */}
         <DialogFooter className="p-4 border-t border-border-strong bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            {tooMany.length > 0 && (
+              <span role="alert" className="font-medium text-destructive">
+                {isAr
+                  ? `${tooMany.length} مقاس يطلب أكثر من المتوفر`
+                  : `${tooMany.length} ${tooMany.length === 1 ? "size asks" : "sizes ask"} for more than is in stock`}
+              </span>
+            )}
             <div className="flex items-center gap-1.5">
               <span className="text-muted-foreground">
                 {isAr ? "إجمالي القطع:" : "Total Units:"}
@@ -938,7 +917,12 @@ export function BatchIncubatorTransferModal({
             <Button
               type="button"
               variant="default"
-              disabled={isSubmitting || totalPieces === 0 || activeIncubators.length === 0}
+              disabled={
+                isSubmitting ||
+                totalPieces === 0 ||
+                activeIncubators.length === 0 ||
+                tooMany.length > 0
+              }
               onClick={handleExecuteTransfer}
               className="flex-1 sm:flex-none h-9 text-xs gap-1.5 font-bold bg-primary text-primary-foreground hover:bg-primary/90"
             >

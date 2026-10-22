@@ -513,6 +513,8 @@ export function ProductsSection({
           open={incubatorTransferModalOpen}
           onOpenChange={setIncubatorTransferModalOpen}
           targetProducts={incubatorTransferProducts}
+          // The merchant chose these products: their sizes with pieces start ticked.
+          preselect
           variantsByProduct={variantsByProduct}
           onSuccess={() => {
             setSelectedProductIds(new Set());
