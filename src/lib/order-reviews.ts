@@ -8,7 +8,8 @@ export type OrderReviewAdminRow = {
   rating: number;
   highlights: string[];
   comment: string | null;
-  reward_code: string;
+  /** The thank-you code the review was given; none when the store gave no discount. */
+  reward_code: string | null;
   reviewed_at: string;
   request_sent_at: string | null;
   /** The customer agreed to the review being shown on the store. */

@@ -123,6 +123,10 @@ describe("post-purchase review reward", () => {
       invoice_number: 1098,
       customer_name: "Sara",
       brand_whatsapp_number: "97330000000",
+      // The store's own thank-you discount (bug #41: it was THANKU10 for every store).
+      reward_discount_type: "percentage",
+      reward_discount_value: 10,
+      currency: "BHD",
     };
 
     reviews.publicReview = { ...base, state: "ready", reward_code: null };
