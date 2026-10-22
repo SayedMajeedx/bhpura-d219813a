@@ -18,7 +18,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 const NO_CODE = "none";
 
 /** The box each moment's choices sit in, under the product picker. */
-function MomentBox({
+export function MomentBox({
   icon: Icon,
   title,
   hint,
@@ -45,7 +45,7 @@ function MomentBox({
   );
 }
 
-function SwitchRow({
+export function SwitchRow({
   id,
   label,
   checked,

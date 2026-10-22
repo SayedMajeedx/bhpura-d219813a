@@ -28,6 +28,7 @@ import { useBatchExport } from "@/features/content-studio/hooks/use-batch-export
 import { useDrafts } from "@/features/content-studio/hooks/use-drafts";
 import { useStoreFonts } from "@/features/content-studio/hooks/use-store-fonts";
 import { useMoments } from "@/features/content-studio/hooks/use-moments";
+import { useLaunch } from "@/features/content-studio/hooks/use-launch";
 import {
   readDraftFormat,
   readDraftSettings,
@@ -71,7 +72,8 @@ export function useContentStudio(slug: string) {
   const [logoTint, setLogoTint] = useState<LogoTint>("auto");
   // Headlines in the studio's own faces (the templates' editorial serif), or the store's.
   const [headlineFont, setHeadlineFont] = useState<"studio" | "store">("studio");
-  const product = useStudioProduct(brand.id, isAr);
+  // A teaser may show a product the store has not put out yet; no other template may.
+  const product = useStudioProduct(brand.id, isAr, { includeHidden: templateId === "coming-soon" });
   const { selected, settingsQ } = product;
   const copy = useStudioCopy({ selected, isAr, brandNameEn, defaultEditionLabel });
   const { editionLabel, headline, body } = copy;
@@ -160,10 +162,13 @@ export function useContentStudio(slug: string) {
     isAr,
     handle: instagram,
   });
-  // Reel Cut cuts between the product's photos; the others never load them.
+  // Reel Cut and Coming Soon cut between the product's photos; the others never load them.
   const { productMediaList, photo: chosenPhoto } = product;
   const shotUrls = useMemo(
-    () => (templateId === "reel-cut" ? reelShotUrls(productMediaList, chosenPhoto) : []),
+    () =>
+      templateId === "reel-cut" || templateId === "coming-soon"
+        ? reelShotUrls(productMediaList, chosenPhoto)
+        : [],
     [templateId, productMediaList, chosenPhoto],
   );
   const moments = useMoments({
@@ -176,9 +181,15 @@ export function useContentStudio(slug: string) {
     isAr,
     currencySymbol,
   });
+  const launch = useLaunch({ active: templateId === "coming-soon", isAr });
   const momentScene = useMemo(
-    () => ({ deadline: moments.deadline, restock: moments.restock, rating: moments.rating }),
-    [moments.deadline, moments.restock, moments.rating],
+    () => ({
+      deadline: moments.deadline,
+      restock: moments.restock,
+      rating: moments.rating,
+      launch: launch.launch,
+    }),
+    [moments.deadline, moments.restock, moments.rating, launch.launch],
   );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
@@ -376,6 +387,7 @@ export function useContentStudio(slug: string) {
     ...detailZoom,
     ...occasion,
     ...moments,
+    ...launch,
     ...batch,
     ...drafts,
     ...product,

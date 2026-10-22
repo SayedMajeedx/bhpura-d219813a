@@ -5,8 +5,9 @@ import { formatAmount } from "@/features/content-studio/lib/batch";
 
 /**
  * The rules behind the templates made for a moment: a sale's last days (Last
- * Chance), a piece back on the shelf (Back in Stock) and what customers say
- * (Customer Favourite). Pure, so what a post claims can be checked.
+ * Chance), a piece back on the shelf (Back in Stock), what customers say
+ * (Customer Favourite) and a launch to come (Coming Soon). Pure, so what a
+ * post claims can be checked.
  */
 
 // ── Last Chance ─────────────────────────────────────────────────────────────
@@ -196,4 +197,24 @@ export function ratingSummary(
     .slice(0, 3)
     .map(([key]) => REVIEW_HIGHLIGHT_LABELS[key][lang]);
   return { average: Math.round(average * 10) / 10, count: rated.length, highlights };
+}
+
+// ── Coming Soon ─────────────────────────────────────────────────────────────
+
+/**
+ * A launch hour as a post writes it, from a time field's "HH:MM": "8 PM",
+ * "8:30 PM" / "8 مساءً", "10:15 صباحاً" (minutes only when there are some,
+ * Western digits). Null for an empty or broken value.
+ */
+export function launchTime(value: string, lang: "ar" | "en"): string | null {
+  const match = /^(\d{1,2}):(\d{2})/.exec(value.trim());
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (hours > 23 || minutes > 59) return null;
+  const hour12 = hours % 12 === 0 ? 12 : hours % 12;
+  const clock = minutes ? `${hour12}:${match[2]}` : String(hour12);
+  const morning = hours < 12;
+  if (lang === "en") return `${clock} ${morning ? "AM" : "PM"}`;
+  return `${clock} ${morning ? "صباحاً" : "مساءً"}`;
 }

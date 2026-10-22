@@ -52,17 +52,20 @@ export async function searchProducts(brandId: string, text: string) {
   return data ?? [];
 }
 
-/** The brand's active products for the content studio, most recently edited first. */
+/**
+ * The brand's products for the content studio, most recently edited first:
+ * the live ones, and the hidden ones a Coming Soon post may tease (the studio
+ * offers those to that template alone, `is_active` says which is which).
+ */
 export async function fetchContentStudioProducts(brandId: string) {
   return readAll((from, to) =>
     supabase
       .from("products")
       .select(
-        "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion",
+        "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion,is_active",
         { count: "exact" },
       )
       .eq("brand_id", brandId)
-      .eq("is_active", true)
       .order("updated_at", { ascending: false })
       .order("id")
       .range(from, to),

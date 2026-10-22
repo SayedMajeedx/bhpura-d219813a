@@ -208,6 +208,7 @@ describe("templatesForStore", () => {
       "atelier-reveal*",
       "reel-cut*",
       "swatch-run*",
+      "coming-soon",
       "detail-zoom",
       "lookbook-carousel",
       "editorial-cover",

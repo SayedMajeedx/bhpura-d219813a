@@ -78,6 +78,19 @@ const products = [
     media: [],
     base_price: 30,
   },
+  {
+    // Hidden from the store: only Coming Soon may show it.
+    id: "p3",
+    name: "Autumn Cape",
+    name_ar: null,
+    name_en: "Autumn Cape",
+    description: null,
+    description_ar: null,
+    image_url: "https://cdn.example/p3.jpg",
+    media: [],
+    base_price: 55,
+    is_active: false,
+  },
 ];
 const variants = [
   {
@@ -615,6 +628,36 @@ describe("the content studio", () => {
       code: "EID15",
       offer: ["15% off"],
     });
+  });
+
+  it("teases a hidden piece on Coming Soon, its launch day set large and its name kept back", async () => {
+    await renderStudio();
+    // A hidden piece is offered to no other template.
+    expect(screen.queryByRole("button", { name: "Autumn Cape" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /^Coming Soon/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Autumn Cape" }));
+    fireEvent.change(screen.getByLabelText("Launch day"), { target: { value: "2099-01-01" } });
+    fireEvent.change(screen.getByLabelText("Hour (optional)"), { target: { value: "20:30" } });
+    expect(screen.getByText(/add Instagram's countdown sticker there/)).toBeInTheDocument();
+
+    const download = await screen.findByRole("button", { name: "Download Video (MP4)" });
+    await waitFor(() => expect(download).toBeEnabled());
+    fireEvent.click(download);
+    await waitFor(() => expect(exporting.exportTemplateMp4).toHaveBeenCalledTimes(1));
+    const [{ template, scene }] = exporting.exportTemplateMp4.mock.lastCall as unknown as [
+      { template: { id: string }; scene: { launch: unknown; productName: string } },
+    ];
+    expect(template.id).toBe("coming-soon");
+    expect(scene.productName).toBe("Autumn Cape");
+    expect(scene.launch).toEqual({
+      when: { day: "Thursday", date: "1 January" },
+      time: "8:30 PM",
+      secret: true,
+    });
+
+    // With no date yet, the post says only that something is coming.
+    fireEvent.click(screen.getByRole("switch", { name: "The launch day is set" }));
+    expect(screen.queryByLabelText("Launch day")).not.toBeInTheDocument();
   });
 
   it("zooms into the detail the merchant taps, named from the product's fabric", async () => {

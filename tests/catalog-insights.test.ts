@@ -93,8 +93,10 @@ describe("product search and pickers", () => {
     expect(await catalog.searchProducts("b1", "abaya")).toEqual([]);
   });
 
-  it("give the content studio the active products, and throw on error", async () => {
+  it("give the content studio the live and hidden products, and throw on error", async () => {
     await catalog.fetchContentStudioProducts("b1");
+    // Hidden products are read too (Coming Soon teases them), marked by is_active.
+    expect(eqs(requests[0])).toEqual([["brand_id", "b1"]]);
     expect(requests[0].filters).toContainEqual(["order", "updated_at", { ascending: false }]);
     respond = () => ({ data: null, error: denied });
     await expect(catalog.fetchContentStudioProducts("b1")).rejects.toBe(denied);

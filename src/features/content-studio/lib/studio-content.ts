@@ -13,6 +13,8 @@ export type Product = {
   base_price: number | null;
   fabric_type?: string | null;
   occasion?: string | null;
+  /** False for a product hidden from the store (offered only to Coming Soon). */
+  is_active?: boolean | null;
 };
 
 export const FORMATS = CREATIVE_FORMATS;
@@ -51,6 +53,21 @@ export const THEMES = {
     panel: "rgba(244,238,233,.7)",
   },
 } as const;
+
+/**
+ * The products a template may use: the live ones, and with `includeHidden`
+ * (Coming Soon) the hidden ones too, first, keeping the list's own order. A
+ * hidden product is never in another template: its post would sell what the
+ * store does not show.
+ */
+export function studioProducts<P extends Pick<Product, "is_active">>(
+  products: readonly P[],
+  includeHidden: boolean,
+): P[] {
+  const live = products.filter((product) => product.is_active !== false);
+  if (!includeHidden) return live;
+  return [...products.filter((product) => product.is_active === false), ...live];
+}
 
 export function firstImage(product?: Product) {
   if (!product) return null;
