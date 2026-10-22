@@ -1,8 +1,12 @@
 import React from "react";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TrendingUp } from "lucide-react";
 import { ExpensesScopeSwitcher } from "../src/components/expenses/ExpensesScopeSwitcher";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+}));
 import { KpiCard } from "../src/components/reports/kpi-card";
 
 describe("Phase 7B responsive financial workspaces", () => {
@@ -11,17 +15,28 @@ describe("Phase 7B responsive financial workspaces", () => {
       <ExpensesScopeSwitcher
         lang="en"
         currency="BHD"
-        totalRevenue={1200}
-        totalCogs={300}
-        manualOpex={150}
-        processingFees={25}
-        netProfit={725}
-        marginPercentage={60.4}
+        slug="pura"
+        figures={{
+          netSales: 1200,
+          productCost: 280,
+          packagingCost: 20,
+          partnerCost: 0,
+          costOfGoods: 300,
+          grossProfit: 900,
+          grossMargin: 75,
+          runningCosts: 150,
+          paymentFees: 25,
+          partnerCommissions: 0,
+          operatingCosts: 175,
+          operatingProfit: 725,
+          operatingMargin: 60.4,
+          missingCosts: 0,
+        }}
       />,
     );
 
-    expect(screen.getByText("Total Revenue")).toBeDefined();
-    expect(screen.getByText("Net Profit / Margin")).toBeDefined();
+    expect(screen.getByText("Net sales")).toBeDefined();
+    expect(screen.getByText("Operating profit / margin")).toBeDefined();
     expect(screen.getByText("Cost and expense details")).toBeDefined();
     expect(screen.getAllByText("Cost of goods").length).toBeGreaterThanOrEqual(2);
   });

@@ -1,116 +1,69 @@
-import { getItemPackagingCost } from "@/lib/bom-calculator";
+import { overviewProfit, type ComposedOverviewRow } from "@/lib/reporting-compose";
+import { startOfLocalDay } from "@/lib/day-range";
 
 /**
- * The profit and loss strip above the expenses list, worked out from the period's sold orders
- * (`ordersQueries.cogs`) and the expenses the view shows.
+ * The expenses page's profit and loss: the Reports' own figures for the page's period (the
+ * overview's `composeOverviewRows` and `overviewProfit`), so the strip, the accounting tab's
+ * statement, the Reports overview and the monthly statement say the same for the same days.
+ * The page once worked its own out in the browser: revenue from order totals (VAT and delivery
+ * in, partner shops' sales and returns out), packaging from today's materials, fees on the whole
+ * total and running costs from the expenses the list's search happened to show.
  */
 
-type SoldOrder = {
-  total?: number | string | null;
-  payment_method?: string | null;
-  fulfillment_status?: string | null;
-  status?: string | null;
-  order_items?: ReadonlyArray<{
-    quantity?: number | string | null;
-    unit_cost?: number | string | null;
-  }> | null;
+export type PeriodFigures = {
+  /** After discounts and returns, partner shops' sales included. */
+  netSales: number;
+  productCost: number;
+  packagingCost: number;
+  partnerCost: number;
+  /** Cost of goods after a restocked return gave its cost back. */
+  costOfGoods: number;
+  grossProfit: number;
+  grossMargin: number;
+  runningCosts: number;
+  paymentFees: number;
+  partnerCommissions: number;
+  operatingCosts: number;
+  operatingProfit: number;
+  operatingMargin: number;
+  /** Pieces sold with no cost recorded: profit is overstated by their cost. */
+  missingCosts: number;
 };
 
-/** Stages at which an order's packaging has been used. */
-const PACKAGING_USED_STAGES = [
-  "fulfilled",
-  "delivered",
-  "completed",
-  "shipped",
-  "picked_up",
-  "ready_for_pickup",
-];
-
-export type PackagingCatalog = {
-  products: unknown[];
-  variants: unknown[];
-  bomItems: unknown[];
-  materials: unknown[];
-};
-
-export function totalRevenueOf(orders: readonly SoldOrder[]): number {
-  return orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
-}
-
-/**
- * What the sold goods cost: each line's cost snapshot times its quantity, plus the packaging of
- * orders that have left (when the store counts packaging by its bill of materials).
- */
-export function costOfGoods(
-  orders: readonly SoldOrder[],
-  catalog: PackagingCatalog,
-  bomEnabled: boolean,
-): { productCogs: number; packagingBomCogs: number; totalCogs: number } {
-  let prod = 0;
-  let pkg = 0;
-
-  orders.forEach((order) => {
-    const isFulfilled = PACKAGING_USED_STAGES.includes(
-      String(order.fulfillment_status || order.status || "").toLowerCase(),
-    );
-    (order.order_items ?? []).forEach((item) => {
-      const pCost = Number(item.unit_cost ?? 0);
-      const qty = Number(item.quantity ?? 1);
-      prod += pCost * qty;
-      if (isFulfilled && bomEnabled) {
-        const bCost = getItemPackagingCost(
-          item,
-          catalog.products,
-          catalog.variants,
-          catalog.bomItems,
-          catalog.materials,
-        );
-        pkg += bCost * qty;
-      }
-    });
-  });
+/** The period's figures in the store's currency; null until they arrive. */
+export function periodFigures(
+  rows: ReadonlyArray<Partial<ComposedOverviewRow>> | null | undefined,
+  currency: string,
+): PeriodFigures | null {
+  if (!rows) return null;
+  const row = rows.find((r) => r.currency === currency) ?? {};
+  const profit = overviewProfit(row);
+  const num = (value: unknown) => Number(value ?? 0) || 0;
   return {
-    productCogs: Number(prod.toFixed(3)),
-    packagingBomCogs: Number(pkg.toFixed(3)),
-    totalCogs: Number((prod + pkg).toFixed(3)),
+    netSales: profit.netSales,
+    productCost: num(row.product_cogs),
+    packagingCost: num(row.packaging_cogs),
+    partnerCost: num(row.incubator_cogs),
+    costOfGoods: profit.costOfGoods,
+    grossProfit: profit.grossProfit,
+    grossMargin: profit.grossMargin,
+    runningCosts: num(row.manual_expenses),
+    paymentFees: num(row.processing_fees),
+    partnerCommissions: num(row.incubator_commissions),
+    operatingCosts: profit.operatingCosts,
+    operatingProfit: profit.operatingProfit,
+    operatingMargin: profit.operatingMargin,
+    missingCosts: num(row.missing_cost_item_count),
   };
 }
 
-/** What the payment providers kept: the store's own percentage of each card and BenefitPay order. */
-export function paymentProcessingFeesOf(
-  orders: readonly SoldOrder[],
-  cardFeePercent: number,
-  benefitFeePercent: number,
-): number {
-  let sum = 0;
-  orders.forEach((order) => {
-    const totalVal = Number(order.total || 0);
-    if (order.payment_method === "card") {
-      sum += totalVal * (cardFeePercent / 100);
-    } else if (order.payment_method === "benefit") {
-      sum += totalVal * (benefitFeePercent / 100);
-    }
-  });
-  return sum;
-}
-
-/** The running costs staff typed in: every expense that is not a stock purchase. */
-export function manualOpexOf(
-  expenses: ReadonlyArray<{ expense_type?: string | null; amount?: number | string | null }>,
-): number {
-  return expenses
-    .filter((expense) => (expense.expense_type || "opex") === "opex")
-    .reduce((sum, expense) => sum + Number(expense.amount || 0), 0);
-}
-
-export function netProfitOf(figures: {
-  totalRevenue: number;
-  totalCogs: number;
-  manualOpex: number;
-  processingFees: number;
-}): { totalOpex: number; netProfit: number; marginPercentage: number } {
-  const totalOpex = figures.manualOpex + figures.processingFees;
-  const netProfit = figures.totalRevenue - (figures.totalCogs + totalOpex);
-  const marginPercentage = figures.totalRevenue > 0 ? (netProfit / figures.totalRevenue) * 100 : 0;
-  return { totalOpex, netProfit, marginPercentage };
+/**
+ * The page's days (`YYYY-MM-DD`, the reader's calendar) as the Reports' period: from the first
+ * day's midnight to the last millisecond of the last day. Undefined for a range not yet chosen.
+ */
+export function reportRangeOfDays(from: string, to: string): { from: Date; to: Date } | undefined {
+  const start = startOfLocalDay(from);
+  const after = startOfLocalDay(to, 1);
+  if (!start || !after) return undefined;
+  return { from: start, to: new Date(after.getTime() - 1) };
 }

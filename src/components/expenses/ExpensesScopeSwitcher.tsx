@@ -1,103 +1,89 @@
-import { TrendingUp, PackageCheck, Wallet, Receipt, ChevronDown } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { TrendingUp, PackageCheck, Wallet, Receipt, ChevronDown, Table2 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { PeriodFigures } from "@/features/expenses/lib/profit-and-loss";
 
 interface ExpensesScopeSwitcherProps {
   lang: "ar" | "en";
   currency: string;
-  totalRevenue: number;
-  totalCogs: number;
-  manualOpex: number;
-  processingFees: number;
-  netProfit: number;
-  marginPercentage: number;
+  slug: string;
+  /** The Reports' figures for the page's period; null while they load. */
+  figures: PeriodFigures | null;
 }
 
+/**
+ * The profit and loss strip above the expenses: net sales, cost of goods, running costs, fees
+ * and commissions, operating profit and margin, the Reports' own figures for the page's period,
+ * with a way to the full monthly statement.
+ */
 export function ExpensesScopeSwitcher({
   lang,
   currency,
-  totalRevenue,
-  totalCogs,
-  manualOpex,
-  processingFees,
-  netProfit,
-  marginPercentage,
+  slug,
+  figures,
 }: ExpensesScopeSwitcherProps) {
   const isAr = lang === "ar";
-  const totalOpex = manualOpex + processingFees;
-  const isProfitable = netProfit >= 0;
+  const money = (value: number | undefined) =>
+    figures ? formatMoney(value ?? 0, currency, lang) : "…";
+  const fees = figures ? figures.paymentFees + figures.partnerCommissions : 0;
+  const feesLabel =
+    figures && figures.partnerCommissions > 0
+      ? isAr
+        ? "رسوم الدفع والعمولات"
+        : "Payment fees & commissions"
+      : isAr
+        ? "رسوم الدفع"
+        : "Payment fees";
+  const profitable = (figures?.operatingProfit ?? 0) >= 0;
 
   return (
     <div className="rounded-2xl border border-border-subtle bg-muted/30 p-1.5">
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
-        {/* 1. Total Revenue */}
-        <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs">
+        <Tile
+          label={isAr ? "صافي المبيعات" : "Net sales"}
+          value={money(figures?.netSales)}
+          icon={<TrendingUp className="h-3.5 w-3.5 text-success" aria-hidden="true" />}
+        />
+        <Tile
+          label={isAr ? "تكلفة البضاعة" : "Cost of goods"}
+          value={money(figures?.costOfGoods)}
+          icon={<PackageCheck className="h-3.5 w-3.5 text-info" aria-hidden="true" />}
+          wide
+        />
+        <Tile
+          label={isAr ? "المصاريف التشغيلية" : "Running costs"}
+          value={money(figures?.runningCosts)}
+          icon={<Wallet className="h-3.5 w-3.5 text-warning" aria-hidden="true" />}
+          wide
+        />
+        <Tile
+          label={feesLabel}
+          value={money(fees)}
+          icon={<Receipt className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />}
+          wide
+        />
+        <div className="flex flex-col gap-0.5 rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:col-span-4 lg:col-span-1">
           <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "إجمالي الإيرادات" : "Total Revenue"}</span>
-            <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalRevenue, currency, lang)}
-          </span>
-        </div>
-
-        {/* 2. COGS */}
-        <div className="hidden flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs sm:flex">
-          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "تكلفة البضاعة" : "Cost of goods"}</span>
-            <PackageCheck className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalCogs, currency, lang)}
-          </span>
-        </div>
-
-        {/* 3. Operating Expenses */}
-        <div className="hidden flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs sm:flex">
-          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "المصروفات التشغيلية" : "Operating Opex"}</span>
-            <Wallet className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-          </div>
-          <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(totalOpex, currency, lang)}
-          </span>
-        </div>
-
-        {/* 4. Payment Fees */}
-        <div className="hidden flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs sm:flex">
-          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "رسوم بوابة الدفع" : "Gateway Fees"}</span>
-            <Receipt className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <span className="font-extrabold text-sm text-foreground font-mono">
-            {formatMoney(processingFees, currency, lang)}
-          </span>
-        </div>
-
-        {/* 5. Net Profit & Margin */}
-        <div className="flex flex-col gap-0.5 p-3 rounded-xl bg-card border border-border-subtle shadow-2xs sm:col-span-4 lg:col-span-1">
-          <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
-            <span>{isAr ? "صافي الربح والهامش" : "Net Profit / Margin"}</span>
-            <span
-              className={cn(
-                "px-1.5 py-0.2 rounded-md text-xs font-extrabold",
-                isProfitable
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                  : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
-              )}
-            >
-              {marginPercentage.toFixed(1)}%
-            </span>
+            <span>{isAr ? "الربح التشغيلي والهامش" : "Operating profit / margin"}</span>
+            {figures && (
+              <span
+                className={cn(
+                  "rounded-md px-1.5 text-xs font-extrabold",
+                  profitable ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
+                )}
+              >
+                {figures.operatingMargin.toFixed(1)}%
+              </span>
+            )}
           </div>
           <span
             className={cn(
-              "font-extrabold text-sm font-mono",
-              isProfitable
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-rose-600 dark:text-rose-400",
+              "font-mono text-sm font-extrabold",
+              profitable ? "text-success" : "text-destructive",
             )}
           >
-            {formatMoney(netProfit, currency, lang)}
+            {money(figures?.operatingProfit)}
           </span>
         </div>
       </div>
@@ -109,21 +95,59 @@ export function ExpensesScopeSwitcher({
         <div className="mt-2 grid gap-2">
           <MetricRow
             label={isAr ? "تكلفة البضاعة" : "Cost of goods"}
-            value={formatMoney(totalCogs, currency, lang)}
-            icon={<PackageCheck className="h-4 w-4 text-blue-600" />}
+            value={money(figures?.costOfGoods)}
+            icon={<PackageCheck className="h-4 w-4 text-info" aria-hidden="true" />}
           />
           <MetricRow
-            label={isAr ? "المصروفات التشغيلية" : "Operating expenses"}
-            value={formatMoney(totalOpex, currency, lang)}
-            icon={<Wallet className="h-4 w-4 text-amber-600" />}
+            label={isAr ? "المصاريف التشغيلية" : "Running costs"}
+            value={money(figures?.runningCosts)}
+            icon={<Wallet className="h-4 w-4 text-warning" aria-hidden="true" />}
           />
           <MetricRow
-            label={isAr ? "رسوم بوابة الدفع" : "Gateway fees"}
-            value={formatMoney(processingFees, currency, lang)}
-            icon={<Receipt className="h-4 w-4 text-purple-600" />}
+            label={feesLabel}
+            value={money(fees)}
+            icon={<Receipt className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
           />
         </div>
       </details>
+      <Link
+        to="/admin/b/$slug/reports/statement"
+        params={{ slug }}
+        className="mt-1.5 inline-flex min-h-9 items-center gap-1.5 px-2 text-xs font-semibold text-primary hover:underline"
+      >
+        <Table2 className="h-3.5 w-3.5" aria-hidden="true" />
+        {isAr
+          ? "نفس أرقام التقارير. القائمة الشهرية كاملة"
+          : "The same figures as Reports. The full monthly statement"}
+      </Link>
+    </div>
+  );
+}
+
+function Tile({
+  label,
+  value,
+  icon,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  icon: React.ReactNode;
+  /** Shown from `sm` up; on a phone it sits in the details below. */
+  wide?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex-col gap-0.5 rounded-xl border border-border-subtle bg-card p-3 shadow-2xs",
+        wide ? "hidden sm:flex" : "flex",
+      )}
+    >
+      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+        <span>{label}</span>
+        {icon}
+      </div>
+      <span className="font-mono text-sm font-extrabold text-foreground">{value}</span>
     </div>
   );
 }

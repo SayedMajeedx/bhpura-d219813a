@@ -17,10 +17,8 @@ import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
-import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { deleteExpense, expensesQueries, invalidateExpenses } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
-import { catalogQueries } from "@/lib/data/catalog";
 
 import { ExpensesCommandHeader } from "@/components/expenses/ExpensesCommandHeader";
 import { ExpensesScopeSwitcher } from "@/components/expenses/ExpensesScopeSwitcher";
@@ -43,13 +41,8 @@ import {
   filterExpenses,
   scanFailureMessage,
 } from "@/features/expenses/lib/expense-list";
-import {
-  costOfGoods,
-  manualOpexOf,
-  netProfitOf,
-  paymentProcessingFeesOf,
-  totalRevenueOf,
-} from "@/features/expenses/lib/profit-and-loss";
+import { periodFigures, reportRangeOfDays } from "@/features/expenses/lib/profit-and-loss";
+import { reportingQueries } from "@/lib/data/reporting";
 import { prepareReceiptForScanning } from "@/features/expenses/lib/receipt-scan";
 import { ExpenseDialog } from "@/features/expenses/components/ExpenseDialog";
 import { ReceiptReviewDialog } from "@/features/expenses/components/ReceiptReviewDialog";
@@ -100,13 +93,6 @@ export function ExpensesPage() {
   // The strip above the list is the store's own money (its orders and its costs); a row is in
   // its expense's own currency, with the store's when it has none.
   const currency = useStoreCurrency(brandId);
-
-  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
-
-  const productsQ = useQuery(catalogQueries.products(brandId));
-  const variantsQ = useQuery(catalogQueries.variants(brandId));
-  const bomItemsQ = useQuery(catalogQueries.bomItems(brandId));
-  const packagingMaterialsQ = useQuery(catalogQueries.packagingMaterials(brandId));
 
   // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
   const cogsQ = useQuery(ordersQueries.cogs(brandId, activeRange.from, activeRange.to));
@@ -174,48 +160,19 @@ export function ExpensesPage() {
     }
   };
 
-  // ── Calculation of Retail Standard Profit & Loss Metrics ──
-  const totalRevenue = useMemo(() => totalRevenueOf(cogsQ.data ?? []), [cogsQ.data]);
-
-  const { totalCogs } = useMemo(
-    () =>
-      costOfGoods(
-        cogsQ.data ?? [],
-        {
-          products: productsQ.data ?? [],
-          variants: variantsQ.data ?? [],
-          bomItems: bomItemsQ.data ?? [],
-          materials: packagingMaterialsQ.data ?? [],
-        },
-        (settingsQ.data as any)?.bom_enabled !== false,
-      ),
-    [
-      cogsQ.data,
-      productsQ.data,
-      variantsQ.data,
-      bomItemsQ.data,
-      packagingMaterialsQ.data,
-      settingsQ.data,
-    ],
-  );
-
-  const cardFeePercent = Number((settingsQ.data as any)?.card_processing_fee ?? 0);
-  const benefitFeePercent = Number((settingsQ.data as any)?.benefit_processing_fee ?? 0);
-
-  const paymentProcessingFees = useMemo(
-    () => paymentProcessingFeesOf(cogsQ.data ?? [], cardFeePercent, benefitFeePercent),
-    [cogsQ.data, cardFeePercent, benefitFeePercent],
-  );
-
-  // Separate OpEx from Bulk COGS Inventory purchases
-  const manualOpexExpenses = useMemo(() => manualOpexOf(filteredList), [filteredList]);
-
-  const { netProfit, marginPercentage } = netProfitOf({
-    totalRevenue,
-    totalCogs,
-    manualOpex: manualOpexExpenses,
-    processingFees: paymentProcessingFees,
+  // The profit and loss strip: the Reports' own figures for the page's days, so this page, the
+  // overview and the monthly statement agree (running costs are every one of the period, not
+  // only those the list's search shows).
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const reportRange = reportRangeOfDays(activeRange.from, activeRange.to);
+  const periodQ = useQuery({
+    ...reportingQueries.overview(brand.slug, reportRange, timeZone, false),
+    retry: 1,
   });
+  const figures = useMemo(
+    () => periodFigures(Array.isArray(periodQ.data) ? periodQ.data : null, currency),
+    [periodQ.data, currency],
+  );
 
   return (
     <div className="space-y-3.5">
@@ -244,12 +201,8 @@ export function ExpensesPage() {
       <ExpensesScopeSwitcher
         lang={lang === "ar" ? "ar" : "en"}
         currency={currency}
-        totalRevenue={totalRevenue}
-        totalCogs={totalCogs}
-        manualOpex={manualOpexExpenses}
-        processingFees={paymentProcessingFees}
-        netProfit={netProfit}
-        marginPercentage={marginPercentage}
+        slug={brand.slug}
+        figures={figures}
       />
 
       {/* Financial & Accounting Hub Navigation Tabs */}
@@ -296,7 +249,9 @@ export function ExpensesPage() {
       {mainTab === "opex_cogs" && <ExpensesOpExCogsTab activeRange={activeRange} />}
       {mainTab === "cash_flow" && <CashFlowLiquidityTab />}
       {mainTab === "vendors_pos" && <VendorsPurchaseOrdersTab />}
-      {mainTab === "reports" && <FinancialReportsTab />}
+      {mainTab === "reports" && (
+        <FinancialReportsTab slug={brand.slug} range={reportRange} figures={figures} />
+      )}
 
       {/* 3. Toolbar */}
       <ExpensesToolbar

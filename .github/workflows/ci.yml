@@ -153,7 +153,16 @@ jobs:
         run: npm ci
 
       - name: Run dependency audit
-        run: npm audit --audit-level=high
+        # The registry's audit endpoint sometimes refuses a request for a moment ("400 Invalid
+        # package tree" from the retired quick endpoint npm 10 falls back to; 2026-10-22, PR #378,
+        # the same run passed when re-run). Asked again before failing; a real finding fails all
+        # three times and the step fails as before.
+        run: |
+          for attempt in 1 2 3; do
+            if npm audit --audit-level=high; then exit 0; fi
+            if [ "$attempt" -lt 3 ]; then echo "Audit attempt $attempt failed; asking again."; sleep 20; fi
+          done
+          exit 1
 
       - name: Run Gitleaks Secret Scan
         # The SHA this was previously pinned to (7007d4f9...) did not
