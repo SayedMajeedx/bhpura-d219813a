@@ -63,6 +63,22 @@ export async function savePagesSettings(
  * stored; a write that matched no row (the member may not change settings) is an error, not a
  * quiet success.
  */
+/**
+ * Saves the store's thank-you discount for a review: one of its promo codes, or none. Fails on a
+ * write that changed nothing (no settings row, or one the member may not change).
+ */
+export async function saveReviewReward(brandId: string, promoId: string | null) {
+  const { data, error } = await supabase
+    .from("business_settings")
+    .update({ review_reward_promo_id: promoId })
+    .eq("brand_id", brandId)
+    .select("review_reward_promo_id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("REVIEW_REWARD_NOT_SAVED");
+  return data.review_reward_promo_id;
+}
+
 export async function saveLowStockLevel(brandId: string, level: number) {
   const { data, error } = await supabase
     .from("business_settings")

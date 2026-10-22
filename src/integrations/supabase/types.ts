@@ -2125,6 +2125,7 @@ export type Database = {
           product_title_color: string | null;
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
+          review_reward_promo_id: string | null;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -2331,6 +2332,7 @@ export type Database = {
           product_title_color?: string | null;
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
+          review_reward_promo_id?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -2537,6 +2539,7 @@ export type Database = {
           product_title_color?: string | null;
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
+          review_reward_promo_id?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -2585,6 +2588,13 @@ export type Database = {
             columns: ["brand_id"];
             isOneToOne: true;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "business_settings_review_reward_promo_id_fkey";
+            columns: ["review_reward_promo_id"];
+            isOneToOne: false;
+            referencedRelation: "promo_codes";
             referencedColumns: ["id"];
           },
         ];
@@ -5264,7 +5274,7 @@ export type Database = {
           order_id: string;
           rating: number;
           request_id: string;
-          reward_code: string;
+          reward_code: string | null;
           show_on_store: boolean;
         };
         Insert: {
@@ -5278,7 +5288,7 @@ export type Database = {
           order_id: string;
           rating: number;
           request_id: string;
-          reward_code?: string;
+          reward_code?: string | null;
           show_on_store?: boolean;
         };
         Update: {
@@ -5292,7 +5302,7 @@ export type Database = {
           order_id?: string;
           rating?: number;
           request_id?: string;
-          reward_code?: string;
+          reward_code?: string | null;
           show_on_store?: boolean;
         };
         Relationships: [
@@ -9772,6 +9782,7 @@ export type Database = {
           product_title_color: string | null;
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
+          review_reward_promo_id: string | null;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -9953,9 +9964,12 @@ export type Database = {
           brand_logo_url: string;
           brand_name: string;
           brand_whatsapp_number: string;
+          currency: string;
           customer_name: string;
           invoice_number: number;
           reward_code: string;
+          reward_discount_type: string;
+          reward_discount_value: number;
           state: string;
         }[];
       };
@@ -11106,6 +11120,14 @@ export type Database = {
       snapshot_order_packaging_cogs: {
         Args: { p_order_id: string };
         Returns: undefined;
+      };
+      store_review_reward: {
+        Args: { p_brand_id: string };
+        Returns: {
+          code: string;
+          discount_type: string;
+          discount_value: number;
+        }[];
       };
       storefront_delivery_fee: {
         Args: {

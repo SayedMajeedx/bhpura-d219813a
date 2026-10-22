@@ -15,6 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
+import { rewardOffer } from "@/lib/review-reward";
 
 export const Route = createFileRoute("/review/$token")({ component: ReviewPage });
 
@@ -25,7 +26,12 @@ type PublicReview = {
   invoice_number: number;
   customer_name: string;
   brand_whatsapp_number: string | null;
+  /** After the review: the code it was given (none when the store gives no discount). */
   reward_code: string | null;
+  /** What the store's discount takes off (before the review) or the given code takes off (after). */
+  reward_discount_type: string | null;
+  reward_discount_value: number | string | null;
+  currency: string | null;
 };
 
 const choices = [
@@ -44,6 +50,7 @@ function ReviewPage() {
   // Whether the review may be shown on the store (first name only): asked, never assumed.
   const [showOnStore, setShowOnStore] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [rewardCode, setRewardCode] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -52,8 +59,19 @@ function ReviewPage() {
     select: (row) => row as PublicReview | null,
   });
   const review = reviewQ.data;
-  const completed = Boolean(rewardCode || review?.state === "completed");
-  const code = rewardCode || review?.reward_code || "THANKU10";
+  const completed = submitted || review?.state === "completed";
+  // The store's own discount (none when it gives none): the page promises only what it gives.
+  const code = submitted ? rewardCode : (review?.reward_code ?? null);
+  const offer = review
+    ? rewardOffer(
+        {
+          discount_type: review.reward_discount_type,
+          discount_value: review.reward_discount_value,
+        },
+        "ar",
+        review.currency,
+      )
+    : null;
 
   const submit = async () => {
     if (!rating) return;
@@ -67,7 +85,8 @@ function ReviewPage() {
         comment: comment.trim() || null,
         showOnStore,
       });
-      setRewardCode(String(reward || "THANKU10"));
+      setRewardCode(reward ? String(reward) : null);
+      setSubmitted(true);
     } catch (error) {
       // Tell the customer why, instead of silently re-enabling the button.
       const refusal = reviewRefusal(error);
@@ -90,8 +109,22 @@ function ReviewPage() {
       </PageState>
     );
 
+  if (completed && !code) {
+    return (
+      <PageShell review={review}>
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+            <Check className="size-8" />
+          </div>
+          <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك 🤍</h1>
+          <p className="text-muted-foreground">رأيك وصلنا، ويساعدنا نتطور.</p>
+        </div>
+      </PageShell>
+    );
+  }
+
   if (completed) {
-    const rewardMessage = `هلا، أكملت تقييم طلبي السابق وحصلت على كود الخصم ${code}، وأرغب باستخدام خصم 10% على طلبي القادم 🤍`;
+    const rewardMessage = `هلا، أكملت تقييم طلبي السابق وحصلت على كود الخصم ${code}، وأرغب باستخدامه على طلبي القادم 🤍`;
     const merchantPhone = normalizePhoneForWhatsApp(review.brand_whatsapp_number);
     return (
       <PageShell review={review}>
@@ -101,7 +134,11 @@ function ReviewPage() {
           </div>
           <div className="space-y-2">
             <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك 🤍</h1>
-            <p className="text-muted-foreground">كهدية منّا، حصلت على خصم 10% على طلبك القادم.</p>
+            <p className="text-muted-foreground">
+              {offer
+                ? `كهدية منّا، لك ${offer} على طلبك القادم.`
+                : "كهدية منّا، هذا كود خصم لطلبك القادم."}
+            </p>
           </div>
           <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
             <p className="mb-2 text-sm text-muted-foreground">كود الخصم</p>
@@ -110,7 +147,7 @@ function ReviewPage() {
             </p>
           </div>
           <p className="text-sm leading-7 text-muted-foreground">
-            قبل تأكيد طلبك القادم، أرسل لنا الكود عبر الواتساب وسنقوم بخصم 10% من قيمة الطلب.
+            قبل تأكيد طلبك القادم، أرسل لنا الكود عبر الواتساب ليُطبَّق الخصم على الطلب.
           </p>
           <Button asChild className="min-h-12 w-full gap-2 text-base">
             <a
@@ -133,11 +170,12 @@ function ReviewPage() {
         <div className="space-y-2 text-center">
           <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
             <Sparkles className="size-3.5" />
-            30 ثانية فقط • خصم 10%
+            30 ثانية فقط{offer ? ` • ${offer}` : ""}
           </div>
           <h1 className="font-heading text-3xl font-bold">كيف كانت تجربتك معنا؟</h1>
           <p className="text-sm text-muted-foreground">
-            هلا {review.customer_name}، رأيك يساعدنا كثيرًا وينتظرك الخصم بعد الإرسال.
+            هلا {review.customer_name}، رأيك يساعدنا كثيرًا
+            {offer ? " وينتظرك الخصم بعد الإرسال." : "."}
           </p>
         </div>
         <div className="space-y-3 text-center">
@@ -219,7 +257,9 @@ function ReviewPage() {
             <label htmlFor="review-show-on-store" className="space-y-0.5 text-sm">
               <span className="block font-semibold">أوافق على عرض تقييمي في المتجر</span>
               <span className="block text-xs text-muted-foreground">
-                باسمي الأول فقط. اختياري، والخصم لك في الحالتين.
+                {offer
+                  ? "باسمي الأول فقط. اختياري، والخصم لك في الحالتين."
+                  : "باسمي الأول فقط. اختياري."}
               </span>
             </label>
           </div>
@@ -239,7 +279,7 @@ function ReviewPage() {
           onClick={submit}
         >
           {submitting ? <Loader2 className="size-5 animate-spin" /> : <Gift className="size-5" />}
-          إرسال التقييم واستلام الخصم
+          {offer ? "إرسال التقييم واستلام الخصم" : "إرسال التقييم"}
         </Button>
       </div>
     </PageShell>

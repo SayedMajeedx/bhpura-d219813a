@@ -161,6 +161,9 @@ describe("the review form", () => {
       customer_name: "Fatima",
       brand_name: "Pura",
       brand_whatsapp_number: "+97333000000",
+      reward_discount_type: "percentage",
+      reward_discount_value: 10,
+      currency: "BHD",
     };
     const Page = reviewRoute.options.component;
     render(

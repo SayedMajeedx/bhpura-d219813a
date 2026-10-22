@@ -2,6 +2,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gift, MessageCircle, Star, CheckCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
+import { reviewRequestMessage, rewardOffer } from "@/lib/review-reward";
+import { useReviewReward } from "@/hooks/use-review-reward";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +34,10 @@ export function ReviewRequestQueue({
   isAr: boolean;
 }) {
   const queryClient = useQueryClient();
+  // The store's own thank-you discount, promised only while it gives one.
+  const reward = useReviewReward(brandId);
+  const lang = isAr ? "ar" : "en";
+  const offer = rewardOffer(reward.usable, lang, reward.currency);
   const requestQ = useQuery({
     ...reviewsQueries.readyRequests(brandId),
     select: (rows) => rows as ReviewRequest[],
@@ -55,9 +61,14 @@ export function ReviewRequestQueue({
       return;
     }
     const reviewUrl = `${window.location.origin}/review/${request.review_url_token}`;
-    const message = isAr
-      ? `هلا ${request.customer_name} 🌿\n\nسعدنا بخدمتك في ${brandName}، ونتمنى أن طلبك رقم ${request.invoice_number} نال رضاك.\n\nشاركنا رأيك بتقييم سريع لا يستغرق أكثر من 30 ثانية، وبعد إكماله ستحصل على خصم 10% على طلبك القادم 🎁\n\n${reviewUrl}\n\nرأيك يفرق معنا ويساعدنا نقدم لك تجربة أجمل دائمًا 🤍`
-      : `Hi ${request.customer_name} 🌿\n\nWe loved serving you at ${brandName}. Share a quick review of order #${request.invoice_number} in under 30 seconds and receive 10% off your next order 🎁\n\n${reviewUrl}\n\nYour feedback helps us make every experience better 🤍`;
+    const message = reviewRequestMessage({
+      lang,
+      customerName: request.customer_name,
+      brandName,
+      invoiceNumber: request.invoice_number,
+      reviewUrl,
+      offer,
+    });
     const popup = window.open(
       `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,
       "_blank",
@@ -123,7 +134,8 @@ export function ReviewRequestQueue({
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 <Gift className="me-1 inline size-3" />
-                {isAr ? "تقييم 30 ثانية • خصم THANKU10" : "30-second review • THANKU10 reward"}
+                {isAr ? "تقييم 30 ثانية" : "30-second review"}
+                {offer ? ` • ${offer}` : ""}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

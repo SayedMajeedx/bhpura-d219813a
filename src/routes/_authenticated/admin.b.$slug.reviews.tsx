@@ -42,6 +42,8 @@ import { ReviewStoryDialog } from "@/features/review-story/components/ReviewStor
 import { storyColor } from "@/features/review-story/lib/review-story";
 import { storeColoursFrom } from "@/features/content-studio/lib/studio-styles";
 import { reviewsKeys, reviewsQueries, setReviewHidden } from "@/lib/data/reviews";
+import { ReviewRewardCard } from "@/components/reviews/ReviewRewardCard";
+import { useProfile } from "@/lib/profile-context";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -52,6 +54,7 @@ function CustomerReviewsPage() {
   const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const { hasPermission } = useProfile();
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const [ratingFilter, setRatingFilter] = useState("all");
@@ -215,11 +218,10 @@ function CustomerReviewsPage() {
           detail={isAr ? "3 نجوم أو أقل" : "3 stars or below"}
           attention={metrics.lowCount > 0}
         />
-        <MetricCard
-          icon={Gift}
-          label={isAr ? "مكافأة التقييم" : "Review reward"}
-          value="THANKU10"
-          detail={isAr ? "خصم 10% للطلب القادم" : "10% off the next order"}
+        <ReviewRewardCard
+          brandId={brand.id}
+          isAr={isAr}
+          canEdit={hasPermission("manage_settings")}
         />
       </section>
 
@@ -464,10 +466,12 @@ function ReviewCard({
         )}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Gift className="size-3.5" />
-              {isAr ? `تم عرض كود ${review.reward_code}` : `${review.reward_code} reward shown`}
-            </span>
+            {review.reward_code && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Gift className="size-3.5" />
+                {isAr ? `تم عرض كود ${review.reward_code}` : `${review.reward_code} reward shown`}
+              </span>
+            )}
             <span className="text-xs text-muted-foreground">
               {onStore === "shown"
                 ? isAr
