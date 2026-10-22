@@ -29,6 +29,7 @@ import { useDrafts } from "@/features/content-studio/hooks/use-drafts";
 import { useStoreFonts } from "@/features/content-studio/hooks/use-store-fonts";
 import { useMoments } from "@/features/content-studio/hooks/use-moments";
 import { useLaunch } from "@/features/content-studio/hooks/use-launch";
+import { useHowToOrder } from "@/features/content-studio/hooks/use-how-to-order";
 import {
   readDraftFormat,
   readDraftSettings,
@@ -182,14 +183,21 @@ export function useContentStudio(slug: string) {
     currencySymbol,
   });
   const launch = useLaunch({ active: templateId === "coming-soon", isAr });
+  const howToOrder = useHowToOrder({
+    active: templateId === "how-to-order",
+    settings: settingsQ.data,
+    isAr,
+    currencySymbol,
+  });
   const momentScene = useMemo(
     () => ({
       deadline: moments.deadline,
       restock: moments.restock,
       rating: moments.rating,
       launch: launch.launch,
+      orderSteps: howToOrder.orderSteps,
     }),
-    [moments.deadline, moments.restock, moments.rating, launch.launch],
+    [moments.deadline, moments.restock, moments.rating, launch.launch, howToOrder.orderSteps],
   );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
   const { buildScene, photoReady } = useTemplateScene({
@@ -388,6 +396,7 @@ export function useContentStudio(slug: string) {
     ...occasion,
     ...moments,
     ...launch,
+    ...howToOrder,
     ...batch,
     ...drafts,
     ...product,

@@ -217,6 +217,7 @@ describe("templatesForStore", () => {
       "last-chance",
       "back-in-stock",
       "customer-favourite",
+      "how-to-order",
       "menu-board",
       "bundle-set",
       "occasion-pack",
