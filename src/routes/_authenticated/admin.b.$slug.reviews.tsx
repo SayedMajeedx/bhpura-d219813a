@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { useDeferredValue, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowUpRight,
+  EyeOff,
+  Eye,
   Gift,
   ImageDown,
   MessageSquareHeart,
@@ -19,6 +22,7 @@ import {
   calculateReviewMetrics,
   filterReviews,
   REVIEW_HIGHLIGHT_LABELS,
+  reviewStoreState,
   type OrderReviewAdminRow,
 } from "@/lib/order-reviews";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,7 +41,7 @@ import { cn } from "@/lib/utils";
 import { ReviewStoryDialog } from "@/features/review-story/components/ReviewStoryDialog";
 import { storyColor } from "@/features/review-story/lib/review-story";
 import { storeColoursFrom } from "@/features/content-studio/lib/studio-styles";
-import { reviewsQueries } from "@/lib/data/reviews";
+import { reviewsKeys, reviewsQueries, setReviewHidden } from "@/lib/data/reviews";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -53,6 +57,30 @@ function CustomerReviewsPage() {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [period, setPeriod] = useState("all");
   const [storyReview, setStoryReview] = useState<OrderReviewAdminRow | null>(null);
+  const queryClient = useQueryClient();
+  const [hiding, setHiding] = useState<string | null>(null);
+  // Hides a review's words from the store's product pages, or shows them again; its stars stay.
+  const toggleHidden = async (review: OrderReviewAdminRow) => {
+    const hide = reviewStoreState(review) === "shown";
+    setHiding(review.review_id);
+    try {
+      await setReviewHidden(review.review_id, hide);
+      await queryClient.invalidateQueries({ queryKey: reviewsKeys.orderReviews(brand.id) });
+      toast.success(
+        hide
+          ? isAr
+            ? "أُخفي التعليق من المتجر، ونجومه تبقى محسوبة"
+            : "Hidden from the store; its stars still count"
+          : isAr
+            ? "عاد التعليق إلى المتجر"
+            : "Shown on the store again",
+      );
+    } catch {
+      toast.error(isAr ? "تعذّر الحفظ، حاول مرة أخرى" : "Could not save, try again");
+    } finally {
+      setHiding(null);
+    }
+  };
 
   const brandStyleQ = useQuery({
     ...businessSettingsQueries.detail(brand.id),
@@ -306,6 +334,8 @@ function CustomerReviewsPage() {
                   slug={slug}
                   isAr={isAr}
                   onCreateStory={() => setStoryReview(review)}
+                  onToggleHidden={() => toggleHidden(review)}
+                  togglingHidden={hiding === review.review_id}
                 />
               ))}
             </div>
@@ -372,13 +402,18 @@ function ReviewCard({
   slug,
   isAr,
   onCreateStory,
+  onToggleHidden,
+  togglingHidden,
 }: {
   review: OrderReviewAdminRow;
   slug: string;
   isAr: boolean;
   onCreateStory: () => void;
+  onToggleHidden: () => void;
+  togglingHidden: boolean;
 }) {
   const low = Number(review.rating) <= 3;
+  const onStore = reviewStoreState(review);
   return (
     <Card className={cn("rounded-md shadow-sm", low && "border-destructive/30")}>
       <CardContent className="space-y-4 p-4">
@@ -428,11 +463,48 @@ function ReviewCard({
           </blockquote>
         )}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Gift className="size-3.5" />
-            {isAr ? `تم عرض كود ${review.reward_code}` : `${review.reward_code} reward shown`}
-          </span>
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Gift className="size-3.5" />
+              {isAr ? `تم عرض كود ${review.reward_code}` : `${review.reward_code} reward shown`}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {onStore === "shown"
+                ? isAr
+                  ? "يظهر في صفحة القطعة"
+                  : "Shown on the product page"
+                : onStore === "hidden"
+                  ? isAr
+                    ? "مخفي من المتجر، ونجومه محسوبة"
+                    : "Hidden from the store; its stars still count"
+                  : isAr
+                    ? "خاص: لم يوافق العميل على عرضه، ونجومه محسوبة"
+                    : "Private: the customer did not agree to show it; its stars count"}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2">
+            {onStore !== "private" && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="min-h-11 gap-2"
+                disabled={togglingHidden}
+                onClick={onToggleHidden}
+              >
+                {onStore === "shown" ? (
+                  <EyeOff className="size-4" aria-hidden="true" />
+                ) : (
+                  <Eye className="size-4" aria-hidden="true" />
+                )}
+                {onStore === "shown"
+                  ? isAr
+                    ? "إخفاء من المتجر"
+                    : "Hide from store"
+                  : isAr
+                    ? "إظهار في المتجر"
+                    : "Show on store"}
+              </Button>
+            )}
             <Button size="sm" className="min-h-11 gap-2" onClick={onCreateStory}>
               <ImageDown className="size-4" />
               {isAr ? "إنشاء ستوري" : "Create story"}

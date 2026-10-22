@@ -81,7 +81,14 @@ describe("the customer's review page", () => {
     expect(calls[0]).toEqual({
       client: "public",
       fn: "submit_public_order_review",
-      args: { p_token: "t1", p_rating: 5, p_highlights: ["fit"], p_comment: undefined },
+      args: {
+        p_token: "t1",
+        p_rating: 5,
+        p_highlights: ["fit"],
+        p_comment: undefined,
+        // Unasked, a review is never shown on the store.
+        p_show_on_store: false,
+      },
     });
     respond = () => ({ data: null, error: denied });
     await expect(
@@ -114,5 +121,51 @@ describe("a refused review (bug backlog #30)", () => {
       comment: null,
     });
     await expect(failure).rejects.toBe(refused);
+  });
+});
+
+describe("reviews on the store", () => {
+  it("sends the customer's answer about showing the review on the store", async () => {
+    respond = () => ({ data: "THANKU10", error: null });
+    await reviews.submitPublicOrderReview({
+      token: "t1",
+      rating: 5,
+      highlights: [],
+      comment: "Lovely",
+      showOnStore: true,
+    });
+    expect(calls[0].args).toMatchObject({ p_comment: "Lovely", p_show_on_store: true });
+  });
+
+  it("hides or shows a review's words as the store's staff", async () => {
+    respond = () => ({ data: null, error: null });
+    await reviews.setReviewHidden("r1", true);
+    expect(calls[0]).toEqual({
+      client: "admin",
+      fn: "set_order_review_hidden",
+      args: { p_review_id: "r1", p_hidden: true },
+    });
+    respond = () => ({ data: null, error: denied });
+    await expect(reviews.setReviewHidden("r1", false)).rejects.toBe(denied);
+  });
+
+  it("reads a product's reviews through the anonymous client, none when it has none or fails", async () => {
+    const product = "00000000-0000-4000-8000-0000000000a1";
+    const summary = { count: 2, average: 4.5, stars: {}, highlights: {}, reviews: [] };
+    respond = () => ({ data: summary, error: null });
+    expect(await reviews.fetchProductReviews("pura", product)).toEqual(summary);
+    expect(calls[0]).toEqual({
+      client: "public",
+      fn: "storefront_product_reviews",
+      args: { p_brand_slug: "pura", p_product_id: product },
+    });
+    respond = () => ({ data: { ...summary, count: 0 }, error: null });
+    expect(await reviews.fetchProductReviews("pura", product)).toBeNull();
+    respond = () => ({ data: null, error: denied });
+    expect(await reviews.fetchProductReviews("pura", product)).toBeNull();
+    // An address that is not a product's asks nothing.
+    calls.length = 0;
+    expect(await reviews.fetchProductReviews("pura", "not-an-id")).toBeNull();
+    expect(calls).toEqual([]);
   });
 });

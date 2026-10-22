@@ -76,6 +76,8 @@ import { ProductMobileBuyBar } from "@/features/product-page/components/ProductM
 import { productHead } from "@/features/product-page/lib/product-head";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
+import { ProductReviews } from "@/features/product-page/components/ProductReviews";
+import { fetchProductReviews, type ProductReviews as ProductReviewsData } from "@/lib/data/reviews";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
@@ -126,6 +128,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
     // The "Purchased N times" badge is part of the same round trip, so it is in the page that is
     // sent and nothing moves when it would otherwise arrive later. It never rejects.
     const socialProofRequest = getProductRecentPurchaseCount(params.slug, params.id);
+    const reviewsRequest = fetchProductReviews(params.slug, params.id); // never rejects
     // Whichever way this loader ends, a request nobody awaits must not become an unhandled rejection.
     for (const request of [productRequest, bestSellersRequest]) request.catch(() => undefined);
     const layout = storeLayoutData((await parentMatchPromise).loaderData);
@@ -147,6 +150,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
         []) as unknown as RecommendationProduct[],
       bestSellerRows: await bestSellersRequest,
       socialProofCount: await socialProofRequest,
+      productReviews: await reviewsRequest,
       initialLang,
       // For the page's Google data: the store's currency, and whether it shows prices at all.
       currency: layout.settings?.currency ?? null,
@@ -167,6 +171,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         recommendationCatalog: RecommendationProduct[];
         bestSellerRows: Array<{ product_id: string; units_sold: number }>;
         socialProofCount?: number | null;
+        productReviews?: ProductReviewsData | null;
       }
     | undefined;
   const params = Route.useParams() as any;
@@ -955,6 +960,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           />
         )}
       </div>
+
+      {loaderData?.productReviews && (
+        <ProductReviews reviews={loaderData.productReviews} lang={lang} />
+      )}
 
       {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (
         <div className="mt-10 space-y-9 border-t pt-8 sm:mt-14 sm:pt-10">

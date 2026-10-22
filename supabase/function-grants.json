@@ -601,6 +601,21 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (a session and can_access_brand on the brand of the product)"
     },
+    "set_order_review_hidden(p_review_id uuid, p_hidden boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_customers) before hiding a review's words on the store"
+    },
+    "storefront_pickup_partners(p_brand_id uuid, p_items jsonb)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront read by design: the checkout asks which of a store's partners that take pickups hold a cart's pieces; it returns their names and pickup addresses, never a quantity, a cost or a contact"
+    },
+    "storefront_product_reviews(p_brand_slug text, p_product_id uuid, p_limit integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public read for a product's page: an active product of an active store; the stars of its orders' reviews and only the words the customer let the store show and the store did not hide, with a first name and nothing else about the customer or the order"
+    },
     "storefront_user_owns_customer(p_customer_id uuid)": {
       "anon": true,
       "authenticated": true,
@@ -610,11 +625,6 @@
       "anon": true,
       "authenticated": true,
       "reason": "Signed-in shopper or session helper: checks the session inside"
-    },
-    "storefront_pickup_partners(p_brand_id uuid, p_items jsonb)": {
-      "anon": true,
-      "authenticated": true,
-      "reason": "Storefront read by design: the checkout asks which of a store's partners that take pickups hold a cart's pieces; it returns their names and pickup addresses, never a quantity, a cost or a contact"
     },
     "storefront_whatsapp_updates_ready(p_brand_id uuid)": {
       "anon": true,
@@ -626,7 +636,7 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
-    "submit_public_order_review(p_token uuid, p_rating integer, p_highlights text[], p_comment text)": {
+    "submit_public_order_review(p_token uuid, p_rating integer, p_highlights text[], p_comment text, p_show_on_store boolean)": {
       "anon": true,
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"

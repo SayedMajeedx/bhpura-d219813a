@@ -39,6 +39,7 @@ export function productHead({
     initialLang?: unknown;
     currency?: unknown;
     showPrices?: unknown;
+    productReviews?: { count?: unknown; average?: unknown } | null;
   };
   params: { slug: string; id: string };
 }) {
@@ -72,6 +73,12 @@ export function productHead({
       in_stock: availabilityOf(product, variants).sellable,
       currency: typeof loaderData?.currency === "string" ? loaderData.currency : null,
       show_price: loaderData?.showPrices !== false,
+      rating: loaderData?.productReviews
+        ? {
+            average: Number(loaderData.productReviews.average),
+            count: Number(loaderData.productReviews.count),
+          }
+        : null,
       sku: variants[0]?.id || product.id,
       primary_image_url: product.image_url,
       images: Array.isArray(product.media)

@@ -49,21 +49,80 @@ export async function fetchPublicOrderReview(token: string) {
   return (data ?? [])[0] ?? null;
 }
 
-/** Submits the customer's review and returns their reward code. */
+/**
+ * Submits the customer's review and returns their reward code. `showOnStore` is the customer's
+ * answer to whether their review may be shown on the store (first name only); unasked, it is not.
+ */
 export async function submitPublicOrderReview(review: {
   token: string;
   rating: number;
   highlights: string[];
   comment: string | null;
+  showOnStore?: boolean;
 }) {
   const { data, error } = await publicSupabase.rpc("submit_public_order_review", {
     p_token: review.token,
     p_rating: review.rating,
     p_highlights: review.highlights,
     p_comment: review.comment ?? undefined,
+    p_show_on_store: review.showOnStore ?? false,
   });
   if (error) throw error;
   return data;
+}
+
+/** Hides a review's words from the store's product pages, or shows them again (staff only). */
+export async function setReviewHidden(reviewId: string, hidden: boolean) {
+  const { error } = await supabase.rpc("set_order_review_hidden", {
+    p_review_id: reviewId,
+    p_hidden: hidden,
+  });
+  if (error) throw error;
+}
+
+/** One review as a product's page shows it: the customer's first name only. */
+export type ProductReview = {
+  id: string;
+  rating: number;
+  highlights: string[];
+  comment: string | null;
+  name: string | null;
+  date: string;
+};
+
+/**
+ * What a product's page says about its reviews: the stars of every review of an order that held
+ * it, what customers praise, and the words the customers let the store show.
+ */
+export type ProductReviews = {
+  count: number;
+  average: number;
+  stars: Record<string, number>;
+  highlights: Record<string, number>;
+  reviews: ProductReview[];
+};
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * A product's reviews for its page, or null when it has none (or the read fails: a page with no
+ * reviews section is better than a broken page). Read beside the product, never after it.
+ */
+export async function fetchProductReviews(
+  brandSlug: string,
+  productId: string,
+): Promise<ProductReviews | null> {
+  if (!brandSlug || !UUID.test(productId)) return null;
+  try {
+    const { data, error } = await publicSupabase.rpc("storefront_product_reviews", {
+      p_brand_slug: brandSlug,
+      p_product_id: productId,
+    });
+    const reviews = data as ProductReviews | null;
+    return error || !reviews || !(Number(reviews.count) > 0) ? null : reviews;
+  } catch {
+    return null;
+  }
 }
 
 /** Why the database refused a review (the codes `submit_public_order_review` raises). */
