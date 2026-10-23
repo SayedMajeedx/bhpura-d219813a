@@ -60,7 +60,7 @@ function PolicyFormFields({
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="policy-balance">
-            {isAr ? "الرصيد المتبقي قبل المناسبة بـ (أيام)" : "Balance due before the event (days)"}
+            {isAr ? "الرصيد المتبقي قبل الموعد بـ (أيام)" : "Balance due before the booking (days)"}
           </Label>
           <Input
             id="policy-balance"

@@ -200,6 +200,16 @@ async function renderPage(view: "agenda" | "calendar" = "calendar") {
   return result;
 }
 
+/** Opens one of the heading's set-up tools (rules, offers, terms, gallery, look, calendar). */
+async function openSetup(name: string) {
+  fireEvent.pointerDown(await screen.findByRole("button", { name: "Set up" }), {
+    button: 0,
+    ctrlKey: false,
+    pointerType: "mouse",
+  });
+  fireEvent.click(await screen.findByRole("menuitem", { name }));
+}
+
 describe("the bookings page", () => {
   it("asks a store without rules to set them up first", async () => {
     state.settings = null;
@@ -215,7 +225,7 @@ describe("the bookings page", () => {
   it("saves travel fees: a default and one area's own", { timeout: 15_000 }, async () => {
     state.areaFees = { hidd: 12 };
     await renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
+    await openSetup("Booking rules");
     fireEvent.change(await screen.findByLabelText(/Default fee/), { target: { value: "5" } });
     // The saved area fee shows the list already open.
     fireEvent.change(screen.getByLabelText("Juffair"), { target: { value: "3" } });
@@ -281,7 +291,8 @@ describe("the bookings page", () => {
   it("takes a booking for the chosen day with the store's active services", async () => {
     await renderPage();
     fireEvent.click(await screen.findByRole("gridcell", { name: /22 October/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "New booking" }));
+    // The heading's "New booking" and the day's both take a booking for the chosen day.
+    fireEvent.click((await screen.findAllByRole("button", { name: "New booking" }))[0]);
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).queryByText("Old")).not.toBeInTheDocument();
     fireEvent.click(await within(dialog).findByRole("checkbox", { name: /Photo booth/ }));
@@ -325,7 +336,7 @@ describe("the bookings page", () => {
   it("makes a private calendar link and shows it to subscribe to", async () => {
     state.calendarToken = null;
     await renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Calendar link" }));
+    await openSetup("Calendar link");
     expect(await screen.findByText("There is no link yet.")).toBeInTheDocument();
     const made = crypto.randomUUID();
     state.calendarToken = made;
@@ -447,7 +458,7 @@ describe("finishing and cancelling a booking", () => {
   it("tells a store that takes neither a card nor BenefitPay that its deposit is not asked", async () => {
     state.settings = { ...DEFAULT_BOOKING_RULES, deposit_percent: 20 };
     await renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
+    await openSetup("Booking rules");
     expect(
       await screen.findByText(
         /Your store takes neither a card nor BenefitPay, so no deposit is asked/,
@@ -616,5 +627,64 @@ describe("the bookings menu item", () => {
   it("appears only for stores with the bookings module", () => {
     expect(nav(true)).toContain("bookings");
     expect(nav(false)).not.toContain("bookings");
+  });
+
+  it("opens a services store's Orders workspace, before the orders", () => {
+    const services = getAdminNavItems({
+      activeSlug: "booth",
+      isCourier: false,
+      isAdmin: true,
+      hasPermission: () => true,
+      t: (key: string) => key,
+      lang: "en",
+      storeModules: {
+        size_guide: false,
+        fit_passport: false,
+        made_to_order: false,
+        bookings: true,
+        stock: false,
+        shipping: false,
+      },
+    }).map((item) => item.id);
+    expect(services.indexOf("bookings")).toBe(services.indexOf("orders") - 1);
+    // A shop (stock and shipping on) with bookings on keeps its orders first.
+    const shop = getAdminNavItems({
+      activeSlug: "booth",
+      isCourier: false,
+      isAdmin: true,
+      hasPermission: () => true,
+      t: (key: string) => key,
+      lang: "en",
+      storeModules: {
+        size_guide: false,
+        fit_passport: false,
+        made_to_order: false,
+        bookings: true,
+        stock: true,
+        shipping: true,
+      },
+    }).map((item) => item.id);
+    expect(shop.indexOf("bookings")).toBeGreaterThan(shop.indexOf("orders"));
+  });
+});
+
+describe("the bookings page's heading", () => {
+  it("counts the requests waiting and keeps the set-up tools in one menu", async () => {
+    await renderPage("agenda");
+    expect(await screen.findByText("1 waiting")).toBeInTheDocument();
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Set up" }), {
+      button: 0,
+      ctrlKey: false,
+      pointerType: "mouse",
+    });
+    const items = await screen.findAllByRole("menuitem");
+    expect(items.map((item) => item.textContent)).toEqual([
+      "Booking rules",
+      "Offers",
+      "Terms",
+      "Gallery & FAQ",
+      "Package look",
+      "Calendar link",
+    ]);
   });
 });

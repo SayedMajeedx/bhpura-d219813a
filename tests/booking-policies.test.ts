@@ -29,13 +29,13 @@ describe("booking policies", () => {
       policyLines(policy, { isAr: false, depositPercent: 30, eventDay: "2026-10-20" }),
     ).toEqual([
       "The 30% deposit is non-refundable.",
-      "The balance is due 7 days before the event (2026-10-13).",
+      "The balance is due 7 days before the booking (2026-10-13).",
       "You can move your booking to another date within 3 months.",
       "Cancel by message.",
     ]);
     expect(policyLines(policy, { isAr: true, depositPercent: 30 })).toEqual([
       "عربون 30% غير قابل للاسترداد.",
-      "يُدفع الرصيد المتبقي قبل المناسبة بـ 7 أيام.",
+      "يُدفع الرصيد المتبقي قبل الموعد بـ 7 أيام.",
       "يمكن نقل الحجز إلى موعد آخر خلال 3 أشهر.",
       "الإلغاء عبر رسالة.",
     ]);
@@ -47,7 +47,7 @@ describe("booking policies", () => {
   it("says nothing for a store with no policy, and falls back between languages", () => {
     expect(policyLines(NO_POLICY, { isAr: false })).toEqual([]);
     expect(policyLines({ ...NO_POLICY, balance_due_days: 0 }, { isAr: false })).toEqual([
-      "The balance is due on the day of the event.",
+      "The balance is due on the day of the booking.",
     ]);
     expect(policyLines({ ...NO_POLICY, terms_en: "English only" }, { isAr: true })).toEqual([
       "English only",

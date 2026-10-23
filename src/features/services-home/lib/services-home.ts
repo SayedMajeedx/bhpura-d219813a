@@ -130,3 +130,23 @@ export function packageOffer(
   });
   return { price, apart, saving: packageSaving(apart, price), includes };
 }
+
+/** Where a service happens, in the shopper's words (`products.service_location`). */
+export const SERVICE_PLACES = {
+  customer: { ar: "في موقعك", en: "At your place" },
+  venue: { ar: "في موقعنا", en: "At our venue" },
+  both: { ar: "في موقعك أو موقعنا", en: "At your place or ours" },
+} as const;
+
+/** The place words for a service, or null when it says none. */
+export function servicePlace(location: unknown, isAr: boolean): string | null {
+  const place = SERVICE_PLACES[location as keyof typeof SERVICE_PLACES];
+  return place ? (isAr ? place.ar : place.en) : null;
+}
+
+/**
+ * Whether a card with no picture keeps a picture's space: when another card of its section has
+ * one, so the row's names and prices line up instead of jumping.
+ */
+export const reservesPicture = (products: readonly ProductRow[]): boolean =>
+  products.some((product) => Boolean(product.image_url));

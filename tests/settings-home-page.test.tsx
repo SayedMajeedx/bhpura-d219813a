@@ -48,7 +48,23 @@ const storefrontModule = async (importOriginal: () => Promise<object>) => ({
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to?: string }) => (
+    <a href={to}>{children}</a>
+  ),
+}));
+// A shop by default; a services store's home page is ServicesHome, with its own sections.
+const profile = vi.hoisted(() => ({ modules: {} as Record<string, boolean> }));
+const brandContext = { useBrand: () => ({ id: "b1", slug: "pura" }) };
+vi.mock("../src/lib/brand-context", () => brandContext);
+vi.mock("@/lib/brand-context", () => brandContext);
+const storeProfile = {
+  useAdminStoreProfile: () => ({ profile: { modules: profile.modules }, isLoading: false }),
+};
+vi.mock("../src/hooks/use-store-profile", () => storeProfile);
+vi.mock("@/hooks/use-store-profile", () => storeProfile);
+vi.mock("../src/features/store-content/components/StoreContentDialog", () => ({
+  StoreContentDialog: ({ open }: { open: boolean }) =>
+    open ? <div role="dialog">gallery and questions</div> : null,
 }));
 
 const { filledPromoCards, homePageSections, homeSectionOn } =
@@ -64,6 +80,7 @@ beforeEach(() => {
   localStorage.setItem("lang", "en");
   form.bs = { storefront_design_version: 2, store_vertical: "abayas" };
   form.brand = { slug: "pura", name_en: "Pura", about_ar: "", about_en: "" };
+  profile.modules = {};
 });
 
 const showGroup = (setActiveGroup = vi.fn()) => {
@@ -211,5 +228,45 @@ describe("the brand story's picture", () => {
     );
     expect(sources.join(" ")).toContain("a.webp");
     expect(sources.join(" ")).not.toContain(".mp4");
+  });
+});
+
+describe("a services store's Home page group", () => {
+  const services = { bookings: true, stock: false, shipping: false };
+
+  it("lists what its home page draws, in order, and none of the shop's sections", () => {
+    profile.modules = services;
+    showGroup();
+    const rows = within(screen.getByRole("list")).getAllByRole("listitem");
+    expect(rows.map((row) => row.querySelector(".font-semibold")?.textContent)).toEqual([
+      "Hero",
+      "Invitation to book",
+      "Packages, rentals and services",
+      "Gallery",
+      "What customers said",
+      "Questions",
+      "Category pages",
+    ]);
+    expect(screen.queryByText("Trust bar")).toBeNull();
+    expect(screen.queryByText("Best sellers")).toBeNull();
+    expect(screen.queryByRole("switch")).toBeNull();
+  });
+
+  it("says where each part is edited", () => {
+    profile.modules = services;
+    const setActiveGroup = showGroup();
+    expect(screen.getByRole("link", { name: "Manage services" })).toHaveAttribute(
+      "href",
+      "/admin/b/$slug/inventory",
+    );
+    expect(screen.getByRole("link", { name: "Reviews" })).toHaveAttribute(
+      "href",
+      "/admin/b/$slug/reviews",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Hero settings" }));
+    expect(setActiveGroup).toHaveBeenCalledWith("home_hero");
+    // The gallery and the questions open their editor here.
+    fireEvent.click(screen.getAllByRole("button", { name: "Edit" })[0]);
+    expect(screen.getByRole("dialog")).toHaveTextContent("gallery and questions");
   });
 });

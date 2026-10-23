@@ -97,3 +97,21 @@ export function startedPromoCards(bs: Settings): number {
       card.href.trim().length > 0,
   ).length;
 }
+
+/**
+ * A services store's home page (`ServicesHome`: a store whose catalog is only services), in the
+ * order a shopper scrolls it. None of the shop's sections show there (no new arrivals, best
+ * sellers or trust bar), so its settings list these instead, each saying where it is edited.
+ */
+export type ServicesHomeSectionId =
+  "hero" | "booking_invite" | "offers" | "gallery" | "reviews" | "faq" | "category_pages";
+
+export const SERVICES_HOME_SECTIONS: readonly ServicesHomeSectionId[] = [
+  "hero",
+  "booking_invite",
+  "offers",
+  "gallery",
+  "reviews",
+  "faq",
+  "category_pages",
+];

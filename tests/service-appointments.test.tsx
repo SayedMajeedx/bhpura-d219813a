@@ -176,7 +176,7 @@ describe("the checkout of a booking", () => {
       useCheckoutFulfillment({ settings, lang: "en", appointment: { travelFee: 5 } }),
     );
     expect(result.current.fulfillmentOptions.map((o) => [o.id, o.en, o.fee])).toEqual([
-      ["delivery", "At my venue", 5],
+      ["delivery", "At my place", 5],
       ["pickup", "At your place", 0],
     ]);
     expect(result.current.fulfillment).toBe("delivery");
@@ -327,7 +327,7 @@ describe("the checkout of a booking, as the customer reads it", () => {
     travelFee: 5,
   };
   const options = [
-    { id: "delivery", ar: "", en: "At my venue", icon: () => null, fee: 5 },
+    { id: "delivery", ar: "", en: "At my place", icon: () => null, fee: 5 },
     { id: "pickup", ar: "", en: "At your place", icon: () => null, fee: 0 },
   ];
 
@@ -346,7 +346,7 @@ describe("the checkout of a booking, as the customer reads it", () => {
       />,
     );
     expect(screen.getByRole("heading", { name: "Where is the service?" })).toBeTruthy();
-    expect(screen.getByText("At my venue")).toBeTruthy();
+    expect(screen.getByText("At my place")).toBeTruthy();
     expect(screen.queryByText(/Estimated delivery/)).toBeNull();
   });
 

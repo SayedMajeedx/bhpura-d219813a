@@ -65,7 +65,7 @@ export function DeliveryAddressCard({
     <Card className="p-5 space-y-4">
       <h2 className="font-display text-xl">
         {appointment
-          ? t("عنوان المناسبة", "Event address")
+          ? t("مكان الموعد", "Where it happens")
           : t("عنوان التوصيل", "Delivery address")}
       </h2>
 

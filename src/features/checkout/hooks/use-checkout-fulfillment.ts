@@ -44,8 +44,8 @@ export function useCheckoutFulfillment({
       // delivery off), a booking can always happen at the customer's venue.
       opts.push({
         id: "delivery",
-        ar: "في موقع مناسبتي",
-        en: "At my venue",
+        ar: "في موقعي",
+        en: "At my place",
         icon: MapPin,
         fee: travelFee,
       });

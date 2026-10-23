@@ -30,13 +30,8 @@ import {
   lengthPrices,
   minutesText,
   serviceImages,
+  servicePlace,
 } from "@/features/services-home/lib/services-home";
-
-const PLACES = {
-  customer: { ar: "في موقعك", en: "At your place" },
-  venue: { ar: "في موقعنا", en: "At our venue" },
-  both: { ar: "في موقعك أو موقعنا", en: "At your place or ours" },
-} as const;
 
 /** A service in full: its pictures, what it costs for each length, what the booking includes, its add-ons. */
 export function ServiceDetailsDialog({
@@ -62,7 +57,7 @@ export function ServiceDetailsDialog({
   const lengths = lengthPrices(product);
   const includes = includeLinesOf(product, isAr);
   const extra = extraHourPriceOf(product);
-  const place = PLACES[product.service_location as keyof typeof PLACES];
+  const place = servicePlace(product.service_location, isAr);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -101,7 +96,7 @@ export function ServiceDetailsDialog({
           {place && (
             <li className="flex items-center gap-1.5">
               <MapPin className="size-4" aria-hidden="true" />
-              {isAr ? place.ar : place.en}
+              {place}
             </li>
           )}
           {extra !== null && (

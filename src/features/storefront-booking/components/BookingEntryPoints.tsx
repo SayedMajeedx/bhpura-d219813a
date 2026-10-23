@@ -22,7 +22,7 @@ export function BookingInvite() {
           </span>
           <div>
             <h2 className="font-display text-xl text-foreground">
-              {t("احجز مناسبتك", "Book your date")}
+              {t("احجز موعدك", "Book your date")}
             </h2>
             <p className="text-sm text-muted-foreground">
               {t(

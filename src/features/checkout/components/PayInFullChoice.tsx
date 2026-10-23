@@ -32,7 +32,7 @@ export function PayInFullChoice({
       value: false,
       title: t("ادفع الدفعة المقدمة الآن", "Pay the advance now"),
       detail: t(
-        `${money(base.dueNow)} الآن، والباقي ${money(base.balance)} ${appointment ? "يوم المناسبة" : "عند الاستلام"}`,
+        `${money(base.dueNow)} الآن، والباقي ${money(base.balance)} ${appointment ? "يوم الموعد" : "عند الاستلام"}`,
         `${money(base.dueNow)} now, ${money(base.balance)} ${appointment ? "on the day" : "on delivery"}`,
       ),
     },

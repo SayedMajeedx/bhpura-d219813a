@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Camera, Clock, MapPin, Plus } from "lucide-react";
+import { Clock, KeyRound, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
@@ -10,21 +10,17 @@ import {
   extraHourPriceOf,
   lengthPrices,
   minutesText,
+  servicePlace,
 } from "@/features/services-home/lib/services-home";
-
-const PLACES = {
-  customer: { ar: "في موقعك", en: "At your place" },
-  venue: { ar: "في موقعنا", en: "At our venue" },
-  both: { ar: "في موقعك أو موقعنا", en: "At your place or ours" },
-} as const;
 
 /** How many hourly prices show on the card before "and N more". */
 const SHOWN_LENGTHS = 4;
 
 /**
- * A rental: equipment hired by the hour. A ticket-style card (a bold top edge,
+ * A rental: something hired by the hour. A ticket-style card (a bold top edge,
  * a perforated divider) that lists what each length costs, so it never reads as
- * a plain service or as a package.
+ * a plain service or as a package. What is hired sells itself, so its picture
+ * runs the card's full width; the mark says "rental" for any kind of store.
  */
 export function RentalCard({
   product,
@@ -37,42 +33,33 @@ export function RentalCard({
   const isAr = lang === "ar";
   const name = (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
   const lengths = lengthPrices(product);
-  const place = PLACES[product.service_location as keyof typeof PLACES];
+  const place = servicePlace(product.service_location, isAr);
   const extra = extraHourPriceOf(product);
   const optional = addOns.filter((o) => o.mode === "optional" || o.mode === "default_on");
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   return (
     <article className="rental-card flex flex-col">
-      <div className="flex items-start gap-3 p-4">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt=""
-            loading="lazy"
-            className="size-16 shrink-0 rounded-lg object-cover"
-          />
-        ) : (
-          <span
-            className="grid size-16 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary"
-            aria-hidden="true"
-          >
-            <Camera className="size-7" />
-          </span>
-        )}
-        <div className="min-w-0 space-y-1">
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-            <Camera className="size-3.5" aria-hidden="true" />
-            {t("تأجير", "Rental")}
+      {product.image_url && (
+        <img
+          src={product.image_url}
+          alt={name}
+          loading="lazy"
+          className="aspect-[4/3] w-full object-cover"
+        />
+      )}
+      <div className="space-y-1 p-4">
+        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
+          <KeyRound className="size-3.5" aria-hidden="true" />
+          {t("تأجير", "Rental")}
+        </p>
+        <h3 className="font-display text-lg leading-tight text-foreground">{name}</h3>
+        {place && (
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <MapPin className="size-3.5" aria-hidden="true" />
+            {place}
           </p>
-          <h3 className="font-display text-lg leading-tight text-foreground">{name}</h3>
-          {place && (
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <MapPin className="size-3.5" aria-hidden="true" />
-              {isAr ? place.ar : place.en}
-            </p>
-          )}
-        </div>
+        )}
       </div>
       <div className="rental-card__tear" aria-hidden="true" />
       <div className="flex flex-1 flex-col gap-3 p-4">

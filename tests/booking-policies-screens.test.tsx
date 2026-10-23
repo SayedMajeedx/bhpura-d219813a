@@ -59,7 +59,7 @@ describe("the storefront's booking terms", () => {
     wrap(<BookingPolicies brandId="b1" isAr={false} depositPercent={30} eventDay="2026-10-20" />);
     expect(await screen.findByText("The 30% deposit is non-refundable.")).toBeInTheDocument();
     expect(
-      screen.getByText("The balance is due 7 days before the event (2026-10-13)."),
+      screen.getByText("The balance is due 7 days before the booking (2026-10-13)."),
     ).toBeInTheDocument();
     expect(
       screen.getByText("You can move your booking to another date within 3 months."),
@@ -80,14 +80,14 @@ describe("the merchant's terms dialog", () => {
 
   it("saves the balance days, the months and the terms, and shows how the customer reads them", async () => {
     open();
-    fireEvent.change(await screen.findByLabelText(/Balance due before the event/), {
+    fireEvent.change(await screen.findByLabelText(/Balance due before the booking/), {
       target: { value: "14" },
     });
     fireEvent.change(screen.getByLabelText(/can be moved within/), { target: { value: "3" } });
     fireEvent.change(screen.getByLabelText("Other terms (English)"), {
       target: { value: "No refunds in the last week." },
     });
-    expect(screen.getByText("The balance is due 14 days before the event.")).toBeInTheDocument();
+    expect(screen.getByText("The balance is due 14 days before the booking.")).toBeInTheDocument();
     expect(screen.getByText("The 20% deposit is non-refundable.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Save terms" }));
     await waitFor(() => expect(state.save).toHaveBeenCalledTimes(1));
@@ -102,7 +102,7 @@ describe("the merchant's terms dialog", () => {
 
   it("will not save a nonsense number", async () => {
     open();
-    fireEvent.change(await screen.findByLabelText(/Balance due before the event/), {
+    fireEvent.change(await screen.findByLabelText(/Balance due before the booking/), {
       target: { value: "400" },
     });
     expect(screen.getByRole("alert")).toHaveTextContent(/0 to 365/);

@@ -143,7 +143,7 @@ describe("a store's advance-payment rule", () => {
     ]);
     expect(advanceLines(whole, { isAr: true, money, balanceWhen: "event" })).toEqual([
       "الدفعة المقدمة (30%) تُدفع الآن: BHD 30.000",
-      "المتبقي BHD 70.000 يوم المناسبة",
+      "المتبقي BHD 70.000 يوم الموعد",
     ]);
     const part = advanceForOrder(
       order({ lines: mixed }),

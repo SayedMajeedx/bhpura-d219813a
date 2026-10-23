@@ -12,31 +12,29 @@ import {
   fromPriceOf,
   includeLinesOf,
   lengthRangeText,
+  servicePlace,
   type PackageOffer,
 } from "@/features/services-home/lib/services-home";
 
 const nameOf = (product: ProductRow, isAr: boolean) =>
   (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
 
-const PLACES = {
-  customer: { ar: "في موقعك", en: "At your place" },
-  venue: { ar: "في موقعنا", en: "At our venue" },
-  both: { ar: "في موقعك أو موقعنا", en: "At your place or ours" },
-} as const;
-
 /** One service: picture, "from" price, length, where, what the booking includes, its add-ons. */
 export function ServiceCard({
   product,
   addOns,
+  reservePicture = false,
 }: {
   product: ProductRow;
   addOns: readonly ServiceOption[];
+  /** Keep a picture's space when it has none (another card of its row has one). */
+  reservePicture?: boolean;
 }) {
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
   const price = fromPriceOf(product);
   const lengths = lengthRangeText(product, isAr);
-  const place = PLACES[product.service_location as keyof typeof PLACES];
+  const place = servicePlace(product.service_location, isAr);
   const includes = includeLinesOf(product, isAr);
   const extra = extraHourPriceOf(product);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -44,13 +42,22 @@ export function ServiceCard({
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
-      {product.image_url && (
+      {product.image_url ? (
         <img
           src={product.image_url}
           alt={nameOf(product, isAr)}
           loading="lazy"
           className="aspect-[4/3] w-full object-cover"
         />
+      ) : (
+        reservePicture && (
+          <div
+            className="grid aspect-[4/3] w-full place-items-center bg-primary/5 text-primary/40"
+            aria-hidden="true"
+          >
+            <Sparkles className="size-8" />
+          </div>
+        )
       )}
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
@@ -74,7 +81,7 @@ export function ServiceCard({
           {place && (
             <li className="flex items-center gap-1">
               <MapPin className="size-3.5" aria-hidden="true" />
-              {isAr ? place.ar : place.en}
+              {place}
             </li>
           )}
         </ul>
