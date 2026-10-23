@@ -1,6 +1,7 @@
 import type { SettingsScope } from "@/lib/storefront-engine";
 import { PAYMENTS_SETTINGS } from "@/features/settings/registry-payments";
 import { BANNER_SETTINGS } from "@/features/settings/registry-banners";
+import { PHOTO_SHAPE_SETTINGS } from "@/features/settings/registry-photos";
 import { DELIVERY_ESTIMATE_SETTINGS } from "@/features/settings/registry-delivery";
 import { INVENTORY_SETTINGS } from "@/features/settings/registry-inventory";
 import { REVIEWS_SETTINGS } from "@/features/settings/registry-reviews";
@@ -1196,21 +1197,8 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     label: { ar: "تكبير صور المنتج عند النقر", en: "Product Image Zoom on Click" },
     keywords: { ar: ["تكبير صور", "زوم"], en: ["image zoom", "lightbox"] },
   },
-  {
-    scope: "v2_only",
-    key: "pdp_gallery_aspect_ratio",
-    table: "business_settings",
-    tab: "storefront",
-    group: "design_v2",
-    level: "advanced",
-    owner: "settings",
-    type: "select",
-    label: { ar: "تناسب صور معرض المنتج", en: "Product Gallery Aspect Ratio" },
-    keywords: {
-      ar: ["تناسب صور المنتج", "معرض الصور", "مربع", "طولي"],
-      en: ["pdp gallery aspect ratio", "product image ratio", "portrait", "square"],
-    },
-  },
+  // The shape of a product's photos on the cards and the product page (registry-photos.ts)
+  ...PHOTO_SHAPE_SETTINGS,
   {
     scope: "v2_only",
     key: "social_proof_enabled",

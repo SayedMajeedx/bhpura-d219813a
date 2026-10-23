@@ -294,6 +294,8 @@ export type PublicSettings = {
   product_card_hover_image?: boolean;
   product_card_color_dots?: boolean;
   product_card_quick_add?: boolean;
+  /** The cards' photo shape ("3:4", "4:5", "1:1", "4:3"); null: the vertical's. */
+  product_card_aspect_ratio?: string | null;
   quick_view_enabled?: boolean;
   pdp_image_zoom?: boolean;
   category_filters_enabled?: boolean;

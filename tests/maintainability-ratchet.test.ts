@@ -49,7 +49,7 @@ const BUDGETS = {
  *   admin.b.$slug.incubators.tsx (incubators v2, now ~25 lines: the page is in features/incubators).
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
-  "src/features/settings/registry.ts": 2475,
+  "src/features/settings/registry.ts": 2455,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/lib/addons/addon-showcase-data.ts": 1893,
   "src/components/super/SuperPlansManager.tsx": 1721,

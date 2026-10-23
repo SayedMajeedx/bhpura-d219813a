@@ -2119,6 +2119,7 @@ export type Database = {
           pickup_enabled: boolean;
           price_color: string | null;
           primary_color: string;
+          product_card_aspect_ratio: string | null;
           product_card_color_dots: boolean;
           product_card_hover_image: boolean;
           product_card_quick_add: boolean;
@@ -2326,6 +2327,7 @@ export type Database = {
           pickup_enabled?: boolean;
           price_color?: string | null;
           primary_color?: string;
+          product_card_aspect_ratio?: string | null;
           product_card_color_dots?: boolean;
           product_card_hover_image?: boolean;
           product_card_quick_add?: boolean;
@@ -2533,6 +2535,7 @@ export type Database = {
           pickup_enabled?: boolean;
           price_color?: string | null;
           primary_color?: string;
+          product_card_aspect_ratio?: string | null;
           product_card_color_dots?: boolean;
           product_card_hover_image?: boolean;
           product_card_quick_add?: boolean;
@@ -8924,6 +8927,7 @@ export type Database = {
           pickup_enabled: boolean | null;
           price_color: string | null;
           primary_color: string | null;
+          product_card_aspect_ratio: string | null;
           product_card_color_dots: boolean | null;
           product_card_hover_image: boolean | null;
           product_card_quick_add: boolean | null;
@@ -9777,6 +9781,7 @@ export type Database = {
           pickup_enabled: boolean;
           price_color: string | null;
           primary_color: string;
+          product_card_aspect_ratio: string | null;
           product_card_color_dots: boolean;
           product_card_hover_image: boolean;
           product_card_quick_add: boolean;

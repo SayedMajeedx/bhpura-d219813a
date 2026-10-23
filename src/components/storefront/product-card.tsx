@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
+import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -111,7 +112,9 @@ export function ProductCard({
           void trackProductEngagement(brand.slug, product.id, "click");
         }}
       >
-        <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
+        <div
+          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} rounded-xl overflow-hidden bg-muted relative`}
+        >
           {badgeLabel && (
             <span
               className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-xs font-medium shadow-sm select-none ${badgeStyle} ${

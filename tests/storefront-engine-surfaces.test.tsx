@@ -312,3 +312,45 @@ describe("Storefront 2.0 cards show a sale", () => {
     expect(screen.queryByText("-23%")).not.toBeInTheDocument();
   });
 });
+
+describe("the cards' photo shape", () => {
+  const product = {
+    id: "p1",
+    name: "Pecan baklava",
+    name_en: "Pecan baklava",
+    base_price: 7,
+    image_url: "https://media.boutq.store/p1.jpg",
+    product_variants: [{ id: "v1", size: "650", selling_price: 7, stock_main: 3 }],
+  };
+  const frame = () => screen.getByRole("img", { name: "Pecan baklava" }).closest("div.rounded-xl");
+
+  it("follows the store's kind of goods until the store chooses a shape", () => {
+    storefront.settings = { storefront_design_version: 2, store_vertical: "food" };
+    const food = withI18n(<ProductCardV2 product={product} />);
+    expect(frame()?.className).toContain("aspect-square");
+    food.unmount();
+
+    storefront.settings = { storefront_design_version: 2, store_vertical: "abayas" };
+    const abayas = withI18n(<ProductCardV2 product={product} />);
+    expect(frame()?.className).toContain("aspect-[3/4]");
+    abayas.unmount();
+
+    storefront.settings = {
+      storefront_design_version: 2,
+      store_vertical: "food",
+      product_card_aspect_ratio: "4:5",
+    };
+    withI18n(<ProductCardV2 product={product} />);
+    expect(frame()?.className).toContain("aspect-[4/5]");
+  });
+
+  it("is carried by the storefront loader, empty until the store chooses", () => {
+    const brand = { id: "b1", slug: "habybee", name_en: "Habybee" } as Brand;
+    const load = (settings: Record<string, unknown>) =>
+      publicSettingsFromPageData(brand, { brand, settings } as never);
+    expect(load({})).toMatchObject({ product_card_aspect_ratio: null });
+    expect(load({ product_card_aspect_ratio: "1:1" })).toMatchObject({
+      product_card_aspect_ratio: "1:1",
+    });
+  });
+});
