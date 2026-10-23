@@ -4,7 +4,12 @@ import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
-import { invalidateOrders } from "@/lib/data/orders/mutations";
+import {
+  courierCompleteDelivery,
+  invalidateOrders,
+  updateOrder,
+} from "@/lib/data/orders/mutations";
+import { logActivity } from "@/lib/activity-log";
 import {
   addBookingBlock,
   bookingsQueries,
@@ -19,6 +24,7 @@ import { bookingErrorMessage } from "@/lib/bookings/errors";
 import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookings/rules";
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
+import { donePlan } from "@/features/bookings/lib/booking-actions";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 
 /** Weeks start on Sunday, as GCC booking calendars usually do. */
@@ -40,7 +46,8 @@ export function useBookingsPage() {
   const rules = settingsQuery.data ?? DEFAULT_BOOKING_RULES;
   const configured = settingsQuery.data != null;
   const today = todayIn(rules.timezone);
-  const currency = useQuery(businessSettingsQueries.detail(brand.id)).data?.currency ?? "BHD";
+  const businessSettings = useQuery(businessSettingsQueries.detail(brand.id)).data;
+  const currency = businessSettings?.currency ?? "BHD";
 
   const [cursor, setCursor] = useState(() => ({
     year: Number(today.slice(0, 4)),
@@ -91,6 +98,51 @@ export function useBookingsPage() {
     onSuccess: async () => {
       await refresh();
       toast.success(isAr ? "تم تحديث الحجز" : "Booking updated");
+    },
+    onError,
+  });
+
+  // A booking is finished through its order (booking-actions.ts): the order completes, with what
+  // the customer still owed recorded as collected, and the booking follows it
+  // (sync_bookings_with_order). A booking with no order to complete is marked done alone.
+  const doneMutation = useMutation({
+    mutationFn: async (booking: Booking) => {
+      const plan = donePlan(booking);
+      if (plan.kind === "verify_first") {
+        throw new Error(
+          isAr ? "راجع إيصال التحويل وأكّد الدفع أولاً." : "Approve the transfer receipt first.",
+        );
+      }
+      if (plan.kind === "booking") {
+        await setBookingStatus(booking.id, "completed");
+        return;
+      }
+      if (plan.collect > 0) {
+        const error = await courierCompleteDelivery(plan.orderId, plan.collect, null);
+        if (error) throw error;
+      } else {
+        const at = new Date().toISOString();
+        await updateOrder(brand.id, plan.orderId, {
+          fulfillment_status: "COMPLETED",
+          status: "completed",
+          delivered_at: at,
+          updated_at: at,
+        });
+      }
+      await logActivity({
+        action: "status_change",
+        brand_id: brand.id,
+        order_id: plan.orderId,
+        en:
+          plan.collect > 0
+            ? "Collected the balance and completed the service"
+            : "Completed the service",
+        ar: plan.collect > 0 ? "تحصيل المبلغ المتبقي وإتمام الخدمة" : "تم تنفيذ الخدمة",
+      });
+    },
+    onSuccess: async () => {
+      await Promise.all([refresh(), invalidateOrders(qc, brand.id)]);
+      toast.success(isAr ? "تم تنفيذ الخدمة وإتمام الطلب" : "Service completed");
     },
     onError,
   });
@@ -151,6 +203,8 @@ export function useBookingsPage() {
     brand,
     isAr,
     currency,
+    /** Whether the store takes cards: the deposit is taken by card only. */
+    cardEnabled: Boolean(businessSettings?.card_enabled),
     rules,
     configured,
     settingsLoading: settingsQuery.isLoading,
@@ -176,7 +230,9 @@ export function useBookingsPage() {
     /** The store's travel fees by area code. */
     areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,
-    statusPending: statusMutation.isPending,
+    statusPending: statusMutation.isPending || doneMutation.isPending,
+    /** Marks a booking done through its order (collecting what is still owed). */
+    completeBooking: doneMutation.mutate,
     createInvoice: invoiceMutation.mutate,
     invoicePending: invoiceMutation.isPending,
     setDiscount: discountMutation.mutate,

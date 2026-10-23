@@ -38,6 +38,8 @@ import {
   type BookingRequestResult,
 } from "@/lib/data/bookings";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { depositTerms } from "@/lib/bookings/deposit";
 import { durations, todayIn, travelFeeFor, type DayState } from "@/lib/bookings/rules";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 import {
@@ -67,6 +69,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
 
   const rulesQuery = useQuery(bookingsQueries.publicRules(brand.id));
   const rules = rulesQuery.data ?? null;
+  const policy = useQuery(bookingPoliciesQueries.policy(brand.id)).data;
   const today = todayIn(rules?.timezone ?? "Asia/Bahrain");
 
   const [cursor, setCursor] = useState(() => ({
@@ -326,6 +329,8 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
     /** The trip to the event's area (null: the store charges none). */
     travelFee,
+    /** The deposit the booking really takes (by card only) and when the rest is due. */
+    deposit: depositTerms(rules, settings, policy),
     /** Catalog stores send a request; shop stores hold the day and check out. */
     catalog,
     submit: () => (catalog ? submit.mutate() : checkout.mutate()),

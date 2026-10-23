@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { bookingsQueries } from "@/lib/data/bookings";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { depositSentence, depositTerms } from "@/lib/bookings/deposit";
 import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom, serviceLocationFrom } from "@/lib/bookings/service-details";
 import { PackageIncludes } from "@/features/product-page/components/PackageIncludes";
@@ -35,9 +37,10 @@ const PLACE_TEXT = {
  * length goes to the booking page, which starts with it chosen.
  */
 export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
-  const { brand, lang, currency, t } = useStorefront();
+  const { brand, settings, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
   const rules = useQuery(bookingsQueries.publicRules(brand.id)).data;
+  const policy = useQuery(bookingPoliciesQueries.policy(brand.id)).data;
 
   const lengths = product.product_variants
     .filter((variant) => typeof variant.duration_minutes === "number")
@@ -52,7 +55,8 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
   const includes = serviceIncludesFrom(product.service_includes).filter((line) =>
     isAr ? line.ar || line.en : line.en || line.ar,
   );
-  const deposit = Number(rules?.deposit_percent ?? 0);
+  // The deposit it really takes (by card only), and when the rest is due by the store's terms.
+  const deposit = depositSentence(depositTerms(rules, settings, policy), isAr);
 
   return (
     <section className="space-y-4" aria-label={t("احجز الخدمة", "Book the service")}>
@@ -130,15 +134,11 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
         )}
         <li className="flex items-center gap-2">
           <ShieldCheck className="size-4 shrink-0 text-primary" aria-hidden="true" />
-          {deposit > 0
-            ? t(
-                `احجز موعدك بعربون ${deposit}٪ والباقي يوم المناسبة`,
-                `Hold your date with a ${deposit}% deposit, the rest on the day`,
-              )
-            : t(
-                "تشوف الأيام المتاحة وتختار وقتك في دقيقة",
-                "See the free days and pick your time in a minute",
-              )}
+          {deposit ??
+            t(
+              "تشوف الأيام المتاحة وتختار وقتك في دقيقة",
+              "See the free days and pick your time in a minute",
+            )}
         </li>
       </ul>
 

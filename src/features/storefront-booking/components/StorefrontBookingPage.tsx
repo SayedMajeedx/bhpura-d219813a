@@ -1,5 +1,6 @@
 import { optionName } from "@/lib/bookings/service-options";
 import { discountLabel } from "@/lib/bookings/discounts";
+import { depositSentence } from "@/lib/bookings/deposit";
 import type { ReactNode } from "react";
 import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -107,6 +108,7 @@ export function StorefrontBookingPage({
   }
 
   const chosen = flow.chosen;
+  const depositLine = depositSentence(flow.deposit, isAr);
   const offerAmount = flow.offer?.amount ?? 0;
   const total =
     flow.servicesTotal +
@@ -139,13 +141,13 @@ export function StorefrontBookingPage({
         </h1>
         <p className="text-sm text-muted-foreground">
           {isAr
-            ? "يُثبَّت موعدك بعد تأكيد المتجر. أرسل الطلب على واتساب ليصلهم فوراً."
-            : "Your date is held once the store confirms. Send it on WhatsApp so they see it now."}
+            ? "يصبح الموعد لك بعد تأكيد المتجر. أرسل الطلب على واتساب ليصلهم فوراً."
+            : "The date is yours once the store confirms it. Send it on WhatsApp so they see it now."}
         </p>
         <BookingPolicies
           brandId={flow.brand.id}
           isAr={isAr}
-          depositPercent={flow.catalog ? 0 : (flow.rules?.deposit_percent ?? 0)}
+          depositPercent={flow.deposit.percent}
           eventDay={flow.result.event_date}
         />
         <p className="rounded-xl bg-muted p-3 text-sm">
@@ -199,7 +201,7 @@ export function StorefrontBookingPage({
       <BookingPolicies
         brandId={flow.brand.id}
         isAr={isAr}
-        depositPercent={flow.catalog ? 0 : (flow.rules?.deposit_percent ?? 0)}
+        depositPercent={flow.deposit.percent}
         eventDay={flow.flow.day}
       />
       <StoreGallery brandId={flow.brand.id} isAr={isAr} />
@@ -249,13 +251,7 @@ export function StorefrontBookingPage({
             </span>
           </div>
         )}
-        {!flow.catalog && (flow.rules?.deposit_percent ?? 0) > 0 && (
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? `يُدفع عربون ${flow.rules!.deposit_percent}% بالبطاقة عند الحجز، والباقي يوم المناسبة.`
-              : `A ${flow.rules!.deposit_percent}% deposit is paid by card when you book; the rest on the day.`}
-          </p>
-        )}
+        {depositLine && <p className="text-xs text-muted-foreground">{depositLine}</p>}
         <Button
           type="button"
           size="lg"

@@ -38,13 +38,25 @@ describe("a service's lengths in a few words", () => {
 
 describe("a service's booking terms", () => {
   it("say how far ahead to book, the deposit, the hold and how to change it", () => {
-    const text = bookingTermsText({ lead_days: 2, deposit_percent: 25, hold_minutes: 15 }, false);
+    const text = bookingTermsText({ lead_days: 2, hold_minutes: 15 }, false, {
+      percent: 25,
+      cardOnly: false,
+      balanceDueDays: 3,
+    });
     expect(text).toContain("at least 2 days ahead");
-    expect(text).toContain("25% deposit");
+    expect(text).toContain("Paying by card: a 25% deposit when you book, the rest 3 days before.");
     expect(text).toContain("held for 15 minutes");
     expect(text).toContain("change or cancel");
     expect(bookingTermsText({ lead_days: 0 }, true)).toContain("لنفس اليوم");
     expect(bookingTermsText(null, false)).not.toContain("deposit");
+    // A store that takes no card takes no deposit (depositTerms gives 0).
+    expect(
+      bookingTermsText({ lead_days: 1 }, false, {
+        percent: 0,
+        cardOnly: false,
+        balanceDueDays: null,
+      }),
+    ).not.toContain("deposit");
   });
 });
 
@@ -161,6 +173,7 @@ describe("the booking flow with questions", () => {
 const storefront = {
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora" },
+    settings: { card_enabled: true, benefit_enabled: true },
     lang: "en",
     currency: "BHD",
     t: (_ar: string, en: string) => en,
@@ -180,6 +193,14 @@ const bookingsData = {
 };
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
+const policiesData = {
+  bookingPoliciesQueries: {
+    policy: (brandId: string) =>
+      queryOptions({ queryKey: ["booking-policies", brandId], queryFn: async () => null }),
+  },
+};
+vi.mock("../src/lib/data/booking-policies", () => policiesData);
+vi.mock("@/lib/data/booking-policies", () => policiesData);
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, search }: { children: React.ReactNode; search?: Record<string, unknown> }) => (
     <a href={`/book?${new URLSearchParams(search as Record<string, string>)}`}>{children}</a>
@@ -218,6 +239,8 @@ describe("a service's page", () => {
 
     expect(screen.getByText("We come to your venue")).toBeTruthy();
     expect(screen.getByText("Lighting")).toBeTruthy();
-    expect(await screen.findByText(/20% deposit/)).toBeTruthy();
+    expect(
+      await screen.findByText("Paying by card: a 20% deposit when you book, the rest on the day."),
+    ).toBeTruthy();
   });
 });

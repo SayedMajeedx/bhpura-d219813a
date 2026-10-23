@@ -27,6 +27,7 @@ import { InvoiceAppointment } from "@/components/orders/InvoiceAppointment";
 import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
 import { policyLines } from "@/lib/bookings/policies";
+import { invoiceDepositPercent } from "@/lib/bookings/deposit";
 
 type SavedAddress = {
   id?: string;
@@ -949,7 +950,10 @@ export default function InvoicePreview({
                 <InvoiceBookingTerms
                   lines={policyLines(policyQ.data, {
                     isAr: isRTL,
-                    depositPercent: bookingRulesQ.data?.deposit_percent ?? 0,
+                    depositPercent: invoiceDepositPercent(
+                      orderBooking,
+                      bookingRulesQ.data?.deposit_percent,
+                    ),
                     eventDay: orderBooking.event_date,
                   })}
                   isRTL={isRTL}
