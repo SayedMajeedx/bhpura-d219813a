@@ -21,6 +21,7 @@ import { User } from "lucide-react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
+import { orderTotals, storeTaxRule } from "@/lib/order-tax";
 import { bookingOfCart } from "@/lib/bookings/cart";
 import { bookingDepositSplit, depositTerms, upfrontSplit } from "@/lib/bookings/deposit";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
@@ -239,10 +240,18 @@ function Checkout() {
   // A member whose loyalty tier has free shipping pays none (so does the order).
   const shipping = freeShipping ? 0 : deliveryFee;
 
-  const grandTotal =
-    Math.max(0, cartTotal - promoDiscount - bookingDiscount - loyaltyDiscount) +
-    Number(appointment?.optionsTotal ?? 0) +
-    shipping;
+  // What the order will charge, tax included (the order builder's own rule: orderTotals).
+  const taxRule = storeTaxRule(settings);
+  const totals = orderTotals(
+    {
+      subtotal: cartTotal + Number(appointment?.optionsTotal ?? 0),
+      discount: promoDiscount + bookingDiscount,
+      shipping,
+      loyaltyDiscount,
+    },
+    taxRule,
+  );
+  const grandTotal = totals.total;
 
   // The store's advance-payment rule, worked out for this cart: which lines are made to order
   // (the catalog says; a booked service always is), how the order is fulfilled and what it costs.
@@ -607,6 +616,7 @@ function Checkout() {
           shareOpen={shareOpen}
           appointment={appointment}
           shipping={shipping}
+          tax={{ amount: totals.tax, added: totals.added, rate: taxRule.rate }}
           submit={submit}
           submitting={submitting}
           t={t}

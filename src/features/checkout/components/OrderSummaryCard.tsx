@@ -3,6 +3,7 @@ import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 import { minutesOf, timeOf } from "@/lib/bookings/rules";
 import { Link } from "@tanstack/react-router";
 import { formatPrice } from "@/lib/storefront-context";
+import { taxRateLabel } from "@/lib/order-tax";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,9 @@ import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-check
 import type { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
+
+export type SummaryTax = { amount: number; added: boolean; rate: number };
+const NO_TAX_LINE: SummaryTax = { amount: 0, added: true, rate: 0 };
 
 /** The cart lines, promo code, loyalty points, totals, terms and the Place order button. */
 export function OrderSummaryCard({
@@ -62,6 +66,7 @@ export function OrderSummaryCard({
   setShareOpen,
   shareOpen,
   shipping,
+  tax = NO_TAX_LINE,
   submit,
   submitting,
   t,
@@ -106,6 +111,8 @@ export function OrderSummaryCard({
   setShareOpen: Dispatch<SetStateAction<boolean>>;
   shareOpen: boolean;
   shipping: number;
+  /** The tax the order carries (`orderTotals`): added to the prices, or part of them. */
+  tax?: SummaryTax;
   submit: ReturnType<typeof usePlaceOrder>["submit"];
   submitting: ReturnType<typeof usePlaceOrder>["submitting"];
   t: Storefront["t"];
@@ -289,6 +296,17 @@ export function OrderSummaryCard({
             <span>− {formatPrice(loyaltyDiscount, currency, lang)}</span>
           </div>
         )}
+        {tax.added && tax.amount > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">
+              {t(
+                `ضريبة القيمة المضافة (${taxRateLabel(tax.rate)})`,
+                `VAT (${taxRateLabel(tax.rate)})`,
+              )}
+            </span>
+            <span>{formatPrice(tax.amount, currency, lang)}</span>
+          </div>
+        )}
       </div>
 
       {/* Promo Code Box */}
@@ -393,6 +411,14 @@ export function OrderSummaryCard({
         <span>{t("الإجمالي", "Total")}</span>
         <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
       </div>
+      {!tax.added && tax.amount > 0 && (
+        <p className="text-xs text-muted-foreground text-end">
+          {t(
+            `يشمل ضريبة القيمة المضافة (${taxRateLabel(tax.rate)}): ${formatPrice(tax.amount, currency, lang)}`,
+            `Includes VAT (${taxRateLabel(tax.rate)}): ${formatPrice(tax.amount, currency, lang)}`,
+          )}
+        </p>
+      )}
       <AdvancePaymentNotice
         split={advance}
         currency={currency}

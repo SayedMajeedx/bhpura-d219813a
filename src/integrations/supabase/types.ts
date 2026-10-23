@@ -8856,6 +8856,7 @@ export type Database = {
           category_filters_enabled: boolean | null;
           cod_enabled: boolean | null;
           currency: string | null;
+          default_tax_rate: number | null;
           delivery_enabled: boolean | null;
           delivery_estimate_ar: string | null;
           delivery_estimate_en: string | null;

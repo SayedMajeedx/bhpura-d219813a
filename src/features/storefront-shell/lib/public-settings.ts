@@ -112,6 +112,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     delivery_estimate_tailored_ar: s?.delivery_estimate_tailored_ar ?? null,
     delivery_estimate_tailored_en: s?.delivery_estimate_tailored_en ?? null,
     vat_inclusive: Boolean(s?.vat_inclusive ?? false),
+    default_tax_rate: Number(s?.default_tax_rate ?? 0),
     shipping_zones: (() => {
       try {
         const raw = s?.shipping_zones;
