@@ -10,6 +10,8 @@ import {
   packageOffer,
   serviceImages,
   splitServices,
+  reservesPicture,
+  servicePlace,
 } from "../src/features/services-home/lib/services-home";
 import type { ProductRow } from "../src/lib/data/storefront";
 
@@ -149,5 +151,19 @@ describe("the home page of a services store", () => {
       includes: [],
     });
     expect(packageOffer(product({ is_package: true }), [], [booth], name)).toBeNull();
+  });
+});
+
+describe("the cards' shared words and pictures", () => {
+  it("say where a service happens in the shopper's language, or nothing", () => {
+    expect(servicePlace("customer", false)).toBe("At your place");
+    expect(servicePlace("both", true)).toBe("في موقعك أو موقعنا");
+    expect(servicePlace(null, false)).toBeNull();
+  });
+
+  it("keep a picture's space only when another card of the row has a picture", () => {
+    const card = (image_url: string | null) => ({ image_url }) as never;
+    expect(reservesPicture([card(null), card("https://cdn/booth.jpg")])).toBe(true);
+    expect(reservesPicture([card(null), card(null)])).toBe(false);
   });
 });

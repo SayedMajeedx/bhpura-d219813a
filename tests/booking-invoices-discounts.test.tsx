@@ -435,8 +435,8 @@ describe("the store's offers", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Add an offer" }));
     fireEvent.click(screen.getByRole("button", { name: /Free gift on chosen dates/ }));
     expect(screen.getByLabelText("Discount")).toHaveValue(100);
-    fireEvent.change(screen.getByLabelText("For events from"), { target: { value: "2026-10-10" } });
-    fireEvent.change(screen.getByLabelText("For events until"), {
+    fireEvent.change(screen.getByLabelText("For bookings from"), { target: { value: "2026-10-10" } });
+    fireEvent.change(screen.getByLabelText("For bookings until"), {
       target: { value: "2026-10-12" },
     });
     fireEvent.click(

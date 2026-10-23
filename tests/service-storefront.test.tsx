@@ -235,7 +235,7 @@ describe("a service's page", () => {
     expect(book().getAttribute("href")).toBe("/book?service=booth&minutes=300");
     expect(screen.getAllByText("BHD 60.000").length).toBeGreaterThan(0);
 
-    expect(screen.getByText("We come to your venue")).toBeTruthy();
+    expect(screen.getByText("We come to you")).toBeTruthy();
     expect(screen.getByText("Lighting")).toBeTruthy();
     expect(
       await screen.findByText("A 20% deposit when you book, the rest on the day."),

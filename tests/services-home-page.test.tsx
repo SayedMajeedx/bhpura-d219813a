@@ -279,3 +279,29 @@ describe("what customers said, on the services home page", () => {
     expect(screen.queryByRole("heading", { name: "Customer reviews" })).toBeNull();
   });
 });
+
+describe("the cards' pictures", () => {
+  it("runs a rental's picture across its card, and keeps a service row's pictures in line", () => {
+    const withPictures = (products as unknown as Array<Record<string, unknown>>).map((product) =>
+      product.id === "booth" ? { ...product, image_url: "https://cdn.example/booth.jpg" } : product,
+    );
+    const extra = {
+      ...(withPictures.find((product) => product.id === "prints") as Record<string, unknown>),
+      id: "album",
+      name: "Album",
+      image_url: "https://cdn.example/album.jpg",
+    };
+    const { container } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicesHome products={[...withPictures, extra] as never} />
+      </QueryClientProvider>,
+    );
+    const rental = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
+    expect(within(rental).getByRole("img", { name: "Photo booth" })).toHaveClass("w-full");
+
+    // Prints has no picture, Album has one: Prints keeps a picture's space.
+    const prints = screen.getByRole("heading", { name: "Prints" }).closest("article")!;
+    expect(prints.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[4/3]");
+    expect(container.querySelectorAll("article img").length).toBe(2);
+  });
+});

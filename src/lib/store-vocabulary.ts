@@ -109,8 +109,9 @@ export function getVerticalVocabularyOverrides(vertical?: string | null): Partia
       collections_noun: { ar: "الباقات", en: "Packages" },
       specifications_label: { ar: "ما تشمله الباقة", en: "What's Included" },
       care_instructions_label: { ar: "شروط الحجز والإلغاء", en: "Booking & Cancellation" },
-      sizing_guide: { ar: "دليل الباقات", en: "Package Guide" },
-      variant_picker_prompt: { ar: "اختر الباقة", en: "Choose a package" },
+      // A service's options are its lengths, each with its price.
+      sizing_guide: { ar: "المدد والأسعار", en: "Lengths & prices" },
+      variant_picker_prompt: { ar: "اختر المدة", en: "Choose a length" },
       // Services are made to order (no stock); say it the way a booking does.
       made_to_order: { ar: "حسب موعدك", en: "Booked for your date" },
       custom_order: { ar: "حسب موعدك", en: "Booked for your date" },

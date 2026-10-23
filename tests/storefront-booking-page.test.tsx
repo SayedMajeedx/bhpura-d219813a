@@ -335,7 +335,7 @@ describe("booking from the storefront", () => {
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "3900 1122" } });
-    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
+    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
     expect(send).toBeEnabled();
     fireEvent.click(send);
 
@@ -625,7 +625,7 @@ describe("a service's add-ons in the booking flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
-    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
+    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
     fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
     await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
     expect(state.requestBooking).toHaveBeenCalledWith(
@@ -652,7 +652,7 @@ describe("a service's add-ons in the booking flow", () => {
     fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
-    fireEvent.change(screen.getByLabelText("Event area"), { target: { value: "juffair" } });
+    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
     fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
     await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
     const sent = (

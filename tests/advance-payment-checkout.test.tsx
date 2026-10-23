@@ -100,13 +100,13 @@ describe("the advance notice", () => {
     );
   });
 
-  it("says the balance is due on the day of the event for a booking, in Arabic too", () => {
+  it("says the balance is due on the day of the booking, in Arabic too", () => {
     state.lang = "ar";
     render(
       <AdvancePaymentNotice split={advanceForOrder(order(), rule())} currency="BHD" appointment />,
     );
     expect(screen.getByRole("note")).toHaveTextContent("الدفعة المقدمة (30%) تُدفع الآن");
-    expect(screen.getByRole("note")).toHaveTextContent("يوم المناسبة");
+    expect(screen.getByRole("note")).toHaveTextContent("يوم الموعد");
   });
 
   it("is a single line at 100% and nothing at all where the rule does not apply", () => {

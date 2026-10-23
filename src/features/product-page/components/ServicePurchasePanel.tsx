@@ -26,9 +26,9 @@ type ServiceProduct = {
 };
 
 const PLACE_TEXT = {
-  customer: { ar: "نأتي إليك في موقع مناسبتك", en: "We come to your venue" },
+  customer: { ar: "نأتي إليك في موقعك", en: "We come to you" },
   venue: { ar: "تُقدَّم في مقرّنا", en: "Held at our venue" },
-  both: { ar: "عندك أو في مقرّنا", en: "At your venue or ours" },
+  both: { ar: "عندك أو في مقرّنا", en: "At your place or ours" },
 } as const;
 
 /**

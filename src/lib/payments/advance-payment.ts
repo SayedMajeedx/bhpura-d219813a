@@ -249,8 +249,8 @@ export function advanceLines(
   const when =
     options.balanceWhen === "event"
       ? isAr
-        ? "يوم المناسبة"
-        : "on the day of the event"
+        ? "يوم الموعد"
+        : "on the day of the booking"
       : isAr
         ? "عند الاستلام"
         : "on delivery";

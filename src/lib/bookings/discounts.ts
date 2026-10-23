@@ -213,11 +213,11 @@ export function describeDiscountRule(rule: DiscountRule, isAr: boolean): string 
     parts.push(
       from && to && from !== to
         ? isAr
-          ? `للمناسبات من ${from} إلى ${to}`
-          : `events ${from} to ${to}`
+          ? `للمواعيد من ${from} إلى ${to}`
+          : `for dates ${from} to ${to}`
         : isAr
-          ? `لمناسبة ${from || to}`
-          : `event on ${from || to}`,
+          ? `لموعد ${from || to}`
+          : `for ${from || to}`,
     );
   }
   if (rule.requires_product_ids && rule.requires_product_ids.length > 0) {
@@ -372,7 +372,7 @@ export function discountFormError(form: DiscountRuleForm, isAr: boolean): string
     return isAr ? "تاريخ النهاية قبل البداية." : "The end date is before the start.";
   }
   if (form.event_from && form.event_to && form.event_to < form.event_from) {
-    return isAr ? "نهاية تواريخ المناسبة قبل بدايتها." : "The event dates end before they start.";
+    return isAr ? "نهاية تواريخ الموعد قبل بدايتها." : "The booking dates end before they start.";
   }
   return null;
 }

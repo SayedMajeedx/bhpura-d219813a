@@ -23,7 +23,7 @@ export const NO_POLICY: BookingPolicy = {
 
 const DAY_MS = 86_400_000;
 
-/** The day the balance is due: `days` before the event (ISO dates). */
+/** The day the balance is due: `days` before the booking (ISO dates). */
 export function balanceDueDate(eventDay: string, days: number): string {
   return new Date(Date.parse(`${eventDay}T00:00:00Z`) - days * DAY_MS).toISOString().slice(0, 10);
 }
@@ -31,7 +31,7 @@ export function balanceDueDate(eventDay: string, days: number): string {
 const daysText = (days: number, isAr: boolean) =>
   isAr
     ? days === 0
-      ? "يوم المناسبة"
+      ? "يوم الموعد"
       : days === 1
         ? "يوم واحد"
         : days === 2
@@ -78,11 +78,11 @@ export function policyLines(
     lines.push(
       days === 0
         ? isAr
-          ? "يُدفع الرصيد المتبقي في يوم المناسبة."
-          : "The balance is due on the day of the event."
+          ? "يُدفع الرصيد المتبقي في يوم الموعد."
+          : "The balance is due on the day of the booking."
         : isAr
-          ? `يُدفع الرصيد المتبقي قبل المناسبة بـ ${daysText(days, true)}${due ? ` (${due})` : ""}.`
-          : `The balance is due ${daysText(days, false)} before the event${due ? ` (${due})` : ""}.`,
+          ? `يُدفع الرصيد المتبقي قبل الموعد بـ ${daysText(days, true)}${due ? ` (${due})` : ""}.`
+          : `The balance is due ${daysText(days, false)} before the booking${due ? ` (${due})` : ""}.`,
     );
   }
   if (policy.reschedule_months !== null && policy.reschedule_months > 0) {

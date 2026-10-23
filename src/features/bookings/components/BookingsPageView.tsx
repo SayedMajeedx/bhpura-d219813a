@@ -1,5 +1,28 @@
 import { useState } from "react";
-import { CalendarDays, Images, Loader2, Palette, ScrollText, Settings2, Tag } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarPlus,
+  CalendarSync,
+  Images,
+  Loader2,
+  Palette,
+  ScrollText,
+  Settings2,
+  Tag,
+  type LucideIcon,
+} from "lucide-react";
+import {
+  AdminPageAction,
+  AdminPageCount,
+  AdminPageHeader,
+} from "@/components/admin/AdminPageHeader";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { NewBookingDialog } from "@/features/bookings/components/NewBookingDialog";
 import { Button } from "@/components/ui/button";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useBookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -14,6 +37,21 @@ import { StoreContentDialog } from "@/features/store-content/components/StoreCon
 import { BookingLookDialog } from "@/features/bookings/components/BookingLookDialog";
 import { BookingPoliciesDialog } from "@/features/bookings/components/BookingPoliciesDialog";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
+
+type Tool = "new" | "rules" | "offers" | "content" | "terms" | "look" | "calendar";
+
+/**
+ * The set-up menu: what a store sets once and comes back to rarely. It was six outline buttons
+ * that wrapped to two or three rows above the bookings on a phone.
+ */
+const SETUP_TOOLS: Array<{ id: Tool; icon: LucideIcon; ar: string; en: string }> = [
+  { id: "rules", icon: Settings2, ar: "قواعد الحجز", en: "Booking rules" },
+  { id: "offers", icon: Tag, ar: "عروض وخصومات", en: "Offers" },
+  { id: "terms", icon: ScrollText, ar: "شروط الحجز", en: "Terms" },
+  { id: "content", icon: Images, ar: "المعرض والأسئلة", en: "Gallery & FAQ" },
+  { id: "look", icon: Palette, ar: "شكل الباقات", en: "Package look" },
+  { id: "calendar", icon: CalendarSync, ar: "ربط بالتقويم", en: "Calendar link" },
+];
 
 const VIEW_LABELS = {
   agenda: { ar: "الأيام القادمة", en: "Agenda" },
@@ -31,11 +69,11 @@ export function BookingsPageView() {
   const page = useBookingsPage();
   const { isAr } = page;
   const { profile, isLoading: profileLoading } = useAdminStoreProfile(page.brand.id);
-  const [rulesOpen, setRulesOpen] = useState(false);
-  const [offersOpen, setOffersOpen] = useState(false);
-  const [contentOpen, setContentOpen] = useState(false);
-  const [termsOpen, setTermsOpen] = useState(false);
-  const [lookOpen, setLookOpen] = useState(false);
+  // One tool open at a time: the new booking, or one of the set-up menu's dialogs.
+  const [tool, setTool] = useState<Tool | null>(null);
+  const close = (open: boolean) => {
+    if (!open) setTool(null);
+  };
   // The agenda first: what a services business works from day to day.
   const [view, setView] = useState<"agenda" | "calendar" | "report">("agenda");
 
@@ -52,78 +90,52 @@ export function BookingsPageView() {
       className="mx-auto w-full min-w-0 max-w-6xl space-y-4 p-2 pb-32 sm:p-4 sm:pb-16"
       dir={isAr ? "rtl" : "ltr"}
     >
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
-            <CalendarDays className="size-5" aria-hidden="true" />
-          </span>
-          <div>
-            <h1 className="font-display text-lg font-bold text-foreground">
-              {isAr ? "الحجوزات" : "Bookings"}
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "التقويم، الأيام المحجوزة والمغلقة، وطلبات الحجز."
-                : "Your calendar, booked and blocked days, and booking requests."}
-            </p>
-          </div>
-        </div>
-        {page.configured && (
-          <div className="flex flex-wrap gap-2">
-            <CalendarLinkDialog page={page} />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setRulesOpen(true)}
-            >
-              <Settings2 className="size-4" />
-              {isAr ? "قواعد الحجز" : "Booking rules"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setOffersOpen(true)}
-            >
-              <Tag className="size-4" />
-              {isAr ? "عروض وخصومات" : "Offers"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setContentOpen(true)}
-            >
-              <Images className="size-4" />
-              {isAr ? "المعرض والأسئلة" : "Gallery & FAQ"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setTermsOpen(true)}
-            >
-              <ScrollText className="size-4" />
-              {isAr ? "شروط الحجز" : "Terms"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
-              onClick={() => setLookOpen(true)}
-            >
-              <Palette className="size-4" />
-              {isAr ? "شكل الباقات" : "Package look"}
-            </Button>
-          </div>
-        )}
-      </header>
+      <AdminPageHeader
+        icon={CalendarDays}
+        title={isAr ? "الحجوزات" : "Bookings"}
+        badges={
+          page.requests.length > 0 ? (
+            <AdminPageCount>
+              {isAr ? `${page.requests.length} بانتظارك` : `${page.requests.length} waiting`}
+            </AdminPageCount>
+          ) : null
+        }
+        description={
+          isAr
+            ? "الأيام القادمة، التقويم، وطلبات الحجز."
+            : "The days ahead, your calendar and booking requests."
+        }
+        actions={
+          page.configured && (
+            <>
+              <AdminPageAction
+                icon={CalendarPlus}
+                label={isAr ? "حجز جديد" : "New booking"}
+                short={isAr ? "جديد" : "New"}
+                onClick={() => setTool("new")}
+              />
+              <DropdownMenu dir={isAr ? "rtl" : "ltr"}>
+                <DropdownMenuTrigger asChild>
+                  <AdminPageAction
+                    icon={Settings2}
+                    label={isAr ? "الإعداد" : "Set up"}
+                    variant="outline"
+                    iconOnPhone
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isAr ? "start" : "end"} className="w-56">
+                  {SETUP_TOOLS.map((item) => (
+                    <DropdownMenuItem key={item.id} onSelect={() => setTool(item.id)}>
+                      <item.icon className="size-4" aria-hidden="true" />
+                      {isAr ? item.ar : item.en}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )
+        }
+      />
 
       {!profile.modules.bookings && (
         <p className="rounded-xl border border-warning bg-warning-subtle p-3 text-sm text-foreground">
@@ -146,7 +158,7 @@ export function BookingsPageView() {
           </p>
           <Button
             type="button"
-            onClick={() => setRulesOpen(true)}
+            onClick={() => setTool("rules")}
             disabled={!profile.modules.bookings}
           >
             {isAr ? "إعداد قواعد الحجز" : "Set booking rules"}
@@ -194,22 +206,15 @@ export function BookingsPageView() {
         </>
       )}
 
-      {offersOpen && (
-        <BookingDiscountsDialog page={page} open={offersOpen} onOpenChange={setOffersOpen} />
+      {tool === "new" && <NewBookingDialog page={page} open onOpenChange={close} />}
+      {tool === "offers" && <BookingDiscountsDialog page={page} open onOpenChange={close} />}
+      {tool === "look" && <BookingLookDialog page={page} open onOpenChange={close} />}
+      {tool === "terms" && <BookingPoliciesDialog page={page} open onOpenChange={close} />}
+      {tool === "content" && (
+        <StoreContentDialog brandId={page.brand.id} isAr={isAr} open onOpenChange={close} />
       )}
-      {lookOpen && <BookingLookDialog page={page} open={lookOpen} onOpenChange={setLookOpen} />}
-      {termsOpen && (
-        <BookingPoliciesDialog page={page} open={termsOpen} onOpenChange={setTermsOpen} />
-      )}
-      {contentOpen && (
-        <StoreContentDialog
-          brandId={page.brand.id}
-          isAr={isAr}
-          open={contentOpen}
-          onOpenChange={setContentOpen}
-        />
-      )}
-      {rulesOpen && <BookingRulesDialog page={page} open={rulesOpen} onOpenChange={setRulesOpen} />}
+      {tool === "rules" && <BookingRulesDialog page={page} open onOpenChange={close} />}
+      {tool === "calendar" && <CalendarLinkDialog page={page} open onOpenChange={close} />}
     </div>
   );
 }

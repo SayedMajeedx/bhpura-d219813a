@@ -491,14 +491,14 @@ describe("a free gift and the calendar's marks", () => {
     );
   });
 
-  it("refuses event dates that end before they start", () => {
+  it("refuses booking dates that end before they start", () => {
     const form = {
       ...EMPTY_DISCOUNT_FORM,
       value: "100",
       event_from: "2026-10-12",
       event_to: "2026-10-10",
     };
-    expect(discountFormError(form, false)).toMatch(/event dates/);
+    expect(discountFormError(form, false)).toMatch(/booking dates/);
     expect(discountFormColumns({ ...form, event_to: "", stackable: true })).toMatchObject({
       event_from: "2026-10-12",
       event_to: null,

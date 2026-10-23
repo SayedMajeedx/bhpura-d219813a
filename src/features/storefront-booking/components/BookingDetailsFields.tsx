@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
-/** Step 4: who is booking, where the event is, and the services' questions. */
+/** Step 4: who is booking, where it happens, and the services' questions. */
 export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
   const { isAr } = flow;
   const { name, phone, areaCode, venue, notes } = flow.flow;
@@ -34,7 +34,7 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
         />
       </div>
       <div className="space-y-1">
-        <Label htmlFor="booking-area">{isAr ? "منطقة المناسبة" : "Event area"}</Label>
+        <Label htmlFor="booking-area">{isAr ? "المنطقة" : "Area"}</Label>
         <select
           id="booking-area"
           className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -78,7 +78,7 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
       {flow.questions.length > 0 && (
         <fieldset className="space-y-3 rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
           <legend className="px-1 text-sm font-semibold text-foreground">
-            {isAr ? "أسئلة عن مناسبتك" : "About your event"}
+            {isAr ? "أسئلة عن حجزك" : "About your booking"}
           </legend>
           {flow.questions.map((question) => {
             const id = `booking-q-${question.id}`;

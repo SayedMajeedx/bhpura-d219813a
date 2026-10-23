@@ -113,7 +113,7 @@ describe("the booking terms block", () => {
     expect(screen.getByText("Booking terms")).toBeInTheDocument();
     expect(screen.getByText("The 30% deposit is non-refundable.")).toBeInTheDocument();
     expect(
-      screen.getByText("The balance is due 7 days before the event (2026-10-13)."),
+      screen.getByText("The balance is due 7 days before the booking (2026-10-13)."),
     ).toBeInTheDocument();
     expect(screen.getByText("Cancel by message.")).toBeInTheDocument();
   });
@@ -128,7 +128,7 @@ describe("the booking terms block", () => {
       />,
     );
     expect(screen.getByText("شروط الحجز")).toBeInTheDocument();
-    expect(screen.getByText(/يُدفع الرصيد المتبقي قبل المناسبة بـ 7 أيام/)).toBeInTheDocument();
+    expect(screen.getByText(/يُدفع الرصيد المتبقي قبل الموعد بـ 7 أيام/)).toBeInTheDocument();
     rerender(<InvoiceBookingTerms lines={[]} isRTL={false} background="#eee" color="#111" />);
     expect(container).toBeEmptyDOMElement();
   });

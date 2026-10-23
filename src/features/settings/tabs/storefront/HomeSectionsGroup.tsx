@@ -32,6 +32,10 @@ import {
   TrustBarFields,
 } from "./HomeSectionFields";
 import { PromoCardsEditor } from "./PromoCardsEditor";
+import { ServicesHomeSectionsGroup } from "./ServicesHomeSectionsGroup";
+import { useBrand } from "@/lib/brand-context";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { isServicesProfile } from "@/lib/store-profile";
 import {
   filledPromoCards,
   startedPromoCards,
@@ -122,6 +126,17 @@ const SECTION_META: Record<
  * spread over this group, the "new look" options, the footer and the hero.
  */
 export function HomeSectionsGroup() {
+  const brand = useBrand();
+  const { profile } = useAdminStoreProfile(brand.id);
+  // A services store's home page is ServicesHome: its own sections, not the shop's.
+  return isServicesProfile(profile.modules) ? (
+    <ServicesHomeSectionsGroup />
+  ) : (
+    <ShopHomeSectionsGroup />
+  );
+}
+
+function ShopHomeSectionsGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();

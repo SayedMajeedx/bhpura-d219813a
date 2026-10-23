@@ -522,7 +522,7 @@ export function getAdminNavItems({
       : item,
   );
 
-  return named.filter((item) => {
+  const shown = named.filter((item) => {
     if (item.adminOnly && !isAdmin) return false;
     if (item.permission && !hasPermission(item.permission)) return false;
     if (item.id === "size-guides" && !storeModules?.size_guide) return false;
@@ -539,6 +539,17 @@ export function getAdminNavItems({
     }
     return true;
   });
+  // A services store works from its bookings: they open its Orders workspace (the phone's dock
+  // and the workspace tabs open its first page), before the orders they become.
+  return services ? bookingsFirst(shown) : shown;
+}
+
+function bookingsFirst(items: AdminNavItemConfig[]): AdminNavItemConfig[] {
+  const bookings = items.find((item) => item.id === "bookings");
+  const orders = items.findIndex((item) => item.id === "orders");
+  if (!bookings || orders < 0) return items;
+  const rest = items.filter((item) => item !== bookings);
+  return [...rest.slice(0, orders), bookings, ...rest.slice(orders)];
 }
 
 /** The address an item opens, with the store filled in. */

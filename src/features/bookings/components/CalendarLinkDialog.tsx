@@ -21,10 +21,22 @@ import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
  * to (Google, Apple, Outlook), copied, made, or reset so an old one stops
  * working.
  */
-export function CalendarLinkDialog({ page }: { page: BookingsPage }) {
+export function CalendarLinkDialog({
+  page,
+  open: shownFromOutside,
+  onOpenChange,
+}: {
+  page: BookingsPage;
+  /** Opened from a menu (the page's set-up menu): the dialog draws no button of its own. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const { isAr, brand } = page;
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = shownFromOutside !== undefined;
+  const open = controlled ? shownFromOutside : ownOpen;
+  const setOpen = (next: boolean) => (controlled ? onOpenChange?.(next) : setOwnOpen(next));
   const token = useQuery({ ...bookingsQueries.calendarToken(brand.id), enabled: open }).data;
   const url =
     token && typeof window !== "undefined" ? calendarFeedUrl(window.location.origin, token) : "";
@@ -57,16 +69,18 @@ export function CalendarLinkDialog({ page }: { page: BookingsPage }) {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-1.5"
-        onClick={() => setOpen(true)}
-      >
-        <CalendarSync className="size-4" aria-hidden="true" />
-        {isAr ? "ربط بالتقويم" : "Calendar link"}
-      </Button>
+      {!controlled && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => setOpen(true)}
+        >
+          <CalendarSync className="size-4" aria-hidden="true" />
+          {isAr ? "ربط بالتقويم" : "Calendar link"}
+        </Button>
+      )}
       <Dialog open={open} onOpenChange={(next) => !renew.isPending && setOpen(next)}>
         <DialogContent dir={isAr ? "rtl" : "ltr"} className="sm:max-w-lg">
           <DialogHeader>

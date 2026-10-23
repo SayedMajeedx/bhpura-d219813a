@@ -18,6 +18,7 @@ import { SERVICE_KIND_LABELS, groupByKind, type ServiceKind } from "@/lib/bookin
 import {
   extraHourPriceOf,
   packageOffer,
+  reservesPicture,
   splitServices,
 } from "@/features/services-home/lib/services-home";
 
@@ -114,7 +115,12 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {kinds.service.map((product) => (
-              <ServiceCard key={product.id} product={product} addOns={addOnsOf(product.id)} />
+              <ServiceCard
+                key={product.id}
+                product={product}
+                addOns={addOnsOf(product.id)}
+                reservePicture={reservesPicture(kinds.service)}
+              />
             ))}
           </div>
         </Section>

@@ -162,7 +162,7 @@ function RuleForm({
       <fieldset className="space-y-2 rounded-xl border border-border p-3">
         <legend className="px-1 text-xs font-semibold text-muted-foreground">
           {isAr
-            ? "متى ينطبق (عدد الأيام بين الحجز والمناسبة)"
+            ? "متى ينطبق (عدد الأيام بين الحجز والموعد)"
             : "When (days between booking and event)"}
         </legend>
         <div className="flex flex-wrap items-end gap-3">
@@ -207,7 +207,7 @@ function RuleForm({
       <fieldset className="space-y-2">
         <legend className="text-xs font-semibold text-muted-foreground">
           {isAr
-            ? "أيام المناسبة (اتركها فارغة لكل الأيام)"
+            ? "أيام الموعد (اتركها فارغة لكل الأيام)"
             : "Event days (leave empty for every day)"}
         </legend>
         <div className="flex flex-wrap gap-2">
@@ -280,7 +280,7 @@ function RuleForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="discount-event-from">
-            {isAr ? "للمناسبات من تاريخ" : "For events from"}
+            {isAr ? "للمواعيد من تاريخ" : "For bookings from"}
           </Label>
           <Input
             id="discount-event-from"
@@ -292,7 +292,7 @@ function RuleForm({
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="discount-event-to">
-            {isAr ? "للمناسبات حتى تاريخ" : "For events until"}
+            {isAr ? "للمواعيد حتى تاريخ" : "For bookings until"}
           </Label>
           <Input
             id="discount-event-to"
@@ -435,8 +435,8 @@ export function BookingDiscountsDialog({
           </DialogTitle>
           <DialogDescription>
             {isAr
-              ? "خصومات حسب موعد الحجز أو تاريخ المناسبة: اللحظة الأخيرة، مبكراً، هدية مجانية، أو عند طلب خدمة أخرى. يُطبَّق أفضل عرض، وتُضاف إليه العروض القابلة للإضافة."
-              : "Discounts by when a booking is made or the event date: last minute, early, a free gift, or with another service. The best offer applies, plus any that add to it."}
+              ? "خصومات حسب موعد الحجز أو تاريخ الموعد: اللحظة الأخيرة، مبكراً، هدية مجانية، أو عند طلب خدمة أخرى. يُطبَّق أفضل عرض، وتُضاف إليه العروض القابلة للإضافة."
+              : "Discounts by when a booking is made or the booking's date: last minute, early, a free gift, or with another service. The best offer applies, plus any that add to it."}
           </DialogDescription>
         </DialogHeader>
 
