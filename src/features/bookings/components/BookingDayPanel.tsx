@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { dayTitle } from "@/lib/bookings/format";
 import { BookingCard } from "@/features/bookings/components/BookingCard";
 import { NewBookingDialog } from "@/features/bookings/components/NewBookingDialog";
+import { listedOnDay } from "@/features/bookings/lib/booking-actions";
 import { stateLabel } from "@/features/bookings/components/BookingsCalendar";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
@@ -20,7 +21,8 @@ export function BookingDayPanel({ page }: { page: BookingsPage }) {
   const [blockUntil, setBlockUntil] = useState(selectedDay);
   const [reason, setReason] = useState("");
 
-  const active = dayBookings.filter((booking) => booking.status !== "expired");
+  // A hold that ran out takes no place, like an expired one (unless its transfer waits for a check).
+  const active = dayBookings.filter((booking) => listedOnDay(booking));
 
   return (
     <section className="space-y-3 rounded-2xl border border-border bg-card p-3 sm:p-4">

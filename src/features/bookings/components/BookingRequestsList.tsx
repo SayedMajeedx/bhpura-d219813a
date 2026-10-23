@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,6 +6,8 @@ import { formatMoney } from "@/lib/format";
 import { dayTitle, formatClock, localTime } from "@/lib/bookings/format";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import { BookingCancelDialog } from "@/features/bookings/components/BookingStepDialogs";
+import type { Booking } from "@/lib/data/bookings";
 
 /**
  * Booking requests waiting for the store (a catalog store's "book via
@@ -13,6 +16,7 @@ import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
  */
 export function BookingRequestsList({ page }: { page: BookingsPage }) {
   const { isAr, requests, toVerify } = page;
+  const [declining, setDeclining] = useState<Booking | null>(null);
   if (requests.length === 0 && toVerify.length === 0) return null;
 
   return (
@@ -119,7 +123,7 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
                     variant="outline"
                     className="h-8 text-xs"
                     disabled={page.statusPending}
-                    onClick={() => page.setStatus({ booking, status: "cancelled" })}
+                    onClick={() => setDeclining(booking)}
                   >
                     {isAr ? "رفض" : "Decline"}
                   </Button>
@@ -128,6 +132,14 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
             ))}
           </ul>
         </section>
+      )}
+      {declining && (
+        <BookingCancelDialog
+          page={page}
+          booking={declining}
+          open
+          onOpenChange={(open) => !open && setDeclining(null)}
+        />
       )}
     </>
   );

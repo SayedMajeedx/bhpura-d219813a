@@ -13,6 +13,8 @@ export type OrderBooking = {
   starts_at: string;
   ends_at: string;
   location?: unknown;
+  /** What the booking took as a deposit (bookings.deposit_amount), when loaded. */
+  deposit_amount?: number | string | null;
 };
 
 /** The first booking an order carries, or null (a delivery, pickup or digital order has none). */

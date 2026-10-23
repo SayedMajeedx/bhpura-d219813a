@@ -69,6 +69,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
     ],
     [/BOOKING_FORBIDDEN/, "لا تملك صلاحية إدارة الحجوزات.", "You can't manage bookings."],
     [
+      /DELIVERY_ALREADY_COMPLETED/,
+      "طلب هذا الحجز مكتمل مسبقاً.",
+      "This booking's order is already completed.",
+    ],
+    [
       /BOOKING_TRANSITION_INVALID/,
       "لا يمكن نقل الحجز إلى هذه الحالة.",
       "A booking can't move to that status.",

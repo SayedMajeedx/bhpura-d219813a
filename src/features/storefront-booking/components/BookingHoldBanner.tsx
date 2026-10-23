@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CalendarClock } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { depositSentence, depositTerms } from "@/lib/bookings/deposit";
 import { bookingOfCart, holdSecondsLeft } from "@/lib/bookings/cart";
 import { bookingEnd } from "@/lib/bookings/rules";
 import { dayTitle, formatClockRange } from "@/lib/bookings/format";
@@ -10,9 +13,13 @@ import { dayTitle, formatClockRange } from "@/lib/bookings/format";
  * the day stays held for the customer.
  */
 export function BookingHoldBanner() {
-  const { cart, lang } = useStorefront();
+  const { brand, settings, cart, lang } = useStorefront();
   const isAr = lang === "ar";
   const booking = bookingOfCart(cart);
+  const policy = useQuery({
+    ...bookingPoliciesQueries.policy(brand.id),
+    enabled: Boolean(booking),
+  }).data;
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -26,6 +33,11 @@ export function BookingHoldBanner() {
   const minutes = Math.floor(left / 60);
   const seconds = String(left % 60).padStart(2, "0");
   const end = bookingEnd(booking.start, booking.durationMinutes);
+  // The deposit a card takes, and when the rest is due by the store's terms.
+  const deposit = depositSentence(
+    depositTerms({ deposit_percent: booking.depositPercent }, settings, policy),
+    isAr,
+  );
 
   return (
     <section
@@ -45,9 +57,7 @@ export function BookingHoldBanner() {
               <span dir="ltr" className="font-semibold text-foreground tabular-nums">
                 {minutes}:{seconds}
               </span>
-              {isAr
-                ? ". أدخل مكان المناسبة كعنوان التوصيل."
-                : ". Enter the event venue as the delivery address."}
+              .
             </>
           ) : isAr ? (
             "انتهت مدة الحجز المؤقت؛ يمكنك الإكمال إن كان اليوم ما زال متاحاً."
@@ -55,13 +65,7 @@ export function BookingHoldBanner() {
             "The hold has run out; you can still finish if the day is still free."
           )}
         </p>
-        {(booking.depositPercent ?? 0) > 0 && (
-          <p className="text-muted-foreground">
-            {isAr
-              ? `عند الدفع بالبطاقة: عربون ${booking.depositPercent}% الآن، والباقي يوم المناسبة.`
-              : `Paying by card: a ${booking.depositPercent}% deposit now, the rest on the day.`}
-          </p>
-        )}
+        {deposit && <p className="text-muted-foreground">{deposit}</p>}
         <p className="text-xs text-muted-foreground" dir="ltr">
           {booking.reference}
         </p>

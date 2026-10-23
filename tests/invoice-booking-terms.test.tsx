@@ -62,8 +62,10 @@ beforeEach(() => {
 });
 
 describe("the public invoice carries the booking terms", () => {
-  it("reads the store's policy and deposit for an appointment order", async () => {
-    const res = (await run([{ reference: "BK-1", event_date: "2026-10-20" }])) as {
+  it("reads the store's policy and the deposit an appointment order took", async () => {
+    const res = (await run([
+      { reference: "BK-1", event_date: "2026-10-20", deposit_amount: 27 },
+    ])) as {
       bookingPolicy: unknown;
       bookingDepositPercent: number;
       bookingTimezone: string;
@@ -71,6 +73,13 @@ describe("the public invoice carries the booking terms", () => {
     expect(res.bookingPolicy).toEqual(policy);
     expect(res.bookingDepositPercent).toBe(30);
     expect(res.bookingTimezone).toBe("Asia/Bahrain");
+  });
+
+  it("names no deposit when the booking took none (paid in full by transfer or cash)", async () => {
+    const res = (await run([{ reference: "BK-1", event_date: "2026-10-20" }])) as {
+      bookingDepositPercent: number;
+    };
+    expect(res.bookingDepositPercent).toBe(0);
   });
 
   it("does not read them for an order without a booking", async () => {

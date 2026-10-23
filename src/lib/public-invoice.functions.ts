@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { variantSpecs } from "@/lib/order-variant-specs";
+import { invoiceDepositPercent } from "@/lib/bookings/deposit";
 
 const inputSchema = z.object({ id: z.string().uuid() });
 
@@ -18,7 +19,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
         branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
-        bookings(reference, event_date, starts_at, ends_at, location),
+        bookings(reference, event_date, starts_at, ends_at, location, deposit_amount),
         order_items(description, quantity, unit_price, original_price, line_total, customization_total,
           customizations, custom_field_values, selected_variant, products(name, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en), product_variants(size, color, fabric))
       `,
@@ -74,7 +75,11 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
         .eq("brand_id", order.brand_id)
         .maybeSingle();
       bookingTimezone = bookingRules?.timezone ?? null;
-      bookingDepositPercent = Number(bookingRules?.deposit_percent ?? 0);
+      // The deposit is named only when this booking took one (a transfer or cash pays in full).
+      bookingDepositPercent = invoiceDepositPercent(
+        order.bookings[0],
+        bookingRules?.deposit_percent,
+      );
       const { data: policy } = await supabaseAdmin
         .from("booking_policies")
         .select("balance_due_days, reschedule_months, deposit_refundable, terms_en, terms_ar")

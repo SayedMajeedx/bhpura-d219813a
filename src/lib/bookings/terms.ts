@@ -1,10 +1,14 @@
+import { depositSentence, type DepositTerms } from "@/lib/bookings/deposit";
+
 /**
  * The booking terms a service's page shows (in place of a product's shipping
- * and returns), from the store's public booking rules.
+ * and returns), from the store's public booking rules. The deposit is the one
+ * the booking really takes (`depositTerms`): none when the store takes no card.
  */
 export function bookingTermsText(
-  rules: { lead_days?: number; deposit_percent?: number; hold_minutes?: number } | null | undefined,
+  rules: { lead_days?: number; hold_minutes?: number } | null | undefined,
   isAr: boolean,
+  deposit?: DepositTerms,
 ): string {
   const lines: string[] = [];
   const lead = Number(rules?.lead_days ?? 0);
@@ -13,14 +17,8 @@ export function bookingTermsText(
     lines.push(isAr ? `احجز قبل ${lead} أيام على الأقل.` : `Book at least ${lead} days ahead.`);
   else lines.push(isAr ? "يمكن الحجز لنفس اليوم إن توفّر." : "Same-day bookings when available.");
 
-  const deposit = Number(rules?.deposit_percent ?? 0);
-  if (deposit > 0) {
-    lines.push(
-      isAr
-        ? `عند الدفع بالبطاقة يُدفع عربون ${deposit}٪ لتأكيد الموعد، والباقي يوم المناسبة.`
-        : `Paying by card takes a ${deposit}% deposit to confirm your date; the rest is paid on the day.`,
-    );
-  }
+  const depositLine = deposit ? depositSentence(deposit, isAr) : null;
+  if (depositLine) lines.push(depositLine);
   const hold = Number(rules?.hold_minutes ?? 0);
   if (hold > 0) {
     lines.push(

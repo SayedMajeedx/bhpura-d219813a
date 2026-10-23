@@ -9,11 +9,11 @@
  * it (its start decides when the appointment can be completed). Type: `OrderListRow`.
  */
 export const ORDER_LIST_SELECT =
-  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at)";
+  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount)";
 
 /** The order editor, with the delivery address the order points at. Type: `OrderDetail`. */
 export const ORDER_DETAIL_SELECT =
-  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)";
+  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)";
 
 /**
  * Finance views (dashboard KPIs, P&L and cash-flow reports): money, status,

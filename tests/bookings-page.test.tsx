@@ -22,8 +22,16 @@ const state = vi.hoisted(() => ({
   addBookingBlock: vi.fn(async () => undefined),
   removeBookingBlock: vi.fn(async () => undefined),
   createStaffBooking: vi.fn(async () => ({})),
+  courierCompleteDelivery: vi.fn(async () => null),
+  updateOrder: vi.fn(async () => undefined),
+  logActivity: vi.fn(async () => undefined),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// A booking with an order links to it (its invoice): a plain link, with no router mounted.
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  Link: ({ children }: { children: React.ReactNode }) => <a href="#order">{children}</a>,
+}));
 
 const fixture = (key: string, value: () => unknown) => ({
   queryKey: ["bookings-test", key],
@@ -50,6 +58,17 @@ const bookingsData = {
 };
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
+// A booking is finished through its order: the order's own writes, recorded here.
+const ordersData = {
+  courierCompleteDelivery: state.courierCompleteDelivery,
+  updateOrder: state.updateOrder,
+  invalidateOrders: vi.fn(async () => undefined),
+};
+vi.mock("../src/lib/data/orders/mutations", () => ordersData);
+vi.mock("@/lib/data/orders/mutations", () => ordersData);
+const activityLog = { logActivity: state.logActivity };
+vi.mock("../src/lib/activity-log", () => activityLog);
+vi.mock("@/lib/activity-log", () => activityLog);
 const settingsData = {
   businessSettingsQueries: { detail: () => fixture("bs", () => ({ currency: "BHD" })) },
 };
@@ -309,6 +328,115 @@ describe("the bookings page", () => {
     const { container } = renderPage();
     expect(await screen.findByRole("button", { name: "الشهر السابق" })).toBeInTheDocument();
     expect(container.querySelector("[dir='rtl']")).not.toBeNull();
+  });
+});
+
+describe("finishing and cancelling a booking", () => {
+  // Today, 1 October: a booking that started at 09:00 in Bahrain, with its order.
+  const order = (over: Record<string, unknown> = {}) => ({
+    id: "o1",
+    invoice_number: 1042,
+    public_invoice_token: "tok",
+    status: "confirmed",
+    payment_status: "partially_paid",
+    total: 100,
+    advance_paid: 40,
+    currency: "BHD",
+    ...over,
+  });
+  const today = (over: Record<string, unknown>) =>
+    booking({
+      id: "t1",
+      event_date: "2026-10-01",
+      starts_at: "2026-10-01T06:00:00Z",
+      ends_at: "2026-10-01T08:00:00Z",
+      orders: order(),
+      ...over,
+    });
+
+  it("marks a started booking done through its order, collecting what is still owed", async () => {
+    state.bookings = [today({})];
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Mark done" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(/Sara still owes BHD 60\.000/)).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: /^Collect BHD\s60\.000 & complete$/ }),
+    );
+    await waitFor(() => expect(state.courierCompleteDelivery).toHaveBeenCalledWith("o1", 60, null));
+    // The booking follows its order (sync_bookings_with_order): it is not written apart.
+    expect(state.setBookingStatus).not.toHaveBeenCalled();
+    expect(state.updateOrder).not.toHaveBeenCalled();
+  });
+
+  it("completes a paid booking's order with nothing to collect", async () => {
+    state.bookings = [today({ orders: order({ payment_status: "paid", advance_paid: 100 }) })];
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Mark done" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Service done" }));
+    await waitFor(() =>
+      expect(state.updateOrder).toHaveBeenCalledWith(
+        "b1",
+        "o1",
+        expect.objectContaining({ status: "completed", fulfillment_status: "COMPLETED" }),
+      ),
+    );
+    expect(state.courierCompleteDelivery).not.toHaveBeenCalled();
+  });
+
+  it("offers no Mark done before the booking's time", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("gridcell", { name: /12 October/ }));
+    expect(await screen.findByText("Sara")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark done" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+  });
+
+  it("asks before cancelling, keeps the reason and says what was paid", async () => {
+    state.bookings = [today({})];
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText(/Its invoice is cancelled with it/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/The customer has paid BHD 40\.000/)).toBeInTheDocument();
+    expect(state.setBookingStatus).not.toHaveBeenCalled();
+    fireEvent.change(within(dialog).getByLabelText("Reason (optional)"), {
+      target: { value: "  Event moved abroad " },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel booking" }));
+    await waitFor(() =>
+      expect(state.setBookingStatus).toHaveBeenCalledWith("t1", "cancelled", "Event moved abroad"),
+    );
+  });
+
+  it("asks before declining a request", async () => {
+    renderPage();
+    const list = (await screen.findByText("Booking requests (1)")).closest("section")!;
+    fireEvent.click(within(list).getByRole("button", { name: "Decline" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Decline" }));
+    await waitFor(() =>
+      expect(state.setBookingStatus).toHaveBeenCalledWith("r1", "cancelled", undefined),
+    );
+  });
+
+  it("tells a store that takes no card that its deposit is not asked", async () => {
+    state.settings = { ...DEFAULT_BOOKING_RULES, deposit_percent: 20 };
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
+    expect(
+      await screen.findByText(/Your store takes no cards, so no deposit is asked/),
+    ).toBeInTheDocument();
+  });
+
+  it("leaves a hold whose time ran out off its day, as an expired one", async () => {
+    state.bookings = [
+      today({ status: "hold", hold_expires_at: "2026-10-01T08:00:00Z", orders: null }),
+    ];
+    renderPage();
+    expect(await screen.findByText("No bookings on this day.")).toBeInTheDocument();
+    expect(screen.queryByText("Awaiting payment")).toBeNull();
   });
 });
 

@@ -1,13 +1,19 @@
+import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Clock, Mail, MapPin, Phone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
-import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
+import type { BookingStatus } from "@/lib/bookings/rules";
 import type { Booking } from "@/lib/data/bookings";
 import { BookingDiscountEditor } from "@/features/bookings/components/BookingDiscountEditor";
 import { BookingInvoiceBlock } from "@/features/bookings/components/BookingInvoiceBlock";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
+import { cardSteps, shownStatus } from "@/features/bookings/lib/booking-actions";
+import {
+  BookingCancelDialog,
+  BookingDoneDialog,
+} from "@/features/bookings/components/BookingStepDialogs";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   BOOKING_STATUS_TEXT,
@@ -55,8 +61,11 @@ export function BookingCard({
   busy: boolean;
   onStatus: (status: BookingStatus) => void;
 }) {
-  const status = (booking.status as BookingStatus) ?? "confirmed";
+  // A hold whose time ran out reads as expired: it no longer takes the day.
+  const status = shownStatus(booking);
+  const steps = cardSteps(booking);
   const text = BOOKING_STATUS_TEXT[status] ?? BOOKING_STATUS_TEXT.confirmed;
+  const [asking, setAsking] = useState<"done" | "cancel" | null>(null);
   const start = localTime(booking.starts_at, timezone);
   const end = localTime(booking.ends_at, timezone);
   const place = bookingPlaceText(booking.location);
@@ -225,9 +234,9 @@ export function BookingCard({
         <p className="text-xs text-destructive">{booking.cancel_reason}</p>
       )}
 
-      {nextStatuses(status).length > 0 && (
+      {steps.length > 0 && (
         <footer className="flex flex-wrap gap-2 pt-1">
-          {nextStatuses(status).map((next) => (
+          {steps.map((next) => (
             <Button
               key={next}
               type="button"
@@ -235,12 +244,35 @@ export function BookingCard({
               variant={next === "cancelled" ? "outline" : "default"}
               className="h-8 text-xs"
               disabled={busy}
-              onClick={() => onStatus(next)}
+              onClick={() =>
+                // Done and cancel ask first: each moves the booking's order too.
+                next === "completed"
+                  ? setAsking("done")
+                  : next === "cancelled"
+                    ? setAsking("cancel")
+                    : onStatus(next)
+              }
             >
               {actionText(status, next, isAr)}
             </Button>
           ))}
         </footer>
+      )}
+      {asking === "done" && (
+        <BookingDoneDialog
+          page={page}
+          booking={booking}
+          open
+          onOpenChange={(open) => !open && setAsking(null)}
+        />
+      )}
+      {asking === "cancel" && (
+        <BookingCancelDialog
+          page={page}
+          booking={booking}
+          open
+          onOpenChange={(open) => !open && setAsking(null)}
+        />
       )}
     </article>
   );

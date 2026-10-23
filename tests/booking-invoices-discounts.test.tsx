@@ -276,10 +276,11 @@ describe("the booking card", () => {
 
   it("asks the store to check a BenefitPay receipt, and lets it confirm or release the held day", () => {
     const onStatus = vi.fn();
+    const setStatus = vi.fn();
     render(
       withClient(
         <BookingCard
-          page={page()}
+          page={page({ setStatus, statusPending: false })}
           booking={
             booking({
               status: "hold",
@@ -302,8 +303,13 @@ describe("the booking card", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Confirm (paid)" }));
     expect(onStatus).toHaveBeenCalledWith("confirmed");
+    // Letting the day go asks first (it cancels the booking's order too).
     fireEvent.click(screen.getByRole("button", { name: "Release the day" }));
-    expect(onStatus).toHaveBeenCalledWith("cancelled");
+    const dialog = screen.getByRole("alertdialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Release the day" }));
+    expect(setStatus).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "cancelled", reason: undefined }),
+    );
   });
 
   it("has no invoice for a held day or a cancelled booking", () => {

@@ -84,8 +84,7 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
 import { soldOnlyByBooking } from "@/lib/bookings/service";
-import { bookingTermsText } from "@/lib/bookings/terms";
-import { bookingsQueries } from "@/lib/data/bookings";
+import { useServiceBookingTerms } from "@/features/product-page/hooks/use-service-booking-terms";
 import { ServicePurchasePanel } from "@/features/product-page/components/ServicePurchasePanel";
 import { ServiceMobileBookBar } from "@/features/product-page/components/ServiceMobileBookBar";
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
@@ -184,10 +183,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const { vocabulary } = useVocabulary();
   const modules = useStoreModules();
   // A services store's booking rules: a service's page shows its booking terms.
-  const publicRules = useQuery({
-    ...bookingsQueries.publicRules(brand.id),
-    enabled: Boolean(modules.bookings),
-  });
+  const serviceTerms = useServiceBookingTerms(Boolean(modules.bookings));
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -556,7 +552,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const displayDescription = pickDescription(lang, product);
   // A service is booked, not bought: its own panel, terms and mobile bar.
   const isService = soldOnlyByBooking(product, modules);
-  const bookingTerms = isService ? bookingTermsText(publicRules.data, lang === "ar") : null;
+  const bookingTerms = isService ? serviceTerms(lang === "ar") : null;
   const serviceFromPrice = Math.min(
     ...(product.product_variants ?? []).map((v) => Number(v.selling_price) || Infinity),
   );
