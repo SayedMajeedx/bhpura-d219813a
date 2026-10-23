@@ -5,6 +5,8 @@ import { CheckCircle2 } from "lucide-react";
 import { confirmationSearch, parseConfirmation } from "@/lib/bookings/confirmation";
 import { AppointmentSummary } from "@/features/storefront-booking/components/AppointmentSummary";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { bookingsQueries } from "@/lib/data/bookings";
 
 /**
  * How the order is fulfilled comes from the URL: checkout sets it from the
@@ -46,6 +48,11 @@ function ThankYou() {
   const { fulfillment, channel } = search;
   const appointment = parseConfirmation(search);
   const isAr = lang === "ar";
+  // The store's time zone places the event in the shopper's calendar at the right instant.
+  const bookingRules = useQuery({
+    ...bookingsQueries.publicRules(brand.id),
+    enabled: Boolean(appointment),
+  }).data;
 
   useEffect(() => {
     clearCart();
@@ -72,7 +79,16 @@ function ThankYou() {
             ? t("تم استلام حجزك!", "Your booking is in!")
             : t("شكراً لطلبك!", "Thank you for your order!")}
         </h1>
-        {appointment && <AppointmentSummary appointment={appointment} isAr={isAr} />}
+        {appointment && (
+          <AppointmentSummary
+            appointment={appointment}
+            isAr={isAr}
+            calendar={{
+              storeName: (isAr ? brand.name_ar : null) || brand.name_en || "",
+              timezone: bookingRules?.timezone ?? "Asia/Bahrain",
+            }}
+          />
+        )}
         <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
           {appointment
             ? t(

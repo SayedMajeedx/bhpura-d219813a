@@ -14,6 +14,8 @@ export const reviewsKeys = {
   readyRequests: (brandId: string) => [...reviewsKeys.all(brandId), "ready-requests"] as const,
   /** The public page is keyed by its link token, not by brand. */
   publicReview: (token: string) => ["public-order-review", token] as const,
+  /** A store's reviews for its home page, keyed by its slug (a visitor has no brand id yet). */
+  store: (brandSlug: string) => ["store-reviews", brandSlug] as const,
 };
 
 /** Every review of the brand's orders. */
@@ -125,6 +127,24 @@ export async function fetchProductReviews(
   }
 }
 
+/**
+ * A store's reviews as a whole (a services store's home page), by the product page's rules
+ * (storefront_store_reviews, migration 20261023120000), or null when it has none or the read
+ * fails: the page is better without the section than broken.
+ */
+export async function fetchStoreReviews(brandSlug: string): Promise<ProductReviews | null> {
+  if (!brandSlug) return null;
+  try {
+    const { data, error } = await publicSupabase.rpc("storefront_store_reviews", {
+      p_brand_slug: brandSlug,
+    });
+    const reviews = data as ProductReviews | null;
+    return error || !reviews || !(Number(reviews.count) > 0) ? null : reviews;
+  } catch {
+    return null;
+  }
+}
+
 /** Why the database refused a review (the codes `submit_public_order_review` raises). */
 export type ReviewRefusal =
   "REVIEW_NOT_FOUND" | "INVALID_RATING" | "INVALID_HIGHLIGHT" | "COMMENT_TOO_LONG";
@@ -156,6 +176,13 @@ export const reviewsQueries = {
       queryKey: reviewsKeys.readyRequests(brandId),
       queryFn: () => fetchReadyReviewRequests(brandId),
       enabled: Boolean(brandId),
+    }),
+  store: (brandSlug: string) =>
+    queryOptions({
+      queryKey: reviewsKeys.store(brandSlug),
+      queryFn: () => fetchStoreReviews(brandSlug),
+      enabled: Boolean(brandSlug),
+      staleTime: 5 * 60_000,
     }),
   publicReview: (token: string) =>
     queryOptions({

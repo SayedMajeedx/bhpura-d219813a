@@ -64,7 +64,40 @@ export async function fetchOwnOrders(brandId: string, customerId: string) {
 }
 export type OwnOrder = Awaited<ReturnType<typeof fetchOwnOrders>>[number];
 
+/** A shopper's booking as their account shows it (storefront_my_bookings). */
+export type OwnBooking = {
+  reference: string;
+  status: string;
+  event_date: string;
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  location: Record<string, unknown> | null;
+  services: Array<{ name_en: string | null; name_ar: string | null; quantity: number }>;
+  invoice_token: string | null;
+  total: number;
+  paid: number;
+  currency: string;
+};
+
+/**
+ * The signed-in shopper's own bookings with the store, latest first (at most 50). The bookings
+ * table is the staff's: a shopper reads through this function, which returns their own only and
+ * none of the store's notes (migration 20261023120000).
+ */
+export async function fetchOwnBookings(brandId: string): Promise<OwnBooking[]> {
+  const { data, error } = await supabase.rpc("storefront_my_bookings", { p_brand_id: brandId });
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []) as unknown as OwnBooking[];
+}
+
 export const ownCustomerQueries = {
+  bookings: (brandId: string, customerId: string | undefined, enabled = true) =>
+    queryOptions({
+      queryKey: customersKeys.ownBookings(brandId, customerId ?? ""),
+      queryFn: () => fetchOwnBookings(brandId),
+      enabled: Boolean(brandId && customerId && enabled),
+    }),
   orders: (brandId: string, customerId: string | undefined) =>
     queryOptions({
       queryKey: customersKeys.ownOrders(brandId, customerId ?? ""),
