@@ -14,6 +14,8 @@ import {
   BookingCancelDialog,
   BookingDoneDialog,
 } from "@/features/bookings/components/BookingStepDialogs";
+import { BookingMoveDialog } from "@/features/bookings/components/BookingMoveDialog";
+import { BookingReminderButton } from "@/features/bookings/components/BookingReminderButton";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   BOOKING_STATUS_TEXT,
@@ -65,7 +67,7 @@ export function BookingCard({
   const status = shownStatus(booking);
   const steps = cardSteps(booking);
   const text = BOOKING_STATUS_TEXT[status] ?? BOOKING_STATUS_TEXT.confirmed;
-  const [asking, setAsking] = useState<"done" | "cancel" | null>(null);
+  const [asking, setAsking] = useState<"done" | "cancel" | "move" | null>(null);
   const start = localTime(booking.starts_at, timezone);
   const end = localTime(booking.ends_at, timezone);
   const place = bookingPlaceText(booking.location);
@@ -234,6 +236,21 @@ export function BookingCard({
         <p className="text-xs text-destructive">{booking.cancel_reason}</p>
       )}
 
+      {(status === "confirmed" || status === "requested") && (
+        <div className="flex flex-wrap gap-2">
+          <BookingReminderButton page={page} booking={booking} />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs"
+            disabled={busy}
+            onClick={() => setAsking("move")}
+          >
+            {isAr ? "نقل لموعد آخر" : "Move to another date"}
+          </Button>
+        </div>
+      )}
       {steps.length > 0 && (
         <footer className="flex flex-wrap gap-2 pt-1">
           {steps.map((next) => (
@@ -260,6 +277,14 @@ export function BookingCard({
       )}
       {asking === "done" && (
         <BookingDoneDialog
+          page={page}
+          booking={booking}
+          open
+          onOpenChange={(open) => !open && setAsking(null)}
+        />
+      )}
+      {asking === "move" && (
+        <BookingMoveDialog
           page={page}
           booking={booking}
           open

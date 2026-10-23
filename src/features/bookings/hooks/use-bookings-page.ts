@@ -12,16 +12,27 @@ import {
 import { logActivity } from "@/lib/activity-log";
 import {
   addBookingBlock,
+  bookingOperationsQueries,
   bookingsQueries,
   createBookingOrder,
   invalidateBookings,
+  moveBookingOrderNote,
+  recordBookingReminder,
   removeBookingBlock,
+  rescheduleBooking,
   setBookingDiscount,
   setBookingStatus,
   type Booking,
 } from "@/lib/data/bookings";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
-import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookings/rules";
+import {
+  bookingEnd,
+  DEFAULT_BOOKING_RULES,
+  todayIn,
+  type BookingStatus,
+} from "@/lib/bookings/rules";
+import { bookingMinutes, bookingNoteLine } from "@/lib/bookings/move";
+import { agendaEnd } from "@/features/bookings/lib/agenda";
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { donePlan } from "@/features/bookings/lib/booking-actions";
@@ -82,6 +93,10 @@ export function useBookingsPage() {
   const dayBlocks = blocks.filter(
     (block) => selectedDay >= block.starts_on && selectedDay <= block.ends_on,
   );
+
+  // The agenda: today and the next days, apart from the month on screen.
+  const agendaQuery = useQuery(bookingsQueries.range(brand.id, today, agendaEnd(today)));
+  const remindersQuery = useQuery(bookingOperationsQueries.reminders(brand.id));
 
   const refresh = () => invalidateBookings(qc, brand.id);
   const onError = (error: Error) => toast.error(bookingErrorMessage(error.message, isAr));
@@ -146,6 +161,62 @@ export function useBookingsPage() {
       toast.success(isAr ? "تم تنفيذ الخدمة وإتمام الطلب" : "Service completed");
     },
     onError,
+  });
+
+  // Moving a booking keeps its length (its price was set for it); the database checks the new
+  // day has a place unless staff move it anyway. The order's line for the booking moves with it.
+  const moveMutation = useMutation({
+    mutationFn: async ({
+      booking,
+      day,
+      start,
+      allowOverbook,
+    }: {
+      booking: Booking;
+      day: string;
+      start: string;
+      allowOverbook: boolean;
+    }) => {
+      const minutes = bookingMinutes(booking);
+      await rescheduleBooking({
+        bookingId: booking.id,
+        day,
+        start,
+        durationMinutes: minutes,
+        allowOverbook,
+      });
+      if (booking.order_id) {
+        const line = bookingNoteLine(
+          booking.reference,
+          day,
+          start,
+          bookingEnd(start, minutes).time,
+        );
+        await moveBookingOrderNote(brand.id, booking.order_id, booking.reference, line).catch(() =>
+          toast.warning(
+            isAr
+              ? "نُقل الحجز، لكن ملاحظة الطلب ما زالت بالموعد القديم."
+              : "The booking moved, but its order's note still shows the old date.",
+          ),
+        );
+      }
+    },
+    onSuccess: async () => {
+      await Promise.all([refresh(), invalidateOrders(qc, brand.id)]);
+      toast.success(isAr ? "تم نقل الحجز" : "Booking moved");
+    },
+  });
+
+  // A reminder is sent by a person on WhatsApp; the record keeps it from being offered again.
+  const reminderMutation = useMutation({
+    mutationFn: (booking: Booking) => recordBookingReminder(brand.id, booking),
+    onSuccess: () => refresh(),
+    onError: () =>
+      toast.error(
+        isAr
+          ? "تعذّر حفظ أن التذكير أُرسل."
+          : "Could not keep a record that the reminder was sent.",
+      ),
   });
 
   // A booking's invoice is its order: made on demand, or with the booking.
@@ -234,6 +305,15 @@ export function useBookingsPage() {
     statusPending: statusMutation.isPending || doneMutation.isPending,
     /** Marks a booking done through its order (collecting what is still owed). */
     completeBooking: doneMutation.mutate,
+    /** Moves a booking to another day and start (same length); resolves once moved, throws when refused. */
+    moveBooking: moveMutation.mutateAsync,
+    movePending: moveMutation.isPending,
+    /** Today and the next days' bookings (the agenda), and the bookings already reminded, with when. */
+    agendaBookings: agendaQuery.data ?? [],
+    agendaLoading: agendaQuery.isLoading,
+    reminded: remindersQuery.data ?? new Map<string, string>(),
+    /** Keeps a reminder sent (the WhatsApp chat opens from its link). */
+    recordReminder: reminderMutation.mutate,
     createInvoice: invoiceMutation.mutate,
     invoicePending: invoiceMutation.isPending,
     setDiscount: discountMutation.mutate,

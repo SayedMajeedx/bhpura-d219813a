@@ -9,14 +9,23 @@ import { BookingRequestsList } from "@/features/bookings/components/BookingReque
 import { BookingDiscountsDialog } from "@/features/bookings/components/BookingDiscountsDialog";
 import { BookingRulesDialog } from "@/features/bookings/components/BookingRulesDialog";
 import { BookingsReport } from "@/features/bookings/components/BookingsReport";
+import { BookingsAgenda } from "@/features/bookings/components/BookingsAgenda";
 import { StoreContentDialog } from "@/features/store-content/components/StoreContentDialog";
 import { BookingLookDialog } from "@/features/bookings/components/BookingLookDialog";
 import { BookingPoliciesDialog } from "@/features/bookings/components/BookingPoliciesDialog";
 import { CalendarLinkDialog } from "@/features/bookings/components/CalendarLinkDialog";
 
+const VIEW_LABELS = {
+  agenda: { ar: "الأيام القادمة", en: "Agenda" },
+  calendar: { ar: "التقويم", en: "Calendar" },
+  report: { ar: "التقرير", en: "Report" },
+} as const;
+
 /**
- * The bookings page: requests waiting, the month calendar and the chosen
- * day. A store sets its booking rules once before its calendar opens.
+ * The bookings page: the agenda (today and the next days, with the reminders
+ * to send), the month calendar with the chosen day, and the report. Requests
+ * waiting show above the agenda and the calendar. A store sets its booking
+ * rules once before its calendar opens.
  */
 export function BookingsPageView() {
   const page = useBookingsPage();
@@ -27,7 +36,8 @@ export function BookingsPageView() {
   const [contentOpen, setContentOpen] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const [lookOpen, setLookOpen] = useState(false);
-  const [view, setView] = useState<"calendar" | "report">("calendar");
+  // The agenda first: what a services business works from day to day.
+  const [view, setView] = useState<"agenda" | "calendar" | "report">("agenda");
 
   if (page.settingsLoading || profileLoading) {
     return (
@@ -145,7 +155,7 @@ export function BookingsPageView() {
       ) : (
         <>
           <div className="flex gap-2" role="tablist" aria-label={isAr ? "العرض" : "View"}>
-            {(["calendar", "report"] as const).map((id) => (
+            {(["agenda", "calendar", "report"] as const).map((id) => (
               <Button
                 key={id}
                 type="button"
@@ -155,12 +165,23 @@ export function BookingsPageView() {
                 variant={view === id ? "default" : "outline"}
                 onClick={() => setView(id)}
               >
-                {id === "calendar" ? (isAr ? "التقويم" : "Calendar") : isAr ? "التقرير" : "Report"}
+                {VIEW_LABELS[id][isAr ? "ar" : "en"]}
               </Button>
             ))}
           </div>
           {view === "report" ? (
             <BookingsReport page={page} />
+          ) : view === "agenda" ? (
+            <>
+              <BookingRequestsList page={page} />
+              <BookingsAgenda
+                page={page}
+                onOpenDay={(day) => {
+                  page.goToDay(day);
+                  setView("calendar");
+                }}
+              />
+            </>
           ) : (
             <>
               <BookingRequestsList page={page} />
