@@ -256,6 +256,8 @@ export type PublicSettings = {
   cart_drawer_checkout_bg: string | null;
   cart_drawer_checkout_fg: string | null;
   vat_inclusive?: boolean;
+  /** The store's tax rate in percent (the checkout shows the tax the order adds: `orderTotals`). */
+  default_tax_rate?: number;
   shipping_zones?: ShippingZone[];
   google_analytics_enabled: boolean;
   google_analytics_id: string | null;
