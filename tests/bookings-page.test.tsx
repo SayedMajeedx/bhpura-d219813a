@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_BOOKING_RULES, type BookingRules } from "../src/lib/bookings/rules";
+import { dayTitle } from "../src/lib/bookings/format";
 
 // The admin bookings page, rendered with its data layer faked: the store's
 // rules, a month of bookings, a waiting request, and the writes staff make.
@@ -25,8 +26,13 @@ const state = vi.hoisted(() => ({
   courierCompleteDelivery: vi.fn(async () => null),
   updateOrder: vi.fn(async () => undefined),
   logActivity: vi.fn(async () => undefined),
+  reminded: new Map<string, string>(),
+  rescheduleBooking: vi.fn(async (_input: unknown) => ({})),
+  moveBookingOrderNote: vi.fn(async (..._args: unknown[]) => true),
+  recordBookingReminder: vi.fn(async (..._args: unknown[]) => undefined),
+  policy: null as { reschedule_months: number | null } | null,
 }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 // A booking with an order links to it (its invoice): a plain link, with no router mounted.
 vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -55,7 +61,17 @@ const bookingsData = {
   addBookingBlock: state.addBookingBlock,
   removeBookingBlock: state.removeBookingBlock,
   createStaffBooking: state.createStaffBooking,
+  // The agenda's reminders and the move (src/lib/data/bookings/operations.ts).
+  bookingOperationsQueries: { reminders: () => fixture("reminders", () => state.reminded) },
+  rescheduleBooking: state.rescheduleBooking,
+  moveBookingOrderNote: state.moveBookingOrderNote,
+  recordBookingReminder: state.recordBookingReminder,
 };
+const policiesData = {
+  bookingPoliciesQueries: { policy: () => fixture("policy", () => state.policy) },
+};
+vi.mock("../src/lib/data/booking-policies", () => policiesData);
+vi.mock("@/lib/data/booking-policies", () => policiesData);
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
 // A booking is finished through its order: the order's own writes, recorded here.
@@ -164,23 +180,30 @@ beforeEach(() => {
   state.bookings = [booking({ id: "c1" }), request];
   state.requests = [request];
   state.blocks = [];
+  state.reminded = new Map();
+  state.policy = null;
 });
 
-function renderPage() {
+/** The page, on the calendar (the agenda is its first view) unless asked for the agenda. */
+async function renderPage(view: "agenda" | "calendar" = "calendar") {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  const result = render(
     <QueryClientProvider client={qc}>
       <I18nProvider>
         <BookingsPageView />
       </I18nProvider>
     </QueryClientProvider>,
   );
+  if (view === "calendar" && state.settings) {
+    fireEvent.click(await screen.findByRole("tab", { name: /^(Calendar|التقويم)$/ }));
+  }
+  return result;
 }
 
 describe("the bookings page", () => {
   it("asks a store without rules to set them up first", async () => {
     state.settings = null;
-    renderPage();
+    await renderPage("agenda");
     fireEvent.click(await screen.findByRole("button", { name: "Set booking rules" }));
     fireEvent.click(await screen.findByRole("button", { name: "Save" }));
     await waitFor(() =>
@@ -191,7 +214,7 @@ describe("the bookings page", () => {
   // The rules dialog renders many fields: slow when the whole suite runs at once.
   it("saves travel fees: a default and one area's own", { timeout: 15_000 }, async () => {
     state.areaFees = { hidd: 12 };
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
     fireEvent.change(await screen.findByLabelText(/Default fee/), { target: { value: "5" } });
     // The saved area fee shows the list already open.
@@ -208,7 +231,7 @@ describe("the bookings page", () => {
   });
 
   it("shows the month with booked days and waiting requests", async () => {
-    renderPage();
+    await renderPage();
     expect(await screen.findByText("October 2026")).toBeInTheDocument();
     const full = await screen.findByRole("gridcell", { name: /12 October: Fully booked/ });
     expect(full).toBeInTheDocument();
@@ -224,7 +247,7 @@ describe("the bookings page", () => {
   });
 
   it("opens a day with its bookings, times in the store's timezone", async () => {
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("gridcell", { name: /12 October/ }));
     expect(await screen.findByText("Sara")).toBeInTheDocument();
     expect(screen.getByText("6:00 PM – 9:00 PM")).toBeInTheDocument();
@@ -232,7 +255,7 @@ describe("the bookings page", () => {
   });
 
   it("confirms a request from the list", async () => {
-    renderPage();
+    await renderPage();
     const list = (await screen.findByText("Booking requests (1)")).closest("section")!;
     fireEvent.click(within(list).getByRole("button", { name: "Confirm" }));
     await waitFor(() =>
@@ -241,7 +264,7 @@ describe("the bookings page", () => {
   });
 
   it("blocks a day", async () => {
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("gridcell", { name: /20 October/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Block" }));
     fireEvent.change(screen.getByLabelText("Reason (optional)"), { target: { value: "Eid" } });
@@ -256,7 +279,7 @@ describe("the bookings page", () => {
   });
 
   it("takes a booking for the chosen day with the store's active services", async () => {
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("gridcell", { name: /22 October/ }));
     fireEvent.click(await screen.findByRole("button", { name: "New booking" }));
     const dialog = await screen.findByRole("dialog");
@@ -286,7 +309,7 @@ describe("the bookings page", () => {
   });
 
   it("shows how the month went in the report view", async () => {
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("tab", { name: "Report" }));
     // One confirmed booking (12 Oct, 55) this month; the 15 Oct request waits.
     expect(await screen.findByText("Confirmed bookings")).toBeInTheDocument();
@@ -301,7 +324,7 @@ describe("the bookings page", () => {
 
   it("makes a private calendar link and shows it to subscribe to", async () => {
     state.calendarToken = null;
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Calendar link" }));
     expect(await screen.findByText("There is no link yet.")).toBeInTheDocument();
     const made = crypto.randomUUID();
@@ -319,13 +342,13 @@ describe("the bookings page", () => {
 
   it("says when bookings are off for the store", async () => {
     state.bookingsModule = false;
-    renderPage();
+    await renderPage();
     expect(await screen.findByText(/Bookings are off for this store/)).toBeInTheDocument();
   });
 
   it("reads right to left in Arabic", async () => {
     localStorage.setItem("lang", "ar");
-    const { container } = renderPage();
+    const { container } = await renderPage();
     expect(await screen.findByRole("button", { name: "الشهر السابق" })).toBeInTheDocument();
     expect(container.querySelector("[dir='rtl']")).not.toBeNull();
   });
@@ -356,7 +379,7 @@ describe("finishing and cancelling a booking", () => {
 
   it("marks a started booking done through its order, collecting what is still owed", async () => {
     state.bookings = [today({})];
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Mark done" }));
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText(/Sara still owes BHD 60\.000/)).toBeInTheDocument();
@@ -371,7 +394,7 @@ describe("finishing and cancelling a booking", () => {
 
   it("completes a paid booking's order with nothing to collect", async () => {
     state.bookings = [today({ orders: order({ payment_status: "paid", advance_paid: 100 }) })];
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Mark done" }));
     const dialog = await screen.findByRole("alertdialog");
     fireEvent.click(within(dialog).getByRole("button", { name: "Service done" }));
@@ -386,7 +409,7 @@ describe("finishing and cancelling a booking", () => {
   });
 
   it("offers no Mark done before the booking's time", async () => {
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("gridcell", { name: /12 October/ }));
     expect(await screen.findByText("Sara")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Mark done" })).toBeNull();
@@ -395,7 +418,7 @@ describe("finishing and cancelling a booking", () => {
 
   it("asks before cancelling, keeps the reason and says what was paid", async () => {
     state.bookings = [today({})];
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     const dialog = await screen.findByRole("alertdialog");
     expect(within(dialog).getByText(/Its invoice is cancelled with it/)).toBeInTheDocument();
@@ -411,7 +434,7 @@ describe("finishing and cancelling a booking", () => {
   });
 
   it("asks before declining a request", async () => {
-    renderPage();
+    await renderPage();
     const list = (await screen.findByText("Booking requests (1)")).closest("section")!;
     fireEvent.click(within(list).getByRole("button", { name: "Decline" }));
     const dialog = await screen.findByRole("alertdialog");
@@ -423,7 +446,7 @@ describe("finishing and cancelling a booking", () => {
 
   it("tells a store that takes neither a card nor BenefitPay that its deposit is not asked", async () => {
     state.settings = { ...DEFAULT_BOOKING_RULES, deposit_percent: 20 };
-    renderPage();
+    await renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
     expect(
       await screen.findByText(
@@ -436,9 +459,145 @@ describe("finishing and cancelling a booking", () => {
     state.bookings = [
       today({ status: "hold", hold_expires_at: "2026-10-01T08:00:00Z", orders: null }),
     ];
-    renderPage();
+    await renderPage();
     expect(await screen.findByText("No bookings on this day.")).toBeInTheDocument();
     expect(screen.queryByText("Awaiting payment")).toBeNull();
+  });
+});
+
+describe("the agenda, reminders and moving a booking", () => {
+  // Tomorrow (2 October) at 18:00 in Bahrain for three hours, with its order part paid.
+  const tomorrow = (over: Record<string, unknown> = {}) =>
+    booking({
+      id: "t2",
+      order_id: "o1",
+      event_date: "2026-10-02",
+      starts_at: "2026-10-02T15:00:00Z",
+      ends_at: "2026-10-02T18:00:00Z",
+      orders: {
+        id: "o1",
+        invoice_number: 1042,
+        public_invoice_token: "tok",
+        status: "confirmed",
+        payment_status: "partially_paid",
+        total: 100,
+        advance_paid: 40,
+        currency: "BHD",
+      },
+      ...over,
+    });
+
+  it("opens on today and the next six days, with tomorrow's reminders to send", async () => {
+    state.bookings = [tomorrow()];
+    await renderPage("agenda");
+    expect(await screen.findByText("1 booking tomorrow still to remind.")).toBeInTheDocument();
+    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.getByText("Tomorrow")).toBeInTheDocument();
+    // Seven days, each listed; the free ones say so.
+    expect(screen.getAllByText("Free")).toHaveLength(6);
+    expect(screen.getByText(/Still to pay/)).toBeInTheDocument();
+
+    const remind = screen.getByRole("link", { name: "Remind of the date" });
+    const href = decodeURIComponent(remind.getAttribute("href") ?? "");
+    expect(href).toContain("https://wa.me/97339001122?text=");
+    expect(href).toContain("A reminder from Booth of your booking tomorrow (BK-AAAAAA)");
+    expect(href).toMatch(/Still to pay: BHD\s60\.000/);
+    fireEvent.click(remind);
+    await waitFor(() =>
+      expect(state.recordBookingReminder).toHaveBeenCalledWith(
+        "b1",
+        expect.objectContaining({ id: "t2", reference: "BK-AAAAAA" }),
+      ),
+    );
+  });
+
+  it("reads a booking already reminded as reminded, and offers to send it again", async () => {
+    state.bookings = [tomorrow()];
+    state.reminded = new Map([["t2", "2026-10-01T08:00:00Z"]]);
+    await renderPage("agenda");
+    expect(await screen.findByText("Reminded")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Remind again" })).toBeInTheDocument();
+    expect(screen.queryByText(/still to remind/)).toBeNull();
+  });
+
+  it("opens a day of the agenda in the calendar", async () => {
+    state.bookings = [tomorrow()];
+    await renderPage("agenda");
+    const day = (await screen.findByText("Tomorrow")).closest("li")!;
+    fireEvent.click(within(day).getByRole("button", { name: "Open day" }));
+    expect(
+      await screen.findByRole("heading", { name: dayTitle("2026-10-02", false) }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Calendar" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("moves a booking keeping its length, moves its order's note, and offers to tell the customer", async () => {
+    state.bookings = [tomorrow()];
+    await renderPage("agenda");
+    fireEvent.click(await screen.findByRole("button", { name: "Move" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Same length: 3 hours/)).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText("New date"), {
+      target: { value: "2026-10-05" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Start"), { target: { value: "17:00" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move booking" }));
+    await waitFor(() =>
+      expect(state.rescheduleBooking).toHaveBeenCalledWith({
+        bookingId: "t2",
+        day: "2026-10-05",
+        start: "17:00",
+        durationMinutes: 180,
+        allowOverbook: false,
+      }),
+    );
+    expect(state.moveBookingOrderNote).toHaveBeenCalledWith(
+      "b1",
+      "o1",
+      "BK-AAAAAA",
+      "📅 BK-AAAAAA · 2026-10-05 · 17:00–20:00",
+    );
+    expect(await within(dialog).findByText(/Moved to/)).toBeInTheDocument();
+    const tell = within(dialog).getByRole("link", { name: "Tell the customer on WhatsApp" });
+    expect(decodeURIComponent(tell.getAttribute("href") ?? "")).toContain(
+      "Your booking with Booth (BK-AAAAAA) has moved",
+    );
+  });
+
+  it("offers to move it anyway when the new day has no place", async () => {
+    state.bookings = [tomorrow()];
+    state.rescheduleBooking.mockRejectedValueOnce(new Error("BOOKING_DAY_FULL"));
+    await renderPage("agenda");
+    fireEvent.click(await screen.findByRole("button", { name: "Move" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("New date"), {
+      target: { value: "2026-10-05" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Move booking" }));
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent("That day is fully booked.");
+    const move = within(dialog).getByRole("button", { name: "Move booking" });
+    expect(move).toBeDisabled();
+    fireEvent.click(within(dialog).getByRole("checkbox"));
+    fireEvent.click(move);
+    await waitFor(() =>
+      expect(state.rescheduleBooking).toHaveBeenLastCalledWith(
+        expect.objectContaining({ allowOverbook: true }),
+      ),
+    );
+  });
+
+  it("says when the new date is past what the store's terms allow", async () => {
+    state.bookings = [tomorrow()];
+    state.policy = { reschedule_months: 1 };
+    await renderPage("agenda");
+    fireEvent.click(await screen.findByRole("button", { name: "Move" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("New date"), {
+      target: { value: "2026-11-10" },
+    });
+    expect(
+      await within(dialog).findByText(/Your terms allow moving a booking until 2026-11-02/),
+    ).toBeInTheDocument();
   });
 });
 

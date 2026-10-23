@@ -544,3 +544,5 @@ export async function setBookingDiscount(bookingId: string, amount: number, labe
   if (error) throw error;
   return data;
 }
+
+export * from "./operations";

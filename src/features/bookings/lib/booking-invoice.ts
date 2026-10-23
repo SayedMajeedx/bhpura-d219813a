@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/format";
+import { customerChatLink } from "@/features/bookings/lib/booking-messages";
 
 /**
  * A booking's invoice is its order (create_booking_order): what the card
@@ -141,9 +142,6 @@ export function balanceReminderMessage({
 
 /** wa.me link to a customer's number, with the message ready. Null when there is no usable number. */
 export function whatsAppToCustomer(phone: string | null | undefined, text: string): string | null {
-  let digits = String(phone ?? "").replace(/\D/g, "");
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  if (digits.length === 8) digits = `973${digits}`;
-  if (digits.length < 8) return null;
-  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  // The one phone rule (src/lib/whatsapp-phone.ts), as every other chat link reads it.
+  return customerChatLink(phone, text);
 }
