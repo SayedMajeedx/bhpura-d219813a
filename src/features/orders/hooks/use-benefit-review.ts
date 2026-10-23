@@ -37,7 +37,11 @@ export function useBenefitReview({
 
       await orderQ.refetch();
       invalidateOrders(qc, brandId);
-      toast.success(transferApprovedMessage(result, lang === "ar" ? "ar" : "en"));
+      toast.success(
+        transferApprovedMessage(result, lang === "ar" ? "ar" : "en", {
+          appointment: orderQ.data?.fulfillment_method === "appointment",
+        }),
+      );
     } catch (error) {
       toast.error(transferRefusedMessage(error, lang === "ar" ? "ar" : "en"));
     } finally {

@@ -136,7 +136,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
     setUpdatingOrderId(o.id);
     try {
       const result = await approveBenefitPayment(o.id);
-      toast.success(transferApprovedMessage(result, lang));
+      toast.success(transferApprovedMessage(result, lang, { appointment: isAppointment }));
       await invalidateOrders(qc, brandId);
       return true;
     } catch (err) {

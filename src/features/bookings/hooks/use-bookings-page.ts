@@ -25,6 +25,7 @@ import { DEFAULT_BOOKING_RULES, todayIn, type BookingStatus } from "@/lib/bookin
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { donePlan } from "@/features/bookings/lib/booking-actions";
+import { takesDeposits } from "@/lib/bookings/deposit";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 
 /** Weeks start on Sunday, as GCC booking calendars usually do. */
@@ -203,8 +204,8 @@ export function useBookingsPage() {
     brand,
     isAr,
     currency,
-    /** Whether the store takes cards: the deposit is taken by card only. */
-    cardEnabled: Boolean(businessSettings?.card_enabled),
+    /** Whether the store can take a deposit: it takes a card or BenefitPay. */
+    takesDeposits: takesDeposits(businessSettings),
     rules,
     configured,
     settingsLoading: settingsQuery.isLoading,

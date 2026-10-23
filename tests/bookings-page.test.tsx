@@ -421,12 +421,14 @@ describe("finishing and cancelling a booking", () => {
     );
   });
 
-  it("tells a store that takes no card that its deposit is not asked", async () => {
+  it("tells a store that takes neither a card nor BenefitPay that its deposit is not asked", async () => {
     state.settings = { ...DEFAULT_BOOKING_RULES, deposit_percent: 20 };
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Booking rules" }));
     expect(
-      await screen.findByText(/Your store takes no cards, so no deposit is asked/),
+      await screen.findByText(
+        /Your store takes neither a card nor BenefitPay, so no deposit is asked/,
+      ),
     ).toBeInTheDocument();
   });
 
