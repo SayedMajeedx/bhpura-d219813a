@@ -28,6 +28,7 @@ import {
   type AdvanceOrder,
   type AdvanceRuleDef,
 } from "@/lib/payments/advance-rules";
+import { balanceWhen } from "@/lib/bookings/deposit";
 
 export type { AdvanceOrder } from "@/lib/payments/advance-rules";
 
@@ -168,6 +169,11 @@ export type AdvanceSplit = {
   dueNow: number;
   /** What stays due after the advance. */
   balance: number;
+  /**
+   * Set when the split is a booking's own deposit (bookingDepositSplit), not a store's advance:
+   * its rest is due when the store's booking terms say.
+   */
+  deposit?: { balanceDueDays: number | null };
 };
 
 /** How an order divides into the advance and the balance. */
@@ -227,6 +233,17 @@ export function advanceLines(
       isAr
         ? `يُدفع المبلغ كاملاً الآن: ${money(split.dueNow)}`
         : `The full amount is paid now: ${money(split.dueNow)}`,
+    ];
+  }
+  if (split.deposit) {
+    const share = split.percent !== null ? ` (${split.percent}%)` : "";
+    return [
+      isAr
+        ? `العربون${share} يُدفع الآن: ${money(split.dueNow)}`
+        : `Deposit${share} due now: ${money(split.dueNow)}`,
+      isAr
+        ? `المتبقي ${money(split.balance)} ${balanceWhen(split.deposit.balanceDueDays, true)}`
+        : `Balance ${money(split.balance)} ${balanceWhen(split.deposit.balanceDueDays, false)}`,
     ];
   }
   const when =

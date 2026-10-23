@@ -40,20 +40,18 @@ describe("a service's booking terms", () => {
   it("say how far ahead to book, the deposit, the hold and how to change it", () => {
     const text = bookingTermsText({ lead_days: 2, hold_minutes: 15 }, false, {
       percent: 25,
-      cardOnly: false,
       balanceDueDays: 3,
     });
     expect(text).toContain("at least 2 days ahead");
-    expect(text).toContain("Paying by card: a 25% deposit when you book, the rest 3 days before.");
+    expect(text).toContain("A 25% deposit when you book, the rest 3 days before.");
     expect(text).toContain("held for 15 minutes");
     expect(text).toContain("change or cancel");
     expect(bookingTermsText({ lead_days: 0 }, true)).toContain("لنفس اليوم");
     expect(bookingTermsText(null, false)).not.toContain("deposit");
-    // A store that takes no card takes no deposit (depositTerms gives 0).
+    // A store that takes neither a card nor BenefitPay takes no deposit (depositTerms gives 0).
     expect(
       bookingTermsText({ lead_days: 1 }, false, {
         percent: 0,
-        cardOnly: false,
         balanceDueDays: null,
       }),
     ).not.toContain("deposit");
@@ -240,7 +238,7 @@ describe("a service's page", () => {
     expect(screen.getByText("We come to your venue")).toBeTruthy();
     expect(screen.getByText("Lighting")).toBeTruthy();
     expect(
-      await screen.findByText("Paying by card: a 20% deposit when you book, the rest on the day."),
+      await screen.findByText("A 20% deposit when you book, the rest on the day."),
     ).toBeTruthy();
   });
 });

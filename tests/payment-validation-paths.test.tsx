@@ -304,6 +304,12 @@ describe("what staff read", () => {
     expect(transferApprovedMessage({ advanceOnly: false, alreadyPaid: false }, "en")).toBe(
       "Payment verified and approved",
     );
+    // A booking's transfer paid its deposit: the rest follows the booking's terms, not delivery.
+    expect(
+      transferApprovedMessage({ advanceOnly: true, alreadyPaid: false }, "en", {
+        appointment: true,
+      }),
+    ).toBe("Deposit approved and the date confirmed; the rest is collected by the booking terms");
     expect(transferApprovedMessage({ advanceOnly: false, alreadyPaid: true }, "en")).toBe(
       "This payment was already approved",
     );

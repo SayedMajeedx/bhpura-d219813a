@@ -15,7 +15,7 @@ export type CartBooking = {
   durationMinutes: number;
   /** When the day stops being held for the customer. */
   expiresAt: string;
-  /** The store's card deposit, 0 when a card pays in full. */
+  /** The store's deposit percentage when the day was held (paid by card or BenefitPay; 0: none). */
   depositPercent?: number;
   /** The trip to the event's area, when the store charges one (the server sets the real fee). */
   travelFee?: number | null;

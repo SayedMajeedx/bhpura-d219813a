@@ -2,17 +2,27 @@
  * What staff read after approving a transfer (BenefitPay or bank), or when it is refused.
  *
  * The database decides what an approval records (`approve_benefit_payment`): only the advance
- * of an order placed under an advance rule, with the balance collected on delivery, or the
- * whole total. The message says which, so nobody reads "paid" on an order that still owes.
+ * of an order placed under an advance rule, with the balance collected on delivery, a booking's
+ * deposit (migration 20261023100000), or the whole total. The message says which, so nobody reads "paid" on an order that still owes.
  */
 
 type Lang = "en" | "ar";
 
 export type TransferApproval = { advanceOnly: boolean; alreadyPaid: boolean };
 
-export function transferApprovedMessage(result: TransferApproval, lang: Lang): string {
+export function transferApprovedMessage(
+  result: TransferApproval,
+  lang: Lang,
+  /** An appointment's transfer paid its booking's deposit: the rest is due by the booking's terms. */
+  options: { appointment?: boolean } = {},
+): string {
   if (result.alreadyPaid) {
     return lang === "ar" ? "تم اعتماد هذا الدفع مسبقاً" : "This payment was already approved";
+  }
+  if (result.advanceOnly && options.appointment) {
+    return lang === "ar"
+      ? "تم اعتماد العربون وتأكيد الموعد، والمتبقي يُحصَّل حسب شروط الحجز"
+      : "Deposit approved and the date confirmed; the rest is collected by the booking terms";
   }
   if (result.advanceOnly) {
     return lang === "ar"

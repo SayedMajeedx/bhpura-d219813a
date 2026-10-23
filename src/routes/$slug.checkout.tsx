@@ -22,6 +22,8 @@ import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
 import { bookingOfCart } from "@/lib/bookings/cart";
+import { bookingDepositSplit, depositTerms, upfrontSplit } from "@/lib/bookings/deposit";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
 import { advanceLinesOfCart } from "@/features/checkout/lib/advance-cart-lines";
 import { cartEstimateKinds } from "@/lib/delivery-estimate";
 import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
@@ -303,9 +305,21 @@ function Checkout() {
     Boolean(appointment),
   );
   const payInFull = fullOffered && payInFullChoice;
-  const advance = payInFull ? advanceFull : advanceBase;
+  // A booking no advance rule reaches pays its own deposit by card or BenefitPay, the rest by the
+  // store's booking terms (the database writes the same amount: place_booking_order).
+  const bookingPolicy = useQuery({
+    ...bookingPoliciesQueries.policy(brand.id),
+    enabled: Boolean(appointment),
+  }).data;
+  const depositSplit = appointment
+    ? bookingDepositSplit(
+        grandTotal,
+        depositTerms({ deposit_percent: appointment.depositPercent }, settings, bookingPolicy),
+      )
+    : null;
+  const advance = upfrontSplit(payInFull ? advanceFull : advanceBase, depositSplit);
   // Where it applies, cash on delivery is not offered: the order is completed by paying the
-  // advance by card or BenefitPay (the database refuses cod too).
+  // advance or the booking's deposit by card or BenefitPay (the database refuses cod too).
   const availableMethods = useMemo(
     () => methodsUnderAdvance(allMethods, advance.applies),
     [allMethods, advance.applies],

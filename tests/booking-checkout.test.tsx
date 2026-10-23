@@ -1,6 +1,5 @@
 import React from "react";
-import { render as baseRender, screen } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   bookingCartLines,
@@ -15,8 +14,6 @@ import {
 
 const state = vi.hoisted(() => ({
   cart: [] as unknown[],
-  settings: { card_enabled: true, benefit_enabled: true } as Record<string, unknown>,
-  policy: null as { balance_due_days: number | null } | null,
   rpc: vi.fn(async (_name: string, _args: unknown) => ({
     data: { order_id: "o1", confirmation_email_token: "t1" },
     error: null,
@@ -27,30 +24,10 @@ vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
 const storefront = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
-  useStorefront: () => ({
-    brand: { id: "b1" },
-    settings: state.settings,
-    cart: state.cart,
-    lang: "en",
-  }),
+  useStorefront: () => ({ cart: state.cart, lang: "en" }),
 });
 vi.mock("../src/lib/storefront-context", (io) => storefront(io));
 vi.mock("@/lib/storefront-context", (io) => storefront(io));
-const policies = {
-  bookingPoliciesQueries: {
-    policy: () => ({ queryKey: ["policy-test"], queryFn: async () => state.policy }),
-  },
-};
-vi.mock("../src/lib/data/booking-policies", () => policies);
-vi.mock("@/lib/data/booking-policies", () => policies);
-const render = (ui: React.ReactElement) =>
-  baseRender(
-    <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-    >
-      {ui}
-    </QueryClientProvider>,
-  );
 
 const { BookingHoldBanner } =
   await import("../src/features/storefront-booking/components/BookingHoldBanner");
@@ -131,44 +108,15 @@ describe("the booking in the cart", () => {
     expect(screen.getByText("BK-HOLD01")).toBeInTheDocument();
   });
 
-  it("tells the customer a card pays only the deposit now", () => {
+  it("leaves the deposit to the payment, which says it with its amounts", () => {
     state.cart = bookingCartLines(
       hold,
       { day: "2026-10-10", start: "18:00", durationMinutes: 180, depositPercent: 30 },
       services,
     );
     render(<BookingHoldBanner />);
-    expect(
-      screen.getByText("Paying by card: a 30% deposit when you book, the rest on the day."),
-    ).toBeInTheDocument();
-  });
-
-  it("says when the rest is due by the store's booking terms", async () => {
-    state.policy = { balance_due_days: 7 };
-    state.cart = bookingCartLines(
-      hold,
-      { day: "2026-10-10", start: "18:00", durationMinutes: 180, depositPercent: 30 },
-      services,
-    );
-    render(<BookingHoldBanner />);
-    expect(
-      await screen.findByText(
-        "Paying by card: a 30% deposit when you book, the rest 7 days before.",
-      ),
-    ).toBeInTheDocument();
-    state.policy = null;
-  });
-
-  it("promises no deposit when the store takes no card", () => {
-    state.settings = { card_enabled: false, benefit_enabled: true };
-    state.cart = bookingCartLines(
-      hold,
-      { day: "2026-10-10", start: "18:00", durationMinutes: 180, depositPercent: 30 },
-      services,
-    );
-    render(<BookingHoldBanner />);
+    expect(screen.getByText("BK-HOLD01")).toBeInTheDocument();
     expect(screen.queryByText(/deposit/)).toBeNull();
-    state.settings = { card_enabled: true, benefit_enabled: true };
   });
 
   it("shows nothing when the cart has no booking", () => {
@@ -201,6 +149,10 @@ describe("the order that finishes the booking", () => {
     expect(placeOrderFailure("BOOKING_HOLD_EXPIRED", t).message).toMatch(/hold ran out/);
     expect(placeOrderFailure("BOOKING_ITEMS_MISMATCH", t).message).toMatch(
       /no longer in your cart/,
+    );
+    // Cash for a booking under a deposit (trg_orders_booking_deposit_cod).
+    expect(placeOrderFailure("BOOKING_DEPOSIT_REQUIRED", t).message).toBe(
+      "This store asks a deposit for a booking, paid by card or BenefitPay.",
     );
     const ar = (arText: string) => arText;
     expect(placeOrderFailure("BOOKING_HOLD_EXPIRED", ar).message).toMatch(/انتهت/);

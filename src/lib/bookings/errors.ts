@@ -69,6 +69,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
     ],
     [/BOOKING_FORBIDDEN/, "لا تملك صلاحية إدارة الحجوزات.", "You can't manage bookings."],
     [
+      /BOOKING_DEPOSIT_REQUIRED/,
+      "يتطلب هذا المتجر عربوناً للحجز بالبطاقة أو بنفت باي.",
+      "This store asks a deposit for a booking, paid by card or BenefitPay.",
+    ],
+    [
       /DELIVERY_ALREADY_COMPLETED/,
       "طلب هذا الحجز مكتمل مسبقاً.",
       "This booking's order is already completed.",

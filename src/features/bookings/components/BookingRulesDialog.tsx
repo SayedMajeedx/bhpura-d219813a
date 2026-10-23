@@ -186,7 +186,7 @@ export function BookingRulesDialog({
             )}
             {number(
               "deposit_percent",
-              isAr ? "العربون عند الدفع بالبطاقة (%)" : "Card deposit (%)",
+              isAr ? "العربون عند الحجز (%)" : "Deposit when booking (%)",
               0,
               100,
             )}
@@ -197,11 +197,11 @@ export function BookingRulesDialog({
               730,
             )}
           </div>
-          {rules.deposit_percent > 0 && !page.cardEnabled && (
+          {rules.deposit_percent > 0 && !page.takesDeposits && (
             <p className="rounded-lg border border-warning bg-warning-subtle p-2 text-xs text-foreground">
               {isAr
-                ? "متجرك لا يقبل البطاقات، فلا يُطلب عربون: يدفع العميل الحجز كاملاً. فعّل الدفع بالبطاقة من الإعدادات ← الطلبات ← الدفع ليُطلب العربون."
-                : "Your store takes no cards, so no deposit is asked: customers pay the whole booking. Turn on card payments in Settings → Orders → Payments to take one."}
+                ? "متجرك لا يقبل البطاقة ولا بنفت باي، فلا يُطلب عربون: يدفع العميل الحجز كاملاً. فعّل أحدهما من الإعدادات ← الطلبات ← الدفع ليُطلب العربون."
+                : "Your store takes neither a card nor BenefitPay, so no deposit is asked: customers pay the whole booking. Turn one on in Settings → Orders → Payments to take one."}
             </p>
           )}
 
