@@ -5,6 +5,7 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { ColorDots } from "@/components/storefront/ColorDots";
 import { QuickAddPopover } from "@/components/storefront/QuickAddPopover";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { Heart, Eye } from "lucide-react";
@@ -208,7 +209,9 @@ export function ProductCardV2({
         }}
       >
         {/* Card Media Container */}
-        <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative border border-border shadow-xs group-hover:shadow-md transition-shadow duration-300">
+        <div
+          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} rounded-xl overflow-hidden bg-muted relative border border-border shadow-xs group-hover:shadow-md transition-shadow duration-300`}
+        >
           {/* Badge */}
           {badgeLabel && (
             <span

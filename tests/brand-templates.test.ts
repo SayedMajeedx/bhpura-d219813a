@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { STORE_VERTICALS, type StoreVertical } from "../src/lib/store-profile";
-import { BRAND_TEMPLATES, getBrandTemplate } from "../src/lib/brand-templates";
+import {
+  BRAND_TEMPLATES,
+  PRODUCT_PHOTO_CLASS,
+  PRODUCT_PHOTO_RATIOS,
+  getBrandTemplate,
+  productCardRatio,
+  verticalProductPhoto,
+} from "../src/lib/brand-templates";
 import { FONT_MOOD_PRESETS } from "../src/components/settings/QuickThemeCustomizer";
 
 describe("Brand Vertical Templates Registry", () => {
@@ -63,19 +70,44 @@ describe("Brand Vertical Templates Registry", () => {
     expect(abayas.vertical).toBe("abayas");
   });
 
-  it("provides valid Storefront 2.0 design config to every vertical", () => {
-    const validPresets = new Set(["editorial", "fresh", "tech"]);
-    const validSpacings = new Set(["airy", "regular", "dense"]);
-    const validCardStyles = new Set(["borderless", "bordered"]);
-
+  it("gives every vertical only what the platform applies: a radius and a photo shape", () => {
     for (const vertical of STORE_VERTICALS) {
-      const template = BRAND_TEMPLATES[vertical];
-      expect(template.design, `Template for ${vertical} must have design config`).toBeDefined();
-      expect(validPresets.has(template.design!.preset)).toBe(true);
-      expect([4, 5]).toContain(template.design!.grid);
-      expect(validSpacings.has(template.design!.sectionSpacing)).toBe(true);
-      expect(validCardStyles.has(template.design!.cardStyle)).toBe(true);
-      expect(template.design!.radius).toBeTruthy();
+      const design = BRAND_TEMPLATES[vertical].design;
+      expect(design, `Template for ${vertical} must have design config`).toBeDefined();
+      // Nothing else: a preset name, a grid, a spacing or a card style nothing read is gone.
+      expect(Object.keys(design!).sort()).toEqual(["productPhoto", "radius"]);
+      expect(design!.radius).toMatch(/^\d+(\.\d+)?rem$/);
+      expect(PRODUCT_PHOTO_RATIOS).toContain(design!.productPhoto);
     }
+  });
+
+  it("starts clothes portrait, food, beauty and jewellery square, home and services wide", () => {
+    expect(verticalProductPhoto("fashion")).toBe("3:4");
+    expect(verticalProductPhoto("abayas")).toBe("3:4");
+    for (const square of ["food", "coffee", "beauty", "fragrance", "jewelry", "gifts"]) {
+      expect(verticalProductPhoto(square)).toBe("1:1");
+    }
+    expect(verticalProductPhoto("home")).toBe("4:3");
+    expect(verticalProductPhoto("services")).toBe("4:3");
+    // An unknown or missing vertical takes the general store's.
+    expect(verticalProductPhoto("nonsense")).toBe(verticalProductPhoto("general"));
+    expect(verticalProductPhoto(null)).toBe("1:1");
+  });
+
+  it("shows a store's own photo shape, else its vertical's", () => {
+    expect(productCardRatio({ store_vertical: "food" })).toBe("1:1");
+    expect(productCardRatio({ store_vertical: "food", product_card_aspect_ratio: null })).toBe(
+      "1:1",
+    );
+    expect(productCardRatio({ store_vertical: "food", product_card_aspect_ratio: "4:5" })).toBe(
+      "4:5",
+    );
+    // A value the column never holds is not trusted.
+    expect(productCardRatio({ store_vertical: "abayas", product_card_aspect_ratio: "2:1" })).toBe(
+      "3:4",
+    );
+    expect(productCardRatio(null)).toBe("1:1");
+    expect(PRODUCT_PHOTO_CLASS["1:1"]).toBe("aspect-square");
+    expect(PRODUCT_PHOTO_CLASS["3:4"]).toBe("aspect-[3/4]");
   });
 });

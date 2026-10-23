@@ -5,36 +5,25 @@ import { buildCartItem } from "../src/lib/cart/add-to-cart";
 
 describe("Storefront 2.0 Layer 3 Tests", () => {
   describe("Vertical Design Presets (L3-17)", () => {
-    it("has exact mapping for every vertical to editorial, fresh, or tech", () => {
+    // A preset holds what the platform applies: the wizard's corner radius and the cards' photo
+    // shape. The style names, grids, spacings and card styles it once promised were read by
+    // nothing and were removed (src/lib/brand-templates/design-presets.ts).
+    it("gives every vertical a radius and a photo shape", () => {
       const verticals = Object.keys(BRAND_TEMPLATES);
       expect(verticals.sort()).toEqual([...STORE_VERTICALS].sort());
 
       for (const template of Object.values(BRAND_TEMPLATES)) {
         expect(template.design).toBeDefined();
-        const preset = template.design?.preset;
-        expect(["editorial", "fresh", "tech"]).toContain(preset);
-
-        if (preset === "editorial") {
-          expect(template.design?.grid).toBe(4);
-          expect(template.design?.sectionSpacing).toBe("airy");
-          expect(template.design?.cardStyle).toBe("borderless");
-        } else if (preset === "fresh") {
-          expect(template.design?.grid).toBe(4);
-          expect(template.design?.sectionSpacing).toBe("regular");
-          expect(template.design?.cardStyle).toBe("bordered");
-        } else if (preset === "tech") {
-          expect(template.design?.grid).toBe(5);
-          expect(template.design?.sectionSpacing).toBe("dense");
-          expect(template.design?.cardStyle).toBe("bordered");
-        }
+        expect(template.design?.radius).toBeTruthy();
+        expect(["3:4", "4:5", "1:1", "4:3"]).toContain(template.design?.productPhoto);
       }
     });
 
-    it("ensures luxury verticals receive editorial preset", () => {
-      expect(VERTICAL_DESIGN_PRESETS.abayas.preset).toBe("editorial");
-      expect(VERTICAL_DESIGN_PRESETS.fashion.preset).toBe("editorial");
-      expect(VERTICAL_DESIGN_PRESETS.jewelry.preset).toBe("editorial");
-      expect(VERTICAL_DESIGN_PRESETS.beauty.preset).toBe("editorial");
+    it("photographs clothes standing and jewellery and beauty square", () => {
+      expect(VERTICAL_DESIGN_PRESETS.abayas.productPhoto).toBe("3:4");
+      expect(VERTICAL_DESIGN_PRESETS.fashion.productPhoto).toBe("3:4");
+      expect(VERTICAL_DESIGN_PRESETS.jewelry.productPhoto).toBe("1:1");
+      expect(VERTICAL_DESIGN_PRESETS.beauty.productPhoto).toBe("1:1");
     });
   });
 

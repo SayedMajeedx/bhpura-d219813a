@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sparkles } from "lucide-react";
+import { ProductPhotoShapeField } from "./ProductPhotoShapeField";
 
 type BoolKey =
   | "product_card_hover_image"
@@ -147,6 +148,13 @@ export function DesignV2Group() {
               : 'These options apply once the new look is enabled from the "Upgrade design" card above.'}
         </p>
       </div>
+
+      <ProductPhotoShapeField
+        value={bs.product_card_aspect_ratio}
+        vertical={bs.store_vertical}
+        isAr={isAr}
+        onChange={(shape) => setBs({ product_card_aspect_ratio: shape })}
+      />
 
       {/* Toggles — dense rows grouped by surface (half the height of card-per-toggle) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">

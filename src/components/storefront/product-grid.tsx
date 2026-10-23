@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Grid2X2, Rows, PackageSearch } from "lucide-react";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
+import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -35,7 +36,9 @@ export function ProductGrid({
    */
   withSidebar?: boolean;
 }) {
-  const { t } = useStorefront();
+  const { t, settings } = useStorefront();
+  // The placeholders take the cards' own photo shape, so nothing jumps when they load.
+  const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
   const wide = withSidebar ? "lg:grid-cols-3" : "lg:grid-cols-4";
   // A services store lists services, not products.
   const services = useIsServicesStore();
@@ -101,7 +104,7 @@ export function ProductGrid({
         >
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+              <Skeleton className={`${photoClass} rounded-xl w-full bg-muted`} />
               <Skeleton className="h-3 w-3/4 bg-muted" />
               <Skeleton className="h-3 w-1/3 bg-muted" />
             </div>

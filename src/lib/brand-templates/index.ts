@@ -1,110 +1,11 @@
 import { VERTICAL_LABELS, VERTICAL_MODULE_DEFAULTS, type StoreVertical } from "@/lib/store-profile";
 import { DEFAULT_VERTICAL_CATEGORIES } from "@/lib/addons/vertical-categories";
 import { FONT_MOOD_PRESETS } from "@/components/settings/QuickThemeCustomizer";
-import type { BrandTemplate, BrandDesignConfig } from "./types";
+import type { BrandTemplate } from "./types";
+import { VERTICAL_DESIGN_PRESETS } from "./design-presets";
 
 export * from "./types";
-
-export const VERTICAL_DESIGN_PRESETS: Record<StoreVertical, BrandDesignConfig> = {
-  abayas: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.5rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  fashion: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.5rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  jewelry: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.5rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  beauty: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.5rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  fragrance: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.5rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  coffee: {
-    preset: "fresh",
-    grid: 4,
-    radius: "1.25rem",
-    sectionSpacing: "regular",
-    cardStyle: "bordered",
-  },
-  services: {
-    preset: "editorial",
-    grid: 4,
-    radius: "0.75rem",
-    sectionSpacing: "airy",
-    cardStyle: "borderless",
-  },
-  food: {
-    preset: "fresh",
-    grid: 4,
-    radius: "1.25rem",
-    sectionSpacing: "regular",
-    cardStyle: "bordered",
-  },
-  gifts: {
-    preset: "fresh",
-    grid: 4,
-    radius: "1.25rem",
-    sectionSpacing: "regular",
-    cardStyle: "bordered",
-  },
-  home: {
-    preset: "fresh",
-    grid: 4,
-    radius: "1.25rem",
-    sectionSpacing: "regular",
-    cardStyle: "bordered",
-  },
-  electronics: {
-    preset: "tech",
-    grid: 5,
-    radius: "0.375rem",
-    sectionSpacing: "dense",
-    cardStyle: "bordered",
-  },
-  digital: {
-    preset: "tech",
-    grid: 5,
-    radius: "0.375rem",
-    sectionSpacing: "dense",
-    cardStyle: "bordered",
-  },
-  print: {
-    preset: "tech",
-    grid: 5,
-    radius: "0.375rem",
-    sectionSpacing: "dense",
-    cardStyle: "bordered",
-  },
-  general: {
-    preset: "tech",
-    grid: 5,
-    radius: "0.375rem",
-    sectionSpacing: "dense",
-    cardStyle: "bordered",
-  },
-};
+export * from "./design-presets";
 
 const getFontPair = (presetId: "classic" | "modern" | "signature" | "strong" | "bubble") => {
   const preset = FONT_MOOD_PRESETS.find((p) => p.id === presetId);

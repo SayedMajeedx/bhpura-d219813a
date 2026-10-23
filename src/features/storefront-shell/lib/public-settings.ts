@@ -239,6 +239,8 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     product_card_hover_image: s?.product_card_hover_image ?? true,
     product_card_color_dots: s?.product_card_color_dots ?? true,
     product_card_quick_add: s?.product_card_quick_add ?? true,
+    // The cards' photo shape; null: the store vertical's (productCardRatio).
+    product_card_aspect_ratio: s?.product_card_aspect_ratio ?? null,
     quick_view_enabled: s?.quick_view_enabled ?? true,
     pdp_image_zoom: s?.pdp_image_zoom ?? true,
     category_filters_enabled: s?.category_filters_enabled ?? true,
