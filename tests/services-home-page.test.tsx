@@ -96,6 +96,18 @@ vi.mock("../src/lib/data/booking-page-options", () => pageOptionsData);
 vi.mock("@/lib/data/booking-page-options", () => pageOptionsData);
 vi.mock("../src/lib/data/service-options", () => optionsData);
 vi.mock("@/lib/data/service-options", () => optionsData);
+// The store's reviews (storefront_store_reviews): none unless a test gives some.
+const reviewsState = vi.hoisted(() => ({ store: null as unknown }));
+const reviewsData = {
+  reviewsQueries: {
+    store: () => ({
+      queryKey: ["sh-test", "store-reviews"],
+      queryFn: async () => reviewsState.store,
+    }),
+  },
+};
+vi.mock("../src/lib/data/reviews", () => reviewsData);
+vi.mock("@/lib/data/reviews", () => reviewsData);
 vi.mock("../src/features/storefront-home/components/HeroBanner", () => ({
   HeroBanner: () => <div>hero</div>,
 }));
@@ -227,5 +239,43 @@ describe("the services home page", () => {
       "href",
       "/aurora/book?service=bundle",
     );
+  });
+});
+
+describe("what customers said, on the services home page", () => {
+  it("shows the store's reviews when it has some, and nothing when it has none", async () => {
+    reviewsState.store = {
+      count: 3,
+      average: 4.7,
+      stars: { "1": 0, "2": 0, "3": 0, "4": 1, "5": 2 },
+      highlights: {},
+      reviews: [
+        {
+          id: "r1",
+          rating: 5,
+          highlights: [],
+          comment: "The booth made the night",
+          name: "Sara",
+          date: "2026-10-20T10:00:00Z",
+        },
+      ],
+    };
+    const { unmount } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicesHome products={products} />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByRole("heading", { name: "Customer reviews" })).toBeInTheDocument();
+    expect(screen.getByText("The booth made the night")).toBeInTheDocument();
+    unmount();
+
+    reviewsState.store = null;
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicesHome products={products} />
+      </QueryClientProvider>,
+    );
+    await screen.findByText(/Guest book/);
+    expect(screen.queryByRole("heading", { name: "Customer reviews" })).toBeNull();
   });
 });

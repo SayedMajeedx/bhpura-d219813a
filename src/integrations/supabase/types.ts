@@ -11147,12 +11147,17 @@ export type Database = {
         };
         Returns: Json;
       };
+      storefront_my_bookings: { Args: { p_brand_id: string }; Returns: Json };
       storefront_pickup_partners: {
         Args: { p_brand_id: string; p_items: Json };
         Returns: Json;
       };
       storefront_product_reviews: {
         Args: { p_brand_slug: string; p_limit?: number; p_product_id: string };
+        Returns: Json;
+      };
+      storefront_store_reviews: {
+        Args: { p_brand_slug: string; p_limit?: number };
         Returns: Json;
       };
       storefront_user_owns_customer: {

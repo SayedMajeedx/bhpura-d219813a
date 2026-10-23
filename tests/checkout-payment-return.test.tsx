@@ -1,5 +1,6 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Banknote, CreditCard } from "lucide-react";
 
@@ -25,6 +26,17 @@ const storefrontContext = { useStorefront: () => storefront };
 vi.mock("../src/lib/storefront-context", () => storefrontContext);
 vi.mock("@/lib/storefront-context", () => storefrontContext);
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+// A booking's thank-you page reads the store's time zone, for the shopper's calendar.
+const bookingsData = {
+  bookingsQueries: {
+    publicRules: () => ({
+      queryKey: ["thank-you-test", "rules"],
+      queryFn: async () => ({ timezone: "Asia/Bahrain" }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/bookings", () => bookingsData);
+vi.mock("@/lib/data/bookings", () => bookingsData);
 
 const { PaymentFailedCard } = await import("../src/features/checkout/components/PaymentFailedCard");
 const { PaymentMethodCard } = await import("../src/features/checkout/components/PaymentMethodCard");
@@ -95,6 +107,24 @@ describe("choosing another payment method after a failed card payment", () => {
 
 describe("the thank-you page", () => {
   const ThankYou = Route.options.component;
+  const renderThankYou = () =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ThankYou />
+      </QueryClientProvider>,
+    );
+
+  it("puts a booking in the shopper's calendar at the store's time", async () => {
+    search.current = { ref: "BK-7Q2M9X", day: "2026-10-08", start: "18:00", minutes: "180" };
+    renderThankYou();
+    expect(screen.getByText("Your booking is in!")).toBeInTheDocument();
+    const google = await screen.findByRole("link", { name: "Add to Google Calendar" });
+    expect(google.getAttribute("href")).toContain("dates=20261008T150000Z%2F20261008T180000Z");
+    expect(screen.getByRole("link", { name: "Add to Apple or Outlook" })).toHaveAttribute(
+      "download",
+      "BK-7Q2M9X.ics",
+    );
+  });
 
   it.each([
     [{ fulfillment: "pickup", channel: "email" }, /ready for pickup/],
@@ -103,7 +133,7 @@ describe("the thank-you page", () => {
     [{ fulfillment: "digital", channel: "email" }, /sent to your email/],
   ])("shows the message for %o straight away and empties the cart", (params, message) => {
     search.current = params;
-    render(<ThankYou />);
+    renderThankYou();
     expect(screen.getByText(message)).toBeInTheDocument();
     expect(screen.queryByText("Loading order details...")).not.toBeInTheDocument();
     expect(storefront.clearCart).toHaveBeenCalledTimes(1);

@@ -5,6 +5,8 @@ import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-pac
 import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
 import { DEFAULT_PACKAGE_STYLE } from "@/lib/bookings/package-style";
 import { serviceOptionsQueries } from "@/lib/data/service-options";
+import { reviewsQueries } from "@/lib/data/reviews";
+import { ProductReviews } from "@/features/product-page/components/ProductReviews";
 import type { ProductRow } from "@/lib/data/storefront";
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
@@ -21,8 +23,9 @@ import {
 
 /**
  * The home page of a services store, as one page: the hero, the way to the
- * free dates, the services, the package offers, pictures of past events, the
- * booking call to action and the questions. The WhatsApp button floats over
+ * free dates, the services, the package offers, pictures of past events, what
+ * customers said (the store's reviews, when it has any), the booking call to
+ * action and the questions. The WhatsApp button floats over
  * it (WhatsAppFab, in the shell).
  */
 function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
@@ -48,6 +51,8 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
   const look =
     useQuery({ ...bookingPageOptionsQueries.options(brand.id), enabled: packages.length > 0 }).data
       ?.package_style ?? DEFAULT_PACKAGE_STYLE;
+  // What customers said about the store: the strongest reason to book an event service.
+  const reviews = useQuery(reviewsQueries.store(brand.slug)).data;
   const lines = packageLinesById(items ?? []);
   const nameOf = (product: ProductRow) =>
     (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
@@ -117,6 +122,7 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
 
       <div className="mx-auto w-full max-w-7xl space-y-10 px-4 py-6 sm:px-6">
         <StoreGallery brandId={brand.id} isAr={isAr} />
+        {reviews && <ProductReviews reviews={reviews} lang={isAr ? "ar" : "en"} />}
       </div>
       <BookingInvite />
       <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-4 sm:px-6">

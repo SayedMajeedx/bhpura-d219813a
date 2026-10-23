@@ -89,6 +89,31 @@ describe("the thank-you page's appointment", () => {
     expect(screen.getByText("⁧6:00 م⁩ – ⁧9:00 م⁩")).toBeTruthy();
     expect(screen.getByText("BK-7Q2M9X")).toBeTruthy();
   });
+
+  it("puts the booking in the shopper's calendar at the store's time", () => {
+    render(
+      <AppointmentSummary
+        appointment={{ ref: "BK-7Q2M9X", day: "2026-10-08", start: "18:00", minutes: 180 }}
+        isAr={false}
+        calendar={{ storeName: "Aurora", timezone: "Asia/Bahrain" }}
+      />,
+    );
+    const google = screen.getByRole("link", { name: "Add to Google Calendar" });
+    expect(google.getAttribute("href")).toContain("dates=20261008T150000Z%2F20261008T180000Z");
+    const file = screen.getByRole("link", { name: "Add to Apple or Outlook" });
+    expect(file.getAttribute("download")).toBe("BK-7Q2M9X.ics");
+    expect(decodeURIComponent(file.getAttribute("href") ?? "")).toContain("SUMMARY:Aurora");
+  });
+
+  it("offers no calendar before the store's time zone is known", () => {
+    render(
+      <AppointmentSummary
+        appointment={{ ref: "BK-7Q2M9X", day: "2026-10-08", start: "18:00", minutes: 180 }}
+        isAr={false}
+      />,
+    );
+    expect(screen.queryByRole("link", { name: "Add to Google Calendar" })).toBeNull();
+  });
 });
 
 /** A stand-in for the service-role client: one row per table. */

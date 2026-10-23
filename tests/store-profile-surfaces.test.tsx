@@ -56,6 +56,7 @@ const customers = async (importOriginal: () => Promise<object>) => {
       profile: fixture("customer", { id: "c1", name: "Sara", phone: "39001122" }),
       orders: fixture("orders", []),
       addresses: fixture("addresses", []),
+      bookings: fixture("bookings", []),
     },
   };
 };
@@ -201,6 +202,17 @@ describe("the store profile on the screens", () => {
     state.modules = { fit_passport: true };
     render(<Account />, { wrapper: withProviders() });
     expect(await screen.findByRole("tab", { name: /My fit/ })).toBeInTheDocument();
+  });
+
+  it("opens a services store's account on the shopper's bookings, with no returns tab", async () => {
+    const Account = accountRoute.options.component;
+    state.modules = { bookings: true, returns: false };
+    render(<Account />, { wrapper: withProviders() });
+    const bookings = await screen.findByRole("tab", { name: /My bookings/ });
+    expect(bookings).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("tab", { name: /Returns/ })).not.toBeInTheDocument();
+    expect(await screen.findByText("No bookings yet.")).toBeInTheDocument();
+    state.modules = { fit_passport: false };
   });
 
   it("keeps the paywall copy free of fashion-only wording", () => {

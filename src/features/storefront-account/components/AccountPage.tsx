@@ -21,6 +21,7 @@ import {
   Wallet,
   Coins,
   Ruler,
+  CalendarDays,
 } from "lucide-react";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { CustomerReturnRequestModal } from "@/components/storefront/CustomerReturnRequestModal";
@@ -34,6 +35,7 @@ import { OrdersSection } from "@/features/storefront-account/components/OrdersSe
 import { CustomerReturnsSection } from "@/features/storefront-account/components/CustomerReturnsSection";
 import { ProfileSection } from "@/features/storefront-account/components/ProfileSection";
 import { AddressesSection } from "@/features/storefront-account/components/AddressesSection";
+import { BookingsSection } from "@/features/storefront-account/components/BookingsSection";
 
 export function AccountPage() {
   const { brand, session, isStoreMember, membershipLoading, t, lang, currency } = useStorefront();
@@ -49,6 +51,11 @@ export function AccountPage() {
 
   const { data: orders, isLoading: loadingOrders } = useQuery(
     ownCustomerQueries.orders(brand.id, customer?.id),
+  );
+
+  // A store that takes bookings shows the shopper's own (storefront_my_bookings).
+  const { data: bookings, isLoading: loadingBookings } = useQuery(
+    ownCustomerQueries.bookings(brand.id, customer?.id, Boolean(modules.bookings)),
   );
 
   const { data: addresses, isLoading: loadingAddresses } = useQuery(
@@ -82,7 +89,14 @@ export function AccountPage() {
   const { data: loyaltyAccount } = useQuery(loyaltyQueries.account(brand.id, customer?.id ?? ""));
   const loyaltyOn = loyaltyProgramState(loyaltyProgram) === "on";
   const loyaltyTier = shopperLoyaltyTier(loyaltyProgram, loyaltyAccount, loyaltyTiers);
-  const tabCount = 5 + (loyaltyOn ? 1 : 0) + (modules.fit_passport ? 1 : 0);
+  // A services store takes no returns; its bookings come first.
+  const showReturns = modules.returns !== false;
+  const tabCount =
+    4 +
+    (modules.bookings ? 1 : 0) +
+    (showReturns ? 1 : 0) +
+    (loyaltyOn ? 1 : 0) +
+    (modules.fit_passport ? 1 : 0);
 
   if (membershipLoading) {
     return (
@@ -218,20 +232,31 @@ export function AccountPage() {
         {/* Portal Active Sections */}
         <div className="space-y-6">
           <Tabs
-            defaultValue="orders"
+            defaultValue={modules.bookings ? "bookings" : "orders"}
             className="w-full rounded-2xl border bg-card p-4 shadow-xs sm:p-6 border-border-strong"
           >
             <TabsList
               className={cn(
                 "grid w-full h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1",
                 "grid-cols-2",
-                tabCount === 7
-                  ? "sm:grid-cols-7"
-                  : tabCount === 6
-                    ? "sm:grid-cols-6"
-                    : "sm:grid-cols-5",
+                tabCount >= 8
+                  ? "sm:grid-cols-8"
+                  : tabCount === 7
+                    ? "sm:grid-cols-7"
+                    : tabCount === 6
+                      ? "sm:grid-cols-6"
+                      : "sm:grid-cols-5",
               )}
             >
+              {modules.bookings && (
+                <TabsTrigger
+                  value="bookings"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                >
+                  <CalendarDays className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{t("حجوزاتي", "My bookings")}</span>
+                </TabsTrigger>
+              )}
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -248,18 +273,20 @@ export function AccountPage() {
                   <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger
-                value="returns"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
-              >
-                <RotateCcw className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
-                {customerReturns.length > 0 && (
-                  <span className="text-xs font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
-                    {customerReturns.length}
-                  </span>
-                )}
-              </TabsTrigger>
+              {showReturns && (
+                <TabsTrigger
+                  value="returns"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                >
+                  <RotateCcw className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
+                  {customerReturns.length > 0 && (
+                    <span className="text-xs font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
+                      {customerReturns.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
               {modules.fit_passport && (
                 <TabsTrigger
                   value="fit"
@@ -292,6 +319,12 @@ export function AccountPage() {
               </TabsTrigger>
             </TabsList>
 
+            {modules.bookings && (
+              <TabsContent value="bookings" className="mt-0 focus-visible:outline-none">
+                <BookingsSection bookings={bookings} isLoading={loadingBookings} />
+              </TabsContent>
+            )}
+
             <TabsContent value="orders" className="mt-0 focus-visible:outline-none">
               <OrdersSection
                 currency={currency}
@@ -313,15 +346,17 @@ export function AccountPage() {
               </TabsContent>
             )}
 
-            <TabsContent value="returns" className="mt-0 focus-visible:outline-none">
-              <CustomerReturnsSection
-                currency={currency}
-                isAr={isAr}
-                lang={lang}
-                returns={customerReturns}
-                isLoading={loadingReturns}
-              />
-            </TabsContent>
+            {showReturns && (
+              <TabsContent value="returns" className="mt-0 focus-visible:outline-none">
+                <CustomerReturnsSection
+                  currency={currency}
+                  isAr={isAr}
+                  lang={lang}
+                  returns={customerReturns}
+                  isLoading={loadingReturns}
+                />
+              </TabsContent>
+            )}
 
             <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
               <ProfileSection isAr={isAr} customer={customer} loadingCustomer={loadingCustomer} />
