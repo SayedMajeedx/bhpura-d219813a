@@ -126,6 +126,8 @@ export type StorefrontProductDetail = {
   /** The product's own details, shown in its details section (`product-details.ts`). */
   fabric_type?: string | null;
   occasion?: string | null;
+  /** Its facts by the store's vertical (`product-facts.ts`). */
+  details?: unknown;
   /** A service's place (customer, venue, both) and what it includes ([{ ar, en }]). */
   service_location?: string | null;
   service_includes?: unknown;

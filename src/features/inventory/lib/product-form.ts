@@ -1,4 +1,5 @@
 import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
+import { cleanFacts } from "@/lib/product-facts";
 import { partProblems, rowsFrom } from "@/features/inventory/lib/cost-parts";
 import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
@@ -62,6 +63,8 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     variant_label_five_en: product?.variant_label_five_en ?? "",
     fabric_type: product?.fabric_type ?? "",
     occasion: product?.occasion ?? "",
+    // Its facts by the store's vertical (product-facts.ts), kept clean as they are edited.
+    details: cleanFacts(product?.details),
     size_guide_id: product?.size_guide_id ?? null,
     size_guide_hidden: product?.size_guide_hidden ?? false,
     is_made_to_order: isService || (product?.is_made_to_order ?? false),
@@ -203,6 +206,7 @@ export function productColumnsFrom(form: ProductForm) {
     variant_label_five_en: (form.variant_label_five_en || "").trim() || null,
     fabric_type: (form.fabric_type || "").trim() || null,
     occasion: (form.occasion || "").trim() || null,
+    details: cleanFacts(form.details),
     size_guide_id: form.size_guide_hidden ? null : form.size_guide_id || null,
     size_guide_hidden: Boolean(form.size_guide_hidden),
     item_kind: form.item_kind === "service" ? "service" : "product",

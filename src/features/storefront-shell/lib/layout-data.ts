@@ -19,6 +19,8 @@ export type StoreLayoutData = {
     currency?: string | null;
     storefront_mode?: string | null;
     catalog_show_prices?: boolean | null;
+    /** The store's kind: the product page reads its facts by it (`product-facts.ts`). */
+    store_vertical?: string | null;
   } | null;
   bootstrapData: StorefrontPageData | null;
   isSuspended: boolean;

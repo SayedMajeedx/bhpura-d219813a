@@ -48,6 +48,8 @@ export type Product = {
   variant_label_five_en?: string | null;
   fabric_type?: string | null;
   occasion?: string | null;
+  /** Its facts by the store's vertical (`product-facts.ts`). */
+  details?: unknown;
   size_guide_id?: string | null;
   size_guide_hidden?: boolean | null;
   is_made_to_order?: boolean | null;

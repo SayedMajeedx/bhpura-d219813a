@@ -46,6 +46,8 @@ export interface SeoProductInfo {
   show_price?: boolean;
   /** The stars its page shows: every review of an order that held it. */
   rating?: { average: number; count: number } | null;
+  /** What the product is (its facts, `product-facts.ts`), as Google's additionalProperty. */
+  properties?: Array<{ name: string; value: string }>;
 }
 
 export interface SeoBreadcrumbItem {
@@ -190,6 +192,15 @@ export function buildProductSchema(
     url: productUrl,
     ...(imageList.length > 0 ? { image: imageList } : {}),
     ...(product.sku ? { sku: product.sku } : {}),
+    ...(product.properties && product.properties.length > 0
+      ? {
+          additionalProperty: product.properties.map((property) => ({
+            "@type": "PropertyValue",
+            name: property.name,
+            value: property.value,
+          })),
+        }
+      : {}),
     brand: {
       "@type": "Brand",
       name: settings?.business_name || brand?.name_ar || brand?.name_en || "Store",

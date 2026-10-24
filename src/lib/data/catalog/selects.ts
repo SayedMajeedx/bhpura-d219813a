@@ -25,6 +25,7 @@ export const ADMIN_PRODUCT_COLUMNS = [
   "description",
   "description_ar",
   "description_en",
+  "details",
   "extra_hour_price",
   "fabric_type",
   "featured_trending",

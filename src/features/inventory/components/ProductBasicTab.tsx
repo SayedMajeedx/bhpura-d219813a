@@ -1,4 +1,5 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
+import { ProductFactsFields } from "@/features/inventory/components/ProductFactsFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
 import { ServicePackageFields } from "@/features/inventory/components/ServicePackageFields";
 import { ServiceOptionsFields } from "@/features/inventory/components/ServiceOptionsFields";
@@ -315,6 +316,14 @@ export function ProductBasicTab({
         onChangeAr={(v) => setForm({ ...form, description_ar: v })}
         onChangeEn={(v) => setForm({ ...form, description_en: v })}
       />
+      {!isService && (
+        <ProductFactsFields
+          vertical={storeProfile?.vertical}
+          value={form.details}
+          onChange={(details) => setForm({ ...form, details })}
+          isAr={isAr}
+        />
+      )}
 
       <div className="flex items-center justify-between rounded-xl border border-border-strong p-4 bg-secondary/10 transition hover:bg-secondary/20">
         <div>

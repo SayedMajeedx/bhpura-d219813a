@@ -153,6 +153,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
       initialLang,
       // For the page's Google data: the store's currency, and whether it shows prices at all.
       currency: layout.settings?.currency ?? null,
+      vertical: layout.settings?.store_vertical ?? null,
       showPrices: !(
         layout.settings?.storefront_mode === "catalog" &&
         layout.settings?.catalog_show_prices === false
