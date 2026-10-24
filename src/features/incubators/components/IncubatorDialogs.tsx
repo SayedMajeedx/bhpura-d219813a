@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  PHONE_SHEET,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -24,6 +25,8 @@ import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incuba
 import { localDateTimeValue } from "@/features/incubators/lib/forms";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
 import type { Incubator, IncubatorDialog } from "@/features/incubators/types";
+import { useLastWhileClosing } from "@/hooks/use-last-while-closing";
+import { cn } from "@/lib/utils";
 
 const SELECT_CLASS =
   "mt-2 h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -49,16 +52,18 @@ const TITLES: Record<string, { en: string; ar: string }> = {
 
 /** The page's forms, one dialog at a time: a partner, a piece's terms, a sale, a return, a payment. */
 export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
-  const { activeItem, busy, closeDialog, current, dialog, isAr, lang, money, submit, summary } =
-    page;
-  const open = FORM_DIALOGS.includes(dialog);
+  const { busy, closeDialog, current, isAr, lang, money, submit, summary } = page;
+  const open = FORM_DIALOGS.includes(page.dialog);
+  // What the dialog shows stays while it fades out (it emptied at once and flashed).
+  const dialog = useLastWhileClosing(open ? page.dialog : null);
+  const activeItem = useLastWhileClosing(page.activeItem);
   const editing = dialog === "edit_incubator" ? current : null;
   const piece = pieceName(activeItem?.product_variants, lang);
   const held = Number(activeItem?.quantity ?? 0);
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && closeDialog()}>
-      <DialogContent className="max-w-lg" dir={isAr ? "rtl" : "ltr"}>
+      <DialogContent className={cn("max-w-lg", PHONE_SHEET)} dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{dialog ? TITLES[dialog]?.[lang] : ""}</DialogTitle>
         </DialogHeader>
@@ -448,13 +453,14 @@ function Field({
 
 /** Undoing a sale: a proper confirmation that says what it does, in the page's language. */
 export function ReverseSaleDialog({ page }: { page: IncubatorsPageState }) {
-  const { busy, isAr, lang, money, reverseSale, saleToReverse, setSaleToReverse } = page;
+  const { busy, isAr, lang, money, reverseSale, setSaleToReverse } = page;
+  const saleToReverse = useLastWhileClosing(page.saleToReverse);
   return (
     <AlertDialog
-      open={Boolean(saleToReverse)}
+      open={Boolean(page.saleToReverse)}
       onOpenChange={(open) => !open && setSaleToReverse(null)}
     >
-      <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
+      <AlertDialogContent className={PHONE_SHEET} dir={isAr ? "rtl" : "ltr"}>
         <AlertDialogHeader>
           <AlertDialogTitle>{isAr ? "إلغاء عملية البيع؟" : "Reverse this sale?"}</AlertDialogTitle>
           <AlertDialogDescription>
@@ -492,16 +498,17 @@ export function ReverseSaleDialog({ page }: { page: IncubatorsPageState }) {
  * record as voided with the reason typed here.
  */
 export function VoidPaymentDialog({ page }: { page: IncubatorsPageState }) {
-  const { busy, isAr, money, paymentToVoid, setPaymentToVoid, voidPayment } = page;
+  const { busy, isAr, money, setPaymentToVoid, voidPayment } = page;
+  const paymentToVoid = useLastWhileClosing(page.paymentToVoid);
   const [reason, setReason] = useState("");
   useEffect(() => setReason(""), [paymentToVoid?.id]);
   const ready = reason.trim().length >= 3;
   return (
     <AlertDialog
-      open={Boolean(paymentToVoid)}
+      open={Boolean(page.paymentToVoid)}
       onOpenChange={(open) => !open && setPaymentToVoid(null)}
     >
-      <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
+      <AlertDialogContent className={PHONE_SHEET} dir={isAr ? "rtl" : "ltr"}>
         <AlertDialogHeader>
           <AlertDialogTitle>{isAr ? "إلغاء هذه الدفعة؟" : "Void this payment?"}</AlertDialogTitle>
           <AlertDialogDescription>

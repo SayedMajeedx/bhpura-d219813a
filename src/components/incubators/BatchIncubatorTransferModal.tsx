@@ -23,6 +23,7 @@ import { formatMoney } from "@/lib/format";
 import {
   Dialog,
   DialogContent,
+  PHONE_FULL_SCREEN,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -53,6 +54,7 @@ import { catalogKeys } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { arNoun, countOf } from "@/lib/arabic-count";
+import { TransferSizeRows } from "@/components/incubators/TransferSizeRows";
 
 export type { BatchTransferProduct, BatchTransferVariant };
 
@@ -352,118 +354,127 @@ export function BatchIncubatorTransferModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[92vh] flex flex-col p-0 overflow-hidden rounded-2xl border border-border shadow-2xl bg-card">
+      {/* A fixed height, so nothing jumps while the sizes load; the whole screen on a phone. */}
+      <DialogContent
+        className={`flex h-[min(92dvh,56rem)] max-w-4xl flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-2xl ${PHONE_FULL_SCREEN}`}
+      >
         {/* Header */}
-        <DialogHeader className="p-5 pb-4 border-b border-border-strong bg-secondary/15">
+        <DialogHeader className="border-b border-border-strong bg-secondary/15 p-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:p-5 sm:pb-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
                 <Building2 className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold font-heading text-foreground flex items-center gap-2">
+                <DialogTitle className="flex flex-wrap items-center gap-2 font-heading text-base font-bold text-foreground sm:text-lg">
                   <span>
                     {isAr
                       ? "تحويل وتعيين البضاعة إلى المحل الشريك"
                       : "Transfer stock to a partner shop"}
                   </span>
                   <Badge variant="secondary" className="font-mono text-xs font-semibold px-2">
-                    {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} · {rows.length}{" "}
-                    {isAr ? "متغيرات" : "variants"}
+                    {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} ·{" "}
+                    {countOf(rows.length, "size", isAr ? "ar" : "en")}
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                <DialogDescription className="mt-0.5 hidden text-xs text-muted-foreground sm:block">
                   {isAr
                     ? "نقل المخزون وتحديد أسعار الأمانة وعمولة المحل الشريك دفعة واحدة وبضغطة زر."
-                    : "Batch transfer products, set consignment prices and incubator commission instantly."}
+                    : "Send pieces to a partner shop and set their prices, in one go."}
                 </DialogDescription>
               </div>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Top Control Bar: Incubator Picker & Quick Presets */}
-        <div className="p-4 border-b border-border-subtle bg-muted/20 space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            {/* Incubator Selector */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5 text-primary" />
-                <span>
-                  {isAr ? "المحل الشريك المستهدف" : "Target Incubator / Consignment Store"}
-                </span>
-              </Label>
-              {incubatorsQ.isLoading ? (
-                <div className="h-9 w-full rounded-md bg-muted animate-pulse" />
-              ) : activeIncubators.length === 0 ? (
-                <div className="text-xs text-destructive p-2 bg-destructive/10 rounded-md border border-destructive/20 flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
+        {/* One scrolling body: the controls scroll away, the search stays, the list has the room. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          {/* Top Control Bar: Incubator Picker & Quick Presets */}
+          <div className="space-y-3 border-b border-border-subtle bg-muted/20 p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              {/* Incubator Selector */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold flex items-center gap-1.5">
+                  <Building2 className="h-3.5 w-3.5 text-primary" />
                   <span>
-                    {isAr
-                      ? "لا توجد محلات شركاء نشطة في حسابك. يرجى إضافة محل شريك أولاً من قسم محلات الشركاء."
-                      : "No active incubators found. Please create one in Incubators section."}
+                    {isAr ? "المحل الشريك المستهدف" : "Target Incubator / Consignment Store"}
                   </span>
-                </div>
-              ) : (
-                <select
-                  value={selectedIncubatorId}
-                  onChange={(e) => setSelectedIncubatorId(e.target.value)}
-                  className="w-full h-9 text-xs rounded-lg border border-input bg-background px-3 font-medium focus:ring-2 focus:ring-ring focus:outline-none"
-                >
-                  {activeIncubators.map((inc) => (
-                    <option key={inc.id} value={inc.id}>
-                      {inc.name} — (
-                      {inc.commission_type === "percentage"
-                        ? `${inc.commission_value}% عمولة`
-                        : `${formatMoney(inc.commission_value, inc.currency || currency, lang)} ثابت`}
-                      )
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
+                </Label>
+                {incubatorsQ.isLoading ? (
+                  <div className="h-9 w-full rounded-md bg-muted animate-pulse" />
+                ) : activeIncubators.length === 0 ? (
+                  <div className="text-xs text-destructive p-2 bg-destructive/10 rounded-md border border-destructive/20 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      {isAr
+                        ? "لا توجد محلات شركاء نشطة في حسابك. يرجى إضافة محل شريك أولاً من قسم محلات الشركاء."
+                        : "No active incubators found. Please create one in Incubators section."}
+                    </span>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedIncubatorId}
+                    onChange={(e) => setSelectedIncubatorId(e.target.value)}
+                    aria-label={isAr ? "المحل الشريك المستهدف" : "Partner shop"}
+                    className="h-10 w-full max-w-full rounded-lg border border-input bg-background px-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {activeIncubators.map((inc) => (
+                      <option key={inc.id} value={inc.id}>
+                        {inc.name} — (
+                        {inc.commission_type === "percentage"
+                          ? isAr
+                            ? `${inc.commission_value}% عمولة`
+                            : `${inc.commission_value}% commission`
+                          : `${formatMoney(inc.commission_value, inc.currency || currency, lang)} ${isAr ? "ثابت" : "fixed"}`}
+                        )
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
 
-            {/* Batch Fast Actions */}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
-                <Zap className="h-3.5 w-3.5 text-amber-500" />
-                <span>{isAr ? "أدوات الضبط السريع للكميات" : "Fast Batch Actions"}</span>
-              </Label>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleTransferAllAvailableStock}
-                  className="h-8 text-xs gap-1 bg-background hover:bg-secondary/40 font-medium"
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  {isAr ? "تحويل كامل المتوفر" : "All Available Stock"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSetUniformQty(1)}
-                  className="h-8 text-xs gap-1 bg-background hover:bg-secondary/40 font-medium"
-                >
-                  {isAr ? "1 قطعة لكل نوع" : "1 per variant"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleApplySellingPrices}
-                  className="h-8 text-xs gap-1 bg-background hover:bg-secondary/40 font-medium"
-                >
-                  {isAr ? "اعتماد أسعار البيع" : "Reset Prices"}
-                </Button>
+              {/* Batch Fast Actions */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+                  <Zap className="h-3.5 w-3.5 text-amber-500" />
+                  <span>{isAr ? "أدوات الضبط السريع للكميات" : "Fast Batch Actions"}</span>
+                </Label>
+                <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-0.5 no-scrollbar sm:flex-wrap sm:overflow-visible">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTransferAllAvailableStock}
+                    className="h-8 shrink-0 gap-1 bg-background text-xs font-medium hover:bg-secondary/40"
+                  >
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    {isAr ? "تحويل كامل المتوفر" : "All Available Stock"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSetUniformQty(1)}
+                    className="h-8 shrink-0 gap-1 bg-background text-xs font-medium hover:bg-secondary/40"
+                  >
+                    {isAr ? "1 قطعة لكل نوع" : "1 per variant"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleApplySellingPrices}
+                    className="h-8 shrink-0 gap-1 bg-background text-xs font-medium hover:bg-secondary/40"
+                  >
+                    {isAr ? "اعتماد أسعار البيع" : "Reset Prices"}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Search & Collapse Filter Bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
+          {/* Search & Collapse Filter Bar: stays at the top while the list scrolls */}
+          <div className="sticky top-0 z-10 flex flex-col items-stretch gap-2 border-b border-border-subtle bg-card/95 px-4 py-2.5 backdrop-blur sm:flex-row sm:items-center">
             <div className="relative flex-1 w-full">
               <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -475,10 +486,11 @@ export function BatchIncubatorTransferModal({
                     ? "بحث باسم المنتج، اللون، المقاس، أو الـ SKU..."
                     : "Search by product name, color, size, or SKU..."
                 }
-                className="h-8 text-xs pe-9 ps-3 w-full bg-background"
+                aria-label={isAr ? "بحث في المنتجات" : "Search products"}
+                className="h-9 w-full bg-background pe-9 ps-3 text-sm"
               />
             </div>
-            <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex flex-wrap items-center gap-1.5 sm:justify-end">
               <Badge variant="outline" className="text-xs font-mono px-2 py-1">
                 {countOf(productGroups.length, "product", isAr ? "ar" : "en")}
               </Badge>
@@ -541,347 +553,198 @@ export function BatchIncubatorTransferModal({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Product-Grouped Collapsible List */}
-        <div className="flex-1 overflow-y-auto p-4 max-h-[50vh] space-y-3">
-          {fetchedVariantsQ.isLoading ? (
-            <div className="p-8 text-center space-y-3">
-              <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
-              <p className="text-xs text-muted-foreground">
-                {isAr ? "جاري تجهيز المتغيرات..." : "Loading variants..."}
-              </p>
-            </div>
-          ) : productGroups.length === 0 ? (
-            <div className="p-8 text-center space-y-2 border border-dashed border-border rounded-xl">
-              <Package className="h-8 w-8 text-muted-foreground mx-auto" />
-              <p className="text-sm font-semibold">
-                {searchQuery
-                  ? isAr
-                    ? "لا توجد نتائج مطابقة لبحثك"
-                    : "No matching products found"
-                  : isAr
-                    ? "لا توجد متغيرات للمنتجات المحددة"
-                    : "No variants found"}
-              </p>
-            </div>
-          ) : (
-            productGroups.map((group) => {
-              const isExpanded = expandedProductIds.has(group.productId);
-              const groupRows = group.rows;
-              // A product's box ticks its sizes that have pieces; sold-out ones never count.
-              const tickable = groupRows.filter((r) => r.totalAvailable > 0);
-              const allSelected = tickable.length > 0 && tickable.every((r) => r.selected);
-              const someSelected = groupRows.some((r) => r.selected);
-              const groupTotalAvailable = groupRows.reduce((sum, r) => sum + r.totalAvailable, 0);
-              const groupTotalTransferQty = groupRows.reduce(
-                (sum, r) => sum + (r.selected ? r.transferQty : 0),
-                0,
-              );
-              const groupTotalValue = groupRows.reduce(
-                (sum, r) => sum + (r.selected ? r.transferQty * r.consignmentPrice : 0),
-                0,
-              );
+          {/* Product-Grouped Collapsible List */}
+          <div className="space-y-3 p-4">
+            {fetchedVariantsQ.isLoading ? (
+              <div className="p-8 text-center space-y-3">
+                <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+                <p className="text-xs text-muted-foreground">
+                  {isAr ? "جاري تجهيز المتغيرات..." : "Loading variants..."}
+                </p>
+              </div>
+            ) : productGroups.length === 0 ? (
+              <div className="p-8 text-center space-y-2 border border-dashed border-border rounded-xl">
+                <Package className="h-8 w-8 text-muted-foreground mx-auto" />
+                <p className="text-sm font-semibold">
+                  {searchQuery
+                    ? isAr
+                      ? "لا توجد نتائج مطابقة لبحثك"
+                      : "No matching products found"
+                    : isAr
+                      ? "لا توجد متغيرات للمنتجات المحددة"
+                      : "No variants found"}
+                </p>
+              </div>
+            ) : (
+              productGroups.map((group) => {
+                const isExpanded = expandedProductIds.has(group.productId);
+                const groupRows = group.rows;
+                // A product's box ticks its sizes that have pieces; sold-out ones never count.
+                const tickable = groupRows.filter((r) => r.totalAvailable > 0);
+                const allSelected = tickable.length > 0 && tickable.every((r) => r.selected);
+                const someSelected = groupRows.some((r) => r.selected);
+                const groupTotalAvailable = groupRows.reduce((sum, r) => sum + r.totalAvailable, 0);
+                const groupTotalTransferQty = groupRows.reduce(
+                  (sum, r) => sum + (r.selected ? r.transferQty : 0),
+                  0,
+                );
+                const groupTotalValue = groupRows.reduce(
+                  (sum, r) => sum + (r.selected ? r.transferQty * r.consignmentPrice : 0),
+                  0,
+                );
 
-              return (
-                <div
-                  key={group.productId}
-                  className="border border-border-strong rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
-                >
-                  {/* Product Group Header / Dropdown Banner */}
-                  <div className="p-3 bg-muted/30 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3 select-none">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Checkbox for whole product */}
-                      <button
-                        type="button"
-                        disabled={tickable.length === 0}
-                        aria-pressed={allSelected}
-                        onClick={() =>
-                          tick(
-                            tickable.map((r) => r.variantId),
-                            !allSelected,
-                          )
-                        }
-                        className="text-primary hover:opacity-80 p-0.5 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label={
-                          isAr
-                            ? `تحديد مقاسات ${group.productName} المتوفرة`
-                            : `Select the sizes of ${group.productName} in stock`
-                        }
-                      >
-                        {allSelected ? (
-                          <CheckSquare className="h-4 w-4" />
-                        ) : someSelected ? (
-                          <div className="h-4 w-4 border-2 border-primary rounded flex items-center justify-center bg-primary/20">
-                            <div className="h-2 w-2 bg-primary rounded-xs" />
-                          </div>
-                        ) : (
-                          <Square className="h-4 w-4 text-muted-foreground" />
-                        )}
-                      </button>
-
-                      {/* Product Name & Details */}
-                      <button
-                        type="button"
-                        onClick={() => toggleProductAccordion(group.productId)}
-                        className="flex items-center gap-2.5 text-end font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
-                      >
-                        <Layers className="h-4 w-4 text-primary shrink-0" />
-                        <span className="font-bold text-sm text-foreground">
-                          {group.productName}
-                        </span>
-                        {group.category && (
-                          <Badge
-                            variant="secondary"
-                            className="text-xs px-1.5 py-0 font-normal hidden sm:inline-block"
-                          >
-                            {group.category}
-                          </Badge>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Group Metrics and Chevron */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="hidden sm:flex items-center gap-2 text-xs">
-                        <span className="text-muted-foreground font-mono">
-                          {isAr ? "المتاح: " : "Avail: "}
-                          <strong className="text-foreground">{groupTotalAvailable}</strong>
-                        </span>
-                        <span>•</span>
-                        <Badge
-                          variant="secondary"
-                          className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+                return (
+                  <div
+                    key={group.productId}
+                    className="border border-border-strong rounded-xl overflow-hidden bg-background shadow-2xs transition-all"
+                  >
+                    {/* Product Group Header / Dropdown Banner */}
+                    <div className="p-3 bg-muted/30 hover:bg-muted/50 transition-colors flex items-center justify-between gap-3 select-none">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Checkbox for whole product */}
+                        <button
+                          type="button"
+                          disabled={tickable.length === 0}
+                          aria-pressed={allSelected}
+                          onClick={() =>
+                            tick(
+                              tickable.map((r) => r.variantId),
+                              !allSelected,
+                            )
+                          }
+                          className="text-primary hover:opacity-80 p-0.5 rounded cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label={
+                            isAr
+                              ? `تحديد مقاسات ${group.productName} المتوفرة`
+                              : `Select the sizes of ${group.productName} in stock`
+                          }
                         >
-                          {groupTotalTransferQty} {isAr ? "محول" : "transferred"}
-                        </Badge>
-                        <span className="font-mono font-bold text-muted-foreground">
-                          {formatMoney(groupTotalValue, currency, lang)}
-                        </span>
+                          {allSelected ? (
+                            <CheckSquare className="h-4 w-4" />
+                          ) : someSelected ? (
+                            <div className="h-4 w-4 border-2 border-primary rounded flex items-center justify-center bg-primary/20">
+                              <div className="h-2 w-2 bg-primary rounded-xs" />
+                            </div>
+                          ) : (
+                            <Square className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+
+                        {/* Product Name & Details */}
+                        <button
+                          type="button"
+                          onClick={() => toggleProductAccordion(group.productId)}
+                          className="flex items-center gap-2.5 text-end font-medium text-xs text-foreground hover:text-primary transition-colors cursor-pointer"
+                        >
+                          <Layers className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-bold text-sm text-foreground">
+                            {group.productName}
+                          </span>
+                          {group.category && (
+                            <Badge
+                              variant="secondary"
+                              className="text-xs px-1.5 py-0 font-normal hidden sm:inline-block"
+                            >
+                              {group.category}
+                            </Badge>
+                          )}
+                        </button>
                       </div>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => toggleProductAccordion(group.productId)}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
+                      {/* Group Metrics and Chevron */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {groupTotalTransferQty > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="border-primary/20 bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary sm:hidden"
+                          >
+                            {groupTotalTransferQty}
+                          </Badge>
                         )}
-                      </Button>
+                        <div className="hidden sm:flex items-center gap-2 text-xs">
+                          <span className="text-muted-foreground font-mono">
+                            {isAr ? "المتاح: " : "Avail: "}
+                            <strong className="text-foreground">{groupTotalAvailable}</strong>
+                          </span>
+                          <span>•</span>
+                          <Badge
+                            variant="secondary"
+                            className="font-mono text-xs font-bold px-2 py-0.5 bg-primary/10 text-primary border-primary/20"
+                          >
+                            {groupTotalTransferQty} {isAr ? "محول" : "transferred"}
+                          </Badge>
+                          <span className="font-mono font-bold text-muted-foreground">
+                            {formatMoney(groupTotalValue, currency, lang)}
+                          </span>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleProductAccordion(group.productId)}
+                          aria-expanded={isExpanded}
+                          aria-label={
+                            isExpanded
+                              ? isAr
+                                ? `طي ${group.productName}`
+                                : `Collapse ${group.productName}`
+                              : isAr
+                                ? `فتح ${group.productName}`
+                                : `Open ${group.productName}`
+                          }
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                        >
+                          {isExpanded ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
+
+                    {/* This product's sizes: cards on a phone, a table from sm up */}
+                    {isExpanded && (
+                      <div className="border-t border-border-subtle">
+                        <TransferSizeRows
+                          rows={groupRows}
+                          productName={group.productName}
+                          isAr={isAr}
+                          money={money}
+                          onTick={tick}
+                          onUpdate={updateRowByVariantId}
+                        />
+                      </div>
+                    )}
                   </div>
+                );
+              })
+            )}
 
-                  {/* Collapsible Variants Table for this Product */}
-                  {isExpanded && (
-                    <div className="border-t border-border-subtle">
-                      <table className="w-full text-xs text-end divide-y divide-border/40">
-                        <thead className="bg-muted/15 font-semibold text-muted-foreground text-xs">
-                          <tr>
-                            <th className="p-2.5 w-8 text-center"></th>
-                            <th className="p-2.5">{isAr ? "النسخة والرمز" : "Variant & SKU"}</th>
-                            <th className="p-2.5 text-center">
-                              {isAr ? "المخزون المتوفر" : "Available Stock"}
-                            </th>
-                            <th className="p-2.5 text-center w-36">
-                              {isAr ? "الكمية المحولة" : "Transfer Qty"}
-                            </th>
-                            <th className="p-2.5 text-center w-32">
-                              {isAr ? "سعر المحل الشريك" : "Consignment Price"}
-                            </th>
-                            <th className="p-2.5 w-32">
-                              {isAr ? "كود المحل الشريك" : "Ext. Code"}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/30">
-                          {groupRows.map((row) => {
-                            const isExceeding = row.transferQty > row.totalAvailable;
-                            const isZeroStock = row.totalAvailable <= 0;
-
-                            return (
-                              <tr
-                                key={row.variantId}
-                                className={`transition-colors ${
-                                  row.selected
-                                    ? "bg-background hover:bg-muted/10"
-                                    : "bg-muted/20 opacity-60"
-                                }`}
-                              >
-                                {/* Checkbox */}
-                                <td className="p-2.5 text-center">
-                                  <input
-                                    type="checkbox"
-                                    checked={row.selected}
-                                    disabled={isZeroStock}
-                                    onChange={(e) => tick([row.variantId], e.target.checked)}
-                                    aria-label={
-                                      isZeroStock
-                                        ? isAr
-                                          ? `${group.productName} ${row.variantLabel}: لا توجد قطع للتحويل`
-                                          : `${group.productName} ${row.variantLabel}: nothing to transfer`
-                                        : isAr
-                                          ? `تحويل ${group.productName} ${row.variantLabel}`
-                                          : `Transfer ${group.productName} ${row.variantLabel}`
-                                    }
-                                    className="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer disabled:cursor-not-allowed"
-                                  />
-                                </td>
-
-                                {/* Variant label */}
-                                <td className="p-2.5">
-                                  <div className="font-semibold text-foreground flex items-center gap-1.5">
-                                    <span>{row.variantLabel}</span>
-                                    {row.color && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs px-1 py-0 font-normal"
-                                      >
-                                        {row.color}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="text-xs font-mono text-muted-foreground mt-0.5">
-                                    {row.sku}
-                                  </div>
-                                </td>
-
-                                {/* Stock info */}
-                                <td className="p-2.5 text-center">
-                                  <div className="inline-flex items-center gap-1 font-mono text-xs flex-wrap justify-center">
-                                    <Badge
-                                      variant="outline"
-                                      className={`px-1.5 py-0.5 text-xs font-bold ${
-                                        isZeroStock
-                                          ? "bg-amber-500/10 text-amber-700 border-amber-300 dark:text-amber-400"
-                                          : "bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:text-emerald-400"
-                                      }`}
-                                    >
-                                      {isAr ? "متاح: " : "Avail: "}
-                                      {row.totalAvailable}
-                                    </Badge>
-                                    {row.unallocatedInc > 0 && row.stockMain > 0 && (
-                                      <span className="text-xs text-muted-foreground">
-                                        ({row.stockMain} ر + {row.unallocatedInc} ح)
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-
-                                {/* Transfer Qty Input */}
-                                <td className="p-2.5">
-                                  <div className="flex items-center gap-1 justify-center">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      max={row.totalAvailable}
-                                      value={row.transferQty}
-                                      disabled={!row.selected}
-                                      onChange={(e) =>
-                                        updateRowByVariantId(row.variantId, {
-                                          transferQty: Math.max(0, parseInt(e.target.value) || 0),
-                                        })
-                                      }
-                                      className={`h-8 w-20 text-center font-mono font-bold text-xs ${
-                                        isExceeding ? "border-destructive text-destructive" : ""
-                                      }`}
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      disabled={!row.selected || row.totalAvailable <= 0}
-                                      onClick={() =>
-                                        updateRowByVariantId(row.variantId, {
-                                          transferQty: row.totalAvailable,
-                                        })
-                                      }
-                                      className="h-8 px-1.5 text-xs font-semibold text-primary hover:bg-primary/10"
-                                    >
-                                      {isAr ? "الكل" : "Max"}
-                                    </Button>
-                                  </div>
-                                  {isExceeding && (
-                                    <div className="text-xs text-destructive mt-0.5 text-center font-medium">
-                                      {isAr ? "تجاوز المخزون المتوفر!" : "Exceeds stock!"}
-                                    </div>
-                                  )}
-                                </td>
-
-                                {/* Consignment Price */}
-                                <td className="p-2.5">
-                                  <div className="flex items-center gap-1 justify-center">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      step="0.001"
-                                      value={row.consignmentPrice}
-                                      disabled={!row.selected}
-                                      onChange={(e) =>
-                                        updateRowByVariantId(row.variantId, {
-                                          consignmentPrice: parseFloat(e.target.value) || 0,
-                                        })
-                                      }
-                                      className="h-8 w-24 text-center font-mono text-xs"
-                                    />
-                                    <span className="text-xs text-muted-foreground shrink-0 font-mono">
-                                      {money}
-                                    </span>
-                                  </div>
-                                </td>
-
-                                {/* External Code */}
-                                <td className="p-2.5">
-                                  <Input
-                                    type="text"
-                                    placeholder={isAr ? "كود اختياري" : "Optional"}
-                                    value={row.externalCode}
-                                    disabled={!row.selected}
-                                    onChange={(e) =>
-                                      updateRowByVariantId(row.variantId, {
-                                        externalCode: e.target.value,
-                                      })
-                                    }
-                                    className="h-8 text-xs"
-                                  />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-
-          {/* Delivery / Transfer Notes */}
-          <div className="mt-4 space-y-1.5">
-            <Label className="text-xs font-semibold text-muted-foreground">
-              {isAr
-                ? "ملاحظات إيصال التسليم والتحويل (اختياري)"
-                : "Transfer / Delivery Notes (Optional)"}
-            </Label>
-            <Textarea
-              placeholder={
-                isAr ? "مثال: تسليم دفعة العيد لمحل دار لولوة..." : "E.g. Delivery batch note..."
-              }
-              value={transferNotes}
-              onChange={(e) => setTransferNotes(e.target.value)}
-              className="text-xs min-h-[50px] resize-none"
-            />
+            {/* Delivery / Transfer Notes */}
+            <div className="mt-4 space-y-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">
+                {isAr
+                  ? "ملاحظات إيصال التسليم والتحويل (اختياري)"
+                  : "Transfer / Delivery Notes (Optional)"}
+              </Label>
+              <Textarea
+                placeholder={
+                  isAr ? "مثال: تسليم دفعة العيد لمحل دار لولوة..." : "E.g. Delivery batch note..."
+                }
+                value={transferNotes}
+                onChange={(e) => setTransferNotes(e.target.value)}
+                className="text-xs min-h-[50px] resize-none"
+              />
+            </div>
           </div>
         </div>
 
         {/* Footer: Summary Metrics & Action Buttons */}
-        <DialogFooter className="p-4 border-t border-border-strong bg-secondary/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-4 text-xs">
+        <DialogFooter className="flex flex-col items-stretch justify-between gap-2.5 border-t border-border-strong bg-secondary/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs sm:justify-start">
             {tooMany.length > 0 && (
               <span role="alert" className="font-medium text-destructive">
                 {isAr
@@ -913,7 +776,7 @@ export function BatchIncubatorTransferModal({
               variant="outline"
               disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
-              className="flex-1 sm:flex-none h-9 text-xs"
+              className="h-11 flex-1 text-sm sm:h-9 sm:flex-none sm:text-xs"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
@@ -927,7 +790,7 @@ export function BatchIncubatorTransferModal({
                 tooMany.length > 0
               }
               onClick={handleExecuteTransfer}
-              className="flex-1 sm:flex-none h-9 text-xs gap-1.5 font-bold bg-primary text-primary-foreground hover:bg-primary/90"
+              className="h-11 flex-[2] gap-1.5 bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:h-9 sm:flex-none sm:text-xs"
             >
               {isSubmitting ? (
                 <>
@@ -939,8 +802,8 @@ export function BatchIncubatorTransferModal({
                   <ArrowRightLeft className="h-4 w-4" />
                   <span>
                     {isAr
-                      ? `تأكيد تحويل (${totalPieces}) قطعة للمحل الشريك`
-                      : `Confirm Transfer (${totalPieces} items)`}
+                      ? `تحويل ${arNoun(totalPieces, "piece")}`
+                      : `Transfer ${countOf(totalPieces, "piece", "en")}`}
                   </span>
                 </>
               )}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  PHONE_SHEET,
   DialogDescription,
   DialogFooter,
   DialogHeader,
@@ -96,7 +97,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && closeDialog()}>
-      <DialogContent className="max-w-lg" dir={isAr ? "rtl" : "ltr"}>
+      <DialogContent className={`max-w-lg ${PHONE_SHEET}`} dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{isAr ? "كشف حساب المحل الشريك" : "Partner statement"}</DialogTitle>
           <DialogDescription className="break-words" dir="auto">
