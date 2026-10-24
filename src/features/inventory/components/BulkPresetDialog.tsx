@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /** Adds one customization preset (measurements, engraving, gift note...) to every selected product. */
 export function BulkPresetDialog({
@@ -42,7 +42,7 @@ export function BulkPresetDialog({
         <div className="space-y-4 py-2">
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? `سيُضاف النموذج المختار إلى ${arNoun(count, "product")}. المنتج الذي عنده النموذج أصلاً لا يتغير، وحقول القياس اليدوية القديمة تُحذف عند إضافة نموذج قياسات.`
+              ? `سيُضاف النموذج المختار إلى ${arNounOblique(count, "product")}. المنتج الذي عنده النموذج أصلاً لا يتغير، وحقول القياس اليدوية القديمة تُحذف عند إضافة نموذج قياسات.`
               : `The chosen preset is added to ${count} products. A product that already has it is left as it is, and the older hand-made measurement fields are dropped when a measurements preset is added.`}
           </p>
           <p className="text-xs font-semibold text-amber-600">

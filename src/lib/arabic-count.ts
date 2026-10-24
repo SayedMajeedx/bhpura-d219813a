@@ -128,3 +128,21 @@ export function countOf(n: number, key: CountedNoun, lang: "ar" | "en"): string 
   const [one, many] = EN_NOUNS[key];
   return `${n} ${n === 1 ? one : many}`;
 }
+
+/** A dual in its oblique case: "منتجان" → "منتجين", "عمليتا بيع" → "عمليتي بيع". */
+const obliqueDual = (two: string) =>
+  two
+    .split(" ")
+    .map((word) => word.replace(/ان$/, "ين").replace(/تا$/, "تي"))
+    .join(" ");
+
+/**
+ * A count after a word that governs it (a preposition, or a verbal noun it belongs to: "تحويل",
+ * "حذف", "من أصل", "لمدة"), or after a verb as its object: the same forms as `arNoun`, but two
+ * takes the oblique "ين" ("تحويل قطعتين", "تم حذف منتجين", "من أصل طلبين"). Only the dual
+ * changes: the other forms read the same in every case. As a subject, after a colon or alone,
+ * the count stays `arNoun` ("بقيت قطعتان", "المحدد: طلبان").
+ */
+export function arNounOblique(n: number, key: CountedNoun): string {
+  return n === 2 ? obliqueDual(AR_NOUNS[key].two) : arNoun(n, key);
+}

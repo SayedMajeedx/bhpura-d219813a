@@ -1,5 +1,5 @@
 import { depositSentence, type DepositTerms } from "@/lib/bookings/deposit";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /**
  * The booking terms a service's page shows (in place of a product's shipping
@@ -16,7 +16,9 @@ export function bookingTermsText(
   if (lead === 1) lines.push(isAr ? "احجز قبل يوم على الأقل." : "Book at least a day ahead.");
   else if (lead > 1)
     lines.push(
-      isAr ? `احجز قبل ${arNoun(lead, "day")} على الأقل.` : `Book at least ${lead} days ahead.`,
+      isAr
+        ? `احجز قبل ${arNounOblique(lead, "day")} على الأقل.`
+        : `Book at least ${lead} days ahead.`,
     );
   else lines.push(isAr ? "يمكن الحجز لنفس اليوم إن توفّر." : "Same-day bookings when available.");
 
@@ -26,7 +28,7 @@ export function bookingTermsText(
   if (hold > 0) {
     lines.push(
       isAr
-        ? `نحجز لك الموعد ${arNoun(hold, "minute")} وأنت تكمل الدفع.`
+        ? `نحجز لك الموعد ${arNounOblique(hold, "minute")} وأنت تكمل الدفع.`
         : `Your date is held for ${hold} minutes while you check out.`,
     );
   }

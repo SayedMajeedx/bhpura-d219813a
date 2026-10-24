@@ -23,7 +23,7 @@ import {
 } from "@/features/inventory/lib/product-import";
 import { importExportQueries } from "@/lib/data/import-export";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 type ImportIssueItem = { row: number; code: string; name: string };
 
@@ -141,7 +141,7 @@ export function ProductImporterModal(props: {
         const chunk = consolidatedPayload.slice(i, i + batchSize);
         setProgress(
           isAr
-            ? `جاري نقل ${i} من أصل ${arNoun(consolidatedPayload.length, "product")}...`
+            ? `جاري نقل ${i} من أصل ${arNounOblique(consolidatedPayload.length, "product")}...`
             : `Migrated ${i} / ${consolidatedPayload.length} products...`,
         );
 

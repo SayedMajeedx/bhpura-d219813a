@@ -1,4 +1,4 @@
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 /**
  * The launch checklist's first and last steps, in the words of what the store
  * sells: products, or (a store that takes bookings) services and bookings.
@@ -38,7 +38,7 @@ const PRODUCTS: ChecklistCopy = {
     en: "Receive your first online order or create a manual order to activate financial metrics.",
   },
   firstDone: (count) => ({
-    ar: `تم تسجيل ${arNoun(count, "order")} بنجاح. لوحة المبيعات والتقارير المالية تعمل بكامل طاقتها.`,
+    ar: `تم تسجيل ${arNounOblique(count, "order")} بنجاح. لوحة المبيعات والتقارير المالية تعمل بكامل طاقتها.`,
     en: `${count} orders recorded successfully. Sales telemetry is active.`,
   }),
   firstButtonDone: { ar: "إدارة الطلبات والفواتير", en: "Manage Orders & Invoices" },
@@ -64,7 +64,7 @@ const SERVICES: ChecklistCopy = {
     en: "Share your link to get your first bookings, or add one from the bookings calendar.",
   },
   firstDone: (count) => ({
-    ar: `تم تسجيل ${arNoun(count, "order")} حجز. التقويم والتقارير جاهزة.`,
+    ar: `تم تسجيل ${arNounOblique(count, "order")} حجز. التقويم والتقارير جاهزة.`,
     en: `${count} bookings recorded. The calendar and reports are ready.`,
   }),
   firstButtonDone: { ar: "فتح تقويم الحجوزات", en: "Open the Bookings Calendar" },

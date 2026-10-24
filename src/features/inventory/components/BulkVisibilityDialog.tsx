@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /** Confirms publishing the selected products to the storefront, or hiding them from it. */
 export function BulkVisibilityDialog({
@@ -38,10 +38,10 @@ export function BulkVisibilityDialog({
           <AlertDialogTitle>
             {publish
               ? isAr
-                ? `نشر ${arNoun(count, "product")} في المتجر؟`
+                ? `نشر ${arNounOblique(count, "product")} في المتجر؟`
                 : `Publish ${count} products to the storefront?`
               : isAr
-                ? `إخفاء ${arNoun(count, "product")} من المتجر؟`
+                ? `إخفاء ${arNounOblique(count, "product")} من المتجر؟`
                 : `Hide ${count} products from the storefront?`}
           </AlertDialogTitle>
           <AlertDialogDescription>

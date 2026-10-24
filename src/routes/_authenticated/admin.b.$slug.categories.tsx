@@ -38,7 +38,7 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import type { StoreVertical } from "@/lib/store-profile";
 import { addonDataQueries } from "@/lib/data/addons";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -110,7 +110,7 @@ function CategoriesPage() {
     if (mode === "soft")
       toast.success(
         isAr
-          ? `تم التعطيل — مرتبط بـ ${arNoun(linked, "product")}`
+          ? `تم التعطيل — مرتبط بـ ${arNounOblique(linked, "product")}`
           : `Deactivated — linked to ${linked} product(s)`,
       );
     else toast.success(isAr ? "تم الحذف" : "Deleted");

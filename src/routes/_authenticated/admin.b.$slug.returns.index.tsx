@@ -14,7 +14,7 @@ import { ReturnsScopeSwitcher, type ReturnsScope } from "@/components/returns/Re
 import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";
 import { RETURN_STATUS_CONFIG, type ReturnRequest } from "@/lib/returns.types";
 import { returnsQueries } from "@/lib/data/returns";
-import { arNoun, countOf } from "@/lib/arabic-count";
+import { countOf, arNounOblique } from "@/lib/arabic-count";
 
 /** The shared return types over the typed rows (JSON and status columns narrowed). */
 const asReturnRequests = (rows: unknown[]) => rows as ReturnRequest[];
@@ -195,7 +195,7 @@ function ReturnsIndexPage() {
             </div>
             <div className="text-xs text-muted-foreground self-end sm:self-auto font-mono">
               {isAr
-                ? `عرض ${filteredReturns.length} من أصل ${arNoun(returns.length, "order")}`
+                ? `عرض ${filteredReturns.length} من أصل ${arNounOblique(returns.length, "order")}`
                 : `Showing ${filteredReturns.length} of ${returns.length} returns`}
             </div>
           </div>

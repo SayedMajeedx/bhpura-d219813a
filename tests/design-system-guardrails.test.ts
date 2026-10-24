@@ -437,6 +437,12 @@ describe("before going live (2026-10-24)", () => {
     expect(countMatches(/حاضن/g, (rel) => !rel.includes("generate-variants"))).toBe(0);
   });
 
+  it("puts a count after a word that governs it in the oblique (تحويل قطعتين, not قطعتان)", () => {
+    const governed =
+      /(?<![؀-ۿ])(من|أصل|إضافة|استيراد|حذف|حفظ|تحويل|نشر|إخفاء|تصدير|تعيين|لمدة|خلال|قبل|إلى|لـ|بـ|على|حتى|منذ|في) \$\{arNoun\(/g;
+    expect(countMatches(governed)).toBe(0);
+  });
+
   it("spells sold out نفدت, not نفذت (which means carried out)", () => {
     // Instagram captions are read as people write them, misspelling included.
     expect(countMatches(/نفذت الكمية/g, (rel) => !rel.includes("instagram-ai-importer"))).toBe(0);

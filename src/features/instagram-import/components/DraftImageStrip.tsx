@@ -2,7 +2,7 @@ import { Check, ChevronLeft, ChevronRight, Layers, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { MergeableDraft } from "@/features/instagram-import/lib/merge-drafts";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /**
  * A draft's pictures in a row: tick which to keep, choose the cover, and put them in order (the
@@ -33,7 +33,7 @@ export function DraftImageStrip({
           <Layers className="h-3.5 w-3.5 text-primary" />
           <span>
             {isAr
-              ? `${selectedCount} من ${arNoun(draft.images.length, "image")} محددة`
+              ? `${selectedCount} من ${arNounOblique(draft.images.length, "image")} محددة`
               : `${selectedCount} of ${draft.images.length} selected`}
           </span>
         </div>

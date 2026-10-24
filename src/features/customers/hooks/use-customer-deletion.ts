@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { deleteCustomers, invalidateCustomers } from "@/lib/data/customers";
 import { useT } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /**
  * The customers list's selection and deletion: one customer from its row, or
@@ -58,7 +58,9 @@ export function useCustomerDeletion({ brandId, isAr }: { brandId: string; isAr: 
     try {
       await deleteCustomers(brandId, ids);
       toast.success(
-        isAr ? `تم حذف ${arNoun(ids.length, "customer")}` : `${ids.length} customers deleted`,
+        isAr
+          ? `تم حذف ${arNounOblique(ids.length, "customer")}`
+          : `${ids.length} customers deleted`,
       );
       setSelectedCustomerIds(new Set());
       setBulkDeleteOpen(false);
