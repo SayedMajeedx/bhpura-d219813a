@@ -125,6 +125,8 @@ function OnboardPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Support access is the owner's to give (off by default; Settings can change it later).
+  const [supportAccess, setSupportAccess] = useState(false);
   // The "are you a person" check: a token is good for one try, so a failed try asks again.
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileRound, setTurnstileRound] = useState(0);
@@ -299,6 +301,7 @@ function OnboardPage() {
           businessType: verticalToLegacyBusinessType(storeVertical!),
           selectedAddonIds,
           turnstileToken,
+          supportAccess,
         },
       });
 
@@ -775,6 +778,27 @@ function OnboardPage() {
 
                     <PasswordField value={password} onChange={setPassword} isAr={isAr} />
                   </div>
+
+                  <label className="flex items-start gap-2.5 rounded-lg border border-border p-3 text-xs">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 size-4 shrink-0 accent-primary"
+                      checked={supportAccess}
+                      onChange={(e) => setSupportAccess(e.target.checked)}
+                    />
+                    <span className="space-y-0.5">
+                      <span className="block font-semibold text-foreground">
+                        {isAr
+                          ? "أسمح لفريق دعم Boutq بالدخول إلى لوحة متجري لمساعدتي"
+                          : "Let Boutq's support team into my admin to help me"}
+                      </span>
+                      <span className="block text-muted-foreground">
+                        {isAr
+                          ? "اختياري. كل دخول يُسجَّل، ويمكنك إيقافه من الإعدادات في أي وقت."
+                          : "Optional. Every visit is logged, and you can turn it off in Settings at any time."}
+                      </span>
+                    </span>
+                  </label>
 
                   <div className="pt-2">
                     <TurnstileWidget

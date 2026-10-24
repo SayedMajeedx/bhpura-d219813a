@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
+import { toggleSupportAccess } from "@/lib/impersonation.functions";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { finalizeBrandSetup } from "@/lib/brand-wizard.functions";
 import { getBrandTemplate } from "@/lib/brand-templates";
@@ -70,6 +71,7 @@ const INITIAL_DATA: BrandWizardData = {
   owner_password: "",
   plan_type: "annual",
   createMobileApp: true,
+  supportAccess: false,
 };
 
 const STEPS: { id: WizardStep; labelAr: string; labelEn: string; icon: React.ElementType }[] = [
@@ -196,6 +198,10 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
 
         brandId = result.brand_id;
         setCreatedBrandId(brandId);
+        // A new store starts without support access; the owner's yes is recorded here.
+        if (data.supportAccess) {
+          await toggleSupportAccess({ data: { brandId, enabled: true } });
+        }
         updatePipelineStep("provision", "success");
       } catch (err: any) {
         updatePipelineStep("provision", "error", err.message || "Failed to provision brand");
