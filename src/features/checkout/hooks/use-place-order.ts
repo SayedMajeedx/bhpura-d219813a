@@ -59,6 +59,7 @@ export function usePlaceOrder({
   cartSessionId,
   paymentErrorState,
   payInFull = false,
+  requestedTime = null,
 }: {
   brand: Pick<Storefront["brand"], "id" | "slug">;
   session: Storefront["session"];
@@ -96,6 +97,11 @@ export function usePlaceOrder({
   paymentErrorState: { status: string; orderId: string } | null;
   /** The shopper chose to pay the whole total now instead of only the advance. */
   payInFull?: boolean;
+  /**
+   * The day and time picked, when the store's delivery schedule applies (`useDeliveryTime`); its
+   * `missing` says what is still to pick before the order can be placed.
+   */
+  requestedTime?: { date: string | null; slot: string | null; missing: string | null } | null;
 }) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -119,6 +125,10 @@ export function usePlaceOrder({
     });
     if (formError) {
       toast.error(formError);
+      return;
+    }
+    if (requestedTime?.missing) {
+      toast.error(requestedTime.missing);
       return;
     }
     const customerEmail = form.email.trim();
@@ -160,6 +170,7 @@ export function usePlaceOrder({
             lang,
             idempotencyKey,
             payInFull,
+            requestedTime,
           }),
           bookingOfCart(cart),
         );
@@ -280,6 +291,12 @@ export function usePlaceOrder({
           fulfillment,
           channel: fulfillment === "digital" ? digitalChannel : "email",
           ...(cartBooking ? confirmationSearch(confirmationFromCart(cartBooking)) : {}),
+          ...(requestedTime?.date
+            ? {
+                for: requestedTime.date,
+                ...(requestedTime.slot ? { slot: requestedTime.slot } : {}),
+              }
+            : {}),
         },
       });
     } catch (e: any) {

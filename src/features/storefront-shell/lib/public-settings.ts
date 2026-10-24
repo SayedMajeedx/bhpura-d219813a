@@ -243,6 +243,8 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     product_card_aspect_ratio: s?.product_card_aspect_ratio ?? null,
     // How the home page sells (shop or menu); null: the store vertical's (storefrontHomeLayout).
     storefront_home_layout: s?.storefront_home_layout ?? null,
+    // When a shopper may have an order (delivery-schedule.ts); {} until the store sets one.
+    delivery_schedule: s?.delivery_schedule ?? null,
     quick_view_enabled: s?.quick_view_enabled ?? true,
     pdp_image_zoom: s?.pdp_image_zoom ?? true,
     category_filters_enabled: s?.category_filters_enabled ?? true,

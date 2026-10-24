@@ -2026,6 +2026,7 @@ export type Database = {
           delivery_estimate_tailored_ar: string | null;
           delivery_estimate_tailored_en: string | null;
           delivery_fee: number;
+          delivery_schedule: Json;
           digital_delivery_enabled: boolean;
           email: string | null;
           email_footer_ar: string | null;
@@ -2235,6 +2236,7 @@ export type Database = {
           delivery_estimate_tailored_ar?: string | null;
           delivery_estimate_tailored_en?: string | null;
           delivery_fee?: number;
+          delivery_schedule?: Json;
           digital_delivery_enabled?: boolean;
           email?: string | null;
           email_footer_ar?: string | null;
@@ -2444,6 +2446,7 @@ export type Database = {
           delivery_estimate_tailored_ar?: string | null;
           delivery_estimate_tailored_en?: string | null;
           delivery_fee?: number;
+          delivery_schedule?: Json;
           digital_delivery_enabled?: boolean;
           email?: string | null;
           email_footer_ar?: string | null;
@@ -5404,6 +5407,8 @@ export type Database = {
           public_invoice_token: string;
           reconciliation_status: string | null;
           request_hash: string | null;
+          requested_date: string | null;
+          requested_slot: string | null;
           shipping: number;
           shipping_address_id: string | null;
           status: string;
@@ -5483,6 +5488,8 @@ export type Database = {
           public_invoice_token?: string;
           reconciliation_status?: string | null;
           request_hash?: string | null;
+          requested_date?: string | null;
+          requested_slot?: string | null;
           shipping?: number;
           shipping_address_id?: string | null;
           status?: string;
@@ -5562,6 +5569,8 @@ export type Database = {
           public_invoice_token?: string;
           reconciliation_status?: string | null;
           request_hash?: string | null;
+          requested_date?: string | null;
+          requested_slot?: string | null;
           shipping?: number;
           shipping_address_id?: string | null;
           status?: string;
@@ -8873,6 +8882,7 @@ export type Database = {
           delivery_estimate_tailored_ar: string | null;
           delivery_estimate_tailored_en: string | null;
           delivery_fee: number | null;
+          delivery_schedule: Json | null;
           digital_delivery_enabled: boolean | null;
           fabric_care_ar: string | null;
           fabric_care_en: string | null;
@@ -9616,6 +9626,16 @@ export type Database = {
         Args: { p_brand_id: string; p_id: string };
         Returns: boolean;
       };
+      delivery_time_problem: {
+        Args: {
+          p_date: string;
+          p_fulfillment: string;
+          p_now?: string;
+          p_schedule: Json;
+          p_slot: string;
+        };
+        Returns: string;
+      };
       dispatch_order_email_event: {
         Args: { p_event_id: string };
         Returns: undefined;
@@ -9695,6 +9715,7 @@ export type Database = {
           delivery_estimate_tailored_ar: string | null;
           delivery_estimate_tailored_en: string | null;
           delivery_fee: number;
+          delivery_schedule: Json;
           digital_delivery_enabled: boolean;
           email: string | null;
           email_footer_ar: string | null;
@@ -11124,6 +11145,10 @@ export type Database = {
       set_made_to_order_paused: {
         Args: { p_paused: boolean; p_product_id: string };
         Returns: boolean;
+      };
+      set_order_requested_time: {
+        Args: { p_date: string; p_order_id: string; p_slot: string };
+        Returns: undefined;
       };
       set_order_review_hidden: {
         Args: { p_hidden: boolean; p_review_id: string };

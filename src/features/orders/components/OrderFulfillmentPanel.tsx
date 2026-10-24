@@ -1,4 +1,6 @@
 import { Button } from "@/components/ui/button";
+import { requestedTimeLabel } from "@/lib/delivery-schedule";
+import { CalendarClock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -119,6 +121,18 @@ export function OrderFulfillmentPanel({
               {lang === "ar" ? "طريقة التسليم" : "FULFILLMENT"}
             </p>
             <p className="text-base font-semibold leading-tight text-foreground mt-0.5">{title}</p>
+            {order.requested_date && (
+              // The day (and window) the customer picked at checkout (delivery-schedule.ts).
+              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-primary">
+                <CalendarClock className="size-4 shrink-0" aria-hidden="true" />
+                {lang === "ar" ? "طلب العميل: " : "Customer asked for "}
+                {requestedTimeLabel(
+                  order.requested_date,
+                  order.requested_slot,
+                  lang === "ar" ? "ar" : "en",
+                )}
+              </p>
+            )}
           </div>
           <div className={isAppointment ? "hidden" : "w-full"}>
             <Label className="sr-only">

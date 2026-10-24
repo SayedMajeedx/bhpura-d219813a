@@ -186,6 +186,22 @@ describe("placeStorefrontOrderArgs", () => {
     });
   });
 
+  it("sends the day and time picked, and nothing when none was", () => {
+    expect(placeStorefrontOrderArgs(argsInput()).p_customer).not.toHaveProperty("requested_date");
+    expect(
+      placeStorefrontOrderArgs(
+        argsInput({ requestedTime: { date: "2026-10-30", slot: "10:00-14:00" } }),
+      ).p_customer,
+    ).toMatchObject({ requested_date: "2026-10-30", requested_slot: "10:00-14:00" });
+    expect(
+      placeStorefrontOrderArgs(argsInput({ requestedTime: { date: "2026-10-30", slot: null } }))
+        .p_customer,
+    ).toMatchObject({ requested_date: "2026-10-30", requested_slot: null });
+    expect(placeOrderFailure("DELIVERY_TIME_UNAVAILABLE", t).message).toBe(
+      "The day or time you picked is no longer available. Pick another and try again.",
+    );
+  });
+
   it("sends a Bahrain delivery", () => {
     const args = placeStorefrontOrderArgs(argsInput());
     expect(args).toMatchObject({
