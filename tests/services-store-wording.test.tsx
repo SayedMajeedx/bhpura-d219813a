@@ -101,6 +101,7 @@ describe("the listing filters", () => {
     filters: {
       sizes: [],
       colors: [],
+      occasions: [],
       minPrice: null,
       maxPrice: null,
       inStockOnly: false,
@@ -113,6 +114,7 @@ describe("the listing filters", () => {
         { value: "4 hours", unit: null, count: 1 },
       ],
       colors: [],
+      occasions: [],
       price: { min: 40, max: 185 },
     },
     totalFilteredCount: 3,

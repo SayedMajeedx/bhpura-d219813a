@@ -2,14 +2,18 @@ import { Link } from "@tanstack/react-router";
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
+import { AskOnWhatsAppButton } from "@/features/product-page/components/AskOnWhatsAppButton";
 
 /** On phones, a service's page keeps "Book" in reach at the bottom of the screen. */
 export function ServiceMobileBookBar({
   productId,
   fromPrice,
+  askUrl = null,
 }: {
   productId: string;
   fromPrice: number;
+  /** The store's WhatsApp with a message about this service, when it takes messages. */
+  askUrl?: string | null;
 }) {
   const { brand, lang, currency, t } = useStorefront();
   return (
@@ -23,6 +27,7 @@ export function ServiceMobileBookBar({
             </span>
           </p>
         )}
+        {askUrl && <AskOnWhatsAppButton url={askUrl} productId={productId} />}
         <Button asChild size="lg" className="min-w-0 flex-1 gap-2">
           <Link to="/$slug/book" params={{ slug: brand.slug }} search={{ service: productId }}>
             <CalendarDays className="size-5" aria-hidden="true" />

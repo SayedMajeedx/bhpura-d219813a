@@ -37,6 +37,8 @@ export type ProductRow = {
   /** What a service includes: `[{ ar, en }]` (service-details.ts reads it). */
   service_includes?: unknown;
   custom_fields?: unknown;
+  /** What it is worn or given for (`product-occasion.ts`); a listing filters by it. */
+  occasion?: string | null;
   product_variants: Array<{
     id: string;
     selling_price: number;
@@ -121,6 +123,9 @@ export type StorefrontProductDetail = {
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;
+  /** The product's own details, shown in its details section (`product-details.ts`). */
+  fabric_type?: string | null;
+  occasion?: string | null;
   /** A service's place (customer, venue, both) and what it includes ([{ ar, en }]). */
   service_location?: string | null;
   service_includes?: unknown;

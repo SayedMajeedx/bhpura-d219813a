@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { OCCASION_CHOICES } from "@/lib/product-occasion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, ChevronDown, Sliders } from "lucide-react";
@@ -101,10 +102,11 @@ export function ProductAdvancedDetails({
                       onChange={(e) => setForm({ ...form, occasion: e.target.value })}
                     >
                       <option value="">{isAr ? "اختر المناسبة..." : "Select occasion..."}</option>
-                      <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
-                      <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
-                      <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
-                      <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
+                      {OCCASION_CHOICES.map((choice) => (
+                        <option key={choice.value} value={choice.value}>
+                          {isAr ? choice.ar : choice.en}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

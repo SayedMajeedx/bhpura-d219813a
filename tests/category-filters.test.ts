@@ -172,10 +172,13 @@ describe("sizes in order", () => {
 describe("the filters in the address", () => {
   it("reads every filter, several sizes or colours, and a bad value as none", () => {
     expect(
-      filtersFromSearch("?size=52&size=54&color=Black&min=10&max=oops&stock=1&sort=price-low"),
+      filtersFromSearch(
+        "?size=52&size=54&color=Black&occasion=يومي&min=10&max=oops&stock=1&sort=price-low",
+      ),
     ).toEqual({
       sizes: ["52", "54"],
       colors: ["Black"],
+      occasions: ["يومي"],
       minPrice: 10,
       maxPrice: null,
       inStockOnly: true,
@@ -215,5 +218,50 @@ describe("the filters in the address", () => {
         filters({ sizes: ["52", "54"], colors: ["a"], minPrice: 1, inStockOnly: true }),
       ),
     ).toBe(4);
+  });
+});
+
+describe("what a product is for", () => {
+  const daily = product("daily", [{ size: "52" }], { occasion: "يومي" });
+  const evening = product("evening", [{ size: "54" }], { occasion: "سهرة" });
+  const formal = product("formal", [{ size: "54" }], { occasion: "إطلالة رسمية" });
+  const none = product("none", [{ size: "52" }]);
+  const all = [daily, evening, formal, none];
+
+  it("filters by the occasions picked, any of them", () => {
+    expect(filterProducts(all, filters({ occasions: ["سهرة"] })).map((p) => p.id)).toEqual([
+      "evening",
+    ]);
+    expect(filterProducts(all, filters({ occasions: ["سهرة", "يومي"] })).map((p) => p.id)).toEqual([
+      "daily",
+      "evening",
+    ]);
+    expect(activeFilterCount(filters({ occasions: ["سهرة", "يومي"] }))).toBe(1);
+  });
+
+  it("offers the occasions the page's products have, each counted with the other filters", () => {
+    const facets = catalogFacets(all, filters({ sizes: ["54"] }));
+    expect(facets.occasions).toEqual([
+      { value: "يومي", count: 0 },
+      { value: "سهرة", count: 1 },
+      { value: "إطلالة رسمية", count: 1 },
+    ]);
+    // A size's count follows the occasion picked.
+    const evenings = catalogFacets(all, filters({ occasions: ["سهرة"] }));
+    expect(evenings.sizes).toEqual([
+      { value: "52", unit: null, count: 0 },
+      { value: "54", unit: null, count: 1 },
+    ]);
+    expect(catalogFacets([none], EMPTY_FILTERS).occasions).toEqual([]);
+    // In the editor's order, whatever order the products come in.
+    expect(catalogFacets([formal, daily], EMPTY_FILTERS).occasions.map((o) => o.value)).toEqual([
+      "يومي",
+      "إطلالة رسمية",
+    ]);
+  });
+
+  it("keeps the occasion in the address", () => {
+    const search = filtersToSearch("?utm=mail", filters({ occasions: ["سهرة"] }));
+    expect(filtersFromSearch(`?${search}`).occasions).toEqual(["سهرة"]);
   });
 });

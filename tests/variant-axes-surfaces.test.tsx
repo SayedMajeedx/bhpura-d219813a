@@ -124,6 +124,7 @@ describe("storefront surfaces use the store's option axes", () => {
       filters: {
         sizes: [],
         colors: [],
+        occasions: [],
         minPrice: null,
         maxPrice: null,
         inStockOnly: false,
@@ -135,6 +136,7 @@ describe("storefront surfaces use the store's option axes", () => {
     const facets = (sizes: Array<[string, string | null]>, colors: string[]) => ({
       sizes: sizes.map(([value, unit]) => ({ value, unit, count: 1 })),
       colors: colors.map((name) => ({ name, hex: null, count: 1 })),
+      occasions: [],
       price: { min: 0, max: 100 },
     });
     const coffee = render(
