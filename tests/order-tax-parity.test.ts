@@ -2,12 +2,13 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import builder from "../supabase/migrations/20261014130000_partner_pickup_points.sql?raw";
 import reprice from "../supabase/migrations/20261002100000_booking_discounts.sql?raw";
-import redeem from "../supabase/migrations/20261007150000_loyalty_redemption_applies_to_order.sql?raw";
+import redeem from "../supabase/migrations/20261024100000_points_keep_inclusive_vat.sql?raw";
 import { orderTotals, storeTaxRule, type TaxRule } from "../src/lib/order-tax";
 
 // The checkout's total (TypeScript) must be the one the order charges: the same orders go
 // through the live order builder (place_storefront_order, read from production on 2026-10-23
-// and equal to these migrations), the booking's repricing and the points redemption.
+// and equal to these migrations), the booking's repricing and the points redemption (as
+// migration 20261024100000 redefines it).
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 60_000 });
 
 const functionOf = (sql: string, head: string) => {
@@ -181,6 +182,28 @@ describe("the checkout's total is the total the order charges", () => {
       tax: 10.425,
       total: 114.675,
     });
+  });
+
+  it("takes points off a VAT-inclusive store's total without adding its tax again (#43)", async () => {
+    const rule: TaxRule = { rate: 10, inclusive: true };
+    // 40.000 with the tax inside it, 3.000 of points: 37.000 to pay, the tax recorded as before.
+    const row = await placed({ subtotal: 40, discount: 0, shipping: 0, rule, points: 300 });
+    expect({ tax: Number(row.tax_amount), total: Number(row.total) }).toEqual({
+      tax: 3.636,
+      total: 37,
+    });
+    expect(
+      orderTotals({ subtotal: 40, discount: 0, shipping: 0, loyaltyDiscount: 3 }, rule),
+    ).toMatchObject({ tax: 3.636, total: 37 });
+    // A VAT-exclusive store still adds its tax on top of what is left.
+    const exclusive = await placed({
+      subtotal: 40,
+      discount: 0,
+      shipping: 0,
+      rule: { rate: 10, inclusive: false },
+      points: 300,
+    });
+    expect(Number(exclusive.total)).toBe(41);
   });
 
   it("agrees with the order builder and the points redemption on every order", async () => {
