@@ -147,14 +147,15 @@ describe("asking on WhatsApp from a phone's product page", () => {
     render(
       <ServiceMobileBookBar productId="s1" fromPrice={20} askUrl="https://wa.me/973?text=hi" />,
     );
-    const ask = screen.getByRole("link", { name: "Ask about this product on WhatsApp" });
-    expect(ask.getAttribute("href")).toBe("https://wa.me/973?text=hi");
+    const open = vi.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(screen.getByRole("button", { name: "Ask about this product on WhatsApp" }));
+    expect(open).toHaveBeenCalledWith("https://wa.me/973?text=hi", "_blank", "noopener,noreferrer");
     expect(within(document.body).getByRole("link", { name: /Book now/ })).toBeTruthy();
   });
 
   it("is left out when the store takes no WhatsApp messages", () => {
     render(<ServiceMobileBookBar productId="s1" fromPrice={20} askUrl={null} />);
-    expect(screen.queryByRole("link", { name: /WhatsApp/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /WhatsApp/ })).toBeNull();
   });
 });
 

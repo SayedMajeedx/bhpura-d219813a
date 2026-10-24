@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
@@ -37,7 +37,6 @@ import {
   filtersFromSearch,
   filtersToSearch,
   type FilterState,
-  EMPTY_FILTERS,
 } from "@/lib/category-filters";
 import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
 
@@ -94,9 +93,10 @@ function CategoryPage() {
   const servicesStore = useIsServicesStore();
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
-  const [filters, setFilters] = useState<FilterState>(() =>
-    typeof window === "undefined" ? EMPTY_FILTERS : filtersFromSearch(window.location.search),
-  );
+  // The router's address, which the server knows too: read from window, the server drew the
+  // page unfiltered and the browser filtered (a hydration mismatch on `?size=` or `?occasion=`).
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const [filters, setFilters] = useState<FilterState>(() => filtersFromSearch(searchStr));
 
   const sort = filters.sort;
   const setSort = (newSort: FilterState["sort"]) => {
