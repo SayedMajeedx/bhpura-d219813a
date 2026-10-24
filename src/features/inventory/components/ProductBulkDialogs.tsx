@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import type { InventoryCategory } from "@/features/inventory/lib/product-list";
 import { assignableCategories } from "@/lib/smart-categories";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /** Confirms deleting the selected products with their variants and stock. */
 export function BulkDeleteProductsDialog({
@@ -107,7 +107,7 @@ export function BulkCategoryDialog({
         <div className="space-y-4 py-2">
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? `اختر القسم الجديد لـ ${arNoun(count, "product")} تم تحديدها، أو اختر "بدون قسم" لإزالتها من أي قسم:`
+              ? `اختر القسم الجديد لـ ${arNounOblique(count, "product")} تم تحديدها، أو اختر "بدون قسم" لإزالتها من أي قسم:`
               : `Select the new category for ${count} selected products, or choose "No category" to unassign:`}
           </p>
           <div className="space-y-1.5">

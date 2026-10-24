@@ -59,7 +59,7 @@ import {
   type MergeableDraft,
 } from "@/features/instagram-import";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 export interface InstagramImporterModalProps {
   brandId: string;
@@ -884,7 +884,7 @@ export function InstagramImporterModal({
                                     : "Requires price"
                                 : selectedCount > 1
                                   ? isAr
-                                    ? `✓ سيحفظ ${arNoun(selectedCount, "image")} بالمعرض`
+                                    ? `✓ سيحفظ ${arNounOblique(selectedCount, "image")} بالمعرض`
                                     : `✓ Saves ${selectedCount} gallery photos`
                                   : isAr
                                     ? "جاهز للاعتماد كمسودة"
@@ -922,7 +922,7 @@ export function InstagramImporterModal({
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {isAr
-                      ? `تم حفظ ${arNoun(importResult.success, "product")} كمسودات غير منشورة. يمكنك مراجعتها ونشرها لاحقاً.`
+                      ? `تم حفظ ${arNounOblique(importResult.success, "product")} كمسودات غير منشورة. يمكنك مراجعتها ونشرها لاحقاً.`
                       : `Successfully saved ${importResult.success} unpublished drafts to your catalog.`}
                   </p>
                   {importResult.skipped > 0 && (

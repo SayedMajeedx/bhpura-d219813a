@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arNoun, countOf } from "../src/lib/arabic-count";
+import { arNoun, arNounOblique, countOf } from "../src/lib/arabic-count";
 
 // The admin wrote "6 عملية بيع", "1 مهام معلّقة", "7 طلب" and "5 تقييم" (found 2026-10-24).
 
@@ -32,5 +32,19 @@ describe("countOf", () => {
     expect(countOf(1, "product", "en")).toBe("1 product");
     expect(countOf(19, "product", "en")).toBe("19 products");
     expect(countOf(3, "category", "en")).toBe("3 categories");
+  });
+});
+
+describe("arNounOblique", () => {
+  it("puts two in the oblique after a word that governs it, and leaves the rest as they are", () => {
+    // The transfer button read "تحويل قطعتان".
+    expect(`تحويل ${arNounOblique(2, "piece")}`).toBe("تحويل قطعتين");
+    expect(`تم حذف ${arNounOblique(2, "product")}`).toBe("تم حذف منتجين");
+    expect(arNounOblique(2, "sale")).toBe("عمليتي بيع");
+    expect(arNounOblique(2, "paidBooking")).toBe("حجزين مدفوعين");
+    expect(arNounOblique(1, "piece")).toBe("قطعة واحدة");
+    expect(arNounOblique(5, "piece")).toBe("5 قطع");
+    expect(arNounOblique(12, "product")).toBe("12 منتجًا");
+    expect(arNounOblique(0, "order")).toBe("0 طلب");
   });
 });

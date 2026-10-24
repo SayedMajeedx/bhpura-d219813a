@@ -8,7 +8,7 @@ import { parseCSV } from "@/lib/csv-parser";
 import { sanitizeGCCPhone } from "@/lib/os-formatting";
 import { importHistoricalOrders } from "@/lib/order-importer";
 import { downloadTemplate } from "@/features/import-export/lib/import-templates";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 // -------------------------------------------------------------
 // Component: Order Import Section
@@ -127,7 +127,7 @@ export function OrderImportSection({
         const chunk = parsedOrders.slice(i, i + batchSize);
         setProgressMsg(
           isAr
-            ? `جاري استيراد ${i} من أصل ${arNoun(parsedOrders.length, "order")}...`
+            ? `جاري استيراد ${i} من أصل ${arNounOblique(parsedOrders.length, "order")}...`
             : `Importing ${i} / ${parsedOrders.length} orders...`,
         );
 
@@ -144,7 +144,7 @@ export function OrderImportSection({
       setStep("success");
       toast.success(
         isAr
-          ? `تم استيراد ${arNoun(totalSuccess, "order")} بنجاح!`
+          ? `تم استيراد ${arNounOblique(totalSuccess, "order")} بنجاح!`
           : `Successfully imported ${totalSuccess} orders!`,
       );
       onComplete();
@@ -303,7 +303,7 @@ export function OrderImportSection({
               </h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
                 {isAr
-                  ? `تم توثيق ${arNoun(lastCount, "order")} في سجل مبيعات متجرك التاريخي.`
+                  ? `تم توثيق ${arNounOblique(lastCount, "order")} في سجل مبيعات متجرك التاريخي.`
                   : `Successfully added ${lastCount} legacy orders to sales records.`}
               </p>
             </div>

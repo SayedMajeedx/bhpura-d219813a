@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatMoney } from "@/lib/format";
 import { MAX_LOW_STOCK_UNITS } from "@/lib/inventory-health";
 import type { StockTotals } from "@/features/inventory/lib/stock-totals";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 /**
  * What the stock adds up to, above the list: pieces in the store and at partners, their worth at
@@ -49,7 +49,7 @@ export function StockOverviewStrip({
         value={number(totals.storePieces)}
         hint={
           isAr
-            ? `في ${arNoun(totals.productsInStock, "product")}`
+            ? `في ${arNounOblique(totals.productsInStock, "product")}`
             : `across ${number(totals.productsInStock)} products`
         }
       />

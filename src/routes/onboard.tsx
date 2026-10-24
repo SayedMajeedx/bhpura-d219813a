@@ -35,7 +35,7 @@ import { isBrandSlugTaken } from "@/lib/data/brands";
 import { pickerVerticals } from "@/lib/verticals/registry";
 import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { signInWithPassword } from "@/lib/auth/sign-in";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 function arabicToLatinSlug(text: string): string {
   const map: Record<string, string> = {
@@ -417,7 +417,7 @@ function OnboardPage() {
             <Sparkles className="size-3.5" />
             <span>
               {isAr
-                ? `تجربة مجانية لمدة ${arNoun(trialDays, "day")} — بدون بطاقة بنكية`
+                ? `تجربة مجانية لمدة ${arNounOblique(trialDays, "day")} — بدون بطاقة بنكية`
                 : `${trialDays} Days Free Trial — No Credit Card Required`}
             </span>
           </Badge>

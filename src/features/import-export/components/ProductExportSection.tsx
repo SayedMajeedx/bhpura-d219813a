@@ -23,7 +23,7 @@ import {
   exportStockStatus,
   matchesExportStockFilter,
 } from "@/features/import-export/lib/export-stock-status";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 // =============================================================
 // Component 1: Product Export Section
@@ -213,7 +213,7 @@ export function ProductExportSection({
       onExportSuccess();
       toast.success(
         isAr
-          ? `تم تنزيل ${arNoun(flattenedRows.length, "record")} بنجاح!`
+          ? `تم تنزيل ${arNounOblique(flattenedRows.length, "record")} بنجاح!`
           : `Successfully exported ${flattenedRows.length} records!`,
         { id: toastId },
       );

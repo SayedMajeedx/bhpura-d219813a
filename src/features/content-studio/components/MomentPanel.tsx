@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { promoOffer } from "@/features/content-studio/lib/moments";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /** "No code" in the code picker (a Select item needs a value). */
 const NO_CODE = "none";
@@ -211,7 +211,7 @@ export function MomentPanel({ studio }: { studio: ContentStudio }) {
               : "Reading the reviews…"
             : reviewSummary
               ? isAr
-                ? `${reviewSummary.average} من 5، من ${arNoun(reviewSummary.count, "review")}. لا يظهر اسم أي عميل.`
+                ? `${reviewSummary.average} من 5، من ${arNounOblique(reviewSummary.count, "review")}. لا يظهر اسم أي عميل.`
                 : `${reviewSummary.average} out of 5, from ${reviewSummary.count} reviews. No customer is named.`
               : isAr
                 ? "لا توجد تقييمات بعد: تظهر القطعة بدون نجوم."
