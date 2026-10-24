@@ -83,24 +83,25 @@ describe("the brand the admin route guard opens", () => {
 });
 
 describe("the brand's icons", () => {
-  it("come from the settings of the brand with that slug", async () => {
-    respond = (request) =>
-      request.table === "brands"
-        ? { data: { id: "b1" }, error: null }
-        : { data: { favicon_url: "f.png", logo_url: "l.png" }, error: null };
+  it("come from the settings of the brand with that slug, in one request", async () => {
+    // It was two in a row (the brand's id, then its settings) on every admin page's first load.
+    respond = () => ({
+      data: { favicon_url: "f.png", logo_url: "l.png", brands: { slug: "pura" } },
+      error: null,
+    });
     expect(await brands.fetchBrandIconsBySlug("pura")).toEqual({
       favicon_url: "f.png",
       logo_url: "l.png",
     });
-    expect(requests.map((r) => [r.table, eqs(r)])).toEqual([
-      ["brands", [["slug", "pura"]]],
-      ["business_settings", [["brand_id", "b1"]]],
+    expect(requests.map((r) => [r.table, r.select, eqs(r)])).toEqual([
+      ["business_settings", "favicon_url, logo_url, brands!inner(slug)", [["brands.slug", "pura"]]],
     ]);
   });
 
-  it("are null without reading settings when the brand is unknown", async () => {
+  it("are null when the brand is unknown or the read fails", async () => {
     expect(await brands.fetchBrandIconsBySlug("gone")).toBeNull();
-    expect(requests.map((r) => r.table)).toEqual(["brands"]);
+    respond = () => ({ data: null, error: denied });
+    expect(await brands.fetchBrandIconsBySlug("pura")).toBeNull();
   });
 });
 

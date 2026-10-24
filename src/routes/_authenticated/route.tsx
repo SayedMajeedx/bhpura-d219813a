@@ -4,12 +4,16 @@ import { AppShell } from "@/components/app-shell";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { profilesQueries } from "@/lib/data/profiles";
+import { prefetchAdminShell } from "@/lib/auth/admin-prefetch";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async ({ context: { queryClient } }) => {
+  beforeLoad: async ({ context: { queryClient }, location }) => {
     const storefrontReturn = readStorefrontOAuthReturn();
     if (storefrontReturn) throw redirect({ to: storefrontReturn as any });
+
+    // The profile, and a store's own reads, start now, beside the sign-in check below.
+    await prefetchAdminShell(queryClient, location.pathname);
 
     // treats it as a query error and retries with backoff, so the router never
     const user = await ensureSessionUser(queryClient);
