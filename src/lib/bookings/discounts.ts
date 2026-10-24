@@ -1,3 +1,4 @@
+import { arNoun } from "@/lib/arabic-count";
 /**
  * Booking-time discounts (booking_discount_rules; migration 20261002100000).
  * The database applies them when a booking is made (apply_booking_discount);
@@ -162,7 +163,7 @@ export function discountValueText(rule: Pick<DiscountRule, "kind" | "value">): s
 }
 
 function daysText(days: number, isAr: boolean): string {
-  if (isAr) return days === 1 ? "يوم" : days === 2 ? "يومين" : `${days} أيام`;
+  if (isAr) return days === 1 ? "يوم" : days === 2 ? "يومين" : `${arNoun(days, "day")}`;
   return days === 1 ? "1 day" : `${days} days`;
 }
 

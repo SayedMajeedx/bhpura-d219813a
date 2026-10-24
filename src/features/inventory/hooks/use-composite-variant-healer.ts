@@ -5,6 +5,7 @@ import { getFriendlyErrorMessage } from "@/lib/utils";
 import { updateProduct, updateVariant } from "@/lib/data/catalog";
 import { splitCompositeVariantSize } from "@/lib/format";
 import type { Product, Variant } from "@/features/inventory/types";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Variants whose size holds two values ("700 - Dark" with no colour), and a
@@ -60,7 +61,7 @@ export function useCompositeVariantHealer({
 
       toast.success(
         isAr
-          ? `تم بنجاح فرز وتصحيح ${compositeVariants.length} متغيرات وتفعيل محور النكهات!`
+          ? `تم بنجاح فرز وتصحيح ${arNoun(compositeVariants.length, "variant")} وتفعيل محور النكهات!`
           : `Successfully healed ${compositeVariants.length} variants into clean sizes & options!`,
       );
       onChanged();

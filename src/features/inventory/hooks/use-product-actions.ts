@@ -18,6 +18,7 @@ import {
   duplicateProductValues,
   duplicateVariantValues,
 } from "@/features/inventory/lib/product-list";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Per-product actions in the inventory list: delete (with its media),
@@ -73,7 +74,7 @@ export function useProductActions({
         if (currentCount >= productLimit) {
           toast.error(
             isAr
-              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${productLimit} منتج). يرجى ترقية باقتك لتكرار المنتجات.`
+              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${arNoun(productLimit, "product")}). يرجى ترقية باقتك لتكرار المنتجات.`
               : `You have reached the products limit for your plan (${productLimit} products). Please upgrade your plan to duplicate products.`,
           );
           return;

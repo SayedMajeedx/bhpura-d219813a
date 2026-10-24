@@ -4,6 +4,7 @@ import { deleteProducts, updateProduct, updateProducts } from "@/lib/data/catalo
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import type { Product } from "@/features/inventory/types";
 import { addPresetToProduct, type PresetLike } from "@/features/inventory/lib/bulk-preset";
+import { arNoun } from "@/lib/arabic-count";
 
 /** Products written at once when a preset is added (each product keeps its own fields). */
 const PRESET_BATCH = 6;
@@ -64,7 +65,9 @@ export function useProductBulkActions({
           .filter((url): url is string => Boolean(url)),
       );
       for (const url of mediaUrls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
-      toast.success(isAr ? `تم حذف ${ids.length} منتج` : `${ids.length} products deleted`);
+      toast.success(
+        isAr ? `تم حذف ${arNoun(ids.length, "product")}` : `${ids.length} products deleted`,
+      );
       setSelectedProductIds(new Set());
       setBulkDeleteOpen(false);
       onChanged();
@@ -94,8 +97,8 @@ export function useProductBulkActions({
       toast.success(
         isAr
           ? catToSave
-            ? `تم تحديث قسم ${ids.length} منتج بنجاح`
-            : `تم تعيين ${ids.length} منتج كـ "بدون قسم" بنجاح`
+            ? `تم تحديث قسم ${arNoun(ids.length, "product")} بنجاح`
+            : `تم تعيين ${arNoun(ids.length, "product")} كـ "بدون قسم" بنجاح`
           : `Updated category for ${ids.length} products`,
       );
       setSelectedProductIds(new Set());
@@ -124,8 +127,8 @@ export function useProductBulkActions({
       toast.success(
         isAr
           ? isActive
-            ? `تم نشر ${ids.length} منتج في المتجر`
-            : `تم إخفاء ${ids.length} منتج من المتجر`
+            ? `تم نشر ${arNoun(ids.length, "product")} في المتجر`
+            : `تم إخفاء ${arNoun(ids.length, "product")} من المتجر`
           : isActive
             ? `${ids.length} products published to the storefront`
             : `${ids.length} products hidden from the storefront`,
@@ -170,7 +173,7 @@ export function useProductBulkActions({
         }
       }
       const summary = isAr
-        ? `أُضيف إلى ${added} منتج` +
+        ? `أُضيف إلى ${arNoun(added, "product")}` +
           (alreadyHad ? `، و${alreadyHad} كان عنده من قبل` : "") +
           (failed ? `، وتعذر ${failed}` : "")
         : `Added to ${added} products` +

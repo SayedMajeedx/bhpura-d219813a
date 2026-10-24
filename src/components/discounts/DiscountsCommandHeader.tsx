@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface DiscountsCommandHeaderProps {
   lang: "ar" | "en";
@@ -22,11 +23,7 @@ export function DiscountsCommandHeader({
     <AdminPageHeader
       icon={Tag}
       title={isAr ? "رموز الخصم والعروض" : "Discount Codes & Promotions"}
-      badges={
-        <AdminPageCount>
-          {promoCount} {isAr ? "رمز" : "codes"}
-        </AdminPageCount>
-      }
+      badges={<AdminPageCount>{countOf(promoCount, "code", isAr ? "ar" : "en")}</AdminPageCount>}
       description={
         isAr
           ? "أنشئ رموز خصم مخصصة، وحدد شروط الأهلية، وجدولة المبيعات، والحد الأقصى للاستخدام."

@@ -52,6 +52,7 @@ import { toast } from "sonner";
 import { catalogKeys } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { arNoun, countOf } from "@/lib/arabic-count";
 
 export type { BatchTransferProduct, BatchTransferVariant };
 
@@ -326,7 +327,7 @@ export function BatchIncubatorTransferModal({
 
       toast.success(
         isAr
-          ? `تم تحويل ${pieces} قطعة بنجاح إلى حاضنة ${selectedIncubator?.name || ""}`
+          ? `تم تحويل ${arNoun(pieces, "piece")} بنجاح إلى حاضنة ${selectedIncubator?.name || ""}`
           : `Successfully transferred ${pieces} items to ${selectedIncubator?.name || "incubator"}`,
       );
 
@@ -365,7 +366,7 @@ export function BatchIncubatorTransferModal({
                     {isAr ? "تحويل وتعيين البضاعة إلى الحاضنة" : "Transfer Stock to Incubator"}
                   </span>
                   <Badge variant="secondary" className="font-mono text-xs font-semibold px-2">
-                    {targetProducts.length} {isAr ? "منتجات" : "products"} · {rows.length}{" "}
+                    {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} · {rows.length}{" "}
                     {isAr ? "متغيرات" : "variants"}
                   </Badge>
                 </DialogTitle>
@@ -479,11 +480,11 @@ export function BatchIncubatorTransferModal({
             </div>
             <div className="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-end">
               <Badge variant="outline" className="text-xs font-mono px-2 py-1">
-                {productGroups.length} {isAr ? "منتج" : "products"}
+                {countOf(productGroups.length, "product", isAr ? "ar" : "en")}
               </Badge>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {isAr
-                  ? `${shownCount.ticked} من ${shownCount.tickable} مقاس`
+                  ? `${shownCount.ticked} من ${arNoun(shownCount.tickable, "size")}`
                   : `${shownCount.ticked} of ${shownCount.tickable} sizes`}
               </span>
               <Button
@@ -882,7 +883,7 @@ export function BatchIncubatorTransferModal({
             {tooMany.length > 0 && (
               <span role="alert" className="font-medium text-destructive">
                 {isAr
-                  ? `${tooMany.length} مقاس يطلب أكثر من المتوفر`
+                  ? `مقاسات تطلب أكثر من المتوفر: ${tooMany.length}`
                   : `${tooMany.length} ${tooMany.length === 1 ? "size asks" : "sizes ask"} for more than is in stock`}
               </span>
             )}
@@ -891,7 +892,7 @@ export function BatchIncubatorTransferModal({
                 {isAr ? "إجمالي القطع:" : "Total Units:"}
               </span>
               <span className="font-mono font-bold text-foreground text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-md">
-                {totalPieces} {isAr ? "قطعة" : "units"}
+                {countOf(totalPieces, "piece", isAr ? "ar" : "en")}
               </span>
             </div>
             <div className="flex items-center gap-1.5">

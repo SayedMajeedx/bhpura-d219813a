@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { FooterVariant } from "@/lib/storefront-engine";
+import { arNoun } from "@/lib/arabic-count";
 
 export type FooterTitles = { companyEn: string; companyAr: string; helpEn: string; helpAr: string };
 
@@ -61,7 +62,7 @@ export function FooterGroupTitlesCard({
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
           {isAr
-            ? `${companyCount} صفحة في الشركة · ${helpCount} صفحة في المساعدة`
+            ? `${arNoun(companyCount, "page")} في الشركة · ${arNoun(helpCount, "page")} في المساعدة`
             : `${companyCount} page(s) in the company group · ${helpCount} in help`}
         </p>
       </div>

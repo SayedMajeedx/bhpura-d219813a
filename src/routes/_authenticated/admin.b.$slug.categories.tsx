@@ -38,6 +38,7 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import type { StoreVertical } from "@/lib/store-profile";
 import { addonDataQueries } from "@/lib/data/addons";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { arNoun } from "@/lib/arabic-count";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -109,7 +110,7 @@ function CategoriesPage() {
     if (mode === "soft")
       toast.success(
         isAr
-          ? `تم التعطيل — مرتبط بـ ${linked} منتج`
+          ? `تم التعطيل — مرتبط بـ ${arNoun(linked, "product")}`
           : `Deactivated — linked to ${linked} product(s)`,
       );
     else toast.success(isAr ? "تم الحذف" : "Deleted");
@@ -147,7 +148,7 @@ function CategoriesPage() {
 
       toast.success(
         isAr
-          ? `تمت تهيئة أقسام النشاط بنجاح (إضافة ${res.insertedCount}، حذف ${res.removedCount} قسم فارغ)`
+          ? `تمت تهيئة أقسام النشاط بنجاح (أُضيف ${arNoun(res.insertedCount, "category")}، وحُذف من الأقسام الفارغة ${res.removedCount})`
           : `Categories initialized successfully (+${res.insertedCount}, -${res.removedCount} empty)`,
       );
 

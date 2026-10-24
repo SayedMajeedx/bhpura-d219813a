@@ -13,6 +13,7 @@ import {
   glanceEnd,
   type GlanceBooking,
 } from "@/features/bookings/lib/bookings-glance";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * The dashboard of a store that takes bookings: what is happening today, the
@@ -104,7 +105,7 @@ export function BookingsGlanceCard({
       label: isAr ? "الإشغال (14 يوماً)" : "Occupancy (14 days)",
       value: `${Math.round(glance.occupancy * 100)}%`,
       hint: isAr
-        ? `${glance.bookedDays} من ${glance.bookableDays} يوم`
+        ? `${glance.bookedDays} من ${arNoun(glance.bookableDays, "day")}`
         : `${glance.bookedDays} of ${glance.bookableDays} days`,
     },
   ];

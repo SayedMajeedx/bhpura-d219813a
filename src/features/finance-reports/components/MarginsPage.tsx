@@ -29,6 +29,7 @@ import {
 } from "../lib/margins";
 import { accountingFigure } from "../lib/statement";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
+import { arNoun } from "@/lib/arabic-count";
 
 const SORT_WORDS: Record<MarginSort, { en: string; ar: string }> = {
   profit: { en: "Gross profit", ar: "مجمل الربح" },
@@ -352,7 +353,8 @@ function MarginRowView({
           </span>
           {(line.category || line.products !== undefined) && (
             <span className="line-clamp-2 block break-words text-xs font-normal text-muted-foreground">
-              {line.category ?? (isAr ? `${line.products} منتجات` : `${line.products} products`)}
+              {line.category ??
+                (isAr ? arNoun(line.products ?? 0, "product") : `${line.products} products`)}
               {line.partnerUnits > 0 &&
                 ` · ${isAr ? `${line.partnerUnits} في المحلات الشريكة` : `${line.partnerUnits} at partner shops`}`}
             </span>

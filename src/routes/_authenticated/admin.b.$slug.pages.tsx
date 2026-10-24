@@ -59,6 +59,7 @@ import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
 import { PagesScopeSwitcher, type PagesScope } from "@/components/pages/PagesScopeSwitcher";
 import { CropUploadButton } from "@/components/crop-upload-button";
+import { arNoun } from "@/lib/arabic-count";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
@@ -277,7 +278,7 @@ function PagesAndPolicies() {
       }
       toast.success(
         isAr
-          ? `تمت إضافة ${newPages.length} صفحات نموذجية — اضغط "حفظ التغييرات" لتفعيلها`
+          ? `تمت إضافة ${arNoun(newPages.length, "page")} نموذجية — اضغط "حفظ التغييرات" لتفعيلها`
           : `Added ${newPages.length} template pages — click "Save changes" to activate`,
       );
       return [...current, ...newPages];

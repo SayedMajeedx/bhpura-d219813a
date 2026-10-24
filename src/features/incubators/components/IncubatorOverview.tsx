@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { settlementNote } from "@/features/incubators/lib/summary";
+import { arNoun, countOf } from "@/lib/arabic-count";
 
 /** The partner picker: every partner with the pieces it holds and what it owes. */
 export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
@@ -36,7 +37,7 @@ export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
                 {chip.name}
               </span>
               <span className="block text-xs text-muted-foreground">
-                {chip.units} {isAr ? "قطعة" : "units"}
+                {countOf(chip.units, "piece", isAr ? "ar" : "en")}
                 {!chip.isActive && (
                   <span className="ms-2 rounded-full bg-muted px-1.5 py-0.5 font-semibold">
                     {isAr ? "موقوفة" : "Inactive"}
@@ -147,7 +148,7 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
           icon={ShoppingBag}
           label={isAr ? "إجمالي المبيعات" : "Gross sales"}
           value={money(summary.gross)}
-          hint={isAr ? `${summary.soldUnits} قطعة` : `${summary.soldUnits} units`}
+          hint={isAr ? `${arNoun(summary.soldUnits, "piece")}` : `${summary.soldUnits} units`}
         />
         <Metric
           icon={Percent}

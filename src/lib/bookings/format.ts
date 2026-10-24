@@ -1,4 +1,5 @@
 import { monthGrid, type BookingStatus } from "@/lib/bookings/rules";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Dates and times for booking calendars (the admin calendar and the
@@ -54,12 +55,12 @@ export function formatClockRange(start: string, end: string, isAr: boolean): str
 
 /** "4 hours" / "4 ساعات", "90 min" / "90 دقيقة". */
 export function formatDuration(minutes: number, isAr: boolean): string {
-  if (minutes % 60 !== 0) return isAr ? `${minutes} دقيقة` : `${minutes} min`;
+  if (minutes % 60 !== 0) return isAr ? `${arNoun(minutes, "minute")}` : `${minutes} min`;
   const hours = minutes / 60;
   if (isAr) {
     if (hours === 1) return "ساعة";
     if (hours === 2) return "ساعتان";
-    return hours <= 10 ? `${hours} ساعات` : `${hours} ساعة`;
+    return arNoun(hours, "hour");
   }
   return hours === 1 ? "1 hour" : `${hours} hours`;
 }

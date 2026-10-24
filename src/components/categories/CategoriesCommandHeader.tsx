@@ -5,6 +5,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface CategoriesCommandHeaderProps {
   lang: "en" | "ar";
@@ -28,9 +29,7 @@ export const CategoriesCommandHeader: React.FC<CategoriesCommandHeaderProps> = (
       icon={Boxes}
       title={isAr ? "الأقسام والتصنيفات" : "Categories & Catalog Hierarchy"}
       badges={
-        <AdminPageCount>
-          {categoryCount} {isAr ? "قسم" : "categories"}
-        </AdminPageCount>
+        <AdminPageCount>{countOf(categoryCount, "category", isAr ? "ar" : "en")}</AdminPageCount>
       }
       description={
         isAr

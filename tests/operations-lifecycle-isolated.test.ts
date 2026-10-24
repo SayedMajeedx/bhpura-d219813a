@@ -302,7 +302,7 @@ describe("Batch 1: Isolated Real Operations Lifecycle", () => {
 
       const stockBadgeText = stockUnitsLabel(totalStock, "available", "ar");
       expect(stockBadgeText).toContain("17");
-      expect(stockBadgeText).toContain("وحدات");
+      expect(stockBadgeText).toContain("وحدة متوفرة");
     });
 
     it("isolates customer order history and lifetime spend to paid orders only", () => {

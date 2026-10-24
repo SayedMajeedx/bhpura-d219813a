@@ -57,7 +57,7 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
                 </DialogTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr
-                    ? `إرسال إلى ${bulkQueue.length} عميل محدد.`
+                    ? `إرسال إلى العملاء المحددين: ${bulkQueue.length}.`
                     : `Targeting ${bulkQueue.length} segments.`}
                 </p>
               </div>

@@ -4,6 +4,7 @@ import {
   type StoreModules,
   type StoreVertical,
 } from "@/lib/store-profile";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * What a change of vertical leaves behind. The change switches a store's modules, wording,
@@ -109,7 +110,7 @@ export function planLeftovers({
       id: "products-not-services",
       count: facts.products,
       text: {
-        ar: `${facts.products} منتجاً (بضاعة) ما زال في الكتالوج وسيظهر في متجر خدمات.`,
+        ar: `ما زال في الكتالوج من البضاعة ${arNoun(facts.products, "product")}، وسيظهر في متجر خدمات.`,
         en: `${facts.products} goods product(s) stay in the catalog and will show in a services store.`,
       },
       advice: {
@@ -123,7 +124,7 @@ export function planLeftovers({
       id: "services-not-products",
       count: facts.services,
       text: {
-        ar: `${facts.services} خدمة ما زالت في الكتالوج، ومتجر بضاعة لا يحجز المواعيد.`,
+        ar: `ما زال في الكتالوج ${arNoun(facts.services, "service")}، ومتجر بضاعة لا يحجز المواعيد.`,
         en: `${facts.services} service(s) stay in the catalog, and a shop does not take bookings.`,
       },
       advice: {
@@ -143,7 +144,7 @@ export function planLeftovers({
       id: "open-orders",
       count: strandedOrders,
       text: {
-        ar: `${strandedOrders} طلب مفتوح بطريقة تسليم لا يعتمدها النشاط الجديد.`,
+        ar: `طلبات مفتوحة بطريقة تسليم لا يعتمدها النشاط الجديد: ${strandedOrders}.`,
         en: `${strandedOrders} open order(s) use a way of fulfilling that the new vertical does not use.`,
       },
       advice: {
@@ -189,7 +190,7 @@ export function planLeftovers({
       id: "returns",
       count: facts.openReturns,
       text: {
-        ar: `${facts.openReturns} طلب إرجاع مفتوح، وصفحة المرتجعات ستختفي من القائمة.`,
+        ar: `طلبات إرجاع مفتوحة: ${facts.openReturns}، وصفحة المرتجعات ستختفي من القائمة.`,
         en: `${facts.openReturns} open return request(s); the Returns page will leave the menu.`,
       },
       advice: {

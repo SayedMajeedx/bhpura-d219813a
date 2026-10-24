@@ -13,6 +13,7 @@ import {
 } from "@/lib/data/storefront";
 
 import type { Dispatch, SetStateAction } from "react";
+import { arNoun } from "@/lib/arabic-count";
 
 /** Quantity, the Add to cart / Buy now buttons (or the inquiry button in catalog mode), the choice error and the delivery estimate. */
 export function ProductPurchaseActions({
@@ -103,7 +104,9 @@ export function ProductPurchaseActions({
             ) : maxStock > 0 && maxStock <= 5 ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">
                 <span>🔥</span>
-                <span>{t(`متبقي ${maxStock} قطع فقط!`, `Only ${maxStock} left in stock!`)}</span>
+                <span>
+                  {t(`متبقي ${arNoun(maxStock, "piece")} فقط!`, `Only ${maxStock} left in stock!`)}
+                </span>
               </span>
             ) : (
               <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">

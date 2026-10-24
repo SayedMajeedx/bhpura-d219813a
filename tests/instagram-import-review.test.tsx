@@ -73,7 +73,7 @@ describe("useDraftMerge", () => {
   it("speaks Arabic when asked to", () => {
     const { result } = renderHook(() => useReview(six(), true));
     act(() => result.current.groupBy(2));
-    expect(toast.success).toHaveBeenCalledWith("صارت 6 منشورات 3 منتجاً.");
+    expect(toast.success).toHaveBeenCalledWith("صارت 6 منشورات 3 منتجات.");
   });
 
   it("splits a merged product back into its posts", () => {

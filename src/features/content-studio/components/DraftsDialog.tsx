@@ -16,6 +16,7 @@ import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import { arNoun } from "@/lib/arabic-count";
 
 /** The studio's design saved under a name, and the brand's drafts to reopen or delete. */
 export function DraftsDialog({ studio }: { studio: ContentStudio }) {
@@ -66,7 +67,7 @@ function DraftsPanel({ studio }: { studio: ContentStudio }) {
       ? occasionById(occasionId).name[lang]
       : isCollectionTemplate(templateId)
         ? isAr
-          ? `${lookbookIds.length} منتجات`
+          ? `${arNoun(lookbookIds.length, "product")}`
           : `${lookbookIds.length} products`
         : productName;
   const suggestedName = defaultDraftName(

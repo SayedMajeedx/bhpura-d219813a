@@ -1,6 +1,7 @@
 import type { VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { formatSkuToken, makeEan13, splitVariantValues } from "@/lib/variant-sku-utils";
 import type { BulkVariantRow } from "@/features/inventory/types";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Pure rules for the bulk "generate variants" dialog: building the size ×
@@ -147,9 +148,9 @@ export function batchSalePriceValue(input: string, basePrice: number): string | 
 export function parsedPlanMessage(sizeCount: number, colorCount: number, isAr: boolean): string {
   if (isAr) {
     if (sizeCount > 0 && colorCount > 0)
-      return `تم استخراج ${sizeCount} مقاس و ${colorCount} لون بنجاح`;
-    if (sizeCount > 0) return `تم استخراج ${sizeCount} مقاس بنجاح`;
-    if (colorCount > 0) return `تم استخراج ${colorCount} ألوان بنجاح`;
+      return `تم استخراج ${arNoun(sizeCount, "size")} و${arNoun(colorCount, "color")} بنجاح`;
+    if (sizeCount > 0) return `تم استخراج ${arNoun(sizeCount, "size")} بنجاح`;
+    if (colorCount > 0) return `تم استخراج ${arNoun(colorCount, "color")} بنجاح`;
     return "تم تحليل البيانات بنجاح";
   }
   if (sizeCount > 0 && colorCount > 0)

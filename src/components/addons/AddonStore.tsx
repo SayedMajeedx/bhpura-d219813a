@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { AddonStoreHero } from "./AddonStoreHero";
 import { AddonCardMicrosoftStore } from "./AddonCardMicrosoftStore";
 import { AddonDetailPage } from "./AddonDetailPage";
+import { arNoun } from "@/lib/arabic-count";
 
 interface AddonStoreProps {
   brandId: string;
@@ -283,7 +284,7 @@ export function AddonStore({
       const res = await upgradeBrandAddons();
       toast.success(
         isAr
-          ? `تم تحديث ${res.upgraded.length} إضافة بنجاح`
+          ? `تم تحديث ${arNoun(res.upgraded.length, "addon")} بنجاح`
           : `Upgraded ${res.upgraded.length} add-on(s) successfully`,
       );
     } catch (err: any) {
@@ -497,7 +498,7 @@ export function AddonStore({
                     ? "جميع الإضافات الأساسية الموصى بها لنشاطك مثبتة وجاهزة للاستخدام."
                     : "All essential add-ons recommended for your store vertical are installed and active."
                   : isAr
-                    ? `متبقي ${missingStarterCount} إضافات أساسية مستحسنة لنشاط ${isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}.`
+                    ? `متبقي ${arNoun(missingStarterCount, "addon")} أساسية مستحسنة لنشاط ${isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}.`
                     : `${missingStarterCount} essential add-on(s) recommended for ${isAr ? VERTICAL_LABELS[storeVertical]?.ar : VERTICAL_LABELS[storeVertical]?.en}.`}
               </p>
             </div>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteOrdersWithPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { invalidateOrders } from "@/lib/data/orders";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Confirms and deletes the selected orders of one brand (with their private
@@ -44,7 +45,7 @@ export function BulkDeleteOrdersDialog({
       const result = await deleteOrdersWithPrivateReceipts({ data: { brandId, orderIds: ids } });
       toast.success(
         lang === "ar"
-          ? `تم حذف ${result.deleted} طلب بنجاح`
+          ? `تم حذف ${arNoun(result.deleted, "order")} بنجاح`
           : `${result.deleted} orders deleted successfully`,
       );
       onDeleted();

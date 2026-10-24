@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-phone";
+import { arNoun } from "@/lib/arabic-count";
 
 export { normalizePhoneForWhatsApp };
 
@@ -57,7 +58,7 @@ export function generateCourierWhatsAppUrl(input: {
       `👤 *العميل:* ${customerName || "عميل"}\n` +
       `📞 *هاتف العميل:* ${customerPhone || "غير محدد"}\n` +
       `📍 *العنوان:* ${addr}\n` +
-      `📦 *عدد المنتجات:* ${itemCount} صنف\n` +
+      `📦 *عدد المنتجات:* ${arNoun(itemCount, "item")}\n` +
       `💰 *المبلغ المطلوب تحصيله:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "مدفوع بالكامل ✅"}\n\n` +
       `🔗 *رابط تفاصيل الطلب:*\n${orderUrl}`;
   } else {

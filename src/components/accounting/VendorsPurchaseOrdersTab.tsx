@@ -21,6 +21,7 @@ import { accountingQueries, createVendor, invalidateVendors } from "@/lib/data/a
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { localToday, ordersSummary } from "@/features/supplier-orders/lib/order-state";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { arNoun } from "@/lib/arabic-count";
 
 export function VendorsPurchaseOrdersTab() {
   const { lang } = useI18n();
@@ -92,7 +93,7 @@ export function VendorsPurchaseOrdersTab() {
           </span>
           <span className="text-xs text-muted-foreground">
             {isAr
-              ? `${summary.open} طلبية بانتظار الاستلام · ${summary.awaited} قطعة`
+              ? `${summary.open} طلبية بانتظار الاستلام · ${arNoun(summary.awaited, "piece")}`
               : `${summary.open} orders awaiting delivery · ${summary.awaited} pieces`}
           </span>
         </div>

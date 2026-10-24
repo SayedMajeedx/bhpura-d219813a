@@ -24,6 +24,7 @@ import type { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
+import { arNoun } from "@/lib/arabic-count";
 
 export type SummaryTax = { amount: number; added: boolean; rate: number };
 const NO_TAX_LINE: SummaryTax = { amount: 0, added: true, rate: 0 };
@@ -399,7 +400,7 @@ export function OrderSummaryCard({
           <span>
             {/* The database gives them when the order is completed or paid (migration 20261014110000). */}
             {t(
-              `ستُضاف ${estimatedPointsToEarn} نقطة مكافأة لحسابك عند اكتمال طلبك`,
+              `ستُضاف ${arNoun(estimatedPointsToEarn, "point")} مكافأة لحسابك عند اكتمال طلبك`,
               `${estimatedPointsToEarn} reward points will be added to your account once your order is completed`,
             )}
           </span>

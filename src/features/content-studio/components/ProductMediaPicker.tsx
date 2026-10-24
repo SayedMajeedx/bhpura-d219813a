@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import { countOf } from "@/lib/arabic-count";
 
 /** Choose the product, its variant and the photo or video the design uses. */
 export function ProductMediaPicker({ studio }: { studio: ContentStudio }) {
@@ -58,7 +59,7 @@ export function ProductMediaPicker({ studio }: { studio: ContentStudio }) {
               {isAr ? "المتغير / المقاس واللون" : "Product Variant"}
             </Label>
             <span className="text-xs font-medium text-muted-foreground">
-              {productVariants.length} {isAr ? "خيارات" : "options"}
+              {countOf(productVariants.length, "option", isAr ? "ar" : "en")}
             </span>
           </div>
           <Select

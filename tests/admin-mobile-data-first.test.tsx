@@ -231,7 +231,7 @@ describe("the orders that need action", () => {
         }}
       />,
     );
-    const line = screen.getByRole("button", { name: /6 طلب يحتاج إجراءً فورياً/ });
+    const line = screen.getByRole("button", { name: /تحتاج إجراءً فورياً: 6 طلبات/ });
     // The reasons wait for a wider screen; on a phone the line is the count and the way in.
     expect(screen.getByText(/تحصيل عند الاستلام/)).toHaveClass("hidden");
     // On a phone the first filter tab says it (amber, with its count), right above this line.

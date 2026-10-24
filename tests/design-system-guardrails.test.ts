@@ -419,6 +419,12 @@ describe("before going live (2026-10-24)", () => {
     expect(countMatches(native, (rel) => !rel.endsWith("confirm-dialog.tsx"))).toBe(0);
   });
 
+  it("counts in Arabic with arNoun, never a number glued to one form of the noun", () => {
+    // "6 عملية بيع", "1 مهام معلّقة", "7 طلب", "5 تقييم": src/lib/arabic-count.ts has every form.
+    const glued = /\$\{[^{}]+\}\s?(منتج|طلب|عميل|تقييم|مهام|مهمة|قسم|رمز)(?![؀-ۿ])/g;
+    expect(countMatches(glued)).toBe(0);
+  });
+
   it("spells sold out نفدت, not نفذت (which means carried out)", () => {
     // Instagram captions are read as people write them, misspelling included.
     expect(countMatches(/نفذت الكمية/g, (rel) => !rel.includes("instagram-ai-importer"))).toBe(0);

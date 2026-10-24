@@ -52,6 +52,7 @@ import { ALL_SIZE_GUIDE_TEMPLATES, ABAYA_GULF_TEMPLATE } from "../../lib/size-gu
 import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
 import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
 import { studioNames } from "@/addons/size-guides/lib/studio-names";
+import { arNoun, countOf } from "@/lib/arabic-count";
 
 type FormState = {
   id?: string;
@@ -301,7 +302,7 @@ export function SizeGuidesStudioPage() {
     setPasteText("");
     toast.success(
       isAr
-        ? `تم استيراد ${parsed.rows.length} مقاس بنجاح`
+        ? `تم استيراد ${arNoun(parsed.rows.length, "size")} بنجاح`
         : `Imported ${parsed.rows.length} rows successfully`,
     );
   };
@@ -624,12 +625,8 @@ export function SizeGuidesStudioPage() {
                     </div>
 
                     <div className="text-end text-xs text-muted-foreground shrink-0">
-                      <div>
-                        {prodCount} {isAr ? "منتج" : "products"}
-                      </div>
-                      <div>
-                        {catCount} {isAr ? "قسم" : "categories"}
-                      </div>
+                      <div>{countOf(prodCount, "product", isAr ? "ar" : "en")}</div>
+                      <div>{countOf(catCount, "category", isAr ? "ar" : "en")}</div>
                     </div>
                   </div>
                 </div>
@@ -1594,9 +1591,7 @@ export function SizeGuidesStudioPage() {
                 </div>
 
                 <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    {tmpl.rows.length} {isAr ? "مقاسات" : "sizes"}
-                  </span>
+                  <span>{countOf(tmpl.rows.length, "size", isAr ? "ar" : "en")}</span>
                   <span className="text-primary font-medium group-hover:underline">
                     {isAr ? "استخدام القالب ←" : "Use template →"}
                   </span>

@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { countOf } from "@/lib/arabic-count";
 
 interface OrdersCommandHeaderProps {
   lang: "en" | "ar";
@@ -36,9 +37,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
       title={<>{isAr ? "الطلبات والفواتير" : "Orders & Invoices"}</>}
       badges={
         <>
-          <AdminPageCount>
-            {filteredCount} {isAr ? "طلب" : "orders"}
-          </AdminPageCount>
+          <AdminPageCount>{countOf(filteredCount, "order", isAr ? "ar" : "en")}</AdminPageCount>
         </>
       }
       description={

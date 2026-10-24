@@ -5,6 +5,7 @@ import { formatMoney } from "@/lib/format";
 
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import type { DashboardFinancials } from "@/features/dashboard/lib/dashboard-metrics";
+import { countOf } from "@/lib/arabic-count";
 
 /** The "sales series" view: the expanded daily sales chart. */
 export function SalesSeriesView({
@@ -69,7 +70,7 @@ export function SalesSeriesView({
                             {formatMoney(Number(data.sales), currency, locale)}
                           </p>
                           <p className="text-muted-foreground text-xs">
-                            {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
+                            {countOf(data.orders, "sale", isAr ? "ar" : "en")}
                           </p>
                         </div>
                       );

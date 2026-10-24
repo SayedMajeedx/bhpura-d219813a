@@ -64,6 +64,7 @@ import { pickerVerticals, verticalFits } from "@/lib/verticals/registry";
 import { VerticalIcon } from "@/components/verticals/VerticalIcon";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { addonDataQueries } from "@/lib/data/addons";
+import { arNoun } from "@/lib/arabic-count";
 
 function renderAddonIcon(iconName: string) {
   switch (iconName) {
@@ -370,7 +371,7 @@ export function StoreProfileCard({
                   {isAr ? "منصة إضافات المتجر" : "Store Add-ons Platform"}
                 </span>
                 <Badge variant="secondary" className="text-xs px-2 py-0 font-normal">
-                  {isAr ? `${addons.length} إضافات مثبتة` : `${addons.length} installed`}
+                  {isAr ? `${arNoun(addons.length, "addon")} مثبتة` : `${addons.length} installed`}
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5 font-normal">
@@ -638,7 +639,7 @@ export function StoreProfileCard({
                 </p>
                 <p className="mt-0.5">
                   {isAr
-                    ? `يوجد ${passportCount} ملف قياس محفوظ للعملاء. إيقاف الوحدة يخفي الواجهة فقط دون حذف أي بيانات.`
+                    ? `ملفات القياس المحفوظة للعملاء: ${passportCount ?? 0}. إيقاف الوحدة يخفي الواجهة فقط دون حذف أي بيانات.`
                     : `There are ${passportCount} saved customer measurement profiles. Disabling this module only hides the UI and will not delete data.`}
                 </p>
               </div>

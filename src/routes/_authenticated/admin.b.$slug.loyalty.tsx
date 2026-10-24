@@ -18,6 +18,7 @@ import { LoyaltyTiersManager } from "@/components/loyalty/LoyaltyTiersManager";
 import { LoyaltyLedgerTable } from "@/components/loyalty/LoyaltyLedgerTable";
 import { LoyaltySettingsEditor } from "@/components/loyalty/LoyaltySettingsEditor";
 import { LoyaltyManualAdjustmentDialog } from "@/components/loyalty/LoyaltyManualAdjustmentDialog";
+import { arNoun } from "@/lib/arabic-count";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/loyalty")({
   component: LoyaltyDashboardPage,
@@ -174,7 +175,9 @@ function LoyaltyDashboardPage() {
           <div className="mt-3">
             <span className="text-2xl font-bold font-mono text-foreground">
               {program
-                ? `${program.points_per_currency_unit} ${isAr ? `نقطة / ${money}` : `pts / ${money}`}`
+                ? isAr
+                  ? `${arNoun(program.points_per_currency_unit, "point")} / ${money}`
+                  : `${program.points_per_currency_unit} pts / ${money}`
                 : "—"}
             </span>
             <span className="text-xs text-muted-foreground block mt-1">

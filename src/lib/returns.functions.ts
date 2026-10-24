@@ -5,6 +5,7 @@ import type {
   ReturnItemCondition,
   CompensationMethod,
 } from "./returns.types";
+import { arNoun } from "@/lib/arabic-count";
 
 export interface CalculateReturnFinancialsParams {
   items: Array<{
@@ -102,7 +103,7 @@ export function checkOrderReturnEligibility(
       return {
         eligible: false,
         daysSinceOrder: diffDays,
-        reason: `تجاوز الطلب فترة الإرجاع المسموحة (${policy.return_window_days} يوماً)`,
+        reason: `تجاوز الطلب فترة الإرجاع المسموحة (${arNoun(policy.return_window_days, "day")})`,
       };
     }
 

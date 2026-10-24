@@ -12,6 +12,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { Order } from "@/features/orders/types";
+import { arNoun } from "@/lib/arabic-count";
 /** Orders per page and page navigation. */
 export function OrderListPagination({
   lang,
@@ -48,7 +49,7 @@ export function OrderListPagination({
         </Select>
         <span className="text-muted-foreground text-xs ms-2">
           {lang === "ar"
-            ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
+            ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${arNoun(sortedOrders.length, "order")}`
             : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
         </span>
       </div>

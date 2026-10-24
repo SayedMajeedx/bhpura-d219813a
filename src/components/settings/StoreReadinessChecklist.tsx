@@ -29,6 +29,7 @@ import { catalogInsightQueries } from "@/lib/data/catalog";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { isServicesProfile } from "@/lib/store-profile";
 import { readinessFoldKey, readinessFolded } from "@/features/settings/lib/readiness-fold";
+import { arNoun } from "@/lib/arabic-count";
 
 /** Whether the policy has written terms in either language (counts as a policy page). */
 const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
@@ -223,7 +224,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
           title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
           description: isAr
             ? hasProducts
-              ? `${activeProducts} منتج نشط حالياً جاهز للعرض بالكتالوج`
+              ? `جاهز للعرض في الكتالوج الآن: ${arNoun(activeProducts, "product")}`
               : "أضف وتفعيل أول منتج للظهور في الكتالوج"
             : hasProducts
               ? `${activeProducts} active product(s) ready for showcase`
@@ -257,7 +258,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
           title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
           description: isAr
             ? hasPolicies
-              ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+              ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
               : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
             : hasPolicies
               ? `${validPages.length} published page(s) with store policies`
@@ -329,7 +330,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
           title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
           description: isAr
             ? hasProducts
-              ? `${activeProducts} منتج نشط حالياً جاهز للبيع مباشرة`
+              ? `جاهز للبيع الآن: ${arNoun(activeProducts, "product")}`
               : "أضف وتفعيل أول منتج لبدء استقبال الطلبات"
             : hasProducts
               ? `${activeProducts} active product(s) ready for purchase`
@@ -391,7 +392,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
           title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
           description: isAr
             ? hasPolicies
-              ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+              ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
               : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
             : hasPolicies
               ? `${validPages.length} published page(s) with store policies`
@@ -415,7 +416,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
                   : "Publish your terms and cancellation policy",
                 description: isAr
                   ? hasPolicies
-                    ? `${validPages.length} صفحات منشورة تشمل الشروط والسياسات`
+                    ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
                     : "توضيح شروط الحجز والإلغاء والدفعة المقدمة يبني الثقة في خدماتك"
                   : hasPolicies
                     ? `${validPages.length} published page(s) with your terms`

@@ -7,6 +7,7 @@ import {
   restoreDrafts,
 } from "@/features/instagram-import/lib/review-view";
 import type { MergeableDraft } from "@/features/instagram-import/lib/merge-drafts";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * The review's bulk actions: set the category, sizes or price of the ticked drafts at once, remove
@@ -30,7 +31,9 @@ export function useReviewActions({
       if (selected.size === 0) return;
       setDrafts((current) => bulkSetField(current, selected, field, value));
       toast.success(
-        isAr ? `تم التعديل على ${selected.size} منتج.` : `Updated ${selected.size} products.`,
+        isAr
+          ? `تم التعديل على ${arNoun(selected.size, "product")}.`
+          : `Updated ${selected.size} products.`,
       );
     },
     [selected, setDrafts, isAr],

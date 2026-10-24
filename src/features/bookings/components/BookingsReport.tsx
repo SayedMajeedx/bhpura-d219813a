@@ -7,6 +7,7 @@ import { bookingsQueries } from "@/lib/data/bookings";
 import { weekdayNames } from "@/lib/bookings/format";
 import { reportPeriod, summariseBookings } from "@/features/bookings/lib/booking-report";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import { arNoun } from "@/lib/arabic-count";
 
 type Period = "month" | "last30" | "last90";
 
@@ -73,7 +74,7 @@ export function BookingsReport({ page }: { page: BookingsPage }) {
           value={percent(report.occupancy)}
           hint={
             isAr
-              ? `${report.bookedDays} من ${report.bookableDays} يوماً`
+              ? `${report.bookedDays} من ${arNoun(report.bookableDays, "day")}`
               : `${report.bookedDays} of ${report.bookableDays} days`
           }
         />
@@ -94,7 +95,7 @@ export function BookingsReport({ page }: { page: BookingsPage }) {
         <Figure
           label={isAr ? "طلبات تحولت لحجوزات" : "Requests booked"}
           value={percent(report.requestConversion)}
-          hint={isAr ? `${report.requests} طلب` : `${report.requests} requests`}
+          hint={isAr ? `${arNoun(report.requests, "order")}` : `${report.requests} requests`}
         />
       </div>
 

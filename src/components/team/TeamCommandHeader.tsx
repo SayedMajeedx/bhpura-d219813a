@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface TeamCommandHeaderProps {
   lang: "ar" | "en";
@@ -18,11 +19,7 @@ export function TeamCommandHeader({ lang, memberCount, onAddMember }: TeamComman
     <AdminPageHeader
       icon={Users}
       title={isAr ? "أعضاء الفريق والصلاحيات" : "Team Members & Roles"}
-      badges={
-        <AdminPageCount>
-          {memberCount} {isAr ? "أعضاء" : "members"}
-        </AdminPageCount>
-      }
+      badges={<AdminPageCount>{countOf(memberCount, "member", isAr ? "ar" : "en")}</AdminPageCount>}
       description={
         isAr
           ? "إضافة موظفين جُدد، تخصيص الأدوار (مدير، موظف)، وتعيين صلاحيات المخزون والطلبات والبيانات المالية."

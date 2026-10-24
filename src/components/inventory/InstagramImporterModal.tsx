@@ -59,6 +59,7 @@ import {
   type MergeableDraft,
 } from "@/features/instagram-import";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { arNoun } from "@/lib/arabic-count";
 
 export interface InstagramImporterModalProps {
   brandId: string;
@@ -668,7 +669,7 @@ export function InstagramImporterModal({
                               <Badge className="bg-zinc-900/80 text-white text-xs gap-1 font-semibold border-0">
                                 <Layers className="h-3 w-3" />
                                 {isAr
-                                  ? `${draft.images.length} صور (معرض)`
+                                  ? `${arNoun(draft.images.length, "image")} (معرض)`
                                   : `${draft.images.length} Images`}
                               </Badge>
                             )}
@@ -883,7 +884,7 @@ export function InstagramImporterModal({
                                     : "Requires price"
                                 : selectedCount > 1
                                   ? isAr
-                                    ? `✓ سيحفظ ${selectedCount} صور بالمعرض`
+                                    ? `✓ سيحفظ ${arNoun(selectedCount, "image")} بالمعرض`
                                     : `✓ Saves ${selectedCount} gallery photos`
                                   : isAr
                                     ? "جاهز للاعتماد كمسودة"
@@ -921,13 +922,13 @@ export function InstagramImporterModal({
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {isAr
-                      ? `تم حفظ ${importResult.success} منتج كمسودات غير منشورة (Drafts). يمكنك مراجعتها ونشرها لاحقاً.`
+                      ? `تم حفظ ${arNoun(importResult.success, "product")} كمسودات غير منشورة (Drafts). يمكنك مراجعتها ونشرها لاحقاً.`
                       : `Successfully saved ${importResult.success} unpublished drafts to your catalog.`}
                   </p>
                   {importResult.skipped > 0 && (
                     <p className="text-xs font-semibold text-amber-600 leading-relaxed">
                       {isAr
-                        ? `لم يُحفظ ${importResult.skipped} منتج لأنه موجود في المتجر من استيراد سابق.`
+                        ? `لم يُحفظ ${arNoun(importResult.skipped, "product")} لأنه موجود في المتجر من استيراد سابق.`
                         : `${importResult.skipped} not saved: already in your store from an earlier import.`}
                     </p>
                   )}

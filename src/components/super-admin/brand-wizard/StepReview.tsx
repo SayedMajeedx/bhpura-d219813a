@@ -4,6 +4,7 @@ import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
 import { Store, ShieldCheck } from "lucide-react";
 import { PLATFORM_HOST } from "@/lib/platform-host";
+import { countOf } from "@/lib/arabic-count";
 
 interface StepReviewProps {
   data: BrandWizardData;
@@ -72,7 +73,7 @@ export function StepReview({ data, isAr }: StepReviewProps) {
               {isAr ? "الأقسام الافتراضية:" : "Starter categories:"}
             </span>
             <span className="font-semibold">
-              {template.categories.length} {isAr ? "أقسام" : "categories"}
+              {countOf(template.categories.length, "category", isAr ? "ar" : "en")}
             </span>
           </div>
 

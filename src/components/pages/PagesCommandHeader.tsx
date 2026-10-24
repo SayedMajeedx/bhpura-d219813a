@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface PagesCommandHeaderProps {
   lang: "ar" | "en";
@@ -29,11 +30,7 @@ export function PagesCommandHeader({
     <AdminPageHeader
       icon={Layout}
       title={isAr ? "الصفحات التعريفية والسياسات" : "Pages & Policy Management"}
-      badges={
-        <AdminPageCount>
-          {pageCount} {isAr ? "صفحة" : "pages"}
-        </AdminPageCount>
-      }
+      badges={<AdminPageCount>{countOf(pageCount, "page", isAr ? "ar" : "en")}</AdminPageCount>}
       description={
         isAr
           ? "إنشاء وترتيب الصفحات التعريفية (عن المتجر، الشروط، الأسئلة الشائعة)، وحسابات التواصل الاجتماعي."

@@ -7,6 +7,7 @@ import { parseCSV } from "@/lib/csv-parser";
 import { sanitizeGCCPhone } from "@/lib/os-formatting";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { downloadTemplate } from "@/features/import-export/lib/import-templates";
+import { arNoun } from "@/lib/arabic-count";
 
 // -------------------------------------------------------------
 // Component: Customer Import Section
@@ -297,7 +298,7 @@ export function CustomerImportSection({
               </h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
                 {isAr
-                  ? `تم حفظ ${lastCount} عميل في قاعدة البيانات مع ربط جهات الاتصال.`
+                  ? `تم حفظ ${arNoun(lastCount, "customer")} في قاعدة البيانات مع ربط جهات الاتصال.`
                   : `Successfully recorded ${lastCount} customer profiles.`}
               </p>
             </div>

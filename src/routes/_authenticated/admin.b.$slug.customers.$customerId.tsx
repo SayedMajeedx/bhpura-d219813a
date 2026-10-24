@@ -263,7 +263,7 @@ function CustomerProfilePage() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {lang === "ar"
-              ? `${orders.length} طلب مرتبط بهذا العميل`
+              ? `طلبات هذا العميل: ${orders.length}`
               : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}
           </p>
         </div>
@@ -708,7 +708,7 @@ function CustomerProfilePage() {
                   <div className="flex items-center justify-between border-t border-border-subtle bg-muted/20 px-4 py-3 text-xs">
                     <p className="text-muted-foreground font-medium">
                       {lang === "ar"
-                        ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من إجمالي ${orders.length} طلب`
+                        ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من ${orders.length}`
                         : `Showing ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} of ${orders.length} orders`}
                     </p>
                     <div className="flex items-center gap-1.5">

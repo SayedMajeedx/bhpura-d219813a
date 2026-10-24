@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatMoney } from "@/lib/format";
 import { MAX_LOW_STOCK_UNITS } from "@/lib/inventory-health";
 import type { StockTotals } from "@/features/inventory/lib/stock-totals";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * What the stock adds up to, above the list: pieces in the store and at partners, their worth at
@@ -48,7 +49,7 @@ export function StockOverviewStrip({
         value={number(totals.storePieces)}
         hint={
           isAr
-            ? `في ${number(totals.productsInStock)} منتج`
+            ? `في ${arNoun(totals.productsInStock, "product")}`
             : `across ${number(totals.productsInStock)} products`
         }
       />
@@ -69,7 +70,7 @@ export function StockOverviewStrip({
           hint={
             totals.piecesWithoutCost > 0
               ? isAr
-                ? `${number(totals.piecesWithoutCost)} قطعة بلا تكلفة مسجلة`
+                ? `${arNoun(totals.piecesWithoutCost, "piece")} بلا تكلفة مسجلة`
                 : `${number(totals.piecesWithoutCost)} pieces have no cost entered`
               : undefined
           }
@@ -124,7 +125,13 @@ function LowStockLevelTile({
   };
 
   const says =
-    level === 0 ? (isAr ? "متوقف" : "Off") : isAr ? `${level} قطع أو أقل` : `${level} or fewer`;
+    level === 0
+      ? isAr
+        ? "متوقف"
+        : "Off"
+      : isAr
+        ? `${arNoun(level, "piece")} أو أقل`
+        : `${level} or fewer`;
 
   return (
     <div className="w-40 min-w-0 shrink-0 snap-start rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:w-auto sm:flex-1 sm:shrink sm:basis-36">

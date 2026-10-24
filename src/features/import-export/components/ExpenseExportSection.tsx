@@ -11,6 +11,7 @@ import {
   ExportFormat,
 } from "@/lib/universal-exporter";
 import { toExpenseExportLine, type ExpenseExportRow } from "@/lib/data/expenses";
+import { arNoun } from "@/lib/arabic-count";
 
 // =============================================================
 // Component 4: Expenses Export Section
@@ -74,7 +75,7 @@ export function ExpenseExportSection({
       onExportSuccess();
       toast.success(
         isAr
-          ? `تم تصدير ${rows.length} بند مصروفات بنجاح!`
+          ? `تم تصدير ${arNoun(rows.length, "line")} مصروفات بنجاح!`
           : `Exported ${rows.length} expense items!`,
         { id: toastId },
       );

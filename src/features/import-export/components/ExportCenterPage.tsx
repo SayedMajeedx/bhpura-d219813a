@@ -31,6 +31,7 @@ import { CustomerExportSection } from "@/features/import-export/components/Custo
 import { OrderExportSection } from "@/features/import-export/components/OrderExportSection";
 import { ExpenseExportSection } from "@/features/import-export/components/ExpenseExportSection";
 import { ExportHistorySection } from "@/features/import-export/components/ExportHistorySection";
+import { countOf } from "@/lib/arabic-count";
 
 export function ExportCenterPage() {
   const brand = useBrand();
@@ -161,7 +162,7 @@ export function ExportCenterPage() {
               <p className="text-2xl font-bold text-foreground tracking-tight">
                 {products.length}{" "}
                 <span className="text-xs font-normal text-muted-foreground">
-                  ({totalVariants} {isAr ? "خيار" : "variants"})
+                  ({countOf(totalVariants, "option", isAr ? "ar" : "en")})
                 </span>
               </p>
             </div>

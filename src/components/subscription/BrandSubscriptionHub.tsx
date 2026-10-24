@@ -61,6 +61,7 @@ import {
 import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
 import { purchasablePlans } from "@/lib/saas-billing/purchasable-plans";
 import { systemSettingsQueries } from "@/lib/data/system-settings";
+import { arNoun } from "@/lib/arabic-count";
 
 interface BrandSubscriptionHubProps {
   brandId: string;
@@ -497,7 +498,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {isTrial && trialEndsAtDate
                   ? `${new Date(trialEndsAtDate).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })} ${
                       trialDaysRemaining !== null
-                        ? `(${isAr ? `متبقي ${trialDaysRemaining} أيام` : `${trialDaysRemaining}d left`})`
+                        ? `(${isAr ? `متبقي ${arNoun(trialDaysRemaining, "day")}` : `${trialDaysRemaining}d left`})`
                         : ""
                     }`
                   : subscription?.current_period_end
@@ -544,7 +545,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <Sparkles className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
               <span>
                 {isAr
-                  ? `أنت حالياً في الفترة التجريبية المجانية (${trialDaysRemaining !== null ? `متبقي ${trialDaysRemaining} أيام` : "3 أيام"}). جميع مزايا المنصة متاحة لك بالكامل.`
+                  ? `أنت حالياً في الفترة التجريبية المجانية (${trialDaysRemaining !== null ? `متبقي ${arNoun(trialDaysRemaining, "day")}` : "3 أيام"}). جميع مزايا المنصة متاحة لك بالكامل.`
                   : `You are currently in your free trial (${trialDaysRemaining !== null ? `${trialDaysRemaining} days remaining` : "3 days"}). All platform features are unlocked.`}
               </span>
             </div>

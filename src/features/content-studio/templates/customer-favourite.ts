@@ -12,6 +12,7 @@ import { fitText, textDirection } from "@/features/content-studio/engine/text-la
 import { ease, mix, presence, progress } from "@/features/content-studio/engine/timeline";
 import { CONTENT_BOTTOM, photoHeight } from "@/features/content-studio/engine/safe-area";
 import { star } from "@/features/content-studio/engine/line-art";
+import { arNoun } from "@/lib/arabic-count";
 
 const DURATION = 7;
 /** The stars fill one after another from here. */
@@ -29,7 +30,7 @@ const LAYOUT: Record<
 
 const WORDS = {
   en: { eyebrow: "Customer favourite", from: (n: number) => `from ${n} reviews` },
-  ar: { eyebrow: "الأكثر حباً", from: (n: number) => `من ${n} تقييم` },
+  ar: { eyebrow: "الأكثر حباً", from: (n: number) => `من ${arNoun(n, "review")}` },
 };
 
 /**

@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface CommunicationsCommandHeaderProps {
   lang: "ar" | "en";
@@ -23,9 +24,7 @@ export function CommunicationsCommandHeader({
       icon={Mail}
       title={isAr ? "سجل المراسلات وتنبيهات الإدارة" : "Outbound Logs & Admin Alerts"}
       badges={
-        <AdminPageCount>
-          {recipientCount} {isAr ? "مستلمين" : "recipients"}
-        </AdminPageCount>
+        <AdminPageCount>{countOf(recipientCount, "recipient", isAr ? "ar" : "en")}</AdminPageCount>
       }
       description={
         isAr
