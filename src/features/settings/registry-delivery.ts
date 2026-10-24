@@ -50,4 +50,18 @@ export const DELIVERY_ESTIMATE_SETTINGS: SettingsFieldDef[] = [
     label: { ar: "مدة توصيل التفصيل (إنجليزي)", en: "Made-to-order Delivery Text (English)" },
     keywords: { ar: ["مدة التفصيل إنجليزي"], en: ["tailored delivery estimate en"] },
   },
+  {
+    key: "delivery_schedule",
+    table: "business_settings",
+    tab: "orders",
+    group: "fulfillment",
+    level: "advanced",
+    owner: "settings",
+    type: "json",
+    label: { ar: "يختار العميل يوم الاستلام ووقته", en: "Shoppers pick the day and time" },
+    keywords: {
+      ar: ["موعد التوصيل", "يوم الاستلام", "وقت التوصيل", "مواعيد"],
+      en: ["delivery date", "delivery time", "time slots", "pickup time"],
+    },
+  },
 ];

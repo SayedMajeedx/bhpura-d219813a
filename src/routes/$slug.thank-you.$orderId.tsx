@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { requestedTimeLabel } from "@/lib/delivery-schedule";
 import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
@@ -22,6 +23,9 @@ type ThankYouSearch = {
   day?: string;
   start?: string;
   minutes?: string;
+  /** The day and window the shopper picked (`delivery-schedule.ts`), as the checkout sent them. */
+  for?: string;
+  slot?: string;
 };
 
 export const Route = createFileRoute("/$slug/thank-you/$orderId")({
@@ -37,6 +41,12 @@ export const Route = createFileRoute("/$slug/thank-you/$orderId")({
             : "delivery",
       channel: search.channel === "whatsapp" ? "whatsapp" : "email",
       ...(appointment ? confirmationSearch(appointment) : {}),
+      ...(typeof search.for === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search.for)
+        ? { for: search.for }
+        : {}),
+      ...(typeof search.slot === "string" && /^\d{2}:\d{2}-\d{2}:\d{2}$/.test(search.slot)
+        ? { slot: search.slot }
+        : {}),
     };
   },
   component: ThankYou,
@@ -115,6 +125,12 @@ function ThankYou() {
                     "We received your order and will contact you shortly to confirm delivery.",
                   )}
         </p>
+        {search.for && (
+          <p className="-mt-3 mb-6 text-sm font-semibold text-foreground">
+            {isPickup ? t("موعد الاستلام: ", "Collect on ") : t("موعد التوصيل: ", "Deliver on ")}
+            {requestedTimeLabel(search.for, search.slot, lang === "ar" ? "ar" : "en")}
+          </p>
+        )}
 
         <Link
           to="/$slug"

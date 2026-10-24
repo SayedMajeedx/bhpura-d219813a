@@ -1,8 +1,9 @@
 import React from "react";
+import { requestedTimeLabel } from "@/lib/delivery-schedule";
 import { Link } from "@tanstack/react-router";
 import { formatMoney } from "@/lib/format";
 import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
-import { UserX, Phone, ExternalLink } from "lucide-react";
+import { UserX, Phone, ExternalLink, CalendarClock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { maskPhoneForList } from "@/lib/privacy";
@@ -39,6 +40,8 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   const paymentMethod = getStoredPaymentMethodPresentation(order.payment_method, lang);
   const items = orderItemsLine(order.order_items, lang);
   const when = orderCardWhen(order.created_at, lang);
+  // The day (and window) the customer asked for, when the store lets them pick.
+  const wanted = requestedTimeLabel(order.requested_date, order.requested_slot, lang);
   // A handed-over, cancelled or refunded order has no next step: its badge already says so.
   const settled = orderIsSettled(order);
 
@@ -73,6 +76,13 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
           )}
         </span>
       </div>
+
+      {wanted && (
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+          <CalendarClock className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+          {wanted}
+        </p>
+      )}
 
       {/* Customer Info */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">

@@ -296,8 +296,8 @@ export type PublicSettings = {
   product_card_quick_add?: boolean;
   /** The cards' photo shape ("3:4", "4:5", "1:1", "4:3"); null: the vertical's. */
   product_card_aspect_ratio?: string | null;
-  /** How the home page sells ("shop", "menu"); null: the vertical's. */
-  storefront_home_layout?: string | null;
+  storefront_home_layout?: string | null; // "shop" or "menu"; null: the vertical's
+  delivery_schedule?: unknown; // the days and times a shopper may pick (delivery-schedule.ts)
   quick_view_enabled?: boolean;
   pdp_image_zoom?: boolean;
   category_filters_enabled?: boolean;

@@ -1,4 +1,6 @@
 import { termsPageSlug } from "@/lib/cms-pages";
+import { useDeliveryTime } from "@/features/checkout/hooks/use-delivery-time";
+import { DeliveryTimeCard } from "@/features/checkout/components/DeliveryTimeCard";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -355,6 +357,14 @@ function Checkout() {
     );
   }, [cart, cartTotal, currency]);
 
+  // The day and time the shopper wants it, by the store's delivery schedule.
+  const deliveryTime = useDeliveryTime({
+    schedule: settings?.delivery_schedule,
+    fulfillment,
+    appointment: Boolean(appointment),
+    t,
+  });
+
   const { submitting, submit } = usePlaceOrder({
     brand,
     session,
@@ -390,6 +400,7 @@ function Checkout() {
     cartSessionId,
     paymentErrorState,
     payInFull,
+    requestedTime: deliveryTime.requested,
   });
 
   if (cart.length === 0) {
@@ -547,6 +558,8 @@ function Checkout() {
             zones={zones}
           />
         )}
+
+        <DeliveryTimeCard time={deliveryTime} fulfillment={fulfillment} lang={lang} t={t} />
 
         <PaymentMethodCard
           availableMethods={availableMethods}

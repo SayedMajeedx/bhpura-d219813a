@@ -39,6 +39,7 @@ export function placeStorefrontOrderArgs({
   lang,
   idempotencyKey,
   payInFull = false,
+  requestedTime = null,
 }: {
   brand: Pick<Storefront["brand"], "slug">;
   form: CheckoutForm;
@@ -66,11 +67,16 @@ export function placeStorefrontOrderArgs({
   idempotencyKey: string;
   /** The shopper chose to pay the whole total now instead of only the advance. */
   payInFull?: boolean;
+  /** The day (and window) picked by the store's delivery schedule; the database checks it. */
+  requestedTime?: { date: string | null; slot: string | null } | null;
 }) {
   return {
     p_brand_slug: brand.slug,
     p_customer: {
       ...(payInFull ? { pay_in_full: true } : {}),
+      ...(requestedTime?.date
+        ? { requested_date: requestedTime.date, requested_slot: requestedTime.slot ?? null }
+        : {}),
       ...(fulfillment === "pickup" && partnerId ? { pickup_partner_id: partnerId } : {}),
       name: form.name,
       phone: form.phone,
@@ -149,6 +155,15 @@ export function placeOrderFailure(
     // `t` picks the shopper's language; asking it for "ar"/"en" tells which.
     const isAr = t("ar", "en") === "ar";
     return { message: bookingErrorMessage(msg, isAr), clearPromo: false };
+  }
+  if (msg.includes("DELIVERY_TIME_UNAVAILABLE")) {
+    return {
+      message: t(
+        "لم يعد الموعد الذي اخترته متاحاً. اختر يوماً أو وقتاً آخر وحاول مرة أخرى.",
+        "The day or time you picked is no longer available. Pick another and try again.",
+      ),
+      clearPromo: false,
+    };
   }
   if (msg.includes("PICKUP_PARTNER_UNAVAILABLE")) {
     return {
