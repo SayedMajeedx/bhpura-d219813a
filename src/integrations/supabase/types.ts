@@ -2151,6 +2151,7 @@ export type Database = {
           storefront_font_ar_url: string | null;
           storefront_font_en: string;
           storefront_font_en_url: string | null;
+          storefront_home_layout: string | null;
           storefront_loader_text_ar: string | null;
           storefront_loader_text_en: string | null;
           storefront_mode: string;
@@ -2359,6 +2360,7 @@ export type Database = {
           storefront_font_ar_url?: string | null;
           storefront_font_en?: string;
           storefront_font_en_url?: string | null;
+          storefront_home_layout?: string | null;
           storefront_loader_text_ar?: string | null;
           storefront_loader_text_en?: string | null;
           storefront_mode?: string;
@@ -2567,6 +2569,7 @@ export type Database = {
           storefront_font_ar_url?: string | null;
           storefront_font_en?: string;
           storefront_font_en_url?: string | null;
+          storefront_home_layout?: string | null;
           storefront_loader_text_ar?: string | null;
           storefront_loader_text_en?: string | null;
           storefront_mode?: string;
@@ -8958,6 +8961,7 @@ export type Database = {
           storefront_font_ar_url: string | null;
           storefront_font_en: string | null;
           storefront_font_en_url: string | null;
+          storefront_home_layout: string | null;
           storefront_loader_text_ar: string | null;
           storefront_loader_text_en: string | null;
           storefront_mode: string | null;
@@ -9813,6 +9817,7 @@ export type Database = {
           storefront_font_ar_url: string | null;
           storefront_font_en: string;
           storefront_font_en_url: string | null;
+          storefront_home_layout: string | null;
           storefront_loader_text_ar: string | null;
           storefront_loader_text_en: string | null;
           storefront_mode: string;

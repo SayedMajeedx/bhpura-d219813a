@@ -26,6 +26,13 @@ import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { Categories } from "@/features/storefront-home/components/Categories";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
 import { ServicesHome } from "@/features/services-home/components/ServicesHome";
+import { MenuHome } from "@/features/storefront-home/components/MenuHome";
+import { isCatalogMode } from "@/lib/storefront-mode";
+import {
+  PRODUCT_PHOTO_CLASS,
+  productCardRatio,
+  storefrontHomeLayout,
+} from "@/lib/brand-templates/design-presets";
 import { isServicesStore } from "@/features/services-home/lib/services-home";
 
 export const Route = createFileRoute("/$slug/")({
@@ -137,6 +144,11 @@ function StoreHome() {
   if (!isLoading && isServicesStore(modules.bookings, products ?? [])) {
     return <ServicesHome products={products ?? []} />;
   }
+  // A store that sells by quick order (a bakery, a roastery) gets its menu; a catalog store has
+  // no basket to fill, so it keeps the shop's home.
+  if (!isLoading && storefrontHomeLayout(settings) === "menu" && !isCatalogMode(settings)) {
+    return <MenuHome products={products ?? []} categories={categories ?? []} />;
+  }
 
   // Loading state with premium skeleton carousels/grids
   if (isLoading) {
@@ -156,7 +168,9 @@ function StoreHome() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+                  <Skeleton
+                    className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} rounded-xl w-full bg-muted`}
+                  />
                   <Skeleton className="h-4 w-3/4 bg-muted" />
                   <Skeleton className="h-4 w-1/3 bg-muted" />
                 </div>

@@ -3,10 +3,12 @@ import React from "react";
 import { useStorefront } from "@/lib/storefront-context";
 import { useIsEmbedded } from "@/features/storefront-shell/lib/embedded";
 import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
+import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 
 /**
  * The floating WhatsApp button, raised above the product page's buy bar on a
- * phone, and left out at checkout.
+ * phone and above a page's own bar at the foot of the screen (a menu's basket),
+ * and left out at checkout.
  */
 export function WhatsAppFab() {
   const { settings, lang, brand } = useStorefront();
@@ -14,6 +16,8 @@ export function WhatsAppFab() {
   // Not read from `window` while rendering: the server has none, and an
   // embedded preview would then hydrate differently from the server's HTML.
   const isEmbedded = useIsEmbedded();
+  // A page's own bar at the foot of the screen (a menu's basket) takes the bottom slot.
+  const bottomBar = useBottomBarClaimed();
   if (isEmbedded) return null;
   if (!settings.whatsapp_enabled) return null;
   const digits = (settings.whatsapp_number ?? "").replace(/\D/g, "");
@@ -22,7 +26,7 @@ export function WhatsAppFab() {
   // At checkout nothing floats over the form or competes with paying.
   if (isCheckoutPath(pathname)) return null;
   // Product pages have a buy bar fixed at the foot of a phone: the button rises above it.
-  const hasStickyBottom = pathname.includes("/product/");
+  const hasStickyBottom = pathname.includes("/product/") || bottomBar;
 
   const text =
     lang === "ar"

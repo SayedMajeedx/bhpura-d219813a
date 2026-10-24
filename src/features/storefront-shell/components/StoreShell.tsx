@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
 import { useQueryClient } from "@tanstack/react-query";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
@@ -27,6 +27,19 @@ export function StoreShell() {
   }, [isCatalog, cart.length, clearCart]);
 
   const { style, isGlass, typographyFaces } = shellTheme({ brand, settings, lang });
+
+  // The sticky header's height, for what sticks under it (a menu's category tabs) and what a tab
+  // scrolls to (`--sf-header-h`). It changes with the announcement bar and the screen's width.
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setHeaderHeight(header.offsetHeight));
+    observer.observe(header);
+    setHeaderHeight(header.offsetHeight);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
@@ -61,7 +74,7 @@ export function StoreShell() {
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
       className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-hidden"
-      style={style}
+      style={{ ...style, "--sf-header-h": `${headerHeight}px` } as React.CSSProperties}
     >
       {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack
           (Readex Pro first) and outspecifies anything set here. It is harmless
@@ -72,6 +85,7 @@ export function StoreShell() {
           UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
       <div
+        ref={headerRef}
         // Its colour runs under the status bar of a store added to the home screen (the page
         // is `viewport-fit=cover`); its content starts below it. Zero in a browser tab.
         className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${isGlass ? "backdrop-blur-md" : ""}`}

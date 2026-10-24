@@ -33,6 +33,9 @@ import {
 } from "./HomeSectionFields";
 import { PromoCardsEditor } from "./PromoCardsEditor";
 import { ServicesHomeSectionsGroup } from "./ServicesHomeSectionsGroup";
+import { MenuHomeSectionsGroup } from "./MenuHomeSectionsGroup";
+import { HomeLayoutField } from "./HomeLayoutField";
+import { storefrontHomeLayout } from "@/lib/brand-templates/design-presets";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { isServicesProfile } from "@/lib/store-profile";
@@ -128,15 +131,27 @@ const SECTION_META: Record<
 export function HomeSectionsGroup() {
   const brand = useBrand();
   const { profile } = useAdminStoreProfile(brand.id);
+  const { lang } = useI18n();
+  const { form, setBs } = useBrandSettingsFormContext();
   // A services store's home page is ServicesHome: its own sections, not the shop's.
-  return isServicesProfile(profile.modules) ? (
-    <ServicesHomeSectionsGroup />
+  if (isServicesProfile(profile.modules)) return <ServicesHomeSectionsGroup />;
+  // A shop's or a quick-order menu's (MenuHome): the store's choice, else its vertical's.
+  const layoutField = (
+    <HomeLayoutField
+      value={form.bs.storefront_home_layout}
+      vertical={form.bs.store_vertical}
+      isAr={lang === "ar"}
+      onChange={(layout) => setBs({ storefront_home_layout: layout })}
+    />
+  );
+  return storefrontHomeLayout(form.bs) === "menu" ? (
+    <MenuHomeSectionsGroup layoutField={layoutField} />
   ) : (
-    <ShopHomeSectionsGroup />
+    <ShopHomeSectionsGroup layoutField={layoutField} />
   );
 }
 
-function ShopHomeSectionsGroup() {
+function ShopHomeSectionsGroup({ layoutField }: { layoutField: React.ReactNode }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
@@ -275,6 +290,7 @@ function ShopHomeSectionsGroup() {
             : "Your home page's sections in the order a visitor sees them. Open a section to edit it; its switch shows or hides it."}
         </p>
       </div>
+      {layoutField}
 
       <ol className="space-y-2">
         {homePageSections(isV2).map((id) => {

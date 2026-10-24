@@ -46,7 +46,7 @@ export async function fetchOwnOrders(brandId: string, customerId: string) {
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, invoice_number, order_date, status, payment_status, fulfillment_status, fulfillment_method, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
+      "id, invoice_number, order_date, status, payment_status, fulfillment_status, fulfillment_method, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price, product_id, variant_id)",
     )
     .eq("brand_id", brandId)
     .eq("customer_id", customerId)

@@ -1,11 +1,27 @@
 import type { SettingsFieldDef } from "@/features/settings/registry";
 
 /**
- * The storefront's banners (the picture-and-title bands above a home page section and above a
- * category's products): their pictures, their parallax and their size. Kept apart so the registry
- * file does not grow; SETTINGS_REGISTRY spreads it in at the same place, so the order is unchanged.
+ * The Home page group's own settings: how the home page sells (`storefront_home_layout`: a
+ * shop's, or a menu's; null, the store vertical's: `storefrontHomeLayout`) and the storefront's
+ * banners (the picture-and-title bands above a home page section and above a category's
+ * products): their pictures, their parallax and their size. Kept apart so the registry file does
+ * not grow; SETTINGS_REGISTRY spreads it in at the same place, so the order is unchanged.
  */
 export const BANNER_SETTINGS: SettingsFieldDef[] = [
+  {
+    key: "storefront_home_layout",
+    table: "business_settings",
+    tab: "storefront",
+    group: "home_sections",
+    level: "advanced",
+    owner: "settings",
+    type: "select",
+    label: { ar: "طريقة عرض الصفحة الرئيسية", en: "Home page layout" },
+    keywords: {
+      ar: ["قائمة", "منيو", "متجر", "طلب سريع", "الصفحة الرئيسية"],
+      en: ["menu", "quick order", "shop layout", "home layout"],
+    },
+  },
   {
     key: "category_banner_background_url",
     table: "business_settings",

@@ -5,7 +5,10 @@ import {
   PRODUCT_PHOTO_CLASS,
   PRODUCT_PHOTO_RATIOS,
   getBrandTemplate,
+  HOME_LAYOUTS,
   productCardRatio,
+  storefrontHomeLayout,
+  verticalHomeLayout,
   verticalProductPhoto,
 } from "../src/lib/brand-templates";
 import { FONT_MOOD_PRESETS } from "../src/components/settings/QuickThemeCustomizer";
@@ -70,12 +73,13 @@ describe("Brand Vertical Templates Registry", () => {
     expect(abayas.vertical).toBe("abayas");
   });
 
-  it("gives every vertical only what the platform applies: a radius and a photo shape", () => {
+  it("gives every vertical only what the platform applies: a radius, a photo shape and a home", () => {
     for (const vertical of STORE_VERTICALS) {
       const design = BRAND_TEMPLATES[vertical].design;
       expect(design, `Template for ${vertical} must have design config`).toBeDefined();
       // Nothing else: a preset name, a grid, a spacing or a card style nothing read is gone.
-      expect(Object.keys(design!).sort()).toEqual(["productPhoto", "radius"]);
+      expect(Object.keys(design!).sort()).toEqual(["homeLayout", "productPhoto", "radius"]);
+      expect(HOME_LAYOUTS).toContain(design!.homeLayout);
       expect(design!.radius).toMatch(/^\d+(\.\d+)?rem$/);
       expect(PRODUCT_PHOTO_RATIOS).toContain(design!.productPhoto);
     }
@@ -109,5 +113,30 @@ describe("Brand Vertical Templates Registry", () => {
     expect(productCardRatio(null)).toBe("1:1");
     expect(PRODUCT_PHOTO_CLASS["1:1"]).toBe("aspect-square");
     expect(PRODUCT_PHOTO_CLASS["3:4"]).toBe("aspect-[3/4]");
+  });
+
+  it("opens food and coffee on a menu, every other kind of store on a shop", () => {
+    expect(verticalHomeLayout("food")).toBe("menu");
+    expect(verticalHomeLayout("coffee")).toBe("menu");
+    for (const vertical of STORE_VERTICALS.filter((v) => v !== "food" && v !== "coffee")) {
+      expect(verticalHomeLayout(vertical), vertical).toBe("shop");
+    }
+    expect(verticalHomeLayout(null)).toBe("shop");
+    expect(verticalHomeLayout("nonsense")).toBe("shop");
+  });
+
+  it("opens a store's own home layout, else its vertical's", () => {
+    expect(storefrontHomeLayout({ store_vertical: "coffee" })).toBe("menu");
+    expect(storefrontHomeLayout({ store_vertical: "coffee", storefront_home_layout: "shop" })).toBe(
+      "shop",
+    );
+    expect(storefrontHomeLayout({ store_vertical: "abayas", storefront_home_layout: "menu" })).toBe(
+      "menu",
+    );
+    // A value the column never holds is not trusted.
+    expect(storefrontHomeLayout({ store_vertical: "food", storefront_home_layout: "grid" })).toBe(
+      "menu",
+    );
+    expect(storefrontHomeLayout(null)).toBe("shop");
   });
 });
