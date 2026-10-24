@@ -639,6 +639,8 @@ const RegisterInstantTrialInput = z.object({
   storeVertical: z.enum(STORE_VERTICALS),
   selectedAddonIds: z.array(z.string()).optional(),
   turnstileToken: z.string().min(1).max(2048),
+  /** The owner lets Boutq's support team into the admin to help; off unless they say so. */
+  supportAccess: z.boolean().optional(),
 });
 
 export const registerInstantTrial = createServerFn({ method: "POST" })
@@ -773,6 +775,7 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
         subscription_tier: "starter",
         subscription_status: "trialing",
         is_active: true,
+        support_access_enabled: data.supportAccess === true,
         updated_at: new Date().toISOString(),
       })
       .eq("id", brandId);

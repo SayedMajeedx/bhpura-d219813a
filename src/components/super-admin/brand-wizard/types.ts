@@ -33,6 +33,8 @@ export interface BrandWizardData {
   owner_password: string;
   plan_type: "annual" | "trial";
   createMobileApp: boolean;
+  /** The owner agreed that Boutq's support team may enter the admin to help (off by default). */
+  supportAccess: boolean;
 }
 
 export interface PipelineStepStatus {

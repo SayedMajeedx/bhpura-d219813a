@@ -172,6 +172,30 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
           </div>
         </div>
       </div>
+
+      <div className="p-4 rounded-xl border border-border bg-muted/20">
+        <div className="flex items-start gap-3">
+          <Checkbox
+            id="support-access-checkbox"
+            checked={data.supportAccess}
+            onCheckedChange={(checked) => onChange({ supportAccess: !!checked })}
+            className="mt-1"
+          />
+          <div className="space-y-1">
+            <Label
+              htmlFor="support-access-checkbox"
+              className="font-semibold text-sm cursor-pointer"
+            >
+              {isAr ? "المالك وافق على وصول فريق الدعم" : "The owner agreed to support access"}
+            </Label>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {isAr
+                ? "يبقى المتجر مغلقاً أمام فريق Boutq حتى يوافق مالكه. كل دخول يُسجَّل، ويوقفه المالك من الإعدادات."
+                : "The store stays closed to Boutq's team until its owner agrees. Every visit is logged, and the owner can turn it off in Settings."}
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

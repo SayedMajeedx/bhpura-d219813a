@@ -9440,6 +9440,10 @@ export type Database = {
         Returns: string;
       };
       catalog_option_values: { Args: { p_terms: string[] }; Returns: string[] };
+      category_product_on_sale: {
+        Args: { p_product_id: string };
+        Returns: boolean;
+      };
       check_registered_customer_exists: {
         Args: { p_brand_id: string; p_email: string; p_phone: string };
         Returns: boolean;
