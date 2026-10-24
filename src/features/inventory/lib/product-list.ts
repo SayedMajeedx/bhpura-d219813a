@@ -1,4 +1,5 @@
 import { productAvailability, type AvailabilityStatus } from "@/lib/product-availability";
+import { cleanFacts } from "@/lib/product-facts";
 import type { LabelData } from "@/components/barcode-label";
 import type { Product, Variant } from "@/features/inventory/types";
 import {
@@ -358,6 +359,7 @@ export function duplicateProductValues(product: Product, brandId: string, isAr: 
     custom_fields: product.custom_fields,
     fabric_type: product.fabric_type,
     occasion: product.occasion,
+    details: cleanFacts(product.details),
     cost_price: product.cost_price ?? 0,
     variant_label_size_ar: product.variant_label_size_ar ?? null,
     variant_label_size_en: product.variant_label_size_en ?? null,

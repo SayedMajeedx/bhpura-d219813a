@@ -1,6 +1,7 @@
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { availabilityOf } from "@/lib/product-availability";
 import { cardPrice, type PricedProduct, type PricedVariant } from "@/lib/product-price";
+import { factLines } from "@/lib/product-facts";
 import {
   buildBreadcrumbsSchema,
   buildProductSchema,
@@ -18,6 +19,8 @@ type HeadProduct = PricedProduct & {
   base_price?: number | null;
   image_url?: string | null;
   media?: unknown;
+  /** Its facts (`product-facts.ts`), read by the store's vertical. */
+  details?: unknown;
   product_variants?: Array<PricedVariant & { id: string }> | null;
 };
 
@@ -39,6 +42,7 @@ export function productHead({
     initialLang?: unknown;
     currency?: unknown;
     showPrices?: unknown;
+    vertical?: unknown;
     productReviews?: { count?: unknown; average?: unknown } | null;
   };
   params: { slug: string; id: string };
@@ -80,6 +84,12 @@ export function productHead({
           }
         : null,
       sku: variants[0]?.id || product.id,
+      // The facts its page shows, in the same words.
+      properties: factLines(
+        product.details,
+        typeof loaderData?.vertical === "string" ? loaderData.vertical : null,
+        lang,
+      ).map((line) => ({ name: line.label, value: line.value })),
       primary_image_url: product.image_url,
       images: Array.isArray(product.media)
         ? product.media.map(mediaUrl).filter((url): url is string => Boolean(url))

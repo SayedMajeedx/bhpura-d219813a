@@ -13,7 +13,12 @@ import type { StoreVertical } from "@/lib/store-profile";
 import { useStoreAxisDefaults } from "@/lib/variant-axes";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import type { StorefrontProductDetail } from "@/lib/data/storefront";
-import { detailsSection, productDetailLines } from "@/features/product-page/lib/product-details";
+import {
+  detailGroups,
+  detailsSection,
+  productDetailLines,
+} from "@/features/product-page/lib/product-details";
+import { ProductDetailsBody } from "@/features/product-page/components/ProductDetailsBody";
 
 interface ProductAccordionProps {
   description?: string | null;
@@ -65,6 +70,8 @@ export function ProductAccordion({
         lang: isAr ? "ar" : "en",
       }).label,
       occasion: product?.occasion,
+      facts: product?.details,
+      vertical: storeVertical,
       lang: isAr ? "ar" : "en",
     }),
     // Care is the store's own text; nothing is said when it wrote none.
@@ -115,21 +122,10 @@ export function ProductAccordion({
           title: details.title,
           icon: isApparelVertical ? Shirt : Sparkles,
           content: (
-            <div className="space-y-2 text-xs leading-relaxed">
-              {details.lines.length > 0 && (
-                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1">
-                  {details.lines.map((line) => (
-                    <React.Fragment key={line.label}>
-                      <dt className="text-muted-foreground">{line.label}</dt>
-                      <dd dir="auto" className="text-page-start break-words font-medium">
-                        {line.value}
-                      </dd>
-                    </React.Fragment>
-                  ))}
-                </dl>
-              )}
-              {details.care && <p className="whitespace-pre-line opacity-90">{details.care}</p>}
-            </div>
+            <ProductDetailsBody
+              groups={detailGroups(details.lines, storeVertical)}
+              care={details.care}
+            />
           ),
         }
       : null,

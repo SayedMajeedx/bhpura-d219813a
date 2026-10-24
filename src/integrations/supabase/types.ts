@@ -6137,6 +6137,7 @@ export type Database = {
           description: string | null;
           description_ar: string | null;
           description_en: string | null;
+          details: Json;
           direct_packaging_cost: number | null;
           extra_hour_price: number | null;
           fabric_type: string | null;
@@ -6193,6 +6194,7 @@ export type Database = {
           description?: string | null;
           description_ar?: string | null;
           description_en?: string | null;
+          details?: Json;
           direct_packaging_cost?: number | null;
           extra_hour_price?: number | null;
           fabric_type?: string | null;
@@ -6249,6 +6251,7 @@ export type Database = {
           description?: string | null;
           description_ar?: string | null;
           description_en?: string | null;
+          details?: Json;
           direct_packaging_cost?: number | null;
           extra_hour_price?: number | null;
           fabric_type?: string | null;
