@@ -127,15 +127,15 @@ describe("the transfer screen", () => {
     expect(
       screen.getByRole("checkbox", { name: /Abaya Sabeeka 55: nothing to transfer/ }),
     ).toBeDisabled();
-    expect(screen.queryByText("Exceeds stock!")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Confirm Transfer \(0 items\)/ })).toBeDisabled();
+    expect(screen.queryByText("More than is in stock")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Transfer 0 pieces/ })).toBeDisabled();
   });
 
   it("selects and deselects everything shown, and only what the search shows", async () => {
     renderModal();
     fireEvent.click(await screen.findByRole("button", { name: "Select all" }));
     expect(screen.getByText("2 of 2 sizes")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Confirm Transfer \(5 items\)/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Transfer 5 pieces/ })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Deselect all" }));
     expect(screen.getByText("0 of 2 sizes")).toBeInTheDocument();
 
@@ -162,7 +162,7 @@ describe("the transfer screen", () => {
     ) as HTMLInputElement;
     fireEvent.change(field, { target: { value: "9" } });
     expect(screen.getByRole("alert")).toHaveTextContent("1 size asks for more than is in stock");
-    const confirm = screen.getByRole("button", { name: /Confirm Transfer/ });
+    const confirm = screen.getByRole("button", { name: /^Transfer \d+ pieces?/ });
     expect(confirm).toBeDisabled();
     fireEvent.change(field, { target: { value: "3" } });
     await waitFor(() => expect(confirm).toBeEnabled());
@@ -172,6 +172,47 @@ describe("the transfer screen", () => {
       transfer.batch.mock.calls[0] as unknown as [{ items: Array<{ variantId: string }> }]
     )[0];
     expect(sent.items.map((item) => item.variantId).sort()).toEqual(["v52", "v54"]);
-    expect(within(document.body).queryByText("Exceeds stock!")).not.toBeInTheDocument();
+    expect(within(document.body).queryByText("More than is in stock")).not.toBeInTheDocument();
+  });
+});
+
+describe("the transfer screen on a phone", () => {
+  const asPhone = () =>
+    vi.mocked(window.matchMedia).mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes("max-width"),
+          media: query,
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }) as unknown as MediaQueryList,
+    );
+
+  it("is the full screen, with a card per size and one field each", async () => {
+    asPhone();
+    renderModal(true);
+    expect(await screen.findByText("2 of 2 sizes")).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+    expect(dialog.className).toContain("max-sm:h-[100dvh]");
+    // No table on a phone, and each size's box once (both layouts once drew every field twice).
+    expect(within(dialog).queryByRole("table")).toBeNull();
+    expect(screen.getAllByRole("checkbox", { name: /Transfer Abaya Sabeeka 52/ })).toHaveLength(1);
+  });
+
+  it("steps a size's quantity with its buttons, never past its pieces", async () => {
+    asPhone();
+    renderModal(true);
+    const field = (await screen.findAllByRole("spinbutton", { name: "Quantity" })).find(
+      (input) => (input as HTMLInputElement).value === "3",
+    ) as HTMLInputElement;
+    expect(screen.getByRole("button", { name: "One more 52" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "One less 52" }));
+    expect(field.value).toBe("2");
+    fireEvent.change(field, { target: { value: "9" } });
+    expect(field.value).toBe("3");
   });
 });

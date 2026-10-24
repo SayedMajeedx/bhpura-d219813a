@@ -110,3 +110,14 @@ export {
   DialogTitle,
   DialogDescription,
 };
+
+/**
+ * On a phone, a dialog as a sheet from the screen's foot: it slides up and down instead of
+ * growing out of the middle, and its buttons sit where a thumb is. Add to `DialogContent`.
+ */
+export const PHONE_SHEET =
+  "max-sm:top-auto max-sm:bottom-0 max-sm:translate-y-0 max-sm:w-full max-sm:max-w-none max-sm:max-h-[92dvh] max-sm:rounded-t-2xl max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))] max-sm:data-[state=open]:slide-in-from-bottom-10 max-sm:data-[state=closed]:slide-out-to-bottom-10 max-sm:data-[state=open]:zoom-in-100 max-sm:data-[state=closed]:zoom-out-100";
+
+/** On a phone, a dialog that is a whole task (a list to work through): the full screen. */
+export const PHONE_FULL_SCREEN =
+  "max-sm:top-0 max-sm:left-0 max-sm:translate-x-0 max-sm:translate-y-0 max-sm:h-[100dvh] max-sm:max-h-[100dvh] max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0 max-sm:data-[state=open]:slide-in-from-bottom-10 max-sm:data-[state=closed]:slide-out-to-bottom-10 max-sm:data-[state=open]:zoom-in-100 max-sm:data-[state=closed]:zoom-out-100";
