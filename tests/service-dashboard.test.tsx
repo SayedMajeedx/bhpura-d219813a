@@ -115,7 +115,7 @@ describe("the launch checklist", () => {
   it("talks about services and bookings for a store that takes bookings", () => {
     const services = checklistCopy(true);
     expect(services.addTitle.en).toBe("Add Your First Service");
-    expect(services.addDone(2).ar).toContain("خدمة");
+    expect(services.addDone(2).ar).toContain("خدمتان");
     expect(services.firstTitle.en).toBe("Receive Your First Booking");
     expect(services.firstTo).toBe("/admin/b/$slug/bookings");
     const shop = checklistCopy(false);

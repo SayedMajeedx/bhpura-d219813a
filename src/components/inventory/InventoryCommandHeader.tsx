@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { countOf } from "@/lib/arabic-count";
 
 interface InventoryCommandHeaderProps {
   lang: "en" | "ar";
@@ -52,7 +53,7 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
       badges={
         <>
           <AdminPageCount>
-            {productCount} {isServices ? (isAr ? "خدمة" : "services") : isAr ? "منتج" : "products"}
+            {countOf(productCount, isServices ? "service" : "product", isAr ? "ar" : "en")}
           </AdminPageCount>
           {Boolean(pendingNotifyCount && pendingNotifyCount > 0) && (
             <WaitlistMark slug={waitlistSlug}>

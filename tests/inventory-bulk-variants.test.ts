@@ -133,7 +133,7 @@ describe("parsedPlanMessage", () => {
     expect(parsedPlanMessage(3, 0, false)).toBe("Extracted 3 sizes");
     expect(parsedPlanMessage(0, 2, false)).toBe("Extracted 2 colors");
     expect(parsedPlanMessage(0, 0, false)).toBe("Data extracted successfully");
-    expect(parsedPlanMessage(3, 2, true)).toBe("تم استخراج 3 مقاس و 2 لون بنجاح");
+    expect(parsedPlanMessage(3, 2, true)).toBe("تم استخراج 3 مقاسات ولونان بنجاح");
     expect(parsedPlanMessage(0, 0, true)).toBe("تم تحليل البيانات بنجاح");
   });
 });

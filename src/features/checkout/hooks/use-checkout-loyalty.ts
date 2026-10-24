@@ -4,6 +4,7 @@ import { fetchLoyaltyAccount, fetchLoyaltyProgram, fetchLoyaltyTier } from "@/li
 import { calculateOrderLoyaltyPoints } from "@/lib/loyalty.functions";
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 import type { Storefront } from "@/features/checkout/types";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Loyalty at checkout: the brand's program and the customer's points and tier,
@@ -110,7 +111,7 @@ export function useCheckoutLoyalty({
       setPointsToRedeemInput(String(maxRedeemablePoints));
       toast.info(
         lang === "ar"
-          ? `تم تحديث خصم النقاط تلقائياً ليلائم السلة الجديدة (${maxRedeemablePoints} نقطة)`
+          ? `تم تحديث خصم النقاط تلقائياً ليلائم السلة الجديدة (${arNoun(maxRedeemablePoints, "point")})`
           : `Loyalty points adjusted to fit new cart subtotal (${maxRedeemablePoints} pts)`,
       );
     }
@@ -139,7 +140,7 @@ export function useCheckoutLoyalty({
     if (pts > maxAvailable) {
       return toast.error(
         lang === "ar"
-          ? `رصيد نقاطك المتاح هو ${maxAvailable} نقطة فقط`
+          ? `رصيد نقاطك المتاح هو ${arNoun(maxAvailable, "point")} فقط`
           : `You only have ${maxAvailable} points available`,
       );
     }
@@ -148,7 +149,7 @@ export function useCheckoutLoyalty({
     if (pts < minRedemption) {
       return toast.error(
         lang === "ar"
-          ? `الحد الأدنى لاستخدام النقاط هو ${minRedemption} نقطة`
+          ? `الحد الأدنى لاستخدام النقاط هو ${arNoun(minRedemption, "point")}`
           : `Minimum points to redeem is ${minRedemption}`,
       );
     }
@@ -162,7 +163,7 @@ export function useCheckoutLoyalty({
       );
       return toast.error(
         lang === "ar"
-          ? `أقصى خصم مسموح بالنقاط لهذا الطلب هو ${allowedPts} نقطة (${maxDiscountAllowed.toFixed(3)} ${currency})`
+          ? `أقصى خصم مسموح بالنقاط لهذا الطلب هو ${arNoun(allowedPts, "point")} (${maxDiscountAllowed.toFixed(3)} ${currency})`
           : `Max points allowed for this order is ${allowedPts} (${maxDiscountAllowed.toFixed(3)} ${currency})`,
       );
     }

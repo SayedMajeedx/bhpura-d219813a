@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 
 import { orderTabCounts } from "@/features/orders/lib/order-queue";
 import type { Dispatch, SetStateAction } from "react";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Nudge to open the 'Needs attention' tab when orders are waiting on the team:
@@ -42,7 +43,7 @@ export function UrgentOrdersBanner({
         <span className="min-w-0 break-words">
           <span className="font-bold">
             {isAr
-              ? `${tabCounts.action_required} طلب يحتاج إجراءً فورياً`
+              ? `تحتاج إجراءً فورياً: ${arNoun(tabCounts.action_required, "order")}`
               : `${tabCounts.action_required} order(s) need action now`}
           </span>
           <span className="ms-1.5 hidden opacity-80 sm:inline">

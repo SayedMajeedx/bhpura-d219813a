@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { parseCSV } from "@/lib/csv-parser";
 import { importProductCatalog } from "@/lib/universal-importer";
 import { downloadTemplate } from "@/features/import-export/lib/import-templates";
+import { arNoun } from "@/lib/arabic-count";
 
 // -------------------------------------------------------------
 // Component: Product Import Section
@@ -183,7 +184,9 @@ export function ProductImportSection({
       setLastCount(inserted);
       setStep("success");
       toast.success(
-        isAr ? `تم استيراد ${inserted} منتج بنجاح!` : `Successfully imported ${inserted} products!`,
+        isAr
+          ? `تم استيراد ${arNoun(inserted, "product")} بنجاح!`
+          : `Successfully imported ${inserted} products!`,
       );
       onComplete();
     } catch (err: any) {
@@ -373,7 +376,7 @@ export function ProductImportSection({
               </h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1">
                 {isAr
-                  ? `تمت إضافة ${lastCount} منتج بنجاح إلى مخزونك. أصبحت جاهزة للتعديل والعرض في المتجر.`
+                  ? `تمت إضافة ${arNoun(lastCount, "product")} بنجاح إلى مخزونك. أصبحت جاهزة للتعديل والعرض في المتجر.`
                   : `Successfully added ${lastCount} products to your store inventory.`}
               </p>
             </div>

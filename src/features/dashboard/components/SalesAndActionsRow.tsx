@@ -10,6 +10,7 @@ import type {
   DashboardFinancials,
   ordersNeedingAction,
 } from "@/features/dashboard/lib/dashboard-metrics";
+import { countOf } from "@/lib/arabic-count";
 
 /** The 30-day sales trajectory and the orders that need action. */
 export function SalesAndActionsRow({
@@ -180,7 +181,7 @@ export function SalesAndActionsRow({
                                 {formatMoney(Number(data.sales), currency, locale)}
                               </p>
                               <p className="text-muted-foreground text-xs">
-                                {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
+                                {countOf(data.orders, "sale", isAr ? "ar" : "en")}
                               </p>
                             </div>
                           );

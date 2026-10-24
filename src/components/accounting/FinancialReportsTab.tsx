@@ -15,6 +15,7 @@ import { expensesQueries } from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
 import { accountingQueries } from "@/lib/data/accounting";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * The expenses page's accounting statements: the income statement is the Reports' own figures
@@ -328,7 +329,7 @@ function IncomeStatement({
           <p className="flex items-start gap-1.5 pt-1 text-xs text-warning">
             <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {isAr
-              ? `${f.missingCosts} قطعة مبيعة بلا تكلفة مسجلة: الربح أعلى من حقيقته بقدر تكلفتها.`
+              ? `${arNoun(f.missingCosts, "piece")} مبيعة بلا تكلفة مسجلة: الربح أعلى من حقيقته بقدر تكلفتها.`
               : `${f.missingCosts} pieces sold with no cost recorded: profit is overstated by their cost.`}
           </p>
         )}

@@ -1,3 +1,4 @@
+import { arNoun } from "@/lib/arabic-count";
 /**
  * The launch checklist's first and last steps, in the words of what the store
  * sells: products, or (a store that takes bookings) services and bookings.
@@ -26,7 +27,7 @@ const PRODUCTS: ChecklistCopy = {
     en: "Add name, price, and photo of your first item to display.",
   },
   addDone: (count) => ({
-    ar: `لديك الآن ${count} منتج جاهز للبيع في المتجر.`,
+    ar: `جاهز للبيع في متجرك الآن: ${arNoun(count, "product")}.`,
     en: `You have ${count} products ready to sell.`,
   }),
   addButtonDone: { ar: "إدارة المنتجات", en: "Manage Products" },
@@ -37,7 +38,7 @@ const PRODUCTS: ChecklistCopy = {
     en: "Receive your first online order or create a manual order to activate financial metrics.",
   },
   firstDone: (count) => ({
-    ar: `تم تسجيل ${count} طلب بنجاح. لوحة المبيعات والتقارير المالية تعمل بكامل طاقتها.`,
+    ar: `تم تسجيل ${arNoun(count, "order")} بنجاح. لوحة المبيعات والتقارير المالية تعمل بكامل طاقتها.`,
     en: `${count} orders recorded successfully. Sales telemetry is active.`,
   }),
   firstButtonDone: { ar: "إدارة الطلبات والفواتير", en: "Manage Orders & Invoices" },
@@ -52,7 +53,7 @@ const SERVICES: ChecklistCopy = {
     en: "Add the service's name, prices by length and what it includes, ready to book.",
   },
   addDone: (count) => ({
-    ar: `لديك الآن ${count} خدمة جاهزة للحجز.`,
+    ar: `جاهز للحجز الآن: ${arNoun(count, "service")}.`,
     en: `You have ${count} services ready to book.`,
   }),
   addButtonDone: { ar: "إدارة الخدمات", en: "Manage Services" },
@@ -63,7 +64,7 @@ const SERVICES: ChecklistCopy = {
     en: "Share your link to get your first bookings, or add one from the bookings calendar.",
   },
   firstDone: (count) => ({
-    ar: `تم تسجيل ${count} طلب حجز. التقويم والتقارير جاهزة.`,
+    ar: `تم تسجيل ${arNoun(count, "order")} حجز. التقويم والتقارير جاهزة.`,
     en: `${count} bookings recorded. The calendar and reports are ready.`,
   }),
   firstButtonDone: { ar: "فتح تقويم الحجوزات", en: "Open the Bookings Calendar" },

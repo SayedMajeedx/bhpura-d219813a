@@ -22,6 +22,7 @@ import {
   statementPeriod,
   type StatementPreset,
 } from "@/features/incubators/lib/statement";
+import { arNoun } from "@/lib/arabic-count";
 
 const PRESETS: Array<{ id: StatementPreset | "custom"; en: string; ar: string }> = [
   { id: "this_month", en: "This month", ar: "هذا الشهر" },
@@ -162,7 +163,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
           </dl>
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? `يتضمن الكشف المطبوع ${statement.sales.length} عملية بيع و${statement.payments.length} دفعة بالتفصيل. المبيعات الملغاة لا تُحتسب.`
+              ? `يتضمن الكشف المطبوع ${arNoun(statement.sales.length, "sale")} و${arNoun(statement.payments.length, "payment")} بالتفصيل. المبيعات الملغاة لا تُحتسب.`
               : `The printed statement lists ${statement.sales.length} sales and ${statement.payments.length} payments in detail. Reversed sales are not counted.`}
           </p>
         </div>

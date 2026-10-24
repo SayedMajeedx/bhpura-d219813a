@@ -5,6 +5,7 @@ import { calculateReviewMetrics, type OrderReviewAdminRow } from "@/lib/order-re
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { reviewsQueries } from "@/lib/data/reviews";
+import { arNoun } from "@/lib/arabic-count";
 
 export function ReviewInsightsSummary({
   brandId,
@@ -41,7 +42,7 @@ export function ReviewInsightsSummary({
               </span>
               <span className="text-sm text-muted-foreground">
                 {isAr
-                  ? `${metrics.total} تقييم • ${metrics.positiveRate.toFixed(0)}% رضا`
+                  ? `${arNoun(metrics.total, "review")} • ${metrics.positiveRate.toFixed(0)}% رضا`
                   : `${metrics.total} reviews • ${metrics.positiveRate.toFixed(0)}% positive`}
               </span>
               {metrics.total < 5 && (

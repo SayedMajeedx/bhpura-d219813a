@@ -17,6 +17,7 @@ import { sanitizeGCCPhone } from "@/lib/os-formatting";
 
 import { parseVCard } from "@/features/customers/lib/vcard";
 import { CUSTOMER_HEADER_MAPS } from "@/features/customers/lib/customer-header-maps";
+import { arNoun } from "@/lib/arabic-count";
 
 export function CustomerImporterModal({
   brandId,
@@ -140,7 +141,7 @@ export function CustomerImporterModal({
         const chunk = customersList.slice(i, i + batchSize);
         setProgress(
           isAr
-            ? `جاري استيراد وتطهير جهات الاتصال: ${i} من أصل ${customersList.length} عميل...`
+            ? `جاري استيراد وتطهير جهات الاتصال: ${i} من أصل ${arNoun(customersList.length, "customer")}...`
             : `Ingested & sanitized ${i} / ${customersList.length} customer contacts...`,
         );
 

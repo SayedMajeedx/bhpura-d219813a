@@ -43,6 +43,7 @@ import {
 } from "@/features/inventory/lib/bulk-variants";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import { getCurrentUser } from "@/lib/auth/session";
+import { arNoun } from "@/lib/arabic-count";
 
 export function BulkVariantDialog({
   productId,
@@ -266,10 +267,10 @@ export function BulkVariantDialog({
         toast.success(
           variants.length === 0
             ? isAr
-              ? `تمت إضافة ${rows.length} متغير وتفعيل المنتج تلقائياً.`
+              ? `تمت إضافة ${arNoun(rows.length, "variant")} وتفعيل المنتج تلقائياً.`
               : `${rows.length} variants added and the product was activated automatically.`
             : isAr
-              ? `تمت إضافة ${rows.length} متغير`
+              ? `تمت إضافة ${arNoun(rows.length, "variant")}`
               : `${rows.length} variants added`,
         );
       }
@@ -555,7 +556,7 @@ export function BulkVariantDialog({
                 ? "جاري الحفظ..."
                 : "Saving..."
               : isAr
-                ? `حفظ ${rows.length} متغير`
+                ? `حفظ ${arNoun(rows.length, "variant")}`
                 : `Save ${rows.length} variants`}
           </Button>
         </DialogFooter>

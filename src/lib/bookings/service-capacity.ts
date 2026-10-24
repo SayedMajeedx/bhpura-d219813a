@@ -1,3 +1,4 @@
+import { arNoun } from "@/lib/arabic-count";
 /**
  * A service's own booking rules (products.booking_capacity, booking_scope,
  * booking_buffer_minutes, booking_notice_hours; migration 20261001180000).
@@ -134,12 +135,12 @@ export function serviceBookingColumns(form: ServiceBookingForm, isService: boole
 function hoursText(hours: number, isAr: boolean): string {
   if (hours % 24 === 0 && hours >= 48) {
     const days = hours / 24;
-    return isAr ? `${days} أيام` : `${days} days`;
+    return isAr ? `${arNoun(days, "day")}` : `${days} days`;
   }
   if (hours === 24) return isAr ? "يوم" : "1 day";
   if (hours === 1) return isAr ? "ساعة" : "1 hour";
   if (hours === 2) return isAr ? "ساعتان" : "2 hours";
-  return isAr ? `${hours} ساعة` : `${hours} hours`;
+  return isAr ? `${arNoun(hours, "hour")}` : `${hours} hours`;
 }
 
 /** A merchant-facing summary of a service's rules, as short phrases. */
@@ -150,7 +151,7 @@ export function describeServiceBooking(rules: ServiceBookingRules, isAr: boolean
       isAr
         ? rules.capacity === 1
           ? "حجز واحد في الوقت نفسه"
-          : `حتى ${rules.capacity} حجوزات في الوقت نفسه`
+          : `حتى ${arNoun(rules.capacity, "booking")} في الوقت نفسه`
         : rules.capacity === 1
           ? "One booking at a time"
           : `Up to ${rules.capacity} bookings at once`,
@@ -167,7 +168,7 @@ export function describeServiceBooking(rules: ServiceBookingRules, isAr: boolean
     if (rules.scope === "time" && rules.bufferMinutes > 0) {
       lines.push(
         isAr
-          ? `${rules.bufferMinutes} دقيقة تجهيز بين الحجوزات`
+          ? `${arNoun(rules.bufferMinutes, "minute")} تجهيز بين الحجوزات`
           : `${rules.bufferMinutes} min between bookings`,
       );
     }

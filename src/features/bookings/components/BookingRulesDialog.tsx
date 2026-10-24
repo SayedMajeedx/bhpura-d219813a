@@ -22,6 +22,7 @@ import {
   travelFeeDraft,
   travelFeesToSave,
 } from "@/features/bookings/components/TravelFeesFields";
+import { arNoun } from "@/lib/arabic-count";
 
 /** What is wrong with a set of rules before the database would refuse them. */
 export function rulesProblem(rules: BookingRules, isAr: boolean): string | null {
@@ -117,7 +118,7 @@ export function BookingRulesDialog({
       >
         {HOURS.map((h) => (
           <option key={h} value={h * 60}>
-            {isAr ? `${h} ساعة` : `${h} h`}
+            {isAr ? `${arNoun(h, "hour")}` : `${h} h`}
           </option>
         ))}
       </select>
@@ -169,7 +170,7 @@ export function BookingRulesDialog({
               >
                 {[15, 30, 60].map((m) => (
                   <option key={m} value={m}>
-                    {isAr ? `${m} دقيقة` : `${m} min`}
+                    {isAr ? `${arNoun(m, "minute")}` : `${m} min`}
                   </option>
                 ))}
               </select>

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { BulkVariantRow } from "@/features/inventory/types";
+import { arNoun } from "@/lib/arabic-count";
 
 /** Batch-fill inputs; the dialog owns their values so they survive regenerating rows. */
 export type BulkBatchControls = {
@@ -39,7 +40,7 @@ export function BulkVariantPreview({
       <div className="flex items-center justify-between flex-wrap gap-2">
         <Label className="font-semibold">
           {isAr
-            ? `معاينة ${rows.length} متغير جاهز للحفظ`
+            ? `معاينة ${arNoun(rows.length, "variant")} قبل الحفظ`
             : `Preview ${rows.length} variants ready to save`}
         </Label>
         <span className="text-xs text-muted-foreground">

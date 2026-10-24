@@ -14,6 +14,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { arNoun, countOf } from "@/lib/arabic-count";
 
 interface CustomerLoyaltySectionProps {
   brandId: string;
@@ -122,7 +123,7 @@ export function CustomerLoyaltySection({
             <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
             <span>
               {isAr
-                ? `فترة الاعتماد: ${holdingDays} يوماً من اكتمال الطلب`
+                ? `فترة الاعتماد: ${arNoun(holdingDays, "day")} من اكتمال الطلب`
                 : `Holding period: ${holdingDays} days after the order is completed`}
             </span>
           </div>
@@ -306,7 +307,7 @@ export function CustomerLoyaltySection({
                       }`}
                     >
                       {isPositive ? "+" : ""}
-                      {entry.points} {isAr ? "نقطة" : "pts"}
+                      {countOf(entry.points, "point", isAr ? "ar" : "en")}
                     </span>
                     <span className="text-xs text-muted-foreground block">
                       {isAr ? "الرصيد: " : "Balance: "} {entry.balance_after}

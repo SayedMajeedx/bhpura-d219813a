@@ -1,5 +1,6 @@
 import { LayoutDashboard } from "lucide-react";
 import { AdminPageCount, AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface DashboardCommandHeaderProps {
   lang: "ar" | "en";
@@ -42,8 +43,11 @@ export function DashboardCommandHeader({
           </span>
         ) : (
           <AdminPageCount>
-            {salesTransactionCount}{" "}
-            {isServices ? (isAr ? "حجز مدفوع" : "paid bookings") : isAr ? "عملية بيع" : "sales"}
+            {countOf(
+              salesTransactionCount,
+              isServices ? "paidBooking" : "sale",
+              isAr ? "ar" : "en",
+            )}
           </AdminPageCount>
         )
       }

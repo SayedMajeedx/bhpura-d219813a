@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface ExpensesCommandHeaderProps {
   lang: "ar" | "en";
@@ -27,9 +28,7 @@ export function ExpensesCommandHeader({
       icon={Wallet}
       title={isAr ? "سجل المصروفات والنفقات" : "Expenses & Operational Costs"}
       badges={
-        <AdminPageCount>
-          {expenseCount} {isAr ? "مصروف" : "expenses"}
-        </AdminPageCount>
+        <AdminPageCount>{countOf(expenseCount, "expense", isAr ? "ar" : "en")}</AdminPageCount>
       }
       description={
         isAr

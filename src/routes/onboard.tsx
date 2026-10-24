@@ -35,6 +35,7 @@ import { isBrandSlugTaken } from "@/lib/data/brands";
 import { pickerVerticals } from "@/lib/verticals/registry";
 import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { signInWithPassword } from "@/lib/auth/sign-in";
+import { arNoun } from "@/lib/arabic-count";
 
 function arabicToLatinSlug(text: string): string {
   const map: Record<string, string> = {
@@ -274,7 +275,7 @@ function OnboardPage() {
     setIsSubmitting(true);
     const toastId = toast.loading(
       isAr
-        ? `جاري إنشاء متجرك وتفعيل التجربة المجانية (${trialDays} أيام)...`
+        ? `جاري إنشاء متجرك وتفعيل التجربة المجانية (${arNoun(trialDays, "day")})...`
         : `Launching your ${trialDays}-day free trial...`,
     );
 
@@ -334,7 +335,7 @@ function OnboardPage() {
 
       toast.success(
         isAr
-          ? `أهلاً بك! تم تفعيل متجرك بنجاح (${trialDays} أيام تجربة مجانية).`
+          ? `أهلاً بك! تم تفعيل متجرك بنجاح (${arNoun(trialDays, "day")} تجربة مجانية).`
           : `Welcome! Your ${trialDays}-day free trial is live.`,
         { id: toastId },
       );
@@ -413,7 +414,7 @@ function OnboardPage() {
             <Sparkles className="size-3.5" />
             <span>
               {isAr
-                ? `تجربة مجانية لمدة ${trialDays} أيام — بدون بطاقة بنكية`
+                ? `تجربة مجانية لمدة ${arNoun(trialDays, "day")} — بدون بطاقة بنكية`
                 : `${trialDays} Days Free Trial — No Credit Card Required`}
             </span>
           </Badge>
@@ -504,7 +505,7 @@ function OnboardPage() {
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">
                   {isAr
-                    ? `أدخل تفاصيل متجرك للبدء الفوري بالتجربة المجانية (${trialDays} أيام).`
+                    ? `أدخل تفاصيل متجرك للبدء الفوري بالتجربة المجانية (${arNoun(trialDays, "day")}).`
                     : `Enter your boutique details to start your instant ${trialDays}-day free trial.`}
                 </CardDescription>
               </CardHeader>
@@ -802,7 +803,7 @@ function OnboardPage() {
                           <Zap className="size-4" />
                           <span>
                             {isAr
-                              ? `إنشاء المتجر وبدء التجربة المجانية (${trialDays} أيام)`
+                              ? `إنشاء المتجر وبدء التجربة المجانية (${arNoun(trialDays, "day")})`
                               : `Launch Store & Start ${trialDays}-Day Free Trial`}
                           </span>
                           <ArrowRight className="size-4 rtl:rotate-180" />

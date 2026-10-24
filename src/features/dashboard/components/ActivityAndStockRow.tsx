@@ -6,6 +6,7 @@ import type { useT } from "@/lib/i18n";
 import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import type { inventoryIntelFor } from "@/features/dashboard/lib/dashboard-metrics";
+import { arNoun } from "@/lib/arabic-count";
 
 /** The activity queue, customer segments and the low-stock and missing-image alerts. */
 export function ActivityAndStockRow({
@@ -78,7 +79,7 @@ export function ActivityAndStockRow({
 
           <p className="text-xs leading-relaxed text-muted-foreground">
             {isAr
-              ? `${inventoryIntel.lowStockCount} منتجات منخفضة إجمالًا، منها ${inventoryIntel.outOfStockVariantCount} خيارات مقاس أو لون نافدة. قد يبقى المنتج متوفرًا إذا كانت خيارات أخرى منه موجودة.`
+              ? `${arNoun(inventoryIntel.lowStockCount, "product")} منخفضة إجمالًا، منها ${arNoun(inventoryIntel.outOfStockVariantCount, "option")} مقاس أو لون نافدة. قد يبقى المنتج متوفرًا إذا كانت خيارات أخرى منه موجودة.`
               : `${inventoryIntel.lowStockCount} products are low overall, including ${inventoryIntel.outOfStockVariantCount} sold-out size or color options. A product can remain available when other options have stock.`}
           </p>
 
@@ -88,7 +89,7 @@ export function ActivityAndStockRow({
                 <AlertCircle className="h-4 w-4" />
                 <span>
                   {isAr
-                    ? `${inventoryIntel.availableWithoutImages.length} منتجات متوفرة بلا صور`
+                    ? `متوفر بلا صور: ${arNoun(inventoryIntel.availableWithoutImages.length, "product")}`
                     : `${inventoryIntel.availableWithoutImages.length} available products have no images`}
                 </span>
               </div>

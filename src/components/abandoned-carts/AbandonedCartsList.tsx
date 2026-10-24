@@ -28,6 +28,7 @@ import { cartReminderMessage } from "@/features/outreach/lib/outreach-messages";
 import { cartLines, guessLang } from "@/features/outreach/lib/outreach";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { formatMoney } from "@/lib/format";
+import { countOf } from "@/lib/arabic-count";
 
 type CartRow = AbandonedCartWithCustomer;
 
@@ -319,7 +320,7 @@ export function AbandonedCartsList({
                       <TableCell>
                         <div className="flex flex-col gap-1 max-w-[220px]">
                           <span className="text-xs font-medium text-foreground">
-                            {items.length} {isAr ? "منتج" : "item(s)"}
+                            {countOf(items.length, "product", isAr ? "ar" : "en")}
                           </span>
                           <span className="text-xs text-muted-foreground line-clamp-1">
                             {items.map((it: any) => it.title).join(", ")}

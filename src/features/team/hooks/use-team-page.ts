@@ -13,6 +13,7 @@ import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { callUserManagement } from "@/features/team/lib/team-shared";
 import type { StaffMember } from "@/features/team/lib/team-shared";
 import { adminWarnings, scopeCountsOf, staffInScope } from "@/features/team/lib/team-rules";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Everything the team page holds: the store's staff, the add and edit forms, a member's
@@ -160,7 +161,7 @@ export function useTeamPage() {
     ) {
       toast.error(
         isAr
-          ? `لقد وصلت إلى الحد الأقصى لعدد أعضاء الفريق في باقتك الحالية (${memberLimit} أعضاء). يرجى ترقية باقتك لإضافة المزيد.`
+          ? `لقد وصلت إلى الحد الأقصى لعدد أعضاء الفريق في باقتك الحالية (${arNoun(memberLimit, "member")}). يرجى ترقية باقتك لإضافة المزيد.`
           : `You have reached the team members limit for your plan (${memberLimit} members). Please upgrade your plan to add more.`,
       );
       return;

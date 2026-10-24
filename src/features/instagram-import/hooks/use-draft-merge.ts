@@ -6,6 +6,7 @@ import {
   splitDraft,
   type MergeableDraft,
 } from "@/features/instagram-import/lib/merge-drafts";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * The review screen's merging: which drafts are ticked, merging the ticked ones, merging every N
@@ -51,7 +52,7 @@ export function useDraftMerge(
       setTicked(new Set());
       toast.success(
         isAr
-          ? `صارت ${drafts.length} منشورات ${next.length} منتجاً.`
+          ? `صارت ${drafts.length} منشورات ${arNoun(next.length, "product")}.`
           : `${drafts.length} posts became ${next.length} products.`,
       );
     },

@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { productLabel, searchProducts } from "../lib/catalog";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import { arNoun } from "@/lib/arabic-count";
 
 /** Most products listed at once: a search narrows a long catalog. */
 const SHOWN = 60;
@@ -143,7 +144,7 @@ export function ProductPickerDialog({
                         {isAr
                           ? sizes.length === 1
                             ? "مقاس واحد"
-                            : `${sizes.length} مقاسات`
+                            : `${arNoun(sizes.length, "size")}`
                           : sizes.length === 1
                             ? "1 size"
                             : `${sizes.length} sizes`}

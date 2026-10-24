@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface CampaignsCommandHeaderProps {
   lang: "ar" | "en";
@@ -27,9 +28,7 @@ export function CampaignsCommandHeader({
       icon={Megaphone}
       title={isAr ? "مركز الحملات والرسائل الجماعية" : "Broadcasts & Campaign Studio"}
       badges={
-        <AdminPageCount>
-          {templateCount} {isAr ? "قوالب" : "templates"}
-        </AdminPageCount>
+        <AdminPageCount>{countOf(templateCount, "template", isAr ? "ar" : "en")}</AdminPageCount>
       }
       description={
         isAr

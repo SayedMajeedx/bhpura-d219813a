@@ -35,6 +35,7 @@ import {
   servicePricingError,
   type ServicePricing,
 } from "@/features/inventory/lib/service-pricing";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * Saves the product editor. Updating an active product with no variants adds a
@@ -182,7 +183,7 @@ export function useSaveProduct({
         if (currentProductCount >= productLimit) {
           return toast.error(
             isAr
-              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${productLimit} منتج). يرجى ترقية باقتك لإضافة المزيد.`
+              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${arNoun(productLimit, "product")}). يرجى ترقية باقتك لإضافة المزيد.`
               : `You have reached the products limit for your plan (${productLimit} products). Please upgrade your plan to add more.`,
           );
         }

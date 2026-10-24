@@ -1,3 +1,4 @@
+import { arNoun } from "@/lib/arabic-count";
 /**
  * A store's booking policies (booking_policies; migration 20261002160000): when
  * the balance is due, how long a booking can be moved, whether the deposit
@@ -36,7 +37,7 @@ const daysText = (days: number, isAr: boolean) =>
         ? "يوم واحد"
         : days === 2
           ? "يومين"
-          : `${days} أيام`
+          : `${arNoun(days, "day")}`
     : days === 1
       ? "1 day"
       : `${days} days`;
@@ -48,7 +49,7 @@ const monthsText = (months: number, isAr: boolean) =>
       : months === 2
         ? "شهرين"
         : months <= 10
-          ? `${months} أشهر`
+          ? `${arNoun(months, "month")}`
           : `${months} شهراً`
     : months === 1
       ? "1 month"

@@ -59,6 +59,7 @@ import { OrderFulfillmentModal } from "@/features/orders/components/OrderFulfill
 import { CashCollectionModal } from "@/features/orders/components/CashCollectionModal";
 import { authenticatedJsonHeaders, copyInvoiceLink } from "@/features/orders/actions/order-links";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
+import { arNoun } from "@/lib/arabic-count";
 type OrdersSearch = {
   tab?: string;
   queue?: string;
@@ -316,7 +317,7 @@ function OrdersList() {
       await Promise.all(updates);
       toast.success(
         lang === "ar"
-          ? `تم تحديث حالة ${orderIds.length} طلب بنجاح`
+          ? `تم تحديث حالة ${arNoun(orderIds.length, "order")} بنجاح`
           : `Updated fulfillment status for ${orderIds.length} orders`,
       );
       setSelectedOrderIds(new Set());
@@ -350,7 +351,7 @@ function OrdersList() {
       await Promise.all(updates);
       toast.success(
         lang === "ar"
-          ? `تم تعيين المندوب لـ ${orderIds.length} طلب بنجاح`
+          ? `تم تعيين المندوب لـ ${arNoun(orderIds.length, "order")} بنجاح`
           : `Courier assigned to ${orderIds.length} orders`,
       );
       setSelectedOrderIds(new Set());

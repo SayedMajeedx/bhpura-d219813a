@@ -44,6 +44,7 @@ import { storeColoursFrom } from "@/features/content-studio/lib/studio-styles";
 import { reviewsKeys, reviewsQueries, setReviewHidden } from "@/lib/data/reviews";
 import { ReviewRewardCard } from "@/components/reviews/ReviewRewardCard";
 import { useProfile } from "@/lib/profile-context";
+import { arNoun } from "@/lib/arabic-count";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -203,7 +204,7 @@ function CustomerReviewsPage() {
           icon={Star}
           label={isAr ? "متوسط التقييم" : "Average rating"}
           value={metrics.total ? `${metrics.average.toFixed(1)} / 5` : "—"}
-          detail={isAr ? `${metrics.total} تقييم مكتمل` : `${metrics.total} completed reviews`}
+          detail={isAr ? arNoun(metrics.total, "review") : `${metrics.total} completed reviews`}
         />
         <MetricCard
           icon={Sparkles}

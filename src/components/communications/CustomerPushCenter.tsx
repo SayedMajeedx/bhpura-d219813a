@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { arNoun } from "@/lib/arabic-count";
 
 type PushEvent = {
   id: string;
@@ -108,7 +109,7 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId: string; isAr: b
             </h2>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? `${installedCustomers.size} عميل لديهم التطبيق والإشعارات مفعلة`
+                ? `${arNoun(installedCustomers.size, "customer")} لديهم التطبيق والإشعارات مفعلة`
                 : `${installedCustomers.size} customers have active app notifications`}
             </p>
           </div>

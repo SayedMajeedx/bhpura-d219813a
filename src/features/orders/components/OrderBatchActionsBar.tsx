@@ -13,6 +13,7 @@ import { useBrandCouriers } from "@/features/orders/hooks/use-brand-couriers";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { Order } from "@/features/orders/types";
+import { arNoun } from "@/lib/arabic-count";
 /** Selection bar for admins: select all, delete, change fulfillment status and assign a courier in bulk. */
 export function OrderBatchActionsBar({
   allFilteredOrdersSelected,
@@ -58,7 +59,7 @@ export function OrderBatchActionsBar({
         <CheckSquare className="h-4 w-4 text-primary" />
         <span>
           {lang === "ar"
-            ? `${selectedOrderIds.size} طلب محدد`
+            ? `المحدد: ${arNoun(selectedOrderIds.size, "order")}`
             : `${selectedOrderIds.size} selected`}
         </span>
       </div>

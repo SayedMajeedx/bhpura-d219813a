@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { arNoun } from "@/lib/arabic-count";
 
 export interface DashboardActionStripProps {
   slug: string;
@@ -58,7 +59,7 @@ export function DashboardActionStrip({
       count: unfulfilledOrdersCount,
       title: isAr ? "طلبات بانتظار التجهيز والشحن" : "Orders Awaiting Fulfillment",
       description: isAr
-        ? `${unfulfilledOrdersCount} طلب مدفوع أو مؤكد يحتاج التغليف وتجهيز البوليصة`
+        ? `بانتظار التغليف وتجهيز البوليصة: ${arNoun(unfulfilledOrdersCount, "order")}`
         : `${unfulfilledOrdersCount} paid/confirmed order(s) waiting for dispatch`,
       to: "/admin/b/$slug/orders" as const,
       search: { tab: "to_prepare", fulfillment_status: "unfulfilled" },
@@ -74,7 +75,7 @@ export function DashboardActionStrip({
       count: lowStockCount,
       title: isAr ? "منتجات قاربت على النفاد" : "Low Stock & Depleted Items",
       description: isAr
-        ? `${lowStockCount} منتج بمستوى مخزون حرج يتطلب إعادة الطلب`
+        ? `بمخزون حرج يحتاج إعادة الطلب: ${arNoun(lowStockCount, "product")}`
         : `${lowStockCount} product(s) at or below critical reorder threshold`,
       to: "/admin/b/$slug/inventory" as const,
       search: { filter: "low", scope: "low" },
@@ -90,7 +91,7 @@ export function DashboardActionStrip({
       count: pendingReturnsCount,
       title: isAr ? "مرتجعات بانتظار الفحص" : "Returns Awaiting Inspection",
       description: isAr
-        ? `${pendingReturnsCount} طلب استبدال أو استرجاع بانتظار فحص البضاعة`
+        ? `طلبات استبدال أو استرجاع بانتظار الفحص: ${pendingReturnsCount}`
         : `${pendingReturnsCount} return or exchange request(s) awaiting review`,
       to: "/admin/b/$slug/returns" as const,
       search: { status: "requested" },
@@ -142,14 +143,16 @@ export function DashboardActionStrip({
             </h2>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? `لديك ${totalActionItems} مهمة تشغيلية بانتظار الإجراء للحفاظ على سرعة خدمة عملائك`
+                ? `لديك ${arNoun(totalActionItems, "task")} تشغيلية بانتظار الإجراء للحفاظ على سرعة خدمة عملائك`
                 : `You have ${totalActionItems} operational task(s) awaiting your action to keep orders moving`}
             </p>
           </div>
         </div>
 
         <span className="inline-flex items-center self-start sm:self-center px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-foreground border border-border-strong">
-          {isAr ? `${totalActionItems} مهام معلّقة` : `${totalActionItems} actions pending`}
+          {isAr
+            ? `${arNoun(totalActionItems, "task")} معلّقة`
+            : `${totalActionItems} actions pending`}
         </span>
       </div>
 

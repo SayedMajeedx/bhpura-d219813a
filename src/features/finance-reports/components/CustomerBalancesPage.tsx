@@ -30,6 +30,7 @@ import {
 } from "../lib/receivables";
 import { accountingFigure } from "../lib/statement";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
+import { arNoun } from "@/lib/arabic-count";
 
 /**
  * What customers owe the store today, aged from the day each piece was handed over, by customer
@@ -317,7 +318,7 @@ function CustomerRow({
                 ? `${customer.orders.length} ${customer.orders.length === 1 ? "طلب" : "طلبات"}`
                 : `${customer.orders.length} ${customer.orders.length === 1 ? "order" : "orders"}`}
               {customer.oldestDays !== null &&
-                ` · ${isAr ? `أقدمها ${customer.oldestDays} يوماً` : `oldest ${customer.oldestDays} days`}`}
+                ` · ${isAr ? `أقدمها ${arNoun(customer.oldestDays, "day")}` : `oldest ${customer.oldestDays} days`}`}
             </span>
           </span>
         </button>

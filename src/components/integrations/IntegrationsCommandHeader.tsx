@@ -4,6 +4,7 @@ import {
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
+import { countOf } from "@/lib/arabic-count";
 
 interface IntegrationsCommandHeaderProps {
   lang: "ar" | "en";
@@ -27,7 +28,7 @@ export function IntegrationsCommandHeader({
       title={isAr ? "التكاملات وبوابات الربط" : "Integrations & API Keys"}
       badges={
         <AdminPageCount>
-          {integrationCount} {isAr ? "تكاملات" : "integrations"}
+          {countOf(integrationCount, "integration", isAr ? "ar" : "en")}
         </AdminPageCount>
       }
       description={

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Search, ArrowUpRight, ArrowDownLeft, Clock, RefreshCw } from "lucide-react";
 import type { LoyaltyLedgerEntry } from "@/lib/loyalty.types";
+import { countOf } from "@/lib/arabic-count";
 
 interface LoyaltyLedgerTableProps {
   entries: (LoyaltyLedgerEntry & {
@@ -64,7 +65,7 @@ export function LoyaltyLedgerTable({ entries, isLoading, onRefresh }: LoyaltyLed
         {isPositive ? <ArrowDownLeft className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
         <span>
           {isPositive ? "+" : ""}
-          {points} {isAr ? "نقطة" : "pts"}
+          {countOf(points, "point", isAr ? "ar" : "en")}
         </span>
       </span>
     );
@@ -236,7 +237,7 @@ export function LoyaltyLedgerTable({ entries, isLoading, onRefresh }: LoyaltyLed
                     <TableCell>{getEventBadge(entry.event_type, entry.points)}</TableCell>
                     <TableCell>{getStatusBadge(entry.points_status)}</TableCell>
                     <TableCell className="font-mono text-xs font-semibold text-foreground">
-                      {entry.balance_after} {isAr ? "نقطة" : "pts"}
+                      {countOf(entry.balance_after, "point", isAr ? "ar" : "en")}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(entry.created_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {

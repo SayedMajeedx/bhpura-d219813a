@@ -20,6 +20,7 @@ import type { Product, Customization } from "@/features/inventory/types";
 import { InventoryDeleteAction } from "@/features/inventory/components/InventoryDeleteAction";
 import { createCustomization, deleteCustomization, updateCustomization } from "@/lib/data/catalog";
 import { getCurrentUser } from "@/lib/auth/session";
+import { arNoun } from "@/lib/arabic-count";
 
 /** The database's message, as the toasts showed before. */
 const errorMessage = (error: unknown) =>
@@ -320,7 +321,9 @@ export function CustomizationsSection({
                         ) : (
                           <span className="inline-flex items-center text-amber-600 dark:text-amber-400 font-medium">
                             🎯{" "}
-                            {isAr ? `${pIds.length} منتج محدد` : `${pIds.length} chosen products`}
+                            {isAr
+                              ? `المحدد: ${arNoun(pIds.length, "product")}`
+                              : `${pIds.length} chosen products`}
                           </span>
                         )}
                       </div>

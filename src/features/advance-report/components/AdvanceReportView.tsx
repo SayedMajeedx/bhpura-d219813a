@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { ADVANCE_REPORT_LIMIT, advanceReportQueries } from "@/lib/data/advance-report";
 import { invoiceLink, whatsAppToCustomer } from "@/features/bookings/lib/booking-invoice";
 import { owedRows, reminderMessage, summarizeAdvance } from "../lib/advance-report";
+import { arNoun } from "@/lib/arabic-count";
 
 const PERIODS: Array<{ days: number | null; ar: string; en: string }> = [
   { days: 30, ar: "30 يوماً", en: "30 days" },
@@ -84,7 +85,7 @@ export function AdvanceReportView() {
             <KpiCard
               title={isAr ? "تم تحصيله" : "Collected"}
               value={money(summary.collected)}
-              description={isAr ? `${summary.orders} طلب` : `${summary.orders} orders`}
+              description={isAr ? `${arNoun(summary.orders, "order")}` : `${summary.orders} orders`}
               icon={<Banknote />}
               accent="emerald"
             />
@@ -93,7 +94,7 @@ export function AdvanceReportView() {
               value={money(summary.outstanding)}
               description={
                 isAr
-                  ? `${summary.awaiting.orders + summary.balance.orders} طلب`
+                  ? `${arNoun(summary.awaiting.orders + summary.balance.orders, "order")}`
                   : `${summary.awaiting.orders + summary.balance.orders} orders`
               }
               icon={<Wallet />}
@@ -174,7 +175,7 @@ export function AdvanceReportView() {
                               ? "الدفعة مدفوعة، والرصيد متبقٍ"
                               : "Advance paid, balance left"}
                           {" · "}
-                          {isAr ? `منذ ${row.ageDays} يوم` : `${row.ageDays} days ago`}
+                          {isAr ? `منذ ${arNoun(row.ageDays, "day")}` : `${row.ageDays} days ago`}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
