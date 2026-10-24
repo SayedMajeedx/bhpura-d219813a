@@ -108,15 +108,15 @@ export async function fetchAnyBrandSlug() {
 
 /** The brand's favicon and logo from its settings, by slug. */
 export async function fetchBrandIconsBySlug(slug: string) {
-  const brandId = await fetchBrandIdBySlug(slug);
-  if (!brandId) return null;
+  // One request, the store found by its slug through the settings' own link: it was two in a
+  // row (the brand's id, then its settings) on every admin page's first load.
   const { data, error } = await supabase
     .from("business_settings")
-    .select("favicon_url, logo_url")
-    .eq("brand_id", brandId)
+    .select("favicon_url, logo_url, brands!inner(slug)")
+    .eq("brands.slug", slug)
     .maybeSingle();
-  if (error) return null;
-  return data;
+  if (error || !data) return null;
+  return { favicon_url: data.favicon_url, logo_url: data.logo_url };
 }
 
 /**

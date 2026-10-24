@@ -36,13 +36,49 @@ export async function fetchReportingOverview(
   includeHistorical: boolean = false,
   brandSlug?: string,
 ) {
-  const { data, error } = await (supabase as any).rpc("rpc_reporting_overview", {
+  // The overview and its four companions are asked for at once: one round trip, not three in a
+  // row (the overview, then returns, cost of goods and partner sales, then fees). With the
+  // database in Tokyo each round is a third of a second or more, on the dashboard, Reports and
+  // Expenses alike.
+  const period = {
     p_start_date: range.from.toISOString(),
     p_end_date: range.to.toISOString(),
-    p_tz: tz,
-    p_include_historical: includeHistorical,
-    p_brand_slug: brandSlug || null,
-  });
+  };
+  const [overviewResponse, incubator, refundsResponse, cogsResponse, feeRows] = await Promise.all([
+    (supabase as any).rpc("rpc_reporting_overview", {
+      ...period,
+      p_tz: tz,
+      p_include_historical: includeHistorical,
+      p_brand_slug: brandSlug || null,
+    }),
+    fetchIncubatorReporting(range, tz, brandSlug),
+    (supabase as any).rpc("rpc_reporting_processed_returns", {
+      ...period,
+      p_tz: tz,
+      p_brand_slug: brandSlug || null,
+    }),
+    (supabase as any).rpc("rpc_reporting_order_cogs", {
+      ...period,
+      p_include_historical: includeHistorical,
+      p_brand_slug: brandSlug || null,
+    }),
+    // Fees are a soft part: a failure reads as none, as before.
+    Promise.resolve(
+      (supabase as any).rpc("rpc_reporting_processing_fees", {
+        ...period,
+        p_include_historical: includeHistorical,
+        p_brand_slug: brandSlug || null,
+      }),
+    ).then(
+      ({ data: res, error: feeError }: { data: unknown; error: unknown }) =>
+        !feeError && Array.isArray(res) ? res : [],
+      (e: unknown) => {
+        console.warn("rpc_reporting_processing_fees soft error:", e);
+        return [];
+      },
+    ),
+  ]);
+  const { data, error } = overviewResponse;
   if (error) {
     // Some early reporting deployments shipped the sales RPC before the overview
     // RPC. Keep the dashboard useful in that state without hiding real permission,
@@ -95,44 +131,12 @@ export async function fetchReportingOverview(
     }
     throw error;
   }
-  const [incubator, refundsResponse, cogsResponse] = await Promise.all([
-    fetchIncubatorReporting(range, tz, brandSlug),
-    (supabase as any).rpc("rpc_reporting_processed_returns", {
-      p_start_date: range.from.toISOString(),
-      p_end_date: range.to.toISOString(),
-      p_tz: tz,
-      p_brand_slug: brandSlug || null,
-    }),
-    (supabase as any).rpc("rpc_reporting_order_cogs", {
-      p_start_date: range.from.toISOString(),
-      p_end_date: range.to.toISOString(),
-      p_include_historical: includeHistorical,
-      p_brand_slug: brandSlug || null,
-    }),
-  ]);
   if (refundsResponse.error && refundsResponse.error.code !== "PGRST202") {
     throw refundsResponse.error;
   }
   const refundRows = Array.isArray(refundsResponse.data) ? refundsResponse.data : [];
   if (cogsResponse.error && cogsResponse.error.code !== "PGRST202") {
     throw cogsResponse.error;
-  }
-  let feeRows: unknown = [];
-  try {
-    const { data: res, error: feeError } = await (supabase as any).rpc(
-      "rpc_reporting_processing_fees",
-      {
-        p_start_date: range.from.toISOString(),
-        p_end_date: range.to.toISOString(),
-        p_include_historical: includeHistorical,
-        p_brand_slug: brandSlug || null,
-      },
-    );
-    if (!feeError && Array.isArray(res)) {
-      feeRows = res;
-    }
-  } catch (e) {
-    console.warn("rpc_reporting_processing_fees soft error:", e);
   }
   return composeOverviewRows({
     overview: data,
