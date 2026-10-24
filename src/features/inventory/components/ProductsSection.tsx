@@ -213,7 +213,7 @@ export function ProductsSection({
     } else {
       toast.info(
         isAr
-          ? "يرجى تحديد منتج واحد على الأقل للتحويل للحاضنات"
+          ? "يرجى تحديد منتج واحد على الأقل للتحويل لمحلات الشركاء"
           : "Please select at least one product to transfer to incubators",
       );
     }

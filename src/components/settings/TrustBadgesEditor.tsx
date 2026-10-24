@@ -382,7 +382,7 @@ export function TrustBadgesEditor({
         >
           <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
             <Monitor className="h-3 w-3" />
-            {isAr ? "العرض على الكمبيوتر (Desktop)" : "Desktop View"}
+            {isAr ? "العرض على الكمبيوتر" : "Desktop View"}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 py-2.5 px-4 text-xs font-medium border-y border-white/10 rounded-xl bg-white/5 max-w-3xl mx-auto">
@@ -402,7 +402,7 @@ export function TrustBadgesEditor({
           <div className="mt-4 pt-3 border-t border-white/10">
             <div className="text-xs opacity-50 mb-2 flex items-center gap-1 font-mono">
               <Smartphone className="h-3 w-3" />
-              {isAr ? "العرض على شاشة الجوال (Mobile Grid)" : "Mobile Grid View"}
+              {isAr ? "العرض على شاشة الجوال" : "Mobile Grid View"}
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs max-w-sm mx-auto">
               {items

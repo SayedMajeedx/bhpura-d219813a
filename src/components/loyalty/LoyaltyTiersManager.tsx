@@ -71,7 +71,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
         <div>
           <h2 className="text-lg font-bold font-display text-foreground flex items-center gap-2">
             <Award className="h-5 w-5 text-primary" />
-            {isAr ? "مستويات العضوية والمكافآت (VIP Tiers)" : "VIP Membership Tiers"}
+            {isAr ? "مستويات العضوية والمكافآت" : "VIP Membership Tiers"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr

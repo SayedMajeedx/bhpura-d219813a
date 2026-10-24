@@ -340,7 +340,7 @@ export function SuperGrantsManager() {
               icon: Store,
             };
             const CategoryIcon = categoryInfo.icon;
-            const formattedDate = new Date(app.created_at).toLocaleDateString("ar-BH", {
+            const formattedDate = new Date(app.created_at).toLocaleDateString("ar-BH-u-nu-latn", {
               month: "short",
               day: "numeric",
               hour: "2-digit",
@@ -586,7 +586,7 @@ export function SuperGrantsManager() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   تاريخ وتوقيت التقديم:{" "}
-                  {new Date(detailsApp.created_at).toLocaleDateString("ar-BH", {
+                  {new Date(detailsApp.created_at).toLocaleDateString("ar-BH-u-nu-latn", {
                     weekday: "long",
                     year: "numeric",
                     month: "long",

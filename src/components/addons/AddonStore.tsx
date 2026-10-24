@@ -974,7 +974,7 @@ export function AddonStore({
                     <span className="text-muted-foreground">{event.source || "manual"}</span>
                   </div>
                   <span className="text-muted-foreground font-mono text-xs">
-                    {new Date(event.created_at).toLocaleString(isAr ? "ar-BH" : "en-US", {
+                    {new Date(event.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-US", {
                       dateStyle: "short",
                       timeStyle: "short",
                     })}

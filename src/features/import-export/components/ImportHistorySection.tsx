@@ -75,7 +75,7 @@ export function ImportHistorySection({
                     {run.entity_type || "entities"}
                   </Badge>
                   <span className="text-xs font-semibold text-foreground">
-                    {new Date(run.created_at).toLocaleString(isAr ? "ar-BH" : "en-US", {
+                    {new Date(run.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-US", {
                       dateStyle: "medium",
                       timeStyle: "short",
                     })}

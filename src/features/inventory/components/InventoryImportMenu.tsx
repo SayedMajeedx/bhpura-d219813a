@@ -83,7 +83,7 @@ export function InventoryImportMenu({
             className="justify-start text-xs font-medium h-9"
           >
             <Boxes className="h-4 w-4 me-2 text-muted-foreground" />
-            {isAr ? "تحويل دفعي للحاضنات" : "Transfer to Incubators"}
+            {isAr ? "تحويل دفعي لمحلات الشركاء" : "Transfer to partner shops"}
           </Button>
         </>
       )}

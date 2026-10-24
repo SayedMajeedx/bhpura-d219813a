@@ -13,7 +13,7 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
   },
   INSUFFICIENT_INCUBATOR_STOCK: {
     en: "The partner does not hold that many pieces (an order may have taken some)",
-    ar: "الكمية الموجودة عند الحاضنة غير كافية (قد يكون طلب أخذ بعضها)",
+    ar: "الكمية الموجودة عند المحل الشريك غير كافية (قد يكون طلب أخذ بعضها)",
   },
   INSUFFICIENT_STOCK: {
     en: "There is not enough stock for this",
@@ -49,7 +49,7 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
   },
   PARTNER_STOCK_MOVES_WITH_ITS_PARTNER: {
     en: "A partner's pieces change with a transfer, a return or a sale, not by typing a number",
-    ar: "قطع الحاضنة تتغير بالتحويل أو الإرجاع أو البيع، وليس بكتابة رقم",
+    ar: "قطع المحل الشريك تتغير بالتحويل أو الإرجاع أو البيع، وليس بكتابة رقم",
   },
   CROSS_BRAND_INCUBATOR_REFERENCE: {
     en: "This piece does not belong to this store",
@@ -74,7 +74,7 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
   },
   NOT_AUTHORIZED: {
     en: "You do not have permission to do this (or the partner is inactive)",
-    ar: "لا تملك صلاحية هذه العملية (أو أن الحاضنة موقوفة)",
+    ar: "لا تملك صلاحية هذه العملية (أو أن المحل الشريك موقوف)",
   },
 };
 

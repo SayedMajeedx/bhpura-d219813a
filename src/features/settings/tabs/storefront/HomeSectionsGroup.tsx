@@ -62,8 +62,8 @@ const SECTION_META: Record<
     icon: BadgeCheck,
     ar: "شريط الثقة",
     en: "Trust bar",
-    hintAr: "شارات مثل الدفع الآمن والتوصيل السريع",
-    hintEn: "Badges such as secure payment and fast delivery",
+    hintAr: "طرق الدفع والتوصيل كما في إعداداتك، أو شاراتك",
+    hintEn: "Your payment and delivery as your settings say, or your own badges",
   },
   promo_cards: {
     icon: Rows3,

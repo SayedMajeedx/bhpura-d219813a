@@ -232,7 +232,7 @@ export function ExpensesPage() {
           className="h-9 text-xs font-bold gap-1.5 shrink-0"
         >
           <Receipt className="h-4 w-4" />
-          {lang === "ar" ? "الموردين وأوامر الشراء (POs)" : "Vendors & POs"}
+          {lang === "ar" ? "الموردين وأوامر الشراء" : "Vendors & POs"}
         </Button>
         <Button
           variant={mainTab === "reports" ? "default" : "ghost"}
@@ -241,7 +241,7 @@ export function ExpensesPage() {
           className="h-9 text-xs font-bold gap-1.5 shrink-0"
         >
           <FileText className="h-4 w-4" />
-          {lang === "ar" ? "التقارير المالية والدفاتر (P&L)" : "Financial Statements"}
+          {lang === "ar" ? "التقارير المالية والدفاتر" : "Financial Statements"}
         </Button>
       </div>
 

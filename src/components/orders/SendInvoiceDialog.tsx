@@ -102,6 +102,13 @@ Warm regards,
 {{business_name}}`;
 }
 
+/** A template's channel in the reader's language. */
+function channelLabel(channel: string | null | undefined, ar: boolean): string {
+  if (channel === "email") return ar ? "البريد فقط" : "Email only";
+  if (channel === "whatsapp") return ar ? "واتساب فقط" : "WhatsApp only";
+  return ar ? "البريد وواتساب" : "Both";
+}
+
 export function ManageTemplatesDialog({
   open,
   onOpenChange,
@@ -114,6 +121,7 @@ export function ManageTemplatesDialog({
   onChanged: () => void;
 }) {
   const { lang } = useI18n();
+  const ar = lang === "ar";
   const brandId = useBrand().id;
   const [editing, setEditing] = useState<Partial<Tpl> | null>(null);
 
@@ -171,12 +179,13 @@ export function ManageTemplatesDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Message templates</DialogTitle>
+          <DialogTitle>{ar ? "قوالب الرسائل" : "Message templates"}</DialogTitle>
           <DialogDescription>
-            Use placeholders like <code>{"{{customer_name}}"}</code>,{" "}
-            <code>{"{{business_name}}"}</code>, <code>{"{{invoice_number}}"}</code>,{" "}
-            <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{invoice_link}}"}</code>
-            , <code>{"{{notes}}"}</code>.
+            {ar ? "حقول تُملأ تلقائياً:" : "Fields filled in for you:"}{" "}
+            <code>{"{{customer_name}}"}</code>, <code>{"{{business_name}}"}</code>,{" "}
+            <code>{"{{invoice_number}}"}</code>, <code>{"{{date}}"}</code>,{" "}
+            <code>{"{{total}}"}</code>, <code>{"{{invoice_link}}"}</code>,{" "}
+            <code>{"{{notes}}"}</code>.
           </DialogDescription>
         </DialogHeader>
 
@@ -184,11 +193,13 @@ export function ManageTemplatesDialog({
           <div className="space-y-2">
             <div className="flex justify-end">
               <Button size="sm" onClick={startNew}>
-                <Plus className="h-3 w-3 me-1" /> New template
+                <Plus className="h-3 w-3 me-1" /> {ar ? "قالب جديد" : "New template"}
               </Button>
             </div>
             {templates.length === 0 && (
-              <p className="text-sm text-muted-foreground">No templates yet.</p>
+              <p className="text-sm text-muted-foreground">
+                {ar ? "لا قوالب بعد." : "No templates yet."}
+              </p>
             )}
             {templates.map((t) => (
               <div
@@ -198,15 +209,22 @@ export function ManageTemplatesDialog({
                 <div>
                   <p className="font-medium text-sm">
                     {t.name}{" "}
-                    {t.is_default && <span className="text-xs text-primary">★ default</span>}
+                    {t.is_default && (
+                      <span className="text-xs text-primary">★ {ar ? "الافتراضي" : "default"}</span>
+                    )}
                   </p>
-                  <p className="text-xs text-muted-foreground">{t.channel}</p>
+                  <p className="text-xs text-muted-foreground">{channelLabel(t.channel, ar)}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => setEditing(t)}>
-                    Edit
+                    {ar ? "تعديل" : "Edit"}
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(t.id)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={ar ? `حذف ${t.name}` : `Delete ${t.name}`}
+                    onClick={() => remove(t.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -219,14 +237,14 @@ export function ManageTemplatesDialog({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Name</Label>
+                <Label>{ar ? "الاسم" : "Name"}</Label>
                 <Input
                   value={editing.name ?? ""}
                   onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                 />
               </div>
               <div>
-                <Label>Channel</Label>
+                <Label>{ar ? "القناة" : "Channel"}</Label>
                 <Select
                   value={editing.channel ?? "both"}
                   onValueChange={(v) => setEditing({ ...editing, channel: v as Tpl["channel"] })}
@@ -235,22 +253,22 @@ export function ManageTemplatesDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="both">Both</SelectItem>
-                    <SelectItem value="email">Email only</SelectItem>
-                    <SelectItem value="whatsapp">WhatsApp only</SelectItem>
+                    <SelectItem value="both">{channelLabel("both", ar)}</SelectItem>
+                    <SelectItem value="email">{channelLabel("email", ar)}</SelectItem>
+                    <SelectItem value="whatsapp">{channelLabel("whatsapp", ar)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label>Email subject (optional)</Label>
+              <Label>{ar ? "عنوان البريد (اختياري)" : "Email subject (optional)"}</Label>
               <Input
                 value={editing.subject ?? ""}
                 onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
               />
             </div>
             <div>
-              <Label>Body</Label>
+              <Label>{ar ? "نص الرسالة" : "Body"}</Label>
               <Textarea
                 rows={12}
                 value={editing.body ?? ""}
@@ -263,13 +281,13 @@ export function ManageTemplatesDialog({
                 checked={!!editing.is_default}
                 onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })}
               />
-              Use as default template
+              {ar ? "القالب الافتراضي" : "Use as default template"}
             </label>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setEditing(null)}>
-                Cancel
+                {ar ? "إلغاء" : "Cancel"}
               </Button>
-              <Button onClick={save}>Save template</Button>
+              <Button onClick={save}>{ar ? "حفظ القالب" : "Save template"}</Button>
             </DialogFooter>
           </div>
         )}
@@ -307,7 +325,10 @@ export default function SendInvoiceDialog({
       customer_phone: getOrderCustomerPhone(order) || "",
       business_name: brandFor(lang === "ar" ? "ar" : "en", settings?.business_name),
       invoice_number: String(order?.invoice_number ?? ""),
-      date: formatDate(order?.created_at ?? order?.order_date, lang === "ar" ? "ar-BH" : "en-BH"),
+      date: formatDate(
+        order?.created_at ?? order?.order_date,
+        lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
+      ),
       total: formatMoney(totals?.total ?? order?.total ?? 0, currency),
       notes: order?.notes ?? "",
       invoice_link: invoiceLink,

@@ -23,7 +23,7 @@ beforeEach(() => vi.clearAllMocks());
 
 const renderEditor = (onSave = vi.fn(async (_value: string) => undefined)) => {
   render(<InlineCodeEditor value="A-1" isAr={false} onSave={onSave} />);
-  return { onSave, field: screen.getByRole("textbox", { name: "Incubator code" }) };
+  return { onSave, field: screen.getByRole("textbox", { name: "Partner shop code" }) };
 };
 
 describe("inline incubator code editing", () => {
@@ -34,7 +34,7 @@ describe("inline incubator code editing", () => {
     fireEvent.change(field, { target: { value: "  B-2 " } });
     fireEvent.blur(field);
     await waitFor(() => expect(onSave).toHaveBeenCalledWith("B-2"));
-    expect(toast.success).toHaveBeenCalledWith("Incubator code saved");
+    expect(toast.success).toHaveBeenCalledWith("Partner shop code saved");
     // An unchanged value is not saved again.
     fireEvent.blur(field);
     expect(onSave).toHaveBeenCalledTimes(1);

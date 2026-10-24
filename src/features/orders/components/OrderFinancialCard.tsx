@@ -159,7 +159,7 @@ export function OrderFinancialCard({
             {t("orderDetail.orderDate")}
           </span>
           <span className="font-bold text-foreground">
-            {formatDate(order.order_date, lang === "ar" ? "ar-BH" : "en-BH")}
+            {formatDate(order.order_date, lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH")}
           </span>
         </div>
         <div>

@@ -81,7 +81,7 @@ export function ExportHistorySection({
                 {history.map((run: any) => (
                   <tr key={run.id || run.created_at} className="hover:bg-muted/30">
                     <td className="p-3 whitespace-nowrap text-muted-foreground">
-                      {new Date(run.created_at).toLocaleString(isAr ? "ar-BH" : "en-US")}
+                      {new Date(run.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-US")}
                     </td>
                     <td className="p-3 whitespace-nowrap font-medium text-foreground capitalize">
                       {run.entity_type}

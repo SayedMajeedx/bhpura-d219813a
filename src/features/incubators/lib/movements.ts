@@ -9,9 +9,9 @@ import type { Movement } from "@/features/incubators/types";
 type Lang = "ar" | "en";
 
 const LABELS: Record<string, { en: string; ar: string }> = {
-  transfer_in: { en: "Sent to the partner", ar: "تحويل إلى الحاضنة" },
+  transfer_in: { en: "Sent to the partner", ar: "تحويل إلى المحل الشريك" },
   return: { en: "Returned to the store", ar: "إرجاع إلى المحل" },
-  sale: { en: "Sold by the partner", ar: "بيع عند الحاضنة" },
+  sale: { en: "Sold by the partner", ar: "بيع عند المحل الشريك" },
   sale_reversal: { en: "Sale reversed", ar: "إلغاء بيعة" },
   adjustment: { en: "Adjustment", ar: "تسوية" },
   order_reserve: { en: "Taken by a store order", ar: "حجز لطلب من المتجر" },

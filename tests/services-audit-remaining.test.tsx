@@ -82,7 +82,7 @@ describe("the inventory import menu", () => {
   it("offers barcodes and incubator transfer to a shop", () => {
     const view = menu();
     expect(view.container.textContent).toContain("Print All Barcodes");
-    expect(view.container.textContent).toContain("Transfer to Incubators");
+    expect(view.container.textContent).toContain("Transfer to partner shops");
   });
 
   it("leaves both out for a store with no stock and no incubators, and keeps the imports", () => {
@@ -93,7 +93,7 @@ describe("the inventory import menu", () => {
   });
 
   it("takes the two apart", () => {
-    expect(menu({ barcodes: false }).container.textContent).toContain("Transfer to Incubators");
+    expect(menu({ barcodes: false }).container.textContent).toContain("Transfer to partner shops");
   });
 });
 

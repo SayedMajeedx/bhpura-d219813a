@@ -48,7 +48,8 @@ export function StorefrontTab() {
   // available group when the stored selection disappears.
   const isV2 = isStorefrontV2(form.bs);
   const groups = React.useMemo(
-    () => GROUPS.filter((g) => (g.id === "design_v2" ? isV2 : true)),
+    // The upgrade is offered to a classic storefront only: on the new look it has nothing to do.
+    () => GROUPS.filter((g) => (g.id === "design_v2" ? isV2 : g.id === "upgrade" ? !isV2 : true)),
     [isV2],
   );
 

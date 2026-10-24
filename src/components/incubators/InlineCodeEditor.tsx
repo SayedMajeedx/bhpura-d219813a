@@ -63,7 +63,7 @@ export function InlineCodeEditor({
     setSaving(true);
     try {
       await onSave(next);
-      toast.success(isAr ? "تم حفظ كود الحاضنة" : "Incubator code saved");
+      toast.success(isAr ? "تم حفظ كود المحل الشريك" : "Partner shop code saved");
     } catch (caught) {
       const error = caught as { code?: string; message?: string } | null;
       committed.current = previous;
@@ -72,7 +72,7 @@ export function InlineCodeEditor({
       toast.error(
         duplicate
           ? isAr
-            ? "هذا الكود مستخدم لقطعة أخرى في نفس الحاضنة"
+            ? "هذا الكود مستخدم لقطعة أخرى في نفس المحل الشريك"
             : "This code is already used by another item in this incubator"
           : error?.message || (isAr ? "تعذر حفظ الكود" : "Could not save code"),
       );
@@ -99,7 +99,7 @@ export function InlineCodeEditor({
           }
         }}
         placeholder={isAr ? "أدخل الكود" : "Enter code"}
-        aria-label={isAr ? "كود الحاضنة" : "Incubator code"}
+        aria-label={isAr ? "كود المحل الشريك" : "Partner shop code"}
         dir="ltr"
         disabled={saving}
         className="h-9 bg-background font-mono text-xs"

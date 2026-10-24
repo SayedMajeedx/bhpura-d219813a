@@ -34,7 +34,7 @@ const ICONS: Record<OutreachReason, LucideIcon> = {
 /** "Today", "Yesterday", "3 days ago", with Western digits in Arabic as the admin writes them. */
 export function sinceLabel(at: string, now: number, lang: "ar" | "en") {
   const days = Math.max(0, Math.floor((now - Date.parse(at)) / 86_400_000));
-  return new Intl.RelativeTimeFormat(lang === "ar" ? "ar-u-nu-latn" : "en", {
+  return new Intl.RelativeTimeFormat(lang === "ar" ? "ar" : "en", {
     numeric: "auto",
   }).format(-days, "day");
 }

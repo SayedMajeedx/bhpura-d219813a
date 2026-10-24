@@ -131,7 +131,7 @@ export function FinancialReportsTab({
             className="h-8 text-xs font-bold gap-1.5"
           >
             <Calculator className="h-3.5 w-3.5" />
-            {isAr ? "قائمة الدخل والأرباح والخسائر (P&L)" : "Income Statement (P&L)"}
+            {isAr ? "قائمة الدخل والأرباح والخسائر" : "Income Statement (P&L)"}
           </Button>
           <Button
             variant={reportType === "cash_flow" ? "default" : "outline"}
@@ -140,7 +140,7 @@ export function FinancialReportsTab({
             className="h-8 text-xs font-bold gap-1.5"
           >
             <PieChart className="h-3.5 w-3.5" />
-            {isAr ? "قائمة التدفقات النقدية (Cash Flow)" : "Cash Flow Statement"}
+            {isAr ? "قائمة التدفقات النقدية" : "Cash Flow Statement"}
           </Button>
         </div>
 
@@ -182,9 +182,7 @@ export function FinancialReportsTab({
           <div className="border-b border-border pb-4 flex items-center justify-between">
             <div>
               <h2 className="text-base font-extrabold text-foreground">
-                {isAr
-                  ? "قائمة التدفقات النقدية والسيولة (Cash Flow Statement)"
-                  : "Cash Flow Statement"}
+                {isAr ? "قائمة التدفقات النقدية والسيولة" : "Cash Flow Statement"}
               </h2>
               <span className="text-xs text-muted-foreground">
                 {isAr
@@ -204,7 +202,7 @@ export function FinancialReportsTab({
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-1">
                 <span className="text-xs text-muted-foreground block">
-                  {isAr ? "المقبوضات النقدية (Inflow)" : "Cash Inflow"}
+                  {isAr ? "المقبوضات النقدية" : "Cash Inflow"}
                 </span>
                 <span className="font-extrabold text-emerald-600 text-lg">
                   {formatMoney(cashFlow.operatingCashInflow, currency, lang)}
@@ -213,7 +211,7 @@ export function FinancialReportsTab({
 
               <div className="p-4 rounded-xl border border-border bg-muted/20 space-y-1">
                 <span className="text-xs text-muted-foreground block">
-                  {isAr ? "المدفوعات والمصاريف (Outflow)" : "Cash Outflow"}
+                  {isAr ? "المدفوعات والمصاريف" : "Cash Outflow"}
                 </span>
                 <span className="font-extrabold text-amber-500 text-lg">
                   - {formatMoney(cashFlow.operatingCashOutflow, currency, lang)}
@@ -223,7 +221,7 @@ export function FinancialReportsTab({
 
             <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
               <span className="font-bold text-foreground">
-                {isAr ? "صافي التدفق النقدي (Net Cash Flow)" : "Net Cash Flow"}
+                {isAr ? "صافي التدفق النقدي" : "Net Cash Flow"}
               </span>
               <span className="font-extrabold text-primary text-xl">
                 {formatMoney(cashFlow.netCashFlow, currency, lang)}

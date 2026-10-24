@@ -35,7 +35,7 @@ export function StockOverviewStrip({
   onSaveLevel: (level: number) => Promise<boolean>;
 }) {
   const isAr = lang === "ar";
-  const number = (value: number) => value.toLocaleString(isAr ? "ar" : "en");
+  const number = (value: number) => value.toLocaleString(isAr ? "ar-u-nu-latn" : "en");
 
   return (
     // On a phone the figures are one row that scrolls sideways: wrapped, they took 253px above the
@@ -55,7 +55,7 @@ export function StockOverviewStrip({
       />
       {showPartners && (
         <Tile
-          label={isAr ? "قطع عند الحاضنات" : "Pieces at partners"}
+          label={isAr ? "قطع عند محلات الشركاء" : "Pieces at partners"}
           value={number(totals.partnerPieces)}
         />
       )}

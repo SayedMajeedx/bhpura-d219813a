@@ -55,7 +55,7 @@ export function PartnerPickupNotice({
     >
       <p className="flex items-center gap-2 text-sm font-bold">
         <Building2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-        {isAr ? "استلام من الحاضنة قبل التجهيز" : "Collect from a partner before packing"}
+        {isAr ? "استلام من المحل الشريك قبل التجهيز" : "Collect from a partner before packing"}
       </p>
       <ul className="mt-2 space-y-1.5 text-xs">
         {lines.map((line) => (
@@ -81,7 +81,7 @@ export function PartnerPickupNotice({
       </ul>
       <p className="mt-2 text-xs text-amber-900/80 dark:text-amber-100/80">
         {isAr
-          ? "مخزون المحل لم يكفِ، فأُخذت هذه القطع من مخزون الحاضنة وخُصمت من رصيدها."
+          ? "مخزون المحل لم يكفِ، فأُخذت هذه القطع من مخزون المحل الشريك وخُصمت من رصيده."
           : "The store's own stock ran out, so these pieces were taken from the partner's stock and its count was lowered."}
       </p>
     </div>
@@ -143,7 +143,7 @@ function CustomerCollectsNotice({
             ) : (
               <p className="text-muted-foreground">
                 {isAr
-                  ? "لا يوجد رقم للشريك: أضفه في صفحة الحاضنات لإبلاغه من هنا."
+                  ? "لا يوجد رقم للشريك: أضفه في صفحة محلات الشركاء لإبلاغه من هنا."
                   : "The partner has no number: add one on the partners' page to tell them from here."}
               </p>
             )}

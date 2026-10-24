@@ -75,7 +75,7 @@ export function BasicsGroup() {
 
         {/* Store Slug (Read only display) */}
         <div className="space-y-2">
-          <Label htmlFor="store_slug">{isAr ? "رابط المتجر (Slug)" : "Store URL (Slug)"}</Label>
+          <Label htmlFor="store_slug">{isAr ? "رابط المتجر" : "Store URL (Slug)"}</Label>
           <div className="flex gap-2">
             <Input
               id="store_slug"
@@ -189,7 +189,7 @@ export function BasicsGroup() {
 
         {/* Favicon Upload */}
         <div className="space-y-2">
-          <Label htmlFor="favicon_url">{isAr ? "أيقونة المتصفح (Favicon)" : "Favicon"}</Label>
+          <Label htmlFor="favicon_url">{isAr ? "أيقونة المتصفح" : "Favicon"}</Label>
           <div className="flex gap-2">
             <Input
               id="favicon_url"

@@ -54,7 +54,7 @@ export function PartnerStockNotices({
           <p className="flex items-center gap-2 text-sm font-bold">
             <PackageOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
             {isAr
-              ? "قطع محجوزة لطلبات المتجر: تُستلم من هذه الحاضنة"
+              ? "قطع محجوزة لطلبات المتجر: تُستلم من هذا المحل الشريك"
               : "Reserved by store orders: to collect from this partner"}
           </p>
           <ul className="mt-2 space-y-1.5 text-xs">
@@ -75,7 +75,7 @@ export function PartnerStockNotices({
           </ul>
           <p className="mt-2 text-xs text-amber-900/80 dark:text-amber-100/80">
             {isAr
-              ? "خُصمت من رصيد الحاضنة عند الطلب، وتعود إليه تلقائياً إذا أُلغي الطلب."
+              ? "خُصمت من رصيد المحل الشريك عند الطلب، وتعود إليه تلقائياً إذا أُلغي الطلب."
               : "They left this partner's count when the order was placed, and return to it if the order is cancelled."}
           </p>
         </div>
@@ -88,7 +88,7 @@ export function PartnerStockNotices({
           <p className="flex items-center gap-2 text-sm font-bold text-destructive">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
             {isAr
-              ? "رصيد الحاضنات لا يطابق ما تحتفظ به الحاضنات"
+              ? "رصيد محلات الشركاء لا يطابق ما تحتفظ به محلات الشركاء"
               : "The total at partners does not match what the partners hold"}
           </p>
           <ul className="mt-2 space-y-1 text-xs">
@@ -96,14 +96,14 @@ export function PartnerStockNotices({
               <li key={item.variantId} className="break-words" dir="auto">
                 {item.piece}:{" "}
                 {isAr
-                  ? `المسجّل على المنتج ${item.onProduct}، وعند الحاضنات ${item.atPartners}`
+                  ? `المسجّل على المنتج ${item.onProduct}، وعند محلات الشركاء ${item.atPartners}`
                   : `the product says ${item.onProduct}, the partners hold ${item.atPartners}`}
               </li>
             ))}
           </ul>
           <p className="mt-2 text-xs text-muted-foreground">
             {isAr
-              ? "حوّل القطع غير المسجّلة إلى الحاضنة التي تحتفظ بها، أو أعدها إلى مخزون المحل."
+              ? "حوّل القطع غير المسجّلة إلى المحل الشريك الذي يحتفظ بها، أو أعدها إلى مخزون المحل."
               : "Transfer the unaccounted pieces to the partner that holds them, or return them to the store's stock."}
           </p>
         </div>

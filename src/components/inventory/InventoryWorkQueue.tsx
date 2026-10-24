@@ -406,7 +406,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             {onTransferToIncubator && (
                               <DropdownMenuItem onClick={() => onTransferToIncubator(product)}>
                                 <Building2 className="h-3.5 w-3.5 me-2 text-primary" />
-                                {isAr ? "تحويل إلى حاضنة..." : "Transfer to Incubator..."}
+                                {isAr ? "تحويل إلى محل شريك..." : "Transfer to a partner shop…"}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem

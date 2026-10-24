@@ -217,7 +217,7 @@ export function HomeHeroGroup() {
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            {isAr ? "خيارات عرض ومظهر الواجهة (Hero Layout)" : "Hero Layout & Presentation"}
+            {isAr ? "خيارات عرض ومظهر الواجهة" : "Hero Layout & Presentation"}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -241,9 +241,7 @@ export function HomeHeroGroup() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="full_bleed">
-                  {isAr
-                    ? "ملء الشاشة الفاخر (Full-Bleed — موصى به)"
-                    : "Full-Bleed (Edge-to-Edge — Recommended)"}
+                  {isAr ? "ملء الشاشة الفاخر (موصى به)" : "Full-Bleed (Edge-to-Edge — Recommended)"}
                 </SelectItem>
                 <SelectItem value="contained">
                   {isAr ? "بطاقة مؤطرة بزوايا منحنية (Contained)" : "Contained (Boxed Card)"}
@@ -328,7 +326,7 @@ export function HomeHeroGroup() {
                     : "Smart Fit — Edge-to-Edge, No Cropping (Recommended)"}
                 </SelectItem>
                 <SelectItem value="cover">
-                  {isAr ? "ملء كامل مع اقتصاص ذكي (Fill & Smart Crop)" : "Fill & Smart Crop"}
+                  {isAr ? "ملء كامل مع اقتصاص ذكي" : "Fill & Smart Crop"}
                 </SelectItem>
                 <SelectItem value="top">
                   {isAr
@@ -613,7 +611,7 @@ export function HomeHeroGroup() {
       <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-4">
         <div>
           <h3 className="text-base font-semibold text-foreground">
-            {isAr ? "خلفية الواجهة الرئيسية (Hero Background)" : "Hero Background Media"}
+            {isAr ? "خلفية الواجهة الرئيسية" : "Hero Background Media"}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr

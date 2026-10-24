@@ -14,8 +14,18 @@ import {
 import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
 import type { CampaignsPageState } from "@/features/campaigns/hooks/use-campaigns-page";
+import { displayPhone } from "@/lib/invoice-display";
 
 /** The audience: search, select, and send to one customer or start a bulk run. */
+/** A customer's segment in the reader's language (the segment ids are English keys). */
+function badgeLabel(badge: string, isAr: boolean): string {
+  if (!isAr) return badge === "Churn Risk" ? "At risk" : badge === "New Buyer" ? "New" : badge;
+  if (badge === "VIP") return "مميز";
+  if (badge === "Churn Risk") return "معرض للتسرب";
+  if (badge === "New Buyer") return "جديد";
+  return badge;
+}
+
 export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
   const {
     isAr,
@@ -178,7 +188,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">
-                            {c.phone || "—"}
+                            {displayPhone(c.phone) || "—"}
                           </div>
                         </div>
                       </div>
@@ -194,7 +204,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
                                   : "bg-muted text-muted-foreground border border-border"
                           }`}
                         >
-                          {stats.badge}
+                          {badgeLabel(stats.badge, isAr)}
                         </span>
                       )}
                     </div>
@@ -328,7 +338,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
                           </div>
                         </td>
                         <td className="p-4 text-muted-foreground font-mono" dir="ltr">
-                          {c.phone || "—"}
+                          {displayPhone(c.phone) || "—"}
                         </td>
                         <td className="p-4">
                           {stats?.badge ? (
@@ -343,7 +353,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
                                       : "bg-muted text-muted-foreground border border-border"
                               }`}
                             >
-                              {stats.badge}
+                              {badgeLabel(stats.badge, isAr)}
                             </span>
                           ) : (
                             <span className="text-muted-foreground text-xs">—</span>

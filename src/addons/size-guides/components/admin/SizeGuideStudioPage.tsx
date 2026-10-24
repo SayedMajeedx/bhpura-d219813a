@@ -1260,7 +1260,7 @@ export function SizeGuidesStudioPage() {
               <div className="border-t border-border pt-4 space-y-3">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">
-                    {isAr ? "الصورة التوضيحية للقياس (Diagram)" : "Measurement Diagram"}
+                    {isAr ? "الصورة التوضيحية للقياس" : "Measurement Diagram"}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {isAr

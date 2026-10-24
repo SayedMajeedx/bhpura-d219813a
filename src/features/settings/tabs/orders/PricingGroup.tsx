@@ -36,7 +36,7 @@ export function PricingGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Coins className="size-4 text-primary" />
-            <span>{isAr ? "العملة والضرائب (Currency & VAT)" : "Currency & Taxation"}</span>
+            <span>{isAr ? "العملة والضرائب" : "Currency & Taxation"}</span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr

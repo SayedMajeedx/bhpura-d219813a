@@ -170,7 +170,7 @@ function History({
               dateTime={row.created_at}
               dir="ltr"
             >
-              {new Date(row.created_at).toLocaleDateString(isAr ? "ar" : "en-GB", {
+              {new Date(row.created_at).toLocaleDateString(isAr ? "ar-u-nu-latn" : "en-GB", {
                 day: "numeric",
                 month: "short",
               })}

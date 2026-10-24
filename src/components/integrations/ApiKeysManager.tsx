@@ -220,10 +220,13 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                     <span>
                       {isAr ? "آخر استخدام:" : "Last used:"}{" "}
                       {k.last_used_at
-                        ? new Date(k.last_used_at).toLocaleDateString(isAr ? "ar-SA" : "en-US", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                        ? new Date(k.last_used_at).toLocaleDateString(
+                            isAr ? "ar-SA-u-nu-latn" : "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )
                         : isAr
                           ? "لم يُستخدم بعد"
                           : "Never"}

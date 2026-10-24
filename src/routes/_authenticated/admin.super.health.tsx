@@ -216,7 +216,7 @@ function ServiceRow({
         <p className="font-semibold">{event.service.replaceAll("_", " ")}</p>
         <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
           <Clock3 className="h-3.5 w-3.5" />
-          {new Date(event.created_at).toLocaleString(isAr ? "ar-BH" : "en-BH")} ·{" "}
+          {new Date(event.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-BH")} ·{" "}
           {event.duration_ms ?? 0} ms
         </p>
       </div>

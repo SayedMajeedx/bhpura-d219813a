@@ -439,7 +439,7 @@ function CustomerProfilePage() {
                   <span className="text-xs font-bold text-foreground truncate block">
                     {lastOrderDate
                       ? new Date(lastOrderDate).toLocaleDateString(
-                          lang === "ar" ? "ar-BH" : "en-GB",
+                          lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
                           { month: "short", day: "numeric", year: "2-digit" },
                         )
                       : lang === "ar"

@@ -425,6 +425,18 @@ describe("before going live (2026-10-24)", () => {
     expect(countMatches(glued)).toBe(0);
   });
 
+  it("writes dates and numbers in Western digits, as the rest of the admin", () => {
+    // Abandoned carts, integrations and the renewal date read "٢٢ أكتوبر، ٠٢:١٥ م".
+    const easternDigits =
+      /(toLocale(?:Date|Time)?String|DateTimeFormat|NumberFormat)\(\s*(?:[^,()"]|\([^()]*\))*?(?<!=== )"ar(?:-[A-Z]{2})?"/g;
+    expect(countMatches(easternDigits)).toBe(0);
+  });
+
+  it("calls the partner shops by one name", () => {
+    // The menu said "محلات الشركاء" and 31 files said "محلات شركاء".
+    expect(countMatches(/حاضن/g, (rel) => !rel.includes("generate-variants"))).toBe(0);
+  });
+
   it("spells sold out نفدت, not نفذت (which means carried out)", () => {
     // Instagram captions are read as people write them, misspelling included.
     expect(countMatches(/نفذت الكمية/g, (rel) => !rel.includes("instagram-ai-importer"))).toBe(0);

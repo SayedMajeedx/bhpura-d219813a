@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { settlementNote } from "@/features/incubators/lib/summary";
 import { arNoun, countOf } from "@/lib/arabic-count";
+import { displayPhone } from "@/lib/invoice-display";
 
 /** The partner picker: every partner with the pieces it holds and what it owes. */
 export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
@@ -21,7 +22,7 @@ export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
   return (
     <Card className="border-border p-3">
       <p className="mb-2 px-1 text-xs font-bold text-muted-foreground">
-        {isAr ? "الحاضنات" : "INCUBATORS"}
+        {isAr ? "محلات الشركاء" : "INCUBATORS"}
       </p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {chips.map((chip) => (
@@ -57,7 +58,7 @@ export function IncubatorPicker({ page }: { page: IncubatorsPageState }) {
         ))}
         {!loading && chips.length === 0 && (
           <p className="p-4 text-center text-sm text-muted-foreground">
-            {isAr ? "أضف أول حاضنة للبدء" : "Add your first incubator"}
+            {isAr ? "أضف أول محل شريك للبدء" : "Add your first partner shop"}
           </p>
         )}
       </div>
@@ -85,7 +86,7 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
           ? `تغليف ثابت: ${money(current.fixed_packaging_cost)}`
           : `Fixed packaging: ${money(current.fixed_packaging_cost)}`
         : isAr
-          ? "التغليف على الحاضنة"
+          ? "التغليف على المحل الشريك"
           : "Incubator-provided packaging";
 
   return (
@@ -96,7 +97,7 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
             {current.name}
           </h2>
           <p className="break-words text-xs text-muted-foreground">
-            {[current.contact_name, current.phone].filter(Boolean).join(" · ") ||
+            {[current.contact_name, displayPhone(current.phone)].filter(Boolean).join(" · ") ||
               (isAr ? "لا توجد بيانات تواصل" : "No contact details")}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -113,7 +114,7 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => openDialog("edit_incubator")}>
             <Pencil className="me-2 h-4 w-4" />
-            {isAr ? "تعديل الحاضنة" : "Edit incubator"}
+            {isAr ? "تعديل المحل الشريك" : "Edit partner shop"}
           </Button>
           <Button variant="outline" onClick={() => openDialog("statement")}>
             <FileText className="me-2 h-4 w-4" />
@@ -152,7 +153,7 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
         />
         <Metric
           icon={Percent}
-          label={isAr ? "عمولة الحاضنة" : "Partner's commission"}
+          label={isAr ? "عمولة المحل الشريك" : "Partner's commission"}
           value={money(summary.commission)}
         />
         <Metric

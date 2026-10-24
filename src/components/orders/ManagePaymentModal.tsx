@@ -203,13 +203,13 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                   📲 {isAr ? "تطبيق بنفت باي (BenefitPay)" : "BenefitPay"}
                 </SelectItem>
                 <SelectItem value="tap">
-                  💳 {isAr ? "بوابة تاب للدفع (Tap Gateway)" : "Tap Payment Gateway"}
+                  💳 {isAr ? "بوابة تاب للدفع" : "Tap Payment Gateway"}
                 </SelectItem>
                 <SelectItem value="bank_transfer">
                   🏛️ {isAr ? "تحويل بنكي مباشر" : "Bank Transfer"}
                 </SelectItem>
                 <SelectItem value="cash">
-                  💶 {isAr ? "نقداً في المحل (Cash)" : "Cash at Counter"}
+                  💶 {isAr ? "نقداً في المحل" : "Cash at Counter"}
                 </SelectItem>
               </SelectContent>
             </Select>

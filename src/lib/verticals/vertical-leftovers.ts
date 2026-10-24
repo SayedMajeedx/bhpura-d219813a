@@ -59,7 +59,7 @@ const MODULE_NAMES: Record<StoreModuleId, { ar: string; en: string }> = {
   made_to_order: { ar: "حسب الطلب", en: "made to order" },
   bookings: { ar: "الحجوزات", en: "bookings" },
   stock: { ar: "المخزون", en: "stock" },
-  incubators: { ar: "الحاضنات", en: "incubators" },
+  incubators: { ar: "محلات الشركاء", en: "partner shops" },
   packaging: { ar: "التغليف", en: "packaging" },
   shipping: { ar: "الشحن", en: "shipping" },
   returns: { ar: "المرتجعات", en: "returns" },
@@ -175,8 +175,8 @@ export function planLeftovers({
       id: "incubators",
       count: facts.activeIncubators,
       text: {
-        ar: `${facts.activeIncubators} حاضنة فعّالة، وصفحتها ستختفي من القائمة وقد لها مستحقات.`,
-        en: `${facts.activeIncubators} active incubator(s); their page will leave the menu and they may be owed money.`,
+        ar: `محلات شركاء فعّالة: ${facts.activeIncubators}، وصفحتها ستختفي من القائمة وقد يكون لها مستحقات.`,
+        en: `${facts.activeIncubators} active partner shop(s); their page will leave the menu and they may be owed money.`,
       },
       advice: {
         ar: "سوِّ مستحقاتها قبل التغيير.",

@@ -103,13 +103,13 @@ const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string
     badgeClass: "bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20",
   },
   incubator_sale: {
-    ar: "مبيعات حاضنة",
-    en: "Incubator Sale",
+    ar: "مبيعات محل شريك",
+    en: "Partner shop sale",
     badgeClass: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20",
   },
   incubator_reversal: {
-    ar: "عكس مبيعات حاضنة",
-    en: "Incubator Reversal",
+    ar: "عكس مبيعات محل شريك",
+    en: "Partner shop sale reversed",
     badgeClass: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20",
   },
   reconciliation_correction: {
@@ -251,7 +251,7 @@ export function InventoryHistorySheet({
   const formatTimestamp = (isoString: string) => {
     try {
       const date = new Date(isoString);
-      return new Intl.DateTimeFormat(isAr ? "ar-BH" : "en-US", {
+      return new Intl.DateTimeFormat(isAr ? "ar-BH-u-nu-latn" : "en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -322,7 +322,9 @@ export function InventoryHistorySheet({
                 <SelectContent>
                   <SelectItem value="all">{isAr ? "كافة المواقع" : "All Locations"}</SelectItem>
                   <SelectItem value="main">{isAr ? "المحل" : "Main Store"}</SelectItem>
-                  <SelectItem value="incubator">{isAr ? "الحاضنة" : "Incubator"}</SelectItem>
+                  <SelectItem value="incubator">
+                    {isAr ? "المحل الشريك" : "Partner shop"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -435,7 +437,7 @@ export function InventoryHistorySheet({
                           <span>
                             {m.location === "incubator"
                               ? isAr
-                                ? "الحاضنة"
+                                ? "المحل الشريك"
                                 : "Incubator"
                               : isAr
                                 ? "المحل"

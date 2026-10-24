@@ -447,8 +447,8 @@ export function OrderLineCard({
                   },
                   {
                     key: "incubator",
-                    en: `Incubator (${incStock})`,
-                    ar: `الحاضنة (${incStock})`,
+                    en: `Partner shop (${incStock})`,
+                    ar: `المحل الشريك (${incStock})`,
                   },
                 ] as const
               ).map((opt) => {

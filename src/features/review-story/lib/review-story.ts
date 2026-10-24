@@ -72,7 +72,7 @@ export function formatOrderDate(dateStr?: string | null, isAr?: boolean) {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString(isAr ? "ar-BH" : "en-GB", {
+    return d.toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
       year: "numeric",
       month: "short",
       day: "numeric",

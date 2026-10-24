@@ -105,8 +105,8 @@ export function ItemTailoringCustomizer({
     if (val.trim()) {
       updated.push({
         key: `fit_passport_${selectedProfile}_${key}`,
-        label_ar: `Passport — ${labelAr}`,
-        label_en: `Passport — ${labelEn}`,
+        label_ar: labelAr,
+        label_en: labelEn,
         value: `${val.trim()} ${unit}`,
       });
     }
@@ -186,8 +186,8 @@ export function ItemTailoringCustomizer({
         .filter((f: any) => passportValues[f.key] != null && String(passportValues[f.key]).trim())
         .map((f: any) => ({
           key: `fit_passport_${selectedProfile}_${f.key}`,
-          label_ar: `Passport — ${f.label_ar}`,
-          label_en: `Passport — ${f.label_en}`,
+          label_ar: f.label_ar,
+          label_en: f.label_en,
           value: `${passportValues[f.key]} ${prefUnit}`,
         })),
       {

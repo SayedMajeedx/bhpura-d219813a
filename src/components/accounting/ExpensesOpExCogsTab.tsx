@@ -310,7 +310,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-muted-foreground">
-                {isAr ? "مشتريات مخزون التغليف والمواد (Asset)" : "Packaging Inventory Asset"}
+                {isAr ? "مشتريات مخزون التغليف والمواد" : "Packaging Inventory Asset"}
               </span>
               <Badge
                 variant="outline"
@@ -616,12 +616,12 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                       onChange={(e) => setUnitType(e.target.value)}
                       className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
                     >
-                      <option value="أكياس">{isAr ? "أكياس (Bags)" : "Bags"}</option>
-                      <option value="بطاقات">{isAr ? "بطاقات (Cards)" : "Cards"}</option>
-                      <option value="علب">{isAr ? "علب (Boxes)" : "Boxes"}</option>
-                      <option value="قطع">{isAr ? "قطع (Pieces)" : "Pieces"}</option>
-                      <option value="كيلو">{isAr ? "كيلو (Kg)" : "Kg"}</option>
-                      <option value="وحدات">{isAr ? "وحدات (Units)" : "Units"}</option>
+                      <option value="أكياس">{isAr ? "أكياس" : "Bags"}</option>
+                      <option value="بطاقات">{isAr ? "بطاقات" : "Cards"}</option>
+                      <option value="علب">{isAr ? "علب" : "Boxes"}</option>
+                      <option value="قطع">{isAr ? "قطع" : "Pieces"}</option>
+                      <option value="كيلو">{isAr ? "كيلو" : "Kg"}</option>
+                      <option value="وحدات">{isAr ? "وحدات" : "Units"}</option>
                     </select>
                   </div>
                 </div>
@@ -658,7 +658,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                   <option value="Rent">
                     {modules.incubators
                       ? isAr
-                        ? "إيجار وحاضنة"
+                        ? "إيجار وعرض لدى الشركاء"
                         : "Rent & Incubator"
                       : isAr
                         ? "إيجار"
@@ -717,7 +717,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
               </div>
               <p className="text-xs text-muted-foreground">
                 {isAr
-                  ? "مثل رسوم الاشتراك بالحاضنة أو الإيجار الشهري لتتبع الالتزامات المستقبلية."
+                  ? "مثل رسوم العرض لدى محل شريك أو الإيجار الشهري لتتبع الالتزامات المستقبلية."
                   : "For fixed recurring obligations like monthly incubator fees or rent."}
               </p>
             </div>

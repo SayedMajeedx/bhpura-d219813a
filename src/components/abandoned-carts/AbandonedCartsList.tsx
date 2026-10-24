@@ -29,6 +29,7 @@ import { cartLines, guessLang } from "@/features/outreach/lib/outreach";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { formatMoney } from "@/lib/format";
 import { countOf } from "@/lib/arabic-count";
+import { displayPhone } from "@/lib/invoice-display";
 
 type CartRow = AbandonedCartWithCustomer;
 
@@ -303,7 +304,10 @@ export function AbandonedCartsList({
                         <div>
                           <span className="text-foreground font-semibold block">{name}</span>
                           <span className="text-xs text-muted-foreground block font-mono">
-                            {phone || cart.guest_email || cart.customers?.email || "—"}
+                            {displayPhone(phone) ||
+                              cart.guest_email ||
+                              cart.customers?.email ||
+                              "—"}
                           </span>
                           {Boolean(
                             cart.marketing_consent &&
@@ -336,7 +340,7 @@ export function AbandonedCartsList({
 
                       <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                         {new Date(cart.last_activity_at).toLocaleDateString(
-                          isAr ? "ar-BH" : "en-US",
+                          isAr ? "ar-BH-u-nu-latn" : "en-US",
                           {
                             month: "short",
                             day: "numeric",

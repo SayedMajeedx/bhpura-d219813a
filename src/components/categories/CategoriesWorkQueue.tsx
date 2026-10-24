@@ -187,7 +187,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
           <thead>
             <tr className="border-b border-border-subtle bg-muted/40 font-bold text-muted-foreground uppercase text-xs tracking-wider">
               <th className="p-3 text-start">{isAr ? "اسم القسم" : "Category Name"}</th>
-              <th className="p-3 text-start">{isAr ? "الرابط اللطيف (Slug)" : "Slug"}</th>
+              <th className="p-3 text-start">{isAr ? "الرابط اللطيف" : "Slug"}</th>
               <th className="p-3 text-start">{isAr ? "عدد المنتجات" : "Products"}</th>
               <th className="p-3 text-center">{isAr ? "الترتيب" : "Reorder"}</th>
               <th className="p-3 text-end">{isAr ? "الإجراءات" : "Actions"}</th>

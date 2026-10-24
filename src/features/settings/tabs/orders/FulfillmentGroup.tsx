@@ -159,9 +159,7 @@ export function FulfillmentGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <Truck className="size-4 text-primary" />
-            <span>
-              {isAr ? "خيارات التوصيل والاستلام (Fulfillment)" : "Fulfillment & Delivery"}
-            </span>
+            <span>{isAr ? "خيارات التوصيل والاستلام" : "Fulfillment & Delivery"}</span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr

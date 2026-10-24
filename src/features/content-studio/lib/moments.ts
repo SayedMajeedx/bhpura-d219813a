@@ -89,7 +89,7 @@ export function deadlineParts(
   if (!match) return null;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   if (Number.isNaN(date.getTime())) return null;
-  const locale = lang === "ar" ? "ar-u-nu-latn" : "en-GB";
+  const locale = lang === "ar" ? "ar" : "en-GB";
   return {
     day: new Intl.DateTimeFormat(locale, { weekday: "long" }).format(date),
     date: new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(date),
