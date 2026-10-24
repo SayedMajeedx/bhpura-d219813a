@@ -3,6 +3,7 @@ import type { CatalogSort } from "@/lib/catalog-sort";
 import { resolveColorHex } from "@/lib/color-names";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import { OCCASION_CHOICES } from "@/lib/product-occasion";
+import { factValues, filterableFacts } from "@/lib/product-facts";
 
 /**
  * A category listing's filters. Sizes and colours are multi-select (a shopper who takes a 52 or a
@@ -14,6 +15,8 @@ export type FilterState = {
   colors: string[];
   /** What the product is for (`products.occasion`): a product-level choice, not a variant's. */
   occasions: string[];
+  /** The store's facts picked (`?f_roast=light`), each a product-level choice like occasion. */
+  facts: Record<string, string[]>;
   minPrice: number | null;
   maxPrice: number | null;
   inStockOnly: boolean;
@@ -24,6 +27,7 @@ export const EMPTY_FILTERS: FilterState = {
   sizes: [],
   colors: [],
   occasions: [],
+  facts: {},
   minPrice: null,
   maxPrice: null,
   inStockOnly: false,
@@ -56,6 +60,7 @@ export function filtersFromSearch(search: string): FilterState {
     sizes: listParam(sp, "size"),
     colors: listParam(sp, "color"),
     occasions: listParam(sp, "occasion"),
+    facts: factsFromSearch(sp),
     minPrice: numberParam(sp.get("min")),
     maxPrice: numberParam(sp.get("max")),
     inStockOnly: sp.get("stock") === "1",
@@ -63,10 +68,27 @@ export function filtersFromSearch(search: string): FilterState {
   };
 }
 
+const FACT_PREFIX = "f_";
+const FACT_PARAM = /^f_[a-z][a-z_]{0,39}$/;
+
+function factsFromSearch(sp: URLSearchParams): Record<string, string[]> {
+  const facts: Record<string, string[]> = {};
+  for (const key of new Set(sp.keys())) {
+    if (!FACT_PARAM.test(key)) continue;
+    const values = listParam(sp, key);
+    if (values.length) facts[key.slice(FACT_PREFIX.length)] = values;
+  }
+  return facts;
+}
+
 /** The address's query with these filters in it, every other parameter left as it was. */
 export function filtersToSearch(search: string, filters: FilterState): string {
   const sp = new URLSearchParams(search);
   for (const key of ["size", "color", "occasion", "min", "max", "stock", "sort"]) sp.delete(key);
+  for (const key of [...sp.keys()]) if (FACT_PARAM.test(key)) sp.delete(key);
+  for (const [key, values] of Object.entries(filters.facts)) {
+    values.forEach((value) => sp.append(`${FACT_PREFIX}${key}`, value));
+  }
   filters.sizes.forEach((size) => sp.append("size", size));
   filters.colors.forEach((color) => sp.append("color", color));
   filters.occasions.forEach((occasion) => sp.append("occasion", occasion));
@@ -83,13 +105,14 @@ export function activeFilterCount(filters: FilterState): number {
     filters.sizes.length > 0,
     filters.colors.length > 0,
     filters.occasions.length > 0,
+    ...Object.values(filters.facts).map((values) => values.length > 0),
     filters.minPrice !== null,
     filters.maxPrice !== null,
     filters.inStockOnly,
   ].filter(Boolean).length;
 }
 
-type Skip = "size" | "color" | "occasion";
+type Skip = "size" | "color" | "occasion" | `fact:${string}`;
 
 /** Whether this variant meets the filters (leaving one facet out when asked). */
 function variantMeets(
@@ -130,12 +153,28 @@ const occasionRank = (value: string) => {
 const byOccasionOrder = (a: string, b: string) =>
   occasionRank(a) - occasionRank(b) || a.localeCompare(b);
 
-/** Whether the product is for one of the occasions picked (none picked: any). */
-const occasionMeets = (product: ProductRow, filters: FilterState) =>
-  filters.occasions.length === 0 || filters.occasions.includes(norm(product.occasion));
+/**
+ * The product-level choices: an occasion picked, and each fact picked (a product with one of the
+ * values picked passes; nothing picked: any). `skip` leaves one out, to count its own options.
+ */
+function productLevelMeets(product: ProductRow, filters: FilterState, skip?: Skip): boolean {
+  if (
+    skip !== "occasion" &&
+    filters.occasions.length > 0 &&
+    !filters.occasions.includes(norm(product.occasion))
+  ) {
+    return false;
+  }
+  return Object.entries(filters.facts).every(
+    ([key, picked]) =>
+      skip === `fact:${key}` ||
+      picked.length === 0 ||
+      factValues(product.details, key).some((value) => picked.includes(value)),
+  );
+}
 
 function productMeets(product: ProductRow, filters: FilterState, skip?: Skip): boolean {
-  if (skip !== "occasion" && !occasionMeets(product, filters)) return false;
+  if (!productLevelMeets(product, filters, skip)) return false;
   const variants = product.product_variants ?? [];
   if (variants.length === 0) {
     // Nothing to match a size, a colour or a price against.
@@ -174,11 +213,15 @@ export function compareSizes(a: string, b: string): number {
 export type SizeFacet = { value: string; unit: string | null; count: number };
 export type ColorFacet = { name: string; hex: string | null; count: number };
 export type OccasionFacet = { value: string; count: number };
+/** A fact of the store's set a listing can filter by, with the values its products have. */
+export type FactFacet = { key: string; options: Array<{ value: string; count: number }> };
 export type CatalogFacets = {
   sizes: SizeFacet[];
   colors: ColorFacet[];
   /** Offered only when a product on the page has one. */
   occasions: OccasionFacet[];
+  /** The store's filterable facts (`filterableFacts`) that a product on the page has. */
+  facts: FactFacet[];
   /** The lowest and highest price in these products (whole numbers), before any price filter. */
   price: { min: number; max: number };
 };
@@ -191,6 +234,7 @@ export type CatalogFacets = {
 export function catalogFacets(
   products: readonly ProductRow[],
   filters: FilterState,
+  vertical?: string | null,
 ): CatalogFacets {
   const sizeValues = new Map<string, string | null>();
   const colorValues = new Map<string, { name: string; hex: string | null }>();
@@ -216,7 +260,7 @@ export function catalogFacets(
   const countFor = (skip: Skip, matches: (variant: Variant) => boolean) =>
     products.filter(
       (product) =>
-        occasionMeets(product, filters) &&
+        productLevelMeets(product, filters) &&
         (product.product_variants ?? []).some(
           (variant) => matches(variant) && variantMeets(product, variant, filters, skip),
         ),
@@ -241,6 +285,26 @@ export function catalogFacets(
         (product) => norm(product.occasion) === value && productMeets(product, filters, "occasion"),
       ).length,
     })),
+    facts: filterableFacts(vertical)
+      .map((field) => ({
+        key: field.key,
+        // In the set's order; a value the set does not offer is not a filter.
+        options: (field.choices ?? [])
+          .map((choice) => ({
+            value: choice.value,
+            count: products.filter(
+              (product) =>
+                factValues(product.details, field.key).includes(choice.value) &&
+                productMeets(product, filters, `fact:${field.key}`),
+            ).length,
+          }))
+          .filter((option) =>
+            products.some((product) =>
+              factValues(product.details, field.key).includes(option.value),
+            ),
+          ),
+      }))
+      .filter((facet) => facet.options.length > 0),
     price: prices.length
       ? { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) }
       : { min: 0, max: 0 },

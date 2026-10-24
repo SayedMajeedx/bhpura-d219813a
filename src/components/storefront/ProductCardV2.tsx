@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { CardFactLine } from "@/components/storefront/CardFactLine";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -280,6 +281,7 @@ export function ProductCardV2({
           >
             {displayName}
           </h3>
+          <CardFactLine details={product.details} />
 
           {/* Price Tag */}
           <div

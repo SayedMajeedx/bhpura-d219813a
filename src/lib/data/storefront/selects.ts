@@ -12,7 +12,7 @@
 
 /** Product grids (home, category, search, wishlist, recently viewed). Type: `ProductRow`. */
 export const PRODUCT_CARD_SELECT =
-  "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, service_location, service_includes, custom_fields, occasion, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color, image_url, duration_minutes)";
+  "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, service_location, service_includes, custom_fields, occasion, details, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color, image_url, duration_minutes)";
 
 /**
  * Product page and quick view, without the per-product option labels.
@@ -33,7 +33,7 @@ export const PRODUCT_DETAIL_SELECT =
  * the shopper chose, never one it cannot name.
  */
 export const RECOMMENDATION_SELECT =
-  "id, name, name_ar, name_en, category, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)";
+  "id, name, name_ar, name_en, category, image_url, media, custom_fields, details, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)";
 
 /**
  * Instant search boxes. Type: `QuickSearchResult`. The availability columns let a result's

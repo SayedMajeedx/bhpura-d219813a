@@ -282,8 +282,8 @@ function CategoryPage() {
 
   // What can be picked here, each option counted against the other filters.
   const facets = useMemo(
-    () => catalogFacets(categoryProducts, filters),
-    [categoryProducts, filters],
+    () => catalogFacets(categoryProducts, filters, settings.store_vertical),
+    [categoryProducts, filters, settings.store_vertical],
   );
 
   const filteredProducts = useMemo(() => {

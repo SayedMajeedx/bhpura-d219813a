@@ -179,6 +179,7 @@ describe("the filters in the address", () => {
       sizes: ["52", "54"],
       colors: ["Black"],
       occasions: ["يومي"],
+      facts: {},
       minPrice: 10,
       maxPrice: null,
       inStockOnly: true,

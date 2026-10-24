@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { CardFactLine } from "@/components/storefront/CardFactLine";
 import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
@@ -160,6 +161,7 @@ export function ProductCard({
           >
             {displayName}
           </div>
+          <CardFactLine details={product.details} />
           <div
             className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5"
             style={{ color: "var(--sf-price, var(--sf-heading))" }}
