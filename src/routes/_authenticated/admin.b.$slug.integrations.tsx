@@ -302,8 +302,7 @@ function IntegrationsPage() {
                               {preset?.label ?? row.provider}
                             </div>
                             <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
-                              {row.base_url ||
-                                (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
+                              {row.base_url || (row.provider === "gemini" ? "Gemini" : "—")}
                             </div>
                           </div>
                         </div>
@@ -364,7 +363,7 @@ function IntegrationsPage() {
                           }
                           value={
                             row.provider === "gemini"
-                              ? row.base_url || "gemini-1.5-flash"
+                              ? row.base_url || "Gemini"
                               : row.api_key_masked
                           }
                         />
@@ -393,7 +392,7 @@ function IntegrationsPage() {
                             <span className="font-mono font-medium text-foreground">
                               {row.last_rotated_at
                                 ? new Date(row.last_rotated_at).toLocaleDateString(
-                                    isAr ? "ar-BH" : "en-US",
+                                    isAr ? "ar-BH-u-nu-latn" : "en-US",
                                     {
                                       year: "numeric",
                                       month: "short",
@@ -442,7 +441,7 @@ function IntegrationsPage() {
                                   ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتوليد مخرجات صياغة المحتوى الثنائي اللغة."
                                   : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
                                 : isAr
-                                  ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
+                                  ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutq عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
                                   : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
                             </p>
                           </div>
@@ -559,7 +558,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
                     : "Checking"
                   : enabled
                     ? isAr
-                      ? "Pilot مفعّل"
+                      ? "تجربة مفعّلة"
                       : "Pilot enabled"
                     : isAr
                       ? "متوقف"

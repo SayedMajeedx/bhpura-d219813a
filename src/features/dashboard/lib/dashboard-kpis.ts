@@ -91,7 +91,7 @@ export function primaryKpisFor({
                 breakdown:
                   financials.incubatorRevenue > 0
                     ? isAr
-                      ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | حاضنات: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
+                      ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | محلات شركاء: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
                       : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
                     : null,
                 deltaPct: financials.revenueDeltaPct,
@@ -119,7 +119,7 @@ export function primaryKpisFor({
                     {
                       label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
                       value: `${financials.grossMarginPercent.toFixed(1)}%`,
-                      subValue: `${isAr ? "تكلفة المبيعات" : "Cost of goods"}: ${formatMoney(financials.cogs, currency, locale)}`,
+                      subValue: `${isAr ? "تكلفة البضاعة" : "Cost of goods"}: ${formatMoney(financials.cogs, currency, locale)}`,
                       icon: PiggyBank,
                       color: "text-blue-500",
                       border: "hover:border-blue-500/20",

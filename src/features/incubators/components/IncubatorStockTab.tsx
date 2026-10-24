@@ -78,12 +78,12 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
             onChange={(event) => setSearch(event.target.value)}
             aria-label={
               isAr
-                ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"
+                ? "ابحث بكودنا أو كود المحل الشريك أو اسم المنتج"
                 : "Search by SKU, external code, or product"
             }
             placeholder={
               isAr
-                ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"
+                ? "ابحث بكودنا أو كود المحل الشريك أو اسم المنتج"
                 : "Search by SKU, external code, or product"
             }
           />
@@ -107,7 +107,7 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
 
       {filteredStock.length === 0 && (
         <p className="rounded-md border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          {isAr ? "لا توجد بضاعة عند هذه الحاضنة" : "No stock at this incubator"}
+          {isAr ? "لا توجد بضاعة عند هذا المحل الشريك" : "No stock at this partner shop"}
         </p>
       )}
 
@@ -131,7 +131,9 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
             </div>
             <dl className="mt-2 grid grid-cols-2 gap-2 text-xs">
               <div>
-                <dt className="text-muted-foreground">{isAr ? "كود الحاضنة" : "External code"}</dt>
+                <dt className="text-muted-foreground">
+                  {isAr ? "كود المحل الشريك" : "External code"}
+                </dt>
                 <dd className="mt-0.5">
                   <InlineCodeEditor
                     value={item.external_code || ""}
@@ -165,7 +167,7 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
             <tr>
               <th className="p-3 text-start">{isAr ? "المنتج" : "Product"}</th>
               <th className="p-3 text-start">{isAr ? "كودنا" : "SKU"}</th>
-              <th className="p-3 text-start">{isAr ? "كود الحاضنة" : "External code"}</th>
+              <th className="p-3 text-start">{isAr ? "كود المحل الشريك" : "External code"}</th>
               <th className="p-3 text-center">{isAr ? "الكمية" : "Qty"}</th>
               <th className="p-3 text-end">{isAr ? "السعر والعمولة" : "Price & terms"}</th>
               <th className="p-3 text-end">{isAr ? "القيمة" : "Value"}</th>

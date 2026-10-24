@@ -211,7 +211,7 @@ export function OrderQuickInspectSheet({
 
                 <div className="space-y-2 font-mono text-muted-foreground">
                   <div className="flex justify-between items-center">
-                    <span>{isAr ? "مجموع المنتجات (Subtotal):" : "Items Subtotal:"}</span>
+                    <span>{isAr ? "مجموع المنتجات:" : "Items Subtotal:"}</span>
                     <span className="font-bold text-foreground">
                       {formatMoney(subtotal, currency, locale)}
                     </span>
@@ -219,16 +219,14 @@ export function OrderQuickInspectSheet({
 
                   {discount > 0 && (
                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                      <span>{isAr ? "الخصم المستقطع (Discount):" : "Discount Applied:"}</span>
+                      <span>{isAr ? "الخصم المستقطع:" : "Discount Applied:"}</span>
                       <span className="font-bold">-{formatMoney(discount, currency, locale)}</span>
                     </div>
                   )}
 
                   {shipping > 0 && (
                     <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                      <span>
-                        {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
-                      </span>
+                      <span>{isAr ? "رسوم الشحن والتوصيل:" : "Shipping & Delivery Fee:"}</span>
                       <span className="font-bold">+{formatMoney(shipping, currency, locale)}</span>
                     </div>
                   )}
@@ -242,11 +240,7 @@ export function OrderQuickInspectSheet({
 
                   {advancePaid > 0 && (
                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
-                      <span>
-                        {isAr
-                          ? "الدفعة المقدمة المدفوعة (Deposit Paid):"
-                          : "Advance Paid / Deposit:"}
-                      </span>
+                      <span>{isAr ? "الدفعة المقدمة المدفوعة:" : "Advance Paid / Deposit:"}</span>
                       <span className="font-bold">
                         -{formatMoney(advancePaid, currency, locale)}
                       </span>
@@ -256,9 +250,7 @@ export function OrderQuickInspectSheet({
                   {advancePaid > 0 && codRemaining > 0 && (
                     <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
                       <span>
-                        {isAr
-                          ? "المتبقي للتحصيل عند التسليم (COD Balance):"
-                          : "Remaining COD Balance:"}
+                        {isAr ? "المتبقي للتحصيل عند التسليم:" : "Remaining COD Balance:"}
                       </span>
                       <span>{formatMoney(codRemaining, currency, locale)}</span>
                     </div>

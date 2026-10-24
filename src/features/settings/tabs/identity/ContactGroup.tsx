@@ -91,7 +91,7 @@ export function ContactGroup() {
 
         {/* Custom Domain (Read only) */}
         <div className="space-y-2">
-          <Label htmlFor="custom_domain">{isAr ? "النطاق المخصص (Domain)" : "Custom Domain"}</Label>
+          <Label htmlFor="custom_domain">{isAr ? "النطاق المخصص" : "Custom Domain"}</Label>
           <div className="flex gap-2">
             <Input
               id="custom_domain"

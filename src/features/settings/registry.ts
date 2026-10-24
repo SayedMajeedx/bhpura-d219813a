@@ -83,7 +83,7 @@ export const SETTINGS_GROUPS: Record<SettingsTabId, { id: string; ar: string; en
   storefront: [
     { id: "mode", ar: "وضع البيع", en: "Selling Mode" },
     { id: "design_v2", ar: "بطاقة المنتج وصفحته", en: "Product card & page" },
-    { id: "home_hero", ar: "الواجهة الرئيسية (Hero)", en: "Homepage Hero" },
+    { id: "home_hero", ar: "الواجهة الرئيسية", en: "Homepage Hero" },
     { id: "home_sections", ar: "الصفحة الرئيسية", en: "Home page" },
     { id: "header_footer", ar: "الترويسة والقائمة والتذييل", en: "Header, Menu & Footer" },
     { id: "announcement", ar: "شريط الإعلانات", en: "Announcement Bar" },
@@ -143,7 +143,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "basic",
     owner: "settings",
     type: "image",
-    label: { ar: "أيقونة التبويب (Favicon)", en: "Favicon" },
+    label: { ar: "أيقونة التبويب", en: "Favicon" },
     keywords: { ar: ["أيقونة", "تبويب", "فافيكون"], en: ["favicon", "browser icon"] },
   },
 
@@ -197,7 +197,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "basic",
     owner: "settings",
     type: "color",
-    label: { ar: "لون العلامة الأساسي (Accent Color)", en: "Primary Accent Color" },
+    label: { ar: "لون العلامة الأساسي", en: "Primary Accent Color" },
     keywords: { ar: ["لون", "رئيسي", "أساسي", "هوية"], en: ["accent", "primary color", "theme"] },
   },
   {
@@ -376,7 +376,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "color",
-    label: { ar: "خلفية الترويسة (Header)", en: "Header Background" },
+    label: { ar: "خلفية الترويسة", en: "Header Background" },
     keywords: { ar: ["ترويسة", "هيدر"], en: ["header bg"] },
   },
   {
@@ -399,7 +399,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "color",
-    label: { ar: "خلفية التذييل (Footer)", en: "Footer Background" },
+    label: { ar: "خلفية التذييل", en: "Footer Background" },
     keywords: { ar: ["تذييل", "فوتر"], en: ["footer bg"] },
   },
   {
@@ -466,7 +466,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "boolean",
-    label: { ar: "تأثير زجاجي للترويسة (Glassmorphism)", en: "Header Glassmorphism" },
+    label: { ar: "تأثير زجاجي للترويسة", en: "Header Glassmorphism" },
     keywords: { ar: ["زجاج", "تأثير زجاجي", "شفافية"], en: ["glass", "blur", "backdrop"] },
   },
   {
@@ -1245,7 +1245,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     owner: "settings",
     type: "boolean",
     label: {
-      ar: "تفعيل المعاينة السريعة للمنتج (Quick View)",
+      ar: "تفعيل المعاينة السريعة للمنتج",
       en: "Enable Product Quick View Modal",
     },
     keywords: { ar: ["معاينة سريعة"], en: ["quick view", "preview modal"] },
@@ -1638,7 +1638,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "text",
-    label: { ar: "عنوان المتجر في محركات البحث (Meta Title)", en: "SEO Meta Title" },
+    label: { ar: "عنوان المتجر في محركات البحث", en: "SEO Meta Title" },
     keywords: { ar: ["سيو", "عنوان البحث", "قوقل"], en: ["seo", "meta title", "google title"] },
   },
   {
@@ -1649,7 +1649,7 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "textarea",
-    label: { ar: "وصف المتجر في محركات البحث (Meta Description)", en: "SEO Meta Description" },
+    label: { ar: "وصف المتجر في محركات البحث", en: "SEO Meta Description" },
     keywords: {
       ar: ["وصف البحث", "سيو", "قوقل"],
       en: ["seo", "meta description", "google snippet"],

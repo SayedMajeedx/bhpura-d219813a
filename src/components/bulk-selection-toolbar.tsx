@@ -144,7 +144,7 @@ export function BulkSelectionToolbar({
           >
             <Building2 className="h-4 w-4" />
             {isAr
-              ? `تحويل إلى حاضنة (${selectedCount})`
+              ? `تحويل إلى محل شريك (${selectedCount})`
               : `Transfer to incubator (${selectedCount})`}
           </Button>
         )}

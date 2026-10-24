@@ -371,7 +371,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                     ? isAr
                       ? "باقة تجريبية (3 أيام)"
                       : "3-DAY TRIAL"
-                    : (currentPlan?.code || "PLAN").toUpperCase()}
+                    : currentPlan?.code
+                      ? currentPlan.code.toUpperCase()
+                      : isAr
+                        ? "باقتك"
+                        : "YOUR PLAN"}
                 </Badge>
                 {isFounder && (
                   <Badge
@@ -409,9 +413,6 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   ? currentPlan?.name_ar ||
                     (isTrial ? "الفترة التجريبية (3 أيام)" : "الخطة الأساسية")
                   : currentPlan?.name_en || (isTrial ? "3-Day Free Trial" : "Base Plan")}
-                <span className="text-xs font-normal text-muted-foreground ms-2">
-                  (v{currentVersion?.version_number || 1})
-                </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl">
                 {isAr
@@ -496,14 +497,14 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               </span>
               <span className="text-sm font-bold text-foreground font-mono">
                 {isTrial && trialEndsAtDate
-                  ? `${new Date(trialEndsAtDate).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })} ${
+                  ? `${new Date(trialEndsAtDate).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-US", { year: "numeric", month: "short", day: "numeric" })} ${
                       trialDaysRemaining !== null
                         ? `(${isAr ? `متبقي ${arNoun(trialDaysRemaining, "day")}` : `${trialDaysRemaining}d left`})`
                         : ""
                     }`
                   : subscription?.current_period_end
                     ? new Date(subscription.current_period_end).toLocaleDateString(
-                        isAr ? "ar-BH" : "en-US",
+                        isAr ? "ar-BH-u-nu-latn" : "en-US",
                         { year: "numeric", month: "short", day: "numeric" },
                       )
                     : isFounder
@@ -1170,27 +1171,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             unitEn="reqs"
           />
 
-          {/* Abandoned Cart Messages */}
-          <UsageMeterBar
-            labelAr="رسائل استرجاع السلات المتروكة"
-            labelEn="Abandoned Cart Messages"
-            currentUsage={
-              usageSummary.abandoned_cart_messages?.current_usage ??
-              (usageSnapshots["abandoned_carts.monthly_messages"]?.current_usage || 0)
-            }
-            limitValue={
-              usageSummary.abandoned_cart_messages?.limit_value ??
-              entitlements?.limits["abandoned_carts.monthly_messages"] ??
-              50
-            }
-            isUnlimited={
-              usageSummary.abandoned_cart_messages?.is_unlimited ??
-              entitlements?.limits["abandoned_carts.monthly_messages"] === -1
-            }
-            unitAr="رسالة"
-            unitEn="msgs"
-          />
-
+          {/* No abandoned-cart message meter: nothing sends them by itself, a person does from
+              the carts screen, so there is nothing to count against a plan. */}
           {/* Team Staff Accounts */}
           <UsageMeterBar
             labelAr="أعضاء فريق العمل والموظفين"
@@ -1255,7 +1237,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             {[
               {
                 key: "returns.enabled",
-                labelAr: "بوابة المرتجعات الآلية",
+                labelAr: "بوابة المرتجعات",
                 labelEn: "Self-Service Returns Portal",
               },
               {
@@ -1265,8 +1247,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               },
               {
                 key: "abandoned_carts.enabled",
-                labelAr: "استرجاع السلات المتروكة",
-                labelEn: "Abandoned Carts Recovery",
+                labelAr: "متابعة السلات المتروكة",
+                labelEn: "Abandoned cart follow-up",
               },
               {
                 key: "api.enabled",

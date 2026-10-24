@@ -62,7 +62,7 @@ export function DashboardCommandHeader({
               : `Money collected from bookings and orders for ${periodLabel}. Open Orders for the details.`
             : hasIncubators
               ? isAr
-                ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
+                ? `المبيعات المحصلة من الطلبات ومحلات الشركاء خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
                 : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`
               : isAr
                 ? `المبيعات المحصلة من الطلبات خلال ${periodLabel}. افتح صفحة الطلبات للتفاصيل.`

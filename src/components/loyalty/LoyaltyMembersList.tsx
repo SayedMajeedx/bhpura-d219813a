@@ -6,6 +6,7 @@ import { loyaltyMembers } from "@/lib/loyalty-program";
 import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { displayPhone } from "@/lib/invoice-display";
 
 /**
  * Who has points: every member with what they can spend now, what is still held, and their
@@ -68,7 +69,7 @@ export function LoyaltyMembersList({
                     {member.name || (isAr ? "عميل بلا اسم" : "Unnamed customer")}
                   </p>
                   <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                    {member.phone && <span dir="ltr">{member.phone}</span>}
+                    {member.phone && <span dir="ltr">{displayPhone(member.phone)}</span>}
                     {tier && <span>{tier}</span>}
                   </p>
                 </div>

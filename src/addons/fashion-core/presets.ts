@@ -52,7 +52,7 @@ export const FASHION_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
   },
   passport_abaya: {
     label_en: "Fit Passport — Abaya",
-    label_ar: "Fit Passport — عباية",
+    label_ar: "جواز المقاسات — عباية",
     fields: [
       {
         key: "passport_abaya_length",
@@ -114,7 +114,7 @@ export const FASHION_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
   },
   passport_dress: {
     label_en: "Fit Passport — Dress",
-    label_ar: "Fit Passport — فستان",
+    label_ar: "جواز المقاسات — فستان",
     fields: [
       {
         key: "passport_dress_length",

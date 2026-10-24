@@ -89,7 +89,7 @@ export function incubatorDetailsProblem(
   details: ReturnType<typeof incubatorDetails>,
   lang: Lang,
 ): string | null {
-  if (!details.name) return lang === "ar" ? "اكتب اسم الحاضنة" : "Enter the partner's name";
+  if (!details.name) return lang === "ar" ? "اكتب اسم المحل الشريك" : "Enter the partner's name";
   if (details.commission_value < 0) {
     return lang === "ar" ? "العمولة لا تكون بالسالب" : "The commission cannot be negative";
   }
@@ -132,7 +132,7 @@ export function saleProblem(
     return lang === "ar" ? "أدخل كمية صحيحة" : "Enter a whole quantity";
   }
   if (sale.quantity > held) {
-    return lang === "ar" ? `الحاضنة لديها ${held} فقط` : `The partner holds only ${held}`;
+    return lang === "ar" ? `المحل الشريك لديه ${held} فقط` : `The partner holds only ${held}`;
   }
   if (!(sale.unitPrice >= 0)) {
     return lang === "ar" ? "السعر لا يكون بالسالب" : "The price cannot be negative";

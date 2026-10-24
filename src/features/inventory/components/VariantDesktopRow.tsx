@@ -449,7 +449,7 @@ export function VariantDesktopRow({
                   className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold text-xs border border-border-subtle"
                   title={partnerStockHint(isAr)}
                 >
-                  {isAr ? "حاضنة:" : "Inc:"}{" "}
+                  {isAr ? "محل شريك:" : "Inc:"}{" "}
                   <strong className="ms-1 text-foreground">{v.stock_incubator}</strong>
                 </span>
               )}

@@ -55,7 +55,7 @@ export function orderCardWhen(
   if (!createdAt) return "";
   const placed = new Date(createdAt);
   if (Number.isNaN(placed.getTime())) return "";
-  const locale = lang === "ar" ? "ar-u-nu-latn" : "en-GB";
+  const locale = lang === "ar" ? "ar" : "en-GB";
   const time = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(
     placed,
   );

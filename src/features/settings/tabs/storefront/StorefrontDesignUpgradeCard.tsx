@@ -14,8 +14,10 @@ export function StorefrontDesignUpgradeCard() {
   const currentVersion = Number(bs.storefront_design_version ?? 1);
   const isV2 = currentVersion === 2;
 
-  const handleToggle = () => {
-    setBs("storefront_design_version", isV2 ? 1 : 2);
+  // One way only: a live store on the new look is not offered the old one back from here (a
+  // tap once switched a store's whole storefront to the classic look).
+  const handleUpgrade = () => {
+    setBs("storefront_design_version", 2);
   };
 
   const NextIcon = isAr ? ArrowLeft : ArrowRight;
@@ -29,46 +31,29 @@ export function StorefrontDesignUpgradeCard() {
               <Sparkles className="h-4 w-4" />
             </div>
             <h3 className="text-base font-bold text-foreground">
-              {isAr ? "محرك المتجر Storefront 2.0" : "Storefront 2.0 Design Engine"}
+              {isAr ? "مظهر المتجر الجديد" : "The new storefront look"}
             </h3>
             <Badge variant={isV2 ? "default" : "secondary"} className="text-xs font-semibold">
-              {isV2
-                ? isAr
-                  ? "الإصدار 2.0 نشط"
-                  : "v2.0 Active"
-                : isAr
-                  ? "الإصدار 1.0 كلاسيك"
-                  : "v1.0 Classic"}
+              {isV2 ? (isAr ? "مفعّل" : "Active") : isAr ? "المظهر الكلاسيكي" : "Classic look"}
             </Badge>
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
             {isAr
-              ? "مظهر عصري فاخر مصمم خصيصاً للبوتيكات الخليجية: خطوط متجاوبة، شريط رأس مضغوط في صف واحد على الجوال، شريط ثقة وضمانات تلقائي، ونظام إشعارات توفر القطع المنتهية عبر واتساب."
-              : "Luxury modern look tailored for GCC boutiques: fluid typography, streamlined 1-row mobile header, responsive trust guarantee badges, and out-of-stock WhatsApp waitlist."}
+              ? "مصمم للبوتيكات: خطوط تتكيف مع الشاشة، رأس في صف واحد على الجوال، شريط ثقة يقول ما تقوله إعداداتك، وقائمة انتظار لمن يطلب إشعاره عند توفر مقاس نفد."
+              : "Made for boutiques: type that fits the screen, a one-row header on phones, a trust bar that says what your settings say, and a waiting list for shoppers who ask to hear when a size is back."}
           </p>
         </div>
 
-        <div className="shrink-0 pt-1">
-          <Button
-            type="button"
-            variant={isV2 ? "outline" : "default"}
-            onClick={handleToggle}
-            className="gap-2 text-xs font-bold"
-          >
-            {isV2 ? (
-              <>
-                <span>{isAr ? "الرجوع للإصدار 1.0" : "Revert to v1.0"}</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{isAr ? "الترقية إلى الإصدار 2.0 الآن" : "Upgrade to v2.0 Now"}</span>
-                <NextIcon className="h-3.5 w-3.5" />
-              </>
-            )}
-          </Button>
-        </div>
+        {!isV2 && (
+          <div className="shrink-0 pt-1">
+            <Button type="button" onClick={handleUpgrade} className="gap-2 text-xs font-bold">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{isAr ? "الانتقال إلى المظهر الجديد" : "Switch to the new look"}</span>
+              <NextIcon className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Feature Pills */}
@@ -77,12 +62,10 @@ export function StorefrontDesignUpgradeCard() {
           <Smartphone className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs font-semibold text-foreground">
-              {isAr ? "رأس مضغوط 56px للجوال" : "56px Mobile Header"}
+              {isAr ? "رأس في صف واحد على الجوال" : "One-row header on phones"}
             </h4>
             <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "صف واحد خفيف مع بحث بملء الشاشة"
-                : "1-row bar with instant fullscreen search"}
+              {isAr ? "مع بحث يفتح بملء الشاشة" : "With search that opens full screen"}
             </p>
           </div>
         </div>
@@ -91,12 +74,12 @@ export function StorefrontDesignUpgradeCard() {
           <ShieldCheck className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs font-semibold text-foreground">
-              {isAr ? "شارات الثقة والضمان" : "Trust & Guarantee Badges"}
+              {isAr ? "شريط الثقة" : "Trust bar"}
             </h4>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "استرجاع، توصيل سريع، ودفع آمن"
-                : "Fast delivery, easy returns & secure payment"}
+                ? "طرق الدفع والتوصيل كما في إعداداتك، أو شاراتك"
+                : "Your payment and delivery as your settings say, or your own badges"}
             </p>
           </div>
         </div>
@@ -105,12 +88,12 @@ export function StorefrontDesignUpgradeCard() {
           <Zap className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <h4 className="text-xs font-semibold text-foreground">
-              {isAr ? "إشعار التوفر عبر واتساب" : "WhatsApp Back-in-Stock"}
+              {isAr ? "قائمة الانتظار" : "Waiting list"}
             </h4>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? "استقطاب العملاء للقطع المنتهية تلقائياً"
-                : "Capture waitlist leads when variants sell out"}
+                ? "من طلب إشعاره بمقاس نفد، وأنت من يراسله"
+                : "Who asked to hear about a sold-out size; you message them"}
             </p>
           </div>
         </div>

@@ -79,7 +79,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
         lang,
         brand,
         money,
-        today: new Date().toLocaleDateString(isAr ? "ar-BH" : "en-BH"),
+        today: new Date().toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-BH"),
       }),
     );
     sheet.document.close();
@@ -88,7 +88,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
   const rows: Array<[string, string, boolean?]> = [
     [isAr ? "القطع المباعة" : "Pieces sold", String(statement.soldUnits)],
     [isAr ? "المبيعات" : "Sales", money(statement.gross)],
-    [isAr ? "عمولة الحاضنة" : "Partner's commission", money(statement.commission)],
+    [isAr ? "عمولة المحل الشريك" : "Partner's commission", money(statement.commission)],
     [isAr ? "المستحق لنا عن الفترة" : "Due to us for the period", money(statement.net)],
     [isAr ? "المدفوع في الفترة" : "Paid in the period", money(statement.paid)],
     [isAr ? "المبلغ المستحق اليوم" : "Balance due today", money(statement.balanceDue), true],
@@ -98,7 +98,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
     <Dialog open={open} onOpenChange={(next) => !next && closeDialog()}>
       <DialogContent className="max-w-lg" dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
-          <DialogTitle>{isAr ? "كشف حساب الحاضنة" : "Partner statement"}</DialogTitle>
+          <DialogTitle>{isAr ? "كشف حساب المحل الشريك" : "Partner statement"}</DialogTitle>
           <DialogDescription className="break-words" dir="auto">
             {current.name} · {periodText(period, lang)}
           </DialogDescription>
@@ -179,7 +179,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
           ) : (
             <p className="me-auto self-center text-xs text-muted-foreground">
               {isAr
-                ? "أضف هاتف الحاضنة لإرسال الملخص واتساب."
+                ? "أضف هاتف المحل الشريك لإرسال الملخص واتساب."
                 : "Add the partner's phone to send the summary on WhatsApp."}
             </p>
           )}

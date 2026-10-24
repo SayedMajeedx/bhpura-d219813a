@@ -41,11 +41,7 @@ export function AnnouncementGroup() {
           <div>
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
               <Megaphone className="size-4 text-primary" />
-              <span>
-                {isAr
-                  ? "شريط الإعلانات أعلى الصفحة (Top Announcement Bar)"
-                  : "Top Announcement Bar"}
-              </span>
+              <span>{isAr ? "شريط الإعلانات أعلى الصفحة" : "Top Announcement Bar"}</span>
             </h3>
             <p className="mt-1 text-xs text-muted-foreground">
               {isAr

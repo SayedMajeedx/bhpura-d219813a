@@ -301,9 +301,7 @@ export function LoyaltySettingsEditor({
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="font-normal">
-                    {isAr
-                      ? "تفعيل مضاعفات مستويات العضوية (Tier Multipliers)"
-                      : "Enable VIP Tier Multipliers"}
+                    {isAr ? "تفعيل مضاعفات مستويات العضوية" : "Enable VIP Tier Multipliers"}
                   </Label>
                 </div>
                 <Switch

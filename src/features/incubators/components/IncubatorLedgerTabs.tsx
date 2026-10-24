@@ -89,7 +89,7 @@ export function IncubatorSalesTab({ page }: { page: IncubatorsPageState }) {
                   value={money(Number(sale.gross_amount))}
                 />
                 <Fact
-                  label={isAr ? "عمولة الحاضنة" : "Commission"}
+                  label={isAr ? "عمولة المحل الشريك" : "Commission"}
                   value={money(Number(sale.commission_amount))}
                 />
                 <Fact

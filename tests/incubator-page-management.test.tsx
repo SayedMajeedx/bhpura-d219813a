@@ -251,7 +251,7 @@ const stockTable = async () => within(await screen.findByRole("table"));
 describe("a partner's details and stock", () => {
   it("edits the current incubator's details for its brand", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit incubator" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Edit partner shop" }));
     const dialog = await screen.findByRole("dialog");
     const name = within(dialog).getByDisplayValue("Souq Box");
     fireEvent.change(name, { target: { value: "  Souq Box Seef " } });
@@ -270,7 +270,7 @@ describe("a partner's details and stock", () => {
   it("creates a partner in the store's own currency, with provider packaging by default", async () => {
     session.currency = "KWD";
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "New incubator" }));
+    fireEvent.click(await screen.findByRole("button", { name: "New partner shop" }));
     const dialog = await screen.findByRole("dialog");
     const policy = dialog.querySelector('select[name="packaging_policy"]') as HTMLSelectElement;
     expect(policy.value).toBe("incubator");
@@ -285,7 +285,7 @@ describe("a partner's details and stock", () => {
 
   it("refuses details that make no sense before asking the database", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "New incubator" }));
+    fireEvent.click(await screen.findByRole("button", { name: "New partner shop" }));
     const dialog = await screen.findByRole("dialog");
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Marina Mall" } });
     fireEvent.change(within(dialog).getByLabelText("Commission value"), {
@@ -328,7 +328,7 @@ describe("a partner's details and stock", () => {
     renderPage();
     fireEvent.click((await stockTable()).getAllByRole("button", { name: "Terms" })[0]);
     const dialog = await screen.findByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Incubator code"), {
+    fireEvent.change(within(dialog).getByLabelText("Partner shop code"), {
       target: { value: " SB-7 " },
     });
     fireEvent.change(within(dialog).getByLabelText("Consignment price"), {
@@ -405,7 +405,7 @@ describe("what the page says about orders and totals", () => {
   it("lays the page out right-to-left with Bahraini money formatting in Arabic", async () => {
     localStorage.setItem("lang", "ar");
     const { container } = renderPage();
-    expect(await screen.findByText("الحاضنات والعُهد")).toBeInTheDocument();
+    expect(await screen.findByText("محلات الشركاء والأمانات")).toBeInTheDocument();
     expect(container.querySelector('[dir="rtl"]')).not.toBeNull();
     const money = new Intl.NumberFormat("ar-BH", { style: "currency", currency: "BHD" })
       .formatToParts(1)

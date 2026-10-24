@@ -702,12 +702,12 @@ export const ADDON_SHOWCASE_DATA: Record<AddonId, AddonShowcaseItem> = {
         en: "Complete men's and women's footwear size conversion charts (EU / US / UK)",
       },
       {
-        ar: "عرض مربعات الألوان البصرية (Color Swatches) في صفحة المنتج",
+        ar: "عرض مربعات الألوان البصرية في صفحة المنتج",
         en: "Visual color swatch pickers on storefront product pages",
       },
     ],
     fullOverview: {
-      ar: "تمثل هذه الحزمة حجر الزاوية لأي براند ملابس أو أحذية أو أزياء معاصرة. توفر مقاييس موحدة ومحاور متغيرات جاهزة للمقاس واللون مع عينات ألوان مرئية (Color Swatches)، وجداول تحويل المقاسات بين الأنظمة الأوروبية والأمريكية، مما يوفر تجربة تسوق راقية ويقلل استفسارات المقاسات.",
+      ar: "تمثل هذه الحزمة حجر الزاوية لأي براند ملابس أو أحذية أو أزياء معاصرة. توفر مقاييس موحدة ومحاور متغيرات جاهزة للمقاس واللون مع عينات ألوان مرئية، وجداول تحويل المقاسات بين الأنظمة الأوروبية والأمريكية، مما يوفر تجربة تسوق راقية ويقلل استفسارات المقاسات.",
       en: "The essential foundation for ready-to-wear fashion and footwear labels. Fashion Core introduces standardized variant dimensions for size and color swatches, plus comprehensive international conversion matrices (EU/US/UK) for garments and shoes, keeping your store aligned with world-class fashion retail standards.",
     },
     keyFeatures: [

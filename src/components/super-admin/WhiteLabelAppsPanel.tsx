@@ -244,7 +244,7 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
                             </span>
                             <span className="ms-auto text-muted-foreground">
                               {new Date(build.completed_at || build.created_at).toLocaleString(
-                                isAr ? "ar-BH" : "en-BH",
+                                isAr ? "ar-BH-u-nu-latn" : "en-BH",
                               )}
                             </span>
                           </div>

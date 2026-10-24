@@ -290,15 +290,15 @@ function ReportsOverview() {
                 )
                   ? ([
                       [
-                        lang === "ar" ? "مبيعات الحاضنات" : "Incubator sales",
+                        lang === "ar" ? "مبيعات محلات الشركاء" : "Partner shop sales",
                         money(data.incubator_sales),
                       ],
                       [
-                        lang === "ar" ? "عمولات الحاضنات" : "Incubator commissions",
+                        lang === "ar" ? "عمولات محلات الشركاء" : "Partner shop commissions",
                         money(data.incubator_commissions),
                       ],
                       [
-                        lang === "ar" ? "مستحقات الحاضنات" : "Incubator receivables",
+                        lang === "ar" ? "مستحقات محلات الشركاء" : "Partner shop receivables",
                         money(data.incubator_receivables),
                       ],
                     ] as Array<[string, string | number]>)
@@ -323,7 +323,7 @@ function ReportsOverview() {
                 ...(shows(modules.incubators, data.incubator_cogs)
                   ? ([
                       [
-                        lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Cost of partner sales",
+                        lang === "ar" ? "تكلفة مبيعات محلات الشركاء" : "Cost of partner sales",
                         money(data.incubator_cogs),
                       ],
                     ] as Array<[string, string | number]>)

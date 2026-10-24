@@ -184,6 +184,6 @@ describe("the order's 'collect from a partner' notice", () => {
 describe("the partners' quantity beside a variant", () => {
   it("says where it changes, in both languages", () => {
     expect(partnerStockHint(false)).toMatch(/Incubators page/);
-    expect(partnerStockHint(true)).toContain("صفحة الحاضنات");
+    expect(partnerStockHint(true)).toContain("صفحة محلات الشركاء");
   });
 });

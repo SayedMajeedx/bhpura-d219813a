@@ -342,7 +342,7 @@ function CategoryDialog({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <Label>{isAr ? "المعرّف (Slug)" : "Slug"}</Label>
+            <Label>{isAr ? "المعرّف" : "Slug"}</Label>
             <Input
               value={form.slug}
               onChange={(e) => setForm({ ...form, slug: e.target.value })}

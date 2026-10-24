@@ -2,7 +2,7 @@
 export function stockLabels(isAr: boolean) {
   return {
     mainLabel: isAr ? "مخزون المحل" : "Store Stock",
-    incLabel: isAr ? "مخزون الحاضنة" : "Incubator Stock",
+    incLabel: isAr ? "مخزون المحل الشريك" : "Partner shop stock",
     mainTooltip: isAr
       ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن للعملاء."
       : "Physical stock in your primary store, ready for instant sale and shipping.",
@@ -17,6 +17,6 @@ export function stockLabels(isAr: boolean) {
  */
 export function partnerStockHint(isAr: boolean): string {
   return isAr
-    ? "القطع الموجودة عند الحاضنات الشريكة. تتغير من صفحة الحاضنات: تحويل، إرجاع أو بيع."
+    ? "القطع الموجودة عند محلات الشركاء. تتغير من صفحة محلات الشركاء: تحويل، إرجاع أو بيع."
     : "Pieces held at partner incubators. They change on the Incubators page: a transfer, a return or a sale.";
 }

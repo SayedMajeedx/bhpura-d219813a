@@ -72,7 +72,7 @@ export function SeoGroup() {
         <div className="space-y-1.5">
           <div className="flex justify-between items-center text-xs">
             <Label className="font-medium">
-              {isAr ? "عنوان الصفحة الرئيسية (Meta Title)" : "Homepage Meta Title"}
+              {isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}
             </Label>
             <span
               className={`font-mono text-xs ${
@@ -103,7 +103,7 @@ export function SeoGroup() {
         <div className="space-y-1.5">
           <div className="flex justify-between items-center text-xs">
             <Label className="font-medium">
-              {isAr ? "وصف الصفحة الرئيسية (Meta Description)" : "Homepage Meta Description"}
+              {isAr ? "وصف الصفحة الرئيسية" : "Homepage Meta Description"}
             </Label>
             <span
               className={`font-mono text-xs ${

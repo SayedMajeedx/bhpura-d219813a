@@ -14,7 +14,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     level: "basic",
     owner: "settings",
     type: "boolean",
-    label: { ar: "الدفع عند الاستلام (Cash on Delivery)", en: "Cash on Delivery (COD)" },
+    label: { ar: "الدفع عند الاستلام", en: "Cash on Delivery (COD)" },
     keywords: { ar: ["دفع عند الاستلام", "كاش"], en: ["cod", "cash on delivery"] },
   },
   {
@@ -25,7 +25,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     level: "basic",
     owner: "settings",
     type: "boolean",
-    label: { ar: "الدفع الإلكتروني بالبطاقات (Card)", en: "Credit/Debit Card Payments" },
+    label: { ar: "الدفع الإلكتروني بالبطاقات", en: "Credit/Debit Card Payments" },
     keywords: {
       ar: ["بطاقة", "فيزا", "مدى", "دفع إلكتروني"],
       en: ["card", "credit card", "debit"],
@@ -101,7 +101,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "text",
-    label: { ar: "المفتاح العام لبوابة الدفع (Card Public Key)", en: "Payment Gateway Public Key" },
+    label: { ar: "المفتاح العام لبوابة الدفع", en: "Payment Gateway Public Key" },
     keywords: { ar: ["مفتاح عام", "بوابة دفع"], en: ["card public key"] },
   },
   {
@@ -112,7 +112,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "text",
-    label: { ar: "المفتاح السري لبوابة الدفع (Card Secret Key)", en: "Payment Gateway Secret Key" },
+    label: { ar: "المفتاح السري لبوابة الدفع", en: "Payment Gateway Secret Key" },
     keywords: { ar: ["مفتاح سري", "بوابة دفع"], en: ["card secret key"] },
   },
   {
@@ -145,7 +145,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     level: "advanced",
     owner: "settings",
     type: "image",
-    label: { ar: "رمز الاستجابة السريعة لبنفت (BenefitPay QR)", en: "BenefitPay QR Code Image" },
+    label: { ar: "رمز الاستجابة السريعة لبنفت", en: "BenefitPay QR Code Image" },
     keywords: { ar: ["باركود بنفت", "كيو ار بنفت"], en: ["benefit qr"] },
   },
   {

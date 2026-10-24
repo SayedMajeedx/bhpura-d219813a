@@ -160,7 +160,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                 <ShoppingBag className="h-4 w-4" />
               </div>
               <span className="font-semibold text-sm text-foreground">
-                {isAr ? "متجر بيع مباشر (Shop)" : "Direct E-Commerce Store (Shop)"}
+                {isAr ? "متجر بيع مباشر" : "Direct E-Commerce Store (Shop)"}
               </span>
             </div>
             <div
@@ -209,9 +209,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
                 <MessageCircle className="h-4 w-4" />
               </div>
               <span className="font-semibold text-sm text-foreground">
-                {isAr
-                  ? "كتالوج واستفسارات واتساب (Catalog)"
-                  : "Catalog & WhatsApp Inquiries (Catalog)"}
+                {isAr ? "كتالوج واستفسارات واتساب" : "Catalog & WhatsApp Inquiries (Catalog)"}
               </span>
             </div>
             <div

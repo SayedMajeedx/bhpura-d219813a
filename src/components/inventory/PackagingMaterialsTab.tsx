@@ -249,9 +249,7 @@ export function PackagingMaterialsTab() {
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Box className="h-5 w-5 text-primary" />
-            {isAr
-              ? "إدارة مواد التغليف والعلب (BOM Packaging)"
-              : "Packaging Materials & Packaging Stock"}
+            {isAr ? "إدارة مواد التغليف والعلب" : "Packaging Materials & Packaging Stock"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr
@@ -297,9 +295,7 @@ export function PackagingMaterialsTab() {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-foreground">
-                {isAr
-                  ? "نظام استهلاك وحساب مواد التغليف (BOM Packaging Automation)"
-                  : "BOM Packaging Automation"}
+                {isAr ? "نظام استهلاك وحساب مواد التغليف" : "BOM Packaging Automation"}
               </span>
               <span
                 className={cn(
@@ -621,7 +617,7 @@ export function PackagingMaterialsTab() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
-                  {isAr ? "حد التنبيه (Low Stock)" : "Reorder Level"}
+                  {isAr ? "حد التنبيه" : "Reorder Level"}
                 </Label>
                 <Input
                   type="number"

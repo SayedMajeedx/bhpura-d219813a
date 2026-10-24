@@ -39,8 +39,8 @@ const FORM_DIALOGS: IncubatorDialog[] = [
 ];
 
 const TITLES: Record<string, { en: string; ar: string }> = {
-  incubator: { en: "Add incubator", ar: "إضافة حاضنة" },
-  edit_incubator: { en: "Edit incubator details", ar: "تعديل بيانات الحاضنة" },
+  incubator: { en: "Add partner shop", ar: "إضافة محل شريك" },
+  edit_incubator: { en: "Edit partner shop details", ar: "تعديل بيانات المحل الشريك" },
   edit_item: { en: "Edit item code and terms", ar: "تعديل كود وشروط القطعة" },
   sale: { en: "Record sale", ar: "تسجيل قطعة مباعة" },
   return: { en: "Return to main stock", ar: "إرجاع للمخزون الرئيسي" },
@@ -79,7 +79,7 @@ export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
                 {piece} · {activeItem.product_variants?.sku || activeItem.product_variants?.barcode}
               </p>
               <Field
-                label={isAr ? "كود الحاضنة" : "Incubator code"}
+                label={isAr ? "كود المحل الشريك" : "Partner shop code"}
                 name="external_code"
                 defaultValue={activeItem.external_code || ""}
                 autoComplete="off"
@@ -222,7 +222,7 @@ function IncubatorFields({ isAr, editing }: { isAr: boolean; editing: Incubator 
   return (
     <>
       <Field
-        label={isAr ? "اسم الحاضنة" : "Name"}
+        label={isAr ? "اسم المحل الشريك" : "Name"}
         name="name"
         defaultValue={editing?.name || ""}
         required
@@ -261,7 +261,7 @@ function IncubatorFields({ isAr, editing }: { isAr: boolean; editing: Incubator 
             className={SELECT_CLASS}
           >
             <option value="incubator">
-              {isAr ? "تغليف الحاضنة — بلا تكلفة علينا" : "Incubator packaging — no cost"}
+              {isAr ? "تغليف المحل الشريك — بلا تكلفة علينا" : "Partner shop packaging — no cost"}
             </option>
             <option value="our_bom">
               {isAr ? "تغليفنا — احتساب وخصم BOM" : "Our packaging — use BOM"}
@@ -465,7 +465,7 @@ export function ReverseSaleDialog({ page }: { page: IncubatorsPageState }) {
               </span>
             )}
             {isAr
-              ? "ستعود القطع إلى مخزون الحاضنة ولن يُحتسب مبلغها ضمن المستحق. لا يمكن إلغاء بيعة سُجّلت عليها دفعة."
+              ? "ستعود القطع إلى مخزون المحل الشريك ولن يُحتسب مبلغها ضمن المستحق. لا يمكن إلغاء بيعة سُجّلت عليها دفعة."
               : "The pieces go back to the partner's stock and their amount is no longer owed. A sale with a payment against it cannot be reversed."}
           </AlertDialogDescription>
         </AlertDialogHeader>

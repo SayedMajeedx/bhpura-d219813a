@@ -281,7 +281,9 @@ export function ProductImporterModal(props: {
                       <div>
                         <span className="font-semibold uppercase">{run.source}</span>
                         <span className="ms-2 text-muted-foreground">
-                          {new Date(run.created_at).toLocaleString(isAr ? "ar-BH" : "en-BH")}
+                          {new Date(run.created_at).toLocaleString(
+                            isAr ? "ar-BH-u-nu-latn" : "en-BH",
+                          )}
                         </span>
                       </div>
                       <div className="flex gap-2">

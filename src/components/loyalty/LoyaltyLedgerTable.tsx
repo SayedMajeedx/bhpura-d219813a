@@ -240,12 +240,15 @@ export function LoyaltyLedgerTable({ entries, isLoading, onRefresh }: LoyaltyLed
                       {countOf(entry.balance_after, "point", isAr ? "ar" : "en")}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(entry.created_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                      {new Date(entry.created_at).toLocaleDateString(
+                        isAr ? "ar-BH-u-nu-latn" : "en-US",
+                        {
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        },
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

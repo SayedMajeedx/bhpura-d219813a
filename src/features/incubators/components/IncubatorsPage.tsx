@@ -36,7 +36,7 @@ export function IncubatorsPage() {
     return (
       <OsLoadFailedState
         isAr={isAr}
-        title={isAr ? "تعذّر تحميل الحاضنات" : "Incubators could not be loaded"}
+        title={isAr ? "تعذّر تحميل محلات الشركاء" : "Partner shops could not be loaded"}
         description={
           isAr
             ? "لم يتغير أي مخزون أو مبلغ. تحقق من الاتصال ثم أعد المحاولة."
@@ -56,7 +56,7 @@ export function IncubatorsPage() {
           </div>
           <div className="min-w-0">
             <h1 className="font-display text-xl font-bold">
-              {isAr ? "الحاضنات والعُهد" : "Incubators & Consignment"}
+              {isAr ? "محلات الشركاء والأمانات" : "Partner shops & consignment"}
             </h1>
             <p className="text-xs text-muted-foreground">
               {isAr
@@ -72,7 +72,7 @@ export function IncubatorsPage() {
           </Button>
           <Button onClick={() => openDialog("incubator")}>
             <Plus className="me-2 h-4 w-4" />
-            {isAr ? "حاضنة جديدة" : "New incubator"}
+            {isAr ? "محل شريك جديد" : "New partner shop"}
           </Button>
         </div>
       </header>
@@ -116,7 +116,7 @@ export function IncubatorsPage() {
             <Building2 className="mx-auto mb-3 h-10 w-10" />
             <p>
               {isAr
-                ? "أنشئ حاضنة لبدء إدارة العُهد"
+                ? "أضف محلًا شريكًا لبدء إدارة العُهد"
                 : "Create an incubator to start managing consignments"}
             </p>
           </Card>

@@ -281,7 +281,7 @@ export function BatchIncubatorTransferModal({
   // Execution
   const handleExecuteTransfer = async () => {
     if (!selectedIncubatorId) {
-      toast.error(isAr ? "يرجى اختيار الحاضنة أولاً" : "Please select an incubator first");
+      toast.error(isAr ? "يرجى اختيار المحل الشريك أولاً" : "Please select a partner shop first");
       return;
     }
 
@@ -327,7 +327,7 @@ export function BatchIncubatorTransferModal({
 
       toast.success(
         isAr
-          ? `تم تحويل ${arNoun(pieces, "piece")} بنجاح إلى حاضنة ${selectedIncubator?.name || ""}`
+          ? `تم تحويل ${arNoun(pieces, "piece")} بنجاح إلى محل شريك ${selectedIncubator?.name || ""}`
           : `Successfully transferred ${pieces} items to ${selectedIncubator?.name || "incubator"}`,
       );
 
@@ -363,7 +363,9 @@ export function BatchIncubatorTransferModal({
               <div>
                 <DialogTitle className="text-lg font-bold font-heading text-foreground flex items-center gap-2">
                   <span>
-                    {isAr ? "تحويل وتعيين البضاعة إلى الحاضنة" : "Transfer Stock to Incubator"}
+                    {isAr
+                      ? "تحويل وتعيين البضاعة إلى المحل الشريك"
+                      : "Transfer stock to a partner shop"}
                   </span>
                   <Badge variant="secondary" className="font-mono text-xs font-semibold px-2">
                     {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} · {rows.length}{" "}
@@ -372,7 +374,7 @@ export function BatchIncubatorTransferModal({
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                   {isAr
-                    ? "نقل المخزون وتحديد أسعار الأمانة وعمولة الحاضنة دفعة واحدة وبضغطة زر."
+                    ? "نقل المخزون وتحديد أسعار الأمانة وعمولة المحل الشريك دفعة واحدة وبضغطة زر."
                     : "Batch transfer products, set consignment prices and incubator commission instantly."}
                 </DialogDescription>
               </div>
@@ -388,9 +390,7 @@ export function BatchIncubatorTransferModal({
               <Label className="text-xs font-semibold flex items-center gap-1.5">
                 <Building2 className="h-3.5 w-3.5 text-primary" />
                 <span>
-                  {isAr
-                    ? "الحاضنة أو المتجر الشريك المستهدف"
-                    : "Target Incubator / Consignment Store"}
+                  {isAr ? "المحل الشريك المستهدف" : "Target Incubator / Consignment Store"}
                 </span>
               </Label>
               {incubatorsQ.isLoading ? (
@@ -400,7 +400,7 @@ export function BatchIncubatorTransferModal({
                   <AlertCircle className="h-4 w-4" />
                   <span>
                     {isAr
-                      ? "لا توجد حاضنات نشطة في حسابك. يرجى إضافة حاضنة أولاً من قسم الحاضنات."
+                      ? "لا توجد محلات شركاء نشطة في حسابك. يرجى إضافة محل شريك أولاً من قسم محلات الشركاء."
                       : "No active incubators found. Please create one in Incubators section."}
                   </span>
                 </div>
@@ -691,9 +691,11 @@ export function BatchIncubatorTransferModal({
                               {isAr ? "الكمية المحولة" : "Transfer Qty"}
                             </th>
                             <th className="p-2.5 text-center w-32">
-                              {isAr ? "سعر الحاضنة" : "Consignment Price"}
+                              {isAr ? "سعر المحل الشريك" : "Consignment Price"}
                             </th>
-                            <th className="p-2.5 w-32">{isAr ? "كود الحاضنة" : "Ext. Code"}</th>
+                            <th className="p-2.5 w-32">
+                              {isAr ? "كود المحل الشريك" : "Ext. Code"}
+                            </th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
@@ -937,7 +939,7 @@ export function BatchIncubatorTransferModal({
                   <ArrowRightLeft className="h-4 w-4" />
                   <span>
                     {isAr
-                      ? `تأكيد تحويل (${totalPieces}) قطعة للحاضنة`
+                      ? `تأكيد تحويل (${totalPieces}) قطعة للمحل الشريك`
                       : `Confirm Transfer (${totalPieces} items)`}
                   </span>
                 </>

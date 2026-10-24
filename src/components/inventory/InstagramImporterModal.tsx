@@ -922,7 +922,7 @@ export function InstagramImporterModal({
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {isAr
-                      ? `تم حفظ ${arNoun(importResult.success, "product")} كمسودات غير منشورة (Drafts). يمكنك مراجعتها ونشرها لاحقاً.`
+                      ? `تم حفظ ${arNoun(importResult.success, "product")} كمسودات غير منشورة. يمكنك مراجعتها ونشرها لاحقاً.`
                       : `Successfully saved ${importResult.success} unpublished drafts to your catalog.`}
                   </p>
                   {importResult.skipped > 0 && (

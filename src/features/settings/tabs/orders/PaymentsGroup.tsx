@@ -51,7 +51,7 @@ export function PaymentsGroup() {
         <div>
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
             <CreditCard className="size-4 text-primary" />
-            <span>{isAr ? "طرق الدفع والتحصيل (Payment Methods)" : "Payment Methods"}</span>
+            <span>{isAr ? "طرق الدفع والتحصيل" : "Payment Methods"}</span>
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
@@ -152,7 +152,7 @@ export function PaymentsGroup() {
               {/* QR Upload */}
               <div className="min-w-0 space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {isAr ? "رمز الاستجابة السريعة (QR Code)" : "QR Code Image"}
+                  {isAr ? "رمز الاستجابة السريعة" : "QR Code Image"}
                 </Label>
                 <div className="flex min-w-0 items-center gap-2">
                   {bs.benefit_qr_url ? (

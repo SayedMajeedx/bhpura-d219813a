@@ -84,7 +84,7 @@ export function CashFlowLiquidityTab() {
   const cashBoxAcc = accounts.find((a) => a.account_type === "cash_box") || {
     id: "cash",
     balance: 0,
-    name_ar: "الصندوق (Cash Box)",
+    name_ar: "الصندوق",
     name_en: "Cash Box",
   };
   const bankAcc = accounts.find((a) => a.account_type === "bank_account") || {
@@ -160,7 +160,7 @@ export function CashFlowLiquidityTab() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
               <Wallet className="h-4 w-4 text-amber-500" />
-              {isAr ? "الصندوق النقدي (Cash Box)" : "Cash Box Balance"}
+              {isAr ? "الصندوق النقدي" : "Cash Box Balance"}
             </span>
             <Badge
               variant="outline"
@@ -231,9 +231,7 @@ export function CashFlowLiquidityTab() {
           <div>
             <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              {isAr
-                ? "تسوية التحويلات والمبيعات النقدية (Reconciliation)"
-                : "Payment Reconciliation"}
+              {isAr ? "تسوية التحويلات والمبيعات النقدية" : "Payment Reconciliation"}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isAr

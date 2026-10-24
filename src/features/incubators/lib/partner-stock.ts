@@ -85,7 +85,8 @@ export function pickupLines(holds: readonly PartnerHold[], lang: Lang): PickupLi
       key: `${hold.order_id}:${hold.variant_id}:${hold.incubator_id}`,
       orderId: hold.order_id,
       orderNumber: String(hold.orders?.invoice_number ?? "").trim(),
-      partner: String(hold.incubators?.name ?? "").trim() || (lang === "ar" ? "حاضنة" : "Partner"),
+      partner:
+        String(hold.incubators?.name ?? "").trim() || (lang === "ar" ? "محل شريك" : "Partner"),
       phone: String(hold.incubators?.phone ?? "").trim() || null,
       piece: pieceName(hold.product_variants, lang),
       quantity: Number(hold.quantity),

@@ -96,7 +96,7 @@ export function PaletteGroup() {
                   ? "اللوحة الحالية مضبوطة يدوياً"
                   : "Current palette was set manually"}
               {meta.extracted_at
-                ? ` · ${new Date(meta.extracted_at).toLocaleDateString(isAr ? "ar-BH" : "en-GB")}`
+                ? ` · ${new Date(meta.extracted_at).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB")}`
                 : ""}
             </p>
           );

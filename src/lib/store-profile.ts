@@ -89,8 +89,8 @@ export const MODULE_LABELS: Record<
     hintEn: "Stock quantities and low and out-of-stock alerts",
   },
   incubators: {
-    ar: "الحاضنات والعُهد",
-    en: "Incubators & consignment",
+    ar: "محلات الشركاء والأمانات",
+    en: "Partner shops & consignment",
     hintAr: "بضاعة معروضة لدى محلات أخرى ومستحقاتها",
     hintEn: "Goods placed with other shops and what they owe",
   },
