@@ -1,4 +1,5 @@
 import { faviconType } from "@/lib/favicon";
+import { smartKindOf } from "@/lib/smart-categories";
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
 import { buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
@@ -12,14 +13,7 @@ export const SMART_NAMES: Record<string, { ar: string; en: string }> = {
   offers: { ar: "تنزيلات", en: "Sale" },
 };
 
-export function smartKindOf(slug: string): "all" | "new" | "best" | "offers" | null {
-  // Every active product: the new-look footer's "All Products" link opened "Category unavailable".
-  if (["all", "all-products", "shop"].includes(slug)) return "all";
-  if (["new-arrivals", "new"].includes(slug)) return "new";
-  if (["most-selling", "best-sellers", "best-selling"].includes(slug)) return "best";
-  if (["offers", "sale", "discounts"].includes(slug)) return "offers";
-  return null;
-}
+export { smartKindOf };
 
 type Brand = {
   slug?: string;

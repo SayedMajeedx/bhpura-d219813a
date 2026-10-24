@@ -18,6 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 const VALID_TABS: SettingsTabId[] = [
   "identity",
   "storefront",
@@ -74,16 +75,21 @@ function SettingsPageInner() {
 
   // 1. TanStack Router navigation blocker when changes are unsaved (Phase 3)
   useBlocker({
-    shouldBlockFn: () => {
+    shouldBlockFn: async () => {
       if (!isDirty) return false;
-      const confirmLeave = window.confirm(
-        isAr
-          ? "لديك تغييرات غير محفوظة في الإعدادات. هل أنت متأكد من مغادرة الصفحة وتجاهلها؟"
-          : "You have unsaved settings changes. Are you sure you want to leave without saving?",
-      );
+      const confirmLeave = await confirmDialog({
+        title: isAr ? "مغادرة الإعدادات دون حفظ؟" : "Leave without saving?",
+        description: isAr
+          ? "لديك تغييرات غير محفوظة في الإعدادات، وستضيع إن غادرت."
+          : "Your settings have unsaved changes, and they will be lost.",
+        confirmLabel: isAr ? "مغادرة" : "Leave",
+        destructive: true,
+      });
       return !confirmLeave;
     },
-    enableBeforeUnload: true,
+    // Only while something is unsaved: `true` made the browser ask "Leave site?" on every
+    // refresh or close of the settings, with nothing changed.
+    enableBeforeUnload: () => isDirty,
   });
 
   // 2. Window beforeunload guard as backup for browser tab close/refresh

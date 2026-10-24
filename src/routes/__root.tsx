@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportAppError } from "../lib/error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { TruncationReveal } from "@/components/ui/truncation-reveal";
+import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { I18nProvider } from "@/lib/i18n";
 import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 import { ProfileProvider } from "@/lib/profile-context";
@@ -221,6 +222,7 @@ function RootComponent() {
           <Outlet />
           <Toaster containerAriaLabel={pageLang === "ar" ? "الإشعارات" : "Notifications"} />
           <TruncationReveal />
+          <ConfirmDialogHost />
         </ProfileProvider>
       </I18nProvider>
     </QueryClientProvider>

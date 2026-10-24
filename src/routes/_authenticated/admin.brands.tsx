@@ -62,6 +62,7 @@ import { DeleteBrandDialog } from "@/components/super-admin/DeleteBrandDialog";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 import { getCurrentUser } from "@/lib/auth/session";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -216,14 +217,12 @@ function BrandsPage() {
   };
 
   const handleReject = async (brandId: string) => {
-    if (
-      !confirm(
-        lang === "ar"
-          ? "هل أنت متأكد من رفض هذا الإيصال؟ سيتم حذف الملف وتعليق المتجر."
-          : "Are you sure you want to reject this receipt? The file will be purged and account suspended.",
-      )
-    )
-      return;
+    const ar = lang === "ar";
+    const ok = await confirmDialog({
+      title: ar ? "رفض هذا الإيصال؟ سيُحذف الملف ويُعلَّق المتجر." : "Reject this receipt?",
+      destructive: true,
+    });
+    if (!ok) return;
     setRejecting(brandId);
     try {
       await rejectSubscriptionSaaS({ data: { brandId } });

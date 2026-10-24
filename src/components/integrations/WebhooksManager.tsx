@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface WebhooksManagerProps {
   brandId: string;
@@ -246,14 +247,12 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          if (
-                            confirm(
-                              isAr ? "هل أنت متأكد من حذف هذا الرابط؟" : "Delete this webhook?",
-                            )
-                          ) {
-                            deleteMutation.mutate(ep.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirmDialog({
+                            title: isAr ? "حذف هذا الرابط؟" : "Delete this webhook?",
+                            destructive: true,
+                          });
+                          if (ok) deleteMutation.mutate(ep.id);
                         }}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10 min-h-[44px]"
                       >

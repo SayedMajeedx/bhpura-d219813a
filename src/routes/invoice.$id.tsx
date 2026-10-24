@@ -26,6 +26,7 @@ import { policyLines } from "@/lib/bookings/policies";
 
 import { getReadableTextColor } from "@/lib/color-utils";
 import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -318,7 +319,11 @@ function PublicInvoice() {
                   await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
                 } catch (err) {
                   console.error("PDF download failed", err);
-                  alert((err as Error)?.message ?? "PDF download failed");
+                  toast.error(
+                    lang === "ar"
+                      ? "تعذّر تنزيل ملف PDF، حاول مرة أخرى"
+                      : "The PDF could not be downloaded; try again",
+                  );
                 }
               }}
               className="px-3.5 py-2 text-xs rounded-md font-semibold hover:opacity-90 transition-all shadow-xs"

@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { InventoryCategory } from "@/features/inventory/lib/product-list";
+import { assignableCategories } from "@/lib/smart-categories";
 
 /** Confirms deleting the selected products with their variants and stock. */
 export function BulkDeleteProductsDialog({
@@ -120,7 +121,7 @@ export function BulkCategoryDialog({
               <option value="">
                 {isAr ? "بدون قسم (إلغاء تعيين القسم)" : "No category (Unassign)"}
               </option>
-              {categories.map((c) => {
+              {assignableCategories(categories).map((c) => {
                 const val = c.slug || c.name_en || "";
                 const label = isAr ? c.name_ar || c.name_en : c.name_en;
                 return (

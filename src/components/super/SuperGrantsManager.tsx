@@ -47,6 +47,7 @@ import {
   superAdminQueries,
   updateGrantApplication,
 } from "@/lib/data/super-admin";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export type GrantApplication = {
   id: string;
@@ -541,10 +542,12 @@ export function SuperGrantsManager() {
                         type="button"
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          if (confirm(`هل أنت متأكد من حذف طلب "${app.business_name}"؟`)) {
-                            deleteMutation.mutate(app.id);
-                          }
+                        onClick={async () => {
+                          const ok = await confirmDialog({
+                            title: `حذف طلب "${app.business_name}"؟`,
+                            destructive: true,
+                          });
+                          if (ok) deleteMutation.mutate(app.id);
                         }}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         title="حذف الطلب"

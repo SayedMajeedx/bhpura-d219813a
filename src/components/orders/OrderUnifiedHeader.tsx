@@ -55,6 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface OrderUnifiedHeaderProps {
   lang: "en" | "ar";
@@ -154,15 +155,18 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         <div className="flex items-center gap-2.5 min-w-0 flex-wrap sm:flex-nowrap">
           <button
             type="button"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               if (
                 isDirty &&
-                !window.confirm(
-                  isAr
-                    ? "لديك تغييرات غير محفوظة. هل تريد مغادرة الطلب وتجاهلها؟"
-                    : "You have unsaved changes. Leave this order and discard them?",
-                )
+                !(await confirmDialog({
+                  title: isAr ? "مغادرة الطلب دون حفظ؟" : "Leave without saving?",
+                  description: isAr
+                    ? "لديك تغييرات غير محفوظة في هذا الطلب، وستضيع إن غادرت."
+                    : "This order has unsaved changes, and they will be lost.",
+                  confirmLabel: isAr ? "مغادرة" : "Leave",
+                  destructive: true,
+                }))
               ) {
                 return;
               }

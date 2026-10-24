@@ -407,6 +407,24 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
   });
 });
 
+describe("before going live (2026-10-24)", () => {
+  it("links to boutq.store, never boutq.app, a domain that does not answer", () => {
+    // The onboarding wizard handed new merchants boutq.app links; src/lib/platform-host.ts holds the address.
+    expect(countMatches(/boutq\.app/g, (rel) => !rel.endsWith("platform-host.ts"))).toBe(0);
+  });
+
+  it("asks with the app's own dialog, never the browser's grey box", () => {
+    // confirmDialog (src/components/ui/confirm-dialog.tsx) is the one way; it falls back itself.
+    const native = /(^|[^.\w])confirm\(|window\.confirm\(|(^|[^.\w])alert\(/gm;
+    expect(countMatches(native, (rel) => !rel.endsWith("confirm-dialog.tsx"))).toBe(0);
+  });
+
+  it("spells sold out نفدت, not نفذت (which means carried out)", () => {
+    // Instagram captions are read as people write them, misspelling included.
+    expect(countMatches(/نفذت الكمية/g, (rel) => !rel.includes("instagram-ai-importer"))).toBe(0);
+  });
+});
+
 describe("a name's start edge (text-page-start)", () => {
   it("follows its parent's direction, not any ancestor's", () => {
     // `[dir="rtl"] .text-page-start` and `[dir="ltr"] .text-page-start` both matched an Arabic

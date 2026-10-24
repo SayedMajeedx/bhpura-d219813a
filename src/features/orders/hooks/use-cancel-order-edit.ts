@@ -3,6 +3,7 @@ import type { Order, OrderSnapshot } from "@/features/orders/types";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 /** Cancel editing: after confirming, restore the saved order, lines and promo code and lock the editor. */
 export function useCancelOrderEdit({
@@ -30,14 +31,18 @@ export function useCancelOrderEdit({
   setOrder: Dispatch<SetStateAction<Order | null>>;
   setPromoInput: Dispatch<SetStateAction<string>>;
 }) {
-  const cancelEditing = () => {
+  const cancelEditing = async () => {
     if (
       isDirty &&
-      !window.confirm(
-        lang === "ar"
-          ? "هل تريد إلغاء التعديل وتجاهل جميع التغييرات غير المحفوظة؟"
-          : "Cancel editing and discard all unsaved changes?",
-      )
+      !(await confirmDialog({
+        title: lang === "ar" ? "إلغاء التعديل؟" : "Cancel editing?",
+        description:
+          lang === "ar"
+            ? "ستضيع التغييرات غير المحفوظة في هذا الطلب."
+            : "The order's unsaved changes will be lost.",
+        confirmLabel: lang === "ar" ? "تجاهل التغييرات" : "Discard changes",
+        destructive: true,
+      }))
     ) {
       return;
     }

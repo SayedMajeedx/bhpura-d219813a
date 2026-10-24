@@ -45,6 +45,7 @@ import {
 } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
@@ -185,11 +186,14 @@ export function PackagingMaterialsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(isAr ? "هل أنت تأكد من حذف مادة التغليف هذه؟" : "Delete this packaging material?"))
-      return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف مادة التغليف هذه؟" : "Delete this packaging material?",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deletePackagingMaterial(brandId, id);
-      toast.success(isAr ? "تمت الحذف بنجاح" : "Material deleted");
+      toast.success(isAr ? "تم الحذف" : "Material deleted");
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
     } catch (err: any) {
       toast.error(err.message || "Failed to delete");

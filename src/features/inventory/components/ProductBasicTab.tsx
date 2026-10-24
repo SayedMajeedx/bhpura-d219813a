@@ -26,6 +26,7 @@ import { ProductAdvancedDetails } from "@/features/inventory/components/ProductA
 import { SaleModeSection } from "@/features/inventory/components/SaleModeSection";
 import { currencyLabel } from "@/lib/currency-label";
 import { ProductCostField } from "@/features/inventory/components/ProductCostField";
+import { assignableCategories } from "@/lib/smart-categories";
 /** First step of the product editor: names, descriptions, category, price, cost and stock. */
 export function ProductBasicTab({
   t,
@@ -139,7 +140,7 @@ export function ProductBasicTab({
               onChange={(e) => setForm({ ...form, category: e.target.value })}
             >
               <option value="">{isAr ? "بدون قسم" : "No category"}</option>
-              {(categoriesQ.data ?? []).map((c) => {
+              {assignableCategories(categoriesQ.data ?? [], form.category).map((c) => {
                 const val = c.slug || c.name_en || "";
                 const label = isAr ? c.name_ar || c.name_en : c.name_en;
                 return (
