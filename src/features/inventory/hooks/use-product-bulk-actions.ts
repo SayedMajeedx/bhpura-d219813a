@@ -4,7 +4,7 @@ import { deleteProducts, updateProduct, updateProducts } from "@/lib/data/catalo
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import type { Product } from "@/features/inventory/types";
 import { addPresetToProduct, type PresetLike } from "@/features/inventory/lib/bulk-preset";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /** Products written at once when a preset is added (each product keeps its own fields). */
 const PRESET_BATCH = 6;
@@ -66,7 +66,7 @@ export function useProductBulkActions({
       );
       for (const url of mediaUrls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
       toast.success(
-        isAr ? `تم حذف ${arNoun(ids.length, "product")}` : `${ids.length} products deleted`,
+        isAr ? `تم حذف ${arNounOblique(ids.length, "product")}` : `${ids.length} products deleted`,
       );
       setSelectedProductIds(new Set());
       setBulkDeleteOpen(false);
@@ -97,8 +97,8 @@ export function useProductBulkActions({
       toast.success(
         isAr
           ? catToSave
-            ? `تم تحديث قسم ${arNoun(ids.length, "product")} بنجاح`
-            : `تم تعيين ${arNoun(ids.length, "product")} كـ "بدون قسم" بنجاح`
+            ? `تم تحديث قسم ${arNounOblique(ids.length, "product")} بنجاح`
+            : `تم تعيين ${arNounOblique(ids.length, "product")} كـ "بدون قسم" بنجاح`
           : `Updated category for ${ids.length} products`,
       );
       setSelectedProductIds(new Set());
@@ -127,8 +127,8 @@ export function useProductBulkActions({
       toast.success(
         isAr
           ? isActive
-            ? `تم نشر ${arNoun(ids.length, "product")} في المتجر`
-            : `تم إخفاء ${arNoun(ids.length, "product")} من المتجر`
+            ? `تم نشر ${arNounOblique(ids.length, "product")} في المتجر`
+            : `تم إخفاء ${arNounOblique(ids.length, "product")} من المتجر`
           : isActive
             ? `${ids.length} products published to the storefront`
             : `${ids.length} products hidden from the storefront`,
@@ -173,7 +173,7 @@ export function useProductBulkActions({
         }
       }
       const summary = isAr
-        ? `أُضيف إلى ${arNoun(added, "product")}` +
+        ? `أُضيف إلى ${arNounOblique(added, "product")}` +
           (alreadyHad ? `، و${alreadyHad} كان عنده من قبل` : "") +
           (failed ? `، وتعذر ${failed}` : "")
         : `Added to ${added} products` +

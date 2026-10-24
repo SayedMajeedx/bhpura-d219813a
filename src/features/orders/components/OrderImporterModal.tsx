@@ -20,7 +20,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Sparkles, Upload, Loader2 } from "lucide-react";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 export const ORDER_HEADER_MAPS = {
   order_number: ["name", "order number", "order_number", "رقم الطلب", "id"],
@@ -339,7 +339,7 @@ export function OrderImporterModal({
         const chunk = parsedOrders.slice(i, i + batchSize);
         setProgress(
           isAr
-            ? `جاري استيراد ${i} من أصل ${arNoun(parsedOrders.length, "order")} تاريخي...`
+            ? `جاري استيراد ${i} من أصل ${arNounOblique(parsedOrders.length, "order")} تاريخي...`
             : `Importing ${i} / ${parsedOrders.length} legacy orders...`,
         );
 
@@ -557,7 +557,7 @@ export function OrderImporterModal({
               </p>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
                 {isAr
-                  ? `تم بنجاح ترحيل واستيراد ${successCount} من أصل ${arNoun(totalCount, "order")} سابقة مع مطابقتها بالعملاء بنجاح.`
+                  ? `تم بنجاح ترحيل واستيراد ${successCount} من أصل ${arNounOblique(totalCount, "order")} سابقة مع مطابقتها بالعملاء بنجاح.`
                   : `Successfully imported ${successCount} out of ${totalCount} historical sales, matching billing phone entries directly.`}
               </p>
             </div>

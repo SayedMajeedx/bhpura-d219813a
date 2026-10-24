@@ -52,7 +52,7 @@ import { ALL_SIZE_GUIDE_TEMPLATES, ABAYA_GULF_TEMPLATE } from "../../lib/size-gu
 import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
 import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
 import { studioNames } from "@/addons/size-guides/lib/studio-names";
-import { arNoun, countOf } from "@/lib/arabic-count";
+import { countOf, arNounOblique } from "@/lib/arabic-count";
 
 type FormState = {
   id?: string;
@@ -302,7 +302,7 @@ export function SizeGuidesStudioPage() {
     setPasteText("");
     toast.success(
       isAr
-        ? `تم استيراد ${arNoun(parsed.rows.length, "size")} بنجاح`
+        ? `تم استيراد ${arNounOblique(parsed.rows.length, "size")} بنجاح`
         : `Imported ${parsed.rows.length} rows successfully`,
     );
   };

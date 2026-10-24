@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { AddonStoreHero } from "./AddonStoreHero";
 import { AddonCardMicrosoftStore } from "./AddonCardMicrosoftStore";
 import { AddonDetailPage } from "./AddonDetailPage";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 interface AddonStoreProps {
   brandId: string;
@@ -284,7 +284,7 @@ export function AddonStore({
       const res = await upgradeBrandAddons();
       toast.success(
         isAr
-          ? `تم تحديث ${arNoun(res.upgraded.length, "addon")} بنجاح`
+          ? `تم تحديث ${arNounOblique(res.upgraded.length, "addon")} بنجاح`
           : `Upgraded ${res.upgraded.length} add-on(s) successfully`,
       );
     } catch (err: any) {

@@ -53,7 +53,7 @@ import { toast } from "sonner";
 import { catalogKeys } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
-import { arNoun, countOf } from "@/lib/arabic-count";
+import { countOf, arNounOblique } from "@/lib/arabic-count";
 import { TransferSizeRows } from "@/components/incubators/TransferSizeRows";
 
 export type { BatchTransferProduct, BatchTransferVariant };
@@ -329,7 +329,7 @@ export function BatchIncubatorTransferModal({
 
       toast.success(
         isAr
-          ? `تم تحويل ${arNoun(pieces, "piece")} بنجاح إلى محل شريك ${selectedIncubator?.name || ""}`
+          ? `تم تحويل ${arNounOblique(pieces, "piece")} بنجاح إلى محل شريك ${selectedIncubator?.name || ""}`
           : `Successfully transferred ${pieces} items to ${selectedIncubator?.name || "incubator"}`,
       );
 
@@ -496,7 +496,7 @@ export function BatchIncubatorTransferModal({
               </Badge>
               <span className="text-xs text-muted-foreground tabular-nums">
                 {isAr
-                  ? `${shownCount.ticked} من ${arNoun(shownCount.tickable, "size")}`
+                  ? `${shownCount.ticked} من ${arNounOblique(shownCount.tickable, "size")}`
                   : `${shownCount.ticked} of ${shownCount.tickable} sizes`}
               </span>
               <Button
@@ -802,7 +802,7 @@ export function BatchIncubatorTransferModal({
                   <ArrowRightLeft className="h-4 w-4" />
                   <span>
                     {isAr
-                      ? `تحويل ${arNoun(totalPieces, "piece")}`
+                      ? `تحويل ${arNounOblique(totalPieces, "piece")}`
                       : `Transfer ${countOf(totalPieces, "piece", "en")}`}
                   </span>
                 </>

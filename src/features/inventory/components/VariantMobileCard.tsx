@@ -23,7 +23,7 @@ import {
   isMadeToOrderOnlyVariant,
 } from "@/features/inventory/components/MadeToOrderOnlyNote";
 import { PremiumCurrencyInput } from "@/features/inventory/components/PremiumCurrencyInput";
-import { arNoun } from "@/lib/arabic-count";
+import { arNounOblique } from "@/lib/arabic-count";
 
 export function VariantMobileCard({
   v,
@@ -406,7 +406,7 @@ export function VariantMobileCard({
             runRateColor = "text-rose-600 dark:text-rose-500 font-extrabold";
           } else if (runRate.kind === "days-left") {
             runRateText = isAr
-              ? `ينفد خلال ${arNoun(runRate.days, "day")}`
+              ? `ينفد خلال ${arNounOblique(runRate.days, "day")}`
               : `Out of stock in ${runRate.days} d`;
             runRateColor =
               runRate.days <= 7

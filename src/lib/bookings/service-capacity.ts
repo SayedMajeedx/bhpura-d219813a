@@ -1,4 +1,4 @@
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 /**
  * A service's own booking rules (products.booking_capacity, booking_scope,
  * booking_buffer_minutes, booking_notice_hours; migration 20261001180000).
@@ -151,7 +151,7 @@ export function describeServiceBooking(rules: ServiceBookingRules, isAr: boolean
       isAr
         ? rules.capacity === 1
           ? "حجز واحد في الوقت نفسه"
-          : `حتى ${arNoun(rules.capacity, "booking")} في الوقت نفسه`
+          : `حتى ${arNounOblique(rules.capacity, "booking")} في الوقت نفسه`
         : rules.capacity === 1
           ? "One booking at a time"
           : `Up to ${rules.capacity} bookings at once`,
