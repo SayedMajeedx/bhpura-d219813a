@@ -6,9 +6,9 @@ import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
 import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 
 /**
- * The floating WhatsApp button, raised above the product page's buy bar on a
- * phone and above a page's own bar at the foot of the screen (a menu's basket),
- * and left out at checkout.
+ * The floating WhatsApp button, raised above a page's own bar at the foot of the
+ * screen (a menu's basket), left to the buy bar on a phone's product page, and
+ * left out at checkout.
  */
 export function WhatsAppFab() {
   const { settings, lang, brand } = useStorefront();
@@ -25,8 +25,10 @@ export function WhatsAppFab() {
 
   // At checkout nothing floats over the form or competes with paying.
   if (isCheckoutPath(pathname)) return null;
-  // Product pages have a buy bar fixed at the foot of a phone: the button rises above it.
-  const hasStickyBottom = pathname.includes("/product/") || bottomBar;
+  // A product page's bar at the foot of a phone asks on WhatsApp itself (AskOnWhatsAppButton):
+  // the floating button sat over the page's own buttons there, so it shows from md up only.
+  const productPage = pathname.includes("/product/");
+  const hasStickyBottom = bottomBar;
 
   const text =
     lang === "ar"
@@ -44,7 +46,7 @@ export function WhatsAppFab() {
         hasStickyBottom
           ? "bottom-[calc(88px+env(safe-area-inset-bottom,0px))] md:bottom-6"
           : "bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6"
-      } end-4 md:end-5 h-12 w-12 md:h-14 md:w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
+      } ${productPage ? "hidden md:grid" : "grid"} end-4 md:end-5 h-12 w-12 md:h-14 md:w-14 rounded-full place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",

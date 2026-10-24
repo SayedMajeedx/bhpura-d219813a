@@ -687,36 +687,40 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
   const discountPercent = discountPercentFor(originalPriceWithAddons, displayPrice);
 
-  const inquiryUrl = isCatalogMode(settings)
-    ? buildWhatsAppInquiryUrl({
-        number: settings.whatsapp_number,
-        template:
-          lang === "ar" ? settings.catalog_inquiry_message_ar : settings.catalog_inquiry_message_en,
-        lang,
-        ctx: {
-          brandName: lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en,
-          productName: displayName,
-          productUrl: typeof window !== "undefined" ? window.location.href : "",
-          variantLabel: variant
-            ? [
-                showsCustomSizing({
-                  showSizeModeToggle,
-                  sizeMode,
-                  hasReadySizes,
-                  isTailoringActive,
-                })
-                  ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
-                  : formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                variant.color,
-                variant.fabric,
-              ]
-                .filter(Boolean)
-                .join(" · ")
-            : null,
-          priceLabel: shouldShowPrices(settings) ? priceLabel : undefined,
-        },
-      })
-    : null;
+  // A catalog asks by WhatsApp; a shop with WhatsApp on lets a shopper ask about this product.
+  const inquiryUrl =
+    isCatalogMode(settings) || settings.whatsapp_enabled
+      ? buildWhatsAppInquiryUrl({
+          number: settings.whatsapp_number,
+          template:
+            lang === "ar"
+              ? settings.catalog_inquiry_message_ar
+              : settings.catalog_inquiry_message_en,
+          lang,
+          ctx: {
+            brandName: lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en,
+            productName: displayName,
+            productUrl: typeof window !== "undefined" ? window.location.href : "",
+            variantLabel: variant
+              ? [
+                  showsCustomSizing({
+                    showSizeModeToggle,
+                    sizeMode,
+                    hasReadySizes,
+                    isTailoringActive,
+                  })
+                    ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
+                    : formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                  variant.color,
+                  variant.fabric,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : null,
+            priceLabel: shouldShowPrices(settings) ? priceLabel : undefined,
+          },
+        })
+      : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
@@ -902,11 +906,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {settings?.storefront_design_version === 2 && (
             <ProductAccordion
               description={displayDescription}
-              fabricCare={
-                variant?.fabric
-                  ? `${variant.fabric}`
-                  : (lang === "ar" ? settings?.fabric_care_ar : settings?.fabric_care_en) || null
-              }
+              product={product}
               hasSizeGuide={Boolean(
                 modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
               )}
@@ -932,6 +932,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           <ServiceMobileBookBar
             productId={product.id}
             fromPrice={Number.isFinite(serviceFromPrice) ? serviceFromPrice : 0}
+            askUrl={inquiryUrl}
           />
         ) : (
           <ProductMobileBuyBar

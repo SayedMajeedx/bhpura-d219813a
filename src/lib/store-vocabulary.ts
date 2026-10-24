@@ -1,3 +1,6 @@
+import type { StoreVertical } from "@/lib/store-profile";
+import { verticalLineage } from "@/lib/verticals/registry";
+
 export type VocabularyEntry = {
   ar: string;
   en: string;
@@ -77,8 +80,21 @@ export function workshopActionLabels(
       };
 }
 
+/**
+ * A vertical's own words. A child vertical speaks its parent's unless it has its own: abayas are
+ * fashion (their product page once read the general store's "Specifications & Details"), a
+ * fragrance store is beauty with its own notes.
+ */
 export function getVerticalVocabularyOverrides(vertical?: string | null): Partial<StoreVocabulary> {
   const v = (vertical || "").toLowerCase();
+  for (const id of verticalLineage(v as StoreVertical)) {
+    const own = ownVocabulary(id);
+    if (own) return own;
+  }
+  return {};
+}
+
+function ownVocabulary(v: string): Partial<StoreVocabulary> | null {
   if (v === "coffee" || v === "food" || v === "cafe") {
     return {
       specifications_label: { ar: "المكونات والتحضير", en: "Ingredients & Details" },
@@ -133,7 +149,39 @@ export function getVerticalVocabularyOverrides(vertical?: string | null): Partia
       variant_picker_prompt: { ar: "اختر المقاس", en: "Select size" },
     };
   }
-  return {};
+  if (v === "jewelry") {
+    return {
+      specifications_label: { ar: "الخامات والتفاصيل", en: "Materials & Details" },
+      care_instructions_label: { ar: "العناية بالقطعة", en: "Jewelry Care" },
+      sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
+      variant_picker_prompt: { ar: "اختر المقاس", en: "Select size" },
+    };
+  }
+  if (v === "home") {
+    return {
+      specifications_label: { ar: "الأبعاد والخامات", en: "Dimensions & Materials" },
+      care_instructions_label: { ar: "العناية والتنظيف", en: "Care & Cleaning" },
+    };
+  }
+  if (v === "gifts") {
+    return {
+      specifications_label: { ar: "ما تحتويه الهدية", en: "What's Inside" },
+      care_instructions_label: { ar: "العناية والحفظ", en: "Care & Keeping" },
+    };
+  }
+  if (v === "print") {
+    return {
+      specifications_label: { ar: "المواصفات والخامات", en: "Specs & Materials" },
+      care_instructions_label: { ar: "تجهيز الملف", en: "Preparing Your File" },
+    };
+  }
+  if (v === "digital") {
+    return {
+      specifications_label: { ar: "ما ستحصل عليه", en: "What You Get" },
+      care_instructions_label: { ar: "التحميل والاستخدام", en: "Download & Use" },
+    };
+  }
+  return null;
 }
 
 export function resolveVocabulary(

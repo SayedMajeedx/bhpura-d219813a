@@ -8,10 +8,17 @@ import type { EstimateKinds } from "@/lib/delivery-estimate";
 import { returnsQueries } from "@/lib/data/returns";
 import { DeliveryInfoDetails } from "@/components/storefront/DeliveryInfoDetails";
 import { DEFAULT_VOCABULARY, getVerticalVocabularyOverrides } from "@/lib/store-vocabulary";
+import { verticalLineage } from "@/lib/verticals/registry";
+import type { StoreVertical } from "@/lib/store-profile";
+import { useStoreAxisDefaults } from "@/lib/variant-axes";
+import { resolveVariantAxis } from "@/lib/addons/addon-registry";
+import type { StorefrontProductDetail } from "@/lib/data/storefront";
+import { detailsSection, productDetailLines } from "@/features/product-page/lib/product-details";
 
 interface ProductAccordionProps {
   description?: string | null;
-  fabricCare?: string | null;
+  /** The product, for its own details (fabric, occasion) in the store's words. */
+  product?: StorefrontProductDetail | null;
   /** Which pieces this product is sold as, so the delivery time said is the one that applies. */
   deliveryKinds?: EstimateKinds;
   onOpenSizeGuide?: () => void;
@@ -22,7 +29,7 @@ interface ProductAccordionProps {
 
 export function ProductAccordion({
   description,
-  fabricCare,
+  product = null,
   deliveryKinds = { ready: true, tailored: false },
   onOpenSizeGuide,
   hasSizeGuide = false,
@@ -35,7 +42,8 @@ export function ProductAccordion({
     (brand as any)?.store_vertical ||
     "general"
   ).toLowerCase();
-  const isApparelVertical = ["fashion", "clothing", "apparel"].includes(storeVertical);
+  // Abayas are fashion: the family decides, not the exact name.
+  const isApparelVertical = verticalLineage(storeVertical as StoreVertical).includes("fashion");
   // Section titles come from the per-vertical vocabulary so a coffee roastery
   // sees "Ingredients & Details" / "Size & Weight Guide" rather than fabric and
   // dress sizes. DEFAULT_VOCABULARY covers verticals with no override.
@@ -45,12 +53,31 @@ export function ProductAccordion({
   };
   const vocabText = (key: keyof typeof vocab) => (isAr ? vocab[key].ar : vocab[key].en);
 
-  const [openItems, setOpenItems] = useState<Record<string, boolean>>({
-    description: true, // Default open for initial scannability
-    fabric: false,
-    shipping: false,
-    sizeGuide: false,
+  const axisDefaults = useStoreAxisDefaults();
+  const details = detailsSection({
+    lines: productDetailLines({
+      fabricType: product?.fabric_type,
+      // The store's word for the fabric axis, whether or not a variant uses it.
+      fabricLabel: resolveVariantAxis({
+        axis: "fabric",
+        product,
+        addonDefaults: axisDefaults,
+        lang: isAr ? "ar" : "en",
+      }).label,
+      occasion: product?.occasion,
+      lang: isAr ? "ar" : "en",
+    }),
+    // Care is the store's own text; nothing is said when it wrote none.
+    careText: isAr ? settings?.fabric_care_ar : settings?.fabric_care_en,
+    specsLabel: vocabText("specifications_label"),
+    careLabel: vocabText("care_instructions_label"),
   });
+  const hasDescription = Boolean(description?.trim());
+
+  // The first section with something in it starts open.
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>(() => ({
+    [hasDescription ? "description" : "fabric"]: true,
+  }));
 
   const toggleItem = (key: string) => {
     setOpenItems((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -68,44 +95,44 @@ export function ProductAccordion({
     formatMoney: (amount) => formatPrice(amount, settings?.currency || "BHD", lang),
   });
 
-  const defaultFabricCare = isApparelVertical
-    ? isAr
-      ? "يُغسل باليد بماء بارد أو تنظيف جاف (Dry Clean). يُكوى بالبخار بدرجة حرارة منخفضة للحفاظ على جودة القماش."
-      : "Hand wash cold or dry clean only. Steam iron at low temperature to preserve fabric texture."
-    : null;
-
-  const effectiveFabric =
-    fabricCare || (isAr ? settings?.fabric_care_ar : settings?.fabric_care_en) || defaultFabricCare;
-
   const sections = [
-    {
-      id: "description",
-      title: t("الوصف والتفاصيل", "Description & Details"),
-      icon: Sparkles,
-      content: description ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed opacity-90 whitespace-pre-line">
-          {description}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          {t("لا يوجد وصف إضافي", "No additional description")}
-        </p>
-      ),
-    },
-    ...(effectiveFabric && !bookingTerms
-      ? [
-          {
-            id: "fabric",
-            title: `${vocabText("specifications_label")} · ${vocabText("care_instructions_label")}`,
-            icon: isApparelVertical ? Shirt : Sparkles,
-            content: (
-              <p className="text-xs leading-relaxed opacity-90 whitespace-pre-line">
-                {effectiveFabric}
-              </p>
-            ),
-          },
-        ]
-      : []),
+    // A product with no description has no empty section saying so.
+    hasDescription
+      ? {
+          id: "description",
+          title: t("الوصف والتفاصيل", "Description & Details"),
+          icon: Sparkles,
+          content: (
+            <div className="prose prose-sm dark:prose-invert max-w-none text-xs leading-relaxed opacity-90 whitespace-pre-line">
+              {description}
+            </div>
+          ),
+        }
+      : null,
+    details && !bookingTerms
+      ? {
+          id: "fabric",
+          title: details.title,
+          icon: isApparelVertical ? Shirt : Sparkles,
+          content: (
+            <div className="space-y-2 text-xs leading-relaxed">
+              {details.lines.length > 0 && (
+                <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1">
+                  {details.lines.map((line) => (
+                    <React.Fragment key={line.label}>
+                      <dt className="text-muted-foreground">{line.label}</dt>
+                      <dd dir="auto" className="text-page-start break-words font-medium">
+                        {line.value}
+                      </dd>
+                    </React.Fragment>
+                  ))}
+                </dl>
+              )}
+              {details.care && <p className="whitespace-pre-line opacity-90">{details.care}</p>}
+            </div>
+          ),
+        }
+      : null,
     bookingTerms
       ? {
           id: "booking",
@@ -156,7 +183,7 @@ export function ProductAccordion({
   return (
     <div className="divide-y divide-border/70 border-y border-border my-6">
       {sections.map((section) => {
-        const isOpen = openItems[section.id];
+        const isOpen = Boolean(openItems[section.id]);
         const IconComponent = section.icon;
 
         return (

@@ -67,9 +67,10 @@ export const printStampsManifest: AddonManifest = {
           },
           {
             key: "logo_upload",
-            label_ar: "رابط الشعار أو الملف",
-            label_en: "Logo / File URL",
-            type: "text",
+            // Uploaded on the product page (ProductCustomFields): a shopper was asked to paste a link.
+            label_ar: "الشعار أو الملف",
+            label_en: "Logo or file",
+            type: "file",
             options: [],
             required: false,
           },

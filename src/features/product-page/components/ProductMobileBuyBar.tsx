@@ -12,6 +12,7 @@ import {
   type StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
 import { showsCustomSizing } from "@/features/product-page/lib/variant-options";
+import { AskOnWhatsAppButton } from "@/features/product-page/components/AskOnWhatsAppButton";
 
 /** Phone-only sticky bar with the price and the buy actions. */
 export function ProductMobileBuyBar({
@@ -89,6 +90,9 @@ export function ProductMobileBuyBar({
             )}
           </div>
         </div>
+        {!isCatalogMode(settings) && inquiryUrl && (
+          <AskOnWhatsAppButton url={inquiryUrl} productId={product.id} />
+        )}
         {isCatalogMode(settings) ? (
           <Button
             type="button"

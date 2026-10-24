@@ -91,7 +91,7 @@ describe("checkout on a phone", () => {
     expect(isCheckoutPath("/pura/checkout-help")).toBe(false);
   });
 
-  it("has no WhatsApp button; a product page raises it above the buy bar", () => {
+  it("has no WhatsApp button; a product page leaves it to its buy bar on a phone", () => {
     location.pathname = "/pura/checkout";
     const checkout = render(<WhatsAppFab />);
     expect(checkout.container.querySelector("a")).toBeNull();
@@ -99,7 +99,8 @@ describe("checkout on a phone", () => {
 
     location.pathname = "/pura/product/p1";
     const product = render(<WhatsAppFab />);
-    expect(product.container.querySelector("a")?.className).toContain("bottom-[calc(88px");
+    // The bar asks about the product itself (AskOnWhatsAppButton); from md up it floats as usual.
+    expect(product.container.querySelector("a")?.className).toContain("hidden md:grid");
     product.unmount();
     location.pathname = "/pura";
   });

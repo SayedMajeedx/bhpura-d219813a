@@ -26,7 +26,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "stamp_size",
         label_ar: "مقاس الختم / الطباعة",
-        label_en: "Stamp/Print Size Swatches",
+        label_en: "Stamp size",
         type: "select",
         options: ["Q13 (13*49mm)", "Q20 (20*20mm)", "Q30 (30*30mm)"],
         required: true,
@@ -34,7 +34,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "ink_color",
         label_ar: "لون الحبر",
-        label_en: "Ink/Color Picker",
+        label_en: "Ink colour",
         type: "select",
         options: ["Black", "Blue", "Red", "Green"],
         required: true,
@@ -42,7 +42,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "logo_upload",
         label_ar: "تحميل شعار الختم / التصميم",
-        label_en: "Upload Logo File Input",
+        label_en: "Logo or design file",
         type: "file",
         options: [],
         required: false,
@@ -50,7 +50,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "custom_note",
         label_ar: "نص الكتابة المطلوب للختم",
-        label_en: "Custom Note Text Area",
+        label_en: "Text for the stamp",
         type: "text",
         options: [],
         required: false,
@@ -64,7 +64,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "gift_box",
         label_ar: "إضافة صندوق هدايا فاخر",
-        label_en: "Gift Box Add-On (+X BHD)",
+        label_en: "Gift box",
         type: "select",
         options: ["No / لا", "Yes (+2.000 BHD) / نعم (+2.000 د.ب)"],
         required: true,
@@ -72,7 +72,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "greeting_card",
         label_ar: "نص كرت الإهداء",
-        label_en: "Greeting Card Message Text Area",
+        label_en: "Greeting card message",
         type: "text",
         options: [],
         required: false,
@@ -86,7 +86,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "engraving_text",
         label_ar: "النص المطلوب للحفر",
-        label_en: "Custom Engraving Text",
+        label_en: "Engraving text",
         type: "text",
         options: [],
         required: false,
@@ -94,7 +94,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "font_style",
         label_ar: "خط الكتابة",
-        label_en: "Font Style Selector",
+        label_en: "Font",
         type: "select",
         options: ["Arabic Calligraphy / ديواني", "Classic Serif", "Modern Sans-Serif"],
         required: false,
@@ -102,7 +102,7 @@ export const GENERIC_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       {
         key: "material_swatch",
         label_ar: "نوع المعدن",
-        label_en: "Material/Metal Swatch",
+        label_en: "Metal",
         type: "select",
         options: ["Gold / ذهب", "Silver / فضة", "Rose Gold / روز جولد"],
         required: true,

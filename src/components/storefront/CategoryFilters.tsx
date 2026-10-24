@@ -9,7 +9,13 @@ import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { formatSizeWithUnit } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
-import { activeFilterCount, type CatalogFacets, type FilterState } from "@/lib/category-filters";
+import {
+  activeFilterCount,
+  EMPTY_FILTERS,
+  type CatalogFacets,
+  type FilterState,
+} from "@/lib/category-filters";
+import { occasionLabel } from "@/lib/product-occasion";
 import { cn } from "@/lib/utils";
 
 export type { FilterState } from "@/lib/category-filters";
@@ -160,16 +166,7 @@ export function CategoryFilters({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() =>
-              onChange((prev) => ({
-                ...prev,
-                sizes: [],
-                colors: [],
-                minPrice: null,
-                maxPrice: null,
-                inStockOnly: false,
-              }))
-            }
+            onClick={() => onChange((prev) => ({ ...EMPTY_FILTERS, sort: prev.sort }))}
             className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="h-3 w-3" />
@@ -309,6 +306,46 @@ export function CategoryFilters({
       )}
 
       {/* Price range */}
+      {/* What the product is for (a fashion or gift store's occasions) */}
+      {facets.occasions.length > 0 && (
+        <Group
+          label={t("المناسبة", "Occasion")}
+          clearLabel={clear}
+          onClear={
+            filters.occasions.length > 0
+              ? () => onChange((prev) => ({ ...prev, occasions: [] }))
+              : undefined
+          }
+        >
+          <div className="flex flex-wrap gap-1.5">
+            {facets.occasions.map((occasion) => {
+              const active = filters.occasions.includes(occasion.value);
+              const empty = occasion.count === 0;
+              return (
+                <Button
+                  key={occasion.value}
+                  type="button"
+                  variant="ghost"
+                  aria-pressed={active}
+                  aria-disabled={empty && !active ? true : undefined}
+                  title={countWord(occasion.count)}
+                  onClick={() => {
+                    if (empty && !active) return;
+                    onChange((prev) => ({
+                      ...prev,
+                      occasions: toggled(prev.occasions, occasion.value),
+                    }));
+                  }}
+                  className={cn(chipClass(active, empty), "px-3")}
+                >
+                  {occasionLabel(occasion.value, axisLang)}
+                </Button>
+              );
+            })}
+          </div>
+        </Group>
+      )}
+
       {facets.price.max > 0 && (
         <Group
           label={t("نطاق السعر", "Price range")}
