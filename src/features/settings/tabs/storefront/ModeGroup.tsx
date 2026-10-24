@@ -15,6 +15,7 @@ import {
   DEFAULT_CATALOG_INQUIRY_MESSAGE_EN,
   renderInquiryMessage,
 } from "@/lib/storefront-mode";
+import { storeAddress } from "@/lib/platform-host";
 
 export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => void }) {
   const { lang } = useI18n();
@@ -87,7 +88,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
   const sampleVariantAr = "المقاس: M / اللون: أسود";
   const sampleVariantEn = "Size: M / Color: Black";
   const samplePrice = "38.000 BHD";
-  const sampleUrl = `https://boutq.app/${brand.slug}/p/sample-123`;
+  const sampleUrl = `${storeAddress(brand.slug ?? "")}/product/sample-123`;
 
   const previewAr = renderInquiryMessage(
     bs.catalog_inquiry_message_ar || DEFAULT_CATALOG_INQUIRY_MESSAGE_AR,

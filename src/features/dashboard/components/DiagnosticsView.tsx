@@ -77,7 +77,7 @@ export function DiagnosticsView({
                     >
                       {item.stock === 0
                         ? isAr
-                          ? "نفذ — إكمال المخزون"
+                          ? "نفد — إكمال المخزون"
                           : "Out of Stock — Reorder"
                         : `${item.stock} ${isAr ? "وحدات المتبقية" : "units remaining"}`}
                     </Link>

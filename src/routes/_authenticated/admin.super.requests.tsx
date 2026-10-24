@@ -44,6 +44,7 @@ import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 import { getCurrentUser } from "@/lib/auth/session";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/super/requests")({
   beforeLoad: async () => {
@@ -203,11 +204,12 @@ function SuperRequestsPage() {
 
   // Action: Reject/Dismiss Request
   const handleReject = async (id: string, subdomain: string) => {
-    const confirmReject = window.confirm(
-      lang === "ar"
-        ? `هل أنت متأكد من رفض طلب متجر "${subdomain}"؟`
-        : `Are you sure you want to dismiss the tenant request for "${subdomain}"?`,
-    );
+    const confirmReject = await confirmDialog({
+      title:
+        lang === "ar" ? `رفض طلب متجر "${subdomain}"؟` : `Dismiss the request for "${subdomain}"?`,
+      confirmLabel: lang === "ar" ? "رفض" : "Dismiss",
+      destructive: true,
+    });
     if (!confirmReject) return;
 
     const toastId = toast.loading(

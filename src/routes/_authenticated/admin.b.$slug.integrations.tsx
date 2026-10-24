@@ -62,6 +62,7 @@ import {
   type IntegrationCredential,
 } from "@/lib/data/integrations";
 import { getAccessToken } from "@/lib/auth/session";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -130,7 +131,11 @@ function IntegrationsPage() {
   const q = useQuery({ ...integrationsQueries.credentials(brandId), select: asRows });
 
   const del = async (id: string) => {
-    if (!confirm(isAr ? "حذف هذا التكامل؟" : "Delete this integration?")) return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف هذا التكامل؟" : "Delete this integration?",
+      destructive: true,
+    });
+    if (!ok) return;
     const error = await deleteIntegrationCredential(brandId, id).then(() => null, errorOf);
     if (error) return toast.error(error.message);
     toast.success(t("common.delete"));
@@ -455,7 +460,7 @@ function IntegrationsPage() {
                                 size="sm"
                                 onClick={() => {
                                   navigator.clipboard?.writeText(webhookUrl);
-                                  toast.success("Copied");
+                                  toast.success(isAr ? "تم النسخ" : "Copied");
                                 }}
                                 aria-label={isAr ? "نسخ رابط Webhook" : "Copy webhook URL"}
                                 className="h-7 px-2 shrink-0"

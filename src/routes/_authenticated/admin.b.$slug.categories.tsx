@@ -37,6 +37,7 @@ import { syncBrandVerticalCategories, PURA_BRAND_ID } from "@/lib/addons/vertica
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import type { StoreVertical } from "@/lib/store-profile";
 import { addonDataQueries } from "@/lib/data/addons";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -90,14 +91,14 @@ function CategoriesPage() {
   };
 
   const remove = async (c: Category) => {
-    if (
-      !confirm(
-        isAr
-          ? "حذف هذا القسم؟ سيتم التعطيل إذا كانت هناك منتجات مرتبطة."
-          : "Delete this category? It will be deactivated if linked to products.",
-      )
-    )
-      return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف هذا القسم؟" : "Delete this category?",
+      description: isAr
+        ? "إن كانت فيه منتجات يُعطَّل بدل الحذف، وتبقى منتجاته كما هي."
+        : "If products are filed under it, it is turned off instead, and its products stay.",
+      destructive: true,
+    });
+    if (!ok) return;
     let mode: string | undefined;
     let linked = 0;
     try {
@@ -125,11 +126,13 @@ function CategoriesPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      isAr
-        ? `هل تريد تهيئة أقسام المتجر الافتراضية لنشاطك؟\nسيتم استبدال الأقسام السابقة الفارغة (التي لا تحتوي على أي منتجات) بأقسام مناسبة لنشاطك، وتبقى الأقسام المرتبطة بمنتجات محفوظة دون أي مساس.`
-        : `Do you want to initialize default categories for your store vertical?\nEmpty previous categories with zero products will be replaced, while all categories linked to existing products will be kept safe.`,
-    );
+    const confirmed = await confirmDialog({
+      title: isAr ? "تهيئة أقسام نشاطك؟" : "Set up your kind of store's categories?",
+      description: isAr
+        ? "تُستبدل الأقسام الفارغة (بلا منتجات) بأقسام تناسب نشاطك، وتبقى الأقسام التي فيها منتجات كما هي."
+        : "Empty categories (with no products) are replaced with ones that suit your store; categories with products stay as they are.",
+      confirmLabel: isAr ? "تهيئة" : "Set up",
+    });
     if (!confirmed) return;
 
     try {

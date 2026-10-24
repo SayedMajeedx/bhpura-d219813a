@@ -10,6 +10,7 @@ import {
 } from "@/lib/data/catalog";
 import type { Variant } from "@/features/inventory/types";
 import { markupPrice, variantColumnPatch } from "@/features/inventory/lib/variant-draft";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 /**
  * Row selection in the variants table and the actions applied to the selection.
@@ -125,14 +126,11 @@ export function useVariantBulkActions(
   };
 
   const bulkDelete = async () => {
-    if (
-      !confirm(
-        isAr
-          ? "هل أنت متأكد من حذف المتغيرات المحددة؟"
-          : "Are you sure you want to delete the selected variants?",
-      )
-    )
-      return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف الخيارات المحددة؟" : "Delete the selected variants?",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deleteVariants(brandId, Array.from(selectedIds));
     } catch (error) {

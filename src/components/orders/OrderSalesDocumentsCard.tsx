@@ -69,6 +69,9 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   workshop: workshopActions,
 }) => {
   const isAr = lang === "ar";
+  // A tax invoice only for a store registered for VAT, as the invoice itself says
+  // (`invoiceTitle`): the card once called every store's invoice a tax invoice.
+  const taxInvoice = Boolean(String(settings?.vat_number ?? "").trim());
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
@@ -192,8 +195,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr
-              ? "عرض مترابط لطلب البيع، الفاتورة الضريبية، إذن التسليم، وإشعارات الإرجاع"
-              : "Unified view connecting Sales Order, Tax Invoice, Delivery Note, and Returns"}
+              ? "طلب البيع والفاتورة وإذن التسليم والإرجاع، في مكان واحد"
+              : "The sales order, invoice, delivery note and returns, in one place"}
           </p>
         </div>
       </div>
@@ -266,7 +269,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   1
                 </span>
                 <span className="font-bold text-sm text-foreground">
-                  {isAr ? "طلب البيع (Sales Order)" : "Sales Order"}
+                  {isAr ? "طلب البيع" : "Sales order"}
                 </span>
               </div>
               <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
@@ -330,7 +333,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   2
                 </span>
                 <span className="font-bold text-sm text-foreground">
-                  {isAr ? "الفاتورة الضريبية (Tax Invoice)" : "Tax Invoice"}
+                  {taxInvoice
+                    ? isAr
+                      ? "الفاتورة الضريبية"
+                      : "Tax invoice"
+                    : isAr
+                      ? "الفاتورة"
+                      : "Invoice"}
                 </span>
               </div>
               <span
@@ -350,9 +359,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              {isAr
-                ? "فاتورة ضريبية رسمية للعميل مع احتساب الضريبة والدفعات"
-                : "Official customer tax invoice with VAT, discounts, and payment proofs"}
+              {taxInvoice
+                ? isAr
+                  ? "فاتورة ضريبية للعميل بالضريبة والخصومات والدفعات"
+                  : "The customer's tax invoice, with VAT, discounts and payments"
+                : isAr
+                  ? "فاتورة العميل بالخصومات والدفعات"
+                  : "The customer's invoice, with discounts and payments"}
             </p>
             <div className="space-y-1 text-xs mb-4">
               <div className="flex justify-between text-muted-foreground">

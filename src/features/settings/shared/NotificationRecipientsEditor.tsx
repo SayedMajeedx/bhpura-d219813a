@@ -15,6 +15,7 @@ import {
   notificationRecipientsQueries,
   updateNotificationRecipient,
 } from "@/lib/data/notification-recipients";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export type NotificationRecipient = {
   id: string;
@@ -121,7 +122,11 @@ export function NotificationRecipientsEditor({
   };
 
   const remove = async (id: string) => {
-    if (!confirm(isAr ? "حذف هذا المستلم؟" : "Remove this recipient?")) return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف هذا المستلم؟" : "Remove this recipient?",
+      destructive: true,
+    });
+    if (!ok) return;
     const error = await deleteNotificationRecipient(brandId, id).then(() => null, databaseError);
     if (error) return toast.error(error.message);
     refresh();

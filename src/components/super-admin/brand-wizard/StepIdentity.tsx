@@ -7,6 +7,7 @@ import { pickerVerticals } from "@/lib/verticals/registry";
 import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
+import { PLATFORM_HOST } from "@/lib/platform-host";
 
 interface StepIdentityProps {
   data: BrandWizardData;
@@ -108,7 +109,7 @@ export function StepIdentity({ data, onChange, isAr }: StepIdentityProps) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-2 rounded-md border border-border">
-            boutq.app/
+            {PLATFORM_HOST}/
           </span>
           <Input
             id="brand-slug"

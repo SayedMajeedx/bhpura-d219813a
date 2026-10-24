@@ -149,7 +149,7 @@ export function ProductSearchDialog({
                               ? "حسب الطلب"
                               : "Made to order"
                             : lang === "ar"
-                              ? "نفذت الكمية"
+                              ? "نفدت الكمية"
                               : "Out of Stock"}
                       </span>
                     </div>

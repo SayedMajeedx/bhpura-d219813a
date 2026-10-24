@@ -227,7 +227,7 @@ export function availabilityBadge(
     case "out":
       return availability.madeToOrderClosed
         ? { tone: "out", label: limitReached, details: [] }
-        : { tone: "out", label: isAr ? "نفذت الكمية" : "Out of Stock", details: [] };
+        : { tone: "out", label: isAr ? "نفدت الكمية" : "Out of Stock", details: [] };
     case "low":
       return {
         tone: "low",

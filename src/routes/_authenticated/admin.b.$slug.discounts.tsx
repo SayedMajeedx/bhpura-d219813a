@@ -40,6 +40,7 @@ import {
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 /** Redemptions and revenue per promo code, leaving out cancelled and draft orders. */
 function promoUsageFrom(orders: OrderPromoRow[]) {
@@ -336,7 +337,11 @@ function DiscountCodes() {
   };
 
   const remove = async (p: Promo) => {
-    if (!confirm(ar ? `حذف الرمز ${p.code}؟` : `Delete ${p.code}?`)) return;
+    const ok = await confirmDialog({
+      title: ar ? `حذف الرمز ${p.code}؟` : `Delete ${p.code}?`,
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deletePromoCode(brand.id, p.id);
     } catch (error) {

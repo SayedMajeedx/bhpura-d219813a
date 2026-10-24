@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ApiKeysManagerProps {
   brandId: string;
@@ -234,16 +235,16 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      if (
-                        confirm(
-                          isAr
-                            ? "هل أنت متأكد من رغبتك في تعطيل هذا المفتاح؟ لن تتمكن أي جهة من استخدامه بعد الآن."
-                            : "Are you sure you want to revoke this API key? Any applications using it will immediately lose access.",
-                        )
-                      ) {
-                        revokeMutation.mutate(k.id);
-                      }
+                    onClick={async () => {
+                      const ok = await confirmDialog({
+                        title: isAr ? "تعطيل هذا المفتاح؟" : "Revoke this API key?",
+                        description: isAr
+                          ? "لن تتمكن أي جهة من استخدامه بعد الآن."
+                          : "Any application using it loses access at once.",
+                        confirmLabel: isAr ? "تعطيل" : "Revoke",
+                        destructive: true,
+                      });
+                      if (ok) revokeMutation.mutate(k.id);
                     }}
                     className="text-destructive hover:text-destructive hover:bg-destructive/10 min-h-[44px]"
                   >

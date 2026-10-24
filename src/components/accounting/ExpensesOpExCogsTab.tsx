@@ -32,6 +32,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -138,7 +139,11 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(isAr ? "هل أنت تأكد من حذف هذا المصروف؟" : "Delete this expense?")) return;
+    const ok = await confirmDialog({
+      title: isAr ? "حذف هذا المصروف؟" : "Delete this expense?",
+      destructive: true,
+    });
+    if (!ok) return;
     try {
       await deleteExpense(brandId, id);
       toast.success(isAr ? "تم الحذف بنجاح" : "Expense deleted");

@@ -3,6 +3,7 @@ import { VERTICAL_LABELS } from "@/lib/store-profile";
 import { getBrandTemplate } from "@/lib/brand-templates";
 import type { BrandWizardData } from "./types";
 import { Store, ShieldCheck } from "lucide-react";
+import { PLATFORM_HOST } from "@/lib/platform-host";
 
 interface StepReviewProps {
   data: BrandWizardData;
@@ -44,7 +45,9 @@ export function StepReview({ data, isAr }: StepReviewProps) {
               <div className="font-bold text-base leading-tight">
                 {isAr ? data.name_ar || data.name_en : data.name_en}
               </div>
-              <div className="text-xs opacity-75 font-mono">boutq.app/{data.slug}</div>
+              <div className="text-xs opacity-75 font-mono">
+                {PLATFORM_HOST}/{data.slug}
+              </div>
             </div>
           </div>
 

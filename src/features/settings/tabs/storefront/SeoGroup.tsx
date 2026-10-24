@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { Globe, Search } from "lucide-react";
+import { PLATFORM_HOST } from "@/lib/platform-host";
 
 export function SeoGroup() {
   const { lang } = useI18n();
@@ -54,7 +55,9 @@ export function SeoGroup() {
           </span>
           <div className="rounded-lg border border-border bg-background p-3.5 shadow-xs space-y-1">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="font-mono">boutq.app › {brand.slug}</span>
+              <span className="font-mono">
+                {PLATFORM_HOST} › {brand.slug}
+              </span>
             </div>
             <h4 className="text-sm font-medium text-info dark:text-info hover:underline cursor-pointer truncate">
               {previewTitle}

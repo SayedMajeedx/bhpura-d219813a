@@ -40,6 +40,7 @@ import {
   Rocket,
 } from "lucide-react";
 import { provisionWhiteLabelApp } from "@/lib/data/super-admin";
+import { adminAddress, storeAddress } from "@/lib/platform-host";
 
 interface BrandWizardDialogProps {
   onSaved: () => void;
@@ -272,8 +273,8 @@ export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) 
   const handleCopyCredentials = () => {
     const text = `Boutq OS Credentials:
 Brand: ${data.name_en}
-URL: https://boutq.app/${data.slug}
-Admin URL: https://boutq.app/admin/b/${data.slug}
+URL: ${storeAddress(data.slug)}
+Admin URL: ${adminAddress(data.slug)}
 Email: ${data.owner_email}
 Password: ${data.owner_password || "(as provided)"}`;
 

@@ -39,6 +39,7 @@ import type {
   BulkStatus,
   CampaignSegment,
 } from "@/features/campaigns/lib/campaign-shared";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 /**
  * Everything the WhatsApp campaigns page holds: the message and its saved templates, the audience
@@ -135,16 +136,16 @@ export function useCampaignsPage(segment: CampaignSegment) {
   };
 
   const deleteTemplate = async () => {
-    if (!selectedId) return;
-    const tpl = (templatesQ.data ?? []).find((t) => t.id === selectedId);
-    if (!tpl) return;
-    if (!confirm(isAr ? `حذف قالب "${tpl.name}"؟` : `Delete template "${tpl.name}"?`)) return;
+    const tpl = selectedId ? (templatesQ.data ?? []).find((t) => t.id === selectedId) : undefined;
+    if (!tpl || !selectedId) return;
+    const title = isAr ? `حذف قالب "${tpl.name}"؟` : `Delete template "${tpl.name}"?`;
+    if (!(await confirmDialog({ title, destructive: true }))) return;
     try {
       await deleteMessageTemplate(brandId, selectedId);
     } catch (error) {
       return toast.error(getFriendlyErrorMessage(error));
     }
-    toast.success(isAr ? "تم الحفظ" : "Deleted");
+    toast.success(isAr ? "تم الحذف" : "Deleted");
     setSelectedId("");
     void invalidateMessageTemplates(qc, brandId);
   };
