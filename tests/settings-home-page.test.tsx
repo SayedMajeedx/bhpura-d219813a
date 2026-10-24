@@ -270,3 +270,49 @@ describe("a services store's Home page group", () => {
     expect(screen.getByRole("dialog")).toHaveTextContent("gallery and questions");
   });
 });
+
+describe("the home page's layout", () => {
+  it("offers a shop store the menu, and keeps its shop sections until it picks it", () => {
+    showGroup();
+    expect(screen.getByRole("radiogroup", { name: "Home page layout" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Your kind of store (Shop)" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByText("Trust bar")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Quick-order menu" }));
+    expect(form.setBs).toHaveBeenCalledWith({ storefront_home_layout: "menu" });
+  });
+
+  it("lists what a food store's menu draws, and where each part is edited", () => {
+    form.bs = { storefront_design_version: 2, store_vertical: "coffee" };
+    const setActiveGroup = showGroup();
+    expect(
+      screen.getByRole("radio", { name: "Your kind of store (Quick-order menu)" }),
+    ).toHaveAttribute("aria-checked", "true");
+    const rows = within(screen.getByRole("list")).getAllByRole("listitem");
+    expect(rows.map((row) => row.querySelector(".font-semibold")?.textContent)).toEqual([
+      "Hero",
+      "Order again",
+      "The menu",
+      "Basket",
+      "Category pages",
+    ]);
+    expect(screen.queryByText("Best sellers")).toBeNull();
+    expect(screen.getByRole("link", { name: "Categories" })).toHaveAttribute(
+      "href",
+      "/admin/b/$slug/categories",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Hero settings" }));
+    expect(setActiveGroup).toHaveBeenCalledWith("home_hero");
+    // Picking the shop again is the store's own choice; the first option hands it back.
+    fireEvent.click(screen.getByRole("radio", { name: "Shop" }));
+    expect(form.setBs).toHaveBeenLastCalledWith({ storefront_home_layout: "shop" });
+  });
+
+  it("is not offered to a services store, whose home is its own", () => {
+    profile.modules = { bookings: true, stock: false, shipping: false };
+    showGroup();
+    expect(screen.queryByRole("radiogroup", { name: "Home page layout" })).toBeNull();
+  });
+});

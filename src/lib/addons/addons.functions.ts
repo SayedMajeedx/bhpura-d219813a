@@ -449,7 +449,7 @@ export const updateAddonSettings = createServerFn({ method: "POST" })
     z.object({
       brandId: z.string().uuid(),
       addonId: z.string(),
-      settings: z.record(z.unknown()),
+      settings: z.record(z.string(), z.unknown()),
     }),
   )
   .handler(async ({ data, context }) => {

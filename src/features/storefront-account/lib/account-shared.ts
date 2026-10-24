@@ -15,7 +15,15 @@ export type OrderRow = {
   total: number;
   currency: string;
   public_invoice_token?: string | null;
-  order_items: Array<{ id: string; description: string; quantity: number; unit_price: number }>;
+  order_items: Array<{
+    id: string;
+    description: string;
+    quantity: number;
+    unit_price: number;
+    /** What was ordered, for "order again" on a menu (null for a line staff typed by hand). */
+    product_id?: string | null;
+    variant_id?: string | null;
+  }>;
 };
 
 export type Address = OwnAddress;

@@ -1,7 +1,7 @@
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { hydrateRoot } from "react-dom/client";
-import { act } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   isEmbeddedWindow,
@@ -24,6 +24,7 @@ vi.mock("@/lib/storefront-context", () => storefront);
 vi.mock("@tanstack/react-router", () => ({ useLocation: () => ({ pathname: "/pura" }) }));
 
 const { WhatsAppFab } = await import("../src/features/storefront-shell/components/WhatsAppFab");
+const { claimBottomBar, releaseBottomBar } = await import("../src/lib/bottom-bar-store");
 
 afterEach(() => {
   window.history.replaceState(null, "", "/");
@@ -62,6 +63,18 @@ describe("the WhatsApp button in an embedded preview (#35)", () => {
     });
     expect(recoverable).not.toHaveBeenCalled();
     expect(container.querySelector("a")?.getAttribute("aria-label")).toBe("Contact us on WhatsApp");
+  });
+});
+
+describe("the WhatsApp button over a bar at the foot of the screen", () => {
+  it("rises above a page's own bar (a menu's basket) while it shows", () => {
+    render(<WhatsAppFab />);
+    const button = () => screen.getByRole("link", { name: "Contact us on WhatsApp" });
+    expect(button().className).not.toContain("88px");
+    act(() => claimBottomBar("menu-basket"));
+    expect(button().className).toContain("bottom-[calc(88px+env(safe-area-inset-bottom,0px))]");
+    act(() => releaseBottomBar("menu-basket"));
+    expect(button().className).not.toContain("88px");
   });
 });
 

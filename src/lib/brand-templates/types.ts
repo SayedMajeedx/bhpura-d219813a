@@ -3,7 +3,7 @@ import type { DefaultCategorySpec } from "@/lib/addons/vertical-categories";
 
 import type { BrandDesignConfig } from "./design-presets";
 
-export type { BrandDesignConfig, ProductPhotoRatio } from "./design-presets";
+export type { BrandDesignConfig, HomeLayout, ProductPhotoRatio } from "./design-presets";
 
 export interface BrandTemplate {
   vertical: StoreVertical;
