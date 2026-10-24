@@ -30,6 +30,7 @@ import {
 import type { ShippingZone } from "@/lib/shipping";
 import type { StorefrontCategory } from "@/lib/data/storefront";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
+import type { StoryPoint } from "@/lib/brand-templates/brand-story";
 import {
   resolveFitProfiles,
   type FitProfileDefinition,
@@ -266,13 +267,9 @@ export type PublicSettings = {
   analytics_consent_required: boolean;
   storefront_loader_text_ar?: string | null;
   storefront_loader_text_en?: string | null;
-  brand_story_title_ar?: string | null;
-  brand_story_title_en?: string | null;
-  brand_story_subtitle_ar?: string | null;
-  brand_story_subtitle_en?: string | null;
-  brand_story_description_ar?: string | null;
-  brand_story_description_en?: string | null;
   brand_story_image_url?: string | null;
+  /** The story's points as the store wrote them (`storyPoints`); none until it does. */
+  brand_story_points?: StoryPoint[];
   trust_badges?: TrustBadgesConfig | null;
   trust_bar_enabled?: boolean;
   trust_bar_position?: "above_footer" | "below_header" | "both" | string;

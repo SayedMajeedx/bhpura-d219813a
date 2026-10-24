@@ -27,6 +27,7 @@ import {
   type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
+  passportTitle,
 } from "../../lib/fit-passport";
 
 type Passport = {
@@ -65,7 +66,7 @@ export function StorefrontFitPassport({
   const contextProfiles = resolveFitProfiles(settings?.fit_profiles);
   const fitProfiles = resolveFitProfiles(customProfiles ?? contextProfiles);
 
-  const passportTitle = brandName ? `${brandName} Fit Passport` : "Fit Passport";
+  const title = passportTitle(brandName, isAr ? "ar" : "en");
   const [profile, setProfile] = useState<FitProfileType>(fitProfiles[0]?.key ?? "abaya");
   const [measurements, setMeasurements] = useState<FitProfiles>(() => emptyProfiles(fitProfiles));
   const [fit, setFit] = useState<Passport["fit_preference"]>("regular");
@@ -141,8 +142,8 @@ export function StorefrontFitPassport({
     return (
       <Card className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
         {isAr
-          ? `يتم تفعيل ${passportTitle} بعد إكمال أول طلب.`
-          : `Place your first order to activate your ${passportTitle}.`}
+          ? `يتم تفعيل ${title} بعد إكمال أول طلب.`
+          : `Place your first order to activate your ${title}.`}
       </Card>
     );
 
@@ -220,7 +221,7 @@ export function StorefrontFitPassport({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="font-serif text-lg font-bold tracking-tight text-foreground sm:text-xl">
-              {passportTitle}
+              {title}
             </h2>
             {passportQ.data?.verified_at && (
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">

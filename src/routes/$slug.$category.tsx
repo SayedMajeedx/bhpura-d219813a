@@ -39,6 +39,7 @@ import {
   type FilterState,
 } from "@/lib/category-filters";
 import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
+import { shownOfTotal } from "@/lib/catalog-count";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -338,6 +339,24 @@ function CategoryPage() {
 
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
 
+  const sortSelect = (
+    <select
+      id="category-sort"
+      name="category-sort"
+      aria-label={
+        servicesStore ? t("ترتيب الخدمات", "Sort services") : t("ترتيب المنتجات", "Sort products")
+      }
+      value={sort}
+      onChange={(event) => setSort(event.target.value as typeof sort)}
+      className="h-10 max-w-36 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
+      <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
+      <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
+      <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
+    </select>
+  );
+
   if (cmsPage) return <StorefrontPageContent page={cmsPage} />;
 
   return (
@@ -454,12 +473,19 @@ function CategoryPage() {
                 />
               )}
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] opacity-60">
+                <p className="hidden text-xs uppercase tracking-[0.2em] opacity-60 sm:block">
                   {t("القسم", "Category")}
                 </p>
-                <h1 className={`mt-1 font-display ${banner.title}`} style={{ color: "inherit" }}>
+                <h1 className={`sm:mt-1 font-display ${banner.title}`} style={{ color: "inherit" }}>
                   {title}
                 </h1>
+                {/* The list's count, said once, with its heading. */}
+                <p className="mt-1 text-sm opacity-70" aria-live="polite">
+                  {shownOfTotal(filteredProducts.length, categoryProducts.length, {
+                    services: servicesStore,
+                    lang: lang === "ar" ? "ar" : "en",
+                  })}
+                </p>
               </div>
             </div>
 
@@ -537,54 +563,6 @@ function CategoryPage() {
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         {settings?.storefront_design_version === 2 ? (
           <>
-            {/* Toolbar: Counter, Mobile Filter Sheet, Sort Selector */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-medium text-muted-foreground">
-                  {servicesStore
-                    ? t(
-                        `عرض ${filteredProducts.length} من أصل ${categoryProducts.length} خدمة`,
-                        `Showing ${filteredProducts.length} of ${categoryProducts.length} services`,
-                      )
-                    : t(
-                        `عرض ${filteredProducts.length} من أصل ${categoryProducts.length} منتج`,
-                        `Showing ${filteredProducts.length} of ${categoryProducts.length} products`,
-                      )}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-3 ms-auto">
-                {settings?.category_filters_enabled !== false && (
-                  <CategoryFiltersSheet
-                    filters={filters}
-                    onChange={setFilters}
-                    facets={facets}
-                    totalFilteredCount={filteredProducts.length}
-                  />
-                )}
-
-                <select
-                  id="category-sort"
-                  name="category-sort"
-                  aria-label={
-                    servicesStore
-                      ? t("ترتيب الخدمات", "Sort services")
-                      : t("ترتيب المنتجات", "Sort products")
-                  }
-                  value={sort}
-                  onChange={(event) => setSort(event.target.value as typeof sort)}
-                  className="h-10 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
-                  <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
-                  <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
-                  <option value="price-high">
-                    {t("السعر: الأعلى أولاً", "Price: high to low")}
-                  </option>
-                </select>
-              </div>
-            </div>
-
             {/* Desktop 2-column layout: Sidebar + Grid */}
             <div className="flex gap-8 items-start">
               {settings?.category_filters_enabled !== false && (
@@ -601,6 +579,19 @@ function CategoryPage() {
               <div className="flex-1 min-w-0">
                 <ProductGrid
                   withSidebar={settings?.category_filters_enabled !== false}
+                  toolbar={
+                    <div className="flex items-center gap-2">
+                      {settings?.category_filters_enabled !== false && (
+                        <CategoryFiltersSheet
+                          filters={filters}
+                          onChange={setFilters}
+                          facets={facets}
+                          totalFilteredCount={filteredProducts.length}
+                        />
+                      )}
+                      {sortSelect}
+                    </div>
+                  }
                   products={filteredProducts}
                   loading={
                     categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
@@ -615,27 +606,8 @@ function CategoryPage() {
           </>
         ) : (
           <>
-            <div className="mb-6 flex justify-end">
-              <select
-                id="category-sort"
-                name="category-sort"
-                aria-label={
-                  servicesStore
-                    ? t("ترتيب الخدمات", "Sort services")
-                    : t("ترتيب المنتجات", "Sort products")
-                }
-                value={sort}
-                onChange={(event) => setSort(event.target.value as typeof sort)}
-                className="h-11 rounded-lg border bg-background px-3 text-sm"
-              >
-                <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
-                <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
-                <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
-                <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
-              </select>
-            </div>
-
             <ProductGrid
+              toolbar={sortSelect}
               products={filteredProducts}
               loading={
                 categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading

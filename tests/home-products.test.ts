@@ -14,11 +14,18 @@ const daysAgo = (days: number) => new Date(now - days * 86_400_000).toISOString(
 
 const product = (
   id: string,
-  { stock = 1, sale = false, category = null as string | null, age = 1 } = {},
+  {
+    stock = 1,
+    sale = false,
+    category = null as string | null,
+    age = 1,
+    photo = true as boolean,
+  } = {},
 ): ProductRow =>
   ({
     id,
     category,
+    image_url: photo ? `https://media.example/${id}.jpg` : null,
     created_at: daysAgo(age),
     product_variants: [
       {
@@ -84,6 +91,17 @@ describe("homeMerchandising", () => {
     expect(ids(rails.bestSellers)).toEqual(["c", "a", "sold-out"]);
     expect(ids(rails.saleProducts)).toEqual(["b"]);
     expect(ids(rails.trending)).toEqual(["b"]);
+  });
+
+  it("leaves a product with no photo out of every rail", () => {
+    // Pura's "ربطة" showed as a grey "no image" box in three rails.
+    const bare = product("bare", { sale: true, photo: false });
+    const rails = homeMerchandising(
+      [...products, bare],
+      [{ product_id: "bare" }],
+      [{ product_id: "bare" }],
+    );
+    for (const rail of Object.values(rails)) expect(ids(rail)).not.toContain("bare");
   });
 
   it("shows a product in one rail only: sale, then best sellers, trending, the newest", () => {

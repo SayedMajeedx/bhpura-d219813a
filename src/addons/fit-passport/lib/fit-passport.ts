@@ -425,3 +425,19 @@ export function fitRangeMessage(
     ? `تحقق من هذه القياسات: ${parts.join("، ")}`
     : `Check these measurements: ${parts.join(", ")}`;
 }
+
+/**
+ * The passport's name in the reader's language: "جواز مقاسات بيورا لاين", "Pura Line Fit
+ * Passport". An Arabic page once read "بيورا لاين Passport".
+ */
+export function passportTitle(brandName: string | null | undefined, lang: "ar" | "en"): string {
+  const name = (brandName ?? "").trim();
+  if (lang === "ar") return name ? `جواز مقاسات ${name}` : "جواز المقاسات";
+  return name ? `${name} Fit Passport` : "Fit Passport";
+}
+
+/** A length unit as the reader writes it: إنش / سم, in / cm. */
+export function lengthUnitLabel(unit: "in" | "cm", lang: "ar" | "en"): string {
+  if (lang === "ar") return unit === "cm" ? "سم" : "إنش";
+  return unit;
+}

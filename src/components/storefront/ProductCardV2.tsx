@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { CardFactLine } from "@/components/storefront/CardFactLine";
+import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
+import { productCover } from "@/lib/product-photo";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -69,12 +71,7 @@ export function ProductCardV2({
   const mediaList: Array<{ type: string; url: string }> = Array.isArray(product.media)
     ? product.media.filter((m: any) => m && m.url)
     : [];
-  const variantWithImage = variants.find((v) => v.image_url)?.image_url || null;
-  const primaryImage =
-    product.image_url ||
-    mediaList.find((m) => m.type === "image" || !m.type)?.url ||
-    variantWithImage ||
-    null;
+  const primaryImage = productCover(product);
   const secondaryImage =
     mediaList.length > 1
       ? mediaList.find((m, i) => i > 0 && (m.type === "image" || !m.type))?.url || null
@@ -162,7 +159,7 @@ export function ProductCardV2({
     <div
       ref={revealRef}
       data-product-id={product.id}
-      className={`group relative sf-reveal sf-cv-card ${staggerClass} ${className || "w-full"}`}
+      className={`group relative flex flex-col sf-reveal sf-cv-card ${staggerClass} ${className || "w-full"}`}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
     >
@@ -204,7 +201,7 @@ export function ProductCardV2({
         to="/$slug/product/$id"
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
-        className="block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+        className="flex flex-1 flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
         onClick={() => {
           void trackProductEngagement(brand.slug, product.id, "click");
         }}
@@ -237,9 +234,7 @@ export function ProductCardV2({
               quality={78}
             />
           ) : (
-            <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">
-              {t("لا توجد صورة", "No image")}
-            </div>
+            <ProductPhotoPlaceholder />
           )}
 
           {/* Out of Stock Overlay */}
@@ -265,8 +260,10 @@ export function ProductCardV2({
           )}
         </div>
 
-        {/* Product Details Info */}
-        <div className="mt-2.5 text-start space-y-1">
+        {/* Product Details Info: the price sits at the card's foot (`mt-auto`), so a row's
+            prices line up however many lines its names take, with no empty line kept under a
+            short name. */}
+        <div className="mt-2.5 flex flex-1 flex-col gap-1 text-start">
           {/* Color Dots */}
           {settings?.product_card_color_dots !== false && (
             <ColorDots variants={variants} product={product} maxVisible={4} />
@@ -274,18 +271,18 @@ export function ProductCardV2({
 
           {/* Product Title */}
           <h3
-            // Two lines, always reserved so a row's prices line up. Each line must hold Arabic marks below the baseline: a tight line-height cuts them off.
+            // At most two lines. Each line must hold Arabic marks below the baseline: a tight line-height cuts them off.
             dir="auto"
-            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 min-h-[2lh] break-words text-page-start transition-colors duration-200 group-hover:text-primary"
+            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 break-words text-page-start transition-colors duration-200 group-hover:text-primary"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}
           </h3>
-          <CardFactLine details={product.details} />
+          <CardFactLine details={product.details} reserve={false} />
 
           {/* Price Tag */}
           <div
-            className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold"
+            className="price-tag mt-auto flex flex-wrap items-baseline gap-2 text-sm font-semibold"
             style={{ color: "var(--sf-price, var(--sf-heading))" }}
           >
             {!shouldShowPrices(settings) ? (

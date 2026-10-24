@@ -61,8 +61,11 @@ export function ProductMobileBuyBar({
       style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
     >
       <div className="mx-auto max-w-6xl flex items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground truncate">
+        {/* The price is never cut: the column is at least as wide as it (the line above it gives
+            way, `w-0 min-w-full`), and the long button's words are what shorten. It once read
+            "30.000 د...." beside three buttons. */}
+        <div className="flex-1" data-testid="buy-bar-summary">
+          <div className="w-0 min-w-full truncate text-xs uppercase tracking-wider text-muted-foreground">
             {variant
               ? [
                   showsCustomSizing({
@@ -80,7 +83,7 @@ export function ProductMobileBuyBar({
                   .join(" · ") || t("مختار", "Selected")
               : t("اختر الخيار", "Choose option")}
           </div>
-          <div className="text-base font-semibold truncate" style={{ color: primary }}>
+          <div className="whitespace-nowrap text-base font-semibold" style={{ color: primary }}>
             {!shouldShowPrices(settings) ? (
               <span className="text-xs font-normal text-muted-foreground">
                 {t("تواصل معنا للسعر", "Contact us for price")}
@@ -149,18 +152,16 @@ export function ProductMobileBuyBar({
             </Button>
             <Button
               variant="outline"
-              className="h-11 px-4 font-semibold border-2"
+              className="h-11 min-w-0 px-4 font-semibold border-2"
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}
             >
-              {isTailoringActive
-                ? vocabulary.custom_order?.[lang]
-                  ? lang === "ar"
-                    ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
-                    : `Complete ${vocabulary.custom_order[lang]}`
-                  : t("إتمام الطلب", "Complete Order")
-                : t("اشتر الآن", "Buy now")}
+              {/* Short on a phone: the line beside the price already names the made-to-order
+                  choice in the store's word ("تفصيل حسب المقاس"). */}
+              <span className="truncate">
+                {isTailoringActive ? t("إتمام الطلب", "Complete order") : t("اشتر الآن", "Buy now")}
+              </span>
             </Button>
           </>
         )}

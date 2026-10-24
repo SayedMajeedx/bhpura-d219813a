@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { brandStoryDefaults } from "@/lib/brand-templates/brand-story";
+import {
+  STORY_POINTS_MAX,
+  brandStoryDefaults,
+  type StoryPoint,
+} from "@/lib/brand-templates/brand-story";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 
 /** Where the trust bar shows, and its badges (the footer's badges on the classic look). */
@@ -173,6 +177,7 @@ export function BrandStoryFields({ isAr }: { isAr: boolean }) {
             onChange={(e) => setBrand({ about_en: e.target.value || null })}
           />
         </div>
+        <StoryPointsFields isAr={isAr} suggestions={defaults.values} />
         <p className="text-xs text-muted-foreground">
           {ownWords
             ? isAr
@@ -184,6 +189,70 @@ export function BrandStoryFields({ isAr }: { isAr: boolean }) {
         </p>
       </div>
     </div>
+  );
+}
+
+/**
+ * The story's points (up to three, a short line each): shown under the story only once written.
+ * The grey text is the kind of store's suggestion, never shown to a shopper by itself. Kept in
+ * `homepage_editorial_sections.story_points`, beside the home page's other sections.
+ */
+function StoryPointsFields({
+  isAr,
+  suggestions,
+}: {
+  isAr: boolean;
+  suggestions: readonly StoryPoint[];
+}) {
+  const { form, setBs } = useBrandSettingsFormContext();
+  const sections =
+    form.bs.homepage_editorial_sections && typeof form.bs.homepage_editorial_sections === "object"
+      ? (form.bs.homepage_editorial_sections as Record<string, unknown>)
+      : {};
+  const stored = Array.isArray(sections.story_points)
+    ? (sections.story_points as Partial<StoryPoint>[])
+    : [];
+  const points = Array.from({ length: STORY_POINTS_MAX }, (_, i) => ({
+    ar: stored[i]?.ar ?? "",
+    en: stored[i]?.en ?? "",
+  }));
+  const write = (index: number, lang: "ar" | "en", value: string) => {
+    const next = points.map((point, i) => (i === index ? { ...point, [lang]: value } : point));
+    setBs({ homepage_editorial_sections: { ...sections, story_points: next } as any });
+  };
+  return (
+    <fieldset className="min-w-0 space-y-2">
+      <legend className="text-sm font-medium">
+        {isAr ? "نقاط تحت القصة (اختياري)" : "Points under the story (optional)"}
+      </legend>
+      <p className="text-xs text-muted-foreground">
+        {isAr
+          ? "ما تعد به زبائنك في سطر قصير. لا يظهر إلا ما تكتبه، والرمادي اقتراح فقط."
+          : "What you promise your customers, a short line each. Only what you write shows; the grey text is a suggestion."}
+      </p>
+      {points.map((point, index) => (
+        <div key={index} className="grid gap-2 sm:grid-cols-2">
+          <Input
+            dir="rtl"
+            maxLength={80}
+            aria-label={isAr ? `النقطة ${index + 1} — عربي` : `Point ${index + 1} — Arabic`}
+            className="h-9 text-xs"
+            value={point.ar}
+            placeholder={suggestions[index]?.ar}
+            onChange={(e) => write(index, "ar", e.target.value)}
+          />
+          <Input
+            dir="ltr"
+            maxLength={80}
+            aria-label={isAr ? `النقطة ${index + 1} — إنجليزي` : `Point ${index + 1} — English`}
+            className="h-9 text-xs"
+            value={point.en}
+            placeholder={suggestions[index]?.en}
+            onChange={(e) => write(index, "en", e.target.value)}
+          />
+        </div>
+      ))}
+    </fieldset>
   );
 }
 

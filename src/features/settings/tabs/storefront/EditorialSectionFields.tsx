@@ -19,7 +19,9 @@ const EMPTY_SECTION: EditorialSectionConfig = {
 
 function normalize(raw: unknown): HomepageEditorialSections {
   const source = raw && typeof raw === "object" ? (raw as Partial<HomepageEditorialSections>) : {};
+  // Anything else kept there stays (the brand story's points: `story_points`).
   return {
+    ...source,
     best: { ...EMPTY_SECTION, ...(source.best ?? {}) },
     sale: { ...EMPTY_SECTION, ...(source.sale ?? {}) },
     trending: { ...EMPTY_SECTION, ...(source.trending ?? {}) },

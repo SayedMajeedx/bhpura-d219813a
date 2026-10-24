@@ -199,6 +199,30 @@ describe("the Home page group", () => {
     expect(form.setBrand).toHaveBeenCalledWith({ about_en: "Made in Manama" });
   });
 
+  it("writes the story's points beside the home page's sections, the defaults only as grey text", () => {
+    form.bs = {
+      storefront_design_version: 2,
+      store_vertical: "abayas",
+      homepage_editorial_sections: { best: { enabled: false } },
+    };
+    showGroup();
+    fireEvent.click(screen.getByRole("button", { name: /Brand story/ }));
+    const first = screen.getByLabelText("Point 1 — English") as HTMLInputElement;
+    expect(first.value).toBe("");
+    expect(first.placeholder).toBe("Premium Selected Fabrics");
+    fireEvent.change(first, { target: { value: "Sewn in Bahrain" } });
+    expect(form.setBs).toHaveBeenCalledWith({
+      homepage_editorial_sections: {
+        best: { enabled: false },
+        story_points: [
+          { ar: "", en: "Sewn in Bahrain" },
+          { ar: "", en: "" },
+          { ar: "", en: "" },
+        ],
+      },
+    });
+  });
+
   it("titles a section in grey with its default until the store names it", () => {
     showGroup();
     fireEvent.click(screen.getByRole("button", { name: /New arrivals/ }));

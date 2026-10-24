@@ -16,6 +16,7 @@ import {
   missingFitFields,
   normalizeFitProfiles,
   resolveFitProfiles,
+  passportTitle,
   type FitProfileDefinition,
   type FitProfileType,
   type FitProfiles,
@@ -205,7 +206,7 @@ export function CustomerFitPassport({
           </div>
           <div>
             <h3 className="text-base font-bold text-foreground">
-              {brandName ? `${brandName} Fit Passport` : isAr ? "جواز المقاسات" : "Fit Passport"}
+              {passportTitle(brandName, isAr ? "ar" : "en")}
             </h3>
             <p className="text-xs text-muted-foreground">
               {isAr

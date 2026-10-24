@@ -23,6 +23,7 @@ import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-check
 import type { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
+import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 
 export type SummaryTax = { amount: number; added: boolean; rate: number };
 const NO_TAX_LINE: SummaryTax = { amount: 0, added: true, rate: 0 };
@@ -148,9 +149,7 @@ export function OrderSummaryCard({
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center px-1 text-center text-xs text-muted-foreground">
-                    {t("لا توجد صورة", "No image")}
-                  </div>
+                  <ProductPhotoPlaceholder />
                 )}
               </div>
               <div className="min-w-0">

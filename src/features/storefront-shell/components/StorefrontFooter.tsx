@@ -6,7 +6,6 @@ import { renderTrustBadgeIcon, resolveStorefrontTrustBadges } from "@/lib/trust-
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
 import { FooterV2 } from "@/components/storefront/FooterV2";
-import { normalizeVertical } from "@/lib/store-profile";
 import { resolveFooterVariant } from "@/lib/storefront-engine";
 import { footerGroupTitles, footerPageGroups } from "@/features/storefront-shell/lib/footer-pages";
 import { StorefrontSocialIcon } from "./StorefrontSocialIcon";
@@ -27,16 +26,7 @@ export function StorefrontFooter() {
     return <FooterV2 />;
   }
 
-  const rawTrustBadges = settings.trust_badges;
-  const storeVertical = normalizeVertical(
-    settings.store_vertical ?? (brand as any)?.store_vertical ?? "general",
-  );
-  const activeBadges = resolveStorefrontTrustBadges({
-    config: rawTrustBadges,
-    vertical: storeVertical,
-    settings,
-    brandName: isAr ? brand?.name_ar : brand?.name_en,
-  });
+  const activeBadges = resolveStorefrontTrustBadges({ config: settings.trust_badges, settings });
 
   const { pageLinks, companyPages, helpPages } = footerPageGroups(settings.pages ?? [], isAr);
   const socials = settings.socials ?? [];

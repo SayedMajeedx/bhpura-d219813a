@@ -6,6 +6,8 @@ import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { type RecommendationProduct } from "@/lib/data/storefront";
 import { cardPrice } from "@/lib/product-price";
+import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
+import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 
 export function RecommendationRail({
   title,
@@ -15,6 +17,8 @@ export function RecommendationRail({
   products: RecommendationProduct[];
 }) {
   const { brand, currency, lang, t, settings } = useStorefront();
+  // The store's own photo shape, as its cards (a bakery's square, not a portrait).
+  const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
 
   return (
     <section aria-label={title} className="w-full overflow-x-clip">
@@ -46,7 +50,7 @@ export function RecommendationRail({
                 void trackProductEngagement(brand.slug, item.id, "click");
               }}
             >
-              <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">
+              <div className={`${photoClass} overflow-hidden rounded-xl bg-muted`}>
                 {cover ? (
                   <ResponsiveImage
                     src={cover}
@@ -57,9 +61,7 @@ export function RecommendationRail({
                     loading="lazy"
                   />
                 ) : (
-                  <div className="grid h-full place-items-center px-3 text-center text-xs text-muted-foreground">
-                    {t("لا توجد صورة", "No image")}
-                  </div>
+                  <ProductPhotoPlaceholder />
                 )}
               </div>
               <div className="mt-2 min-w-0">

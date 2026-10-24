@@ -6,7 +6,7 @@ type Text = { ar: string; en: string };
 export type BrandStoryDefaults = {
   subtitle: Text;
   description: Text;
-  /** Three promises, shown with the quality, care and guarantee icons. */
+  /** Three suggested points for the story, offered as the editor's grey text, never shown to a shopper. */
   values: [Text, Text, Text];
 };
 
@@ -213,4 +213,33 @@ export function brandStoryDefaults(vertical: string | null | undefined): BrandSt
   return (STORE_VERTICALS as readonly string[]).includes(id)
     ? BRAND_STORY_DEFAULTS[id as StoreVertical]
     : BRAND_STORY_DEFAULTS.general;
+}
+
+/** One of the brand story's points, in both languages (either may be empty). */
+export type StoryPoint = { ar: string; en: string };
+
+export const STORY_POINTS_MAX = 3;
+
+/**
+ * The brand story's points as the store wrote them (`homepage_editorial_sections.story_points`):
+ * up to three, each with some text, nothing made up. Until the store writes one the section shows
+ * none: the vertical's `values` are only the editor's suggestions, as they once promised every
+ * abaya store's shoppers "quality and authenticity guaranteed".
+ */
+export function storyPoints(editorialSections: unknown): StoryPoint[] {
+  const raw =
+    editorialSections && typeof editorialSections === "object"
+      ? (editorialSections as { story_points?: unknown }).story_points
+      : null;
+  if (!Array.isArray(raw)) return [];
+  const text = (value: unknown) => (typeof value === "string" ? value.trim().slice(0, 80) : "");
+  return raw
+    .map((point) => ({ ar: text(point?.ar), en: text(point?.en) }))
+    .filter((point) => point.ar || point.en)
+    .slice(0, STORY_POINTS_MAX);
+}
+
+/** A point in the reader's language, else in the other one. */
+export function storyPointText(point: StoryPoint, lang: "ar" | "en"): string {
+  return lang === "ar" ? point.ar || point.en : point.en || point.ar;
 }

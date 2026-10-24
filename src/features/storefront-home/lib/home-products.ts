@@ -1,6 +1,7 @@
 import { hasAvailableStock, type ProductRow, type StorefrontCategory } from "@/lib/data/storefront";
 import type { PublicSettings } from "@/lib/storefront-context";
 import { productOnSale } from "@/lib/product-price";
+import { hasProductPhoto } from "@/lib/product-photo";
 
 /**
  * The home page's product rules: available products first, the four rails
@@ -54,7 +55,8 @@ const RAIL_SIZE = 8;
  * product shows in one rail only, the first of `CLAIM_ORDER` that is drawn and wants it: with a
  * small catalogue the rails all drew the same pieces (Pura: 11 products as 22 cards). Each rail
  * still fills up to 8 from its own list, and the grid below is the whole catalogue, untouched.
- * A rail left with nothing is not drawn (`MerchandisingSection`).
+ * A rail left with nothing is not drawn (`MerchandisingSection`), and a product with no photo is
+ * in none (`hasProductPhoto`).
  */
 export function homeMerchandising(
   products: ProductRow[],
@@ -62,7 +64,8 @@ export function homeMerchandising(
   trendingRows: RankingRows,
   shown: ShownRails = ALL_RAILS,
 ) {
-  const list = availableFirst(products);
+  // A rail is the shop window: a product with no photo stays in the grid below, not here.
+  const list = availableFirst(products.filter(hasProductPhoto));
   const ranked = (rows: RankingRows) => {
     const rank = new Map(
       (rows ?? []).map((row: any, index: number) => [String(row.product_id), index]),

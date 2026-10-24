@@ -11,6 +11,8 @@ import {
   fitRangeProblems,
   missingFitFields,
   FIT_PROFILE_FIELDS,
+  lengthUnitLabel,
+  passportTitle,
 } from "../../lib/fit-passport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -201,9 +203,7 @@ export function ProductFitPassportSection({
     });
     setPassportApplied(true);
     onApplied?.(true);
-    toast.success(
-      isAr ? "تم تطبيق مقاسات الـ Passport على طلبك" : "Fit Passport measurements applied",
-    );
+    toast.success(isAr ? "تم تطبيق مقاساتك على طلبك" : "Fit Passport measurements applied");
   };
 
   const handleSaveAndApplyPassport = async () => {
@@ -285,12 +285,11 @@ export function ProductFitPassportSection({
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm font-bold">
-                {(isAr ? brand?.name_ar : brand?.name_en) ||
-                  brand?.name_en ||
-                  brand?.name_ar ||
-                  "Fit"}{" "}
-                Passport ·{" "}
-                {activeDef ? (isAr ? activeDef.label_ar : activeDef.label_en) : fitProfileType}
+                {passportTitle(
+                  (isAr ? brand?.name_ar : brand?.name_en) || brand?.name_en || brand?.name_ar,
+                  isAr ? "ar" : "en",
+                )}{" "}
+                · {activeDef ? (isAr ? activeDef.label_ar : activeDef.label_en) : fitProfileType}
               </p>
               {isGuest && (
                 <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -327,7 +326,7 @@ export function ProductFitPassportSection({
                 onClick={() => setGuestUnit("in")}
                 className="h-7 px-2 text-xs"
               >
-                {t("بوصة", "in")}
+                {lengthUnitLabel("in", isAr ? "ar" : "en")}
               </Button>
               <Button
                 type="button"
@@ -336,7 +335,7 @@ export function ProductFitPassportSection({
                 onClick={() => setGuestUnit("cm")}
                 className="h-7 px-2 text-xs"
               >
-                {t("سم", "cm")}
+                {lengthUnitLabel("cm", isAr ? "ar" : "en")}
               </Button>
             </div>
           )}
@@ -400,7 +399,7 @@ export function ProductFitPassportSection({
                 className="h-10 pe-9 bg-background"
               />
               <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                {currentUnit}
+                {lengthUnitLabel(currentUnit, isAr ? "ar" : "en")}
               </span>
             </div>
           </label>

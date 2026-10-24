@@ -6,6 +6,7 @@ import { SecondaryBannerParallax } from "@/components/storefront/secondary-banne
 import { type ProductRow } from "@/lib/data/storefront";
 import { SECTION_BANNER, resolveBannerSize } from "@/lib/banner-size";
 import { RAIL_CARD, RAIL_CONTAINER, railLayout, railPhoneAlign } from "@/lib/rail-layout";
+import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 
 /** A home page section heading with bilingual fallbacks. */
 export function SectionHeading({
@@ -33,7 +34,9 @@ export function SectionHeading({
 
 /** Placeholder cards while the home page products load. */
 export function SkeletonMerchandisingSection({ label }: { label: [string, string] }) {
-  const { lang } = useStorefront();
+  const { lang, settings } = useStorefront();
+  // The cards' own photo shape, so nothing jumps when they load.
+  const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
   return (
     <section className="py-4 sm:py-6 border-t border-border">
       <SectionHeading fallbackAr={label[0]} fallbackEn={label[1]} />
@@ -46,7 +49,7 @@ export function SkeletonMerchandisingSection({ label }: { label: [string, string
             key={i}
             className="flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] md:w-auto md:shrink space-y-2"
           >
-            <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+            <Skeleton className={`${photoClass} rounded-xl w-full bg-muted`} />
             <Skeleton className="h-4 w-3/4 bg-muted" />
             <Skeleton className="h-4 w-1/3 bg-muted" />
           </div>

@@ -5,6 +5,7 @@ import {
   type RecommendationProduct,
   type StorefrontBrandRef,
 } from "@/lib/data/storefront";
+import { hasProductPhoto } from "@/lib/product-photo";
 
 /** Best sellers ranked for the product page's badges and rails. */
 export const PDP_BEST_SELLER_LIMIT = 10;
@@ -35,14 +36,19 @@ export function useProductRecommendations({
     initialData: initialBestSellerRows,
   });
 
+  // A product with no photo is not recommended (`hasProductPhoto`): a rail is a shop window.
+  const withPhotos = useMemo(
+    () => recommendationCatalog.filter(hasProductPhoto),
+    [recommendationCatalog],
+  );
   const relatedProducts = useMemo(
     () =>
       product?.category
-        ? recommendationCatalog
+        ? withPhotos
             .filter((item) => item.id !== product.id && item.category === product.category)
             .slice(0, 8)
         : [],
-    [product, recommendationCatalog],
+    [product, withPhotos],
   );
   const relatedIds = useMemo(
     () => new Set(relatedProducts.map((item) => item.id)),
@@ -50,11 +56,11 @@ export function useProductRecommendations({
   );
   const bestSellingProducts = useMemo(() => {
     const ranks = new Map(bestSellerRows.map((row, index) => [row.product_id, index]));
-    return recommendationCatalog
+    return withPhotos
       .filter((item) => item.id !== product?.id && !relatedIds.has(item.id) && ranks.has(item.id))
       .sort((a, b) => (ranks.get(a.id) ?? 99) - (ranks.get(b.id) ?? 99))
       .slice(0, 8);
-  }, [bestSellerRows, product?.id, recommendationCatalog, relatedIds]);
+  }, [bestSellerRows, product?.id, withPhotos, relatedIds]);
 
   return { relatedProducts, bestSellingProducts };
 }
