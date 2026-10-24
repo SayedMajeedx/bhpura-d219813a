@@ -12,6 +12,7 @@ import {
   renderTrustBadgeIcon,
   resolveTrustBadgeIcon,
   getDynamicTrustBadges,
+  storeFactBadges,
 } from "@/lib/trust-badges";
 import { TrustBadgeIconPicker } from "@/components/settings/TrustBadgeIconPicker";
 import {
@@ -40,9 +41,6 @@ interface TrustBadgesEditorProps {
   settings?: Record<string, any> | null;
 }
 
-/** A store that never saved its badges: on, with none of its own yet. */
-const NO_BADGES: TrustBadgesConfig = { enabled: true, items: [] };
-
 export function TrustBadgesEditor({
   value: stored,
   onChange,
@@ -52,7 +50,9 @@ export function TrustBadgesEditor({
   vertical,
   settings,
 }: TrustBadgesEditorProps) {
-  const value = stored ?? NO_BADGES;
+  // A store that never saved its badges shows the facts its settings say (`storeFactBadges`):
+  // the editor starts from those, so the merchant edits what shoppers see.
+  const value = stored ?? { enabled: true, items: storeFactBadges(settings) };
   const items = value.items || [];
   const { addons } = useAddons();
   const suggestedIcons = useMemo(() => trustBadgeSuggestionsFrom(addons), [addons]);
@@ -159,6 +159,13 @@ export function TrustBadgesEditor({
 
       {/* Badges List */}
       <div className="space-y-3">
+        {!stored && (
+          <p className="rounded-md bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">
+            {isAr
+              ? "لم تحفظ شاراتك بعد: يرى الزائر ما تقوله إعداداتك فقط (طرق الدفع والتوصيل والاستلام). عدّلها واحفظها لتصبح شاراتك."
+              : "You have not saved your badges yet: shoppers see only what your settings say (payment, delivery and pickup). Edit and save them to make them yours."}
+          </p>
+        )}
         {items.length === 0 ? (
           <div className="text-center py-8 rounded-xl border border-dashed border-border p-6 bg-muted/20 space-y-2">
             <Sparkles className="h-6 w-6 text-muted-foreground mx-auto" />

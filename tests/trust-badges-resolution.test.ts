@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { resolveStorefrontTrustBadges, type TrustBadgesConfig } from "../src/lib/trust-badges";
+import {
+  getDynamicTrustBadges,
+  resolveStorefrontTrustBadges,
+  storeFactBadges,
+  type TrustBadgesConfig,
+} from "../src/lib/trust-badges";
 
 describe("resolveStorefrontTrustBadges", () => {
   it("returns customized badges when merchant configures them in admin", () => {
@@ -27,9 +32,7 @@ describe("resolveStorefrontTrustBadges", () => {
 
     const result = resolveStorefrontTrustBadges({
       config: customConfig,
-      vertical: "food",
       settings: {},
-      brandName: "بقلاوة حبيبي",
     });
 
     expect(result).toHaveLength(2);
@@ -46,9 +49,7 @@ describe("resolveStorefrontTrustBadges", () => {
 
     const result = resolveStorefrontTrustBadges({
       config: emptyConfig,
-      vertical: "food",
       settings: {},
-      brandName: "بقلاوة حبيبي",
     });
 
     expect(result).toEqual([]);
@@ -71,9 +72,7 @@ describe("resolveStorefrontTrustBadges", () => {
 
     const result = resolveStorefrontTrustBadges({
       config: disabledConfig,
-      vertical: "general",
       settings: {},
-      brandName: "My Store",
     });
 
     expect(result).toEqual([]);
@@ -112,7 +111,6 @@ describe("resolveStorefrontTrustBadges", () => {
 
     const result = resolveStorefrontTrustBadges({
       config: mixedConfig,
-      vertical: "fashion",
       settings: {},
     });
 
@@ -120,29 +118,64 @@ describe("resolveStorefrontTrustBadges", () => {
     expect(result.map((b) => b.id)).toEqual(["badge-1", "badge-3"]);
   });
 
-  it("falls back to smart niche defaults only when config is null or undefined", () => {
-    const foodDefaults = resolveStorefrontTrustBadges({
+  it("before the merchant saves badges, says only what the settings say", () => {
+    // The fallback once promised "100% authentic", "fast delivery to the door" to a store that
+    // does not deliver, cash on delivery when the switch was never set, and "256-bit SSL".
+    const shown = resolveStorefrontTrustBadges({
       config: null,
-      vertical: "food",
-      settings: {},
-      brandName: "Sweet Corner",
+      settings: { card_enabled: true, cod_enabled: true, pickup_enabled: true },
     });
+    expect(shown.map((b) => b.text_ar)).toEqual([
+      "الدفع بالبطاقة أو عند الاستلام",
+      "استلام من المتجر",
+    ]);
+    expect(shown.map((b) => b.text_en)).toEqual([
+      "Pay by card or cash on delivery",
+      "Store pickup",
+    ]);
+    const all = JSON.stringify(shown);
+    expect(all).not.toMatch(/256|أصلي|Authentic|سريع|Fast/);
+  });
 
-    expect(foodDefaults.length).toBeGreaterThan(0);
-    // Food vertical default includes "Freshly Prepared Daily"
-    expect(foodDefaults.some((b) => b.text_en.includes("Freshly Prepared"))).toBe(true);
+  it("says nothing when no setting says anything", () => {
+    expect(resolveStorefrontTrustBadges({ config: undefined, settings: {} })).toEqual([]);
+    expect(resolveStorefrontTrustBadges({ config: null, settings: null })).toEqual([]);
+  });
+});
 
-    const abayasDefaults = resolveStorefrontTrustBadges({
-      config: undefined,
-      vertical: "abayas",
-      settings: {},
-      brandName: "Abaya Chic",
+describe("storeFactBadges", () => {
+  it("names every payment method that is on, and free delivery when the fee is zero", () => {
+    const badges = storeFactBadges({
+      card_enabled: true,
+      benefit_enabled: true,
+      cod_enabled: true,
+      delivery_enabled: true,
+      delivery_fee: 0,
+      digital_delivery_enabled: true,
     });
+    expect(badges.map((b) => b.text_ar)).toEqual([
+      "الدفع بالبطاقة أو عبر بنفت باي أو عند الاستلام",
+      "توصيل مجاني",
+      "تسليم رقمي بعد الدفع",
+    ]);
+    expect(badges[0].text_en).toBe("Pay by card, BenefitPay or cash on delivery");
+  });
 
-    expect(abayasDefaults.length).toBeGreaterThan(0);
-    // Abayas vertical default includes tailoring / fabric
+  it("says delivery only for a store that delivers", () => {
+    expect(storeFactBadges({ delivery_enabled: true, delivery_fee: 2 })[0].text_ar).toBe(
+      "توصيل إلى بابك",
+    );
+    expect(storeFactBadges({ delivery_enabled: false })).toEqual([]);
     expect(
-      abayasDefaults.some((b) => b.text_ar.includes("تفصيل") || b.text_ar.includes("أقمشة")),
-    ).toBe(true);
+      storeFactBadges({ delivery_enabled: true, pickup_enabled: true, delivery_fee: 1 })[0].text_en,
+    ).toBe("Delivery or store pickup");
+  });
+
+  it("the editor's starting set adds the kind of store's line to the facts", () => {
+    const set = getDynamicTrustBadges({ vertical: "food", settings: { cod_enabled: true } });
+    expect(set.items.map((b) => b.text_en)).toEqual([
+      "Freshly Prepared Daily",
+      "Pay by cash on delivery",
+    ]);
   });
 });

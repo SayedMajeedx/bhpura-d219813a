@@ -18,12 +18,7 @@ export function TrustBar({ className }: TrustBarProps) {
     return null;
   }
 
-  const activeItems = resolveStorefrontTrustBadges({
-    config: settings?.trust_badges,
-    vertical: settings?.store_vertical,
-    settings,
-    brandName: settings?.business_name,
-  });
+  const activeItems = resolveStorefrontTrustBadges({ config: settings?.trust_badges, settings });
 
   if (!activeItems || activeItems.length === 0) {
     return null;

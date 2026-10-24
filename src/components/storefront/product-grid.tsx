@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Grid2X2, Rows, PackageSearch } from "lucide-react";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { type ProductRow } from "@/lib/data/storefront";
 import { ProductCard } from "./product-card";
+import { catalogCount } from "@/lib/catalog-count";
 
 /**
  * A list up to SHOW_ALL_UP_TO products is shown whole (images load lazily as they come into
@@ -25,6 +26,7 @@ export function ProductGrid({
   categoryEmpty,
   onViewAll,
   withSidebar = false,
+  toolbar,
 }: {
   products: ProductRow[];
   loading: boolean;
@@ -35,8 +37,14 @@ export function ProductGrid({
    * columns would make cards a marketplace's size (235px); three keep them a boutique's.
    */
   withSidebar?: boolean;
+  /**
+   * The page's own controls (filters, sort), drawn in the grid's bar beside the phone's column
+   * switch, in place of the count: the page says the count under its heading. One row, where
+   * a category page had three (a count, the controls, then the count again).
+   */
+  toolbar?: ReactNode;
 }) {
-  const { t, settings } = useStorefront();
+  const { t, settings, lang } = useStorefront();
   // The placeholders take the cards' own photo shape, so nothing jumps when they load.
   const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
   const wide = withSidebar ? "lg:grid-cols-3" : "lg:grid-cols-4";
@@ -115,69 +123,72 @@ export function ProductGrid({
   }
 
   if (products.length === 0) {
+    // The page's controls stay: a filter that left nothing can be undone from here.
     return (
-      <OsEmptyState
-        icon={PackageSearch}
-        title={
-          categoryEmpty
-            ? services
-              ? t("لا توجد خدمات متاحة", "No services available")
-              : t("لا توجد منتجات متاحة", "No products available")
-            : services
-              ? t("لا توجد خدمات بعد", "No services yet")
-              : t("لا توجد منتجات بعد", "No products yet")
-        }
-        description={
-          categoryEmpty
-            ? services
-              ? t(
-                  "لا توجد خدمات متاحة في هذا القسم حالياً. يمكنك تصفح كافة الخدمات الأخرى.",
-                  "No services are currently available in this category. You can browse all other services.",
-                )
-              : t(
-                  "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
-                  "No products are currently available in this category. You can browse all other products.",
-                )
-            : services
-              ? t(
-                  "لم تتم إضافة أي خدمات إلى هذا المتجر حتى الآن.",
-                  "No services have been added to this store yet.",
-                )
-              : t(
-                  "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
-                  "No products have been added to this store yet.",
-                )
-        }
-        action={
-          categoryEmpty ? (
-            <Button variant="default" onClick={onViewAll}>
-              {services
-                ? t("عرض كل الخدمات", "View all services")
-                : t("عرض كل المنتجات", "View all products")}
-            </Button>
-          ) : undefined
-        }
-      />
+      <div className="space-y-4">
+        {toolbar && (
+          <div className="flex flex-wrap items-center gap-3 border-b border-border pb-3">
+            {toolbar}
+          </div>
+        )}
+        <OsEmptyState
+          icon={PackageSearch}
+          title={
+            categoryEmpty
+              ? services
+                ? t("لا توجد خدمات متاحة", "No services available")
+                : t("لا توجد منتجات متاحة", "No products available")
+              : services
+                ? t("لا توجد خدمات بعد", "No services yet")
+                : t("لا توجد منتجات بعد", "No products yet")
+          }
+          description={
+            categoryEmpty
+              ? services
+                ? t(
+                    "لا توجد خدمات متاحة في هذا القسم حالياً. يمكنك تصفح كافة الخدمات الأخرى.",
+                    "No services are currently available in this category. You can browse all other services.",
+                  )
+                : t(
+                    "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
+                    "No products are currently available in this category. You can browse all other products.",
+                  )
+              : services
+                ? t(
+                    "لم تتم إضافة أي خدمات إلى هذا المتجر حتى الآن.",
+                    "No services have been added to this store yet.",
+                  )
+                : t(
+                    "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
+                    "No products have been added to this store yet.",
+                  )
+          }
+          action={
+            categoryEmpty ? (
+              <Button variant="default" onClick={onViewAll}>
+                {services
+                  ? t("عرض كل الخدمات", "View all services")
+                  : t("عرض كل المنتجات", "View all products")}
+              </Button>
+            ) : undefined
+          }
+        />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Dynamic Grid Layout Switcher control bar */}
-      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-        <span className="text-xs text-muted-foreground font-medium">
-          {products.length}{" "}
-          {services
-            ? products.length === 1
-              ? t("خدمة", "service")
-              : t("خدمات", "services")
-            : products.length === 1
-              ? t("منتج", "product")
-              : t("منتجات", "products")}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+        {toolbar ?? (
+          <span className="text-xs text-muted-foreground font-medium">
+            {catalogCount(products.length, { services, lang: lang === "ar" ? "ar" : "en" })}
+          </span>
+        )}
 
         {/* Toggle columns trigger button (strictly visible on mobile viewport <md) */}
-        <div className="flex items-center gap-1.5 md:hidden">
+        <div className="ms-auto flex items-center gap-1.5 md:hidden">
           <Button
             type="button"
             variant={mobileCols === "2" ? "default" : "outline"}

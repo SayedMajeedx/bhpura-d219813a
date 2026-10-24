@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
+import { catalogCount } from "@/lib/catalog-count";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { formatSizeWithUnit } from "@/lib/format";
@@ -115,7 +116,7 @@ export function CategoryFilters({
   const activeCount = activeFilterCount(filters);
   const clear = t("مسح", "Clear");
   const countWord = (count: number) =>
-    t(`${count} منتج`, count === 1 ? "1 item" : `${count} items`);
+    catalogCount(count, { services: servicesStore, lang: lang === "ar" ? "ar" : "en" });
 
   // A range typed the wrong way round is put right when the shopper leaves the field.
   const settlePrice = () =>

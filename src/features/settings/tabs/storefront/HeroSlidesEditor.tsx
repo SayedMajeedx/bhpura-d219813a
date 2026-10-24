@@ -626,6 +626,7 @@ export function HeroSlidesEditor({
                     isAr={isAr}
                     onChange={(patch) => update(index, patch)}
                     withText
+                    storeNames={[livePreview?.brand.name_ar, livePreview?.brand.name_en]}
                   />
                 )}
 

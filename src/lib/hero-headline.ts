@@ -254,3 +254,25 @@ export function paceOf(slide: Pick<HeroHeadlineFields, "text_seconds">): HeroPac
   );
   return match ?? null;
 }
+
+/**
+ * A slide whose headline is only the store's name says nothing the logo above it does not: a
+ * note for the settings that a phrase about what the store sells, or what is new, does more
+ * (ZH's hero read "ZH").
+ */
+export function storeNameHeadlineNote(
+  slide: HeroHeadlineFields,
+  storeNames: ReadonlyArray<string | null | undefined>,
+  lang: "ar" | "en",
+): string | null {
+  const plain = (text: string) => text.trim().toLocaleLowerCase().replace(/\s+/g, " ");
+  const names = storeNames.map((name) => plain(name ?? "")).filter(Boolean);
+  if (names.length === 0) return null;
+  const firsts = (["ar", "en"] as const)
+    .map((l) => headlinePhrases(slide, l)[0])
+    .filter((phrase): phrase is string => Boolean(phrase));
+  if (!firsts.some((phrase) => names.includes(plain(phrase)))) return null;
+  return lang === "ar"
+    ? "العنوان هو اسم المتجر، والشعار يقوله فوقه. جملة عمّا تبيعه أو عن الجديد تشدّ الزائر أكثر."
+    : "The headline is the store's name, which the logo above already says. A phrase about what you sell, or what is new, does more.";
+}

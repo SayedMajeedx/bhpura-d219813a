@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { CardFactLine } from "@/components/storefront/CardFactLine";
+import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { Heart } from "lucide-react";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
@@ -86,7 +87,9 @@ export function ProductCard({
       : "storefront-fade-in-up";
 
   return (
-    <div className={`group relative sf-cv-card ${staggerClass} ${className || "w-full"}`}>
+    <div
+      className={`group relative flex flex-col sf-cv-card ${staggerClass} ${className || "w-full"}`}
+    >
       <Button
         type="button"
         variant="ghost"
@@ -108,7 +111,7 @@ export function ProductCard({
         to="/$slug/product/$id"
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
-        className="block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5"
+        className="flex flex-1 flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5"
         onClick={() => {
           void trackProductEngagement(brand.slug, product.id, "click");
         }}
@@ -139,9 +142,7 @@ export function ProductCard({
               quality={76}
             />
           ) : (
-            <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">
-              {t("لا توجد صورة", "No image")}
-            </div>
+            <ProductPhotoPlaceholder />
           )}
 
           {oos && (
@@ -153,17 +154,18 @@ export function ProductCard({
           )}
         </div>
 
-        <div className="mt-2 text-start">
+        {/* The price sits at the card's foot, so a row's prices line up without an empty line. */}
+        <div className="mt-2 flex flex-1 flex-col text-start">
           <div
             dir="auto"
-            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 min-h-[2lh] break-words text-page-start"
+            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 break-words text-page-start"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}
           </div>
-          <CardFactLine details={product.details} />
+          <CardFactLine details={product.details} reserve={false} />
           <div
-            className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5"
+            className="price-tag mt-auto flex flex-wrap items-baseline gap-2 pt-0.5 text-sm font-semibold"
             style={{ color: "var(--sf-price, var(--sf-heading))" }}
           >
             {!shouldShowPrices(settings) ? (

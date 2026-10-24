@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { useReveal } from "@/lib/motion/use-reveal";
 import { Sparkles, ShieldCheck, HeartHandshake, Award } from "lucide-react";
-import { brandStoryDefaults } from "@/lib/brand-templates/brand-story";
+import { brandStoryDefaults, storyPointText } from "@/lib/brand-templates/brand-story";
 
 interface BrandStorySectionProps {
   className?: string;
@@ -24,23 +24,12 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
   const defaultDescAr = story.description.ar;
   const defaultDescEn = story.description.en;
 
-  const title = isAr
-    ? settings?.brand_story_title_ar || brand.name_ar || brand.name_en
-    : settings?.brand_story_title_en || brand.name_en || brand.name_ar;
-
-  const subtitle = isAr
-    ? settings?.brand_story_subtitle_ar || defaultSubtitle
-    : settings?.brand_story_subtitle_en || defaultSubtitle;
-
+  const title = isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar;
+  const subtitle = defaultSubtitle;
+  // The store's story (`brands.about_*`, edited as the brand story), else its default.
   const description = isAr
-    ? settings?.brand_story_description_ar ||
-      brand.about_ar ||
-      brand.meta_description ||
-      defaultDescAr
-    : settings?.brand_story_description_en ||
-      brand.about_en ||
-      brand.meta_description ||
-      defaultDescEn;
+    ? brand.about_ar || brand.meta_description || defaultDescAr
+    : brand.about_en || brand.meta_description || defaultDescEn;
 
   const bgMedia = brand.hero_media?.background;
   const bgImageFallback =
@@ -65,9 +54,10 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     bgImageFallback ||
     brand.logo_url;
 
-  const values = [Award, HeartHandshake, ShieldCheck].map((icon, index) => ({
-    icon,
-    text: t(story.values[index].ar, story.values[index].en),
+  // The store's own points only (none until it writes them): a promise is the store's to make.
+  const values = (settings?.brand_story_points ?? []).map((point, index) => ({
+    icon: [Award, HeartHandshake, ShieldCheck][index % 3],
+    text: storyPointText(point, isAr ? "ar" : "en"),
   }));
 
   return (
@@ -115,22 +105,24 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
             </p>
 
             {/* Brand Values Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              {values.map((v, i) => {
-                const IconComp = v.icon;
-                return (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-card border border-border shadow-2xs"
-                  >
-                    <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <IconComp className="h-4 w-4" />
+            {values.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                {values.map((v, i) => {
+                  const IconComp = v.icon;
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2.5 p-3 rounded-xl bg-card border border-border shadow-2xs"
+                    >
+                      <div className="h-7 w-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <IconComp className="h-4 w-4" />
+                      </div>
+                      <span className="text-xs font-semibold text-foreground">{v.text}</span>
                     </div>
-                    <span className="text-xs font-semibold text-foreground">{v.text}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Read More / About Link if page exists */}
             {settings?.pages?.some((p) => p.slug === "about" || p.slug === "about-us") && (

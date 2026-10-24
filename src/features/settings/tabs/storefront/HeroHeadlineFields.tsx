@@ -9,6 +9,7 @@ import {
   HERO_PACES,
   headlineSettings,
   paceOf,
+  storeNameHeadlineNote,
   type HeroPace,
   type HeroHeadlineFields,
   type HeroTextAnimation,
@@ -69,6 +70,7 @@ export function HeroHeadlineFields({
   isAr,
   onChange,
   withText = false,
+  storeNames = [],
 }: {
   /** Unique per slide, so each field's label points at its own field. */
   idPrefix: string;
@@ -77,6 +79,8 @@ export function HeroHeadlineFields({
   onChange: (patch: Partial<SlideText>) => void;
   /** The line under the headline and the button, for every kind of slide (the V2 hero). */
   withText?: boolean;
+  /** The store's names, to notice a headline that only repeats them. */
+  storeNames?: ReadonlyArray<string | null | undefined>;
 }) {
   const settings = headlineSettings(slide);
   // A slide written before phrases existed opens with its title as the first phrase.
@@ -86,6 +90,7 @@ export function HeroHeadlineFields({
     return (lang === "ar" ? slide.title_ar : slide.title_en) ?? "";
   };
   const countNote = phraseCountNote(slide, isAr ? "ar" : "en");
+  const nameNote = storeNameHeadlineNote(slide, storeNames, isAr ? "ar" : "en");
   return (
     <fieldset className="min-w-0 space-y-3 rounded-xl border border-border p-3">
       <legend className="px-1 text-sm font-semibold">
@@ -130,6 +135,11 @@ export function HeroHeadlineFields({
       {countNote && (
         <p className="rounded-md bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">
           {countNote}
+        </p>
+      )}
+      {nameNote && (
+        <p className="rounded-md bg-muted/60 px-2.5 py-1.5 text-xs text-muted-foreground">
+          {nameNote}
         </p>
       )}
 

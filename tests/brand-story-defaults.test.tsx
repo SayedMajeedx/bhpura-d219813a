@@ -1,7 +1,10 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { brandStoryDefaults } from "../src/lib/brand-templates/brand-story";
+import {
+  brandStoryDefaults,
+  storyPoints as readStoryPoints,
+} from "../src/lib/brand-templates/brand-story";
 import { STORE_VERTICALS } from "../src/lib/store-profile";
 
 // The storefront's "Our story" section knew only food and perfume; every other
@@ -9,10 +12,15 @@ import { STORE_VERTICALS } from "../src/lib/store-profile";
 // store promised "exclusive collections" and "refined design".
 
 let storeVertical = "services";
+let storyPoints: Array<{ ar: string; en: string }> | undefined;
 const storefront = {
   useStorefront: () => ({
     brand: { slug: "bloom", name_ar: "بلوم", name_en: "Bloom", hero_media: null, logo_url: null },
-    settings: { store_vertical: storeVertical, motion_enabled: false },
+    settings: {
+      store_vertical: storeVertical,
+      motion_enabled: false,
+      brand_story_points: storyPoints,
+    },
     lang: "ar",
     t: (ar: string) => ar,
   }),
@@ -53,8 +61,52 @@ describe("the story section on a services store", () => {
     const services = brandStoryDefaults("services");
     expect(screen.getByText(services.subtitle.ar)).toBeTruthy();
     expect(screen.getByText(services.description.ar)).toBeTruthy();
-    for (const value of services.values) expect(screen.getByText(value.ar)).toBeTruthy();
     expect(screen.queryByText("تشكيلات حصرية مميزة")).toBeNull();
     expect(screen.queryByText(/التصميم الراقي/)).toBeNull();
+  });
+});
+
+describe("the story's points", () => {
+  it("shows none the store did not write: the defaults are only suggestions", () => {
+    // Pura and ZH showed "ضمان الجودة والأصالة", a promise neither store made.
+    storeVertical = "abayas";
+    storyPoints = undefined;
+    render(<BrandStorySection />);
+    for (const value of brandStoryDefaults("abayas").values) {
+      expect(screen.queryByText(value.ar)).toBeNull();
+    }
+  });
+
+  it("shows the store's own points, in the reader's language or else the other", () => {
+    storyPoints = [
+      { ar: "خياطة في البحرين", en: "Sewn in Bahrain" },
+      { ar: "", en: "Free alterations" },
+    ];
+    render(<BrandStorySection />);
+    expect(screen.getByText("خياطة في البحرين")).toBeTruthy();
+    expect(screen.getByText("Free alterations")).toBeTruthy();
+  });
+});
+
+describe("storyPoints", () => {
+  it("keeps up to three points with some text, trimmed", () => {
+    expect(
+      readStoryPoints({
+        best: {},
+        story_points: [
+          { ar: " أ ", en: "" },
+          { ar: "", en: "" },
+          { ar: "ب", en: "B" },
+          { ar: "ج" },
+          { en: "D" },
+        ],
+      }),
+    ).toEqual([
+      { ar: "أ", en: "" },
+      { ar: "ب", en: "B" },
+      { ar: "ج", en: "" },
+    ]);
+    expect(readStoryPoints(null)).toEqual([]);
+    expect(readStoryPoints({ story_points: "x" })).toEqual([]);
   });
 });

@@ -103,7 +103,7 @@ describe("the listing's filter panel", () => {
     expect(colors.getByRole("button", { name: "Black" })).not.toHaveAttribute("aria-disabled");
     const navy = colors.getByRole("button", { name: "Navy" });
     expect(navy).toHaveAttribute("aria-disabled", "true");
-    expect(navy).toHaveAttribute("title", expect.stringContaining("0 items"));
+    expect(navy).toHaveAttribute("title", expect.stringContaining("0 products"));
     fireEvent.click(navy);
     expect(navy).toHaveAttribute("aria-pressed", "false");
   });

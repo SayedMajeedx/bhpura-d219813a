@@ -60,183 +60,130 @@ export interface TrustBadgesConfig {
   items: TrustBadgeItem[];
 }
 
-export interface DynamicTrustBadgesParams {
-  vertical?: string | null;
-  settings?: Record<string, any> | null;
-  currency?: string | null;
-  brandName?: string | null;
+/** The store settings a badge may speak from: how it is paid and how an order is handed over. */
+export interface TrustBadgeSettings {
+  cod_enabled?: boolean | null;
+  card_enabled?: boolean | null;
+  benefit_enabled?: boolean | null;
+  delivery_enabled?: boolean | null;
+  delivery_fee?: number | string | null;
+  pickup_enabled?: boolean | null;
+  digital_delivery_enabled?: boolean | null;
+}
+
+const badge = (
+  id: string,
+  icon: string,
+  color: string,
+  text_ar: string,
+  text_en: string,
+): TrustBadgeItem => ({ id, icon, text_ar, text_en, color, enabled: true });
+
+/**
+ * Badges that say only what the store's own settings say, in the checkout's words: the ways it is
+ * paid that are switched on, and how an order reaches the shopper. A store that never wrote its
+ * own badges shows these, and only these. The bar once filled the gap with promises nobody made:
+ * "100% authentic", "with warranty", "fast delivery to the door" for a store that does not deliver,
+ * cash on delivery when the switch was never set, and "256-bit SSL encrypted".
+ */
+export function storeFactBadges(settings?: TrustBadgeSettings | null): TrustBadgeItem[] {
+  const s = settings ?? {};
+  const items: TrustBadgeItem[] = [];
+
+  const methods = [
+    s.card_enabled === true && { ar: "بالبطاقة", en: "card", icon: "CreditCard" },
+    s.benefit_enabled === true && { ar: "عبر بنفت باي", en: "BenefitPay", icon: "QrCode" },
+    s.cod_enabled === true && { ar: "عند الاستلام", en: "cash on delivery", icon: "Banknote" },
+  ].filter(Boolean) as Array<{ ar: string; en: string; icon: string }>;
+  if (methods.length > 0) {
+    const en = methods.map((m) => m.en);
+    const enText = en.length > 1 ? `${en.slice(0, -1).join(", ")} or ${en[en.length - 1]}` : en[0];
+    items.push(
+      badge(
+        "badge-payments",
+        methods.length > 1 ? "Wallet" : methods[0].icon,
+        "emerald",
+        `الدفع ${methods.map((m) => m.ar).join(" أو ")}`,
+        `Pay by ${enText}`,
+      ),
+    );
+  }
+
+  const delivers = s.delivery_enabled === true;
+  const freeDelivery = delivers && s.delivery_fee != null && Number(s.delivery_fee) === 0;
+  if (delivers && s.pickup_enabled === true) {
+    items.push(
+      badge(
+        "badge-delivery",
+        "Truck",
+        "purple",
+        freeDelivery ? "توصيل مجاني أو استلام من المتجر" : "توصيل أو استلام من المتجر",
+        freeDelivery ? "Free delivery or store pickup" : "Delivery or store pickup",
+      ),
+    );
+  } else if (delivers) {
+    items.push(
+      badge(
+        "badge-delivery",
+        "Truck",
+        "purple",
+        freeDelivery ? "توصيل مجاني" : "توصيل إلى بابك",
+        freeDelivery ? "Free delivery" : "Delivery to your door",
+      ),
+    );
+  } else if (s.pickup_enabled === true) {
+    items.push(
+      badge("badge-delivery", "PackageCheck", "purple", "استلام من المتجر", "Store pickup"),
+    );
+  }
+  if (s.digital_delivery_enabled === true) {
+    items.push(
+      badge(
+        "badge-digital",
+        "Zap",
+        "sky",
+        "تسليم رقمي بعد الدفع",
+        "Digital delivery after payment",
+      ),
+    );
+  }
+  return items;
 }
 
 /**
- * Generates tailored trust badges dynamically based on the brand's vertical,
- * enabled payment methods, and fulfillment settings.
+ * A starting set for the badges editor ("Auto-generate"): the kind of store's own line, which the
+ * merchant reads, edits and saves as theirs, then the facts from its settings. Never shown to a
+ * shopper unless the merchant saves it.
  */
-export function getDynamicTrustBadges(params?: DynamicTrustBadgesParams): TrustBadgesConfig {
-  const vertical = (params?.vertical || "general").toLowerCase();
-  const settings = params?.settings || {};
-  const currency = (params?.currency || settings.currency || "BHD").toUpperCase();
-
-  // 1. Craftsmanship / Product badge tailored to vertical (copy lives in brand-templates)
-  const productBadge: TrustBadgeItem = verticalProductBadge(vertical);
-
-  // 2. Payment badge tailored to store payment settings & currency
-  const codEnabled = Boolean(settings.cod_enabled ?? true);
-  const benefitEnabled = Boolean(settings.benefit_enabled || settings.benefit_pay_enabled);
-  const cardEnabled = Boolean(
-    settings.card_enabled || settings.tap_enabled || settings.stripe_enabled,
-  );
-
-  let paymentBadge: TrustBadgeItem;
-  if (benefitEnabled && codEnabled && currency === "BHD") {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "Banknote",
-      text_ar: "الدفع كاش عند الاستلام أو بنفت بي",
-      text_en: "Cash on Arrival & BenefitPay",
-      color: "emerald",
-      enabled: true,
-    };
-  } else if (benefitEnabled && currency === "BHD") {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "QrCode",
-      text_ar: "الدفع المباشر عبر بنفت بي",
-      text_en: "Direct BenefitPay Checkout",
-      color: "emerald",
-      enabled: true,
-    };
-  } else if (cardEnabled && codEnabled) {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "CreditCard",
-      text_ar: "الدفع بالبطاقة أو عند الاستلام",
-      text_en: "Card & Cash on Delivery",
-      color: "emerald",
-      enabled: true,
-    };
-  } else if (cardEnabled) {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "CreditCard",
-      text_ar: "دفع إلكتروني آمن ومشفر",
-      text_en: "Safe & Encrypted Digital Payments",
-      color: "emerald",
-      enabled: true,
-    };
-  } else if (codEnabled) {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "Banknote",
-      text_ar: "الدفع نقداً عند الاستلام",
-      text_en: "Cash on Delivery Available",
-      color: "emerald",
-      enabled: true,
-    };
-  } else {
-    paymentBadge = {
-      id: "badge-payments",
-      icon: "CreditCard",
-      text_ar: "طرق دفع آمنة وموثوقة",
-      text_en: "Secure & Trusted Payment Methods",
-      color: "emerald",
-      enabled: true,
-    };
-  }
-
-  // 3. Security badge
-  const securityBadge: TrustBadgeItem = {
-    id: "badge-security",
-    icon: "ShieldCheck",
-    text_ar: "موقع آمن ومشفّر 256-Bit",
-    text_en: "256-Bit SSL Encrypted",
-    color: "sky",
-    enabled: true,
-  };
-
-  // 4. Delivery / fulfillment badge
-  let deliveryBadge: TrustBadgeItem;
-  if (vertical === "digital" || settings.digital_delivery_enabled) {
-    deliveryBadge = {
-      id: "badge-delivery",
-      icon: "Zap",
-      text_ar: "تحميل فوري بعد الدفع مباشرة",
-      text_en: "Instant Access & Direct Download",
-      color: "purple",
-      enabled: true,
-    };
-  } else if (settings.pickup_enabled && settings.delivery_enabled === false) {
-    deliveryBadge = {
-      id: "badge-delivery",
-      icon: "PackageCheck",
-      text_ar: "استلام فوري وميسّر من الفرع",
-      text_en: "Fast & Easy Store Pickup",
-      color: "purple",
-      enabled: true,
-    };
-  } else {
-    deliveryBadge = {
-      id: "badge-delivery",
-      icon: "Truck",
-      text_ar: "توصيل سريع ومباشر للباب",
-      text_en: "Fast & Direct Local Delivery",
-      color: "purple",
-      enabled: true,
-    };
-  }
-
+export function getDynamicTrustBadges(params?: {
+  vertical?: string | null;
+  settings?: TrustBadgeSettings | null;
+}): TrustBadgesConfig {
   return {
     enabled: true,
-    items: [productBadge, paymentBadge, securityBadge, deliveryBadge],
+    items: [verticalProductBadge(params?.vertical), ...storeFactBadges(params?.settings)],
   };
 }
-
-export const DEFAULT_TRUST_BADGES: TrustBadgesConfig = getDynamicTrustBadges({
-  vertical: "general",
-});
 
 /**
  * Resolves active trust badges for the storefront.
  *
- * Rules:
- * 1. If merchant explicitly configured trust badges in database:
- *    - If global toggle is off (enabled === false): returns [] (no badges).
- *    - If merchant configured items list (even if empty []): returns items where enabled !== false.
- * 2. If not yet configured (null/undefined):
- *    - Falls back to smart niche-specific dynamic badges.
+ * - The merchant's own badges, once saved: none when the bar is switched off, else the ones left
+ *   on (an empty list shows nothing).
+ * - Before that, the facts its settings say (`storeFactBadges`), nothing more.
  */
 export function resolveStorefrontTrustBadges(options: {
   config?: TrustBadgesConfig | null;
-  vertical?: string | null;
-  settings?: any;
-  brandName?: string | null;
+  settings?: TrustBadgeSettings | null;
 }): TrustBadgeItem[] {
-  const { config, vertical, settings, brandName } = options;
-
-  // 1. If merchant explicitly configured trust badges in database:
+  const { config, settings } = options;
   if (config && typeof config === "object") {
-    // If merchant turned OFF the global badges toggle:
-    if (config.enabled === false) {
-      return [];
-    }
-    // If merchant configured items:
+    if (config.enabled === false) return [];
     if (Array.isArray(config.items)) {
       return config.items.filter((item) => item && item.enabled !== false);
     }
   }
-
-  // 2. Fallback to smart niche-specific dynamic badges only if not yet configured by merchant:
-  const dynamic = getDynamicTrustBadges({
-    vertical: vertical || undefined,
-    settings,
-    currency: settings?.currency,
-    brandName: brandName || undefined,
-  });
-
-  if (dynamic.enabled === false) {
-    return [];
-  }
-
-  return (dynamic.items || []).filter((item) => item && item.enabled !== false);
+  return storeFactBadges(settings);
 }
 
 export interface BadgeColorPreset {
