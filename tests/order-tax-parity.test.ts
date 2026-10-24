@@ -2,13 +2,14 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import builder from "../supabase/migrations/20261014130000_partner_pickup_points.sql?raw";
 import reprice from "../supabase/migrations/20261002100000_booking_discounts.sql?raw";
-import redeem from "../supabase/migrations/20261024100000_points_keep_inclusive_vat.sql?raw";
+import redeem from "../supabase/migrations/20261024110000_points_come_off_before_tax.sql?raw";
 import { orderTotals, storeTaxRule, type TaxRule } from "../src/lib/order-tax";
+import { orderTotals as editorTotals } from "../src/features/orders/lib/order-editor";
 
 // The checkout's total (TypeScript) must be the one the order charges: the same orders go
 // through the live order builder (place_storefront_order, read from production on 2026-10-23
 // and equal to these migrations), the booking's repricing and the points redemption (as
-// migration 20261024100000 redefines it).
+// migration 20261024110000 redefines it: points are a discount before tax).
 vi.setConfig({ testTimeout: 180_000, hookTimeout: 60_000 });
 
 const functionOf = (sql: string, head: string) => {
@@ -184,26 +185,41 @@ describe("the checkout's total is the total the order charges", () => {
     });
   });
 
-  it("takes points off a VAT-inclusive store's total without adding its tax again (#43)", async () => {
-    const rule: TaxRule = { rate: 10, inclusive: true };
-    // 40.000 with the tax inside it, 3.000 of points: 37.000 to pay, the tax recorded as before.
-    const row = await placed({ subtotal: 40, discount: 0, shipping: 0, rule, points: 300 });
-    expect({ tax: Number(row.tax_amount), total: Number(row.total) }).toEqual({
-      tax: 3.636,
-      total: 37,
-    });
-    expect(
-      orderTotals({ subtotal: 40, discount: 0, shipping: 0, loyaltyDiscount: 3 }, rule),
-    ).toMatchObject({ tax: 3.636, total: 37 });
-    // A VAT-exclusive store still adds its tax on top of what is left.
-    const exclusive = await placed({
+  it("takes points off the price before the tax, with or without VAT in the prices (#43, #44)", async () => {
+    // 40.000 and 3.000 of points: the tax is on the 37.000 the customer pays.
+    const exclusive: TaxRule = { rate: 10, inclusive: false };
+    const inclusive: TaxRule = { rate: 10, inclusive: true };
+    const onTop = await placed({
       subtotal: 40,
       discount: 0,
       shipping: 0,
-      rule: { rate: 10, inclusive: false },
+      rule: exclusive,
       points: 300,
     });
-    expect(Number(exclusive.total)).toBe(41);
+    expect({ tax: Number(onTop.tax_amount), total: Number(onTop.total) }).toEqual({
+      tax: 3.7,
+      total: 40.7,
+    });
+    const inside = await placed({
+      subtotal: 40,
+      discount: 0,
+      shipping: 0,
+      rule: inclusive,
+      points: 300,
+    });
+    expect({ tax: Number(inside.tax_amount), total: Number(inside.total) }).toEqual({
+      tax: 3.364,
+      total: 37,
+    });
+    for (const rule of [exclusive, inclusive]) {
+      expect(
+        orderTotals({ subtotal: 40, discount: 0, shipping: 0, loyaltyDiscount: 3 }, rule),
+      ).toMatchObject(rule.inclusive ? { tax: 3.364, total: 37 } : { tax: 3.7, total: 40.7 });
+    }
+    // Saved again (the editor and a booking's offer reprice the order): nothing moves.
+    await setRule(exclusive);
+    await db.query("SELECT public.reprice_order_totals($1)", [onTop.id]);
+    expect(Number((await read(onTop.id)).total)).toBe(40.7);
   });
 
   it("agrees with the order builder and the points redemption on every order", async () => {
@@ -222,6 +238,24 @@ describe("the checkout's total is the total the order charges", () => {
         tax: twin.tax,
         total: twin.total,
       });
+    }
+  });
+
+  it("agrees with the order editor, which reads the points inside the order's discount", async () => {
+    for (const c of cases().filter((x) => x.points)) {
+      const row = await placed(c);
+      const order = (
+        await db.query<{ discount: string; shipping: string; tax_rate: string }>(
+          "SELECT discount, shipping, tax_rate FROM public.orders WHERE id = $1",
+          [row.id],
+        )
+      ).rows[0];
+      const items = [{ line_total: c.subtotal }] as Parameters<typeof editorTotals>[0];
+      const editor = editorTotals(items, order, c.rule.inclusive);
+      const fils = (n: number) => Math.round(n * 1000) / 1000;
+      expect({ tax: fils(editor.taxAmount), total: fils(editor.total) }, JSON.stringify(c)).toEqual(
+        { tax: Number(row.tax_amount), total: Number(row.total) },
+      );
     }
   });
 

@@ -10,10 +10,11 @@
  * same total and the order records the share that is tax. Amounts are kept to the fils (three
  * decimals), the tax rounded half away from zero as Postgres does.
  *
- * Loyalty points come off after the order is placed (`redeem_loyalty_points_for_order`): they
- * lower the total and leave the tax as it was, which is added on top of what is left only where
- * prices exclude it. Where prices include it the tax is already in the subtotal: adding it again
- * charged a 40.000 order with 3.000 of points 40.636 (bug #43, migration `20261024100000`).
+ * The store's loyalty points are a discount on the price, as international practice treats a
+ * seller's own scheme: they come off before the tax, which is worked out on what the customer
+ * pays (`redeem_loyalty_points_for_order` reprices the order through `reprice_order_totals`,
+ * migration `20261024110000`; the order editor reads them the same way). They once left the tax
+ * as it was, so an order saved again from the editor changed its total (bug #44).
  */
 
 export type TaxRule = {
@@ -45,12 +46,12 @@ export type OrderAmounts = {
   discount: number;
   /** The delivery or travel fee. */
   shipping: number;
-  /** What the shopper's points take off, applied after the order is placed. */
+  /** What the shopper's points take off: a discount before tax, as the promo code's. */
   loyaltyDiscount?: number;
 };
 
 export type OrderTotals = {
-  /** What the tax is worked on: the subtotal after discounts, never below zero. */
+  /** What the tax is worked on: the subtotal after discounts and points, never below zero. */
   taxable: number;
   /** The order's `tax_amount`. */
   tax: number;
@@ -74,18 +75,15 @@ export function orderTotals(amounts: OrderAmounts, rule: TaxRule): OrderTotals {
   const subtotal = fils(amounts.subtotal);
   const discount = fils(amounts.discount);
   const shipping = fils(amounts.shipping);
-  const taxable = Math.max(0, subtotal - discount);
+  // Points come off what is left after the discounts (the redemption allows no more).
+  const points = Math.min(fils(amounts.loyaltyDiscount ?? 0), Math.max(0, subtotal - discount));
+  const taxable = Math.max(0, subtotal - discount - points);
   // numeric(5,2): the rate in hundredths of a percent, so the tax is exact before rounding.
   const rate = Math.round(Math.max(0, rule.rate) * 100);
   const tax = rule.inclusive
     ? divideRounded(taxable * rate, 10000 + rate)
     : divideRounded(taxable * rate, 10000);
-  let total = rule.inclusive ? taxable + shipping : taxable + tax + shipping;
-
-  const points = Math.min(fils(amounts.loyaltyDiscount ?? 0), taxable);
-  if (points > 0) {
-    total = Math.max(0, subtotal - (discount + points)) + shipping + (rule.inclusive ? 0 : tax);
-  }
+  const total = rule.inclusive ? taxable + shipping : taxable + tax + shipping;
 
   return {
     taxable: money(taxable),
