@@ -39,7 +39,7 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     description_en: product?.description_en ?? product?.description ?? "",
     category: product?.category ?? "",
     base_price: product?.base_price ? String(product.base_price) : "0",
-    cost_price: product?.cost_price ? String(product.cost_price) : "0",
+    cost_price: product?.cost_price ? String(product.cost_price) : "",
     // The cost in parts (null: one number); saved on the product's cost, never in its columns.
     cost_parts: rowsFrom(product?.cost_parts ?? null),
     image_url: product?.image_url ?? "",

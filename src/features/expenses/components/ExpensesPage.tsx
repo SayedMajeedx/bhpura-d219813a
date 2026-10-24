@@ -203,6 +203,7 @@ export function ExpensesPage() {
         currency={currency}
         slug={brand.slug}
         figures={figures}
+        period={{ from: activeRange.from, to: activeRange.to }}
       />
 
       {/* Financial & Accounting Hub Navigation Tabs */}

@@ -44,7 +44,7 @@ describe("Phase 7A responsive workspaces", () => {
     }
   });
 
-  test("customer segments provide a localized overflow action", () => {
+  test("customer segments are one sideways row with whole labels on a phone", () => {
     render(
       <CustomersScopeSwitcher
         lang="ar"
@@ -54,7 +54,11 @@ describe("Phase 7A responsive workspaces", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "المزيد من شرائح العملاء" })).toBeDefined();
+    // Every segment is a button of its own, its label whole: no "…" menu hiding three of them.
+    for (const name of [/جميع العملاء/, /المميزون/]) {
+      expect(screen.getAllByRole("button", { name }).length).toBeGreaterThan(0);
+    }
+    expect(screen.queryByRole("button", { name: "المزيد من شرائح العملاء" })).toBeNull();
   });
 
   test("categories retain desktop table and render mobile cards with named reorder actions", () => {

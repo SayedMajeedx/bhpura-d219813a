@@ -1,11 +1,5 @@
 import React from "react";
-import { Star, Users, RefreshCw, UserPlus, AlertCircle, MoreHorizontal } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Star, Users, RefreshCw, UserPlus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CustomerSegmentScope = "all" | "vip" | "repeat" | "new" | "churn";
@@ -63,7 +57,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
     },
   ];
 
-  const renderScope = (scope: (typeof scopes)[number], mobile = false) => {
+  const renderScope = (scope: (typeof scopes)[number]) => {
     const Icon = scope.icon;
     const isActive = currentScope === scope.id;
     const count = counts[scope.id] || 0;
@@ -76,14 +70,14 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
         onClick={() => onScopeChange(scope.id)}
         className={cn(
           "flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all cursor-pointer",
-          mobile ? "min-w-0 flex-1" : "shrink-0",
+          "shrink-0",
           isActive
             ? "border border-border-strong bg-card text-foreground shadow-2xs"
             : "text-muted-foreground hover:bg-card/50 hover:text-foreground",
         )}
       >
         <Icon className={cn("h-3.5 w-3.5 shrink-0", scope.badgeStyle)} />
-        <span className="truncate">{isAr ? scope.labelAr : scope.labelEn}</span>
+        <span className="whitespace-nowrap">{isAr ? scope.labelAr : scope.labelEn}</span>
         <span
           className={cn(
             "rounded-full px-1.5 text-xs font-extrabold",
@@ -103,41 +97,10 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
           return renderScope(scope);
         })}
       </div>
-      <div className="grid grid-cols-[repeat(2,minmax(0,1fr))_44px] gap-1.5 rounded-2xl border border-border-subtle bg-muted/35 p-1 sm:hidden">
-        {scopes.slice(0, 2).map((scope) => renderScope(scope, true))}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              aria-label={isAr ? "المزيد من شرائح العملاء" : "More customer segments"}
-              className={cn(
-                "flex min-h-10 items-center justify-center rounded-xl border border-border-subtle bg-card text-muted-foreground",
-                ["repeat", "new", "churn"].includes(currentScope) &&
-                  "border-primary/30 bg-primary/10 text-primary",
-              )}
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align={isAr ? "start" : "end"} className="min-w-56">
-            {scopes.slice(2).map((scope) => {
-              const Icon = scope.icon;
-              return (
-                <DropdownMenuItem
-                  key={scope.id}
-                  onClick={() => onScopeChange(scope.id)}
-                  className={cn("gap-2", currentScope === scope.id && "bg-primary/10 text-primary")}
-                >
-                  <Icon className={cn("h-4 w-4", scope.badgeStyle)} />
-                  <span className="flex-1">{isAr ? scope.labelAr : scope.labelEn}</span>
-                  <span className="rounded-full bg-muted px-2 text-xs font-bold">
-                    {counts[scope.id] || 0}
-                  </span>
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* On a phone, one sideways row with whole labels, as the orders' filters: two halves and a
+          menu cut the labels to "جميع العـ…" and hid three segments behind "…". */}
+      <div className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar sm:hidden">
+        {scopes.map((scope) => renderScope(scope))}
       </div>
     </>
   );
