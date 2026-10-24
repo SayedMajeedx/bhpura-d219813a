@@ -37,7 +37,8 @@ describe("productFormFrom", () => {
     expect(productFormFrom(null)).toMatchObject({
       name_en: "",
       base_price: "0",
-      cost_price: "0",
+      // An unknown cost is empty, not 0 (the field once showed "0" for every product with none).
+      cost_price: "",
       is_active: true,
       show_sale_badge: true,
       custom_fields: [],
@@ -50,7 +51,7 @@ describe("productFormFrom", () => {
       name_en: "Legacy",
       description_en: "Old description",
       base_price: "25",
-      cost_price: "0",
+      cost_price: "",
       is_active: false,
       show_sale_badge: false,
     });

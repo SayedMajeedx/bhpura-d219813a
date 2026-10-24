@@ -92,7 +92,7 @@ export const SETTINGS_GROUPS: Record<SettingsTabId, { id: string; ar: string; en
   ],
   orders: [
     { id: "payments", ar: "طرق الدفع", en: "Payment Methods" },
-    { id: "pricing", ar: "العملة والضريبة", en: "Currency & Tax" },
+    { id: "pricing", ar: "الأسعار والضريبة", en: "Pricing & tax" },
     { id: "fulfillment", ar: "التوصيل والاستلام", en: "Delivery & Pickup" },
     { id: "invoice", ar: "الفاتورة", en: "Invoice" },
   ],

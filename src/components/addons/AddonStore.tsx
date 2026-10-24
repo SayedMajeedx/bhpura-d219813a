@@ -62,7 +62,7 @@ export function AddonStore({
     addons: installedRows,
     events,
     policies: _policies,
-    isLoading: _isLoading,
+    isLoading,
     isMutating,
     installAddon,
     disableAddon,
@@ -467,7 +467,8 @@ export function AddonStore({
       )}
 
       {/* 3. Starter Pack Status Callout */}
-      {storeVertical && (
+      {/* Not before the installed add-ons load: it said "0 installed, install the remaining". */}
+      {storeVertical && !isLoading && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl border border-border bg-card">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -579,7 +580,7 @@ export function AddonStore({
           >
             {isAr ? "المثبتة" : "Installed"}
             <span className="ms-1.5 rounded-full bg-background/20 px-1.5 py-0.2 text-xs">
-              {installedRows.length}
+              {isLoading ? "…" : installedRows.length}
             </span>
           </Button>
           {storeVertical && (

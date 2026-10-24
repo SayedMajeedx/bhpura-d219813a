@@ -52,6 +52,8 @@ export function SettingsStickySaveBar({
 
   return (
     <div
+      aria-hidden={!isVisible}
+      inert={!isVisible}
       dir={isAr ? "rtl" : "ltr"}
       aria-live="polite"
       className={cn(

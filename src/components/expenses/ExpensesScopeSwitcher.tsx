@@ -10,6 +10,21 @@ interface ExpensesScopeSwitcherProps {
   slug: string;
   /** The Reports' figures for the page's period; null while they load. */
   figures: PeriodFigures | null;
+  /** The page's period (whole days, YYYY-MM-DD): the strip says which days its figures are. */
+  period?: { from: string; to: string };
+}
+
+/** "1 Oct 2026 – 31 Oct 2026", in Western digits, read as calendar days. */
+export function periodCaption(period: { from: string; to: string }, lang: "ar" | "en"): string {
+  const day = (iso: string) => {
+    const [y, m, d] = iso.split("-").map(Number);
+    return new Intl.DateTimeFormat(lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(y, (m || 1) - 1, d || 1));
+  };
+  return period.from === period.to ? day(period.from) : `${day(period.from)} – ${day(period.to)}`;
 }
 
 /**
@@ -22,6 +37,7 @@ export function ExpensesScopeSwitcher({
   currency,
   slug,
   figures,
+  period,
 }: ExpensesScopeSwitcherProps) {
   const isAr = lang === "ar";
   const money = (value: number | undefined) =>
@@ -39,6 +55,14 @@ export function ExpensesScopeSwitcher({
 
   return (
     <div className="rounded-2xl border border-border-subtle bg-muted/30 p-1.5">
+      {period && (
+        <p className="px-2 pb-1.5 pt-0.5 text-xs text-muted-foreground">
+          {isAr ? "أرقام الفترة: " : "Figures for "}
+          <span dir="auto" className="font-medium text-foreground">
+            {periodCaption(period, lang)}
+          </span>
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-5">
         <Tile
           label={isAr ? "صافي المبيعات" : "Net sales"}

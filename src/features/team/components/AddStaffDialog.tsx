@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -16,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Users, Shield, Crown, Sparkles, Eye, EyeOff } from "lucide-react";
+import { Users, Shield, Crown, Sparkles, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { UserRole } from "@/lib/profile-context";
 
@@ -48,12 +47,7 @@ export function AddStaffDialog({ page }: { page: TeamPageState }) {
           if (!v) resetForm();
         }}
       >
-        <DialogTrigger asChild>
-          <Button className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
-            <Plus className="h-4 w-4" />
-            {isAr ? "إضافة موظف" : "Add Staff"}
-          </Button>
-        </DialogTrigger>
+        {/* Opened by the page heading's action and the empty list's: no third button. */}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{isAr ? "إضافة موظف جديد" : "Add New Staff Member"}</DialogTitle>

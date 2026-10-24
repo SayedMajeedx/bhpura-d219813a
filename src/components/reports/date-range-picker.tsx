@@ -31,7 +31,7 @@ export function DatePickerWithRange({ className, date, setDate }: DatePickerWith
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-11 w-full justify-start rounded-xl bg-white px-4 text-start font-medium shadow-sm sm:w-[310px]"
+            className="h-11 w-full justify-start rounded-xl bg-card px-4 text-start font-medium shadow-sm sm:w-[310px]"
           >
             <CalendarIcon className="me-2 h-4 w-4 text-primary" />
             <span className="flex-1 tabular-nums" dir="ltr">
