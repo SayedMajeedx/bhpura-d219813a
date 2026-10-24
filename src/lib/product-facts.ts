@@ -30,7 +30,14 @@ export type FactField = {
 /** How the product page lays a vertical's facts out (the rest is a table). */
 export type FactLayout = "notes" | "allergens" | "table";
 
-type FactSet = { layout: FactLayout; fields: readonly FactField[] };
+/**
+ * What a card says under the name: these facts joined ("Eau de Parfum · Oud"), a fact named with
+ * its label when its value alone says nothing ("Serves 6 - 8"), or the dimensions as W × D × H.
+ */
+type CardSpec =
+  { keys: readonly string[]; labelled?: readonly string[] } | { dimensions: readonly string[] };
+
+type FactSet = { layout: FactLayout; fields: readonly FactField[]; card?: CardSpec };
 
 const c = (value: string, ar: string, en: string): FactChoice => ({ value, ar, en });
 
@@ -70,6 +77,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   fragrance: {
     layout: "notes",
+    card: { keys: ["concentration", "family"] },
     fields: [
       {
         key: "concentration",
@@ -117,6 +125,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   beauty: {
     layout: "table",
+    card: { keys: ["skin_type"] },
     fields: [
       {
         key: "key_ingredients",
@@ -151,6 +160,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   food: {
     layout: "allergens",
+    card: { keys: ["serves"], labelled: ["serves"] },
     fields: [
       { key: "ingredients", label: { ar: "المكونات", en: "Ingredients" }, kind: "text" },
       {
@@ -176,6 +186,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   coffee: {
     layout: "table",
+    card: { keys: ["origin", "roast"] },
     fields: [
       { key: "origin", label: { ar: "المنشأ", en: "Origin" }, kind: "text" },
       { key: "variety", label: { ar: "السلالة", en: "Variety" }, kind: "text" },
@@ -213,6 +224,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   jewelry: {
     layout: "table",
+    card: { keys: ["karat", "metal", "weight"] },
     fields: [
       {
         key: "metal",
@@ -232,12 +244,12 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
         label: { ar: "العيار", en: "Karat" },
         kind: "choice",
         choices: [
-          c("24k", "24", "24K"),
-          c("22k", "22", "22K"),
-          c("21k", "21", "21K"),
-          c("18k", "18", "18K"),
-          c("14k", "14", "14K"),
-          c("925", "925", "925 silver"),
+          c("24k", "عيار 24", "24K"),
+          c("22k", "عيار 22", "22K"),
+          c("21k", "عيار 21", "21K"),
+          c("18k", "عيار 18", "18K"),
+          c("14k", "عيار 14", "14K"),
+          c("925", "فضة 925", "925 silver"),
         ],
       },
       {
@@ -252,6 +264,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   home: {
     layout: "table",
+    card: { dimensions: ["width", "depth", "height"] },
     fields: [
       {
         key: "width",
@@ -289,6 +302,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   print: {
     layout: "table",
+    card: { keys: ["turnaround"], labelled: ["turnaround"] },
     fields: [
       { key: "material", label: { ar: "الخامة", en: "Material" }, kind: "text" },
       { key: "dimensions", label: { ar: "المقاس", en: "Dimensions" }, kind: "text" },
@@ -302,6 +316,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   digital: {
     layout: "table",
+    card: { keys: ["format"] },
     fields: [
       {
         key: "format",
@@ -315,6 +330,7 @@ const FACT_SETS: Partial<Record<StoreVertical, FactSet>> = {
   },
   electronics: {
     layout: "table",
+    card: { keys: ["brand", "model"] },
     fields: [
       { key: "brand", label: { ar: "العلامة التجارية", en: "Brand" }, kind: "text" },
       { key: "model", label: { ar: "الطراز", en: "Model" }, kind: "text" },
@@ -413,4 +429,62 @@ export function factLines(
     }
   }
   return lines;
+}
+
+/** Whether the store's cards say a fact under the name (its cards keep a line for it). */
+export function hasCardFact(vertical: string | null | undefined): boolean {
+  return Boolean(factSet(vertical).card);
+}
+
+/**
+ * The one line a card says about the product, from its facts: null when the store's kind says
+ * none or the product has none of them.
+ */
+export function cardFact(
+  facts: unknown,
+  vertical: string | null | undefined,
+  lang: "ar" | "en",
+): string | null {
+  const set = factSet(vertical);
+  if (!set.card) return null;
+  const clean = cleanFacts(facts);
+  if ("dimensions" in set.card) {
+    const dimensions = set.card.dimensions;
+    const sizes = dimensions
+      .map((key) => clean[key])
+      .filter((value): value is number => typeof value === "number");
+    if (sizes.length === 0) return null;
+    const unit = set.fields.find((field) => field.key === dimensions[0])?.unit;
+    return unit ? `${sizes.join(" × ")} ${unit[lang]}` : sizes.join(" × ");
+  }
+  const { keys, labelled = [] } = set.card;
+  const lines = new Map(factLines(clean, vertical, lang).map((line) => [line.key, line]));
+  const parts = keys
+    .map((key) => lines.get(key))
+    .filter((line): line is FactLine => Boolean(line))
+    .map((line) => {
+      const value = line.items
+        ? line.items.slice(0, 2).join(lang === "ar" ? "، " : ", ")
+        : line.value;
+      return labelled.includes(line.key) ? `${line.label} ${value}` : value;
+    });
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/**
+ * The facts a listing can filter by: a choice or several of the store's set (a roast, a scent
+ * family, a metal, a skin type). A food's allergens are not one: a shopper looks for what a
+ * product is free from, not what it contains.
+ */
+export function filterableFacts(vertical: string | null | undefined): FactField[] {
+  return factSet(vertical).fields.filter(
+    (field) => (field.kind === "choice" || field.kind === "choices") && field.key !== "allergens",
+  );
+}
+
+/** A product's values for a fact (a choice as one, several as many). */
+export function factValues(facts: unknown, key: string): string[] {
+  const value = cleanFacts(facts)[key];
+  if (typeof value === "string") return [value];
+  return Array.isArray(value) ? value : [];
 }

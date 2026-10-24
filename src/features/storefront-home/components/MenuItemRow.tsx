@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { CardFactLine } from "@/components/storefront/CardFactLine";
 import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, pickName, useStorefront } from "@/lib/storefront-context";
@@ -124,6 +125,7 @@ export function MenuItemRow({
         >
           {name}
         </Link>
+        <CardFactLine details={product.details} reserve={false} />
         {description && (
           <p dir="auto" className="text-page-start line-clamp-2 text-sm text-muted-foreground">
             {description}

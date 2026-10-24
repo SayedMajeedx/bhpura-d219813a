@@ -16,6 +16,7 @@ import {
   type FilterState,
 } from "@/lib/category-filters";
 import { occasionLabel } from "@/lib/product-occasion";
+import { filterableFacts } from "@/lib/product-facts";
 import { cn } from "@/lib/utils";
 
 export type { FilterState } from "@/lib/category-filters";
@@ -345,6 +346,50 @@ export function CategoryFilters({
           </div>
         </Group>
       )}
+
+      {/* The store's facts a shopper picks by (a roast, a scent family, a metal) */}
+      {facets.facts.map((facet) => {
+        const field = filterableFacts(settings?.store_vertical).find((f) => f.key === facet.key);
+        if (!field) return null;
+        const picked = filters.facts[facet.key] ?? [];
+        const setPicked = (next: string[]) =>
+          onChange((prev) => ({ ...prev, facts: { ...prev.facts, [facet.key]: next } }));
+        return (
+          <Group
+            key={facet.key}
+            label={field.label[axisLang]}
+            clearLabel={clear}
+            onClear={picked.length > 0 ? () => setPicked([]) : undefined}
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {facet.options.map((option) => {
+                const active = picked.includes(option.value);
+                const empty = option.count === 0;
+                const label =
+                  field.choices?.find((choice) => choice.value === option.value)?.[axisLang] ??
+                  option.value;
+                return (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant="ghost"
+                    aria-pressed={active}
+                    aria-disabled={empty && !active ? true : undefined}
+                    title={countWord(option.count)}
+                    onClick={() => {
+                      if (empty && !active) return;
+                      setPicked(toggled(picked, option.value));
+                    }}
+                    className={cn(chipClass(active, empty), "px-3")}
+                  >
+                    {label}
+                  </Button>
+                );
+              })}
+            </div>
+          </Group>
+        );
+      })}
 
       {facets.price.max > 0 && (
         <Group

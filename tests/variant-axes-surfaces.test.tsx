@@ -125,6 +125,7 @@ describe("storefront surfaces use the store's option axes", () => {
         sizes: [],
         colors: [],
         occasions: [],
+        facts: {},
         minPrice: null,
         maxPrice: null,
         inStockOnly: false,
@@ -137,6 +138,7 @@ describe("storefront surfaces use the store's option axes", () => {
       sizes: sizes.map(([value, unit]) => ({ value, unit, count: 1 })),
       colors: colors.map((name) => ({ name, hex: null, count: 1 })),
       occasions: [],
+      facts: [],
       price: { min: 0, max: 100 },
     });
     const coffee = render(

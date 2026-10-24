@@ -39,6 +39,8 @@ export type ProductRow = {
   custom_fields?: unknown;
   /** What it is worn or given for (`product-occasion.ts`); a listing filters by it. */
   occasion?: string | null;
+  /** Its facts (`product-facts.ts`): a card's key fact, a listing's filters. */
+  details?: unknown;
   product_variants: Array<{
     id: string;
     selling_price: number;
