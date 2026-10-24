@@ -11,9 +11,9 @@
  * decimals), the tax rounded half away from zero as Postgres does.
  *
  * Loyalty points come off after the order is placed (`redeem_loyalty_points_for_order`): they
- * lower the total and leave the tax as it was, and that function adds the order's tax on top
- * of what is left, including a store whose prices already include it (bug #43). The twin says
- * what the database charges.
+ * lower the total and leave the tax as it was, which is added on top of what is left only where
+ * prices exclude it. Where prices include it the tax is already in the subtotal: adding it again
+ * charged a 40.000 order with 3.000 of points 40.636 (bug #43, migration `20261024100000`).
  */
 
 export type TaxRule = {
@@ -83,7 +83,9 @@ export function orderTotals(amounts: OrderAmounts, rule: TaxRule): OrderTotals {
   let total = rule.inclusive ? taxable + shipping : taxable + tax + shipping;
 
   const points = Math.min(fils(amounts.loyaltyDiscount ?? 0), taxable);
-  if (points > 0) total = Math.max(0, subtotal - (discount + points)) + shipping + tax;
+  if (points > 0) {
+    total = Math.max(0, subtotal - (discount + points)) + shipping + (rule.inclusive ? 0 : tax);
+  }
 
   return {
     taxable: money(taxable),
