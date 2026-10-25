@@ -260,8 +260,7 @@ export function CustomersPage({ slug }: { slug: string }) {
 
       <BulkSelectionToolbar
         lang={isAr ? "ar" : "en"}
-        entityAr="عميل"
-        entityEn="customers"
+        noun="customer"
         selectedCount={selectedCustomerIds.size}
         allFilteredSelected={allFilteredCustomersSelected}
         disabled={bulkDeleting || filteredCustomers.length === 0}
@@ -340,8 +339,7 @@ export function CustomersPage({ slug }: { slug: string }) {
 
       <ListPagination
         lang={isAr ? "ar" : "en"}
-        entityAr="عميل"
-        entityEn="Customers"
+        noun="customer"
         totalItems={filteredCustomers.length}
         page={safeCustomerPage}
         pageSize={rowsPerPage}

@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { catalogQueries } from "@/lib/data/catalog";
+import { storeDayLimitApplies } from "@/lib/bookings/service-capacity";
+import { waitingOnStore } from "@/features/bookings/lib/waiting-on-store";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
@@ -34,7 +37,6 @@ import {
 import { bookingMinutes, bookingNoteLine } from "@/lib/bookings/move";
 import { agendaEnd } from "@/features/bookings/lib/agenda";
 import { summariseMonth } from "@/features/bookings/lib/calendar-view";
-import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { donePlan } from "@/features/bookings/lib/booking-actions";
 import { takesDeposits } from "@/lib/bookings/deposit";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
@@ -71,8 +73,12 @@ export function useBookingsPage() {
   const rangeQuery = useQuery(bookingsQueries.range(brand.id, from, to));
   const blocksQuery = useQuery(bookingsQueries.blocks(brand.id, from, to));
   const requestsQuery = useQuery(bookingsQueries.requests(brand.id));
+  const waiting = waitingOnStore(requestsQuery.data ?? []);
   const areaFeesQuery = useQuery(bookingsQueries.areaFees(brand.id));
   const bookings = useMemo(() => rangeQuery.data ?? [], [rangeQuery.data]);
+  // The store's day limit decides "full" only for services with no capacity of their own.
+  const services = useQuery(catalogQueries.products(brand.id)).data;
+  const storeLimit = storeDayLimitApplies(services ?? []);
   const blocks = useMemo(() => blocksQuery.data ?? [], [blocksQuery.data]);
 
   const weeks = useMemo(
@@ -85,8 +91,9 @@ export function useBookingsPage() {
         bookings,
         blocks,
         today,
+        storeLimit,
       }),
-    [cursor, rules, bookings, blocks, today],
+    [cursor, rules, bookings, blocks, today, storeLimit],
   );
   const selectedCell = weeks.flat().find((cell) => cell.day === selectedDay) ?? null;
   const dayBookings = bookings.filter((booking) => booking.event_date === selectedDay);
@@ -293,12 +300,9 @@ export function useBookingsPage() {
     selectedCell,
     dayBookings,
     dayBlocks,
-    requests: (requestsQuery.data ?? []).filter((booking) => booking.status === "requested"),
+    requests: waiting.requests,
     /** A day held for a BenefitPay transfer whose receipt waits for the store's check. */
-    toVerify: (requestsQuery.data ?? []).filter(
-      (booking) =>
-        booking.status === "hold" && bookingInvoiceOf(booking)?.status === "pending_verification",
-    ),
+    toVerify: waiting.toVerify,
     /** The store's travel fees by area code. */
     areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,

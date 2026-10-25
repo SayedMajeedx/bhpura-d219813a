@@ -5071,6 +5071,8 @@ export type Database = {
           id: string;
           line_total: number;
           location: string;
+          name_ar: string | null;
+          name_en: string | null;
           order_id: string;
           original_price: number | null;
           packaging_cost_snapshot: number | null;
@@ -5092,6 +5094,8 @@ export type Database = {
           id?: string;
           line_total?: number;
           location?: string;
+          name_ar?: string | null;
+          name_en?: string | null;
           order_id: string;
           original_price?: number | null;
           packaging_cost_snapshot?: number | null;
@@ -5113,6 +5117,8 @@ export type Database = {
           id?: string;
           line_total?: number;
           location?: string;
+          name_ar?: string | null;
+          name_en?: string | null;
           order_id?: string;
           original_price?: number | null;
           packaging_cost_snapshot?: number | null;

@@ -421,8 +421,11 @@ describe("before going live (2026-10-24)", () => {
 
   it("counts in Arabic with arNoun, never a number glued to one form of the noun", () => {
     // "6 عملية بيع", "1 مهام معلّقة", "7 طلب", "5 تقييم": src/lib/arabic-count.ts has every form.
-    const glued = /\$\{[^{}]+\}\s?(منتج|طلب|عميل|تقييم|مهام|مهمة|قسم|رمز)(?![؀-ۿ])/g;
+    const glued =
+      /\$\{[^{}]+\}\s?(منتج|طلب|عميل|تقييم|مهام|مهمة|قسم|رمز|موعد|مدد|خدمة|حجز|دفعة|حركة)(?![؀-ۿ])/g;
     expect(countMatches(glued)).toBe(0);
+    // "و2 مدد أخرى", "و1 أخرى": a count glued to "and" with no noun that agrees with it.
+    expect(countMatches(/و\$\{[^{}]+\}\s?(?:[؀-ۿ]+\s)?أخرى/g)).toBe(0);
   });
 
   it("writes dates and numbers in Western digits, as the rest of the admin", () => {

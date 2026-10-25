@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { arNoun } from "@/lib/arabic-count";
 import { Link } from "@tanstack/react-router";
 import { Clock, KeyRound, MapPin, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -87,7 +88,7 @@ export function RentalCard({
         {lengths.length > SHOWN_LENGTHS && (
           <p className="text-xs text-muted-foreground">
             {t(
-              `و${lengths.length - SHOWN_LENGTHS} مدد أخرى`,
+              `+ ${arNoun(lengths.length - SHOWN_LENGTHS, "length")}`,
               `and ${lengths.length - SHOWN_LENGTHS} more lengths`,
             )}
           </p>

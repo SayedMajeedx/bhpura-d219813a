@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { storefrontQueries } from "@/lib/data/storefront";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
-import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, useIsServicesStore } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -703,6 +703,7 @@ function DesktopStoreNavigation() {
 
 function SearchBar() {
   const { brand, lang, t, currency } = useStorefront();
+  const servicesStore = useIsServicesStore();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -726,7 +727,9 @@ function SearchBar() {
 
   const results = data ?? [];
   const searchLabel = t("البحث في المتجر", "Search store");
-  const searchPlaceholder = t("ابحث عن منتج...", "Search for products...");
+  const searchPlaceholder = servicesStore
+    ? t("ابحث عن خدمة...", "Search for a service...")
+    : t("ابحث عن منتج...", "Search for products...");
 
   return (
     <>
@@ -850,7 +853,12 @@ function SearchBar() {
 
                 {!isFetching && results.length === 0 && (
                   <div className="py-8 text-center text-sm text-muted-foreground">
-                    {t("لا توجد نتائج مطابقة", "No products found matching your query")}
+                    {t(
+                      "لا توجد نتائج مطابقة",
+                      servicesStore
+                        ? "No services found matching your query"
+                        : "No products found matching your query",
+                    )}
                   </div>
                 )}
 

@@ -161,6 +161,7 @@ export function ProductsSection({
   const scopeTabs = inventoryScopeTabs(list.counts, {
     tracksStock: storeProfile.modules.stock,
     madeToOrderLabel: vocabulary.made_to_order,
+    services: isServicesProfile(storeProfile.modules),
   });
 
   // A service shows its lengths and prices; a product its sizes, colours and stock.
@@ -291,6 +292,7 @@ export function ProductsSection({
       {/* 3. Compact Command Toolbar */}
       <InventoryToolbar
         lang={isAr ? "ar" : "en"}
+        services={isServicesProfile(storeProfile.modules)}
         search={view.search}
         onSearchChange={(search) => list.change({ search })}
         selectedCategory={view.category}
@@ -308,8 +310,7 @@ export function ProductsSection({
 
       <BulkSelectionToolbar
         lang={isAr ? "ar" : "en"}
-        entityAr="منتج"
-        entityEn="products"
+        noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
         selectedCount={selectedProductIds.size}
         allFilteredSelected={allFilteredProductsSelected}
         disabled={
@@ -398,6 +399,7 @@ export function ProductsSection({
       <div className={filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"}>
         <InventoryWorkQueue
           lang={isAr ? "ar" : "en"}
+          services={isServicesProfile(storeProfile.modules)}
           products={paginatedProducts}
           variantsByProduct={variantsByProduct}
           categories={categoriesQ.data ?? []}
@@ -430,8 +432,7 @@ export function ProductsSection({
 
       <ListPagination
         lang={isAr ? "ar" : "en"}
-        entityAr="منتج"
-        entityEn="Products"
+        noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
         totalItems={filteredDisplayProducts.length}
         page={list.page}
         pageSize={list.pageSize}

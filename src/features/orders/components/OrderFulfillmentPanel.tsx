@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { appointmentAddress } from "@/features/orders/lib/appointment-address";
 import { requestedTimeLabel } from "@/lib/delivery-schedule";
 import { CalendarClock } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -68,11 +69,16 @@ export function OrderFulfillmentPanel({
     (!order.shipping_address_id ||
       !storedAddressSnapshot.id ||
       storedAddressSnapshot.id === order.shipping_address_id);
-  const addressSnapshot =
+  const savedAddress =
     (snapshotMatchesSavedSelection ? storedAddressSnapshot : null) ??
     selectedAddress ??
     storedAddressSnapshot ??
     (selectedCustomer as StructuredAddress | null);
+  // A booking's order shows the booking's place when it carries no address of its own.
+  const addressSnapshot =
+    method === "appointment"
+      ? appointmentAddress(savedAddress, "bookings" in order ? order.bookings?.[0]?.location : null)
+      : savedAddress;
   const selectedBranch = (branchesQ.data ?? []).find((b: any) => b.id === order.branch_id);
   const address = selectedAddress
     ? formatAddressLine(selectedAddress as StructuredAddress, lang)

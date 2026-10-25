@@ -186,3 +186,24 @@ export function describeServiceBooking(rules: ServiceBookingRules, isAr: boolean
   }
   return lines;
 }
+
+/**
+ * Whether the store's own day limit (`booking_settings.daily_capacity`) still decides when a day
+ * is full: a service with its own capacity is booked by it instead (the database's
+ * `get_service_availability`), so when every bookable service has one the store's limit decides
+ * nothing. The admin calendar once read "fully booked 1/1" on a day the storefront still sold.
+ */
+export function storeDayLimitApplies(
+  services: ReadonlyArray<{
+    item_kind?: string | null;
+    is_active?: boolean | null;
+    booking_capacity?: number | null;
+  }>,
+): boolean {
+  const bookable = services.filter(
+    (service) => service.item_kind === "service" && service.is_active !== false,
+  );
+  return (
+    bookable.length === 0 || bookable.some((service) => whole(service.booking_capacity) === null)
+  );
+}

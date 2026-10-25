@@ -10,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useId } from "react";
 import { Coins, Percent } from "lucide-react";
+import { hasVatNumber, vatNumberPatch } from "@/lib/vat-registration";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -29,6 +31,9 @@ export function PricingGroup() {
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
   const bs = form.bs;
+  const ids = useId();
+  // VAT is charged only with a VAT number: until one is written the rate stays 0.
+  const registered = hasVatNumber(bs.vat_number);
 
   return (
     <div className="space-y-6">
@@ -65,19 +70,41 @@ export function PricingGroup() {
             </Select>
           </div>
 
-          {/* Default VAT Rate */}
+          {/* VAT Registration Number: VAT is charged only with one */}
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium flex items-center gap-1.5">
+            <Label htmlFor={`${ids}-vat-number`} className="text-xs font-medium">
+              {isAr ? "الرقم الضريبي للمنشأة" : "Tax / VAT ID Number"}
+            </Label>
+            <Input
+              id={`${ids}-vat-number`}
+              className="text-xs h-9 font-mono"
+              value={bs.vat_number ?? ""}
+              placeholder="3xxxxxxxxxxxxxx"
+              onChange={(e) => setBs(vatNumberPatch(e.target.value))}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* VAT Rate: only with a VAT number */}
+          <div className="space-y-1.5">
+            <Label
+              htmlFor={`${ids}-vat-rate`}
+              className="text-xs font-medium flex items-center gap-1.5"
+            >
               <Percent className="size-3.5 text-primary" />
               <span>{isAr ? "نسبة ضريبة القيمة المضافة (%)" : "VAT Tax Rate (%)"}</span>
             </Label>
             <Input
+              id={`${ids}-vat-rate`}
               type="number"
               step="0.1"
               min="0"
               max="100"
               className="text-xs h-9 font-mono"
-              value={bs.default_tax_rate ?? 0}
+              value={registered ? (bs.default_tax_rate ?? 0) : 0}
+              disabled={!registered}
+              aria-describedby={`${ids}-vat-note`}
               placeholder="10"
               onChange={(e) =>
                 setBs({
@@ -85,23 +112,16 @@ export function PricingGroup() {
                 })
               }
             />
+            <p id={`${ids}-vat-note`} className="text-xs text-muted-foreground">
+              {registered
+                ? isAr
+                  ? "تُضاف إلى طلبات المتجر الجديدة بهذه النسبة."
+                  : "Added to the store's new orders at this rate."
+                : isAr
+                  ? "لا تُحتسب ضريبة على طلباتك حتى تكتب الرقم الضريبي للمنشأة."
+                  : "No VAT is charged on your orders until you enter your VAT number."}
+            </p>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-          {/* VAT Registration Number */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">
-              {isAr ? "الرقم الضريبي للمنشأة" : "Tax / VAT ID Number"}
-            </Label>
-            <Input
-              className="text-xs h-9 font-mono"
-              value={bs.vat_number ?? ""}
-              placeholder="3xxxxxxxxxxxxxx"
-              onChange={(e) => setBs({ vat_number: e.target.value || null })}
-            />
-          </div>
-
           {/* VAT Inclusive Switch */}
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background self-end">
             <div>
@@ -114,6 +134,8 @@ export function PricingGroup() {
             </div>
             <Switch
               checked={bs.vat_inclusive ?? false}
+              disabled={!registered}
+              aria-label={isAr ? "الأسعار شاملة الضريبة" : "Prices are VAT inclusive"}
               onCheckedChange={(checked) => setBs({ vat_inclusive: checked })}
             />
           </div>

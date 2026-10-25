@@ -198,6 +198,15 @@ function fmt(n: number, currency: string, isAr: boolean) {
   }
 }
 
+/** A line in the email's language: its own name when it has one (a booking's add-on), else its text. */
+function lineName(
+  line: { description?: string | null; name_ar?: string | null; name_en?: string | null },
+  isAr: boolean,
+) {
+  const own = isAr ? line.name_ar || line.name_en : line.name_en || line.name_ar;
+  return String(own || line.description || "");
+}
+
 function paymentStatusLabel(
   status: string | null | undefined,
   isAr: boolean,
@@ -312,12 +321,13 @@ function renderHtml(
             : "Card"
           : o.payment_method || (isAr ? "غير محدد" : "Not specified");
   const fulfillment = fulfillmentText(o, isAr);
-  const showVat = (o.tax_rate !== null && o.tax_rate !== undefined) || taxAmount > 0;
+  // A VAT line only when tax was charged: a store with no VAT number charges none (rate 0).
+  const showVat = taxAmount > 0;
   const showPaymentSummary = !!o.payment_status || advancePaid > 0 || !!o.payment_method;
   const rows = items
     .map(
       (i: any) =>
-        `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${isAr ? "right" : "left"};unicode-bidi:plaintext">${escapeHtml(i.description)}</td>` +
+        `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${isAr ? "right" : "left"};unicode-bidi:plaintext">${escapeHtml(lineName(i, isAr))}</td>` +
         `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td>` +
         `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.unit_price), cur, isAr)}</td>` +
         `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.line_total), cur, isAr)}</td></tr>`,
@@ -656,7 +666,7 @@ async function sendAndLog(
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
         brand:brands ( slug, booking_settings ( timezone ) ),
         bookings ( reference, event_date, starts_at, ends_at, location ),
-        order_items ( description, quantity, unit_price, line_total ),
+        order_items ( description, name_ar, name_en, quantity, unit_price, line_total ),
         customer:customers ( email, name )
       `,
       )

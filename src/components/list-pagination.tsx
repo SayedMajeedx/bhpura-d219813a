@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AR_NOUNS, arNounOblique, countOf, type CountedNoun } from "@/lib/arabic-count";
 import {
   Select,
   SelectContent,
@@ -10,8 +11,8 @@ import {
 
 type ListPaginationProps = {
   lang: "en" | "ar";
-  entityAr: string;
-  entityEn: string;
+  /** What the list holds, counted in the reader's language ("عرض 1-6 من 6 منتجات"). */
+  noun: CountedNoun;
   totalItems: number;
   page: number;
   pageSize: number;
@@ -19,10 +20,15 @@ type ListPaginationProps = {
   onPageSizeChange: (pageSize: number) => void;
 };
 
+/** "Products" for "Products per page". */
+const perPageNoun = (noun: CountedNoun) => {
+  const plural = countOf(2, noun, "en").slice(2);
+  return plural.charAt(0).toUpperCase() + plural.slice(1);
+};
+
 export function ListPagination({
   lang,
-  entityAr,
-  entityEn,
+  noun,
   totalItems,
   page,
   pageSize,
@@ -38,7 +44,7 @@ export function ListPagination({
     <div className="flex flex-col items-center justify-between gap-3 rounded-2xl border border-border-strong bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
       <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
         <span className="text-xs text-muted-foreground sm:text-sm">
-          {isAr ? `${entityAr} لكل صفحة:` : `${entityEn} per page:`}
+          {isAr ? `${AR_NOUNS[noun].few} لكل صفحة:` : `${perPageNoun(noun)} per page:`}
         </span>
         <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
           <SelectTrigger
@@ -57,8 +63,8 @@ export function ListPagination({
         </Select>
         <span className="text-xs text-muted-foreground">
           {isAr
-            ? `عرض ${start}-${end} من ${totalItems} ${entityAr}`
-            : `Showing ${start}-${end} of ${totalItems} ${entityEn.toLowerCase()}`}
+            ? `عرض ${start}-${end} من ${arNounOblique(totalItems, noun)}`
+            : `Showing ${start}-${end} of ${countOf(totalItems, noun, "en")}`}
         </span>
       </div>
 

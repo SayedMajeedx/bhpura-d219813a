@@ -214,6 +214,7 @@ describe("super-admin platform navigation", () => {
     const home = { redirect: "/admin/b/$slug/dashboard" };
 
     auth.profile = member("staff", ["manage_orders"]);
+    expect(await open("")).toEqual(home);
     expect(await open("orders/order-1")).toMatchObject({ allowed: { brand: { id: "b1" } } });
     expect(await open("dashboard")).toMatchObject({ allowed: { brand: { id: "b1" } } });
     for (const page of ["expenses", "reports/sales", "inventory", "settings", "team"]) {
@@ -230,6 +231,8 @@ describe("super-admin platform navigation", () => {
     expect(await open("orders")).toMatchObject({ allowed: { brand: { id: "b1" } } });
     expect(await open("inventory")).toEqual({ redirect: "/admin/b/$slug/orders" });
     expect(await open("dashboard")).toEqual({ redirect: "/admin/b/$slug/orders" });
+    // The store's bare address opens the caller's home page (it drew an empty screen).
+    expect(await open("")).toEqual({ redirect: "/admin/b/$slug/orders" });
 
     // The store's admin opens everything.
     auth.profile = member("brand_admin");

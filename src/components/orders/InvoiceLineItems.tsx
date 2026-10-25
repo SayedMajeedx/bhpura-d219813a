@@ -1,5 +1,6 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 
 /**
  * The customer invoice's lines. From `sm` (and on paper) a table; on a phone each line is a card
@@ -41,7 +42,8 @@ function ItemDetails({
   textColor,
 }: Pick<Props, "lang" | "addonDefaults" | "money" | "textColor"> & { it: any }) {
   const isRTL = lang === "ar";
-  const lines = String(it.products?.name || it.description || "—")
+  // The name in the invoice's language (a product's own, or the line's: a booking's add-on).
+  const lines = String(orderLineName(it, lang) || "—")
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -62,7 +64,8 @@ function ItemDetails({
   const pick = (key: "color" | "size" | "fabric") =>
     it.selected_variant?.[key] || it.product_variants?.[key];
   const color = pick("color");
-  const size = pick("size");
+  // A booked service's length in the invoice's language ("3 ساعات"), not its variant's text.
+  const size = serviceLengthLabel(it.product_variants, lang) || pick("size");
   const fabric = pick("fabric");
   const options = [
     color && axes.color.visible ? [axes.color.label, color] : null,

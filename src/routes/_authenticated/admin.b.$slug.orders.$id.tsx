@@ -732,6 +732,7 @@ function OrderEditor() {
                 />
               )}
               <OrderItemsCard
+                appointment={order?.fulfillment_method === "appointment"}
                 isReadOnly={isReadOnly}
                 addItem={addItem}
                 addonDefaults={addonDefaults}

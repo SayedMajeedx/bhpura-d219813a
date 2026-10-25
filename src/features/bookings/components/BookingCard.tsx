@@ -131,18 +131,17 @@ export function BookingCard({
       {items.length > 0 && (
         <ul className="space-y-0.5 text-xs text-foreground">
           {items.map((item) => {
-            // A service a package includes: listed under it, with no price of its own.
-            const included = Boolean(item.parent_item_id);
+            // Listed under its service: what a package includes (no price of its own) and the
+            // add-ons chosen with it (priced: they once read "included" at 30 BHD).
+            const child = Boolean(item.parent_item_id);
+            const included = child && Number(item.line_total ?? 0) === 0;
             return (
               <li
                 key={item.id}
-                className={cn(
-                  "flex justify-between gap-2",
-                  included && "ps-4 text-muted-foreground",
-                )}
+                className={cn("flex justify-between gap-2", child && "ps-4 text-muted-foreground")}
               >
                 <span>
-                  {included ? "↳ " : ""}
+                  {child ? "↳ " : ""}
                   {(isAr ? item.name_ar || item.name_en : item.name_en || item.name_ar) ??
                     (isAr ? "خدمة" : "Service")}
                   {item.quantity > 1 ? ` × ${item.quantity}` : ""}

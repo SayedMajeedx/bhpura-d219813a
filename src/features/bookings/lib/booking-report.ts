@@ -13,6 +13,9 @@ export type ReportBooking = {
   source: string;
   total: number | string | null;
   booking_items?: ReadonlyArray<{
+    id?: string;
+    /** Set on an add-on and on a package's service: the line it belongs to. */
+    parent_item_id?: string | null;
     product_id: string | null;
     name_en: string | null;
     name_ar: string | null;
@@ -86,7 +89,20 @@ export function summariseBookings({
 
   const services = new Map<string, BookingReport["topServices"][number]>();
   for (const booking of kept) {
-    for (const item of booking.booking_items ?? []) {
+    const items = booking.booking_items ?? [];
+    // A service is a line of its own; an add-on (and a package's service) belongs to its line:
+    // its price is that service's revenue, and it is not a service sold. The report once listed
+    // "Envelopes × 100 × 1" beside the photobooth.
+    const ownLine = (item: (typeof items)[number]) => {
+      let line = item;
+      for (let hops = 0; line.parent_item_id && hops < 5; hops += 1) {
+        const parent = items.find((other) => other.id === line.parent_item_id);
+        if (!parent) break;
+        line = parent;
+      }
+      return line;
+    };
+    for (const item of items.filter((line) => !line.parent_item_id)) {
       const key = item.product_id ?? item.name_en ?? item.name_ar ?? "?";
       const entry = services.get(key) ?? {
         key,
@@ -96,7 +112,9 @@ export function summariseBookings({
         revenue: 0,
       };
       entry.count += item.quantity;
-      entry.revenue += Number(item.line_total ?? 0);
+      entry.revenue += items
+        .filter((line) => ownLine(line) === item)
+        .reduce((sum, line) => sum + Number(line.line_total ?? 0), 0);
       services.set(key, entry);
     }
   }

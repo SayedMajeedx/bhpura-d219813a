@@ -1,5 +1,6 @@
 import { isValidSlot, type BookingRules, type DayState } from "@/lib/bookings/rules";
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
+import { orderTotals, type OrderTotals, type TaxRule } from "@/lib/order-tax";
 import {
   bookingQuestions,
   notesWithAnswers,
@@ -147,6 +148,26 @@ export function chosenTotal(
   return services
     .filter((service) => chosen.includes(service.id))
     .reduce((sum, service) => sum + (priceFor(service, minutes) ?? 0), 0);
+}
+
+/**
+ * What the booking will charge, worked out as the order it becomes is (`place_booking_order`:
+ * the services and add-ons are the subtotal, the offer a discount, the travel fee the delivery
+ * fee, not taxed; the store's VAT on the rest). The page once showed the total before VAT, and
+ * checkout then charged a VAT-exclusive store's customer 10% more.
+ */
+export function bookingTotals(
+  amounts: { services: number; options: number; offer: number; travelFee: number },
+  rule: TaxRule,
+): OrderTotals {
+  return orderTotals(
+    {
+      subtotal: amounts.services + amounts.options,
+      discount: amounts.offer,
+      shipping: amounts.travelFee,
+    },
+    rule,
+  );
 }
 
 export type FlowStep = "date" | "services" | "time" | "details";

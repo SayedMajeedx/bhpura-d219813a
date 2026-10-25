@@ -121,8 +121,7 @@ export function IncubatorSalesTab({ page }: { page: IncubatorsPageState }) {
       </Card>
       <ListPagination
         lang={lang}
-        entityAr="عملية بيع"
-        entityEn="Sales"
+        noun="sale"
         totalItems={sales.length}
         page={salesPaging.page}
         pageSize={salesPaging.size}
@@ -233,8 +232,7 @@ export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
       </Card>
       <ListPagination
         lang={lang}
-        entityAr="دفعة"
-        entityEn="Payments"
+        noun="payment"
         totalItems={payments.length}
         page={paymentsPaging.page}
         pageSize={paymentsPaging.size}
@@ -318,8 +316,7 @@ export function IncubatorHistoryTab({ page }: { page: IncubatorsPageState }) {
       </Card>
       <ListPagination
         lang={lang}
-        entityAr="حركة"
-        entityEn="Movements"
+        noun="movement"
         totalItems={movementsTotal}
         page={movementsPaging.page}
         pageSize={movementsPaging.size}

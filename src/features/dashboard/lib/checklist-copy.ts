@@ -64,7 +64,7 @@ const SERVICES: ChecklistCopy = {
     en: "Share your link to get your first bookings, or add one from the bookings calendar.",
   },
   firstDone: (count) => ({
-    ar: `تم تسجيل ${arNounOblique(count, "order")} حجز. التقويم والتقارير جاهزة.`,
+    ar: `تم تسجيل ${arNounOblique(count, "booking")}. التقويم والتقارير جاهزة.`,
     en: `${count} bookings recorded. The calendar and reports are ready.`,
   }),
   firstButtonDone: { ar: "فتح تقويم الحجوزات", en: "Open the Bookings Calendar" },
