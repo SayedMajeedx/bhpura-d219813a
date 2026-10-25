@@ -1,3 +1,5 @@
+import { chargedTaxRate } from "@/lib/vat-registration";
+
 /**
  * A sample order for the invoice settings' preview: the store's real invoice (`InvoicePreview`)
  * drawn from the settings being edited, before any order is placed. Two lines, a delivery fee and
@@ -32,7 +34,7 @@ export function sampleInvoice(bs: Settings, brandId: string) {
   ];
   const subtotal = items.reduce((sum, item) => sum + item.line_total, 0);
   const shipping = Number(bs.delivery_fee) > 0 ? Number(bs.delivery_fee) : 2;
-  const taxRate = Number(bs.default_tax_rate) > 0 ? Number(bs.default_tax_rate) : 0;
+  const taxRate = chargedTaxRate(bs);
   const taxAmount = round(((subtotal + shipping) * taxRate) / 100);
   const total = round(subtotal + shipping + taxAmount);
   const now = new Date().toISOString();

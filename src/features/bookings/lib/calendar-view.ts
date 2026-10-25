@@ -28,7 +28,8 @@ export type CalendarCell = {
   isPast: boolean;
   state: DayState;
   taken: number;
-  capacity: number;
+  /** The store's day limit; null when every service is booked by its own capacity instead. */
+  capacity: number | null;
   requests: number;
   /** Bookings on the day waiting for the store: requests, and live holds for a payment. */
   pending: number;
@@ -46,6 +47,7 @@ export function summariseMonth({
   blocks,
   today,
   now = new Date(),
+  storeLimit = true,
 }: {
   year: number;
   month: number;
@@ -55,6 +57,11 @@ export function summariseMonth({
   blocks: readonly BookingBlock[];
   today: string;
   now?: Date;
+  /**
+   * The store's day limit decides when a day is full (`storeDayLimitApplies`): false when every
+   * service has its own capacity, and a day is then never "full" by the store's count.
+   */
+  storeLimit?: boolean;
 }): CalendarCell[][] {
   const byDay = new Map<string, CalendarBooking[]>();
   for (const booking of bookings) {
@@ -66,7 +73,8 @@ export function summariseMonth({
     week.map(({ day, inMonth }) => {
       const dayBookings = byDay.get(day) ?? [];
       const taken = dayBookings.filter((booking) => takesPlace(booking, now)).length;
-      const { state } = dayState({ day, today, rules, blocks, taken, staff: true });
+      const { state: byStore } = dayState({ day, today, rules, blocks, taken, staff: true });
+      const state = !storeLimit && byStore === "full" ? "available" : byStore;
       return {
         day,
         inMonth,
@@ -74,7 +82,7 @@ export function summariseMonth({
         isPast: day < today,
         state,
         taken,
-        capacity: rules.daily_capacity,
+        capacity: storeLimit ? rules.daily_capacity : null,
         requests: dayBookings.filter((booking) => booking.status === "requested").length,
         pending: dayBookings.filter(
           (booking) =>

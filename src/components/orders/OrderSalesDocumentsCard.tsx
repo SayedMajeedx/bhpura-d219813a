@@ -94,6 +94,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
 
   const resolvedLogoUrl = brand?.logo_url || settings?.logo_url || null;
 
+  // A booking's order is not delivered by a courier: it has no delivery note.
+  const appointment = order?.fulfillment_method === "appointment";
   const fulfillmentDetails = getFulfillmentBadgeDetails(
     order?.fulfillment_status || order?.status,
     lang,
@@ -429,59 +431,61 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
 
         {/* Document 3: Delivery Note */}
-        <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
-          <div>
-            <div className="flex items-center justify-between gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                  3
-                </span>
-                <span className="font-bold text-sm text-foreground">
-                  {isAr ? "إذن التسليم وبوليصة الشحن" : "Delivery Note & Consignment"}
+        {!appointment && (
+          <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-xs">
+                    3
+                  </span>
+                  <span className="font-bold text-sm text-foreground">
+                    {isAr ? "إذن التسليم وبوليصة الشحن" : "Delivery Note & Consignment"}
+                  </span>
+                </div>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+                  {fulfillmentDetails.label}
                 </span>
               </div>
-              <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-                {fulfillmentDetails.label}
-              </span>
+              <p className="text-xs text-muted-foreground mb-3">
+                {isAr
+                  ? "مستند سائق التوصيل والتسليم الميداني مع خانة توقيع المستلم"
+                  : "Courier dispatch document with address, driver notes, and sign-off area"}
+              </p>
+              <div className="space-y-1 text-xs mb-4">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{isAr ? "المندوب المعين:" : "Assigned courier:"}</span>
+                  <span className="font-semibold text-foreground">
+                    {order?.courier_name || (isAr ? "غير معين" : "Unassigned")}
+                  </span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{isAr ? "طريقة الاستلام:" : "Fulfillment method:"}</span>
+                  <span className="font-semibold text-foreground">
+                    {getFulfillmentMethodLabel(order?.fulfillment_method, lang)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>{isAr ? "ملاحظات التوصيل:" : "Driver instructions:"}</span>
+                  <span className="truncate max-w-[150px] font-mono text-xs text-foreground">
+                    {order?.delivery_notes || (isAr ? "لا توجد ملاحظات" : "None")}
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              {isAr
-                ? "مستند سائق التوصيل والتسليم الميداني مع خانة توقيع المستلم"
-                : "Courier dispatch document with address, driver notes, and sign-off area"}
-            </p>
-            <div className="space-y-1 text-xs mb-4">
-              <div className="flex justify-between text-muted-foreground">
-                <span>{isAr ? "المندوب المعين:" : "Assigned courier:"}</span>
-                <span className="font-semibold text-foreground">
-                  {order?.courier_name || (isAr ? "غير معين" : "Unassigned")}
-                </span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>{isAr ? "طريقة الاستلام:" : "Fulfillment method:"}</span>
-                <span className="font-semibold text-foreground">
-                  {getFulfillmentMethodLabel(order?.fulfillment_method, lang)}
-                </span>
-              </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>{isAr ? "ملاحظات التوصيل:" : "Driver instructions:"}</span>
-                <span className="truncate max-w-[150px] font-mono text-xs text-foreground">
-                  {order?.delivery_notes || (isAr ? "لا توجد ملاحظات" : "None")}
-                </span>
-              </div>
+            <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrintDeliveryNote}
+                className="h-8 w-full text-xs gap-1.5"
+              >
+                <Truck className="h-3.5 w-3.5 text-blue-600" />
+                {isAr ? "طباعة إذن التسليم وبوليصة الشحن" : "Print Delivery Note"}
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 pt-2 border-t border-border-subtle">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintDeliveryNote}
-              className="h-8 w-full text-xs gap-1.5"
-            >
-              <Truck className="h-3.5 w-3.5 text-blue-600" />
-              {isAr ? "طباعة إذن التسليم وبوليصة الشحن" : "Print Delivery Note"}
-            </Button>
-          </div>
-        </div>
+        )}
 
         {/* Document 4: Return & Credit Note */}
         <div className="rounded-xl border border-border-subtle bg-muted/20 p-4 flex flex-col justify-between hover:border-primary/40 transition-colors">
@@ -489,7 +493,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs">
-                  4
+                  {appointment ? 3 : 4}
                 </span>
                 <span className="font-bold text-sm text-foreground">
                   {isAr ? "إشعار الإرجاع والاستبدال" : "Return & Credit Note"}

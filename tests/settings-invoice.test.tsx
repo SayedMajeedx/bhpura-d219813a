@@ -55,6 +55,8 @@ beforeEach(() => {
   form.bs = {
     currency: "KWD",
     default_tax_rate: 10,
+    // VAT is charged only with a VAT number.
+    vat_number: "220000000000003",
     delivery_fee: 3,
     storefront_accent_color: "#330a0a",
     storefront_font_ar: "Readex Pro",

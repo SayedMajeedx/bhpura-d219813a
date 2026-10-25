@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
 import { bookingEnd } from "@/lib/bookings/rules";
 import { dayTitle, formatClock } from "@/lib/bookings/format";
+import { storeTaxRule, taxRateLabel } from "@/lib/order-tax";
 import {
+  bookingTotals,
   bookingWhatsAppText,
   serviceName,
   whatsAppLink,
@@ -110,11 +112,16 @@ export function StorefrontBookingPage({
   const chosen = flow.chosen;
   const depositLine = depositSentence(flow.deposit, isAr);
   const offerAmount = flow.offer?.amount ?? 0;
-  const total =
-    flow.servicesTotal +
-    flow.optionsTotal -
-    offerAmount +
-    (flow.flow.areaCode ? (flow.travelFee ?? 0) : 0);
+  const tax = storeTaxRule(flow.settings);
+  const totals = bookingTotals(
+    {
+      services: flow.servicesTotal,
+      options: flow.optionsTotal,
+      offer: offerAmount,
+      travelFee: flow.flow.areaCode ? (flow.travelFee ?? 0) : 0,
+    },
+    tax,
+  );
   const stepIndex = flow.step ? STEPS.findIndex((step) => step.id === flow.step) : STEPS.length;
   const done = (id: FlowStep) => STEPS.findIndex((step) => step.id === id) < stepIndex;
 
@@ -208,6 +215,16 @@ export function StorefrontBookingPage({
       <StoreFaq brandId={flow.brand.id} isAr={isAr} />
 
       <section className="sticky bottom-0 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-lg">
+        {chosen.length > 0 && showPrices && (
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="min-w-0 break-words text-muted-foreground">
+              {chosen.map((service) => serviceName(service, isAr)).join(isAr ? "، " : ", ")}
+            </span>
+            <span className="shrink-0 text-foreground" dir="ltr">
+              {formatPrice(flow.servicesTotal, currency, lang)}
+            </span>
+          </div>
+        )}
         {showPrices && flow.flow.areaCode && flow.travelFee !== null && flow.travelFee > 0 && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
@@ -241,15 +258,32 @@ export function StorefrontBookingPage({
             <span dir="ltr">− {formatPrice(offerAmount, currency, lang)}</span>
           </div>
         )}
-        {chosen.length > 0 && showPrices && (
+        {chosen.length > 0 && showPrices && totals.tax > 0 && totals.added && (
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {chosen.map((service) => serviceName(service, isAr)).join(isAr ? "، " : ", ")}
+              {isAr
+                ? `ضريبة القيمة المضافة (${taxRateLabel(tax.rate)})`
+                : `VAT (${taxRateLabel(tax.rate)})`}
             </span>
-            <span className="font-semibold text-foreground" dir="ltr">
-              {formatPrice(total, currency, lang)}
+            <span className="text-foreground" dir="ltr">
+              + {formatPrice(totals.tax, currency, lang)}
             </span>
           </div>
+        )}
+        {chosen.length > 0 && showPrices && (
+          <div className="flex items-center justify-between border-t border-border pt-2 text-sm">
+            <span className="font-semibold text-foreground">{isAr ? "الإجمالي" : "Total"}</span>
+            <span className="font-semibold text-foreground" dir="ltr">
+              {formatPrice(totals.total, currency, lang)}
+            </span>
+          </div>
+        )}
+        {chosen.length > 0 && showPrices && totals.tax > 0 && !totals.added && (
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? `يشمل ضريبة القيمة المضافة (${taxRateLabel(tax.rate)}): ${formatPrice(totals.tax, currency, lang)}`
+              : `Includes VAT (${taxRateLabel(tax.rate)}): ${formatPrice(totals.tax, currency, lang)}`}
+          </p>
         )}
         {depositLine && <p className="text-xs text-muted-foreground">{depositLine}</p>}
         <Button

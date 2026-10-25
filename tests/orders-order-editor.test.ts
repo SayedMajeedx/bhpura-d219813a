@@ -92,9 +92,13 @@ describe("drafts", () => {
       shipping: 0,
       total: 0,
       currency: "SAR",
-      tax_rate: 15,
+      // No VAT number: no VAT (it once fell back to 15% while the settings loaded).
+      tax_rate: 0,
       order_date: "2026-09-24",
     });
+    expect(
+      newDraftOrder({ vat_number: "220000000000003", default_tax_rate: 10 }, "b1", "x").tax_rate,
+    ).toBe(10);
     expect(newDraftOrder({ delivery_enabled: true, delivery_fee: 2 }, "b1", "x")).toMatchObject({
       fulfillment_method: "delivery",
       shipping: 2,

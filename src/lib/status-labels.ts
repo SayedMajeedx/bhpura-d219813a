@@ -157,6 +157,8 @@ export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
   delivery: { ar: "توصيل للمنزل", en: "Home Delivery" },
   pickup: { ar: "استلام من الفرع", en: "Pickup" },
   digital: { ar: "منتج رقمي", en: "Digital Delivery" },
+  // An order placed for a booking: the service happens at its time and place.
+  appointment: { ar: "موعد خدمة", en: "Service appointment" },
 };
 
 /**
