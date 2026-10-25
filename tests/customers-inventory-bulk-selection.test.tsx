@@ -61,8 +61,7 @@ describe("customers and inventory bulk selection", () => {
     const { rerender } = render(
       <ListPagination
         lang="en"
-        entityAr="عميل"
-        entityEn="Customers"
+        noun="customer"
         totalItems={45}
         page={1}
         pageSize={20}
@@ -81,8 +80,7 @@ describe("customers and inventory bulk selection", () => {
     rerender(
       <ListPagination
         lang="en"
-        entityAr="عميل"
-        entityEn="Customers"
+        noun="customer"
         totalItems={0}
         page={1}
         pageSize={20}

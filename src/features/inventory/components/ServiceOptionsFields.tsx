@@ -50,38 +50,35 @@ const MODE_TEXT: Record<OptionMode, { ar: string; en: string; hint: { ar: string
     },
   };
 
-/** Starting points a merchant can pick, then change. */
+/**
+ * Starting points a merchant can pick, then name and price: a kind of add-on, never one store's
+ * own. They were a photobooth's (an attendant at 15, instant prints at 30, envelopes at
+ * 15 / 12.5 / 10), offered to a salon or a trainer and priced in BHD in every currency.
+ */
 const STARTERS: Array<{
   id: string;
   label: { ar: string; en: string };
   form: Partial<OptionForm>;
 }> = [
   {
-    id: "attendant",
-    label: { ar: "موظفة مرافقة (إلزامية)", en: "Attendant (required)" },
-    form: { name_en: "Attendant", name_ar: "موظفة مرافقة", mode: "required", price: "15" },
+    id: "required",
+    label: { ar: "إضافة إلزامية مع كل حجز", en: "Required with every booking" },
+    form: { mode: "required" },
   },
   {
-    id: "prints",
-    label: { ar: "طباعة فورية (مضافة تلقائياً)", en: "Instant prints (on by default)" },
-    form: { name_en: "Instant prints", name_ar: "طباعة فورية", mode: "default_on", price: "30" },
+    id: "default_on",
+    label: { ar: "مضافة تلقائياً ويمكن إزالتها", en: "On by default, can be removed" },
+    form: { mode: "default_on" },
   },
   {
-    id: "extra",
+    id: "optional",
     label: { ar: "إضافة اختيارية", en: "An optional extra" },
-    form: { name_en: "", name_ar: "", mode: "optional", price: "25" },
+    form: { mode: "optional" },
   },
   {
     id: "blocks",
-    label: { ar: "بالدفعات (مثل الأظرف)", en: "In blocks (like envelopes)" },
-    form: {
-      name_en: "Envelopes",
-      name_ar: "أظرف أنيقة",
-      mode: "optional",
-      tiered: true,
-      step: "50",
-      prices: "15, 12.5, 10",
-    },
+    label: { ar: "بالدفعات (سعر لكل دفعة)", en: "In blocks (a price per block)" },
+    form: { mode: "optional", tiered: true, step: "50" },
   },
 ];
 

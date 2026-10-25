@@ -23,6 +23,8 @@ interface CategoryOption {
 
 interface InventoryToolbarProps {
   lang: "en" | "ar";
+  /** A services store: the search names services, not products and barcodes. */
+  services?: boolean;
   search: string;
   onSearchChange: (val: string) => void;
   selectedCategory: string;
@@ -55,6 +57,7 @@ const STOCK_ISSUES = new Set(["out_of_stock", "low_stock", "hidden_with_stock"])
 
 export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   lang,
+  services = false,
   search,
   onSearchChange,
   selectedCategory,
@@ -162,9 +165,23 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            aria-label={isAr ? "ابحث باسم المنتج أو الباركود" : "Search name or barcode"}
+            aria-label={
+              services
+                ? isAr
+                  ? "ابحث باسم الخدمة"
+                  : "Search services"
+                : isAr
+                  ? "ابحث باسم المنتج أو الباركود"
+                  : "Search name or barcode"
+            }
             placeholder={
-              isAr ? "ابحث باسم المنتج أو الباركود..." : `Search name or barcode${shortcutHint}`
+              services
+                ? isAr
+                  ? "ابحث باسم الخدمة..."
+                  : `Search services${shortcutHint}`
+                : isAr
+                  ? "ابحث باسم المنتج أو الباركود..."
+                  : `Search name or barcode${shortcutHint}`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border-strong"
           />

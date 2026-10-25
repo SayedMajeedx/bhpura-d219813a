@@ -189,8 +189,7 @@ describe("the selection toolbar", () => {
     render(
       <BulkSelectionToolbar
         lang="en"
-        entityAr="منتج"
-        entityEn="products"
+        noun="product"
         selectedCount={selectedCount}
         allFilteredSelected={false}
         onSelectAll={() => undefined}

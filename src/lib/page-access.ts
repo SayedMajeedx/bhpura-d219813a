@@ -90,6 +90,21 @@ export function mayOpenPage(page: string, caller: PageCaller): boolean {
   return !rule.permission || (caller.permissions ?? []).includes(rule.permission);
 }
 
+/**
+ * Where the guard sends a caller, or null to let the page open: the store's bare address
+ * (`/admin/b/<slug>`, no page) and a page the caller may not open go to their home page. The bare
+ * address had no route of its own and drew an empty screen.
+ */
+export function pageRedirect(
+  page: string | null,
+  caller: PageCaller,
+  isSuperAdmin = false,
+): "orders" | "dashboard" | null {
+  if (!page) return homePageOf(caller);
+  if (!isSuperAdmin && !mayOpenPage(page, caller)) return homePageOf(caller);
+  return null;
+}
+
 /** Where a caller who may not open a page is sent: a page they can always open. */
 export function homePageOf(caller: PageCaller): "orders" | "dashboard" {
   return caller.role === "courier" ? "orders" : "dashboard";

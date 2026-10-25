@@ -86,13 +86,13 @@ export function BookingsGlanceCard({
       icon: CalendarDays,
       label: isAr ? "اليوم" : "Today",
       value: String(glance.todayBookings.length),
-      hint: isAr ? "موعد مؤكد" : "confirmed",
+      hint: isAr ? "مؤكدة" : "confirmed",
     },
     {
       icon: CalendarClock,
       label: isAr ? "الأسبوع القادم" : "Next 7 days",
       value: String(glance.weekCount),
-      hint: isAr ? "موعد مؤكد" : "confirmed",
+      hint: isAr ? "مؤكدة" : "confirmed",
     },
     {
       icon: Hourglass,

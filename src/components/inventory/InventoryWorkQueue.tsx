@@ -73,10 +73,13 @@ interface InventoryWorkQueueProps {
   pricesMatter?: boolean;
   /** Whether a product has no cost (given only to staff who may see costs). */
   missingCostOf?: (productId: string) => boolean;
+  /** A services store: its columns name a service and its lengths, not stock. */
+  services?: boolean;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   lang,
+  services = false,
   products,
   variantsByProduct,
   isLoading,
@@ -187,16 +190,38 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     }
                     onCheckedChange={onToggleAll}
                     aria-label={
-                      isAr ? "تحديد كل المنتجات في الصفحة" : "Select all products on this page"
+                      services
+                        ? isAr
+                          ? "تحديد كل الخدمات في الصفحة"
+                          : "Select all services on this page"
+                        : isAr
+                          ? "تحديد كل المنتجات في الصفحة"
+                          : "Select all products on this page"
                     }
                   />
                 </th>
                 <th className="p-3 text-start">
-                  {isAr ? "اسم المنتج والرمز" : "Product & Identity"}
+                  {services
+                    ? isAr
+                      ? "الخدمة"
+                      : "Service"
+                    : isAr
+                      ? "اسم المنتج والرمز"
+                      : "Product & Identity"}
                 </th>
                 <th className="p-3 text-start">{isAr ? "القسم" : "Category"}</th>
-                <th className="p-3 text-start">{isAr ? "المتغيرات والأنواع" : "Variants"}</th>
-                <th className="p-3 text-start">{isAr ? "حالة المخزون" : "Stock Level"}</th>
+                <th className="p-3 text-start">
+                  {services
+                    ? isAr
+                      ? "المدد والأسعار"
+                      : "Lengths & prices"
+                    : isAr
+                      ? "المتغيرات والأنواع"
+                      : "Variants"}
+                </th>
+                <th className="p-3 text-start">
+                  {services ? (isAr ? "النوع" : "Kind") : isAr ? "حالة المخزون" : "Stock Level"}
+                </th>
                 <th className="p-3 text-end">{isAr ? "سعر البيع" : "Price"}</th>
                 <th className="p-3 text-center">{isAr ? "الإجراء" : "Action"}</th>
                 <th className="p-3 text-center w-10"></th>

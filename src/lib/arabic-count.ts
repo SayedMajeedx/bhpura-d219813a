@@ -66,6 +66,9 @@ export const AR_NOUNS = {
   item: noun("صنف واحد", "صنفان", "أصناف", "صنفًا", "صنف"),
   file: noun("ملف واحد", "ملفان", "ملفات", "ملفًا", "ملف"),
   payment: noun("دفعة واحدة", "دفعتان", "دفعات", "دفعة", "دفعة"),
+  length: noun("مدة واحدة", "مدتان", "مدد", "مدة", "مدة"),
+  appointment: noun("موعد واحد", "موعدان", "مواعيد", "موعدًا", "موعد"),
+  movement: noun("حركة واحدة", "حركتان", "حركات", "حركة", "حركة"),
 } as const;
 
 export type CountedNoun = keyof typeof AR_NOUNS;
@@ -120,6 +123,9 @@ const EN_NOUNS: Record<CountedNoun, [string, string]> = {
   item: ["item", "items"],
   file: ["file", "files"],
   payment: ["payment", "payments"],
+  length: ["length", "lengths"],
+  appointment: ["appointment", "appointments"],
+  movement: ["movement", "movements"],
 };
 
 /** A count in the reader's language: "12 منتجًا" or "12 products". */
