@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
 
 export interface DashboardActionStripProps {
   slug: string;
@@ -43,7 +43,7 @@ export function DashboardActionStrip({
       count: appointmentsToCompleteCount,
       title: isAr ? "مواعيد حان وقتها" : "Appointments to Complete",
       description: isAr
-        ? `${appointmentsToCompleteCount} موعد حان وقته: أنجز الخدمة وحصّل المتبقي إن وُجد`
+        ? `حان وقت ${arNounOblique(appointmentsToCompleteCount, "appointment")}: أنجز الخدمة وحصّل المتبقي إن وُجد`
         : `${appointmentsToCompleteCount} appointment(s) whose time has come: carry out the service and collect any balance`,
       to: "/admin/b/$slug/orders" as const,
       search: { tab: "action_required" },

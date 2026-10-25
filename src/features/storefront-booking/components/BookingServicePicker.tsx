@@ -1,6 +1,6 @@
 import { BookingPackageCard } from "@/features/storefront-booking/components/BookingPackageCard";
 import { BookingServiceOptions } from "@/features/storefront-booking/components/BookingServiceOptions";
-import { Camera, Check } from "lucide-react";
+import { Check, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
@@ -63,13 +63,13 @@ function ServiceRow({
           )}
           aria-hidden="true"
         >
-          {rental && <Camera className="size-6" />}
+          {rental && <KeyRound className="size-6" />}
         </span>
       )}
       <span className="min-w-0 flex-1">
         {rental && (
           <span className="mb-0.5 flex items-center gap-1 text-xs font-semibold uppercase tracking-widest text-primary">
-            <Camera className="size-3" aria-hidden="true" />
+            <KeyRound className="size-3" aria-hidden="true" />
             {isAr ? SERVICE_KIND_LABELS.rental.ar : SERVICE_KIND_LABELS.rental.en}
           </span>
         )}

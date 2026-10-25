@@ -29,6 +29,7 @@ import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
 import { policyLines } from "@/lib/bookings/policies";
 import { invoiceDepositPercent } from "@/lib/bookings/deposit";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { orderLineName } from "@/lib/order-line-name";
 
 type SavedAddress = {
   id?: string;
@@ -59,6 +60,8 @@ type CustomFieldValue = {
 
 type Item = {
   description: string;
+  name_ar?: string | null;
+  name_en?: string | null;
   quantity: number;
   unit_price: number;
   original_price?: number | null;
@@ -700,7 +703,7 @@ export default function InvoicePreview({
                   >
                     <td className="p-3 text-start">
                       {(() => {
-                        const rawDesc = it.description || "—";
+                        const rawDesc = orderLineName(it, isRTL ? "ar" : "en") || "—";
                         const lines = rawDesc
                           .split(/\r?\n/)
                           .map((s) => s.trim())

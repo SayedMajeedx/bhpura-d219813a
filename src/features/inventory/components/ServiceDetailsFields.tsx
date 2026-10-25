@@ -12,7 +12,8 @@ import {
 const LOCATION_TEXT: Record<ServiceLocation, { ar: string; en: string }> = {
   customer: { ar: "عند العميل", en: "At the customer's" },
   venue: { ar: "في مقرّنا", en: "At our venue" },
-  both: { ar: "الاثنين", en: "Either" },
+  // "الاثنين" read as Monday.
+  both: { ar: "كلاهما", en: "Either" },
 };
 
 /** Where a service happens and what it includes, in its editor. */

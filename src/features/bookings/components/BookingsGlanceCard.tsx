@@ -14,6 +14,7 @@ import {
   type GlanceBooking,
 } from "@/features/bookings/lib/bookings-glance";
 import { arNounOblique } from "@/lib/arabic-count";
+import { waitingCount } from "@/features/bookings/lib/waiting-on-store";
 
 /**
  * The dashboard of a store that takes bookings: what is happening today, the
@@ -48,7 +49,7 @@ export function BookingsGlanceCard({
             bookings: (rangeQ.data ?? []) as GlanceBooking[],
             blocks: blocksQ.data ?? [],
             rules,
-            pendingRequests: requestsQ.data?.length ?? 0,
+            pendingRequests: waitingCount(requestsQ.data ?? []),
             now: new Date(),
           })
         : null,
@@ -85,13 +86,13 @@ export function BookingsGlanceCard({
       icon: CalendarDays,
       label: isAr ? "اليوم" : "Today",
       value: String(glance.todayBookings.length),
-      hint: isAr ? "موعد مؤكد" : "confirmed",
+      hint: isAr ? "مؤكدة" : "confirmed",
     },
     {
       icon: CalendarClock,
       label: isAr ? "الأسبوع القادم" : "Next 7 days",
       value: String(glance.weekCount),
-      hint: isAr ? "موعد مؤكد" : "confirmed",
+      hint: isAr ? "مؤكدة" : "confirmed",
     },
     {
       icon: Hourglass,

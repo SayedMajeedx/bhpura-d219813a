@@ -89,8 +89,8 @@ export function ProductBasicTab({
         />
       )}
       <BilingualField
-        labelAr="اسم المنتج — عربي"
-        labelEn="Product name — English"
+        labelAr={isService ? "اسم الخدمة — عربي" : "اسم المنتج — عربي"}
+        labelEn={isService ? "Service name — English" : "Product name — English"}
         valueAr={form.name_ar}
         valueEn={form.name_en}
         onChangeAr={(v) => {
@@ -329,7 +329,11 @@ export function ProductBasicTab({
       <div className="flex items-center justify-between rounded-xl border border-border-strong p-4 bg-secondary/10 transition hover:bg-secondary/20">
         <div>
           <p className="text-sm font-bold text-foreground">
-            {isAr ? "المنتج مفعّل في المتجر" : "Active in storefront"}
+            {isAr
+              ? isService
+                ? "الخدمة مفعّلة في المتجر"
+                : "المنتج مفعّل في المتجر"
+              : "Active in storefront"}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr ? "إظهار للعملاء في المتجر العام" : "Show to customers in the public storefront"}

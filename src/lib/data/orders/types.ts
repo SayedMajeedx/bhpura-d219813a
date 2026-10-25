@@ -10,7 +10,7 @@ export type OrderListRow = Tables<"orders"> & {
   /** The booking the order was placed for (at most one), when it is an appointment. */
   bookings: Pick<
     Tables<"bookings">,
-    "id" | "reference" | "status" | "event_date" | "starts_at" | "ends_at"
+    "id" | "reference" | "status" | "event_date" | "starts_at" | "ends_at" | "location"
   >[];
 };
 

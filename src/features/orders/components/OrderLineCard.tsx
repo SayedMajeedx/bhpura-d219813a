@@ -23,11 +23,13 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 
 import { OrderItemEditDialog } from "@/features/orders/components/OrderItemEditDialog";
 import { isTailoredLine } from "@/features/orders/lib/order-editor";
+import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 import { LineThumbnail } from "@/features/orders/components/LineThumbnail";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 /** One order line: image, SKU, stock, quantity and price, with its edit dialog. */
 export function OrderLineCard({
   addonDefaults,
+  appointment = false,
   currency,
   customQ,
   customerPassportQ,
@@ -50,6 +52,11 @@ export function OrderLineCard({
   vocabulary,
 }: {
   addonDefaults: ReturnType<typeof variantAxisDefaultsFrom>;
+  /**
+   * The order is a booking's: a line is a booked service (its length, not a size) or an add-on,
+   * never a made-to-order piece or stock, and the product's own customizations are not offered.
+   */
+  appointment?: boolean;
   currency: string;
   customQ: OrderDetailData["customQ"];
   customerPassportQ: ReturnType<typeof useCustomerFitPassport>;
@@ -106,6 +113,9 @@ export function OrderLineCard({
   const mainStock = Number((variant as any)?.stock_main ?? 0);
   const incStock = Number((variant as any)?.stock_incubator ?? 0);
   const isAr = lang === "ar";
+  const title = orderLineName({ ...it, product }, isAr ? "ar" : "en");
+  const length = appointment ? serviceLengthLabel(variant, isAr ? "ar" : "en") : null;
+  const tailored = !appointment && isTailoredLine(it);
   return (
     <div
       key={idx}
@@ -114,14 +124,11 @@ export function OrderLineCard({
       {/* Item Thumbnail & SKU Header */}
       <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">
         <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
-          <LineThumbnail
-            sources={[getMediaUrl(variant), getMediaUrl(product)]}
-            alt={it.description || ""}
-          />
+          <LineThumbnail sources={[getMediaUrl(variant), getMediaUrl(product)]} alt={title} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-sm line-clamp-2 break-words text-foreground">
-            {it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
+            {title || (isAr ? "منتج مخصص" : "Custom Item")}
           </p>
           {sku ? (
             <span className="inline-flex max-w-full items-center break-all text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border-subtle mt-1">
@@ -129,14 +136,17 @@ export function OrderLineCard({
             </span>
           ) : (
             <span className="text-xs text-muted-foreground">
-              {it.location === "custom" || !it.variant_id
-                ? vocabulary.custom_order?.[lang] || (isAr ? "طلب مخصص" : "Custom Order")
-                : variant
-                  ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
-                    (isAr ? "خيار" : "Variant")
-                  : isAr
-                    ? "بند مخصص"
-                    : "Custom Line"}
+              {appointment
+                ? length ||
+                  (it.product_id ? (isAr ? "خدمة" : "Service") : isAr ? "إضافة" : "Add-on")
+                : it.location === "custom" || !it.variant_id
+                  ? vocabulary.custom_order?.[lang] || (isAr ? "طلب مخصص" : "Custom Order")
+                  : variant
+                    ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
+                      (isAr ? "خيار" : "Variant")
+                    : isAr
+                      ? "بند مخصص"
+                      : "Custom Line"}
             </span>
           )}
         </div>
@@ -174,7 +184,13 @@ export function OrderLineCard({
       {/* Desktop Full Inline Input Grid (>= 640px) */}
       <div className="hidden sm:grid sm:grid-cols-12 gap-3">
         <div className="sm:col-span-3">
-          <Label htmlFor={`${fieldId}-variant`}>{t("orderDetail.fromInventory")}</Label>
+          <Label htmlFor={`${fieldId}-variant`}>
+            {appointment
+              ? isAr
+                ? "الخدمة والمدة"
+                : "Service & length"
+              : t("orderDetail.fromInventory")}
+          </Label>
           <Select
             value={it.variant_id ?? "custom"}
             onValueChange={(v) => {
@@ -190,11 +206,15 @@ export function OrderLineCard({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="custom">
-                {vocabulary.custom_sizing?.[lang]
-                  ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
-                  : isAr
-                    ? "طلب مخصص / بدون مخزون جاهز"
-                    : "Custom Order / No Ready Stock"}
+                {appointment
+                  ? isAr
+                    ? "بند بدون خدمة محددة"
+                    : "A line with no service"
+                  : vocabulary.custom_sizing?.[lang]
+                    ? `${vocabulary.custom_sizing[lang]} / ${isAr ? "بدون مخزون جاهز" : "No Ready Stock"}`
+                    : isAr
+                      ? "طلب مخصص / بدون مخزون جاهز"
+                      : "Custom Order / No Ready Stock"}
               </SelectItem>
               {(variantsQ.data ?? []).map((v: any) => {
                 const p = productsQ.data?.find((x: any) => x.id === v.product_id);
@@ -227,7 +247,7 @@ export function OrderLineCard({
             />
           ) : (
             <div className="text-xs font-medium text-foreground bg-muted/20 border border-border-subtle rounded-lg p-2.5 min-h-[42px] flex items-center">
-              {it.description || (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
+              {title || (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
             </div>
           )}
         </div>
@@ -307,11 +327,11 @@ export function OrderLineCard({
       </div>
 
       {/* Custom Item / Specifications */}
-      {isTailoredLine(it) ||
+      {tailored ||
       (it.custom_field_values && it.custom_field_values.length > 0) ||
       editingItems[idx] ? (
         <div className="space-y-2">
-          {isTailoredLine(it) && (
+          {tailored && (
             <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-1.5">
                 {storeProfile.modules.made_to_order ? (
@@ -372,8 +392,10 @@ export function OrderLineCard({
                     <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
                   )}
                   <span>
-                    {vocabulary.customization_options?.[lang] ||
-                      (isAr ? "المواصفات والخيارات" : "Specifications & Options")}
+                    {appointment ? (isAr ? "تفاصيل الحجز" : "Booking details") : null}
+                    {!appointment &&
+                      (vocabulary.customization_options?.[lang] ||
+                        (isAr ? "المواصفات والخيارات" : "Specifications & Options"))}
                   </span>
                 </div>
                 {it.selected_variant &&
@@ -385,7 +407,15 @@ export function OrderLineCard({
                     });
                     return (
                       <div className="flex flex-wrap gap-2">
-                        {it.selected_variant.size && itemAxes.size.visible && (
+                        {length && (
+                          <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
+                            <span className="text-muted-foreground">
+                              {isAr ? "المدة:" : "Length:"}
+                            </span>
+                            <b>{length}</b>
+                          </span>
+                        )}
+                        {!length && it.selected_variant.size && itemAxes.size.visible && (
                           <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
                             <span className="text-muted-foreground">{itemAxes.size.label}:</span>
                             <b>
@@ -434,7 +464,8 @@ export function OrderLineCard({
           )}
         </div>
       ) : (
-        it.variant_id && (
+        it.variant_id &&
+        !appointment && (
           <div>
             <Label className="text-xs">{isAr ? "خصم المخزون من" : "Deduct Stock From"}</Label>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -473,7 +504,7 @@ export function OrderLineCard({
         )
       )}
 
-      {Boolean(it.product_id) && (
+      {Boolean(it.product_id) && !appointment && (
         <div>
           <Label className="text-xs">{t("orderDetail.customizations")}</Label>
           <div className="flex flex-wrap gap-2 mt-1">

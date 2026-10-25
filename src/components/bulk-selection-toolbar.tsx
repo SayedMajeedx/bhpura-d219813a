@@ -10,11 +10,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { arNoun, countOf, type CountedNoun } from "@/lib/arabic-count";
 
 type BulkSelectionToolbarProps = {
   lang: "en" | "ar";
-  entityAr: string;
-  entityEn: string;
+  /** What the list holds, counted in the reader's language ("المحدد: 3 منتجات"). */
+  noun: CountedNoun;
   selectedCount: number;
   allFilteredSelected: boolean;
   disabled?: boolean;
@@ -30,8 +31,7 @@ type BulkSelectionToolbarProps = {
 
 export function BulkSelectionToolbar({
   lang,
-  entityAr,
-  entityEn,
+  noun,
   selectedCount,
   allFilteredSelected,
   disabled,
@@ -55,7 +55,9 @@ export function BulkSelectionToolbar({
       <div className="inline-flex items-center gap-2 text-xs font-bold text-foreground">
         <CheckSquare className="h-4 w-4 text-primary" />
         <span>
-          {selectedCount} {isAr ? `${entityAr} محدد` : `${entityEn} selected`}
+          {isAr
+            ? `المحدد: ${arNoun(selectedCount, noun)}`
+            : `${countOf(selectedCount, noun, "en")} selected`}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">

@@ -294,22 +294,29 @@ describe("the add-ons section of the service editor", () => {
   }
   const saved = () => JSON.parse(screen.getByTestId("options").textContent ?? "[]") as OptionForm[];
 
-  it("adds an add-on from a starting point, then saves it", () => {
+  it("adds an add-on from a starting point the merchant names and prices, then saves it", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: /Attendant \(required\)/ }));
-    expect(screen.getByLabelText("Name (English)")).toHaveValue("Attendant");
-    expect(screen.getByLabelText("Price")).toHaveValue(15);
+    // A kind of add-on, never one store's own (they were a photobooth's, priced in BHD).
+    fireEvent.click(screen.getByRole("button", { name: /Required with every booking/ }));
+    expect(screen.getByLabelText("Name (English)")).toHaveValue("");
+    expect(screen.getByLabelText("Price")).toHaveValue(null);
+    fireEvent.change(screen.getByLabelText("Name (English)"), { target: { value: "Attendant" } });
+    fireEvent.change(screen.getByLabelText("Price"), { target: { value: "15" } });
     fireEvent.click(screen.getByRole("button", { name: "Save add-on" }));
     expect(saved()).toHaveLength(1);
     expect(saved()[0]).toMatchObject({ name_en: "Attendant", mode: "required", price: "15" });
     expect(screen.getByText("Required · 15")).toBeInTheDocument();
   });
 
-  it("adds envelopes in blocks, with their prices", () => {
+  it("adds an add-on in blocks, with the prices the merchant writes", () => {
     render(<Harness />);
-    fireEvent.click(screen.getByRole("button", { name: /In blocks \(like envelopes\)/ }));
+    fireEvent.click(screen.getByRole("button", { name: /In blocks \(a price per block\)/ }));
     expect(screen.getByLabelText("Block size")).toHaveValue(50);
-    expect(screen.getByLabelText(/Each block's price/)).toHaveValue("15, 12.5, 10");
+    expect(screen.getByLabelText(/Each block's price/)).toHaveValue("");
+    fireEvent.change(screen.getByLabelText("Name (English)"), { target: { value: "Envelopes" } });
+    fireEvent.change(screen.getByLabelText(/Each block's price/), {
+      target: { value: "15, 12.5, 10" },
+    });
     fireEvent.change(screen.getByLabelText("Most units"), { target: { value: "200" } });
     fireEvent.click(screen.getByRole("button", { name: "Save add-on" }));
     expect(saved()[0]).toMatchObject({ tiered: true, step: "50", max_quantity: "200" });
@@ -320,6 +327,7 @@ describe("the add-ons section of the service editor", () => {
     fireEvent.click(screen.getByRole("button", { name: /An optional extra/ }));
     expect(screen.getByRole("button", { name: "Save add-on" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Name (English)"), { target: { value: "Frame" } });
+    fireEvent.change(screen.getByLabelText("Price"), { target: { value: "25" } });
     expect(screen.getByRole("button", { name: "Save add-on" })).toBeEnabled();
     fireEvent.change(screen.getByLabelText("Price"), { target: { value: "" } });
     expect(screen.getByRole("alert")).toHaveTextContent(/price/);

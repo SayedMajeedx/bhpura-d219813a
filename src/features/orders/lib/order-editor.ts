@@ -1,4 +1,5 @@
 import { regionLabel } from "@/lib/bahrain-regions";
+import { chargedTaxRate } from "@/lib/vat-registration";
 import { formatMoney } from "@/lib/format";
 import type {
   DraftOrder,
@@ -192,7 +193,8 @@ export function newDraftOrder(settings: any, brandId: string, today: string): Dr
     brand_id: brandId,
     invoice_number: 0,
     currency: settings.currency ?? "BHD",
-    tax_rate: settings.default_tax_rate ?? 15,
+    // The store's rate only with a VAT number (none while the settings load).
+    tax_rate: chargedTaxRate(settings),
     fulfillment_method: fulfillmentMethod,
     shipping,
     subtotal: 0,

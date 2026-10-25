@@ -188,7 +188,12 @@ describe("the dashboard's bookings card", () => {
       booking({ event_date: today, starts_at: soon, ends_at: later, customer_name: "Ali" }),
       booking({ event_date: addDays(today, 2) }),
     ];
-    data.requests = [{ id: "r1" }, { id: "r2" }];
+    // A request to answer, a transfer to check, and a hold that ran out (not waiting).
+    data.requests = [
+      { id: "r1", status: "requested" },
+      { id: "r2", status: "hold", orders: [{ id: "o2", status: "pending_verification" }] },
+      { id: "r3", status: "hold", orders: null },
+    ];
     withQuery(<BookingsGlanceCard brandId="b1" slug="aurora" isAr={false} />);
 
     expect(await screen.findByText("Ali")).toBeTruthy();

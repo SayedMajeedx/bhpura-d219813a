@@ -23,13 +23,19 @@ export function inventoryScopeTabs(
   {
     tracksStock = true,
     madeToOrderLabel,
-  }: { tracksStock?: boolean; madeToOrderLabel?: { ar: string; en: string } } = {},
+    services = false,
+  }: {
+    tracksStock?: boolean;
+    madeToOrderLabel?: { ar: string; en: string };
+    /** A services store: the list holds services, not products. */
+    services?: boolean;
+  } = {},
 ): InventoryScopeTab[] {
   const tabs: InventoryScopeTab[] = [
     {
       id: "all",
-      label_en: "All Products",
-      label_ar: "جميع المنتجات",
+      label_en: services ? "All services" : "All Products",
+      label_ar: services ? "جميع الخدمات" : "جميع المنتجات",
       count: counts.all,
       icon: Package,
     },
@@ -71,7 +77,7 @@ export function inventoryScopeTabs(
     {
       id: "featured",
       label_en: "Featured",
-      label_ar: "المنتجات المميزة",
+      label_ar: services ? "الخدمات المميزة" : "المنتجات المميزة",
       count: counts.featured,
       icon: TrendingUp,
     },

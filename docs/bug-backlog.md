@@ -8,4 +8,4 @@ Line numbers are as of 2026-09-24 and may drift; search for the quoted code.
 
 ---
 
-Every bug found up to #44 is fixed.
+Every bug found up to #49 is fixed.

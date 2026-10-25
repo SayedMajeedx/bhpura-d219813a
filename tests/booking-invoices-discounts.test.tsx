@@ -203,6 +203,30 @@ describe("a booking's invoice", () => {
 });
 
 describe("the booking card", () => {
+  it("prices the add-ons chosen with a service, and calls only a package's free parts included", () => {
+    renderCard(
+      booking({
+        booking_items: [
+          { id: "i1", product_id: "p1", name_en: "Photo booth", quantity: 1, line_total: 55 },
+          // Aurora's 29 Oct booking: 30 BHD of prints read "included".
+          {
+            id: "i2",
+            parent_item_id: "i1",
+            name_en: "Instant prints",
+            quantity: 1,
+            line_total: 30,
+          },
+          { id: "i3", parent_item_id: "i1", name_en: "Attendant", quantity: 1, line_total: 0 },
+        ],
+      }),
+    );
+    const prints = screen.getByText(/Instant prints/).closest("li")!;
+    expect(within(prints).getByText(/30\.000/)).toBeTruthy();
+    expect(within(prints).queryByText("included")).toBeNull();
+    const attendant = screen.getByText(/Attendant/).closest("li")!;
+    expect(within(attendant).getByText("included")).toBeTruthy();
+  });
+
   it("shows the customer, the money, where it came from and its invoice", () => {
     renderCard(booking({ deposit_amount: 10 }));
     expect(screen.getByText("Sara")).toBeInTheDocument();

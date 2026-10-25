@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PAGE_ACCESS, homePageOf, mayOpenPage, pageOf } from "../src/lib/page-access";
+import { PAGE_ACCESS, homePageOf, mayOpenPage, pageOf, pageRedirect } from "../src/lib/page-access";
 import { getAdminNavItems } from "../src/config/admin-navigation";
 
 // Who may open which page of a store's admin. Five pages each carried their own copy of the
@@ -78,6 +78,16 @@ describe("who may open a page", () => {
     for (const caller of [staff(), staff("manage_orders"), { role: "courier", status: "active" }]) {
       expect(mayOpenPage(homePageOf(caller), caller)).toBe(true);
     }
+  });
+
+  it("sends the store's bare address to the caller's home page (it drew an empty screen)", () => {
+    expect(pageOf("/admin/b/aurora", "aurora")).toBeNull();
+    expect(pageRedirect(null, staff())).toBe("dashboard");
+    expect(pageRedirect(null, { role: "courier", status: "active" })).toBe("orders");
+    expect(pageRedirect(null, { role: "admin", status: "active" }, true)).toBe("dashboard");
+    expect(pageRedirect("bookings", { role: "admin", status: "active" })).toBeNull();
+    expect(pageRedirect("team", staff())).toBe("dashboard");
+    expect(pageRedirect("team", staff(), true)).toBeNull();
   });
 });
 

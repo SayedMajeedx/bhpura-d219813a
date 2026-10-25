@@ -15,6 +15,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { OrderLineCard } from "@/features/orders/components/OrderLineCard";
 /** The order's lines, with add, search and barcode scan. */
 export function OrderItemsCard({
+  appointment = false,
   isReadOnly = false,
   addItem,
   addonDefaults,
@@ -43,6 +44,8 @@ export function OrderItemsCard({
   variantsQ,
   vocabulary,
 }: {
+  /** An order placed for a booking: its lines are booked services and their add-ons. */
+  appointment?: boolean;
   /** The order is open to view: its tools to add lines wait until it is opened for editing. */
   isReadOnly?: boolean;
   addItem: () => void;
@@ -111,6 +114,7 @@ export function OrderItemsCard({
           <OrderLineCard
             key={idx}
             addonDefaults={addonDefaults}
+            appointment={appointment}
             currency={currency}
             customQ={customQ}
             customerPassportQ={customerPassportQ}

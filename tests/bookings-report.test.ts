@@ -87,6 +87,60 @@ describe("the bookings report", () => {
     expect(report.byWeekday[0]).toBe(2);
   });
 
+  it("lists services only: an add-on's price is its service's, a package's parts are not sold", () => {
+    const withExtras = summariseBookings({
+      from: "2026-10-01",
+      to: "2026-10-31",
+      rules: { closed_weekdays: [] },
+      blocks: [],
+      bookings: [
+        booking({
+          booking_items: [
+            {
+              id: "b",
+              product_id: "booth",
+              name_en: "Booth",
+              name_ar: null,
+              quantity: 1,
+              line_total: 55,
+            },
+            // Aurora's 29 Oct booking: the report listed "Envelopes × 100 × 1" as a service.
+            {
+              id: "e",
+              parent_item_id: "b",
+              product_id: null,
+              name_en: "Envelopes × 100",
+              name_ar: null,
+              quantity: 1,
+              line_total: 27.5,
+            },
+            {
+              id: "p",
+              product_id: "diamond",
+              name_en: "Diamond",
+              name_ar: null,
+              quantity: 1,
+              line_total: 160,
+            },
+            {
+              id: "pv",
+              parent_item_id: "p",
+              product_id: "video",
+              name_en: "Video booth",
+              name_ar: null,
+              quantity: 1,
+              line_total: 0,
+            },
+          ],
+        }),
+      ],
+    });
+    expect(withExtras.topServices.map((s) => [s.key, s.count, s.revenue])).toEqual([
+      ["diamond", 1, 160],
+      ["booth", 1, 82.5],
+    ]);
+  });
+
   it("is empty without bookings", () => {
     const empty = summariseBookings({
       from: "2026-10-01",

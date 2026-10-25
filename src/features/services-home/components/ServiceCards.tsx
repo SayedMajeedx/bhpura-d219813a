@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { arNoun } from "@/lib/arabic-count";
 import { Link } from "@tanstack/react-router";
 import { Check, Clock, Gem, MapPin, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ export function ServiceCard({
             </ul>
             {includes.length > 4 && (
               <p className="text-xs text-muted-foreground">
-                {t(`و${includes.length - 4} أخرى`, `and ${includes.length - 4} more`)}
+                {t(`+ ${arNoun(includes.length - 4, "line")}`, `and ${includes.length - 4} more`)}
               </p>
             )}
           </div>
@@ -220,7 +221,7 @@ export function PackageOfferCard({
           ))}
           {own.length > 4 && (
             <li className="text-xs text-muted-foreground">
-              {t(`و${own.length - 4} أخرى`, `and ${own.length - 4} more`)}
+              {t(`+ ${arNoun(own.length - 4, "line")}`, `and ${own.length - 4} more`)}
             </li>
           )}
         </ul>

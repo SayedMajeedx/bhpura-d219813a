@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { arNoun } from "@/lib/arabic-count";
 import { type CalendarCell } from "@/features/bookings/lib/calendar-view";
 import { dayTitle, monthTitle, weekdayNames } from "@/lib/bookings/format";
 import { WEEK_STARTS_ON, type BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -15,7 +16,10 @@ export function stateLabel(cell: CalendarCell, isAr: boolean): string {
     case "full":
       return isAr ? "محجوز بالكامل" : "Fully booked";
     default:
-      return cell.taken > 0
+      if (cell.taken > 0 && cell.capacity === null) {
+        return isAr ? arNoun(cell.taken, "booking") : `${cell.taken} booked`;
+      }
+      return cell.taken > 0 && cell.capacity !== null
         ? isAr
           ? `${cell.capacity - cell.taken} متاح من ${cell.capacity}`
           : `${cell.capacity - cell.taken} of ${cell.capacity} free`
@@ -182,7 +186,7 @@ function DayCell({
       <span>{Number(cell.day.slice(8))}</span>
       {cell.state !== "closed" && cell.taken > 0 && (
         <span className="text-xs leading-none opacity-80">
-          {cell.taken}/{cell.capacity}
+          {cell.capacity === null ? cell.taken : `${cell.taken}/${cell.capacity}`}
         </span>
       )}
       {cell.pending > 0 && (

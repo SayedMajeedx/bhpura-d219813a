@@ -207,8 +207,7 @@ export function IncubatorStockTab({ page }: { page: IncubatorsPageState }) {
 
       <ListPagination
         lang={lang}
-        entityAr="صنف / متغير"
-        entityEn="Variants"
+        noun="variant"
         totalItems={filteredStock.length}
         page={stockPaging.page}
         pageSize={stockPaging.size}
