@@ -24,6 +24,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { OrderItemEditDialog } from "@/features/orders/components/OrderItemEditDialog";
 import { isTailoredLine } from "@/features/orders/lib/order-editor";
 import { LineThumbnail } from "@/features/orders/components/LineThumbnail";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 /** One order line: image, SKU, stock, quantity and price, with its edit dialog. */
 export function OrderLineCard({
   addonDefaults,
@@ -419,12 +420,11 @@ export function OrderLineCard({
                     {it.custom_field_values.map((cf, i) => (
                       <div key={i} className="min-w-0 text-xs [overflow-wrap:anywhere]">
                         <span className="font-bold text-muted-foreground">
-                          {isAr
-                            ? cf.label_ar || cf.label_en || cf.key
-                            : cf.label_en || cf.label_ar || cf.key}
-                          :{" "}
+                          {customFieldLabel(cf, isAr ? "ar" : "en")}:{" "}
                         </span>
-                        <span className="text-foreground font-medium">{cf.value}</span>
+                        <span className="text-foreground font-medium">
+                          {customFieldValue(cf, isAr ? "ar" : "en")}
+                        </span>
                       </div>
                     ))}
                   </div>

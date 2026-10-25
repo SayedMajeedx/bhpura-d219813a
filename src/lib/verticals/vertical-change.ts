@@ -3,7 +3,6 @@ import { dependentsOf, getAddon, resolveInstallOrder } from "@/lib/addons/addon-
 import { starterPackFor } from "@/lib/addons/starter-packs";
 import {
   DEFAULT_VERTICAL_CATEGORIES,
-  PURA_BRAND_ID,
   planCategorySync,
   type CategoryRow,
   type DefaultCategorySpec,
@@ -59,7 +58,7 @@ export type VerticalChangePlan = {
    * needs: the super admin may switch them off (their data is kept).
    */
   disableCandidates: AddonId[];
-  /** Null when categories are left alone (not asked, or a protected store). */
+  /** Null when categories are left alone (not asked). */
   categories: { add: DefaultCategorySpec[]; remove: CategoryRow[] } | null;
   modules: { before: StoreModules; after: StoreModules };
   wording: WordingChange[];
@@ -68,7 +67,6 @@ export type VerticalChangePlan = {
 };
 
 export function planVerticalChange({
-  brandId,
   from,
   to,
   installed,
@@ -78,7 +76,6 @@ export function planVerticalChange({
   policies,
   facts,
 }: {
-  brandId: string;
   from: StoreVertical;
   to: StoreVertical;
   installed: readonly InstalledAddon[];
@@ -108,16 +105,14 @@ export function planVerticalChange({
     const others = installedIds.filter((other) => other !== id);
     return dependentsOf(id, others).length === 0;
   });
-  // Pura's categories are hand-built: a vertical change never touches them.
-  const categoryPlan =
-    syncCategories && brandId !== PURA_BRAND_ID
-      ? planCategorySync({
-          existing: categories,
-          usedKeys,
-          targets: DEFAULT_VERTICAL_CATEGORIES[to] ?? DEFAULT_VERTICAL_CATEGORIES.general,
-          replaceEmpty: true,
-        })
-      : null;
+  const categoryPlan = syncCategories
+    ? planCategorySync({
+        existing: categories,
+        usedKeys,
+        targets: DEFAULT_VERTICAL_CATEGORIES[to] ?? DEFAULT_VERTICAL_CATEGORIES.general,
+        replaceEmpty: true,
+      })
+    : null;
   return {
     from,
     to,

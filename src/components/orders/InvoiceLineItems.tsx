@@ -1,5 +1,6 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 
 /**
  * The customer invoice's lines. From `sm` (and on paper) a table; on a phone each line is a card
@@ -40,7 +41,6 @@ function ItemDetails({
   money,
   textColor,
 }: Pick<Props, "lang" | "addonDefaults" | "money" | "textColor"> & { it: any }) {
-  const isRTL = lang === "ar";
   const lines = String(it.products?.name || it.description || "—")
     .split(/\r?\n/)
     .map((s) => s.trim())
@@ -104,9 +104,7 @@ function ItemDetails({
       ))}
       {(it.custom_field_values ?? []).map((field: any, i: number) => (
         <p key={`f${i}`} className="text-xs" style={muted}>
-          {(isRTL ? field.label_ar || field.label_en : field.label_en || field.label_ar) ||
-            field.key}
-          : {field.value}
+          {customFieldLabel(field, lang)}: {customFieldValue(field, lang)}
         </p>
       ))}
     </div>

@@ -33,7 +33,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
 import { CropUploadButton } from "@/components/crop-upload-button";
-import { syncBrandVerticalCategories, PURA_BRAND_ID } from "@/lib/addons/vertical-categories";
+import { syncBrandVerticalCategories } from "@/lib/addons/vertical-categories";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import type { StoreVertical } from "@/lib/store-profile";
 import { addonDataQueries } from "@/lib/data/addons";
@@ -118,15 +118,6 @@ function CategoriesPage() {
   };
 
   const handleSyncVerticalDefaults = async () => {
-    if (brandId === PURA_BRAND_ID) {
-      toast.info(
-        isAr
-          ? "براند Pura محمي من التعديل التلقائي للأقسام."
-          : "Pura brand is protected from automated category changes.",
-      );
-      return;
-    }
-
     const confirmed = await confirmDialog({
       title: isAr ? "تهيئة أقسام نشاطك؟" : "Set up your kind of store's categories?",
       description: isAr

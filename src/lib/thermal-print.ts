@@ -1,6 +1,7 @@
 import { formatDate, formatMoney } from "@/lib/format";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 
 type ThermalItem = {
   description: string;
@@ -116,7 +117,7 @@ export function printThermalReceipt(a: ThermalArgs) {
             )
               .map(
                 (cf) =>
-                  `${escapeHtml((isRTL ? cf.label_ar || cf.label_en : cf.label_en || cf.label_ar) || cf.key || "")}: ${escapeHtml(cf.value)}`,
+                  `${escapeHtml(customFieldLabel(cf, isRTL ? "ar" : "en"))}: ${escapeHtml(customFieldValue(cf, isRTL ? "ar" : "en"))}`,
               )
               .join("<br/>")}</div>`
           : "";

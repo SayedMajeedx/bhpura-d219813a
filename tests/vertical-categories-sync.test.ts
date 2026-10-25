@@ -3,7 +3,6 @@ import { listReply } from "./helpers/list-reply";
 import {
   syncBrandVerticalCategories,
   DEFAULT_VERTICAL_CATEGORIES,
-  PURA_BRAND_ID,
 } from "../src/lib/addons/vertical-categories";
 import { STORE_VERTICALS } from "../src/lib/store-profile";
 
@@ -25,28 +24,7 @@ describe("Vertical Categories Synchronization & Invariants", () => {
     }
   });
 
-  it("strictly aborts and protects PURA brand from any category modifications", async () => {
-    const mockDb: any = {
-      from: vi.fn(),
-    };
-
-    const result = await syncBrandVerticalCategories({
-      db: mockDb,
-      brandId: PURA_BRAND_ID,
-      newVertical: "food",
-      replaceEmptyOldCategories: true,
-    });
-
-    expect(result).toEqual({
-      insertedCount: 0,
-      removedCount: 0,
-      skipped: true,
-      reason: "pura_protected",
-    });
-    expect(mockDb.from).not.toHaveBeenCalled();
-  });
-
-  it("safely syncs categories for non-pura brand, preserving categories with products", async () => {
+  it("syncs a store's categories, keeping those with products (every store alike)", async () => {
     const fakeBrandId = "11111111-2222-3333-4444-555555555555";
     const existingCategories = [
       { id: "c1", slug: "women-perfumes", name_en: "Women's Perfumes" },

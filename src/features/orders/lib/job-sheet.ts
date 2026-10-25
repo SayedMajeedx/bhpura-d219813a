@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/format";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 
 /**
  * The job sheet: the page that goes to the workshop with a made-to-order piece. It says what to
@@ -108,10 +109,7 @@ export function jobSheetPieces(
       }
 
       const given = answers(line);
-      const labelOf = (field: (typeof given)[number]) =>
-        filled(
-          lang === "ar" ? field.label_ar || field.label_en : field.label_en || field.label_ar,
-        ) || filled(field.key);
+      const labelOf = (field: (typeof given)[number]) => filled(customFieldLabel(field, lang));
 
       return {
         title: filled(line.description) || "—",
@@ -120,7 +118,10 @@ export function jobSheetPieces(
         options: chosen,
         details: given
           .filter((field) => !NOTE_KEYS.has(filled(field.key)))
-          .map((field) => ({ label: labelOf(field), value: filled(field.value) })),
+          .map((field) => ({
+            label: labelOf(field),
+            value: filled(customFieldValue(field, lang)),
+          })),
         notes: given
           .filter((field) => NOTE_KEYS.has(filled(field.key)))
           .map((field) => filled(field.value)),

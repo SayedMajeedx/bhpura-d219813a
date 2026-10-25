@@ -1,6 +1,7 @@
 import type { StoreVertical } from "@/lib/store-profile";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { readAll } from "@/lib/data/read-all";
+import { smartKindOf } from "@/lib/smart-categories";
 
 export interface DefaultCategorySpec {
   name_ar: string;
@@ -8,8 +9,6 @@ export interface DefaultCategorySpec {
   slug: string;
   sort_order: number;
 }
-
-export const PURA_BRAND_ID = "b2f628c9-cfeb-444b-befe-5dbbb9d5c9e6";
 
 export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategorySpec[]> = {
   coffee: [
@@ -203,16 +202,12 @@ export interface SyncVerticalCategoriesResult {
   removedCount: number;
 }
 
-/**
- * Synchronizes categories when changing a store vertical, or on explicit merchant request.
- * Strictly protects Pura from any automated changes.
- * Safely preserves any category currently associated with products.
- */
 export type CategoryRow = {
   id: string;
   slug: string | null;
   name_ar: string | null;
   name_en: string | null;
+  parent_id?: string | null;
 };
 
 /**
@@ -229,7 +224,9 @@ export function categoryKeys(category: CategoryRow): string[] {
  * How a store's categories follow a new vertical: the vertical's default
  * categories that are missing are added, and (when asked) categories no
  * product uses that are not the vertical's are removed. A category any
- * product uses is never removed.
+ * product uses is never removed, nor an automatic collection (no product is
+ * ever filed under "Sale" or "New arrivals", so they always looked empty), nor
+ * a category holding others.
  */
 export function planCategorySync({
   existing,
@@ -244,10 +241,12 @@ export function planCategorySync({
   replaceEmpty: boolean;
 }): { add: DefaultCategorySpec[]; remove: CategoryRow[] } {
   const targetSlugs = new Set(targets.map((target) => target.slug.toLowerCase()));
+  const parents = new Set(existing.map((category) => category.parent_id).filter(Boolean));
   const remove = replaceEmpty
     ? existing.filter((category) => {
         const slug = (category.slug ?? "").trim().toLowerCase();
         if (slug && targetSlugs.has(slug)) return false;
+        if (smartKindOf(slug) || parents.has(category.id)) return false;
         return !categoryKeys(category).some((key) => usedKeys.has(key));
       })
     : [];
@@ -262,22 +261,12 @@ export async function syncBrandVerticalCategories({
   newVertical,
   replaceEmptyOldCategories = true,
 }: SyncVerticalCategoriesOptions): Promise<SyncVerticalCategoriesResult> {
-  // CRITICAL SAFEGUARD: Never mutate brand Pura
-  if (brandId === PURA_BRAND_ID) {
-    return {
-      skipped: true,
-      reason: "pura_protected",
-      insertedCount: 0,
-      removedCount: 0,
-    };
-  }
-
   const targets = DEFAULT_VERTICAL_CATEGORIES[newVertical] || DEFAULT_VERTICAL_CATEGORIES.general;
 
   // 1. Fetch current categories
   const { data: currentCategories, error: catErr } = await db
     .from("categories")
-    .select("id, slug, name_ar, name_en")
+    .select("id, slug, name_ar, name_en, parent_id")
     .eq("brand_id", brandId);
 
   if (catErr) throw catErr;

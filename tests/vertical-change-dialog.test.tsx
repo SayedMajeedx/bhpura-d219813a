@@ -10,7 +10,6 @@ import { planVerticalChange } from "../src/lib/verticals/vertical-change";
 
 const BRAND = "11111111-2222-4333-8444-555555555555";
 const plan = planVerticalChange({
-  brandId: BRAND,
   from: "food",
   to: "coffee",
   installed: [
