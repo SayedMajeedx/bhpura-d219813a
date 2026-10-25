@@ -139,7 +139,6 @@ describe("what a change of vertical leaves behind", () => {
 describe("the plan of a vertical change", () => {
   const plan = (withFacts: boolean) =>
     planVerticalChange({
-      brandId: "b1",
       from: "fashion",
       to: "services",
       installed: [],

@@ -130,6 +130,7 @@ describe("reads", () => {
     expect(requests[0].payload).toEqual({ p_brand_id: "b1" });
   });
 
+  // An automatic collection needs the storefront's rules and the orders: no number is guessed.
   it("work the counts out when the server returns nothing", async () => {
     respond = (request) => {
       if (request.op === "rpc") return { data: [], error: null };
@@ -139,6 +140,8 @@ describe("reads", () => {
             { id: "c1", slug: "abayas", name_en: "Abayas" },
             { id: "c2", slug: "new", name_en: "New" },
             { id: "c3", slug: "sale", name_en: "Sale" },
+            { id: "c4", slug: "all", name_en: "All" },
+            { id: "c5", slug: "most-selling", name_en: "Best sellers" },
           ],
           error: null,
         };
@@ -154,8 +157,10 @@ describe("reads", () => {
     const rows = await categories.fetchCategoriesOverview("b1");
     expect(rows.map((r) => [r.id, r.product_count, r.total_product_count, r.is_smart])).toEqual([
       ["c1", 2, 3, false],
-      ["c2", 2, 2, true],
-      ["c3", 1, 1, true],
+      ["c2", undefined, undefined, true],
+      ["c3", undefined, undefined, true],
+      ["c4", 2, 2, true],
+      ["c5", undefined, undefined, true],
     ]);
   });
 });

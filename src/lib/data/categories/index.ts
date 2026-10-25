@@ -1,6 +1,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { readAll } from "../read-all";
+import { smartKindOf } from "@/lib/smart-categories";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 /**
@@ -66,11 +67,12 @@ export async function fetchCategoriesForExport(brandId: string) {
 
 /**
  * Every category with its active and total product counts, from the server
- * (`get_brand_categories_with_counts`). When that returns nothing or fails,
- * the counts are worked out here: "new" categories count every active
- * product, "best sellers" count one, "sale" counts active products on sale
- * (or every active product), others count products whose category is the
- * slug, English name or id.
+ * (`get_brand_categories_with_counts`, which counts the automatic collections as the
+ * storefront fills them). When that returns nothing or fails, the counts are worked out
+ * here: a category counts the products filed under its slug, a name or its id, "all"
+ * every active product, and the other automatic collections (new, best sellers, sale)
+ * no number at all: they need the storefront's rules and the orders, and a guess once
+ * showed one best seller and every product on sale.
  */
 export async function fetchCategoriesOverview(brandId: string): Promise<CategoryWithCounts[]> {
   try {
@@ -95,7 +97,7 @@ export async function fetchCategoriesOverview(brandId: string): Promise<Category
     readAll((from, to) =>
       supabase
         .from("products")
-        .select("id, category, is_active, show_sale_badge", { count: "exact" })
+        .select("id, category, is_active", { count: "exact" })
         .eq("brand_id", brandId)
         .order("id")
         .range(from, to),
@@ -106,10 +108,8 @@ export async function fetchCategoriesOverview(brandId: string): Promise<Category
   const totalActiveProducts = productsList.filter((p) => p.is_active).length;
 
   return (cats ?? []).map((cat) => {
-    const slug = cat.slug || "";
-    const nameEn = cat.name_en || "";
-
-    if (["new-arrivals", "new"].includes(slug)) {
+    const kind = smartKindOf(cat.slug);
+    if (kind === "all") {
       return {
         ...cat,
         product_count: totalActiveProducts,
@@ -117,22 +117,15 @@ export async function fetchCategoriesOverview(brandId: string): Promise<Category
         is_smart: true,
       };
     }
-    if (["most-selling", "best-sellers", "best-selling"].includes(slug)) {
-      return { ...cat, product_count: 1, total_product_count: 1, is_smart: true };
-    }
-    if (["sale", "offers", "discounts"].includes(slug)) {
-      const saleCount = productsList.filter((p) => p.is_active && p.show_sale_badge).length;
-      return {
-        ...cat,
-        product_count: saleCount || totalActiveProducts,
-        total_product_count: saleCount || totalActiveProducts,
-        is_smart: true,
-      };
-    }
+    if (kind)
+      return { ...cat, product_count: undefined, total_product_count: undefined, is_smart: true };
 
-    const matches = productsList.filter(
-      (p) => p.category === slug || p.category === nameEn || p.category === cat.id,
+    const keys = new Set(
+      [cat.slug, cat.name_en, cat.name_ar, cat.id]
+        .filter((key): key is string => Boolean(key?.trim()))
+        .map((key) => key.trim().toLowerCase()),
     );
+    const matches = productsList.filter((p) => keys.has((p.category ?? "").trim().toLowerCase()));
     const activeMatches = matches.filter((p) => p.is_active);
     return {
       ...cat,

@@ -3,6 +3,7 @@ import { Boxes, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { OsSkeleton } from "@/components/os/os-skeleton";
+import { countOf } from "@/lib/arabic-count";
 
 interface CategoriesWorkQueueProps {
   lang: "en" | "ar";
@@ -13,38 +14,27 @@ interface CategoriesWorkQueueProps {
   onReorder: (id: string, dir: "up" | "down") => void;
 }
 
+/** An automatic collection whose count is not known (the counts were worked out here) says so. */
 function formatProductCount(
-  count: number,
+  count: number | undefined,
   isAr: boolean,
   total?: number,
   isSmart?: boolean,
 ): string {
+  const lang = isAr ? "ar" : "en";
   if (isSmart) {
-    if (isAr) {
-      if (count === 0) return "تلقائي (0 منتج)";
-      if (count === 1) return "تلقائي (منتج واحد)";
-      if (count === 2) return "تلقائي (منتجان)";
-      if (count >= 3 && count <= 10) return `تلقائي (${count} منتجات)`;
-      return `تلقائي (${count} منتجاً)`;
-    }
-    return `Smart (${count} ${count === 1 ? "item" : "items"})`;
+    if (count === undefined) return isAr ? "تلقائي" : "Automatic";
+    return isAr
+      ? `تلقائي (${countOf(count, "product", lang)})`
+      : `Automatic (${countOf(count, "product", lang)})`;
   }
-
-  if (total !== undefined && total > count) {
-    if (isAr) {
-      return `${count} نشط (${total} إجمالي)`;
-    }
-    return `${count} active (${total} total)`;
+  const active = count ?? 0;
+  if (total !== undefined && total > active) {
+    return isAr
+      ? `${countOf(total, "product", lang)}، ${active} منها ظاهرة`
+      : `${countOf(total, "product", lang)}, ${active} shown`;
   }
-
-  if (isAr) {
-    if (count === 0) return "0 منتجات";
-    if (count === 1) return "منتج واحد";
-    if (count === 2) return "منتجان";
-    if (count >= 3 && count <= 10) return `${count} منتجات`;
-    return `${count} منتجاً`;
-  }
-  return `${count} ${count === 1 ? "item" : "items"}`;
+  return countOf(active, "product", lang);
 }
 
 export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
@@ -102,7 +92,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
         {categories.map((cat, index) => {
           const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
           const countText = formatProductCount(
-            cat.product_count || 0,
+            cat.product_count,
             isAr,
             cat.total_product_count,
             cat.is_smart,
@@ -197,7 +187,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
             {categories.map((cat, index) => {
               const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
               const countText = formatProductCount(
-                cat.product_count || 0,
+                cat.product_count,
                 isAr,
                 cat.total_product_count,
                 cat.is_smart,

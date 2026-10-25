@@ -140,7 +140,7 @@ async function planFor(
   const [settings, addons, categories, products, policies, facts] = await Promise.all([
     db.from("business_settings").select("store_vertical").eq("brand_id", brandId).maybeSingle(),
     db.from("brand_addons").select("addon_id, status").eq("brand_id", brandId),
-    db.from("categories").select("id, slug, name_ar, name_en").eq("brand_id", brandId),
+    db.from("categories").select("id, slug, name_ar, name_en, parent_id").eq("brand_id", brandId),
     // Which categories are in use is read from every product, however many there are.
     readAll<{ category: string | null }>((from, to) =>
       db
@@ -171,7 +171,6 @@ async function planFor(
       .filter(Boolean),
   );
   return planVerticalChange({
-    brandId,
     from: normalizeVertical(settings.data.store_vertical),
     to: vertical,
     installed: addons.data ?? [],

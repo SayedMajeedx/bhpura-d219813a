@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_VERTICAL_CATEGORIES, PURA_BRAND_ID } from "../src/lib/addons/vertical-categories";
+import { DEFAULT_VERTICAL_CATEGORIES } from "../src/lib/addons/vertical-categories";
 import { planVerticalChange, wordingChanges } from "../src/lib/verticals/vertical-change";
 import { fakeSupabase } from "./helpers/server-fn";
 
@@ -9,7 +9,6 @@ const installed = (...ids: string[]) => ids.map((addon_id) => ({ addon_id, statu
 
 const plan = (overrides: Partial<Parameters<typeof planVerticalChange>[0]>) =>
   planVerticalChange({
-    brandId: BRAND,
     from: "food",
     to: "coffee",
     installed: [],
@@ -91,9 +90,19 @@ describe("planVerticalChange: categories", () => {
     );
   });
 
-  it("leaves categories alone when not asked, and always for Pura", () => {
+  it("leaves categories alone when not asked", () => {
     expect(plan({ categories, syncCategories: false }).categories).toBeNull();
-    expect(plan({ categories, brandId: PURA_BRAND_ID }).categories).toBeNull();
+  });
+
+  it("never removes an automatic collection or a category holding others as empty", () => {
+    const kept = [
+      { id: "s1", slug: "sale", name_en: "Sale", name_ar: "تخفيضات" },
+      { id: "s2", slug: "new-arrivals", name_en: "New", name_ar: "جديدنا" },
+      { id: "p1", slug: "gifts", name_en: "Gifts", name_ar: "هدايا" },
+      { id: "c1", slug: "gift-boxes", name_en: "Boxes", name_ar: "صناديق", parent_id: "p1" },
+    ];
+    const removed = plan({ categories: kept }).categories?.remove.map((c) => c.id);
+    expect(removed).toEqual(["c1"]);
   });
 });
 

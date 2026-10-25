@@ -28,6 +28,7 @@ import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
 import { policyLines } from "@/lib/bookings/policies";
 import { invoiceDepositPercent } from "@/lib/bookings/deposit";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName } from "@/lib/order-line-name";
 
 type SavedAddress = {
@@ -792,10 +793,7 @@ export default function InvoicePreview({
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.custom_field_values.map((cf, ci) => (
                             <li key={ci}>
-                              {isRTL
-                                ? cf.label_ar || cf.label_en || cf.key
-                                : cf.label_en || cf.label_ar || cf.key}
-                              :{" "}
+                              {customFieldLabel(cf, isRTL ? "ar" : "en")}:{" "}
                               {cf.value.startsWith("http") ? (
                                 <a
                                   href={cf.value}
@@ -806,7 +804,7 @@ export default function InvoicePreview({
                                   📎 {isRTL ? "تحميل/عرض الملف" : "View File"}
                                 </a>
                               ) : (
-                                cf.value
+                                customFieldValue(cf, isRTL ? "ar" : "en")
                               )}
                             </li>
                           ))}

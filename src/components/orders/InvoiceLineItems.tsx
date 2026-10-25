@@ -1,5 +1,6 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 
 /**
@@ -41,7 +42,6 @@ function ItemDetails({
   money,
   textColor,
 }: Pick<Props, "lang" | "addonDefaults" | "money" | "textColor"> & { it: any }) {
-  const isRTL = lang === "ar";
   // The name in the invoice's language (a product's own, or the line's: a booking's add-on).
   const lines = String(orderLineName(it, lang) || "—")
     .split(/\r?\n/)
@@ -107,9 +107,7 @@ function ItemDetails({
       ))}
       {(it.custom_field_values ?? []).map((field: any, i: number) => (
         <p key={`f${i}`} className="text-xs" style={muted}>
-          {(isRTL ? field.label_ar || field.label_en : field.label_en || field.label_ar) ||
-            field.key}
-          : {field.value}
+          {customFieldLabel(field, lang)}: {customFieldValue(field, lang)}
         </p>
       ))}
     </div>
