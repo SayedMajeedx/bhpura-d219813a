@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import { StoreStatusBanner } from "@/features/storefront-shell/components/StoreStatusBanner";
 import React, { useEffect, useRef, useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
 import { useQueryClient } from "@tanstack/react-query";
@@ -99,6 +100,7 @@ export function StoreShell() {
         }}
       >
         <AnnouncementBar />
+        <StoreStatusBanner />
         <StoreHeader />
         <DesktopStoreNavigation />
       </div>

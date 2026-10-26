@@ -27,6 +27,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
       "إحدى الإضافات تحتاج إضافة أخرى لم تختَرها. راجع الإضافات وحاول مجدداً.",
       "One add-on needs another you didn't choose. Please check your add-ons and try again.",
     ],
+    [
+      /ORDERS_PAUSED/,
+      "المتجر لا يستقبل حجوزات جديدة الآن. حاول بعد قليل.",
+      "The store is not taking new bookings right now. Please try again a little later.",
+    ],
     [/BOOKING_NAME_REQUIRED/, "أدخل اسمك.", "Please enter your name."],
     [/BOOKING_PHONE_REQUIRED/, "أدخل رقم هاتف صحيح.", "Please enter a valid phone number."],
     [

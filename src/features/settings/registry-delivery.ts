@@ -64,4 +64,18 @@ export const DELIVERY_ESTIMATE_SETTINGS: SettingsFieldDef[] = [
       en: ["delivery date", "delivery time", "time slots", "pickup time"],
     },
   },
+  {
+    key: "opening_hours",
+    table: "business_settings",
+    tab: "orders",
+    group: "fulfillment",
+    level: "basic",
+    owner: "settings",
+    type: "json",
+    label: { ar: "ساعات العمل", en: "Opening hours" },
+    keywords: {
+      ar: ["ساعات العمل", "مغلق", "مفتوح", "أوقات الدوام"],
+      en: ["opening hours", "business hours", "closed", "open"],
+    },
+  },
 ];
