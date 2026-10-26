@@ -15,7 +15,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatMoney } from "@/lib/format";
 import type { Booking } from "@/lib/data/bookings";
-import { cancelMoney, donePlan, shownStatus } from "@/features/bookings/lib/booking-actions";
+import {
+  cancelMoney,
+  donePlan,
+  shownStatus,
+  slotTaken,
+} from "@/features/bookings/lib/booking-actions";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 
 /**
@@ -120,7 +125,8 @@ export function BookingCancelDialog({ page, booking, open, onOpenChange }: Dialo
   const lang = isAr ? "ar" : "en";
   const reasonId = useId();
   const [reason, setReason] = useState("");
-  const words = cancelWords(shownStatus(booking), isAr);
+  // A booking paid after its day was taken is a booking to cancel, not a held day to release.
+  const words = cancelWords(slotTaken(booking) ? "confirmed" : shownStatus(booking), isAr);
   const money = cancelMoney(booking);
   const paid =
     money.paid > 0 ? formatMoney(money.paid, money.currency ?? page.currency, lang) : null;

@@ -3,12 +3,18 @@
  *
  * The database decides what an approval records (`approve_benefit_payment`): only the advance
  * of an order placed under an advance rule, with the balance collected on delivery, a booking's
- * deposit (migration 20261023100000), or the whole total. The message says which, so nobody reads "paid" on an order that still owes.
+ * deposit (migration 20261023100000), or the whole total. The message says which, so nobody reads "paid" on an order that still owes,
+ * and says when a booking paid after its hold ran out lost its day meanwhile (migration 20261026100000).
  */
 
 type Lang = "en" | "ar";
 
-export type TransferApproval = { advanceOnly: boolean; alreadyPaid: boolean };
+export type TransferApproval = {
+  advanceOnly: boolean;
+  alreadyPaid: boolean;
+  /** The payment is recorded, and the booking was not confirmed: its day was taken after its hold ran out. */
+  slotTaken?: boolean;
+};
 
 export function transferApprovedMessage(
   result: TransferApproval,
@@ -16,6 +22,11 @@ export function transferApprovedMessage(
   /** An appointment's transfer paid its booking's deposit: the rest is due by the booking's terms. */
   options: { appointment?: boolean } = {},
 ): string {
+  if (result.slotTaken) {
+    return lang === "ar"
+      ? "تم تسجيل الدفع، لكن الموعد حُجز لعميل آخر بعد انتهاء المهلة فلم يُؤكَّد. انقل الحجز إلى موعد متاح أو ألغِه وأعد المبلغ"
+      : "Payment recorded, but the date was booked by another customer after the hold ran out, so it was not confirmed. Move the booking to a free time, or cancel it and return the money";
+  }
   if (result.alreadyPaid) {
     return lang === "ar" ? "تم اعتماد هذا الدفع مسبقاً" : "This payment was already approved";
   }

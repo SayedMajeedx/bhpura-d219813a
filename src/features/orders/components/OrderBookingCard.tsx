@@ -5,7 +5,12 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { bookingsQueries } from "@/lib/data/bookings";
-import type { BookingStatus } from "@/lib/bookings/rules";
+import {
+  holdRanOutText,
+  lateTransferHours,
+  shownStatus,
+  slotTaken,
+} from "@/features/bookings/lib/booking-actions";
 import {
   BOOKING_STATUS_TEXT,
   bookingPlaceText,
@@ -17,7 +22,8 @@ import {
 /**
  * The appointment an order was placed for (a services store's checkout): its
  * day, time, place and status, with a link to the bookings calendar. Shows
- * nothing for an order without a booking.
+ * nothing for an order without a booking. Before a transfer is approved it says when the
+ * booking's hold has run out, and after, when the payment came too late to keep the day.
  */
 export function OrderBookingCard({
   brandId,
@@ -38,7 +44,10 @@ export function OrderBookingCard({
   if (!booking) return null;
 
   const timezone = settingsQ.data?.timezone ?? "Asia/Bahrain";
-  const status = (booking.status as BookingStatus) ?? "confirmed";
+  // A hold whose time ran out reads as expired, as on the bookings page.
+  const status = shownStatus(booking);
+  const bumped = slotTaken(booking);
+  const lateHours = lateTransferHours(booking);
   const statusText = BOOKING_STATUS_TEXT[status] ?? BOOKING_STATUS_TEXT.confirmed;
   const place = bookingPlaceText(booking.location);
   const travelFee = Number(booking.travel_fee ?? 0);
@@ -105,6 +114,21 @@ export function OrderBookingCard({
 
       {booking.status === "cancelled" && booking.cancel_reason && (
         <p className="text-xs text-destructive">{booking.cancel_reason}</p>
+      )}
+      {lateHours !== null && (
+        <p className="rounded-lg border border-warning bg-warning-subtle p-2 text-xs text-foreground">
+          {holdRanOutText(lateHours, isAr)}
+        </p>
+      )}
+      {bumped && (
+        <p
+          className="rounded-lg border border-destructive bg-destructive/5 p-2 text-xs text-foreground"
+          role="status"
+        >
+          {isAr
+            ? "سُجّل الدفع، لكن عميلاً آخر حجز الموعد بعد انتهاء المهلة، فلم يُؤكَّد. من صفحة الحجوزات: انقله إلى موعد متاح، أو ألغِه وأعد المبلغ."
+            : "The payment is recorded, but another customer booked the date after the hold ran out, so it was not confirmed. From the bookings page: move it to a free time, or cancel it and return the money."}
+        </p>
       )}
 
       <Link

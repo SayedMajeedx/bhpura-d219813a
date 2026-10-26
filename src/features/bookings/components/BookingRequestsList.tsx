@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Inbox } from "lucide-react";
+import { CalendarX, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
 import { dayTitle, formatClock, localTime } from "@/lib/bookings/format";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import { BookingCancelDialog } from "@/features/bookings/components/BookingStepDialogs";
+import { BookingMoveDialog } from "@/features/bookings/components/BookingMoveDialog";
 import type { Booking } from "@/lib/data/bookings";
 
 /**
@@ -15,12 +16,78 @@ import type { Booking } from "@/lib/data/bookings";
  * until it is confirmed; confirming checks the day still has one.
  */
 export function BookingRequestsList({ page }: { page: BookingsPage }) {
-  const { isAr, requests, toVerify } = page;
+  const { isAr, requests, toVerify, slotTaken } = page;
   const [declining, setDeclining] = useState<Booking | null>(null);
-  if (requests.length === 0 && toVerify.length === 0) return null;
+  const [moving, setMoving] = useState<Booking | null>(null);
+  if (requests.length === 0 && toVerify.length === 0 && slotTaken.length === 0) return null;
 
   return (
     <>
+      {slotTaken.length > 0 && (
+        <section className="space-y-2 rounded-2xl border border-destructive bg-destructive/5 p-3 sm:p-4">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <CalendarX className="size-4 text-destructive" aria-hidden="true" />
+            {isAr
+              ? `دُفعت بعد انتهاء المهلة وموعدها محجوز (${slotTaken.length})`
+              : `Paid after the hold ran out, the date taken (${slotTaken.length})`}
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "وصل الدفع بعد أن حجز عميل آخر الموعد، فلم يُؤكَّد. انقل الحجز إلى موعد متاح، أو ألغِه وأعد المبلغ للعميل."
+              : "The payment arrived after another customer booked the date, so it was not confirmed. Move the booking to a free time, or cancel it and return the money."}
+          </p>
+          <ul className="space-y-2">
+            {slotTaken.map((booking) => (
+              <li
+                key={booking.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-card p-2 text-xs"
+              >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="h-auto min-w-0 flex-col items-start gap-0 whitespace-normal p-0 text-start text-xs font-normal hover:bg-transparent hover:underline"
+                  onClick={() => page.goToDay(booking.event_date)}
+                >
+                  <span className="block font-semibold text-foreground">
+                    {dayTitle(booking.event_date, isAr)} ·{" "}
+                    <span dir={isAr ? "rtl" : "ltr"}>
+                      {formatClock(localTime(booking.starts_at, page.rules.timezone), isAr)}
+                    </span>
+                  </span>
+                  <span className="block text-muted-foreground">
+                    {booking.customer_name || booking.customer_phone || booking.reference}
+                    {" · "}
+                    <span dir="ltr">
+                      {formatMoney(Number(booking.total ?? 0), page.currency, isAr ? "ar" : "en")}
+                    </span>
+                  </span>
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-8 text-xs"
+                    disabled={page.movePending}
+                    onClick={() => setMoving(booking)}
+                  >
+                    {isAr ? "نقل لموعد آخر" : "Move to another date"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    disabled={page.statusPending}
+                    onClick={() => setDeclining(booking)}
+                  >
+                    {isAr ? "إلغاء وإعادة المبلغ" : "Cancel and refund"}
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {toVerify.length > 0 && (
         <section className="space-y-2 rounded-2xl border border-info bg-info-subtle p-3 sm:p-4">
           <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -132,6 +199,14 @@ export function BookingRequestsList({ page }: { page: BookingsPage }) {
             ))}
           </ul>
         </section>
+      )}
+      {moving && (
+        <BookingMoveDialog
+          page={page}
+          booking={moving}
+          open
+          onOpenChange={(open) => !open && setMoving(null)}
+        />
       )}
       {declining && (
         <BookingCancelDialog

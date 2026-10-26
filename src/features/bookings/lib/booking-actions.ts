@@ -1,5 +1,6 @@
 import { nextStatuses, type BookingStatus } from "@/lib/bookings/rules";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
+import { arNounOblique } from "@/lib/arabic-count";
 
 /**
  * What staff can do with a booking on its card, and what each step writes.
@@ -16,6 +17,7 @@ type CardBooking = {
   status: string | null;
   starts_at?: string | null;
   hold_expires_at?: string | null;
+  late_payment_slot_taken_at?: string | null;
   orders?: Parameters<typeof bookingInvoiceOf>[0]["orders"];
 };
 
@@ -38,10 +40,46 @@ export function shownStatus(booking: CardBooking, now: Date = new Date()): Booki
   return status;
 }
 
-/** Whether a booking is listed on its day: not one that ran out, unless a transfer receipt for it waits. */
+/**
+ * Whether a booking was paid after its hold ran out, when its day had been taken meanwhile: the
+ * database recorded the payment and did not confirm it (migration 20261026100000). It waits for
+ * staff to move it to a free time or cancel it and return the money.
+ */
+export function slotTaken(booking: CardBooking): boolean {
+  return booking.status === "expired" && Boolean(booking.late_payment_slot_taken_at);
+}
+
+/**
+ * How many whole hours ago a held booking's hold ran out while its transfer receipt still waits
+ * (0 within the first hour), or null while the hold runs or nothing waits. Approving it then
+ * confirms the booking only if its day is still free.
+ */
+export function lateTransferHours(booking: CardBooking, now: Date = new Date()): number | null {
+  if (booking.status !== "hold" && booking.status !== "expired") return null;
+  if (bookingInvoiceOf(booking)?.status !== "pending_verification") return null;
+  if (!booking.hold_expires_at) return null;
+  const since = now.getTime() - new Date(booking.hold_expires_at).getTime();
+  return since >= 0 ? Math.floor(since / 3_600_000) : null;
+}
+
+/**
+ * What staff read before approving a transfer whose booking's hold ran out `hours` ago
+ * (`lateTransferHours`): approving still records the payment, and confirms the booking only
+ * while its day is free.
+ */
+export function holdRanOutText(hours: number, isAr: boolean): string {
+  if (isAr) {
+    const since = hours < 1 ? "أقل من ساعة" : arNounOblique(hours, "hour");
+    return `انتهت مهلة الحجز منذ ${since}. إن حجز عميل آخر الموعد في هذه الأثناء، يُسجَّل الدفع عند اعتماده ولا يُؤكَّد الحجز.`;
+  }
+  const since = hours < 1 ? "less than an hour" : `${hours} ${hours === 1 ? "hour" : "hours"}`;
+  return `The hold ran out ${since} ago. If another customer has booked the date meanwhile, approving records the payment and does not confirm the booking.`;
+}
+
+/** Whether a booking is listed on its day: not one that ran out, unless a transfer receipt for it waits or it was paid. */
 export function listedOnDay(booking: CardBooking, now: Date = new Date()): boolean {
   if (shownStatus(booking, now) !== "expired") return true;
-  return bookingInvoiceOf(booking)?.status === "pending_verification";
+  return bookingInvoiceOf(booking)?.status === "pending_verification" || slotTaken(booking);
 }
 
 /**
@@ -50,6 +88,8 @@ export function listedOnDay(booking: CardBooking, now: Date = new Date()): boole
  * (paid late) or let go.
  */
 export function cardSteps(booking: CardBooking, now: Date = new Date()): BookingStatus[] {
+  // Paid, and its day taken: it is moved (its own button) or cancelled, never confirmed over the other.
+  if (slotTaken(booking)) return ["cancelled"];
   const status = shownStatus(booking, now);
   const steps =
     status === "expired" && booking.status === "hold"

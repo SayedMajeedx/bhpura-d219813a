@@ -303,6 +303,8 @@ export function useBookingsPage() {
     requests: waiting.requests,
     /** A day held for a BenefitPay transfer whose receipt waits for the store's check. */
     toVerify: waiting.toVerify,
+    /** Paid after the hold ran out, its day taken meanwhile: to move, or to cancel and refund. */
+    slotTaken: waiting.slotTaken,
     /** The store's travel fees by area code. */
     areaFees: areaFeesQuery.data ?? {},
     setStatus: statusMutation.mutate,
