@@ -29,6 +29,9 @@ export type ProductRow = {
   made_to_order_available?: number | null;
   /** When the store paused making it to order (null: not paused). */
   made_to_order_paused_at?: string | null;
+  /** Off sale until (its own, and its category's): offSaleUntil in product-availability.ts. */
+  unavailable_until?: string | null;
+  category_unavailable_until?: string | null;
   /** "service" for a service, sold only with a booking. */
   item_kind?: string | null;
   is_package?: boolean | null;
@@ -122,6 +125,9 @@ export type StorefrontProductDetail = {
   made_to_order_available?: number | null;
   /** When the store paused making it to order (null: not paused). */
   made_to_order_paused_at?: string | null;
+  /** Off sale until (its own, and its category's): offSaleUntil in product-availability.ts. */
+  unavailable_until?: string | null;
+  category_unavailable_until?: string | null;
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;
@@ -162,6 +168,9 @@ export type RecommendationProduct = {
   made_to_order_available?: number | null;
   /** When the store paused making it to order (null: not paused). */
   made_to_order_paused_at?: string | null;
+  /** Off sale until (its own, and its category's): offSaleUntil in product-availability.ts. */
+  unavailable_until?: string | null;
+  category_unavailable_until?: string | null;
   item_kind?: string | null;
   is_package?: boolean | null;
   extra_hour_price?: number | null;
@@ -189,6 +198,9 @@ export type QuickSearchResult = {
   is_made_to_order?: boolean | null;
   made_to_order_available?: number | null;
   made_to_order_paused_at?: string | null;
+  /** Off sale until (its own, and its category's): offSaleUntil in product-availability.ts. */
+  unavailable_until?: string | null;
+  category_unavailable_until?: string | null;
   item_kind?: string | null;
   product_variants: Array<{
     id: string;

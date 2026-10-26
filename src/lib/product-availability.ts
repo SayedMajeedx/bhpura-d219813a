@@ -27,6 +27,10 @@ export type AvailabilityProduct = {
   made_to_order_available?: number | string | null;
   /** When the store paused making it to order (null or absent: not paused). */
   made_to_order_paused_at?: string | null;
+  /** Off sale until this moment ("infinity": until put back; migration 20261027120000). */
+  unavailable_until?: string | null;
+  /** Its category's off-sale moment, written by the database. */
+  category_unavailable_until?: string | null;
 };
 
 export type AvailabilityVariant = {
@@ -56,6 +60,8 @@ export type ProductAvailability = {
   madeToOrderPaused: boolean;
   /** A shopper can buy it now. */
   sellable: boolean;
+  /** Taken off sale (or its category) until this moment ("infinity": until put back). */
+  offSaleUntil: string | null;
   /** Ready stock is what decides whether it can be bought (false for made to order and services). */
   soldFromStock: boolean;
 };
@@ -93,6 +99,26 @@ export function madeToOrderLimit(product: AvailabilityProduct | null | undefined
 }
 
 /**
+ * When a product taken off sale (by itself or with its category) is back: the later of the two
+ * moments still to come, "infinity" until the store puts it back, or null when it is on sale.
+ * The database refuses a storefront order line for it until then (migration 20261027120000).
+ */
+export function offSaleUntil(
+  product: AvailabilityProduct | null | undefined,
+  at: Date = new Date(),
+): string | null {
+  let latest: string | null = null;
+  for (const value of [product?.unavailable_until, product?.category_unavailable_until]) {
+    if (!value) continue;
+    if (value === "infinity") return "infinity";
+    const moment = new Date(value);
+    if (Number.isNaN(moment.getTime()) || moment <= at) continue;
+    if (latest === null || moment > new Date(latest)) latest = moment.toISOString();
+  }
+  return latest;
+}
+
+/**
  * Whether a shopper can buy this one variant now: it has ready pieces, or the product is made
  * when ordered (while making is open) or is a service. The cards' prices and the shopping feed
  * read it, so a sold-out size is never advertised as available.
@@ -101,6 +127,7 @@ export function variantSellable(
   product: AvailabilityProduct,
   variant: AvailabilityVariant,
 ): boolean {
+  if (offSaleUntil(product)) return false;
   if (product.item_kind === "service") return true;
   if (product.is_made_to_order && !madeToOrderLimit(product).closed) return true;
   return readyUnitsOf([variant]) > 0;
@@ -123,6 +150,7 @@ export function productAvailability(
   lowStockUnits?: number,
 ): ProductAvailability {
   const units = Math.max(0, Number(readyUnits) || 0);
+  const offSale = offSaleUntil(product);
   if (product.item_kind === "service") {
     return {
       status: "service",
@@ -131,7 +159,8 @@ export function productAvailability(
       madeToOrderLeft: null,
       madeToOrderClosed: false,
       madeToOrderPaused: false,
-      sellable: true,
+      sellable: !offSale,
+      offSaleUntil: offSale,
       soldFromStock: false,
     };
   }
@@ -144,7 +173,8 @@ export function productAvailability(
       madeToOrderLeft: limit.left,
       madeToOrderClosed: false,
       madeToOrderPaused: false,
-      sellable: true,
+      sellable: !offSale,
+      offSaleUntil: offSale,
       soldFromStock: false,
     };
   }
@@ -161,7 +191,8 @@ export function productAvailability(
     madeToOrderLeft: limit.left,
     madeToOrderClosed: limit.closed,
     madeToOrderPaused: limit.paused,
-    sellable: status !== "out",
+    sellable: status !== "out" && !offSale,
+    offSaleUntil: offSale,
     soldFromStock: true,
   };
 }

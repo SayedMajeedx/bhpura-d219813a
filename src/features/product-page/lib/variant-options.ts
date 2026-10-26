@@ -7,6 +7,7 @@ import {
   productAvailability,
   readyUnitsOf,
   type AvailabilityProduct,
+  offSaleUntil,
 } from "@/lib/product-availability";
 
 /**
@@ -164,6 +165,8 @@ export function choiceUnavailable({
   product: AvailabilityProduct;
   isTailoringActive: boolean;
 }): boolean {
+  // Taken off sale for a while: nothing can be bought, made to order or not.
+  if (offSaleUntil(product)) return true;
   if (isTailoringActive) return false;
   if (variant) return unitsOf(variant) <= 0;
   if (variants.length === 0) return false;

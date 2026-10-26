@@ -183,6 +183,15 @@ export function placeOrderFailure(
       clearPromo: false,
     };
   }
+  if (msg.includes("PRODUCT_UNAVAILABLE")) {
+    return {
+      message: t(
+        "أحد المنتجات غير متاح للطلب الآن. احذفه من السلة وحاول مرة أخرى.",
+        "One item is not available to order right now. Remove it from your cart and try again.",
+      ),
+      clearPromo: false,
+    };
+  }
   if (msg.includes("MADE_TO_ORDER_SOLD_OUT")) {
     return {
       message: t(

@@ -204,6 +204,22 @@ export async function setMadeToOrderPaused(productId: string, paused: boolean) {
   if (error) throw error;
 }
 
+/**
+ * Takes a product off sale until a moment ("infinity": until put back), or puts it back (null).
+ * Fails on a write that changed nothing (a product of another store, or one the member may not
+ * change). Migration 20261027120000.
+ */
+export async function setProductOffSale(brandId: string, productId: string, until: string | null) {
+  const { data, error } = await supabase
+    .from("products")
+    .update({ unavailable_until: until })
+    .eq("id", productId)
+    .eq("brand_id", brandId)
+    .select("id");
+  if (error) throw error;
+  if (!data?.length) throw new Error("PRODUCT_NOT_SAVED");
+}
+
 // ── Packaging materials ─────────────────────────────────────────────────────
 
 export async function createPackagingMaterial(brandId: string, values: NewPackagingMaterial) {
