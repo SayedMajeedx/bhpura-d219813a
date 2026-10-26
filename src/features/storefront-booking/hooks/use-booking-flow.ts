@@ -3,7 +3,7 @@ import {
   combineServiceDays,
   freeStartSet,
 } from "@/features/storefront-booking/lib/service-availability";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -44,7 +44,9 @@ import { depositTerms } from "@/lib/bookings/deposit";
 import { durations, todayIn, travelFeeFor, type DayState } from "@/lib/bookings/rules";
 import { gridRange, shiftMonth } from "@/lib/bookings/format";
 import {
+  MAX_AUTO_MONTHS,
   bookableServices,
+  monthHasAvailableDay,
   chosenTotal,
   EMPTY_FLOW,
   priceFor,
@@ -83,10 +85,25 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     ...bookingsQueries.availability(brand.id, from, to),
     enabled: Boolean(rules),
   });
+  // The calendar opens on a month with a day to book: late in a month with nothing left, it moves
+  // on by itself (a few months at most), and never once the customer has chosen a month.
+  const movedMonth = useRef(false);
+  const skippedMonths = useRef(0);
   const storeDayStates = useMemo(
     () => new Map((availabilityQuery.data ?? []).map((row) => [row.day, row.state as DayState])),
     [availabilityQuery.data],
   );
+
+  useEffect(() => {
+    if (!rules || movedMonth.current || skippedMonths.current >= MAX_AUTO_MONTHS) return;
+    if (!availabilityQuery.isSuccess || availabilityQuery.isFetching) return;
+    if (monthHasAvailableDay(storeDayStates, cursor.year, cursor.month)) {
+      movedMonth.current = true;
+      return;
+    }
+    skippedMonths.current += 1;
+    setCursor((current) => shiftMonth(current, 1));
+  }, [rules, availabilityQuery.isSuccess, availabilityQuery.isFetching, storeDayStates, cursor]);
 
   const productsQuery = useQuery(storefrontQueries.products(brand));
   const services = useMemo(() => bookableServices(productsQuery.data ?? []), [productsQuery.data]);
@@ -308,8 +325,14 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     rules,
     today,
     cursor,
-    previousMonth: () => setCursor((current) => shiftMonth(current, -1)),
-    nextMonth: () => setCursor((current) => shiftMonth(current, 1)),
+    previousMonth: () => {
+      movedMonth.current = true;
+      setCursor((current) => shiftMonth(current, -1));
+    },
+    nextMonth: () => {
+      movedMonth.current = true;
+      setCursor((current) => shiftMonth(current, 1));
+    },
     dayStates,
     availabilityLoading: availabilityQuery.isLoading || serviceDaysQuery.isLoading,
     services,

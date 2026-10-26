@@ -4,6 +4,7 @@ import { Check, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
+import { descriptionLead } from "@/features/services-home/lib/rental-card";
 import { SERVICE_KIND_LABELS, groupByKind, type ServiceKind } from "@/lib/bookings/service-kind";
 import {
   compareAtFor,
@@ -32,6 +33,14 @@ function ServiceRow({
   const was = compareAtFor(service, minutes);
   // "From" until a duration is chosen for a service priced by duration.
   const from = !minutes && serviceDurations(service).length > 0;
+  const lead = descriptionLead(
+    {
+      description: service.description ?? null,
+      description_ar: service.description_ar ?? null,
+      description_en: service.description_en ?? null,
+    },
+    isAr,
+  );
   return (
     <Button
       type="button"
@@ -81,8 +90,13 @@ function ServiceRow({
         >
           {serviceName(service, isAr)}
         </span>
+        {lead && (
+          <span className="mt-0.5 line-clamp-2 block break-words text-xs font-normal text-muted-foreground">
+            {lead}
+          </span>
+        )}
         {showPrices && price !== null && (
-          <span className="block text-xs text-muted-foreground">
+          <span className="mt-1 block text-sm font-semibold text-foreground">
             {from && (isAr ? "من " : "From ")}
             {formatPrice(price, currency, isAr ? "ar" : "en")}
             {was !== null && (

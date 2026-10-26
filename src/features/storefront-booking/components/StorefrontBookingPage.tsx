@@ -1,6 +1,3 @@
-import { optionName } from "@/lib/bookings/service-options";
-import { discountLabel } from "@/lib/bookings/discounts";
-import { depositSentence } from "@/lib/bookings/deposit";
 import type { ReactNode } from "react";
 import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
 import { bookingEnd } from "@/lib/bookings/rules";
 import { dayTitle, formatClock } from "@/lib/bookings/format";
-import { storeTaxRule, taxRateLabel } from "@/lib/order-tax";
+import { storeTaxRule } from "@/lib/order-tax";
 import {
   bookingTotals,
   bookingWhatsAppText,
@@ -20,6 +17,10 @@ import {
   useBookingFlow,
   type BookingFlow,
 } from "@/features/storefront-booking/hooks/use-booking-flow";
+import {
+  BookingSummaryBar,
+  stepAnchor,
+} from "@/features/storefront-booking/components/BookingSummaryBar";
 import { BookingDayPicker } from "@/features/storefront-booking/components/BookingDayPicker";
 import { BookingServicePicker } from "@/features/storefront-booking/components/BookingServicePicker";
 import { BookingTimePicker } from "@/features/storefront-booking/components/BookingTimePicker";
@@ -36,18 +37,23 @@ const STEPS: Array<{ id: FlowStep; ar: string; en: string }> = [
 ];
 
 function Step({
+  id,
   index,
   title,
   done,
   children,
 }: {
+  id: FlowStep;
   index: number;
   title: string;
   done: boolean;
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5">
+    <section
+      id={stepAnchor(id)}
+      className="scroll-mt-24 space-y-3 rounded-2xl border border-border bg-card p-4 sm:p-5"
+    >
       <h2 className="flex items-center gap-2 font-display text-base font-semibold text-foreground">
         <span
           className={cn(
@@ -110,7 +116,6 @@ export function StorefrontBookingPage({
   }
 
   const chosen = flow.chosen;
-  const depositLine = depositSentence(flow.deposit, isAr);
   const offerAmount = flow.offer?.amount ?? 0;
   const tax = storeTaxRule(flow.settings);
   const totals = bookingTotals(
@@ -179,7 +184,7 @@ export function StorefrontBookingPage({
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 py-8 sm:py-12">
+    <main className="mx-auto w-full max-w-3xl space-y-4 px-4 pb-36 pt-8 sm:pb-40 sm:pt-12">
       <header className="space-y-1 text-center">
         <h1 className="font-display text-3xl text-foreground">
           {isAr ? "احجز موعدك" : "Book your date"}
@@ -189,19 +194,19 @@ export function StorefrontBookingPage({
         </p>
       </header>
 
-      <Step index={1} title={STEPS[0][lang]} done={done("date")}>
+      <Step id="date" index={1} title={STEPS[0][lang]} done={done("date")}>
         <BookingDayPicker flow={flow} />
       </Step>
-      <Step index={2} title={STEPS[1][lang]} done={done("services")}>
+      <Step id="services" index={2} title={STEPS[1][lang]} done={done("services")}>
         {flow.flow.day && (
           <p className="text-sm text-muted-foreground">{dayTitle(flow.flow.day, isAr)}</p>
         )}
         <BookingServicePicker flow={flow} />
       </Step>
-      <Step index={3} title={STEPS[2][lang]} done={done("time")}>
+      <Step id="time" index={3} title={STEPS[2][lang]} done={done("time")}>
         <BookingTimePicker flow={flow} />
       </Step>
-      <Step index={4} title={STEPS[3][lang]} done={done("details")}>
+      <Step id="details" index={4} title={STEPS[3][lang]} done={done("details")}>
         <BookingDetailsFields flow={flow} />
       </Step>
 
@@ -210,108 +215,18 @@ export function StorefrontBookingPage({
         isAr={isAr}
         depositPercent={flow.deposit.percent}
         eventDay={flow.flow.day}
+        compact
       />
       <StoreGallery brandId={flow.brand.id} isAr={isAr} />
-      <StoreFaq brandId={flow.brand.id} isAr={isAr} />
+      <StoreFaq brandId={flow.brand.id} isAr={isAr} folded />
 
-      <section className="sticky bottom-0 space-y-3 rounded-2xl border border-border bg-card p-4 shadow-lg">
-        {chosen.length > 0 && showPrices && (
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="min-w-0 break-words text-muted-foreground">
-              {chosen.map((service) => serviceName(service, isAr)).join(isAr ? "، " : ", ")}
-            </span>
-            <span className="shrink-0 text-foreground" dir="ltr">
-              {formatPrice(flow.servicesTotal, currency, lang)}
-            </span>
-          </div>
-        )}
-        {showPrices && flow.flow.areaCode && flow.travelFee !== null && flow.travelFee > 0 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {isAr ? `التنقل إلى ${flow.flow.area}` : `Travel to ${flow.flow.area}`}
-            </span>
-            <span className="text-foreground" dir="ltr">
-              {formatPrice(flow.travelFee, currency, lang)}
-            </span>
-          </div>
-        )}
-        {flow.optionLines.some((line) => line.price > 0) && showPrices && (
-          <div className="space-y-0.5 text-sm">
-            {flow.optionLines
-              .filter((line) => line.price > 0)
-              .map((line) => (
-                <div key={line.option.id} className="flex items-center justify-between">
-                  <span className="text-muted-foreground">
-                    {optionName(line.option, isAr)}
-                    {line.option.tiers ? ` × ${line.quantity}` : ""}
-                  </span>
-                  <span className="text-foreground" dir="ltr">
-                    + {formatPrice(line.price, currency, lang)}
-                  </span>
-                </div>
-              ))}
-          </div>
-        )}
-        {flow.offer && chosen.length > 0 && showPrices && (
-          <div className="flex items-center justify-between text-sm text-success">
-            <span>{discountLabel(flow.offer, isAr)}</span>
-            <span dir="ltr">− {formatPrice(offerAmount, currency, lang)}</span>
-          </div>
-        )}
-        {chosen.length > 0 && showPrices && totals.tax > 0 && totals.added && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {isAr
-                ? `ضريبة القيمة المضافة (${taxRateLabel(tax.rate)})`
-                : `VAT (${taxRateLabel(tax.rate)})`}
-            </span>
-            <span className="text-foreground" dir="ltr">
-              + {formatPrice(totals.tax, currency, lang)}
-            </span>
-          </div>
-        )}
-        {chosen.length > 0 && showPrices && (
-          <div className="flex items-center justify-between border-t border-border pt-2 text-sm">
-            <span className="font-semibold text-foreground">{isAr ? "الإجمالي" : "Total"}</span>
-            <span className="font-semibold text-foreground" dir="ltr">
-              {formatPrice(totals.total, currency, lang)}
-            </span>
-          </div>
-        )}
-        {chosen.length > 0 && showPrices && totals.tax > 0 && !totals.added && (
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? `يشمل ضريبة القيمة المضافة (${taxRateLabel(tax.rate)}): ${formatPrice(totals.tax, currency, lang)}`
-              : `Includes VAT (${taxRateLabel(tax.rate)}): ${formatPrice(totals.tax, currency, lang)}`}
-          </p>
-        )}
-        {depositLine && <p className="text-xs text-muted-foreground">{depositLine}</p>}
-        <Button
-          type="button"
-          size="lg"
-          className="w-full"
-          disabled={flow.step !== null || flow.submitting}
-          onClick={flow.submit}
-        >
-          {flow.submitting
-            ? isAr
-              ? "جارٍ الإرسال…"
-              : "Sending…"
-            : flow.catalog
-              ? isAr
-                ? "أرسل طلب الحجز"
-                : "Send booking request"
-              : isAr
-                ? "تابع للدفع"
-                : "Continue to checkout"}
-        </Button>
-        {flow.step && (
-          <p className="text-center text-xs text-muted-foreground" role="status">
-            {isAr ? "أكمل خطوة: " : "Still to do: "}
-            {STEPS.find((step) => step.id === flow.step)?.[lang]}
-          </p>
-        )}
-      </section>
+      <BookingSummaryBar
+        flow={flow}
+        totals={totals}
+        tax={tax}
+        offerAmount={offerAmount}
+        stepLabel={flow.step ? (STEPS.find((step) => step.id === flow.step)?.[lang] ?? null) : null}
+      />
     </main>
   );
 }
