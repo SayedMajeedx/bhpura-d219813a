@@ -144,3 +144,26 @@ describe("the questions on the booking page", () => {
     expect(screen.getByRole("button", { name: "Question c" })).toBeInTheDocument();
   });
 });
+
+describe("the three parts of the day on a narrow phone", () => {
+  it("write a part's first and last time on two lines, so neither runs past its button", async () => {
+    const { BookingTimePicker } =
+      await import("../src/features/storefront-booking/components/BookingTimePicker");
+    const { DEFAULT_BOOKING_RULES } = await import("../src/lib/bookings/rules");
+    const flow = {
+      isAr: false,
+      rules: DEFAULT_BOOKING_RULES,
+      flow: { durationMinutes: 180, start: null },
+      lengths: [180],
+      freeStarts: null,
+      startRows: [],
+      update: vi.fn(),
+    } as never;
+    render(<BookingTimePicker flow={flow} />);
+    const morning = screen.getByRole("button", { name: "Morning" });
+    const lines = [...morning.querySelectorAll("span.block span.block")].map(
+      (line) => line.textContent,
+    );
+    expect(lines).toEqual(["10:00 AM", "– 11:30 AM"]);
+  });
+});
