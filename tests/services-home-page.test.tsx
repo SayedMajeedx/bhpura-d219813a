@@ -311,12 +311,14 @@ describe("the cards' pictures", () => {
     const rental = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
     // A rental's photo stands whole in its own shape (3:4 unless the store chose one), never the
     // services vertical's wide frame that showed a standing booth's middle half.
-    expect(within(rental).getByRole("img", { name: "Photo booth" })).toHaveClass("object-cover");
+    // Whole, never cut: a row taller than the photo shows it over a soft copy of itself.
+    expect(within(rental).getByRole("img", { name: "Photo booth" })).toHaveClass("object-contain");
     expect(rental.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[3/4]");
 
     // Prints has no picture, Album has one: Prints keeps a picture's space.
     const prints = screen.getByRole("heading", { name: "Prints" }).closest("article")!;
     expect(prints.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[4/3]");
-    expect(container.querySelectorAll("article img").length).toBe(2);
+    // The rental's photo (and its soft copy behind it) and Album's: Prints has none.
+    expect(container.querySelectorAll("article img[alt]:not([alt=''])").length).toBe(2);
   });
 });

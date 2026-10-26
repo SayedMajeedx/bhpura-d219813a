@@ -72,11 +72,20 @@ export function RentalCard({
         <div className={cn("relative overflow-hidden bg-muted", flip && "lg:order-last")}>
           {/* Holds the photo's shape; the row grows past it when the words need more room. */}
           <div className={PRODUCT_PHOTO_CLASS[ratio]} aria-hidden="true" />
+          {/* When the row is taller than the photo, the photo stays whole over a soft copy of
+              itself: covered, the narrow column of a tablet cut a booth's sides away. */}
+          <img
+            src={product.image_url}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            className="absolute inset-0 size-full scale-110 object-cover opacity-70 blur-2xl"
+          />
           <img
             src={product.image_url}
             alt={name}
             loading="lazy"
-            className="absolute inset-0 size-full object-cover"
+            className="absolute inset-0 size-full object-contain"
           />
         </div>
       )}
