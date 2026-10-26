@@ -88,26 +88,35 @@ function PeriodPicker({ flow, times }: { flow: BookingFlow; times: string[] }) {
                 disabled={free.length === 0}
                 aria-label={`${isAr ? period.ar : period.en}${chosen ? `: ${formatClock(chosen, isAr)}` : ""}`}
                 className={cn(
-                  "h-auto min-h-16 flex-col gap-0.5 rounded-xl px-2 py-2.5",
+                  "h-auto min-h-16 min-w-0 flex-col gap-0.5 whitespace-normal rounded-xl px-1.5 py-2.5",
                   chosen && "border-primary bg-primary/10 text-foreground",
                 )}
               >
-                <span className="flex items-center gap-1.5 text-sm font-semibold">
+                <span className="flex max-w-full flex-wrap items-center justify-center gap-1.5 text-sm font-semibold">
                   <Icon className="size-4 text-primary" aria-hidden="true" />
                   {isAr ? period.ar : period.en}
                 </span>
-                <span className="text-xs font-normal text-muted-foreground">
-                  {chosen
-                    ? formatClock(chosen, isAr)
-                    : free.length === 0
-                      ? isAr
-                        ? "غير متاح"
-                        : "Unavailable"
-                      : `${formatClock(free[0], isAr)} – ${formatClock(free[free.length - 1], isAr)}`}
+                <span className="block max-w-full text-center text-xs font-normal leading-snug text-muted-foreground">
+                  {chosen ? (
+                    formatClock(chosen, isAr)
+                  ) : free.length === 0 ? (
+                    isAr ? (
+                      "غير متاح"
+                    ) : (
+                      "Unavailable"
+                    )
+                  ) : (
+                    <>
+                      <span className="block">{formatClock(free[0], isAr)}</span>
+                      {free.length > 1 && (
+                        <span className="block">– {formatClock(free[free.length - 1], isAr)}</span>
+                      )}
+                    </>
+                  )}
                 </span>
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="center" className="w-64 p-3">
+            <PopoverContent align="center" collisionPadding={12} className="w-64 p-3">
               <p className="mb-2 text-xs font-semibold text-muted-foreground">
                 {isAr ? period.ar : period.en}
               </p>
