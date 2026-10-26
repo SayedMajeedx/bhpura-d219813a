@@ -30,6 +30,7 @@ export function BookingServiceOptions({
   const options = flow.optionsOfService(serviceId);
   if (options.length === 0) return null;
   const selection = flow.selectionFor(serviceId);
+  const extraHours = flow.extraHoursFor(serviceId);
   const money = (amount: number) => formatPrice(amount, currency, isAr ? "ar" : "en");
 
   return (
@@ -43,7 +44,7 @@ export function BookingServiceOptions({
         const quantity = selection[option.id] ?? 0;
         const on = quantity > 0 || option.mode === "included" || option.mode === "required";
         const step = optionStep(option);
-        const price = optionPrice(option, quantity || step);
+        const price = optionPrice(option, quantity || step, extraHours);
         const locked = !isChangeable(option);
         return (
           <li key={option.id} className="space-y-1">
@@ -83,8 +84,8 @@ export function BookingServiceOptions({
                   {option.mode === "default_on" && quantity > 0 && showPrices && (
                     <p className="text-xs text-muted-foreground">
                       {isAr
-                        ? `مضافة تلقائياً، وتُخصم ${money(optionPrice(option))} عند إزالتها`
-                        : `Added for you; ${money(optionPrice(option))} comes off if you remove it`}
+                        ? `مضافة تلقائياً، وتُخصم ${money(price)} عند إزالتها`
+                        : `Added for you; ${money(price)} comes off if you remove it`}
                     </p>
                   )}
                   {option.tiers && showPrices && (

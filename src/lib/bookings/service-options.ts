@@ -22,6 +22,8 @@ export type ServiceOption = {
   description_ar: string | null;
   mode: OptionMode;
   price: number;
+  /** Added for each hour the booking runs beyond the service's shortest length (null: one price at any length). */
+  extra_hour_price: number | null;
   tiers: OptionTiers | null;
   max_quantity: number | null;
   sort_order: number;
@@ -32,13 +34,27 @@ export const OPTION_MODES: OptionMode[] = ["included", "required", "default_on",
 
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
-/** What an option costs for `quantity` units (the database's service_option_price). */
+/** Whole hours a booking of `minutes` runs beyond `baseMinutes` (a started hour counts): the database's service_option_extra_hours. */
+export function extraHoursOf(
+  minutes: number | null | undefined,
+  baseMinutes: number | null | undefined,
+): number {
+  if (!minutes || !baseMinutes || minutes <= baseMinutes) return 0;
+  return Math.ceil((minutes - baseMinutes) / 60);
+}
+
+/**
+ * What an option costs for `quantity` units (the database's service_option_price), and for a flat
+ * add-on priced by the hour, `extraHours` beyond the service's shortest length at its hourly price.
+ */
 export function optionPrice(
-  option: Pick<ServiceOption, "mode" | "price" | "tiers">,
+  option: Pick<ServiceOption, "mode" | "price" | "tiers"> &
+    Partial<Pick<ServiceOption, "extra_hour_price">>,
   quantity = 1,
+  extraHours = 0,
 ): number {
   if (option.mode === "included") return 0;
-  if (!option.tiers) return round3(option.price);
+  if (!option.tiers) return round3(option.price + (option.extra_hour_price ?? 0) * extraHours);
   const { step, prices } = option.tiers;
   const blocks = Math.ceil(Math.max(quantity, 0) / Math.max(1, step));
   let total = 0;
@@ -85,6 +101,7 @@ export function validQuantity(option: ServiceOption, quantity: number): number |
 export function chosenOptions(
   options: readonly ServiceOption[],
   selection: OptionSelection,
+  extraHours = 0,
 ): Array<{ option: ServiceOption; quantity: number; price: number }> {
   return options
     .filter((option) => option.is_active)
@@ -94,15 +111,18 @@ export function chosenOptions(
     )
     .map((option) => {
       const quantity = selection[option.id] ?? optionStep(option);
-      return { option, quantity, price: optionPrice(option, quantity) };
+      return { option, quantity, price: optionPrice(option, quantity, extraHours) };
     });
 }
 
 export function optionsTotal(
   options: readonly ServiceOption[],
   selection: OptionSelection,
+  extraHours = 0,
 ): number {
-  return round3(chosenOptions(options, selection).reduce((sum, line) => sum + line.price, 0));
+  return round3(
+    chosenOptions(options, selection, extraHours).reduce((sum, line) => sum + line.price, 0),
+  );
 }
 
 /**
@@ -165,7 +185,13 @@ export function describeOption(option: ServiceOption, isAr: boolean): string {
     : option.mode === "included"
       ? ""
       : String(option.price);
-  return [mode, price].filter(Boolean).join(" · ");
+  const perHour =
+    option.extra_hour_price && option.mode !== "included" && !option.tiers
+      ? isAr
+        ? `+${option.extra_hour_price} لكل ساعة إضافية`
+        : `+${option.extra_hour_price} per extra hour`
+      : "";
+  return [mode, price, perHour].filter(Boolean).join(" · ");
 }
 
 // ── The merchant's add-on form ──────────────────────────────────────────────
@@ -178,6 +204,8 @@ export type OptionForm = {
   description_ar: string;
   mode: OptionMode;
   price: string;
+  /** Added per hour beyond the service's shortest length; empty: one price at any length. */
+  extra_hour_price: string;
   tiered: boolean;
   step: string;
   /** Block prices, comma-separated: "15, 12.5, 10". */
@@ -193,6 +221,7 @@ export const EMPTY_OPTION_FORM: OptionForm = {
   description_ar: "",
   mode: "optional",
   price: "",
+  extra_hour_price: "",
   tiered: false,
   step: "50",
   prices: "",
@@ -209,6 +238,7 @@ export function optionFormFrom(option: ServiceOption): OptionForm {
     description_ar: option.description_ar ?? "",
     mode: option.mode,
     price: option.price ? String(option.price) : "",
+    extra_hour_price: option.extra_hour_price ? String(option.extra_hour_price) : "",
     tiered: option.tiers !== null,
     step: option.tiers ? String(option.tiers.step) : "50",
     prices: option.tiers ? option.tiers.prices.join(", ") : "",
@@ -251,6 +281,12 @@ export function optionFormError(form: OptionForm, isAr: boolean): string | null 
     if (form.price.trim() === "" || !Number.isFinite(price) || price < 0) {
       return isAr ? "اكتب سعر الإضافة." : "Enter the add-on's price.";
     }
+    const perHour = form.extra_hour_price.trim();
+    if (perHour !== "" && (!Number.isFinite(Number(perHour)) || Number(perHour) < 0)) {
+      return isAr
+        ? "اكتب سعر الساعة الإضافية كرقم."
+        : "Enter the price per extra hour as a number.";
+    }
   }
   if (form.max_quantity.trim() !== "") {
     const max = Number(form.max_quantity);
@@ -272,6 +308,10 @@ export function optionColumns(form: OptionForm) {
     description_ar: form.description_ar.trim() || null,
     mode: form.mode,
     price: form.tiered ? (prices[0] ?? 0) : form.mode === "included" ? 0 : Number(form.price || 0),
+    extra_hour_price:
+      form.tiered || form.mode === "included" || form.extra_hour_price.trim() === ""
+        ? null
+        : Number(form.extra_hour_price),
     tiers: form.tiered ? { step: Number(form.step), prices } : null,
     max_quantity: form.tiered ? max : null,
     is_active: form.is_active,

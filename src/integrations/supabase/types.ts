@@ -7676,6 +7676,7 @@ export type Database = {
           created_at: string;
           description_ar: string | null;
           description_en: string | null;
+          extra_hour_price: number | null;
           id: string;
           is_active: boolean;
           max_quantity: number | null;
@@ -7692,6 +7693,7 @@ export type Database = {
           created_at?: string;
           description_ar?: string | null;
           description_en?: string | null;
+          extra_hour_price?: number | null;
           id?: string;
           is_active?: boolean;
           max_quantity?: number | null;
@@ -7708,6 +7710,7 @@ export type Database = {
           created_at?: string;
           description_ar?: string | null;
           description_en?: string | null;
+          extra_hour_price?: number | null;
           id?: string;
           is_active?: boolean;
           max_quantity?: number | null;
@@ -11045,6 +11048,10 @@ export type Database = {
           p_vendor_id: string;
         };
         Returns: string;
+      };
+      service_option_extra_hours: {
+        Args: { p_base_minutes: number; p_minutes: number };
+        Returns: number;
       };
       service_option_price: {
         Args: {

@@ -45,6 +45,7 @@ const option = (over: Partial<ServiceOption>): ServiceOption => ({
   description_ar: null,
   mode: "optional",
   price: 10,
+  extra_hour_price: null,
   tiers: null,
   max_quantity: null,
   sort_order: 0,
@@ -197,6 +198,28 @@ describe("extra hours", () => {
     expect(variantFor(booth(null), 360)).toBeNull();
     expect(offeredDurations([180, 240, 300, 360], [booth(null)])).toEqual([180, 300]);
     expect(offeredDurations([180, 240, 300, 360], [booth(20)])).toEqual([180, 300, 360]);
+  });
+});
+
+describe("an add-on priced by the hour", () => {
+  const hourly = option({ mode: "default_on", price: 30, extra_hour_price: 10 });
+
+  it("follows the booking's length, in what is chosen and in the total", () => {
+    const selection = defaultSelection([hourly]);
+    expect(optionsTotal([hourly], selection)).toBe(30);
+    expect(optionsTotal([hourly], selection, 2)).toBe(50);
+    expect(chosenOptions([hourly], selection, 3)[0].price).toBe(60);
+  });
+
+  it("is said in a few words, and kept by the merchant's form", () => {
+    expect(describeOption(hourly, false)).toContain("+10 per extra hour");
+    expect(describeOption(hourly, true)).toContain("+10 لكل ساعة إضافية");
+    const form = optionFormFrom(hourly);
+    expect(form.extra_hour_price).toBe("10");
+    expect(optionColumns(form).extra_hour_price).toBe(10);
+    expect(optionColumns({ ...form, extra_hour_price: "" }).extra_hour_price).toBeNull();
+    expect(optionColumns({ ...form, tiered: true, prices: "15, 10" }).extra_hour_price).toBeNull();
+    expect(optionFormError({ ...form, extra_hour_price: "-1" }, false)).toMatch(/per extra hour/);
   });
 });
 

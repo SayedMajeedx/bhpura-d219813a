@@ -22,7 +22,7 @@ export const serviceOptionsKeys = {
 };
 
 const COLUMNS =
-  "id, product_id, name_en, name_ar, description_en, description_ar, mode, price, tiers, max_quantity, sort_order, is_active" as const;
+  "id, product_id, name_en, name_ar, description_en, description_ar, mode, price, extra_hour_price, tiers, max_quantity, sort_order, is_active" as const;
 
 const asTiers = (value: Json | null): OptionTiers | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -44,6 +44,7 @@ export async function fetchServiceOptions(brandId: string): Promise<ServiceOptio
     ...row,
     mode: row.mode as OptionMode,
     price: Number(row.price),
+    extra_hour_price: row.extra_hour_price === null ? null : Number(row.extra_hour_price),
     tiers: asTiers(row.tiers),
   }));
 }

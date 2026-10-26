@@ -30,6 +30,14 @@ export function AddOnList({ lines }: { lines: readonly AddOnLine[] }) {
                 <>
                   {extra.from ? t("من ", "from ") : "+ "}
                   <span>{formatPrice(extra.price, currency, lang)}</span>
+                  {extra.perHour !== null && (
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      {t(
+                        `+ ${formatPrice(extra.perHour, currency, lang)} لكل ساعة إضافية`,
+                        `+ ${formatPrice(extra.perHour, currency, lang)} per extra hour`,
+                      )}
+                    </span>
+                  )}
                 </>
               )}
             </span>
