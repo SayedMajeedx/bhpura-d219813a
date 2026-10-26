@@ -123,6 +123,42 @@ vi.mock("../src/features/store-content/components/StoreFaq", () => ({
   StoreFaq: () => <div>faq</div>,
 }));
 
+// The store's offers, listed once under the invitation to book.
+const discountsData = {
+  bookingDiscountsQueries: {
+    public: () => ({
+      queryKey: ["booking-discounts"],
+      queryFn: async () => [
+        {
+          id: "d1",
+          name_en: null,
+          name_ar: null,
+          kind: "percent",
+          value: 25,
+          min_days: 0,
+          max_days: 14,
+          weekdays: null,
+          product_ids: null,
+          valid_from: null,
+          valid_to: null,
+        },
+      ],
+    }),
+  },
+};
+vi.mock("../src/lib/data/booking-discounts", () => discountsData);
+vi.mock("@/lib/data/booking-discounts", () => discountsData);
+const bookingsData = {
+  bookingsQueries: {
+    publicRules: () => ({
+      queryKey: ["public-rules"],
+      queryFn: async () => ({ timezone: "Asia/Bahrain" }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/bookings", () => bookingsData);
+vi.mock("@/lib/data/bookings", () => bookingsData);
+
 const { ServicesHome } = await import("../src/features/services-home/components/ServicesHome");
 
 const variant = (price: number, minutes: number | null) => ({
@@ -201,6 +237,8 @@ describe("the services home page", () => {
     expect(screen.getAllByText("book-invite")).toHaveLength(2);
     expect(screen.getByText("gallery")).toBeInTheDocument();
     expect(screen.getByText("faq")).toBeInTheDocument();
+    // The store's offers, once.
+    expect(await screen.findAllByText("25% off · within 14 days")).toHaveLength(1);
 
     // Three kinds, each under its own heading: packages, rentals, services.
     expect(screen.getByRole("heading", { name: "Packages", level: 2 })).toBeInTheDocument();
