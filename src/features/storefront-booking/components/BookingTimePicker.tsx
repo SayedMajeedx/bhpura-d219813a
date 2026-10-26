@@ -1,8 +1,15 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { Moon, Sun, Sunrise } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { bookingEnd, startTimes } from "@/lib/bookings/rules";
 import { formatClock, formatDuration } from "@/lib/bookings/format";
+import {
+  periodOf,
+  periodsOf,
+  type DayPeriodId,
+} from "@/features/storefront-booking/lib/time-periods";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 import {
   blockedReasonText,
@@ -45,6 +52,100 @@ function Chip({
   );
 }
 
+const PERIOD_ICONS = { morning: Sunrise, noon: Sun, evening: Moon } as const;
+
+/**
+ * The start time in two taps: a part of the day (morning, afternoon, evening), then a time from the
+ * list that opens under it. A part with no free time is greyed out; the chosen time shows on its part.
+ */
+function PeriodPicker({ flow, times }: { flow: BookingFlow; times: string[] }) {
+  const { isAr } = flow;
+  const { start } = flow.flow;
+  const [openId, setOpenId] = useState<DayPeriodId | null>(null);
+  const periods = periodsOf(times);
+  const isTaken = (time: string) => flow.freeStarts !== null && !flow.freeStarts.has(time);
+
+  return (
+    <div
+      className="grid grid-cols-3 gap-2"
+      role="group"
+      aria-label={isAr ? "وقت البداية" : "Start time"}
+    >
+      {periods.map((period) => {
+        const free = period.times.filter((time) => !isTaken(time));
+        const chosen = start && periodOf(start) === period.id ? start : null;
+        const Icon = PERIOD_ICONS[period.id];
+        return (
+          <Popover
+            key={period.id}
+            open={openId === period.id}
+            onOpenChange={(open) => setOpenId(open ? period.id : null)}
+          >
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={free.length === 0}
+                aria-label={`${isAr ? period.ar : period.en}${chosen ? `: ${formatClock(chosen, isAr)}` : ""}`}
+                className={cn(
+                  "h-auto min-h-16 flex-col gap-0.5 rounded-xl px-2 py-2.5",
+                  chosen && "border-primary bg-primary/10 text-foreground",
+                )}
+              >
+                <span className="flex items-center gap-1.5 text-sm font-semibold">
+                  <Icon className="size-4 text-primary" aria-hidden="true" />
+                  {isAr ? period.ar : period.en}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {chosen
+                    ? formatClock(chosen, isAr)
+                    : free.length === 0
+                      ? isAr
+                        ? "غير متاح"
+                        : "Unavailable"
+                      : `${formatClock(free[0], isAr)} – ${formatClock(free[free.length - 1], isAr)}`}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="center" className="w-64 p-3">
+              <p className="mb-2 text-xs font-semibold text-muted-foreground">
+                {isAr ? period.ar : period.en}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {period.times.map((time) => {
+                  const taken = isTaken(time);
+                  return (
+                    <Button
+                      key={time}
+                      type="button"
+                      size="sm"
+                      variant={start === time ? "default" : "outline"}
+                      disabled={taken}
+                      aria-pressed={start === time}
+                      title={
+                        taken
+                          ? blockedReasonText(startBlockedReason(flow.startRows, time), isAr)
+                          : undefined
+                      }
+                      className={cn("h-10 px-1 text-xs", taken && "line-through")}
+                      onClick={() => {
+                        flow.update({ start: time });
+                        setOpenId(null);
+                      }}
+                    >
+                      {formatClock(time, isAr)}
+                    </Button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Step 3: how long, and from when; the end time follows. */
 export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
   const { isAr, rules } = flow;
@@ -74,32 +175,7 @@ export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
         <p className="text-sm font-medium text-foreground">
           {isAr ? "متى تريد البداية؟" : "When should it start?"}
         </p>
-        {/* Follows the page: in Arabic the first time is at the right and rows run right to left. */}
-        <div
-          className="flex flex-wrap gap-2"
-          role="group"
-          aria-label={isAr ? "وقت البداية" : "Start time"}
-        >
-          {startTimes(rules).map((time) => {
-            // A time the chosen services cannot take (booked, or needing more notice).
-            const taken = flow.freeStarts !== null && !flow.freeStarts.has(time);
-            return (
-              <Chip
-                key={time}
-                selected={start === time}
-                disabled={taken}
-                title={
-                  taken
-                    ? blockedReasonText(startBlockedReason(flow.startRows, time), isAr)
-                    : undefined
-                }
-                onClick={() => flow.update({ start: time })}
-              >
-                {formatClock(time, isAr)}
-              </Chip>
-            );
-          })}
-        </div>
+        <PeriodPicker flow={flow} times={startTimes(rules)} />
         {flow.freeStarts !== null && flow.freeStarts.size === 0 && (
           <p className="text-sm font-medium text-destructive" role="status">
             {isAr

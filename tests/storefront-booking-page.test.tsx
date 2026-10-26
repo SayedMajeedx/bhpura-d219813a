@@ -21,6 +21,8 @@ const state = vi.hoisted(() => ({
     remaining: number;
   }> | null,
   taken: [] as string[],
+  // The store's days when a test needs others than the October ones (null: those).
+  days: null as Array<{ day: string; state: string; remaining: number }> | null,
   // A store with a package (made of the booth and two prints).
   withPackage: false,
   // The booth is filed under a rentals category.
@@ -72,10 +74,16 @@ const bookingsData = {
   bookingsKeys: { all: (brandId: string) => ["storefront-booking-test", brandId] },
   bookingsQueries: {
     publicRules: () => fixture("rules", () => state.rules),
-    availability: () => fixture("availability", () => storeDays),
+    availability: () =>
+      fixture(`availability-${state.days ? "own" : "store"}`, () => state.days ?? storeDays),
     serviceDays: (_b: string, ids: string[]) =>
-      fixture(`service-days-${ids.join()}-${state.serviceDays ? "own" : "store"}`, () =>
-        (state.serviceDays ?? storeDays).map((row) => ({ product_id: ids[0], ...row })),
+      fixture(
+        `service-days-${ids.join()}-${state.serviceDays ? "own" : state.days ? "days" : "store"}`,
+        () =>
+          (state.serviceDays ?? state.days ?? storeDays).map((row) => ({
+            product_id: ids[0],
+            ...row,
+          })),
       ),
     serviceStarts: (_b: string, ids: string[], day: string) =>
       fixture(`service-starts-${ids.join()}-${day}-${state.taken.join()}`, everyHalfHour),
@@ -299,6 +307,7 @@ beforeEach(() => {
   state.mode = "catalog";
   state.cart = [];
   state.serviceDays = null;
+  state.days = null;
   state.taken = [];
   state.discountRules = [];
   state.withPackage = false;
@@ -316,6 +325,12 @@ const renderWithQuery = (ui: React.ReactElement) =>
     </QueryClientProvider>,
   );
 
+/** The start time in its two taps: the part of the day, then the time in the list that opens. */
+async function pickStart(period: string, time: string) {
+  fireEvent.click(await screen.findByRole("button", { name: new RegExp(`^${period}`) }));
+  fireEvent.click(await screen.findByRole("button", { name: time }));
+}
+
 describe("booking from the storefront", () => {
   it("greys out booked and closed days", async () => {
     renderWithQuery(<StorefrontBookingPage />);
@@ -326,16 +341,18 @@ describe("booking from the storefront", () => {
 
   it("walks the four steps and sends the request, then offers WhatsApp", async () => {
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
-    const send = await screen.findByRole("button", { name: "Send booking request" });
-    expect(send).toBeDisabled();
+    // Until the steps are done the button names the next one and takes the customer there.
+    expect(await screen.findByRole("button", { name: "Next: Date" })).toBeEnabled();
+    expect(screen.queryByRole("button", { name: "Send booking request" })).toBeNull();
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Prints/ }));
     fireEvent.click(screen.getByRole("button", { name: "4 hours" }));
-    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    await pickStart("Evening", "6:00 PM");
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "3900 1122" } });
     fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
+    const send = screen.getByRole("button", { name: "Send booking request" });
     expect(send).toBeEnabled();
     fireEvent.click(send);
 
@@ -372,7 +389,7 @@ describe("booking from the storefront", () => {
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
-    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue to checkout" }));
@@ -451,6 +468,7 @@ describe("a service with its own capacity", () => {
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^Evening/ }));
     const taken = await waitFor(() => {
       const chip = screen.getByRole("button", { name: "6:00 PM" });
       expect(chip).toBeDisabled();
@@ -522,7 +540,7 @@ describe("a store's booking offers", () => {
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
-    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
     fireEvent.click(screen.getByRole("button", { name: "Continue to checkout" }));
@@ -624,7 +642,7 @@ describe("a service's add-ons in the booking flow", () => {
     expect(within(list).getByRole("button", { name: "More Envelopes" })).toBeDisabled();
 
     fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
-    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
     fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
@@ -651,7 +669,7 @@ describe("a service's add-ons in the booking flow", () => {
     const list = await open();
     fireEvent.click(within(list).getByRole("checkbox", { name: "Instant prints" }));
     fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
-    fireEvent.click(screen.getByRole("button", { name: "6:00 PM" }));
+    await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
     fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
@@ -668,5 +686,41 @@ describe("a service's add-ons in the booking flow", () => {
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     await screen.findByRole("button", { name: "3 hours" });
     expect(screen.queryByRole("list", { name: "Add-ons" })).toBeNull();
+  });
+
+  it("opens on the next month when this one has no day left to book", async () => {
+    // Late in a month with nothing free: the calendar moves on to the month that has a day.
+    const next = (day: string) => ({ day, state: "available", remaining: 1 });
+    state.days = [next("2026-11-05"), next("2026-11-06")];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    expect(await screen.findByRole("gridcell", { name: /5 November: Available/ })).toBeEnabled();
+    expect(screen.getByRole("grid", { name: /November 2026/ })).toBeInTheDocument();
+  });
+
+  it("keeps the month the customer chose, even when it has no free day", async () => {
+    state.days = [{ day: "2026-11-05", state: "available", remaining: 1 }];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    await screen.findByRole("grid", { name: /November 2026/ });
+    fireEvent.click(screen.getByRole("button", { name: "Previous month" }));
+    expect(await screen.findByRole("grid", { name: /October 2026/ })).toBeInTheDocument();
+  });
+
+  it("keeps the price in view as a total that opens onto its breakdown", async () => {
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
+    const total = await screen.findByRole("button", { name: /Total/ });
+    expect(total).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(total);
+    expect(total).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(total);
+    expect(total).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("names the step still to do on its button and takes the customer to it", async () => {
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    const next = await screen.findByRole("button", { name: "Next: Date" });
+    fireEvent.click(next);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(document.getElementById("booking-step-date")).not.toBeNull();
   });
 });

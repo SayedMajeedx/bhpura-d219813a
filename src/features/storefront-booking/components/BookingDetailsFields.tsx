@@ -9,8 +9,11 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
   const { isAr } = flow;
   const { name, phone, areaCode, venue, notes } = flow.flow;
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div className="space-y-1">
+    <div className="grid gap-x-3 gap-y-4 sm:grid-cols-2">
+      <p className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+        {isAr ? "بياناتك" : "About you"}
+      </p>
+      <div className="space-y-1.5">
         <Label htmlFor="booking-name">{isAr ? "الاسم" : "Your name"}</Label>
         <Input
           id="booking-name"
@@ -20,7 +23,7 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
           onChange={(event) => flow.update({ name: event.target.value })}
         />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor="booking-phone">{isAr ? "رقم الواتساب" : "WhatsApp number"}</Label>
         <Input
           id="booking-phone"
@@ -29,11 +32,18 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
           autoComplete="tel"
           dir="ltr"
           maxLength={20}
+          placeholder="+973 3XXX XXXX"
           value={phone}
           onChange={(event) => flow.update({ phone: event.target.value })}
         />
+        <p className="text-xs text-muted-foreground">
+          {isAr ? "نتواصل معك عليه لتأكيد الحجز." : "We message you here to confirm."}
+        </p>
       </div>
-      <div className="space-y-1">
+      <p className="pt-1 text-xs font-semibold text-muted-foreground sm:col-span-2">
+        {isAr ? "مكان المناسبة" : "Where it takes place"}
+      </p>
+      <div className="space-y-1.5">
         <Label htmlFor="booking-area">{isAr ? "المنطقة" : "Area"}</Label>
         <select
           id="booking-area"
@@ -55,16 +65,17 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
           ))}
         </select>
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <Label htmlFor="booking-venue">{isAr ? "اسم القاعة أو العنوان" : "Venue or address"}</Label>
         <Input
           id="booking-venue"
           maxLength={200}
+          placeholder={isAr ? "مثال: قاعة الأفراح، المنامة" : "e.g. the hall's name, Manama"}
           value={venue}
           onChange={(event) => flow.update({ venue: event.target.value })}
         />
       </div>
-      <div className="space-y-1 sm:col-span-2">
+      <div className="space-y-1.5 sm:col-span-2">
         <Label htmlFor="booking-notes">{isAr ? "ملاحظات (اختياري)" : "Notes (optional)"}</Label>
         <Textarea
           id="booking-notes"

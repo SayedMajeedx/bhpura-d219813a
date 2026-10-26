@@ -39,6 +39,9 @@ export type BookableService = {
   name_ar: string | null;
   name_en: string | null;
   image_url: string | null;
+  description?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
   product_variants: ReadonlyArray<ServiceVariant>;
 };
 
@@ -323,4 +326,19 @@ export function bookingWhatsAppText({
 export function whatsAppLink(storeNumber: string | null | undefined, text: string): string | null {
   const digits = normalizeWhatsAppDigits(storeNumber);
   return digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : null;
+}
+
+/** The most months the calendar skips on its own to reach one with a free day. */
+export const MAX_AUTO_MONTHS = 3;
+
+/** Whether any day of the month (1-12) is free to book in the calendar's day states. */
+export function monthHasAvailableDay(
+  states: ReadonlyMap<string, string>,
+  year: number,
+  month: number,
+): boolean {
+  const prefix = `${year}-${String(month).padStart(2, "0")}-`;
+  for (const [day, state] of states)
+    if (day.startsWith(prefix) && state === "available") return true;
+  return false;
 }
