@@ -25,6 +25,7 @@ import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { arNoun } from "@/lib/arabic-count";
+import { appliedOfferName, type OffersOutcome } from "@/lib/offers";
 
 export type SummaryTax = { amount: number; added: boolean; rate: number };
 const NO_TAX_LINE: SummaryTax = { amount: 0, added: true, rate: 0 };
@@ -58,6 +59,7 @@ export function OrderSummaryCard({
   method,
   pointsToRedeemInput,
   promoDiscount,
+  offers = null,
   promoInput,
   redeemedPoints,
   setAcceptedTerms,
@@ -103,6 +105,8 @@ export function OrderSummaryCard({
   method: ReturnType<typeof useCheckoutFulfillment>["method"];
   pointsToRedeemInput: ReturnType<typeof useCheckoutLoyalty>["pointsToRedeemInput"];
   promoDiscount: number;
+  /** What the store's automatic offers give the cart (null: none, or not asked yet). */
+  offers?: OffersOutcome | null;
   promoInput: ReturnType<typeof usePromoCode>["promoInput"];
   redeemedPoints: ReturnType<typeof useCheckoutLoyalty>["redeemedPoints"];
   setAcceptedTerms: Dispatch<SetStateAction<boolean>>;
@@ -288,6 +292,19 @@ export function OrderSummaryCard({
             <span>− {formatPrice(promoDiscount, currency, lang)}</span>
           </div>
         )}
+        {(offers?.applied ?? []).map((offer) => (
+          <div
+            key={offer.id}
+            className="flex justify-between gap-3 font-medium text-emerald-700 dark:text-emerald-400"
+          >
+            <span className="min-w-0 break-words">{appliedOfferName(offer, lang)}</span>
+            <span className="shrink-0">
+              {offer.kind === "free_delivery"
+                ? t("توصيل مجاني", "Free delivery")
+                : `− ${formatPrice(Number(offer.amount), currency, lang)}`}
+            </span>
+          </div>
+        ))}
         {loyaltyDiscount > 0 && (
           <div className="flex justify-between font-medium text-amber-700 dark:text-amber-400">
             <span>
@@ -337,6 +354,14 @@ export function OrderSummaryCard({
             {t("تطبيق", "Apply")}
           </Button>
         </div>
+        {appliedPromo && offers?.code_dropped && (
+          <p className="text-xs text-muted-foreground" role="status">
+            {t(
+              "عرض المتجر يوفّر لك أكثر من هذا الرمز، فطُبّق العرض بدلًا منه.",
+              "The store's offer saves you more than this code, so the offer is used instead.",
+            )}
+          </p>
+        )}
       </div>
 
       {/* Loyalty Points Redemption Widget */}

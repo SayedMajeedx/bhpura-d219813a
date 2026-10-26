@@ -606,10 +606,20 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_customers) before hiding a review's words on the store"
     },
+    "storefront_active_offers(p_brand_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public read for the product page and the cart: an active store's offers that are on now, with the terms a shopper is shown (names, amounts, which products and categories, least amount and pieces); nothing about orders or customers"
+    },
     "storefront_my_bookings(p_brand_id uuid)": {
       "anon": false,
       "authenticated": true,
       "reason": "A signed-in shopper's own bookings with a store, for the account page: only bookings whose customer (or whose order's customer) is the caller's account; returns the reference, state, times, place, services and the invoice with what is paid, never the hold token, notes or a cancel reason"
+    },
+    "storefront_offers_preview(p_brand_slug text, p_items jsonb, p_promo_code text, p_fulfillment text, p_country text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Checkout read by design: what a cart would get from an active store's offers (the order builder applies the same rule to the real order); reads only the store's own variants, at most 100 lines, writes nothing, and prices a code through validate_promo_code as the checkout already may"
     },
     "storefront_pickup_partners(p_brand_id uuid, p_items jsonb)": {
       "anon": true,

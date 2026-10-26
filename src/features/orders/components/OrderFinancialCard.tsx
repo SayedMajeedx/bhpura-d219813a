@@ -1,4 +1,5 @@
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
+import { discountSources } from "@/lib/offers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -384,7 +385,7 @@ export function OrderFinancialCard({
           value={formatMoney(totals.subtotal, currency, lang)}
         />
         <SummaryRow
-          label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
+          label={`${t("orderDetail.discount")}${discountSources(order, lang) ? ` (${discountSources(order, lang)})` : ""}`}
           value={`− ${formatMoney(totals.discount, currency, lang)}`}
         />
         <SummaryRow
