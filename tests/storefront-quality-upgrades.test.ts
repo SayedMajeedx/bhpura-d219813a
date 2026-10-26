@@ -24,7 +24,7 @@ describe("storefront quality upgrades", () => {
     const head = productHead({
       loaderData: {
         initialLang: "en",
-        brand: { slug: "pura" },
+        brand: { slug: "pura", name_en: "Pura Line", name_ar: "بيورا لاين" },
         product: {
           id: "p1",
           name_en: "Silk Abaya",
@@ -37,11 +37,11 @@ describe("storefront quality upgrades", () => {
     });
     expect(head.meta).toEqual(
       expect.arrayContaining([
-        { title: "Silk Abaya | PURA" },
+        { title: "Silk Abaya | Pura Line" },
         { property: "og:type", content: "product" },
         { property: "og:image", content: "https://media.boutq.store/p1.jpg" },
         { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: "Silk Abaya | PURA" },
+        { name: "twitter:title", content: "Silk Abaya | Pura Line" },
       ]),
     );
     expect(head.links).toEqual([{ rel: "canonical", href: "https://boutq.store/pura/product/p1" }]);

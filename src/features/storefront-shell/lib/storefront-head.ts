@@ -7,7 +7,8 @@ import {
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import { jsonForScript } from "@/lib/seo/json-for-script";
-import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
+import { storefrontCanonical } from "@/lib/seo/canonical";
+import { storeShareImage } from "@/lib/seo/share-image";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
 import { storefrontThemeColor } from "@/lib/theme-color";
@@ -54,7 +55,8 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
         (takesBookings
           ? `Book ${nameEn} online: see the free dates, our services and offers.`
           : `Shop ${b.name_en || b.name_ar} online.`);
-  const img = socialImage(settings?.logo_url || b.logo_url);
+  // The store's own picture when its link is shared (not the logo alone: an SVG is not drawn).
+  const img = storeShareImage({ brand: b, settings });
   const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
   const typography = normalizeTypography(
     settings?.storefront_typography,
