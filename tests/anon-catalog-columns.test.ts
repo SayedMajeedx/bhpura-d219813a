@@ -101,7 +101,8 @@ describe("what a visitor can read of the catalog", () => {
     // A later migration's own grants to anon (a column added since).
     for (const grant of `${madeToOrderLimit}
 ${madeToOrderPause}
-${productDetails}`.match(/GRANT SELECT \([^)]*\) ON public\.\w+ TO anon;/g) ?? []) {
+${productDetails}
+${takeOffSale}`.match(/GRANT SELECT \([^)]*\) ON public\.\w+ TO anon;/g) ?? []) {
       await db.exec(grant);
     }
     const can = async (role: string, table: string, column: string) =>
