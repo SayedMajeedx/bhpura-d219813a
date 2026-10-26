@@ -7,6 +7,7 @@ import {
   approveBenefitPayment as approveBenefitTransfer,
   invalidateOrders,
 } from "@/lib/data/orders";
+import { bookingsKeys } from "@/lib/data/bookings";
 import {
   transferApprovedMessage,
   transferRefusedMessage,
@@ -37,11 +38,13 @@ export function useBenefitReview({
 
       await orderQ.refetch();
       invalidateOrders(qc, brandId);
-      toast.success(
-        transferApprovedMessage(result, lang === "ar" ? "ar" : "en", {
-          appointment: orderQ.data?.fulfillment_method === "appointment",
-        }),
-      );
+      // The order's appointment card reads whether the booking was confirmed or lost its day.
+      void qc.invalidateQueries({ queryKey: bookingsKeys.all(brandId) });
+      const message = transferApprovedMessage(result, lang === "ar" ? "ar" : "en", {
+        appointment: orderQ.data?.fulfillment_method === "appointment",
+      });
+      if (result.slotTaken) toast.warning(message, { duration: 12_000 });
+      else toast.success(message);
     } catch (error) {
       toast.error(transferRefusedMessage(error, lang === "ar" ? "ar" : "en"));
     } finally {

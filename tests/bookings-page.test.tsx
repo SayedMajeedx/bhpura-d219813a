@@ -688,3 +688,66 @@ describe("the bookings page's heading", () => {
     ]);
   });
 });
+
+describe("a booking paid after its hold ran out, its day taken meanwhile", () => {
+  const bumped = () =>
+    booking({
+      id: "late1",
+      status: "expired",
+      hold_expires_at: "2026-09-30T09:00:00Z",
+      late_payment_slot_taken_at: "2026-10-01T08:00:00Z",
+      orders: {
+        id: "o9",
+        invoice_number: 1009,
+        public_invoice_token: "tok",
+        status: "confirmed",
+        payment_status: "paid",
+        total: 55,
+        advance_paid: 55,
+        currency: "BHD",
+      },
+    });
+
+  it("asks the store, in its language, to move it or to cancel it and return the money", async () => {
+    localStorage.setItem("lang", "ar");
+    state.requests = [bumped()];
+    await renderPage("agenda");
+    const section = (
+      await screen.findByText(/دُفعت بعد انتهاء المهلة وموعدها محجوز \(1\)/)
+    ).closest("section") as HTMLElement;
+    expect(
+      within(section).getByText(/انقل الحجز إلى موعد متاح، أو ألغِه وأعد المبلغ/),
+    ).toBeTruthy();
+
+    fireEvent.click(within(section).getByRole("button", { name: "نقل لموعد آخر" }));
+    let dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByLabelText("التاريخ الجديد"), {
+      target: { value: "2026-10-13" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "نقل الحجز" }));
+    await waitFor(() =>
+      expect(state.rescheduleBooking).toHaveBeenCalledWith(
+        expect.objectContaining({ bookingId: "late1", day: "2026-10-13" }),
+      ),
+    );
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+
+    fireEvent.click(within(section).getByRole("button", { name: "إلغاء وإعادة المبلغ" }));
+    dialog = await screen.findByRole("alertdialog");
+    expect(within(dialog).getByText("إلغاء الحجز؟")).toBeTruthy();
+    expect(within(dialog).getByText(/دفع العميل/)).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "إلغاء الحجز" }));
+    await waitFor(() =>
+      expect(state.setBookingStatus).toHaveBeenCalledWith("late1", "cancelled", undefined),
+    );
+  });
+
+  it("may stay at its time once that time has room again", async () => {
+    state.requests = [bumped()];
+    await renderPage("agenda");
+    fireEvent.click(await screen.findByRole("button", { name: "Move to another date" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "Move booking" })).toBeEnabled();
+  });
+});

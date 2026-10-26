@@ -25,6 +25,7 @@ import {
   localTime,
 } from "@/lib/bookings/format";
 import { bookingMinutes, overbookable, pastMoveTerms } from "@/lib/bookings/move";
+import { slotTaken } from "@/features/bookings/lib/booking-actions";
 import { bookingInvoiceOf, invoiceLink } from "@/features/bookings/lib/booking-invoice";
 import { bookingMovedMessage, customerChatLink } from "@/features/bookings/lib/booking-messages";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -65,7 +66,8 @@ export function BookingMoveDialog({
   const times = Array.from(new Set([...startTimes(rules), currentStart])).sort();
   const end = bookingEnd(start, minutes).time;
   const limit = pastMoveTerms(booking.event_date, day, policy?.reschedule_months);
-  const unchanged = day === booking.event_date && start === currentStart;
+  // A paid booking whose day was taken may stay where it is, once that time has room again.
+  const unchanged = day === booking.event_date && start === currentStart && !slotTaken(booking);
   const canAnyway = refusal !== null && overbookable(refusal);
 
   const submit = async () => {
