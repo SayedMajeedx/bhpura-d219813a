@@ -69,7 +69,7 @@ export const DELIVERY_ESTIMATE_SETTINGS: SettingsFieldDef[] = [
     table: "business_settings",
     tab: "orders",
     group: "fulfillment",
-    level: "basic",
+    level: "advanced",
     owner: "settings",
     type: "json",
     label: { ar: "ساعات العمل", en: "Opening hours" },
