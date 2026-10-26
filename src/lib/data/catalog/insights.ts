@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { catalogKeys } from "./keys";
 import { readAll } from "../read-all";
+import { hasProductPhoto } from "@/lib/product-photo";
 
 /**
  * Smaller catalog reads around the product list: the inventory screen's
@@ -15,6 +16,7 @@ export const catalogInsightKeys = {
   backInStockCount: (brandId: string) =>
     [...catalogKeys.products(brandId), "back-in-stock-count"] as const,
   activeCount: (brandId: string) => [...catalogKeys.products(brandId), "active-count"] as const,
+  withoutPhoto: (brandId: string) => [...catalogKeys.products(brandId), "without-photo"] as const,
   contentStudio: (brandId: string) => [...catalogKeys.products(brandId), "content-studio"] as const,
 };
 
@@ -38,6 +40,25 @@ export async function countActiveProducts(brandId: string) {
     .eq("is_active", true);
   if (error) return 0;
   return count ?? 0;
+}
+
+/**
+ * How many of the brand's active products have no photo at all (`hasProductPhoto`: the main
+ * picture, a gallery picture or a size's). The launch checklist of a services store asks for a
+ * photo of every service and package. Read up to 500: a services store lists far fewer.
+ */
+export async function countActiveWithoutPhoto(brandId: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, image_url, media, product_variants(image_url)")
+    .eq("brand_id", brandId)
+    .eq("is_active", true)
+    .order("id")
+    .limit(500);
+  if (error) return 0;
+  return (data ?? []).filter(
+    (product) => !hasProductPhoto(product as Parameters<typeof hasProductPhoto>[0]),
+  ).length;
 }
 
 /** Up to six products whose English or Arabic name contains the text. A failed read finds none. */
@@ -112,6 +133,12 @@ export const catalogInsightQueries = {
     queryOptions({
       queryKey: catalogInsightKeys.activeCount(brandId),
       queryFn: () => countActiveProducts(brandId),
+      enabled: Boolean(brandId),
+    }),
+  withoutPhoto: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogInsightKeys.withoutPhoto(brandId),
+      queryFn: () => countActiveWithoutPhoto(brandId),
       enabled: Boolean(brandId),
     }),
   contentStudio: (brandId: string) =>
