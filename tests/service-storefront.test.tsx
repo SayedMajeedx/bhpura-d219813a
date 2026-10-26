@@ -176,13 +176,14 @@ describe("the booking flow with questions", () => {
   });
 });
 
+const page = vi.hoisted(() => ({ lang: "en" as "ar" | "en" }));
 const storefront = {
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora" },
     settings: { card_enabled: true, benefit_enabled: true },
-    lang: "en",
+    lang: page.lang,
     currency: "BHD",
-    t: (_ar: string, en: string) => en,
+    t: (ar: string, en: string) => (page.lang === "ar" ? ar : en),
   }),
   formatPrice: (n: number) => `BHD ${n.toFixed(3)}`,
 };
@@ -207,6 +208,72 @@ const policiesData = {
 };
 vi.mock("../src/lib/data/booking-policies", () => policiesData);
 vi.mock("@/lib/data/booking-policies", () => policiesData);
+// The booth's add-ons, and the store's offers: one for every service, one for the booth, one
+// for another service, and one that ended.
+const optionsData = {
+  serviceOptionsQueries: {
+    list: (brandId: string) =>
+      queryOptions({
+        queryKey: ["service-options", brandId],
+        queryFn: async () => [
+          {
+            id: "o1",
+            product_id: "booth",
+            name_en: "Instant prints",
+            name_ar: "طباعة فورية",
+            mode: "optional",
+            price: 30,
+            tiers: null,
+            max_quantity: 1,
+            is_active: true,
+          },
+          {
+            id: "o2",
+            product_id: "video",
+            name_en: "Guest book",
+            name_ar: "دفتر الضيوف",
+            mode: "optional",
+            price: 20,
+            tiers: null,
+            max_quantity: 1,
+            is_active: true,
+          },
+        ],
+      }),
+  },
+};
+vi.mock("../src/lib/data/service-options", () => optionsData);
+vi.mock("@/lib/data/service-options", () => optionsData);
+const offer = (over: Record<string, unknown>) => ({
+  id: "d",
+  name_en: null,
+  name_ar: null,
+  kind: "percent",
+  value: 25,
+  min_days: 0,
+  max_days: 14,
+  weekdays: null,
+  product_ids: null,
+  valid_from: null,
+  valid_to: null,
+  ...over,
+});
+const discountsData = {
+  bookingDiscountsQueries: {
+    public: (brandId: string) =>
+      queryOptions({
+        queryKey: ["booking-discounts", brandId],
+        queryFn: async () => [
+          offer({ id: "d1" }),
+          offer({ id: "d2", value: 15, min_days: 15, max_days: 30, product_ids: ["booth"] }),
+          offer({ id: "d3", value: 50, product_ids: ["video"] }),
+          offer({ id: "d4", value: 40, valid_to: "2020-01-01" }),
+        ],
+      }),
+  },
+};
+vi.mock("../src/lib/data/booking-discounts", () => discountsData);
+vi.mock("@/lib/data/booking-discounts", () => discountsData);
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, search }: { children: React.ReactNode; search?: Record<string, unknown> }) => (
     <a href={`/book?${new URLSearchParams(search as Record<string, string>)}`}>{children}</a>
@@ -248,5 +315,44 @@ describe("a service's page", () => {
     expect(
       await screen.findByText("A 20% deposit when you book, the rest on the day."),
     ).toBeTruthy();
+  });
+});
+
+describe("a service's add-ons and offers on its page", () => {
+  const renderBooth = () =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicePurchasePanel
+          product={{
+            id: "booth",
+            product_variants: [{ id: "v3", selling_price: 40, duration_minutes: 180 }],
+          }}
+        />
+      </QueryClientProvider>,
+    );
+
+  it("lists its own add-ons and the offers that reach it, in English", async () => {
+    page.lang = "en";
+    renderBooth();
+    const addOns = await screen.findByRole("region", { name: "Add-ons" });
+    expect(addOns.textContent).toContain("Instant prints");
+    expect(addOns.textContent).toContain("+ BHD 30.000");
+    expect(addOns.textContent).not.toContain("Guest book");
+    const offers = await screen.findByRole("region", { name: "Offers" });
+    expect(offers.textContent).toContain("25% off · within 14 days");
+    expect(offers.textContent).toContain("15% off · 15 to 30 days ahead");
+    expect(offers.textContent).not.toContain("50%");
+    expect(offers.textContent).not.toContain("40%");
+  });
+
+  it("and in Arabic", async () => {
+    page.lang = "ar";
+    renderBooth();
+    const addOns = await screen.findByRole("region", { name: "الإضافات" });
+    expect(addOns.textContent).toContain("طباعة فورية");
+    const offers = await screen.findByRole("region", { name: "العروض" });
+    expect(offers.textContent).toContain("خصم 25%");
+    expect(offers.textContent).toContain("خصم 15%");
+    page.lang = "en";
   });
 });

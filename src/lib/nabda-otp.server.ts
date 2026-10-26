@@ -95,3 +95,14 @@ export async function executeNabdaOtp(input: NabdaOtpRequest): Promise<NabdaOtpR
 
   return { ok: true, enabled: true, action: input.action };
 }
+
+/**
+ * Who may use the OTP pilot: the platform's owner only (an active `super_admin`, as
+ * `is_super_admin()` reads it). It sends codes to any number on the platform's account, so it
+ * is not a merchant's tool: every store's admin once saw it on Integrations and could send codes.
+ */
+export function mayUseOtpPilot(
+  profile: { role?: unknown; status?: unknown } | null | undefined,
+): boolean {
+  return profile?.status === "active" && profile.role === "super_admin";
+}

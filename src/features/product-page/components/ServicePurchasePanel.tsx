@@ -11,6 +11,10 @@ import { depositSentence, depositTerms } from "@/lib/bookings/deposit";
 import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom, serviceLocationFrom } from "@/lib/bookings/service-details";
 import { PackageIncludes } from "@/features/product-page/components/PackageIncludes";
+import { serviceOptionsQueries } from "@/lib/data/service-options";
+import { addOnLines } from "@/features/services-home/lib/rental-card";
+import { AddOnList } from "@/features/services-home/components/AddOnList";
+import { BookingOffersList } from "@/features/storefront-booking/components/BookingOffersList";
 
 type ServiceProduct = {
   id: string;
@@ -33,14 +37,21 @@ const PLACE_TEXT = {
 
 /**
  * How a service is bought on its page: pick a length (each with its price),
- * see where it happens, what it includes and the deposit, then book. The
- * length goes to the booking page, which starts with it chosen.
+ * see where it happens, what it includes, its add-ons, the store's offers that
+ * reach it and the deposit, then book. The length goes to the booking page,
+ * which starts with it chosen.
  */
 export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
   const { brand, settings, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
   const rules = useQuery(bookingsQueries.publicRules(brand.id)).data;
   const policy = useQuery(bookingPoliciesQueries.policy(brand.id)).data;
+  const options = useQuery(serviceOptionsQueries.list(brand.id)).data ?? [];
+  // Its add-ons with their prices, as its card on the home page lists them.
+  const extras = addOnLines(
+    options.filter((option) => option.product_id === product.id && option.is_active),
+    isAr,
+  );
 
   const lengths = product.product_variants
     .filter((variant) => typeof variant.duration_minutes === "number")
@@ -111,6 +122,8 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
         </p>
       )}
 
+      <BookingOffersList productId={product.id} />
+
       <Button asChild size="lg" className="w-full gap-2">
         <Link
           to="/$slug/book"
@@ -161,6 +174,8 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
           </ul>
         </div>
       )}
+
+      <AddOnList lines={extras} />
     </section>
   );
 }

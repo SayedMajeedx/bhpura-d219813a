@@ -23,7 +23,7 @@ import type {
  */
 
 const BOOKING_COLUMNS =
-  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, total, travel_fee, deposit_amount, discount_amount, discount_label_en, discount_label_ar, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total, parent_item_id), orders(id, invoice_number, public_invoice_token, status, payment_status, total, advance_paid, currency)" as const;
+  "id, reference, status, event_date, starts_at, ends_at, customer_id, customer_name, customer_phone, customer_email, location, notes, source, order_id, hold_expires_at, late_payment_slot_taken_at, total, travel_fee, deposit_amount, discount_amount, discount_label_en, discount_label_ar, confirmed_at, cancelled_at, cancel_reason, created_at, booking_items(id, product_id, variant_id, name_en, name_ar, quantity, unit_price, line_total, parent_item_id), orders(id, invoice_number, public_invoice_token, status, payment_status, total, advance_paid, currency)" as const;
 
 const BLOCK_COLUMNS = "id, starts_on, ends_on, reason, created_at" as const;
 
@@ -103,13 +103,16 @@ export async function fetchBookingForOrder(brandId: string, orderId: string) {
   return data;
 }
 
-/** Booking requests waiting for the store, soonest day first. */
+/**
+ * Bookings waiting for the store, soonest day first: requests, holds, and paid bookings whose
+ * day was taken after their hold ran out (migration 20261026100000).
+ */
 export async function fetchBookingRequests(brandId: string) {
   const { data, error } = await supabase
     .from("bookings")
     .select(BOOKING_COLUMNS)
     .eq("brand_id", brandId)
-    .in("status", ["requested", "hold"])
+    .or("status.in.(requested,hold),late_payment_slot_taken_at.not.is.null")
     .order("event_date", { ascending: true })
     .limit(200);
   if (error) throw error;

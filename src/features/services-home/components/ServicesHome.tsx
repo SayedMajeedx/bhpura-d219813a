@@ -12,6 +12,7 @@ import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { trustBarBelowHero } from "@/features/storefront-home/lib/home-products";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
+import { BookingOffersList } from "@/features/storefront-booking/components/BookingOffersList";
 import { StoreFaq } from "@/features/store-content/components/StoreFaq";
 import { StoreGallery } from "@/features/store-content/components/StoreGallery";
 import { PackageOfferCard, ServiceCard } from "@/features/services-home/components/ServiceCards";
@@ -78,6 +79,8 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
       <HeroBanner />
       {trustBarBelowHero(settings) && <TrustBar />}
       <BookingInvite />
+      {/* The store's offers, once, before its services. */}
+      <BookingOffersList className="mx-auto max-w-3xl px-4 pt-4 sm:px-6" />
 
       {offers.length > 0 && (
         <Section

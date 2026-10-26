@@ -3,6 +3,8 @@ import {
   bestDiscount,
   dayOffer,
   describeDiscountRule,
+  offerLine,
+  offersToShow,
   discountFormColumns,
   discountFormError,
   discountFormFrom,
@@ -571,5 +573,43 @@ describe("a rule in words and in its form", () => {
     // Every weekday means no weekday limit.
     expect(discountFormColumns({ ...form, weekdays: [0, 1, 2, 3, 4, 5, 6] }).weekdays).toBeNull();
     expect(discountFormFrom(rule({ max_days: null, weekdays: [1] })).max_days).toBe("");
+  });
+});
+
+describe("the offers a shopper is told about before booking", () => {
+  const rule = (over: Partial<DiscountRule>): DiscountRule => ({
+    id: "r",
+    name_en: null,
+    name_ar: null,
+    kind: "percent",
+    value: 25,
+    min_days: 0,
+    max_days: 14,
+    weekdays: null,
+    product_ids: null,
+    valid_from: null,
+    valid_to: null,
+    ...over,
+  });
+
+  it("are those that reach the service and can still be booked", () => {
+    const rules = [
+      rule({ id: "all" }),
+      rule({ id: "booth", product_ids: ["booth"] }),
+      rule({ id: "other", product_ids: ["video"] }),
+      rule({ id: "ended", valid_to: "2026-10-01" }),
+      rule({ id: "later", valid_from: "2026-11-01" }),
+      rule({ id: "past-dates", event_to: "2026-10-20" }),
+    ];
+    expect(offersToShow(rules, "2026-10-26", "booth").map((r) => r.id)).toEqual(["all", "booth"]);
+    // The services home lists every offer still open.
+    expect(offersToShow(rules, "2026-10-26").map((r) => r.id)).toEqual(["all", "booth", "other"]);
+  });
+
+  it("read as their name, then their terms", () => {
+    expect(offerLine(rule({}), true)).toBe("خصم 25% · خلال 14 يومًا");
+    expect(offerLine(rule({ name_en: "Early bird" }), false)).toBe(
+      "Early bird: 25% off · within 14 days",
+    );
   });
 });

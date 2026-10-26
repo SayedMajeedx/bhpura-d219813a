@@ -20,7 +20,7 @@ import {
   type OptionSelection,
 } from "@/lib/bookings/service-options";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
-import { packageLinesText } from "@/lib/bookings/service-package";
+import { packageLength, packageLinesText, separatePrice } from "@/lib/bookings/service-package";
 import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
 import { packageStyleFrom } from "@/lib/bookings/package-style";
 import {
@@ -50,6 +50,7 @@ import {
   offeredDurations,
   missingStep,
   toBookingRequest,
+  type BookableService,
   type FlowState,
 } from "@/features/storefront-booking/lib/booking-flow";
 
@@ -183,6 +184,16 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
         return line.quantity > 1 ? `${name} × ${line.quantity}` : name;
       })
       .filter(Boolean);
+  /**
+   * What a package's services cost apart at the package's own length (the chosen one, else its
+   * "from" price's), as the home card and the package's page compare them; null when unknown.
+   */
+  const packageApart = (service: BookableService, minutes: number | null): number | null =>
+    separatePrice(
+      packageLines.get(service.id) ?? [],
+      services.map((item) => ({ id: item.id, variants: item.product_variants })),
+      packageLength(service.product_variants, minutes),
+    );
   const packageStyle = packageStyleFrom(
     useQuery({
       ...bookingPageOptionsQueries.options(brand.id),
@@ -318,6 +329,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     /** What a package includes, in words (empty for a service that is not one). */
     includesText,
     includesList,
+    packageApart,
     /** How packages stand out on the page (the merchant's pick). */
     packageStyle,
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */

@@ -262,7 +262,7 @@ function IntegrationsPage() {
         categoryScope !== "dev_docs" &&
         categoryScope !== "pixels" && (
           <>
-            {(categoryScope === "all" || categoryScope === "email_ai") && (
+            {isSuperAdmin && (categoryScope === "all" || categoryScope === "email_ai") && (
               <NabdaOtpPilotCard isAr={isAr} />
             )}
 
