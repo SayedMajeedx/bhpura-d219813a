@@ -25,6 +25,7 @@ import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { arNoun } from "@/lib/arabic-count";
+import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { appliedOfferName, type OffersOutcome } from "@/lib/offers";
 
 export type SummaryTax = { amount: number; added: boolean; rate: number };
@@ -434,7 +435,10 @@ export function OrderSummaryCard({
 
       <div className="border-t pt-3 flex justify-between font-semibold text-lg">
         <span>{t("الإجمالي", "Total")}</span>
-        <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
+        <span className="flex flex-col items-end">
+          <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
+          <ApproxPrice amount={grandTotal} charged />
+        </span>
       </div>
       {!tax.added && tax.amount > 0 && (
         <p className="text-xs text-muted-foreground text-end">

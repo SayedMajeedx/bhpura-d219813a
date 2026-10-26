@@ -8,6 +8,7 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { ColorDots } from "@/components/storefront/ColorDots";
 import { QuickAddPopover } from "@/components/storefront/QuickAddPopover";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -298,6 +299,7 @@ export function ProductCardV2({
                       {formatPrice(price.was, currency, lang)}
                     </span>
                   )}
+                  <ApproxPrice amount={minPrice} className="basis-full" />
                 </>
               ) : (
                 <>
@@ -309,6 +311,7 @@ export function ProductCardV2({
                       {formatPrice(price.was, currency, lang)}
                     </span>
                   )}
+                  <ApproxPrice amount={minPrice} className="basis-full" />
                 </>
               )
             ) : (

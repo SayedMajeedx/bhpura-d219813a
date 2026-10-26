@@ -12,6 +12,7 @@ import { cardPrice } from "@/lib/product-price";
 import { Button } from "@/components/ui/button";
 
 import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
+import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 
 export function ProductCard({
   product,
@@ -181,11 +182,16 @@ export function ProductCard({
                       {formatPrice(originalPrice, currency, lang)}
                     </span>
                   )}
+                  <ApproxPrice amount={minPrice} className="basis-full" />
                 </>
               ) : (
-                <span>
-                  {formatPrice(minPrice, currency, lang)} – {formatPrice(maxPrice, currency, lang)}
-                </span>
+                <>
+                  <span>
+                    {formatPrice(minPrice, currency, lang)} –{" "}
+                    {formatPrice(maxPrice, currency, lang)}
+                  </span>
+                  <ApproxPrice amount={minPrice} className="basis-full" />
+                </>
               )
             ) : (
               <span>{t("السعر عند الطلب", "Price on request")}</span>

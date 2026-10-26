@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CurrencySwitcher } from "@/components/storefront/CurrencySwitcher";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
@@ -168,6 +169,7 @@ function StoreHeader() {
               <Languages className="h-4 w-4" />
               <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
             </Button>
+            <CurrencySwitcher />
 
             {session && isStoreMember ? (
               <Button
