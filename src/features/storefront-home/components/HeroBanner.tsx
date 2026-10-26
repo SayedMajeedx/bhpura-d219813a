@@ -1,4 +1,5 @@
-import { useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
+import { useIsServicesStore, useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
+import { heroButtonHref, newSlideButton, bookingPageHref } from "@/lib/hero-link";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { HeroV2 } from "@/components/storefront/HeroV2";
 import { HeroContentCarousel } from "@/features/storefront-home/components/HeroContentCarousel";
@@ -6,6 +7,8 @@ import { HeroContentCarousel } from "@/features/storefront-home/components/HeroC
 /** The home page hero: V2 cinematic hero, or the V1 background media with its content slides. */
 export function HeroBanner() {
   const { brand, settings } = useStorefront();
+  const servicesStore = useIsServicesStore();
+  const linkStore = { slug: brand.slug, servicesStore };
   const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
   const bgUrl = typeof background === "string" ? background : background?.url;
@@ -40,6 +43,7 @@ export function HeroBanner() {
         if (!hasOwnMedia && bgUrl) {
           return {
             ...s,
+            button_href: heroButtonHref(s.button_href, linkStore),
             type: s.type === "text" ? bgType : s.type,
             media_url: bgUrl,
             media_url_ar: s.media_url_ar || bgUrl,
@@ -53,7 +57,7 @@ export function HeroBanner() {
             ...bgMobile,
           };
         }
-        return s;
+        return { ...s, button_href: heroButtonHref(s.button_href, linkStore) };
       })
     : [
         {
@@ -69,9 +73,7 @@ export function HeroBanner() {
           media_poster_url_en: bgPoster,
           media_aspect: bgAspect,
           ...bgMobile,
-          button_en: "Shop now",
-          button_ar: "تسوّق الآن",
-          button_href: "#products",
+          ...newSlideButton(servicesStore ? bookingPageHref(brand.slug) : null),
         },
       ];
 

@@ -138,3 +138,80 @@ describe("the listing filters", () => {
     expect(screen.getByText("In-stock items only")).toBeInTheDocument();
   });
 });
+
+describe("a services store's listing, product page and hero (go-live fix 7)", () => {
+  const head = async (servicesStore: boolean, lang: "ar" | "en" = "ar") => {
+    const { categoryHead } = await import("../src/features/storefront-shell/lib/category-head");
+    const result = categoryHead({
+      loaderData: {
+        brand: { name_en: "Aurora", name_ar: "أورورا", logo_url: null },
+        initialLang: lang,
+        servicesStore,
+      },
+      slug: "aurora",
+      category: "all",
+    }) as { meta: Array<Record<string, string>> };
+    const meta = (key: string) =>
+      result.meta.find((m) => m.title !== undefined && key === "title")?.title ??
+      result.meta.find((m) => m.name === key)?.content;
+    return { title: meta("title"), description: meta("description") };
+  };
+
+  it("is titled and described as its services, booked rather than shopped", async () => {
+    expect(await head(true)).toEqual({
+      title: "كل الخدمات | أورورا",
+      description: "احجز كل الخدمات من أورورا.",
+    });
+    expect(await head(true, "en")).toEqual({
+      title: "All services | Aurora",
+      description: "Book All services with Aurora.",
+    });
+    // A shop keeps its own words.
+    expect(await head(false)).toEqual({
+      title: "كل المنتجات | أورورا",
+      description: "تسوّق كل المنتجات من أورورا.",
+    });
+  });
+
+  it("is told apart by the loader with the same rule as the page", async () => {
+    const { isServicesStorefront } = await import("../src/lib/storefront-modules");
+    expect(isServicesStorefront({ store_vertical: "services" }, [])).toBe(true);
+    expect(isServicesStorefront({ store_vertical: "fashion" }, null)).toBe(false);
+  });
+
+  it("sends a hero button pointing at the shop's products section to the booking page", async () => {
+    const { heroButtonHref, newSlideButton } = await import("../src/lib/hero-link");
+    const services = { slug: "aurora", servicesStore: true };
+    expect(heroButtonHref("#products", services)).toBe("/aurora/book");
+    expect(heroButtonHref("", services)).toBe("/aurora/book");
+    expect(heroButtonHref("https://wa.me/97339990016", services)).toBe("https://wa.me/97339990016");
+    expect(heroButtonHref("#products", { slug: "pura", servicesStore: false })).toBe("#products");
+    expect(newSlideButton("/aurora/book")).toEqual({
+      button_en: "Book now",
+      button_ar: "احجز الآن",
+      button_href: "/aurora/book",
+    });
+    expect(newSlideButton(null).button_ar).toBe("تسوّق الآن");
+  });
+});
+
+describe("a services home's trust bar (go-live fix 10)", () => {
+  it("shows under the hero by the same rule as the shop's home", async () => {
+    const { trustBarBelowHero } = await import("../src/features/storefront-home/lib/home-products");
+    expect(trustBarBelowHero({})).toBe(true);
+    expect(trustBarBelowHero({ trust_bar_position: "both" })).toBe(true);
+    expect(trustBarBelowHero({ trust_bar_position: "above_footer" })).toBe(false);
+    expect(trustBarBelowHero({ trust_bar_enabled: false })).toBe(false);
+  });
+
+  it("is listed in a services store's home page settings, with one switch", async () => {
+    const { SERVICES_HOME_SECTIONS, trustBadgesTurnedOn } =
+      await import("../src/features/settings/tabs/storefront/home-page-sections");
+    expect(SERVICES_HOME_SECTIONS.slice(0, 2)).toEqual(["hero", "trust_bar"]);
+    expect(trustBadgesTurnedOn({ trust_badges: { enabled: false, items: [] } })).toEqual({
+      enabled: true,
+      items: [],
+    });
+    expect(trustBadgesTurnedOn({})).toEqual({ items: [], enabled: true });
+  });
+});

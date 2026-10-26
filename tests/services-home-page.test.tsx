@@ -29,9 +29,11 @@ vi.mock("@tanstack/react-router", () => ({
     </a>
   ),
 }));
+const homeSettings = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 const storefrontMock = vi.hoisted(() => () => ({
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora" },
+    settings: homeSettings.current,
     lang: "en",
     currency: "BHD",
     t: (_ar: string, en: string) => en,
@@ -112,6 +114,9 @@ vi.mock("../src/lib/data/reviews", () => reviewsData);
 vi.mock("@/lib/data/reviews", () => reviewsData);
 vi.mock("../src/features/storefront-home/components/HeroBanner", () => ({
   HeroBanner: () => <div>hero</div>,
+}));
+vi.mock("../src/components/storefront/TrustBar", () => ({
+  TrustBar: () => <div>trust-bar</div>,
 }));
 vi.mock("../src/features/storefront-booking/components/BookingEntryPoints", () => ({
   BookingInvite: () => <div>book-invite</div>,
@@ -320,5 +325,22 @@ describe("the cards' pictures", () => {
     expect(prints.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[4/3]");
     // The rental's photo (and its soft copy behind it) and Album's: Prints has none.
     expect(container.querySelectorAll("article img[alt]:not([alt=''])").length).toBe(2);
+  });
+});
+
+const renderWithQuery = (ui: React.ReactElement) =>
+  render(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+
+describe("the trust bar on the services home page", () => {
+  it("shows the bar the store saved under the hero, and nothing when it is off", async () => {
+    homeSettings.current = { trust_bar_enabled: true, trust_bar_position: "below_hero" };
+    const { unmount } = renderWithQuery(<ServicesHome products={[]} />);
+    expect(await screen.findByText("trust-bar")).toBeInTheDocument();
+    unmount();
+    homeSettings.current = { trust_bar_enabled: false };
+    renderWithQuery(<ServicesHome products={[]} />);
+    await screen.findByText("hero");
+    expect(screen.queryByText("trust-bar")).toBeNull();
+    homeSettings.current = {};
   });
 });

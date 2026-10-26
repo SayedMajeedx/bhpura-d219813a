@@ -258,12 +258,13 @@ describe("the brand story's picture", () => {
 describe("a services store's Home page group", () => {
   const services = { bookings: true, stock: false, shipping: false };
 
-  it("lists what its home page draws, in order, and none of the shop's sections", () => {
+  it("lists what its home page draws, in order, and of the shop's sections only the trust bar", () => {
     profile.modules = services;
     showGroup();
     const rows = within(screen.getByRole("list")).getAllByRole("listitem");
     expect(rows.map((row) => row.querySelector(".font-semibold")?.textContent)).toEqual([
       "Hero",
+      "Trust bar",
       "Invitation to book",
       "Packages, rentals and services",
       "Gallery",
@@ -271,9 +272,9 @@ describe("a services store's Home page group", () => {
       "Questions",
       "Category pages",
     ]);
-    expect(screen.queryByText("Trust bar")).toBeNull();
     expect(screen.queryByText("Best sellers")).toBeNull();
-    expect(screen.queryByRole("switch")).toBeNull();
+    // The trust bar's one switch is the only one (a services home draws it: go-live fix 10).
+    expect(screen.getAllByRole("switch")).toHaveLength(1);
   });
 
   it("says where each part is edited", () => {

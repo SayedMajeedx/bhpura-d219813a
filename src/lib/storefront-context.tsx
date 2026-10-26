@@ -22,7 +22,6 @@ import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
 import { getExistingCartSessionId, getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 import { isCatalogMode, type StorefrontMode } from "@/lib/storefront-mode";
 import {
-  resolveStoreModules,
   isServicesProfile,
   type StoreVertical,
   type StoreModuleOverrides,
@@ -37,7 +36,7 @@ import {
   type SizeGuide,
 } from "@/lib/addons/addon-presets";
 import { AddonsProvider } from "@/components/addons/AddonsProvider";
-import { modulesFromAddons } from "@/lib/addons/addon-compat";
+import { storefrontModules } from "@/lib/storefront-modules";
 import type { CartBooking } from "@/lib/bookings/cart";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";
 
@@ -934,30 +933,10 @@ export function useStoreModules() {
   const { settings, addons } = useStorefront();
   const storeVertical = settings?.store_vertical;
   const storeModules = settings?.store_modules;
-  return useMemo(() => {
-    if (addons && addons.length > 0) {
-      const rows: BrandAddonRow[] = addons.map((a) => ({
-        brand_id: "",
-        addon_id: a.addon_id as any,
-        status: (a.status || "installed") as any,
-        version: 1,
-        settings: {},
-        public_settings: a.public_settings || {},
-        seeded_keys: [],
-        source: "onboarding",
-        installed_at: "",
-        updated_at: "",
-      }));
-      return modulesFromAddons(rows, {
-        store_vertical: storeVertical,
-        store_modules: storeModules,
-      });
-    }
-    return resolveStoreModules({
-      store_vertical: storeVertical,
-      store_modules: storeModules,
-    });
-  }, [storeVertical, storeModules, addons]);
+  return useMemo(
+    () => storefrontModules({ store_vertical: storeVertical, store_modules: storeModules }, addons),
+    [storeVertical, storeModules, addons],
+  );
 }
 
 export function useFitProfiles(): FitProfileDefinition[] {
