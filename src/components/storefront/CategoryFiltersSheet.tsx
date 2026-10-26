@@ -5,6 +5,7 @@ import { CategoryFilters } from "@/components/storefront/CategoryFilters";
 import { activeFilterCount, type CatalogFacets, type FilterState } from "@/lib/category-filters";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { SlidersHorizontal } from "lucide-react";
+import { catalogCount } from "@/lib/catalog-count";
 
 interface CategoryFiltersSheetProps {
   filters: FilterState;
@@ -19,7 +20,7 @@ export function CategoryFiltersSheet({
   facets,
   totalFilteredCount,
 }: CategoryFiltersSheetProps) {
-  const { t } = useStorefront();
+  const { t, lang } = useStorefront();
   const servicesStore = useIsServicesStore();
   const [open, setOpen] = useState(false);
 
@@ -62,6 +63,7 @@ export function CategoryFiltersSheet({
             onChange={onChange}
             facets={facets}
             totalFilteredCount={totalFilteredCount}
+            titled={false}
           />
         </div>
 
@@ -71,7 +73,13 @@ export function CategoryFiltersSheet({
             className="w-full h-11 text-sm font-semibold rounded-xl bg-primary text-primary-foreground"
             onClick={() => setOpen(false)}
           >
-            {t(`عرض النتائج (${totalFilteredCount})`, `View results (${totalFilteredCount})`)}
+            {/* What the list will show, counted in the shopper's words ("عرض 3 خدمات"). */}
+            {totalFilteredCount > 0
+              ? `${t("عرض", "Show")} ${catalogCount(totalFilteredCount, {
+                  services: servicesStore,
+                  lang: lang === "ar" ? "ar" : "en",
+                })}`
+              : t("لا توجد نتائج", "No results")}
           </Button>
         </div>
       </SheetContent>

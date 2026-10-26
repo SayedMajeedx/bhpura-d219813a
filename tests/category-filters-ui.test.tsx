@@ -12,9 +12,9 @@ import type { ProductRow } from "../src/lib/data/storefront";
 // The listing's filter panel: pick several sizes or colours, see what each would show, and never
 // land on an empty page by picking an option with nothing behind it.
 
-const state = vi.hoisted(() => ({ lang: "en" as "ar" | "en", swatches: true }));
+const state = vi.hoisted(() => ({ lang: "en" as "ar" | "en", swatches: true, services: false }));
 const storefrontMock = vi.hoisted(() => () => ({
-  useIsServicesStore: () => false,
+  useIsServicesStore: () => state.services,
   useStorefront: () => ({
     settings: { currency: "BHD" },
     get lang() {
@@ -162,5 +162,47 @@ describe("the listing's filter panel", () => {
     expect(screen.getByText("نطاق السعر")).toBeInTheDocument();
     expect(screen.getByLabelText("من")).toBeInTheDocument();
     expect(screen.getByLabelText("إلى")).toBeInTheDocument();
+  });
+});
+
+describe("a services store's listing (Aurora's rentals)", () => {
+  const RENTALS = [
+    product("booth", [
+      { ...variant("3 hours", null), duration_minutes: 180 },
+      { ...variant("8 hours", null, 1, 145), duration_minutes: 480 },
+    ] as ReturnType<typeof variant>[]),
+  ];
+  const renderRentals = () =>
+    render(
+      <CategoryFilters
+        filters={EMPTY_FILTERS}
+        onChange={() => {}}
+        facets={catalogFacets(RENTALS, EMPTY_FILTERS)}
+        totalFilteredCount={1}
+      />,
+    );
+
+  it("names each length in Arabic in its own chip, and the price in the reader's currency word", () => {
+    state.lang = "ar";
+    state.services = true;
+    renderRentals();
+    const lengths = screen.getByText("المدة").closest("section")!;
+    expect(within(lengths).getByRole("button", { name: "3 ساعات" })).toBeInTheDocument();
+    expect(within(lengths).getByRole("button", { name: "8 ساعات" })).toBeInTheDocument();
+    // Its chips are as wide as their longest label (they were 2.5rem and "3 ساعات" ran out).
+    const grid = within(lengths).getByRole("button", { name: "3 ساعات" }).parentElement!;
+    expect(Number.parseFloat(grid.style.getPropertyValue("--size-chip"))).toBeGreaterThanOrEqual(5);
+    expect(screen.getAllByText("د.ب").length).toBe(2);
+    expect(screen.queryByText("BHD")).toBeNull();
+    state.services = false;
+  });
+
+  it("names them in English on an English page", () => {
+    state.lang = "en";
+    state.services = true;
+    renderRentals();
+    expect(screen.getByRole("button", { name: "3 hours" })).toBeInTheDocument();
+    expect(screen.getAllByText("BHD").length).toBe(2);
+    state.services = false;
   });
 });

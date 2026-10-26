@@ -8,17 +8,19 @@ import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { catalogCount } from "@/lib/catalog-count";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
-import { formatSizeWithUnit } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
 import {
   activeFilterCount,
   EMPTY_FILTERS,
+  sizeChipColumn,
+  sizeChipLabel,
   type CatalogFacets,
   type FilterState,
 } from "@/lib/category-filters";
 import { occasionLabel } from "@/lib/product-occasion";
 import { filterableFacts } from "@/lib/product-facts";
 import { cn } from "@/lib/utils";
+import { currencyLabel } from "@/lib/currency-label";
 
 export type { FilterState } from "@/lib/category-filters";
 
@@ -29,6 +31,8 @@ interface CategoryFiltersProps {
   facets: CatalogFacets;
   totalFilteredCount: number;
   className?: string;
+  /** In the phone's sheet, which has the title already: the panel shows only its reset. */
+  titled?: boolean;
 }
 
 const toggled = (list: string[], value: string) =>
@@ -69,7 +73,8 @@ function Group({
 
 const chipClass = (active: boolean, empty: boolean) =>
   cn(
-    "min-h-11 min-w-10 rounded-lg border px-2.5 text-sm font-medium tabular-nums transition-colors sm:min-h-9",
+    // A label wraps inside its chip rather than running out of it (a button keeps one line).
+    "h-auto min-h-11 min-w-10 whitespace-normal break-words rounded-lg border px-2.5 py-1.5 text-center text-sm leading-tight font-medium tabular-nums transition-colors sm:min-h-9",
     active
       ? "border-primary bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
       : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-card",
@@ -83,12 +88,14 @@ export function CategoryFilters({
   facets,
   totalFilteredCount,
   className = "",
+  titled = true,
 }: CategoryFiltersProps) {
   const { lang, t, settings } = useStorefront();
   const servicesStore = useIsServicesStore();
   const isAr = lang === "ar";
   const axisLang = isAr ? "ar" : "en";
-  const currency = settings?.currency ?? "";
+  // The currency in the shopper's words ("د.ب" on an Arabic page, never the bare code).
+  const currency = settings?.currency ? currencyLabel(settings.currency, axisLang) : "";
 
   // Filter headings follow the store's own option names (a roastery's "size"
   // is the bag weight and its "color" is the grind), not the column names.
@@ -149,33 +156,43 @@ export function CategoryFilters({
     </div>
   );
 
+  const sizeLabels = facets.sizes.map((size) => sizeChipLabel(size, axisLang));
+
   const selectedColors = filters.colors.map((name) => translateOptionValue(name, axisLang) || name);
 
   return (
     <div className={cn("space-y-6", className)}>
-      {/* Header & Reset */}
-      <div className="flex items-center justify-between border-b border-border pb-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-foreground">
-            {servicesStore ? t("تصفية الخدمات", "Filter services") : t("تصفية المنتجات", "Filters")}
-          </h3>
-          <span className="text-xs tabular-nums text-muted-foreground" aria-live="polite">
-            ({totalFilteredCount})
-          </span>
+      {/* Header & Reset (in the sheet, the reset alone: the sheet has the title) */}
+      {(titled || activeCount > 0) && (
+        <div className="flex items-center justify-between border-b border-border pb-3">
+          {titled ? (
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground">
+                {servicesStore
+                  ? t("تصفية الخدمات", "Filter services")
+                  : t("تصفية المنتجات", "Filters")}
+              </h3>
+              <span className="text-xs tabular-nums text-muted-foreground" aria-live="polite">
+                ({totalFilteredCount})
+              </span>
+            </div>
+          ) : (
+            <span />
+          )}
+          {activeCount > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange((prev) => ({ ...EMPTY_FILTERS, sort: prev.sort }))}
+              className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>{t("إعادة ضبط", "Reset")}</span>
+            </Button>
+          )}
         </div>
-        {activeCount > 0 && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onChange((prev) => ({ ...EMPTY_FILTERS, sort: prev.sort }))}
-            className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <RotateCcw className="h-3 w-3" />
-            <span>{t("إعادة ضبط", "Reset")}</span>
-          </Button>
-        )}
-      </div>
+      )}
 
       {/* In-Stock Only Switch (a service is booked, never out of stock) */}
       {!servicesStore && (
@@ -202,8 +219,11 @@ export function CategoryFilters({
               : undefined
           }
         >
-          {/* Equal columns, so the chips line up row after row instead of wrapping ragged. */}
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1.5">
+          {/* Equal columns as wide as the longest label, so the chips line up row after row. */}
+          <div
+            className="grid grid-cols-[repeat(auto-fill,minmax(var(--size-chip),1fr))] gap-1.5"
+            style={{ "--size-chip": sizeChipColumn(sizeLabels) } as React.CSSProperties}
+          >
             {facets.sizes.map((size) => {
               const active = filters.sizes.includes(size.value);
               const empty = size.count === 0;
@@ -221,7 +241,7 @@ export function CategoryFilters({
                   }}
                   className={chipClass(active, empty)}
                 >
-                  {formatSizeWithUnit(size.value, size.unit ?? undefined, axisLang) || size.value}
+                  {sizeChipLabel(size, axisLang)}
                 </Button>
               );
             })}

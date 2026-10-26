@@ -86,6 +86,8 @@ describe("the home page of a services store", () => {
     expect(fromPriceOf(product({}))).toBeNull();
     expect(lengthRangeText(booth, false)).toBe("1 hour to 3 hours");
     expect(lengthRangeText(booth, true)).toBe("من ساعة إلى 3 ساعات");
+    expect(minutesText(660, true)).toBe("11 ساعة");
+    expect(minutesText(90, true)).toBe("90 دقيقة");
     expect(lengthRangeText(prints, false)).toBe("");
     expect(minutesText(90, false)).toBe("90 min");
     expect(minutesText(120, true)).toBe("ساعتان");
