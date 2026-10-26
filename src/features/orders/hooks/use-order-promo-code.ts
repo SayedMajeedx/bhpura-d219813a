@@ -8,6 +8,9 @@ import { orderTotals, promoFailureMessage } from "@/features/orders/lib/order-ed
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 
+/** The part of an order's discount an automatic offer gave at checkout: a code applied or removed here keeps it. */
+const offerPart = (order: Order) => Number(order.offer_discount ?? 0);
+
 /** Applying a promo code (validated by validate_promo_code for this customer and these lines) and removing it. */
 export function useOrderPromoCode({
   brand,
@@ -68,14 +71,19 @@ export function useOrderPromoCode({
     const active = { code: String(result.code), id: String(result.promo_code_id), amount };
     setPromoInput(active.code);
     setAppliedPromo(active);
-    setOrder({ ...order, discount: amount, promo_code: active.code, promo_code_id: active.id });
+    setOrder({
+      ...order,
+      discount: amount + offerPart(order),
+      promo_code: active.code,
+      promo_code_id: active.id,
+    });
     toast.success(lang === "ar" ? "تم تطبيق رمز الخصم." : "Promo code applied.");
   };
   const removeAdminPromo = () => {
     if (!order) return;
     setAppliedPromo(null);
     setPromoInput("");
-    setOrder({ ...order, discount: 0, promo_code: null, promo_code_id: null });
+    setOrder({ ...order, discount: offerPart(order), promo_code: null, promo_code_id: null });
   };
 
   return {

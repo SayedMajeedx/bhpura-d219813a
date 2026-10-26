@@ -4,8 +4,9 @@ import { Heart } from "lucide-react";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
+import { ProductOffers } from "@/features/product-page/components/ProductOffers";
 
-/** Product name with share and wishlist, and the price with any original price and saving. */
+/** Product name with share and wishlist, the price with any original price and saving, and the store's offers that reach it. */
 export function ProductTitleAndPrice({
   currency,
   discountPercent,
@@ -86,6 +87,7 @@ export function ProductTitleAndPrice({
           </>
         )}
       </div>
+      <ProductOffers product={product} />
     </>
   );
 }

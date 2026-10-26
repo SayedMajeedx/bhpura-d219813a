@@ -37,6 +37,7 @@ import {
   DiscountsScopeSwitcher,
   type DiscountStatusTab,
 } from "@/components/discounts/DiscountsScopeSwitcher";
+import { StoreOffersSection } from "@/features/offers/components/StoreOffersSection";
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
@@ -402,6 +403,9 @@ function DiscountCodes() {
         promoCount={allList.length}
         onCreateNew={beginCreate}
       />
+
+      {/* Automatic offers: no code, applied by the order builder */}
+      <StoreOffersSection brandId={brand.id} isAr={ar} />
 
       {/* 2. Scope Switcher Tabs */}
       <DiscountsScopeSwitcher

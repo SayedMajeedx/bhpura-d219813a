@@ -38,6 +38,7 @@ import { usePickupAndDigital } from "@/features/checkout/hooks/use-pickup-and-di
 import { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
 import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
+import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
 import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import { checkoutQueries } from "@/lib/data/checkout";
 import { PaymentFailedCard } from "@/features/checkout/components/PaymentFailedCard";
@@ -215,7 +216,24 @@ function Checkout() {
     marketingConsent,
   });
 
-  const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
+  // The store's automatic offers, as the order builder applies them: an offer that saves more
+  // than the code replaces it (or the store's own combining rule), and free delivery.
+  const offers = useCheckoutOffers({
+    brand,
+    cart,
+    appliedPromo,
+    fulfillment,
+    country: selectedDestination === "BH" ? "BH" : selectedCountryCode,
+    enabled: !appointment && !isCatalogMode(settings),
+  });
+  const promoDiscount = Math.min(
+    offers ? offers.code_discount : (appliedPromo?.amount ?? 0),
+    cartTotal,
+  );
+  const offerDiscount = Math.min(
+    offers?.offer_discount ?? 0,
+    Math.max(cartTotal - promoDiscount, 0),
+  );
   // The booking's own offer (last minute, early bird): the order carries it too.
   const bookingDiscount = Math.min(Number(appointment?.discount ?? 0), cartTotal);
 
@@ -235,19 +253,19 @@ function Checkout() {
     brand,
     customerId,
     cartTotal,
-    promoDiscount: promoDiscount + bookingDiscount,
+    promoDiscount: promoDiscount + offerDiscount + bookingDiscount,
     currency,
     lang,
   });
   // A member whose loyalty tier has free shipping pays none (so does the order).
-  const shipping = freeShipping ? 0 : deliveryFee;
+  const shipping = freeShipping || offers?.free_delivery ? 0 : deliveryFee;
 
   // What the order will charge, tax included (the order builder's own rule: orderTotals).
   const taxRule = storeTaxRule(settings);
   const totals = orderTotals(
     {
       subtotal: cartTotal + Number(appointment?.optionsTotal ?? 0),
-      discount: promoDiscount + bookingDiscount,
+      discount: promoDiscount + offerDiscount + bookingDiscount,
       shipping,
       loyaltyDiscount,
     },
@@ -618,6 +636,7 @@ function Checkout() {
           method={method}
           pointsToRedeemInput={pointsToRedeemInput}
           promoDiscount={promoDiscount}
+          offers={offers}
           promoInput={promoInput}
           redeemedPoints={redeemedPoints}
           setAcceptedTerms={setAcceptedTerms}

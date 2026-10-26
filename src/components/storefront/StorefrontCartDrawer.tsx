@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
+import { FreeDeliveryNudge } from "@/components/storefront/FreeDeliveryNudge";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
@@ -283,6 +284,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
+                {!servicesStore && <FreeDeliveryNudge />}
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("الإجمالي", "Total")}</span>
                   <span style={{ color: settings.primary_color }}>
