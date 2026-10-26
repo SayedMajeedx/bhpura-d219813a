@@ -228,6 +228,36 @@ export function describeDiscountRule(rule: DiscountRule, isAr: boolean): string 
   return parts.join(" · ");
 }
 
+/**
+ * The store's offers a shopper is told about before booking: those that reach a service (or any
+ * service, with none named) and can be booked `today` (on the store's clock): started, not
+ * ended, for event dates still to come. The booking calendar marks the days; a service's page and
+ * the services home once said nothing of them.
+ */
+export function offersToShow(
+  rules: readonly DiscountRule[],
+  today: string,
+  productId: string | null = null,
+): DiscountRule[] {
+  return rules.filter(
+    (rule) =>
+      (productId === null ||
+        !rule.product_ids ||
+        rule.product_ids.length === 0 ||
+        rule.product_ids.includes(productId)) &&
+      !(rule.valid_from && today < rule.valid_from) &&
+      !(rule.valid_to && today > rule.valid_to) &&
+      !(rule.event_to && today > rule.event_to),
+  );
+}
+
+/** One offer as a shopper reads it: its name, then its terms ("خصم 25% · خلال 14 يوماً"). */
+export function offerLine(rule: DiscountRule, isAr: boolean): string {
+  const name = (isAr ? rule.name_ar || rule.name_en : rule.name_en || rule.name_ar)?.trim();
+  const terms = describeDiscountRule(rule, isAr);
+  return name ? `${name}: ${terms}` : terms;
+}
+
 // ── The merchant's rule form ────────────────────────────────────────────────
 
 /** A rule as its form holds it: numbers as the text of their inputs. */

@@ -10,6 +10,7 @@ import { serviceLengthsText } from "@/lib/bookings/service-lengths";
 import type { ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
+import { AddOnList } from "@/features/services-home/components/AddOnList";
 import {
   extraHourPriceOf,
   includeLinesOf,
@@ -189,37 +190,7 @@ export function RentalCard({
           </div>
         )}
 
-        {extras.length > 0 && (
-          <section className="space-y-1.5" aria-label={t("الإضافات", "Add-ons")}>
-            <h4 className="text-xs font-semibold text-muted-foreground">
-              {t("الإضافات", "Add-ons")}
-            </h4>
-            <ul className="divide-y divide-border/60 text-sm">
-              {extras.map((extra) => (
-                <li key={extra.id} className="flex items-baseline justify-between gap-3 py-1.5">
-                  <span className="min-w-0 break-words text-foreground">
-                    {extra.name}
-                    {extra.always && extra.price !== null && (
-                      <span className="text-xs text-muted-foreground">
-                        {t(" · مع كل حجز", " · with every booking")}
-                      </span>
-                    )}
-                  </span>
-                  <span className="shrink-0 font-medium text-foreground">
-                    {extra.price === null ? (
-                      <span className="text-muted-foreground">{t("مشمولة", "Included")}</span>
-                    ) : (
-                      <>
-                        {extra.from ? t("من ", "from ") : "+ "}
-                        <span>{money(extra.price)}</span>
-                      </>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        <AddOnList lines={extras} />
 
         <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2">
           <Button type="button" variant="outline" onClick={() => setDetailsOpen(true)}>
