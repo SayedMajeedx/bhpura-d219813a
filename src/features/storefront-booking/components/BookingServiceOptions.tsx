@@ -1,4 +1,5 @@
-import { Minus, Plus } from "lucide-react";
+import { useState } from "react";
+import { Info, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,34 @@ import {
   validQuantity,
 } from "@/lib/bookings/service-options";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
+
+/**
+ * An add-on's long description, folded behind a small info button so a list of add-ons stays a
+ * list of names and prices: the words open under the name on a tap.
+ */
+function OptionNote({ name, text, isAr }: { name: string; text: string; isAr: boolean }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="ms-1 size-5 translate-y-0.5 rounded-full text-muted-foreground hover:text-foreground"
+        aria-expanded={open}
+        aria-label={isAr ? `تفاصيل ${name}` : `Details of ${name}`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Info className="size-4" aria-hidden="true" />
+      </Button>
+      {open && (
+        <span className="mt-1 block break-words text-xs font-normal text-muted-foreground">
+          {text}
+        </span>
+      )}
+    </>
+  );
+}
 
 /**
  * A chosen service's add-ons: what comes with it (an attendant, shown with its
@@ -77,10 +106,8 @@ export function BookingServiceOptions({
                             : "With every booking"}
                       </span>
                     )}
+                    {description && <OptionNote name={name} text={description} isAr={isAr} />}
                   </p>
-                  {description && (
-                    <p className="break-words text-xs text-muted-foreground">{description}</p>
-                  )}
                   {option.mode === "default_on" && quantity > 0 && showPrices && (
                     <p className="text-xs text-muted-foreground">
                       {isAr
