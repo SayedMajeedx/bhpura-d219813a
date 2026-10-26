@@ -546,7 +546,9 @@ describe("a package in the booking flow", () => {
     await waitFor(() => expect(pkg).toHaveTextContent("Prints × 2"));
     expect(pkg).toHaveTextContent("Photo booth");
     expect(pkg).toHaveTextContent("Package");
-    expect(pkg).toHaveTextContent("Save 22%");
+    // Against its services apart (55 + 2 x 35 = 125), as the home card and its page compare it,
+    // in money first.
+    expect(pkg).toHaveTextContent("Save BHD 55.000 (44%)");
     expect(pkg.className).toContain("pkg-card--glow");
     // Grouped under its own heading, apart from the services it is made of.
     expect(screen.getByRole("heading", { name: "Packages" })).toBeInTheDocument();

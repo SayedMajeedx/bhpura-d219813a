@@ -91,6 +91,38 @@ export function separatePrice(
   return round3(sum);
 }
 
+/**
+ * The length a package is compared at: the chosen one, else the length of its cheapest price (the
+ * "from" price a card shows), null for a package not priced by length. Its services apart are
+ * priced at that same length: the home card once priced them at their shortest (3 hours) against
+ * a 5-hour package, and read "save 3%" where the package's page read "save 41%".
+ */
+export function packageLength(
+  variants: PriceableService["variants"],
+  minutes: number | null,
+): number | null {
+  if (minutes !== null) return minutes;
+  const timed = variants.filter(
+    (variant) =>
+      typeof variant.duration_minutes === "number" && Number(variant.selling_price ?? 0) > 0,
+  );
+  if (timed.length === 0) return null;
+  const cheapest = timed.reduce((best, variant) =>
+    Number(variant.selling_price) < Number(best.selling_price) ? variant : best,
+  );
+  return cheapest.duration_minutes ?? null;
+}
+
+/** What a package saves, in money first and then percent: "وفّر 113 د.ب (41%)". */
+export function packageSavingText(
+  saving: { amount: number; percent: number },
+  /** The amount written in the store's currency. */
+  money: string,
+  isAr: boolean,
+): string {
+  return isAr ? `وفّر ${money} (${saving.percent}%)` : `Save ${money} (${saving.percent}%)`;
+}
+
 /** What a package price saves against the services apart. */
 export function packageSaving(
   separate: number | null,

@@ -14,6 +14,12 @@ import {
   servicePlace,
 } from "../src/features/services-home/lib/services-home";
 import type { ProductRow } from "../src/lib/data/storefront";
+import {
+  packageLength,
+  packageSaving,
+  packageSavingText,
+  separatePrice,
+} from "../src/lib/bookings/service-package";
 
 const variant = (price: number, minutes: number | null = null, was: number | null = null) => ({
   id: `v${price}-${minutes}`,
@@ -153,6 +159,59 @@ describe("the home page of a services store", () => {
       includes: [],
     });
     expect(packageOffer(product({ is_package: true }), [], [booth], name)).toBeNull();
+  });
+
+  it("compares a package at its own length, as its page does (Aurora's Diamond: 41%, not 3%)", () => {
+    const hours = (h: number) => h * 60;
+    const service = (id: string, prices: Array<[number, number]>) =>
+      product({ id, name: id, product_variants: prices.map(([h, p]) => variant(p, hours(h))) });
+    const photobooth = service("photobooth", [
+      [3, 55],
+      [5, 91],
+    ]);
+    const phonebooth = service("phonebooth", [
+      [3, 40],
+      [5, 66],
+    ]);
+    const videobooth = service("videobooth", [
+      [3, 70],
+      [5, 116],
+    ]);
+    const diamond = product({
+      id: "diamond",
+      is_package: true,
+      product_variants: [variant(160, hours(5))],
+    });
+    const lines = ["photobooth", "phonebooth", "videobooth"].map((id) => ({
+      product_id: id,
+      quantity: 1,
+    }));
+    const offer = packageOffer(diamond, lines, [photobooth, phonebooth, videobooth], (p) => p.name);
+    expect(offer).toMatchObject({ price: 160, apart: 273, saving: { amount: 113, percent: 41 } });
+    // The package's own page, given the same length, says the same.
+    const services = [photobooth, phonebooth, videobooth].map((p) => ({
+      id: p.id,
+      variants: p.product_variants,
+    }));
+    expect(
+      packageSaving(
+        separatePrice(lines, services, packageLength(diamond.product_variants, null)),
+        160,
+      ),
+    ).toEqual({ amount: 113, percent: 41 });
+    expect(packageSavingText({ amount: 113, percent: 41 }, "113.000 د.ب", true)).toBe(
+      "وفّر 113.000 د.ب (41%)",
+    );
+    expect(packageSavingText({ amount: 113, percent: 41 }, "BHD 113.000", false)).toBe(
+      "Save BHD 113.000 (41%)",
+    );
+  });
+
+  it("takes a package's chosen length, else its cheapest price's, else none", () => {
+    const variants = [variant(160, 300), variant(120, 180)];
+    expect(packageLength(variants, 300)).toBe(300);
+    expect(packageLength(variants, null)).toBe(180);
+    expect(packageLength([variant(50)], null)).toBeNull();
   });
 });
 

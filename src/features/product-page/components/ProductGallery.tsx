@@ -5,6 +5,7 @@ import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { isLikelyImageUrl } from "@/lib/media-delivery";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
 import { ImageZoom } from "@/components/storefront/ImageZoom";
+import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import type { PdpMediaItem } from "@/features/product-page/types";
@@ -132,9 +133,8 @@ export function ProductGallery({
               )}
             </>
           ) : (
-            <div className="w-full h-full grid place-items-center text-muted-foreground">
-              {t("لا توجد صورة", "No image")}
-            </div>
+            // The store's initials, as on its cards: never "No image".
+            <ProductPhotoPlaceholder />
           )}
         </div>
         {media.length > 1 && (

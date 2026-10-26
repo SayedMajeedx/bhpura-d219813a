@@ -49,9 +49,3 @@ export const PACKAGE_STYLE_LABELS: Record<
     hintEn: "A deep tint and a hairline frame, calm and formal",
   },
 };
-
-/** What a package saves against its price before the offer (null when it saves nothing). */
-export function packageSavingPercent(was: number | null, price: number | null): number | null {
-  if (was === null || price === null || was <= 0 || price <= 0 || price >= was) return null;
-  return Math.round(((was - price) / was) * 100);
-}
