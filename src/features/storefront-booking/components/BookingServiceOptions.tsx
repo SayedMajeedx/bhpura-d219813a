@@ -23,15 +23,17 @@ function OptionNote({ name, text, isAr }: { name: string; text: string; isAr: bo
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button
+      <Button
         type="button"
-        className="ms-1.5 inline-flex size-5 translate-y-0.5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+        variant="ghost"
+        size="icon"
+        className="ms-1 size-5 translate-y-0.5 rounded-full text-muted-foreground hover:text-foreground"
         aria-expanded={open}
         aria-label={isAr ? `تفاصيل ${name}` : `Details of ${name}`}
         onClick={() => setOpen((value) => !value)}
       >
         <Info className="size-4" aria-hidden="true" />
-      </button>
+      </Button>
       {open && (
         <span className="mt-1 block break-words text-xs font-normal text-muted-foreground">
           {text}
