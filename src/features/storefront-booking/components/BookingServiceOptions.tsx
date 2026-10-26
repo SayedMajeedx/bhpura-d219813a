@@ -7,9 +7,11 @@ import { formatPrice } from "@/lib/storefront-context";
 import {
   isChangeable,
   optionDescription,
+  optionAvailable,
   optionName,
   optionPrice,
   optionStep,
+  requiredOption,
   tiersText,
   validQuantity,
 } from "@/lib/bookings/service-options";
@@ -74,17 +76,20 @@ export function BookingServiceOptions({
         const on = quantity > 0 || option.mode === "included" || option.mode === "required";
         const step = optionStep(option);
         const price = optionPrice(option, quantity || step, extraHours);
+        // One that needs another (magnets need the prints) waits until that one is chosen.
+        const waiting = !optionAvailable(option, options, selection);
+        const needed = waiting ? requiredOption(option, options) : null;
         const locked = !isChangeable(option);
         return (
-          <li key={option.id} className="space-y-1">
+          <li key={option.id} className={cn("space-y-1", waiting && "opacity-60")}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-start gap-2.5">
                 {option.tiers ? (
                   <span className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
                 ) : (
                   <Checkbox
-                    checked={on}
-                    disabled={locked}
+                    checked={on && !waiting}
+                    disabled={locked || waiting}
                     aria-label={name}
                     className="mt-0.5"
                     onCheckedChange={(checked) =>
@@ -108,6 +113,13 @@ export function BookingServiceOptions({
                     )}
                     {description && <OptionNote name={name} text={description} isAr={isAr} />}
                   </p>
+                  {needed && (
+                    <p className="text-xs font-medium text-primary">
+                      {isAr
+                        ? `أضف «${optionName(needed, true)}» أولاً`
+                        : `Add “${optionName(needed, false)}” first`}
+                    </p>
+                  )}
                   {option.mode === "default_on" && quantity > 0 && showPrices && (
                     <p className="text-xs text-muted-foreground">
                       {isAr
@@ -130,7 +142,7 @@ export function BookingServiceOptions({
                 </span>
               )}
             </div>
-            {option.tiers && (
+            {option.tiers && !waiting && (
               <div className="flex items-center gap-2 ps-6" role="group" aria-label={name}>
                 <Button
                   type="button"

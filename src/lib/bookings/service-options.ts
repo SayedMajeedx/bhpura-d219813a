@@ -24,6 +24,8 @@ export type ServiceOption = {
   price: number;
   /** Added for each hour the booking runs beyond the service's shortest length (null: one price at any length). */
   extra_hour_price: number | null;
+  /** Another add-on of the service that must be on for this one to be (null: stands alone). */
+  requires_option_id: string | null;
   tiers: OptionTiers | null;
   max_quantity: number | null;
   sort_order: number;
@@ -97,6 +99,45 @@ export function validQuantity(option: ServiceOption, quantity: number): number |
   return quantity;
 }
 
+/** The add-on this one needs, when the service has it on offer. */
+export function requiredOption(
+  option: Pick<ServiceOption, "requires_option_id">,
+  options: readonly ServiceOption[],
+): ServiceOption | null {
+  if (!option.requires_option_id) return null;
+  return options.find((other) => other.id === option.requires_option_id && other.is_active) ?? null;
+}
+
+/**
+ * Whether an add-on can be on with this choice: one that needs another only while that one is on
+ * (it comes with the service, or the customer has chosen it). The database's rule in
+ * apply_booking_options.
+ */
+export function optionAvailable(
+  option: Pick<ServiceOption, "requires_option_id">,
+  options: readonly ServiceOption[],
+  selection: OptionSelection,
+): boolean {
+  if (!option.requires_option_id) return true;
+  const needed = requiredOption(option, options);
+  if (!needed) return false;
+  return needed.mode === "included" || needed.mode === "required" || needed.id in selection;
+}
+
+/** The choice without any add-on whose own requirement is no longer on (taking prints off takes the magnets with it). */
+export function cleanSelection(
+  options: readonly ServiceOption[],
+  selection: OptionSelection,
+): OptionSelection {
+  const clean: OptionSelection = {};
+  for (const [id, quantity] of Object.entries(selection)) {
+    const option = options.find((other) => other.id === id);
+    if (option && !optionAvailable(option, options, selection)) continue;
+    clean[id] = quantity;
+  }
+  return clean;
+}
+
 /** The chosen add-ons with their prices, in the merchant's order. */
 export function chosenOptions(
   options: readonly ServiceOption[],
@@ -105,6 +146,7 @@ export function chosenOptions(
 ): Array<{ option: ServiceOption; quantity: number; price: number }> {
   return options
     .filter((option) => option.is_active)
+    .filter((option) => optionAvailable(option, options, selection))
     .filter(
       (option) =>
         option.mode === "included" || option.mode === "required" || option.id in selection,
@@ -137,7 +179,12 @@ export function optionsPayload(
   const active = options.filter((option) => option.is_active);
   if (active.length === 0) return undefined;
   return active
-    .filter((option) => isChangeable(option) && option.id in selection)
+    .filter(
+      (option) =>
+        isChangeable(option) &&
+        option.id in selection &&
+        optionAvailable(option, options, selection),
+    )
     .map((option) => ({ option_id: option.id, quantity: selection[option.id] }));
 }
 
@@ -173,7 +220,11 @@ export function tiersText(tiers: OptionTiers, isAr: boolean): string {
 }
 
 /** What the merchant sees under an add-on in its list: its mode and price in a few words. */
-export function describeOption(option: ServiceOption, isAr: boolean): string {
+export function describeOption(
+  option: ServiceOption,
+  isAr: boolean,
+  all: readonly ServiceOption[] = [],
+): string {
   const mode = {
     included: isAr ? "مشمولة (بدون مقابل)" : "Included (free)",
     required: isAr ? "إلزامية" : "Required",
@@ -191,7 +242,13 @@ export function describeOption(option: ServiceOption, isAr: boolean): string {
         ? `+${option.extra_hour_price} لكل ساعة إضافية`
         : `+${option.extra_hour_price} per extra hour`
       : "";
-  return [mode, price, perHour].filter(Boolean).join(" · ");
+  const needed = requiredOption(option, all);
+  const needs = needed
+    ? isAr
+      ? `تحتاج: ${optionName(needed, true)}`
+      : `Needs: ${optionName(needed, false)}`
+    : "";
+  return [mode, price, perHour, needs].filter(Boolean).join(" · ");
 }
 
 // ── The merchant's add-on form ──────────────────────────────────────────────
@@ -206,6 +263,8 @@ export type OptionForm = {
   price: string;
   /** Added per hour beyond the service's shortest length; empty: one price at any length. */
   extra_hour_price: string;
+  /** The add-on of the same service this one needs ("" : none). */
+  requires_option_id: string;
   tiered: boolean;
   step: string;
   /** Block prices, comma-separated: "15, 12.5, 10". */
@@ -222,6 +281,7 @@ export const EMPTY_OPTION_FORM: OptionForm = {
   mode: "optional",
   price: "",
   extra_hour_price: "",
+  requires_option_id: "",
   tiered: false,
   step: "50",
   prices: "",
@@ -239,6 +299,7 @@ export function optionFormFrom(option: ServiceOption): OptionForm {
     mode: option.mode,
     price: option.price ? String(option.price) : "",
     extra_hour_price: option.extra_hour_price ? String(option.extra_hour_price) : "",
+    requires_option_id: option.requires_option_id ?? "",
     tiered: option.tiers !== null,
     step: option.tiers ? String(option.tiers.step) : "50",
     prices: option.tiers ? option.tiers.prices.join(", ") : "",
@@ -312,6 +373,7 @@ export function optionColumns(form: OptionForm) {
       form.tiered || form.mode === "included" || form.extra_hour_price.trim() === ""
         ? null
         : Number(form.extra_hour_price),
+    requires_option_id: form.requires_option_id || null,
     tiers: form.tiered ? { step: Number(form.step), prices } : null,
     max_quantity: form.tiered ? max : null,
     is_active: form.is_active,

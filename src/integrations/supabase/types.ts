@@ -7685,6 +7685,7 @@ export type Database = {
           name_en: string | null;
           price: number;
           product_id: string;
+          requires_option_id: string | null;
           sort_order: number;
           tiers: Json | null;
         };
@@ -7702,6 +7703,7 @@ export type Database = {
           name_en?: string | null;
           price?: number;
           product_id: string;
+          requires_option_id?: string | null;
           sort_order?: number;
           tiers?: Json | null;
         };
@@ -7719,6 +7721,7 @@ export type Database = {
           name_en?: string | null;
           price?: number;
           product_id?: string;
+          requires_option_id?: string | null;
           sort_order?: number;
           tiers?: Json | null;
         };
@@ -7735,6 +7738,13 @@ export type Database = {
             columns: ["product_id"];
             isOneToOne: false;
             referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "service_options_requires_option_id_fkey";
+            columns: ["requires_option_id"];
+            isOneToOne: false;
+            referencedRelation: "service_options";
             referencedColumns: ["id"];
           },
         ];

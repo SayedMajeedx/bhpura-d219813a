@@ -84,11 +84,14 @@ const STARTERS: Array<{
 
 function OptionEditor({
   initial,
+  others,
   isAr,
   onSave,
   onCancel,
 }: {
   initial: OptionForm;
+  /** The service's other saved add-ons this one could need (none that need another themselves). */
+  others: Array<{ id: string; name: string }>;
   isAr: boolean;
   onSave: (form: OptionForm) => void;
   onCancel: () => void;
@@ -166,6 +169,32 @@ function OptionEditor({
           </Button>
         ))}
       </div>
+
+      {others.length > 0 && form.mode !== "included" && (
+        <div className="space-y-1">
+          <Label htmlFor="option-requires" className="text-xs">
+            {isAr ? "تحتاج إضافة أخرى أولاً" : "Needs another add-on first"}
+          </Label>
+          <select
+            id="option-requires"
+            className="h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            value={form.requires_option_id}
+            onChange={(event) => patch({ requires_option_id: event.target.value })}
+          >
+            <option value="">{isAr ? "لا شيء، تُحجز وحدها" : "Nothing, it stands alone"}</option>
+            {others.map((other) => (
+              <option key={other.id} value={other.id}>
+                {other.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "لا يستطيع العميل اختيارها إلا بعد اختيار الإضافة المحددة، وتُزال معها إن أزالها. مثلاً: الصور المغناطيسية تحتاج الطباعة."
+              : "The customer can only choose it once that add-on is chosen, and it comes off with it. For example, magnets need the prints."}
+          </p>
+        </div>
+      )}
 
       {form.mode !== "included" && (
         <div className="space-y-2">
@@ -310,6 +339,19 @@ export function ServiceOptionsFields({
     next.splice(index + by, 0, item);
     onOptions(next);
   };
+  // The add-ons one could need: saved ones that need nothing themselves (one level only), and
+  // none for an add-on that others already need.
+  const requirable = (form: OptionForm | null) =>
+    form && options.some((other) => other.id && other.requires_option_id === form.id)
+      ? []
+      : options
+          .filter((other) => other.id && other.id !== form?.id && !other.requires_option_id)
+          .map((other) => ({
+            id: other.id as string,
+            name:
+              (isAr ? other.name_ar || other.name_en : other.name_en || other.name_ar) ||
+              (isAr ? "إضافة" : "Add-on"),
+          }));
   const asOption = (form: OptionForm, index: number): ServiceOption => ({
     ...optionColumns(form),
     id: form.id ?? `new-${index}`,
@@ -337,6 +379,7 @@ export function ServiceOptionsFields({
             <li key={form.id ?? index}>
               <OptionEditor
                 initial={form}
+                others={requirable(form)}
                 isAr={isAr}
                 onSave={(saved) => {
                   onOptions(options.map((current, i) => (i === index ? saved : current)));
@@ -359,7 +402,11 @@ export function ServiceOptionsFields({
                     (isAr ? "إضافة" : "Add-on")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {describeOption(asOption(form, index), isAr)}
+                  {describeOption(
+                    asOption(form, index),
+                    isAr,
+                    options.map((other, i) => asOption(other, i)),
+                  )}
                 </p>
               </div>
               <div className="flex shrink-0 items-center">
@@ -414,6 +461,7 @@ export function ServiceOptionsFields({
       {editing === "new" ? (
         <OptionEditor
           initial={{ ...EMPTY_OPTION_FORM, ...starter }}
+          others={requirable(null)}
           isAr={isAr}
           onSave={(saved) => {
             onOptions([...options, saved]);

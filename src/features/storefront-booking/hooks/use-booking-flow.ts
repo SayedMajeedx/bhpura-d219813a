@@ -15,6 +15,7 @@ import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
 import { optionsOf, serviceOptionsQueries } from "@/lib/data/service-options";
 import {
   chosenOptions,
+  cleanSelection,
   extraHoursOf,
   defaultSelection,
   optionsPayload,
@@ -246,7 +247,8 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
       };
       if (quantity <= 0) delete selection[optionId];
       else selection[optionId] = quantity;
-      return { ...current, [serviceId]: selection };
+      // Taking off what another add-on needs takes that one off with it (the prints, then the magnets).
+      return { ...current, [serviceId]: cleanSelection(optionsOfService(serviceId), selection) };
     });
   // An add-on priced by the hour follows the chosen length: its price is for the service's
   // shortest length and each hour beyond adds the hourly price (as the database prices it).
