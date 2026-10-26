@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   EMPTY_OPTION_FORM,
   chosenOptions,
+  defaultAddOnNames,
   defaultSelection,
   describeOption,
   isChangeable,
@@ -13,6 +14,7 @@ import {
   optionPrice,
   optionsPayload,
   optionsTotal,
+  priceWithDefaults,
   tiersText,
   validQuantity,
   type OptionForm,
@@ -386,5 +388,30 @@ describe("the add-ons section of the service editor", () => {
       target: { value: "20" },
     });
     expect(screen.getByTestId("extra")).toHaveTextContent("20");
+  });
+});
+
+describe("what a service costs with what comes with it", () => {
+  const attendant = option({ id: "a", mode: "required", price: 0 });
+  const prints = option({ id: "pr", mode: "default_on", price: 30, extra_hour_price: 10 });
+  const magnets = option({ id: "m", mode: "optional", price: 25 });
+  const gone = option({ id: "g", mode: "default_on", price: 5, is_active: false });
+  const all = [attendant, prints, magnets, gone];
+
+  it("adds what is on by default and nothing the customer has to choose", () => {
+    // A 40 booth with the prints on by default: 70, as the booking page's total starts.
+    expect(priceWithDefaults(40, all, 180, 180)).toBe(70);
+    expect(priceWithDefaults(40, [magnets], 180, 180)).toBe(40);
+    expect(priceWithDefaults(40, [], null, null)).toBe(40);
+  });
+
+  it("follows the length for an add-on priced by the hour", () => {
+    // 5 hours: the booth is its own price (50), the prints 30 + 2 hours at 10.
+    expect(priceWithDefaults(50, all, 300, 180)).toBe(100);
+  });
+
+  it("names the paid add-ons that can be taken off", () => {
+    expect(defaultAddOnNames(all, false)).toEqual(["Option"]);
+    expect(defaultAddOnNames([attendant, magnets], false)).toEqual([]);
   });
 });

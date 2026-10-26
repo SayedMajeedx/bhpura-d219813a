@@ -4,6 +4,7 @@ import { Check, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
+import { priceWithDefaults } from "@/lib/bookings/service-options";
 import { descriptionLead } from "@/features/services-home/lib/rental-card";
 import { SERVICE_KIND_LABELS, groupByKind, type ServiceKind } from "@/lib/bookings/service-kind";
 import {
@@ -29,7 +30,17 @@ function ServiceRow({
   const rental = kind === "rental";
   const chosen = flow.flow.services.includes(service.id);
   const minutes = flow.flow.durationMinutes;
-  const price = priceFor(service, minutes);
+  const apart = priceFor(service, minutes);
+  const lengthsOf = serviceDurations(service);
+  const price =
+    apart === null
+      ? null
+      : priceWithDefaults(
+          apart,
+          flow.optionsOfService(service.id),
+          minutes,
+          lengthsOf.length > 0 ? Math.min(...lengthsOf) : null,
+        );
   const was = compareAtFor(service, minutes);
   // "From" until a duration is chosen for a service priced by duration.
   const from = !minutes && serviceDurations(service).length > 0;

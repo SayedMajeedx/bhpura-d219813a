@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { packageCardClass, type PackageStyle } from "@/lib/bookings/package-style";
 import { packageSavingText } from "@/lib/bookings/service-package";
-import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
+import { optionName, priceWithDefaults, type ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
 import {
@@ -34,7 +34,8 @@ export function ServiceCard({
 }) {
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
-  const price = fromPriceOf(product);
+  const fromPrice = fromPriceOf(product);
+  const price = fromPrice === null ? null : priceWithDefaults(fromPrice, addOns, null, null);
   const lengths = lengthRangeText(product, isAr);
   const place = servicePlace(product.service_location, isAr);
   const includes = includeLinesOf(product, isAr);

@@ -629,7 +629,8 @@ describe("a service's add-ons in the booking flow", () => {
   it("adds them to the total as they are chosen, and sends the choice with the request", async () => {
     const list = await open();
     // 55 for the booth + the attendant 15 + the prints 30 on by default.
-    expect(await screen.findByText(/100\.000/)).toBeInTheDocument();
+    // The service's own row says the same: its price with what comes on by default.
+    expect((await screen.findAllByText(/100\.000/)).length).toBeGreaterThanOrEqual(2);
     fireEvent.click(within(list).getByRole("checkbox", { name: "Instant prints" }));
     fireEvent.click(within(list).getByRole("checkbox", { name: "Magnets" }));
     fireEvent.click(within(list).getByRole("button", { name: "More Envelopes" }));

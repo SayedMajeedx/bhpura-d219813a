@@ -7,7 +7,11 @@ import { cn } from "@/lib/utils";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { PRODUCT_PHOTO_CLASS } from "@/lib/brand-templates/design-presets";
 import { serviceLengthsText } from "@/lib/bookings/service-lengths";
-import type { ServiceOption } from "@/lib/bookings/service-options";
+import {
+  defaultAddOnNames,
+  priceWithDefaults,
+  type ServiceOption,
+} from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
 import { AddOnList } from "@/features/services-home/components/AddOnList";
@@ -53,6 +57,7 @@ export function RentalCard({
   const includes = includeLinesOf(product, isAr);
   const extras = addOnLines(addOns, isAr);
   const extraHour = extraHourPriceOf(product);
+  const defaultNames = defaultAddOnNames(addOns, isAr);
   const ratio = rentalPhotoRatio(settings);
   const [minutes, setMinutes] = useState<number | null>(lengths[0]?.minutes ?? null);
   const chosen = lengths.find((length) => length.minutes === minutes) ?? lengths[0] ?? null;
@@ -172,7 +177,9 @@ export function RentalCard({
             )}
             <p className="flex flex-wrap items-baseline gap-x-2" aria-live="polite">
               <span className="font-display text-3xl font-semibold text-foreground">
-                {money(chosen.price)}
+                {money(
+                  priceWithDefaults(chosen.price, addOns, chosen.minutes, lengths[0]?.minutes),
+                )}
               </span>
               <span className="text-sm text-muted-foreground">
                 {t(
@@ -181,6 +188,14 @@ export function RentalCard({
                 )}
               </span>
             </p>
+            {defaultNames.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  `يشمل ${defaultNames.join("، ")} (يمكن إزالتها عند الحجز)`,
+                  `Includes ${defaultNames.join(", ")} (you can remove it when booking)`,
+                )}
+              </p>
+            )}
             {extraHour !== null && (
               <p className="text-xs text-muted-foreground">
                 {t("كل ساعة إضافية ", "Each extra hour ")}

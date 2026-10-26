@@ -188,6 +188,33 @@ export function optionsPayload(
     .map((option) => ({ option_id: option.id, quantity: selection[option.id] }));
 }
 
+/**
+ * What a service costs for a length with what comes with it by default: the attendant, the prints
+ * that are on unless taken off. It is the price the booking page's total starts from, so a card
+ * says "from 70" where the page says 70, and not 40 with 30 more to find.
+ */
+export function priceWithDefaults(
+  price: number,
+  options: readonly ServiceOption[],
+  minutes: number | null | undefined,
+  baseMinutes: number | null | undefined,
+): number {
+  const active = options.filter((option) => option.is_active);
+  return round3(
+    price + optionsTotal(active, defaultSelection(active), extraHoursOf(minutes, baseMinutes)),
+  );
+}
+
+/** The names of the paid add-ons that come on by default and can be taken off ("Instant prints"). */
+export function defaultAddOnNames(options: readonly ServiceOption[], isAr: boolean): string[] {
+  const active = options.filter((option) => option.is_active);
+  const chosen = chosenOptions(active, defaultSelection(active));
+  return chosen
+    .filter((line) => line.option.mode === "default_on" && line.price > 0)
+    .map((line) => optionName(line.option, isAr))
+    .filter(Boolean);
+}
+
 export function optionName(option: Pick<ServiceOption, "name_en" | "name_ar">, isAr: boolean) {
   return (isAr ? option.name_ar || option.name_en : option.name_en || option.name_ar) ?? "";
 }

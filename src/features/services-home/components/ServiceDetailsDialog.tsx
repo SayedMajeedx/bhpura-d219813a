@@ -21,6 +21,7 @@ import {
   optionDescription,
   optionName,
   optionPrice,
+  priceWithDefaults,
   type ServiceOption,
 } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
@@ -121,7 +122,11 @@ export function ServiceDetailsDialog({
                 >
                   <span className="text-foreground">{minutesText(length.minutes, isAr)}</span>
                   <span className="font-semibold text-foreground" dir="ltr">
-                    {formatPrice(length.price, currency, lang)}
+                    {formatPrice(
+                      priceWithDefaults(length.price, addOns, length.minutes, lengths[0]?.minutes),
+                      currency,
+                      lang,
+                    )}
                   </span>
                 </li>
               ))}
