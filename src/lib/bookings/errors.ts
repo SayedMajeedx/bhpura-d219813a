@@ -22,6 +22,11 @@ export function bookingErrorMessage(message: string, isAr: boolean): string {
       "الخصم لا يمكن أن يتجاوز سعر الخدمات.",
       "A discount can't be more than the services cost.",
     ],
+    [
+      /BOOKING_OPTION_REQUIRES_OTHER/,
+      "إحدى الإضافات تحتاج إضافة أخرى لم تختَرها. راجع الإضافات وحاول مجدداً.",
+      "One add-on needs another you didn't choose. Please check your add-ons and try again.",
+    ],
     [/BOOKING_NAME_REQUIRED/, "أدخل اسمك.", "Please enter your name."],
     [/BOOKING_PHONE_REQUIRED/, "أدخل رقم هاتف صحيح.", "Please enter a valid phone number."],
     [

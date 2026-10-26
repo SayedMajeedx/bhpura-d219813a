@@ -46,6 +46,7 @@ const option = (over: Partial<ServiceOption>): ServiceOption => ({
   mode: "optional",
   price: 10,
   extra_hour_price: null,
+  requires_option_id: null,
   tiers: null,
   max_quantity: null,
   sort_order: 0,
