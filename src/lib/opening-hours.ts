@@ -61,7 +61,14 @@ export function readHours(raw: unknown): OpeningHours {
 }
 
 /** The hours as stored (`opening_hours`), keyed by weekday as the database reads them. */
-export function storedHours(hours: OpeningHours): Record<string, unknown> {
+export type StoredHours = {
+  enabled: boolean;
+  timezone: string;
+  after_hours: OpeningHours["after_hours"];
+  days: Record<string, HoursWindow[]>;
+};
+
+export function storedHours(hours: OpeningHours): StoredHours {
   return {
     enabled: hours.enabled,
     timezone: hours.timezone,
