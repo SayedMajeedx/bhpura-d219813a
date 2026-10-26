@@ -12,6 +12,7 @@ import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom, serviceLocationFrom } from "@/lib/bookings/service-details";
 import { PackageIncludes } from "@/features/product-page/components/PackageIncludes";
 import { serviceOptionsQueries } from "@/lib/data/service-options";
+import { priceWithDefaults } from "@/lib/bookings/service-options";
 import { addOnLines } from "@/features/services-home/lib/rental-card";
 import { AddOnList } from "@/features/services-home/components/AddOnList";
 import { BookingOffersList } from "@/features/storefront-booking/components/BookingOffersList";
@@ -60,7 +61,19 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
   const chosen =
     lengths.find((variant) => variant.id === chosenId) ??
     [...product.product_variants].sort((a, b) => a.selling_price - b.selling_price)[0];
-  const price = Number(chosen?.selling_price ?? 0);
+  const productOptions = options.filter((option) => option.product_id === product.id);
+  const baseMinutes = lengths[0]?.duration_minutes ?? null;
+  // What a length costs with what comes on by default, as the booking page's total starts.
+  const priceOf = (
+    variant: { selling_price: number; duration_minutes?: number | null } | undefined,
+  ) =>
+    priceWithDefaults(
+      Number(variant?.selling_price ?? 0),
+      productOptions,
+      variant?.duration_minutes ?? null,
+      baseMinutes,
+    );
+  const price = priceOf(chosen);
   const was = Number(chosen?.original_price ?? 0);
   const place = serviceLocationFrom(product.service_location);
   const includes = serviceIncludesFrom(product.service_includes).filter((line) =>
@@ -100,7 +113,7 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
                     {formatDuration(Number(variant.duration_minutes), isAr)}
                   </span>
                   <span className="text-xs text-muted-foreground" dir="ltr">
-                    {formatPrice(Number(variant.selling_price), currency, lang)}
+                    {formatPrice(priceOf(variant), currency, lang)}
                   </span>
                 </Button>
               );
