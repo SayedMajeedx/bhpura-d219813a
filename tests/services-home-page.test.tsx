@@ -237,7 +237,7 @@ describe("the services home page", () => {
     expect(within(service).getByText("Gift wrap")).toBeInTheDocument();
 
     // The package: its price against the parts apart (40 + 2 x 20 = 80).
-    expect(await screen.findByText("Save 38%")).toBeInTheDocument();
+    expect(await screen.findByText("Save BHD 30 (38%)")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Party bundle" })).toBeInTheDocument();
     expect(screen.getByText("BHD 80")).toBeInTheDocument();
     expect(screen.getByText("Prints × 2")).toBeInTheDocument();

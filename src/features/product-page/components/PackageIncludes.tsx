@@ -3,7 +3,7 @@ import { Check, Package } from "lucide-react";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { storefrontQueries } from "@/lib/data/storefront";
 import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-packages";
-import { packageSaving, separatePrice } from "@/lib/bookings/service-package";
+import { packageSaving, packageSavingText, separatePrice } from "@/lib/bookings/service-package";
 
 /**
  * What a package includes, on its page: each service (with how many), what
@@ -64,10 +64,7 @@ export function PackageIncludes({
           {t("منفصلة: ", "Apart: ")}
           <s dir="ltr">{formatPrice(apart, currency, lang)}</s>
           <span className="ms-2 font-semibold text-success">
-            {t(
-              `وفّر ${saving.percent}% (${formatPrice(saving.amount, currency, lang)})`,
-              `Save ${saving.percent}% (${formatPrice(saving.amount, currency, lang)})`,
-            )}
+            {packageSavingText(saving, formatPrice(saving.amount, currency, lang), isAr)}
           </span>
         </p>
       )}

@@ -2,6 +2,7 @@ import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom } from "@/lib/bookings/service-details";
 import {
   packageSaving,
+  packageLength,
   separatePrice,
   servicePriceAt,
   type PackageLine,
@@ -120,7 +121,15 @@ export function packageOffer(
   const price = fromPriceOf(pkg);
   if (price === null) return null;
   // A package with no linked services still shows (its price and its own "includes" lines).
-  const apart = lines.length === 0 ? null : separatePrice(lines, products.map(asPriceable), null);
+  // Its services apart at the length its price is for, as the package's own page compares them.
+  const apart =
+    lines.length === 0
+      ? null
+      : separatePrice(
+          lines,
+          products.map(asPriceable),
+          packageLength(asPriceable(pkg).variants, null),
+        );
   const includes = lines.flatMap((line) => {
     const service = products.find((p) => p.id === line.product_id);
     return service ? [{ id: service.id, name: nameOf(service), quantity: line.quantity }] : [];

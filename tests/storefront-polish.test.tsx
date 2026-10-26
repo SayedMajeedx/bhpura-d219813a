@@ -23,6 +23,7 @@ vi.mock("@/lib/storefront-context", () => storefront);
 
 const { ProductPhotoPlaceholder } =
   await import("../src/components/storefront/ProductPhotoPlaceholder");
+const { ProductGallery } = await import("../src/features/product-page/components/ProductGallery");
 
 describe("a product's photo", () => {
   it("is its main picture, else its gallery's first picture, else a size's", () => {
@@ -56,6 +57,25 @@ describe("a product's photo", () => {
     expect(screen.queryByText(/no image|لا توجد صورة/i)).toBeNull();
     expect(storeInitials("  zh  ")).toBe("Z");
     expect(storeInitials("بيورا لاين")).toBe("بل");
+  });
+
+  it("is the initials on a product's own page too (Aurora's Diamond package read 'لا توجد صورة')", () => {
+    render(
+      <ProductGallery
+        displayName="Diamond Package"
+        galleryRatioClass="aspect-[3/4]"
+        galleryTouchStartX={{ current: null }}
+        media={[]}
+        mediaIdx={0}
+        primary="rgb(51, 10, 10)"
+        product={{ id: "p1" } as never}
+        setMediaIdx={() => undefined}
+        settings={{} as never}
+        t={((ar: string, en: string) => en) as never}
+      />,
+    );
+    expect(screen.getByTestId("product-photo-placeholder")).toHaveTextContent("PL");
+    expect(screen.queryByText(/no image|لا توجد صورة/i)).toBeNull();
   });
 });
 

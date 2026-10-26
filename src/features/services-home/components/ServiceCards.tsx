@@ -5,6 +5,7 @@ import { Check, Clock, Gem, MapPin, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { packageCardClass, type PackageStyle } from "@/lib/bookings/package-style";
+import { packageSavingText } from "@/lib/bookings/service-package";
 import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
@@ -183,7 +184,11 @@ export function PackageOfferCard({
         </h3>
         {offer.saving && (
           <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
-            {t(`وفّر ${offer.saving.percent}%`, `Save ${offer.saving.percent}%`)}
+            {packageSavingText(
+              offer.saving,
+              formatPrice(offer.saving.amount, currency, lang),
+              isAr,
+            )}
           </span>
         )}
       </div>
