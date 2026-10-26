@@ -2672,6 +2672,7 @@ export type Database = {
           size_guide_id: string | null;
           slug: string | null;
           sort_order: number;
+          unavailable_until: string | null;
           updated_at: string;
         };
         Insert: {
@@ -2687,6 +2688,7 @@ export type Database = {
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
+          unavailable_until?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -2702,6 +2704,7 @@ export type Database = {
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
+          unavailable_until?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -6164,6 +6167,7 @@ export type Database = {
           booking_scope: string;
           brand_id: string;
           category: string | null;
+          category_unavailable_until: string | null;
           cost_price: number;
           created_at: string;
           custom_fields: Json;
@@ -6195,6 +6199,7 @@ export type Database = {
           size_guide_hidden: boolean;
           size_guide_id: string | null;
           tracks_inventory: boolean | null;
+          unavailable_until: string | null;
           updated_at: string;
           user_id: string | null;
           variant_label_color: string | null;
@@ -6221,6 +6226,7 @@ export type Database = {
           booking_scope?: string;
           brand_id: string;
           category?: string | null;
+          category_unavailable_until?: string | null;
           cost_price?: number;
           created_at?: string;
           custom_fields?: Json;
@@ -6252,6 +6258,7 @@ export type Database = {
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
+          unavailable_until?: string | null;
           updated_at?: string;
           user_id?: string | null;
           variant_label_color?: string | null;
@@ -6278,6 +6285,7 @@ export type Database = {
           booking_scope?: string;
           brand_id?: string;
           category?: string | null;
+          category_unavailable_until?: string | null;
           cost_price?: number;
           created_at?: string;
           custom_fields?: Json;
@@ -6309,6 +6317,7 @@ export type Database = {
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
+          unavailable_until?: string | null;
           updated_at?: string;
           user_id?: string | null;
           variant_label_color?: string | null;
