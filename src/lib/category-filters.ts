@@ -1,4 +1,6 @@
 import type { ProductRow } from "@/lib/data/storefront";
+import { formatDuration } from "@/lib/bookings/format";
+import { formatSizeWithUnit } from "@/lib/format";
 import type { CatalogSort } from "@/lib/catalog-sort";
 import { resolveColorHex } from "@/lib/color-names";
 import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
@@ -210,7 +212,13 @@ export function compareSizes(a: string, b: string): number {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
 }
 
-export type SizeFacet = { value: string; unit: string | null; count: number };
+export type SizeFacet = {
+  value: string;
+  unit: string | null;
+  /** A service's length, when the size is one (`duration_minutes`): it is named from this. */
+  minutes: number | null;
+  count: number;
+};
 export type ColorFacet = { name: string; hex: string | null; count: number };
 export type OccasionFacet = { value: string; count: number };
 /** A fact of the store's set a listing can filter by, with the values its products have. */
@@ -236,7 +244,7 @@ export function catalogFacets(
   filters: FilterState,
   vertical?: string | null,
 ): CatalogFacets {
-  const sizeValues = new Map<string, string | null>();
+  const sizeValues = new Map<string, { unit: string | null; minutes: number | null }>();
   const colorValues = new Map<string, { name: string; hex: string | null }>();
   const prices: number[] = [];
   const occasionValues = new Set<string>();
@@ -246,7 +254,11 @@ export function catalogFacets(
     for (const variant of product.product_variants ?? []) {
       const size = norm(variant.size);
       if (size && !isPlaceholderSize(size) && !sizeValues.has(size)) {
-        sizeValues.set(size, variant.size_unit ?? null);
+        const minutes = Number(variant.duration_minutes ?? 0);
+        sizeValues.set(size, {
+          unit: variant.size_unit ?? null,
+          minutes: minutes > 0 ? minutes : null,
+        });
       }
       const color = norm(variant.color);
       if (color && !colorValues.has(color.toLowerCase())) {
@@ -268,12 +280,18 @@ export function catalogFacets(
 
   return {
     sizes: [...sizeValues.entries()]
-      .map(([value, unit]) => ({
+      .map(([value, { unit, minutes }]) => ({
         value,
         unit,
+        minutes,
         count: countFor("size", (variant) => norm(variant.size) === value),
       }))
-      .sort((a, b) => compareSizes(a.value, b.value)),
+      // Lengths by how long they are; other sizes as a shopper expects them.
+      .sort((a, b) =>
+        a.minutes !== null && b.minutes !== null
+          ? a.minutes - b.minutes
+          : compareSizes(a.value, b.value),
+      ),
     colors: [...colorValues.values()].map(({ name, hex }) => ({
       name,
       hex,
@@ -309,4 +327,26 @@ export function catalogFacets(
       ? { min: Math.floor(Math.min(...prices)), max: Math.ceil(Math.max(...prices)) }
       : { min: 0, max: 0 },
   };
+}
+
+/**
+ * A size chip's words in the shopper's language: a service's length from its minutes ("3 ساعات",
+ * "3 hours"), else the size with its unit. A length named from the variant's own text came out in
+ * whichever language the store typed it ("3 hours" on an Arabic page).
+ */
+export function sizeChipLabel(facet: SizeFacet, lang: "ar" | "en"): string {
+  if (facet.minutes) return formatDuration(facet.minutes, lang === "ar");
+  return formatSizeWithUnit(facet.value, facet.unit ?? undefined, lang) || facet.value;
+}
+
+/**
+ * How wide a size chip's column is: as wide as the longest label needs, so every chip is the same
+ * width and no label runs out of its chip. A column sized for "S" and "52" (2.5rem) cut
+ * "3 ساعات" and "Free size" off at its edges.
+ */
+export function sizeChipColumn(labels: readonly string[]): string {
+  const longest = labels.reduce((most, label) => Math.max(most, [...label].length), 0);
+  // About half a rem a character at the chip's text size, plus its padding; never under 2.5rem.
+  const rem = Math.min(12, Math.max(2.5, Math.ceil((longest * 0.55 + 1.5) * 4) / 4));
+  return `${rem}rem`;
 }

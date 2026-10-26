@@ -7,6 +7,8 @@ import {
   filterProducts,
   filtersFromSearch,
   filtersToSearch,
+  sizeChipColumn,
+  sizeChipLabel,
   type FilterState,
 } from "../src/lib/category-filters";
 import type { ProductRow } from "../src/lib/data/storefront";
@@ -17,6 +19,7 @@ type V = {
   price?: number;
   stock?: number;
   unit?: string | null;
+  minutes?: number | null;
 };
 const product = (id: string, variants: V[], over: Partial<ProductRow> = {}): ProductRow =>
   ({
@@ -31,6 +34,7 @@ const product = (id: string, variants: V[], over: Partial<ProductRow> = {}): Pro
       original_price: null,
       stock_main: v.stock ?? 1,
       stock_incubator: 0,
+      duration_minutes: v.minutes ?? null,
     })),
     ...over,
   }) as unknown as ProductRow;
@@ -250,8 +254,8 @@ describe("what a product is for", () => {
     // A size's count follows the occasion picked.
     const evenings = catalogFacets(all, filters({ occasions: ["سهرة"] }));
     expect(evenings.sizes).toEqual([
-      { value: "52", unit: null, count: 0 },
-      { value: "54", unit: null, count: 1 },
+      { value: "52", unit: null, minutes: null, count: 0 },
+      { value: "54", unit: null, minutes: null, count: 1 },
     ]);
     expect(catalogFacets([none], EMPTY_FILTERS).occasions).toEqual([]);
     // In the editor's order, whatever order the products come in.
@@ -264,5 +268,53 @@ describe("what a product is for", () => {
   it("keeps the occasion in the address", () => {
     const search = filtersToSearch("?utm=mail", filters({ occasions: ["سهرة"] }));
     expect(filtersFromSearch(`?${search}`).occasions).toEqual(["سهرة"]);
+  });
+});
+
+describe("a service's lengths in the filter", () => {
+  // Aurora's rentals: lengths typed in English, filtered on an Arabic page.
+  const booth = product("booth", [
+    { size: "8 hours", minutes: 480 },
+    { size: "3 hours", minutes: 180 },
+    { size: "10 hours", minutes: 600 },
+  ]);
+
+  it("are named from their minutes in the shopper's language, never the text typed", () => {
+    const sizes = catalogFacets([booth], filters()).sizes;
+    expect(sizes.map((size) => sizeChipLabel(size, "ar"))).toEqual([
+      "3 ساعات",
+      "8 ساعات",
+      "10 ساعات",
+    ]);
+    expect(sizes.map((size) => sizeChipLabel(size, "en"))).toEqual([
+      "3 hours",
+      "8 hours",
+      "10 hours",
+    ]);
+    // Still filtered by the size they are stored under.
+    expect(sizes.map((size) => size.value)).toEqual(["3 hours", "8 hours", "10 hours"]);
+  });
+
+  it("are ordered by how long they are, not as text ('10 hours' after '8 hours')", () => {
+    const sizes = catalogFacets([booth], filters()).sizes;
+    expect(sizes.map((size) => size.minutes)).toEqual([180, 480, 600]);
+  });
+
+  it("keep a clothing size's own words", () => {
+    const dress = product("dress", [{ size: "54" }, { size: "250", unit: "g" }]);
+    const sizes = catalogFacets([dress], filters()).sizes;
+    expect(sizes.map((size) => sizeChipLabel(size, "en"))).toEqual(["54", "250g"]);
+  });
+});
+
+describe("a size chip's width", () => {
+  it("fits the longest label, so no label runs out of its chip", () => {
+    expect(sizeChipColumn(["S", "M", "L"])).toBe("2.5rem");
+    expect(sizeChipColumn(["S", "M", "52"])).toBe("2.75rem");
+    expect(Number.parseFloat(sizeChipColumn(["3 ساعات"]))).toBeGreaterThanOrEqual(5);
+    expect(Number.parseFloat(sizeChipColumn(["Free size", "S"]))).toBeGreaterThanOrEqual(6);
+    // A very long label wraps inside a chip of at most 12rem.
+    expect(sizeChipColumn(["x".repeat(60)])).toBe("12rem");
+    expect(sizeChipColumn([])).toBe("2.5rem");
   });
 });

@@ -26,8 +26,16 @@ import { DEFAULT_BOOKING_RULES } from "../src/lib/bookings/rules";
 describe("a service's lengths in a few words", () => {
   it("reads as one length, a range of hours, or two lengths", () => {
     expect(serviceLengthsText([{ duration_minutes: 180 }], false)).toBe("3 hours");
+    // In Arabic the range is its own left-to-right run, or it shows as "8–3".
     expect(serviceLengthsText([{ duration_minutes: 480 }, { duration_minutes: 180 }], true)).toBe(
-      "3–8 ساعات",
+      "\u20663–8\u2069 ساعات",
+    );
+    // The noun agrees with the larger number.
+    expect(serviceLengthsText([{ duration_minutes: 180 }, { duration_minutes: 720 }], true)).toBe(
+      "\u20663–12\u2069 ساعة",
+    );
+    expect(serviceLengthsText([{ duration_minutes: 60 }, { duration_minutes: 120 }], true)).toBe(
+      "ساعة – ساعتان",
     );
     expect(serviceLengthsText([{ duration_minutes: 90 }, { duration_minutes: 180 }], false)).toBe(
       "90 min – 3 hours",

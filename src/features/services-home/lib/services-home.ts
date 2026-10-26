@@ -1,3 +1,4 @@
+import { formatDuration } from "@/lib/bookings/format";
 import { serviceIncludesFrom } from "@/lib/bookings/service-details";
 import {
   packageSaving,
@@ -44,12 +45,8 @@ export const lengthsOf = (product: ProductRow): number[] =>
 
 /** "1 hour", "90 min", "2 hours": a length as the customer reads it. */
 export function minutesText(minutes: number, isAr: boolean): string {
-  if (minutes % 60 === 0) {
-    const hours = minutes / 60;
-    if (isAr) return hours === 1 ? "ساعة" : hours === 2 ? "ساعتان" : `${hours} ساعات`;
-    return hours === 1 ? "1 hour" : `${hours} hours`;
-  }
-  return isAr ? `${minutes} دقيقة` : `${minutes} min`;
+  // The one way a length is written (it wrote "11 ساعات" here).
+  return formatDuration(minutes, isAr);
 }
 
 /** "1 hour to 3 hours", or one length, or "" when it has none. */
