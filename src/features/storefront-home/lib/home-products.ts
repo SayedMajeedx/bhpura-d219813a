@@ -251,6 +251,20 @@ export function promoCardsToShow<T extends PromoCardFields>(
 }
 
 /**
+ * Whether the trust bar is drawn under the hero: on unless switched off, placed under the hero (the
+ * default) or both under the hero and above the footer. The shop's home and a services home both
+ * read it: a services home once never drew the bar its store had saved.
+ */
+export function trustBarBelowHero(settings: {
+  trust_bar_enabled?: boolean | null;
+  trust_bar_position?: string | null;
+}): boolean {
+  if (settings.trust_bar_enabled === false) return false;
+  const position = settings.trust_bar_position;
+  return !position || position === "below_hero" || position === "both";
+}
+
+/**
  * Whether the area under the hero (the promo cards and the new arrivals) has anything to show.
  * Its section carries a background and its own padding, so drawn empty it left a bare band
  * between the hero and the next section (Pura: no cards that show, new arrivals off).

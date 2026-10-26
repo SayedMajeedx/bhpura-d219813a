@@ -9,6 +9,8 @@ import { reviewsQueries } from "@/lib/data/reviews";
 import { ProductReviews } from "@/features/product-page/components/ProductReviews";
 import type { ProductRow } from "@/lib/data/storefront";
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
+import { TrustBar } from "@/components/storefront/TrustBar";
+import { trustBarBelowHero } from "@/features/storefront-home/lib/home-products";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
 import { BookingOffersList } from "@/features/storefront-booking/components/BookingOffersList";
 import { StoreFaq } from "@/features/store-content/components/StoreFaq";
@@ -42,7 +44,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 export function ServicesHome({ products }: { products: readonly ProductRow[] }) {
-  const { brand, lang, t } = useStorefront();
+  const { brand, lang, t, settings } = useStorefront();
   const isAr = lang === "ar";
   const { services, packages } = splitServices(products);
   const items = useQuery({
@@ -75,6 +77,7 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
   return (
     <div>
       <HeroBanner />
+      {trustBarBelowHero(settings) && <TrustBar />}
       <BookingInvite />
       {/* The store's offers, once, before its services. */}
       <BookingOffersList className="mx-auto max-w-3xl px-4 pt-4 sm:px-6" />

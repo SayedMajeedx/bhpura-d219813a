@@ -7,6 +7,7 @@ import {
   pickDescription,
   useStoreModules,
 } from "@/lib/storefront-context";
+import { isServicesProfile } from "@/lib/store-profile";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
@@ -524,7 +525,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         <Card className="p-8">
           <p className="mb-4">{t("لم يتم العثور على المنتج.", "Product not found.")}</p>
           <Link to="/$slug" params={{ slug: brand.slug }} className="underline">
-            {t("العودة للمتجر", "Back to store")}
+            {t("العودة للرئيسية", "Back to home")}
           </Link>
         </Card>
       </div>
@@ -973,7 +974,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
           {bestSellingProducts.length > 0 && (
             <RecommendationRail
-              title={t("اشتراها العملاء أيضاً", "Customers also bought")}
+              title={
+                isServicesProfile(modules)
+                  ? t("حجزها العملاء أيضاً", "Customers also booked")
+                  : t("اشتراها العملاء أيضاً", "Customers also bought")
+              }
               products={bestSellingProducts}
             />
           )}

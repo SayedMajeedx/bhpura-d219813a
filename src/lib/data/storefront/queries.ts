@@ -57,6 +57,12 @@ export type StorefrontPageData = {
   categories?: StorefrontCategory[] | null;
   bestSellerRows?: BestSellerRow[] | null;
   trendingRows?: TrendingRow[] | null;
+  /** The store's installed add-ons, as the storefront reads them (its modules). */
+  addons?: Array<{
+    addon_id: string;
+    status: string;
+    public_settings: Record<string, unknown>;
+  }> | null;
 };
 
 /** Best sellers and trending rows in the page data are computed with this limit. */

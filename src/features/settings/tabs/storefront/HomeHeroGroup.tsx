@@ -22,6 +22,9 @@ import {
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { HeroSlidesEditor, type HeroSlide } from "./HeroSlidesEditor";
 import { HeroStoreLookFields } from "./HeroLookFields";
+import { bookingPageHref } from "@/lib/hero-link";
+import { isServicesProfile } from "@/lib/store-profile";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
@@ -46,6 +49,7 @@ export function HomeHeroGroup() {
   const isAr = lang === "ar";
   const { form, setBrand, setBs, brandId } = useBrandSettingsFormContext();
   const brand = form.brand;
+  const servicesStore = isServicesProfile(useAdminStoreProfile(brandId).profile.modules);
   const bs = form.bs;
   // Classic-hero typography and visibility toggles are read only by the V1
   // carousel; HeroV2 uses per-slide fields instead.
@@ -817,6 +821,7 @@ export function HomeHeroGroup() {
 
         <HeroSlidesEditor
           brandId={brandId}
+          bookingHref={servicesStore ? bookingPageHref(String(brand.slug ?? "")) : null}
           slides={slides}
           onChange={updateSlides}
           background={backgroundMedia}

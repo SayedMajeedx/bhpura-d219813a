@@ -32,6 +32,7 @@ import {
 } from "./HeroFramingTools";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { newSlideButton } from "@/lib/hero-link";
 
 export type { HeroSlide };
 
@@ -87,7 +88,10 @@ export type HeroState = {
   about_en: string | null;
 };
 
-export const emptyHeroSlide = (): HeroSlide => ({
+export const emptyHeroSlide = (
+  /** A services store's booking page: a new slide's button books (it once linked to #products). */
+  bookingHref?: string | null,
+): HeroSlide => ({
   id: crypto.randomUUID(),
   type: "text",
   title_en: "",
@@ -95,9 +99,7 @@ export const emptyHeroSlide = (): HeroSlide => ({
   body_en: "",
   body_ar: "",
   media_url: "",
-  button_en: "Shop now",
-  button_ar: "تسوّق الآن",
-  button_href: "#products",
+  ...newSlideButton(bookingHref),
 });
 
 export interface HeroSlidesEditorProps {
@@ -110,6 +112,8 @@ export interface HeroSlidesEditorProps {
   uploading?: boolean;
   uploadSlideMedia?: (file: File, index: number, language?: "en" | "ar") => Promise<void>;
   primaryColor?: string;
+  /** A services store's booking page, where a new slide's button goes. */
+  bookingHref?: string | null;
   /** Storefront hero settings, so previews match what shoppers will see. */
   framing?: HeroFramingSettings;
   background?: HeroBackgroundInput;
@@ -134,6 +138,7 @@ export function HeroSlidesEditor({
   uploading: propUploading,
   uploadSlideMedia: propUploadSlideMedia,
   primaryColor,
+  bookingHref,
   framing = {},
   background,
   livePreview,
@@ -325,7 +330,7 @@ export function HeroSlidesEditor({
           size="sm"
           disabled={slides.length >= 5}
           onClick={() => {
-            handleUpdateSlides([...slides, emptyHeroSlide()]);
+            handleUpdateSlides([...slides, emptyHeroSlide(bookingHref)]);
             setOpenSlide(slides.length);
           }}
         >
