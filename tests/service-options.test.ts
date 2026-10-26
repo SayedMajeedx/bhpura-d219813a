@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { createEngineDb, type EngineDb } from "./helpers/booking-engine-db";
+import { extraHoursOf, optionPrice } from "../src/lib/bookings/service-options";
 
 // A service's add-ons, extra hours and the new offers (with another service,
 // stacking, chosen dates), run for real in Postgres (PGlite).
@@ -536,5 +537,98 @@ describe("the store's pictures and questions, and who may call what", () => {
       [brand, foreign.id],
     );
     expect((await db.refusal(insert))?.message).toBe("OPTION_PRODUCT_INVALID");
+  });
+});
+
+describe("an add-on that costs more for a longer booking", () => {
+  const lengths = [180, 240, 300, 360].map((minutes, i) => ({ minutes, price: 40 + 5 * i }));
+
+  /** A booth with an hourly add-on, booked for `minutes`: the add-ons' lines and the total. */
+  async function book(minutes: number, perHour: number | null) {
+    // A store allows a few requests an hour from one phone, so each length gets its own store.
+    const brand = await db.store({ dailyCapacity: 5, leadDays: 0, minDuration: 120, step: 60 });
+    const booth = await db.service(brand, { name: "Booth", lengths });
+    const prints = await db.option(booth.id, brand, {
+      name: "Prints",
+      mode: "default_on",
+      price: 30,
+      perHour,
+    });
+    const magnets = await db.option(booth.id, brand, {
+      name: "Magnets",
+      mode: "optional",
+      price: 25,
+      perHour,
+    });
+    const asked = await db.request(brand, db.day(5), "12:00", minutes, [
+      { product_id: booth.id, options: [{ option_id: prints }, { option_id: magnets }] },
+    ]);
+    const lines = await linesOf((await bookingByRef(String(asked.reference))).id);
+    return {
+      total: asked.total,
+      prices: lines.filter((l) => l.option_id).map((l) => [l.name_en, num(l.unit_price)]),
+    };
+  }
+
+  it("costs its price at the shortest length and the hourly price for each hour after", async () => {
+    expect(await book(180, 10)).toMatchObject({
+      total: 40 + 30 + 25,
+      prices: [
+        ["Magnets", 25],
+        ["Prints", 30],
+      ],
+    });
+    expect((await book(240, 10)).prices).toEqual([
+      ["Magnets", 35],
+      ["Prints", 40],
+    ]);
+    expect((await book(300, 10)).prices).toEqual([
+      ["Magnets", 45],
+      ["Prints", 50],
+    ]);
+    // The 6-hour length is its own price (55), and the add-ons are three hours over their base.
+    expect(await book(360, 10)).toMatchObject({
+      total: 55 + 55 + 60,
+      prices: [
+        ["Magnets", 55],
+        ["Prints", 60],
+      ],
+    });
+  });
+
+  it("is one price at any length when the add-on has no hourly price", async () => {
+    expect((await book(300, null)).prices).toEqual([
+      ["Magnets", 25],
+      ["Prints", 30],
+    ]);
+  });
+
+  it("agrees with what the customer sees as they choose", async () => {
+    for (const minutes of [180, 240, 300, 360]) {
+      const hours = extraHoursOf(minutes, 180);
+      expect(
+        optionPrice({ mode: "default_on", price: 30, tiers: null, extra_hour_price: 10 }, 1, hours),
+      ).toBe((await book(minutes, 10)).prices.find(([name]) => name === "Prints")![1]);
+    }
+  });
+
+  it("never charges by the hour for a block-priced add-on or an included one", async () => {
+    expect(
+      optionPrice({ mode: "included", price: 0, tiers: null, extra_hour_price: 10 }, 1, 3),
+    ).toBe(0);
+    expect(
+      optionPrice(
+        {
+          mode: "optional",
+          price: 15,
+          tiers: { step: 50, prices: [15, 12.5] },
+          extra_hour_price: 10,
+        },
+        50,
+        3,
+      ),
+    ).toBe(15);
+    expect(extraHoursOf(null, 180)).toBe(0);
+    expect(extraHoursOf(190, 180)).toBe(1);
   });
 });

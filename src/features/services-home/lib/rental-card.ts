@@ -51,6 +51,8 @@ export type AddOnLine = {
   from: boolean;
   /** Comes with every booking (included, or required at a price). */
   always: boolean;
+  /** What each hour beyond the service's shortest length adds to the price (null: one price). */
+  perHour: number | null;
 };
 
 const ORDER: Record<ServiceOption["mode"], number> = {
@@ -75,6 +77,8 @@ export function addOnLines(addOns: readonly ServiceOption[], isAr: boolean): Add
         price: included ? null : optionPrice(option, option.tiers ? option.tiers.step : 1),
         from: !included && Boolean(option.tiers),
         always: included || option.mode === "required",
+        perHour:
+          !included && !option.tiers && option.extra_hour_price ? option.extra_hour_price : null,
       };
     })
     .filter((line) => line.name);

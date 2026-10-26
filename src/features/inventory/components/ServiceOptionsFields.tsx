@@ -224,21 +224,44 @@ function OptionEditor({
               </div>
             </div>
           ) : (
-            <div className="space-y-1">
-              <Label htmlFor="option-price" className="text-xs">
-                {isAr ? "السعر" : "Price"}
-              </Label>
-              <Input
-                id="option-price"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step="0.001"
-                dir="ltr"
-                className="w-32"
-                value={form.price}
-                onChange={(event) => patch({ price: event.target.value })}
-              />
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="option-price" className="text-xs">
+                  {isAr ? "السعر" : "Price"}
+                </Label>
+                <Input
+                  id="option-price"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.001"
+                  dir="ltr"
+                  className="w-32"
+                  value={form.price}
+                  onChange={(event) => patch({ price: event.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="option-extra-hour" className="text-xs">
+                  {isAr ? "يُضاف لكل ساعة إضافية" : "Added per extra hour"}
+                </Label>
+                <Input
+                  id="option-extra-hour"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.001"
+                  dir="ltr"
+                  className="w-32"
+                  value={form.extra_hour_price}
+                  onChange={(event) => patch({ extra_hour_price: event.target.value })}
+                />
+                <p className="max-w-64 text-xs text-muted-foreground">
+                  {isAr
+                    ? "السعر أعلاه لأقصر مدة للخدمة، ويزيد بهذا المبلغ مع كل ساعة بعدها. اتركه فارغاً إن كان السعر ثابتاً."
+                    : "The price above is for the service's shortest length; each hour after adds this. Leave empty for one price."}
+                </p>
+              </div>
             </div>
           )}
         </div>

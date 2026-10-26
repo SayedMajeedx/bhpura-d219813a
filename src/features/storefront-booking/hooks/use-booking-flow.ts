@@ -15,6 +15,7 @@ import { bookingDiscountsQueries } from "@/lib/data/booking-discounts";
 import { optionsOf, serviceOptionsQueries } from "@/lib/data/service-options";
 import {
   chosenOptions,
+  extraHoursOf,
   defaultSelection,
   optionsPayload,
   type OptionSelection,
@@ -230,8 +231,16 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
       else selection[optionId] = quantity;
       return { ...current, [serviceId]: selection };
     });
+  // An add-on priced by the hour follows the chosen length: its price is for the service's
+  // shortest length and each hour beyond adds the hourly price (as the database prices it).
+  const extraHoursFor = (serviceId: string) => {
+    const lengths = (services.find((service) => service.id === serviceId)?.product_variants ?? [])
+      .map((variant) => variant.duration_minutes)
+      .filter((minutes): minutes is number => typeof minutes === "number");
+    return extraHoursOf(flow.durationMinutes, lengths.length > 0 ? Math.min(...lengths) : null);
+  };
   const optionLines = flow.services.flatMap((serviceId) =>
-    chosenOptions(optionsOfService(serviceId), selectionFor(serviceId)),
+    chosenOptions(optionsOfService(serviceId), selectionFor(serviceId), extraHoursFor(serviceId)),
   );
   const optionsTotalValue = optionLines.reduce((sum, line) => sum + line.price, 0);
   const optionPayloads = Object.fromEntries(
@@ -323,6 +332,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     /** The add-ons: each service's, the choice made, what is chosen with prices, and the total. */
     optionsOfService,
     selectionFor,
+    extraHoursFor,
     setOptionQuantity,
     optionLines,
     optionsTotal: optionsTotalValue,

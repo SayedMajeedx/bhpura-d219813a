@@ -4,6 +4,7 @@ import bookingDiscounts from "../../supabase/migrations/20261002100000_booking_d
 import bookingOrders from "../../supabase/migrations/20261002110000_booking_orders.sql?raw";
 import servicePackages from "../../supabase/migrations/20261002120000_service_packages.sql?raw";
 import serviceOptions from "../../supabase/migrations/20261002140000_service_options_and_offers.sql?raw";
+import optionByLength from "../../supabase/migrations/20261026110000_service_option_price_by_length.sql?raw";
 import heldBookings from "../../supabase/migrations/20261002150000_fix_storefront_checkout_and_held_bookings.sql?raw";
 
 /**
@@ -301,6 +302,8 @@ export type OptionRules = {
   tiers?: { step: number; prices: number[] } | null;
   max?: number | null;
   active?: boolean;
+  /** Added per hour beyond the service's shortest length. */
+  perHour?: number | null;
 };
 
 export type Item = {
@@ -327,6 +330,8 @@ export async function createEngineDb() {
   await pg.exec(servicePackages);
   // Add-ons, extra hours, offers with another service and chosen dates.
   await pg.exec(serviceOptions);
+  // An add-on that costs more for a longer booking.
+  await pg.exec(optionByLength);
   // Held bookings: a transfer waits for its receipt; staff answer a hold.
   await pg.exec(
     heldBookings.slice(
@@ -415,8 +420,8 @@ export async function createEngineDb() {
   /** An add-on of a service (or package). */
   async function option(productId: string, brandId: string, rules: OptionRules = {}) {
     const row = await one<{ id: string }>(
-      `insert into service_options (brand_id, product_id, name_en, name_ar, mode, price, tiers, max_quantity, is_active)
-       values ($1, $2, $3, $3, $4, $5, $6::jsonb, $7, $8) returning id`,
+      `insert into service_options (brand_id, product_id, name_en, name_ar, mode, price, tiers, max_quantity, is_active, extra_hour_price)
+       values ($1, $2, $3, $3, $4, $5, $6::jsonb, $7, $8, $9) returning id`,
       [
         brandId,
         productId,
@@ -426,6 +431,7 @@ export async function createEngineDb() {
         rules.tiers ? JSON.stringify(rules.tiers) : null,
         rules.max ?? null,
         rules.active ?? true,
+        rules.perHour ?? null,
       ],
     );
     return row.id;
