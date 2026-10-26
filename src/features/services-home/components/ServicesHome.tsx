@@ -100,9 +100,15 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
           id="rentals-title"
           title={kindCount > 1 ? labelOf("rental") : t("خدماتنا", "Our services")}
         >
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {kinds.rental.map((product) => (
-              <RentalCard key={product.id} product={product} addOns={addOnsOf(product.id)} />
+          {/* One wide card a row, the photo alternating sides on a wide screen. */}
+          <div className="grid gap-6">
+            {kinds.rental.map((product, index) => (
+              <RentalCard
+                key={product.id}
+                product={product}
+                addOns={addOnsOf(product.id)}
+                flip={index % 2 === 1}
+              />
             ))}
           </div>
         </Section>
