@@ -62,6 +62,8 @@ export function categoryHead({
         faviconUrl?: string | null;
         initialLang?: "ar" | "en";
         servicesStore?: boolean;
+        /** The store's picture for a shared link (`storeShareImage`), set by the loader. */
+        shareImage?: string | null;
       }
     | undefined;
   slug: string;
@@ -86,7 +88,7 @@ export function categoryHead({
     title = page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
     description =
       page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
-    image = page.image_url || brand.logo_url;
+    image = page.image_url || loaderData?.shareImage || brand.logo_url;
   } else if (category || smart) {
     name = category
       ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) || categorySlug
@@ -102,7 +104,7 @@ export function categoryHead({
       : lang === "ar"
         ? `تسوّق ${name} من ${storeName}.`
         : `Shop ${name} at ${storeName}.`;
-    image = category?.image_url || brand.logo_url;
+    image = category?.image_url || loaderData?.shareImage || brand.logo_url;
   } else {
     return {};
   }

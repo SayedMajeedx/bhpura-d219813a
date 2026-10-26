@@ -41,6 +41,7 @@ import {
 import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
 import { shownOfTotal } from "@/lib/catalog-count";
 import { isServicesStorefront } from "@/lib/storefront-modules";
+import { storeShareImage, type ShareImageStore } from "@/lib/seo/share-image";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -76,6 +77,11 @@ export const Route = createFileRoute("/$slug/$category")({
     const page = layoutPage(layout, params.category);
     // A services store's listing is titled and described as its services (its head reads it).
     const servicesStore = isServicesStorefront(layout.settings, layout.bootstrapData?.addons);
+    // What a shared link to the page shows when it has no picture of its own.
+    const shareImage = storeShareImage({
+      brand: brand as ShareImageStore["brand"],
+      settings: layout.settings,
+    });
     // A slug that is neither a page, a smart collection nor a category is a missing page: a 404 for
     // search engines too, not an empty page that answers 200.
     let category: StorefrontCategory | null = null;
@@ -83,7 +89,7 @@ export const Route = createFileRoute("/$slug/$category")({
       category = layoutCategories(layout).find((c) => c.slug === params.category) ?? null;
       if (!category) throw notFound();
     }
-    return { page, category, brand, faviconUrl, initialLang, servicesStore };
+    return { page, category, brand, faviconUrl, initialLang, servicesStore, shareImage };
   },
   head: ({ loaderData, params }) =>
     categoryHead({ loaderData, slug: params.slug, category: params.category }),

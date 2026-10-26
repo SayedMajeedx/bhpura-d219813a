@@ -58,7 +58,12 @@ export function productHead({
       ? product.description_ar || product.description || product.description_en
       : product.description_en || product.description || product.description_ar) || name;
   const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
-  const title = `${name} | ${String(params?.slug || "").toUpperCase()}`;
+  // The store's own name in the page's language, as written (it was the address in capitals:
+  // "فوتوبوث | AURORA" on an Arabic page).
+  const storeName =
+    (lang === "ar" ? brand?.name_ar || brand?.name_en : brand?.name_en || brand?.name_ar) ||
+    String(params?.slug || "");
+  const title = `${name} | ${storeName}`;
   const image = product.image_url || undefined;
 
   // The price and availability the cards and the shopping feed say, so Google reads one story:
