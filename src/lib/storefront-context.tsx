@@ -294,6 +294,8 @@ export type PublicSettings = {
   product_card_aspect_ratio?: string | null;
   storefront_home_layout?: string | null; // "shop" or "menu"; null: the vertical's
   delivery_schedule?: unknown; // the days and times a shopper may pick (delivery-schedule.ts)
+  orders_paused_until?: string | null; // busy pause (opening-hours.ts); "infinity": until reopened
+  opening_hours?: unknown; // the store's hours (opening-hours.ts)
   quick_view_enabled?: boolean;
   pdp_image_zoom?: boolean;
   category_filters_enabled?: boolean;

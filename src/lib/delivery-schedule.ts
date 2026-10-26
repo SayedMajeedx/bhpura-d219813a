@@ -54,7 +54,7 @@ const bounded = (value: unknown, min: number, max: number, fallback: number) => 
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fallback;
 };
 
-const knownTimezone = (value: unknown) =>
+export const knownTimezone = (value: unknown) =>
   GCC_TIMEZONES.some((zone) => zone.value === value)
     ? (value as string)
     : DEFAULT_SCHEDULE.timezone;
@@ -111,7 +111,7 @@ export function scheduleApplies(
 export const slotValue = (slot: DeliverySlot) => `${slot.from}-${slot.to}`;
 
 /** An instant's day and time on a clock: { date: "2026-10-30", time: "14:05" }. */
-function localParts(at: Date, timezone: string): { date: string; time: string } {
+export function localParts(at: Date, timezone: string): { date: string; time: string } {
   const parts = Object.fromEntries(
     new Intl.DateTimeFormat("en-CA", {
       timeZone: timezone,

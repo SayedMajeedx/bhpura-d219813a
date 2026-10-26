@@ -19,6 +19,7 @@ import { CountryFlag } from "@/components/ui/country-flag";
 import { Banknote, CreditCard, Plus, QrCode, Sparkles, Trash2, Truck } from "lucide-react";
 import { DeliveryShopperPreview } from "@/features/settings/tabs/orders/DeliveryShopperPreview";
 import { DeliveryScheduleCard } from "@/features/settings/tabs/orders/DeliveryScheduleCard";
+import { OpeningHoursCard } from "@/features/settings/tabs/orders/OpeningHoursCard";
 import type { DeliveryInfoSettings } from "@/lib/delivery-info";
 
 export function FulfillmentGroup() {
@@ -670,6 +671,7 @@ export function FulfillmentGroup() {
 
         {/* The day and time a shopper picks at checkout */}
         {(bs.delivery_enabled || bs.pickup_enabled) && <DeliveryScheduleCard />}
+        <OpeningHoursCard />
       </div>
     </div>
   );

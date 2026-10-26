@@ -241,6 +241,9 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     storefront_home_layout: s?.storefront_home_layout ?? null,
     // When a shopper may have an order (delivery-schedule.ts); {} until the store sets one.
     delivery_schedule: s?.delivery_schedule ?? null,
+    // Whether the store takes orders now (opening-hours.ts): its busy pause and its hours.
+    orders_paused_until: s?.orders_paused_until ?? null,
+    opening_hours: s?.opening_hours ?? null,
     quick_view_enabled: s?.quick_view_enabled ?? true,
     pdp_image_zoom: s?.pdp_image_zoom ?? true,
     category_filters_enabled: s?.category_filters_enabled ?? true,

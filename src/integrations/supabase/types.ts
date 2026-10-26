@@ -2116,6 +2116,8 @@ export type Database = {
           newsletter_title_en: string | null;
           next_invoice_number: number;
           offers_combine: string;
+          opening_hours: Json;
+          orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -2327,6 +2329,8 @@ export type Database = {
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
           offers_combine?: string;
+          opening_hours?: Json;
+          orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -2538,6 +2542,8 @@ export type Database = {
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
           offers_combine?: string;
+          opening_hours?: Json;
+          orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -2666,6 +2672,7 @@ export type Database = {
           size_guide_id: string | null;
           slug: string | null;
           sort_order: number;
+          unavailable_until: string | null;
           updated_at: string;
         };
         Insert: {
@@ -2681,6 +2688,7 @@ export type Database = {
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
+          unavailable_until?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -2696,6 +2704,7 @@ export type Database = {
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
+          unavailable_until?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -6158,6 +6167,7 @@ export type Database = {
           booking_scope: string;
           brand_id: string;
           category: string | null;
+          category_unavailable_until: string | null;
           cost_price: number;
           created_at: string;
           custom_fields: Json;
@@ -6189,6 +6199,7 @@ export type Database = {
           size_guide_hidden: boolean;
           size_guide_id: string | null;
           tracks_inventory: boolean | null;
+          unavailable_until: string | null;
           updated_at: string;
           user_id: string | null;
           variant_label_color: string | null;
@@ -6215,6 +6226,7 @@ export type Database = {
           booking_scope?: string;
           brand_id: string;
           category?: string | null;
+          category_unavailable_until?: string | null;
           cost_price?: number;
           created_at?: string;
           custom_fields?: Json;
@@ -6246,6 +6258,7 @@ export type Database = {
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
+          unavailable_until?: string | null;
           updated_at?: string;
           user_id?: string | null;
           variant_label_color?: string | null;
@@ -6272,6 +6285,7 @@ export type Database = {
           booking_scope?: string;
           brand_id?: string;
           category?: string | null;
+          category_unavailable_until?: string | null;
           cost_price?: number;
           created_at?: string;
           custom_fields?: Json;
@@ -6303,6 +6317,7 @@ export type Database = {
           size_guide_hidden?: boolean;
           size_guide_id?: string | null;
           tracks_inventory?: boolean | null;
+          unavailable_until?: string | null;
           updated_at?: string;
           user_id?: string | null;
           variant_label_color?: string | null;
@@ -9059,6 +9074,8 @@ export type Database = {
           newsletter_enabled: boolean | null;
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
+          opening_hours: Json | null;
+          orders_paused_until: string | null;
           pages: Json | null;
           pdp_gallery_aspect_ratio: string | null;
           pdp_image_zoom: boolean | null;
@@ -9934,6 +9951,8 @@ export type Database = {
           newsletter_title_en: string | null;
           next_invoice_number: number;
           offers_combine: string;
+          opening_hours: Json;
+          orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -11321,6 +11340,10 @@ export type Database = {
           p_mode: string;
           p_offers: Json;
         };
+        Returns: Json;
+      };
+      store_open_state: {
+        Args: { p_at?: string; p_hours: Json };
         Returns: Json;
       };
       store_review_reward: {

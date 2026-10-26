@@ -17,6 +17,7 @@ export function MobileCheckoutBar({
   method,
   submit,
   submitting,
+  closedToOrders = false,
   t,
 }: {
   acceptedTerms: boolean;
@@ -29,6 +30,8 @@ export function MobileCheckoutBar({
   method: ReturnType<typeof useCheckoutFulfillment>["method"];
   submit: ReturnType<typeof usePlaceOrder>["submit"];
   submitting: ReturnType<typeof usePlaceOrder>["submitting"];
+  /** The store takes no order now: the button waits. */
+  closedToOrders?: boolean;
   t: Storefront["t"];
 }) {
   return (
@@ -43,6 +46,7 @@ export function MobileCheckoutBar({
         <Button
           className="h-12 min-w-36 shrink-0 bg-primary text-primary-foreground rounded-lg"
           disabled={
+            closedToOrders ||
             submitting ||
             availableMethods.length === 0 ||
             fulfillmentOptions.length === 0 ||

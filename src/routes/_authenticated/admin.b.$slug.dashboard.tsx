@@ -1,5 +1,6 @@
 import { checklistView } from "@/features/dashboard/lib/checklist-view";
 import { OnboardingChecklistLine } from "@/features/dashboard/components/OnboardingChecklistLine";
+import { StoreStatusCard } from "@/features/dashboard/components/StoreStatusCard";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { BookingsGlanceCard } from "@/features/bookings/components/BookingsGlanceCard";
 import { createFileRoute } from "@tanstack/react-router";
@@ -258,6 +259,9 @@ function Dashboard() {
         pendingReturnsCount={pendingReturnsQ.data ?? 0}
         appointmentsToCompleteCount={appointmentsToComplete}
       />
+
+      {/* Whether the store takes orders now, and a busy pause in one tap. */}
+      <StoreStatusCard brandId={brandId} isAr={isAr} canChange={hasPermission("manage_settings")} />
 
       {/* Clients worth a message today: one line, the way in to the list. */}
       {hasPermission("manage_customers") && <OutreachDashboardLine slug={slug} isAr={isAr} />}

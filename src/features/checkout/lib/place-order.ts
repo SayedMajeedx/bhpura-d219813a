@@ -183,6 +183,15 @@ export function placeOrderFailure(
       clearPromo: false,
     };
   }
+  if (msg.includes("PRODUCT_UNAVAILABLE")) {
+    return {
+      message: t(
+        "أحد المنتجات غير متاح للطلب الآن. احذفه من السلة وحاول مرة أخرى.",
+        "One item is not available to order right now. Remove it from your cart and try again.",
+      ),
+      clearPromo: false,
+    };
+  }
   if (msg.includes("MADE_TO_ORDER_SOLD_OUT")) {
     return {
       message: t(
@@ -210,6 +219,22 @@ export function placeOrderFailure(
       message: t(
         "يتطلب هذا المتجر دفعة مقدمة بالبطاقة أو بنفت باي لإتمام الطلب.",
         "This store asks for an advance payment by card or BenefitPay to complete the order.",
+      ),
+      clearPromo: false,
+    };
+  } else if (msg.includes("ORDERS_PAUSED")) {
+    return {
+      message: t(
+        "المتجر لا يستقبل طلبات جديدة الآن. حاول بعد قليل.",
+        "The store is not taking new orders right now. Please try again a little later.",
+      ),
+      clearPromo: false,
+    };
+  } else if (msg.includes("STORE_CLOSED")) {
+    return {
+      message: t(
+        "المتجر مغلق الآن ولا يستقبل طلبات. حاول في ساعات العمل.",
+        "The store is closed to orders now. Please order during its opening hours.",
       ),
       clearPromo: false,
     };

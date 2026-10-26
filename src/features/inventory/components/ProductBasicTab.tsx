@@ -1,4 +1,5 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
+import { ProductOffSaleField } from "@/features/inventory/components/ProductOffSaleField";
 import { ProductFactsFields } from "@/features/inventory/components/ProductFactsFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
 import { ServicePackageFields } from "@/features/inventory/components/ServicePackageFields";
@@ -245,6 +246,9 @@ export function ProductBasicTab({
           draftLimit={form.made_to_order_limit}
           onDraftLimit={(text) => setForm({ ...form, made_to_order_limit: text })}
         />
+      )}
+      {product && !isService && (
+        <ProductOffSaleField brandId={brandId} product={product} isAr={isAr} />
       )}
       {!product && !isService && (
         <div>
