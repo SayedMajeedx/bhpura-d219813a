@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { executeNabdaOtp, type NabdaOtpRequest } from "@/lib/nabda-otp.server";
+import { executeNabdaOtp, mayUseOtpPilot, type NabdaOtpRequest } from "@/lib/nabda-otp.server";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -37,13 +37,8 @@ export const Route = createFileRoute("/api/admin/nabda-otp")({
           .select("role,status")
           .eq("id", auth.user.id)
           .maybeSingle();
-        if (
-          !profile ||
-          profile.status !== "active" ||
-          !["admin", "brand_admin", "super_admin"].includes(String(profile.role))
-        ) {
-          return json({ error: "Forbidden" }, 403);
-        }
+        // The platform's pilot: its owner only, never a store's admin.
+        if (!mayUseOtpPilot(profile)) return json({ error: "Forbidden" }, 403);
 
         let body: NabdaOtpRequest;
         try {

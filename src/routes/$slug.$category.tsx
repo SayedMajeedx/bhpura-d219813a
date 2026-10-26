@@ -19,7 +19,7 @@ import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
 import { resolveInitialLang } from "@/features/storefront-shell/lib/initial-lang";
 import {
-  SMART_NAMES,
+  smartName,
   categoryHead,
   smartKindOf,
 } from "@/features/storefront-shell/lib/category-head";
@@ -40,6 +40,7 @@ import {
 } from "@/lib/category-filters";
 import { CategoryFiltersSheet } from "@/components/storefront/CategoryFiltersSheet";
 import { shownOfTotal } from "@/lib/catalog-count";
+import { isServicesStorefront } from "@/lib/storefront-modules";
 import { storeShareImage, type ShareImageStore } from "@/lib/seo/share-image";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
@@ -74,6 +75,8 @@ export const Route = createFileRoute("/$slug/$category")({
     // A suspended store shows its own screen (its answer carries no catalog).
     if (layout.isSuspended) return { page: null, category: null, brand, faviconUrl, initialLang };
     const page = layoutPage(layout, params.category);
+    // A services store's listing is titled and described as its services (its head reads it).
+    const servicesStore = isServicesStorefront(layout.settings, layout.bootstrapData?.addons);
     // What a shared link to the page shows when it has no picture of its own.
     const shareImage = storeShareImage({
       brand: brand as ShareImageStore["brand"],
@@ -86,7 +89,7 @@ export const Route = createFileRoute("/$slug/$category")({
       category = layoutCategories(layout).find((c) => c.slug === params.category) ?? null;
       if (!category) throw notFound();
     }
-    return { page, category, brand, faviconUrl, initialLang, shareImage };
+    return { page, category, brand, faviconUrl, initialLang, servicesStore, shareImage };
   },
   head: ({ loaderData, params }) =>
     categoryHead({ loaderData, slug: params.slug, category: params.category }),
@@ -142,14 +145,15 @@ function CategoryPage() {
     return {
       id: smartKind,
       slug: categorySlug,
-      name_en: SMART_NAMES[smartKind].en,
-      name_ar: SMART_NAMES[smartKind].ar,
+      // A services store's whole listing is "All services".
+      name_en: smartName(smartKind, "en", servicesStore),
+      name_ar: smartName(smartKind, "ar", servicesStore),
       parent_id: null,
       image_url: null,
       menu_icon_url: null,
       sort_order: null,
     };
-  }, [smartKind, categorySlug]);
+  }, [smartKind, categorySlug, servicesStore]);
 
   // The loader already read the category, so the heading is in the server-rendered page.
   const loaded = Route.useLoaderData();
@@ -463,7 +467,7 @@ function CategoryPage() {
               className={`${banner.gap} inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100`}
             >
               <BackIcon className="h-4 w-4" />
-              {t("العودة للمتجر", "Back to store")}
+              {t("العودة للرئيسية", "Back to home")}
             </Link>
           )}
 
@@ -636,7 +640,7 @@ function CategoryUnavailable() {
     <div className="mx-auto max-w-3xl px-4 py-20 text-center">
       <h1 className="text-3xl font-display">{t("القسم غير متاح", "Category unavailable")}</h1>
       <Link to="/$slug" params={{ slug: brand.slug }} className="mt-5 inline-block underline">
-        {t("العودة للمتجر", "Back to store")}
+        {t("العودة للرئيسية", "Back to home")}
       </Link>
     </div>
   );

@@ -2,7 +2,8 @@ import { Check, Gem, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
-import { packageCardClass, packageSavingPercent } from "@/lib/bookings/package-style";
+import { packageCardClass } from "@/lib/bookings/package-style";
+import { packageSaving, packageSavingText } from "@/lib/bookings/service-package";
 import {
   compareAtFor,
   priceFor,
@@ -29,8 +30,9 @@ export function BookingPackageCard({
   const chosen = flow.flow.services.includes(service.id);
   const minutes = flow.flow.durationMinutes;
   const price = priceFor(service, minutes);
-  const was = compareAtFor(service, minutes);
-  const saving = packageSavingPercent(was, price);
+  // Its services apart, as on the home card and the package's page; else its own compare-at price.
+  const was = flow.packageApart(service, minutes ?? null) ?? compareAtFor(service, minutes);
+  const saving = price === null ? null : packageSaving(was, price);
   const from = !minutes && serviceDurations(service).length > 0;
   const includes = flow.includesList(service.id);
   const style = flow.packageStyle;
@@ -84,7 +86,7 @@ export function BookingPackageCard({
           </span>
           {saving !== null && (
             <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
-              {isAr ? `وفّر ${saving}%` : `Save ${saving}%`}
+              {packageSavingText(saving, formatPrice(saving.amount, currency, lang), isAr)}
             </span>
           )}
         </span>
@@ -107,7 +109,7 @@ export function BookingPackageCard({
               {from && (isAr ? "من " : "From ")}
               {formatPrice(price, currency, lang)}
             </span>
-            {was !== null && (
+            {saving !== null && was !== null && (
               <s className="text-sm font-normal text-muted-foreground" dir="ltr">
                 {formatPrice(was, currency, lang)}
               </s>

@@ -7,6 +7,7 @@ import {
   HelpCircle,
   Images,
   LayoutTemplate,
+  ShieldCheck,
   Star,
   type LucideIcon,
 } from "lucide-react";
@@ -16,9 +17,15 @@ import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { Button } from "@/components/ui/button";
 import { StoreContentDialog } from "@/features/store-content/components/StoreContentDialog";
 import { HomeSectionRow } from "./HomeSectionRow";
-import { CategoryBannerField } from "./HomeSectionFields";
+import { CategoryBannerField, TrustBarFields } from "./HomeSectionFields";
+import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { BannerSizeControl } from "./BannerSizeControl";
-import { SERVICES_HOME_SECTIONS, type ServicesHomeSectionId } from "./home-page-sections";
+import {
+  SERVICES_HOME_SECTIONS,
+  homeSectionOn,
+  trustBadgesTurnedOn,
+  type ServicesHomeSectionId,
+} from "./home-page-sections";
 
 const SECTION_META: Record<
   ServicesHomeSectionId,
@@ -30,6 +37,13 @@ const SECTION_META: Record<
     en: "Hero",
     hintAr: "أول ما يراه الزائر: الشرائح والعنوان المتحرك",
     hintEn: "The first thing a visitor sees: slides and animated headline",
+  },
+  trust_bar: {
+    icon: ShieldCheck,
+    ar: "شريط الثقة",
+    en: "Trust bar",
+    hintAr: "تحت الواجهة: كيف يُدفع، وأين تُقدَّم الخدمة، وما تعد به",
+    hintEn: "Under the hero: how a booking is paid, where you serve, what you promise",
   },
   booking_invite: {
     icon: CalendarDays,
@@ -80,8 +94,9 @@ const SECTION_META: Record<
  * A services store's home page, section by section in the order a shopper scrolls it
  * (`SERVICES_HOME_SECTIONS`, drawn by `ServicesHome`). The page has no switches of its own: each
  * row says what shows and opens where it is edited (the hero group, the services list, the
- * gallery and questions here, the Reviews page). The shop's sections (new arrivals, best sellers,
- * trust bar) are not listed: a services home never draws them.
+ * gallery and questions here, the Reviews page); the trust bar has its switch and badges here.
+ * The shop's other sections (new arrivals, best sellers) are not listed: a services home never
+ * draws them.
  */
 export function ServicesHomeSectionsGroup() {
   const { lang } = useI18n();
@@ -90,6 +105,8 @@ export function ServicesHomeSectionsGroup() {
   const { setActiveGroup } = React.useContext(SettingsNavContext);
   const [open, setOpen] = React.useState<ServicesHomeSectionId | null>(null);
   const [contentOpen, setContentOpen] = React.useState(false);
+  const { form, setBs } = useBrandSettingsFormContext();
+  const settings = form.bs as unknown as Record<string, unknown>;
 
   const linkButton = (to: string, label: string) => (
     <Button asChild type="button" variant="outline" size="sm" className="shrink-0">
@@ -158,13 +175,26 @@ export function ServicesHomeSectionsGroup() {
                 icon={meta.icon}
                 title={isAr ? meta.ar : meta.en}
                 summary={isAr ? meta.hintAr : meta.hintEn}
-                on={null}
+                on={id === "trust_bar" ? homeSectionOn("trust_bar", settings) : null}
+                onToggle={
+                  id === "trust_bar"
+                    ? (on) =>
+                        setBs({
+                          trust_bar_enabled: on,
+                          ...(on ? { trust_badges: trustBadgesTurnedOn(settings) } : {}),
+                        })
+                    : undefined
+                }
                 open={open === id}
                 onOpen={(next) => setOpen(next ? id : null)}
                 isAr={isAr}
                 action={action(id)}
               >
-                {id === "category_pages" ? <CategoryBannerField isAr={isAr} /> : null}
+                {id === "category_pages" ? (
+                  <CategoryBannerField isAr={isAr} />
+                ) : id === "trust_bar" ? (
+                  <TrustBarFields isAr={isAr} />
+                ) : null}
               </HomeSectionRow>
             </li>
           );

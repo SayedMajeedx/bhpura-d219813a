@@ -30,6 +30,12 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { isServicesProfile } from "@/lib/store-profile";
 import { readinessFoldKey, readinessFolded } from "@/features/settings/lib/readiness-fold";
 import { arNoun } from "@/lib/arabic-count";
+import {
+  servicesReadinessItems,
+  type ServicesReadinessFacts,
+} from "@/features/settings/lib/services-readiness";
+import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
+import { storeContentQueries } from "@/lib/data/store-content";
 
 /** Whether the policy has written terms in either language (counts as a policy page). */
 const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
@@ -63,6 +69,8 @@ export interface ReadinessEvaluationInput {
   hasReturnPolicy?: boolean;
   /** A services store: it has no shipping to set up and no goods to take back. */
   services?: boolean;
+  /** What a services store's own steps read (contact, booking terms, questions, photos). */
+  servicesFacts?: ServicesReadinessFacts;
 }
 
 export interface ReadinessItem {
@@ -84,6 +92,8 @@ export interface ReadinessItem {
   tabId?: SettingsTabId;
   group?: string;
   href?: string;
+  /** An admin page under the store where the step is done ("bookings", "inventory"). */
+  page?: string;
   actionLabel: string;
   editLabel: string;
 }
@@ -425,6 +435,24 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
             : it,
         )
     : items;
+  // A services store's own steps: a way to reach it, booking terms, questions, photos.
+  if (input.services && input.servicesFacts) {
+    for (const step of servicesReadinessItems(input.servicesFacts, isAr)) {
+      forStore.push({
+        id: step.id,
+        icon: step.icon,
+        title: step.title,
+        description: step.description,
+        isComplete: step.isComplete,
+        actionType: step.tab ? "tab" : "link",
+        tabId: step.tab?.tabId,
+        group: step.tab?.group,
+        page: step.page,
+        actionLabel: isAr ? "إكمال" : "Complete",
+        editLabel: isAr ? "تعديل" : "Edit",
+      });
+    }
+  }
   const visibleItems = includeDesignChecks
     ? forStore
     : forStore.filter((it) => it.id !== "palette" && it.id !== "vertical");
@@ -488,6 +516,14 @@ export function StoreReadinessChecklist({
   const brandQ = useQuery(brandQueries.profile(brandId));
 
   const { profile } = useAdminStoreProfile(brandId);
+  const services = isServicesProfile(profile.modules);
+  // A services store's own steps (services-readiness.ts).
+  const bookingPolicyQ = useQuery({ ...bookingPoliciesQueries.policy(brandId), enabled: services });
+  const faqQ = useQuery({ ...storeContentQueries.faq(brandId), enabled: services });
+  const withoutPhotoQ = useQuery({
+    ...catalogInsightQueries.withoutPhoto(brandId),
+    enabled: services,
+  });
   const { addons } = useAddons();
   const addonChecks = React.useMemo(() => readinessChecksFrom(addons), [addons]);
 
@@ -525,7 +561,16 @@ export function StoreReadinessChecklist({
     storeVertical: storeVertical ?? businessSettingsQ.data?.store_vertical,
     lang,
     hasReturnPolicy: Boolean(returnPolicyQ.data),
-    services: isServicesProfile(profile.modules),
+    services,
+    servicesFacts: services
+      ? {
+          whatsappNumber: businessSettingsQ.data?.whatsapp_number,
+          phone: businessSettingsQ.data?.phone,
+          policy: bookingPolicyQ.data ?? null,
+          faqCount: faqQ.data?.length ?? 0,
+          withoutPhoto: withoutPhotoQ.data ?? 0,
+        }
+      : undefined,
   });
 
   const checklistItems = evaluation.items.map((item) => {
@@ -535,6 +580,7 @@ export function StoreReadinessChecklist({
     if (item.id === "policies") {
       return { ...item, href: `/admin/b/${slug}/pages` };
     }
+    if (item.page) return { ...item, href: `/admin/b/${slug}/${item.page}` };
     return item;
   });
 

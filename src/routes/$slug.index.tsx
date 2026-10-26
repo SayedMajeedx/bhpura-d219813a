@@ -15,6 +15,7 @@ import {
   homeMerchandising,
   homeSectionBackgrounds,
   promoAreaShows,
+  trustBarBelowHero,
 } from "@/features/storefront-home/lib/home-products";
 import { PromoCards } from "@/features/storefront-home/components/PromoCards";
 import {
@@ -182,11 +183,7 @@ function StoreHome() {
     );
   }
 
-  const showTrustBarBelowHero =
-    settings?.trust_bar_enabled !== false &&
-    (settings?.trust_bar_position === "below_hero" ||
-      settings?.trust_bar_position === "both" ||
-      !settings?.trust_bar_position);
+  const showTrustBarBelowHero = trustBarBelowHero(settings);
 
   return (
     <div>

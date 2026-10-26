@@ -13,7 +13,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import type { Json } from "@/integrations/supabase/types";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
@@ -44,6 +43,7 @@ import {
   startedPromoCards,
   homePageSections,
   homeSectionOn,
+  trustBadgesTurnedOn,
   type HomeSectionId,
 } from "./home-page-sections";
 
@@ -165,13 +165,9 @@ function ShopHomeSectionsGroup({ layoutField }: { layoutField: React.ReactNode }
   const toggle = (id: HomeSectionId, on: boolean) => {
     if (id === "trust_bar") {
       // One switch for the bar: turning it on also clears the badges' older flag.
-      const badges: { [key: string]: Json | undefined } =
-        bs.trust_badges && typeof bs.trust_badges === "object" && !Array.isArray(bs.trust_badges)
-          ? bs.trust_badges
-          : {};
       setBs({
         trust_bar_enabled: on,
-        ...(on ? { trust_badges: { items: [], ...badges, enabled: true } } : {}),
+        ...(on ? { trust_badges: trustBadgesTurnedOn(settings) } : {}),
       });
     } else if (id === "new") setBs({ show_new_arrivals: on });
     else if (id === "best" || id === "sale" || id === "trending") {

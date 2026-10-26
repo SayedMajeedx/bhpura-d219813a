@@ -29,9 +29,11 @@ vi.mock("@tanstack/react-router", () => ({
     </a>
   ),
 }));
+const homeSettings = vi.hoisted(() => ({ current: {} as Record<string, unknown> }));
 const storefrontMock = vi.hoisted(() => () => ({
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora" },
+    settings: homeSettings.current,
     lang: "en",
     currency: "BHD",
     t: (_ar: string, en: string) => en,
@@ -113,6 +115,9 @@ vi.mock("@/lib/data/reviews", () => reviewsData);
 vi.mock("../src/features/storefront-home/components/HeroBanner", () => ({
   HeroBanner: () => <div>hero</div>,
 }));
+vi.mock("../src/components/storefront/TrustBar", () => ({
+  TrustBar: () => <div>trust-bar</div>,
+}));
 vi.mock("../src/features/storefront-booking/components/BookingEntryPoints", () => ({
   BookingInvite: () => <div>book-invite</div>,
 }));
@@ -122,6 +127,42 @@ vi.mock("../src/features/store-content/components/StoreGallery", () => ({
 vi.mock("../src/features/store-content/components/StoreFaq", () => ({
   StoreFaq: () => <div>faq</div>,
 }));
+
+// The store's offers, listed once under the invitation to book.
+const discountsData = {
+  bookingDiscountsQueries: {
+    public: () => ({
+      queryKey: ["booking-discounts"],
+      queryFn: async () => [
+        {
+          id: "d1",
+          name_en: null,
+          name_ar: null,
+          kind: "percent",
+          value: 25,
+          min_days: 0,
+          max_days: 14,
+          weekdays: null,
+          product_ids: null,
+          valid_from: null,
+          valid_to: null,
+        },
+      ],
+    }),
+  },
+};
+vi.mock("../src/lib/data/booking-discounts", () => discountsData);
+vi.mock("@/lib/data/booking-discounts", () => discountsData);
+const bookingsData = {
+  bookingsQueries: {
+    publicRules: () => ({
+      queryKey: ["public-rules"],
+      queryFn: async () => ({ timezone: "Asia/Bahrain" }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/bookings", () => bookingsData);
+vi.mock("@/lib/data/bookings", () => bookingsData);
 
 const { ServicesHome } = await import("../src/features/services-home/components/ServicesHome");
 
@@ -201,6 +242,8 @@ describe("the services home page", () => {
     expect(screen.getAllByText("book-invite")).toHaveLength(2);
     expect(screen.getByText("gallery")).toBeInTheDocument();
     expect(screen.getByText("faq")).toBeInTheDocument();
+    // The store's offers, once.
+    expect(await screen.findAllByText("25% off · within 14 days")).toHaveLength(1);
 
     // Three kinds, each under its own heading: packages, rentals, services.
     expect(screen.getByRole("heading", { name: "Packages", level: 2 })).toBeInTheDocument();
@@ -237,7 +280,7 @@ describe("the services home page", () => {
     expect(within(service).getByText("Gift wrap")).toBeInTheDocument();
 
     // The package: its price against the parts apart (40 + 2 x 20 = 80).
-    expect(await screen.findByText("Save 38%")).toBeInTheDocument();
+    expect(await screen.findByText("Save BHD 30 (38%)")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Party bundle" })).toBeInTheDocument();
     expect(screen.getByText("BHD 80")).toBeInTheDocument();
     expect(screen.getByText("Prints × 2")).toBeInTheDocument();
@@ -320,5 +363,22 @@ describe("the cards' pictures", () => {
     expect(prints.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[4/3]");
     // The rental's photo (and its soft copy behind it) and Album's: Prints has none.
     expect(container.querySelectorAll("article img[alt]:not([alt=''])").length).toBe(2);
+  });
+});
+
+const renderWithQuery = (ui: React.ReactElement) =>
+  render(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+
+describe("the trust bar on the services home page", () => {
+  it("shows the bar the store saved under the hero, and nothing when it is off", async () => {
+    homeSettings.current = { trust_bar_enabled: true, trust_bar_position: "below_hero" };
+    const { unmount } = renderWithQuery(<ServicesHome products={[]} />);
+    expect(await screen.findByText("trust-bar")).toBeInTheDocument();
+    unmount();
+    homeSettings.current = { trust_bar_enabled: false };
+    renderWithQuery(<ServicesHome products={[]} />);
+    await screen.findByText("hero");
+    expect(screen.queryByText("trust-bar")).toBeNull();
+    homeSettings.current = {};
   });
 });

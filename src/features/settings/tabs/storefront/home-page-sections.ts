@@ -1,4 +1,5 @@
 import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
+import type { Json } from "@/integrations/supabase/types";
 
 /**
  * The storefront's home page, section by section, in the order a shopper scrolls it
@@ -72,6 +73,19 @@ export function homeSectionOn(id: HomeSectionId, bs: Settings): boolean | null {
   }
 }
 
+/**
+ * The badges as the trust bar's one switch leaves them when it turns the bar on: their older flag
+ * (`trust_badges.enabled`), which hid the bar too, cleared. The switch writes `trust_bar_enabled`
+ * itself, and these only when turning on.
+ */
+export function trustBadgesTurnedOn(bs: Settings): { [key: string]: Json | undefined } {
+  const badges =
+    bs.trust_badges && typeof bs.trust_badges === "object" && !Array.isArray(bs.trust_badges)
+      ? (bs.trust_badges as { [key: string]: Json | undefined })
+      : {};
+  return { items: [], ...badges, enabled: true };
+}
+
 const promoCards = (bs: Settings) =>
   (Array.isArray(bs.home_promo_cards) ? bs.home_promo_cards.slice(0, 4) : []).map((card) =>
     card && typeof card === "object" ? (card as Settings) : null,
@@ -100,14 +114,22 @@ export function startedPromoCards(bs: Settings): number {
 
 /**
  * A services store's home page (`ServicesHome`: a store whose catalog is only services), in the
- * order a shopper scrolls it. None of the shop's sections show there (no new arrivals, best
- * sellers or trust bar), so its settings list these instead, each saying where it is edited.
+ * order a shopper scrolls it. Of the shop's sections only the trust bar shows there (no new
+ * arrivals or best sellers), so its settings list these instead, each saying where it is edited.
  */
 export type ServicesHomeSectionId =
-  "hero" | "booking_invite" | "offers" | "gallery" | "reviews" | "faq" | "category_pages";
+  | "hero"
+  | "trust_bar"
+  | "booking_invite"
+  | "offers"
+  | "gallery"
+  | "reviews"
+  | "faq"
+  | "category_pages";
 
 export const SERVICES_HOME_SECTIONS: readonly ServicesHomeSectionId[] = [
   "hero",
+  "trust_bar",
   "booking_invite",
   "offers",
   "gallery",

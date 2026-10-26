@@ -13,6 +13,15 @@ export const SMART_NAMES: Record<string, { ar: string; en: string }> = {
   offers: { ar: "تنزيلات", en: "Sale" },
 };
 
+/** A services store's whole listing is its services, not its products. */
+const ALL_SERVICES = { ar: "كل الخدمات", en: "All services" };
+
+/** A built-in collection's name, in a services store's words where they differ. */
+export function smartName(kind: string, lang: "ar" | "en", servicesStore: boolean): string {
+  if (kind === "all" && servicesStore) return ALL_SERVICES[lang];
+  return SMART_NAMES[kind][lang];
+}
+
 export { smartKindOf };
 
 type Brand = {
@@ -52,6 +61,7 @@ export function categoryHead({
         brand?: unknown;
         faviconUrl?: string | null;
         initialLang?: "ar" | "en";
+        servicesStore?: boolean;
         /** The store's picture for a shared link (`storeShareImage`), set by the loader. */
         shareImage?: string | null;
       }
@@ -67,6 +77,7 @@ export function categoryHead({
   const page = loaderData?.page as CmsPage | null | undefined;
   const category = loaderData?.category as CategoryRow | null | undefined;
   const smart = smartKindOf(categorySlug);
+  const servicesStore = Boolean(loaderData?.servicesStore);
 
   let title: string;
   let description: string;
@@ -81,12 +92,18 @@ export function categoryHead({
   } else if (category || smart) {
     name = category
       ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) || categorySlug
-      : SMART_NAMES[smart!][lang];
+      : smartName(smart!, lang, servicesStore);
     title = `${name} | ${storeName}`;
     // Only what is true of every store: it once also promised every store's prices and speed of
     // delivery, a catalog with no prices and a store that makes to order included.
-    description =
-      lang === "ar" ? `تسوّق ${name} من ${storeName}.` : `Shop ${name} at ${storeName}.`;
+    // A services store is booked, not shopped.
+    description = servicesStore
+      ? lang === "ar"
+        ? `احجز ${name} من ${storeName}.`
+        : `Book ${name} with ${storeName}.`
+      : lang === "ar"
+        ? `تسوّق ${name} من ${storeName}.`
+        : `Shop ${name} at ${storeName}.`;
     image = category?.image_url || loaderData?.shareImage || brand.logo_url;
   } else {
     return {};

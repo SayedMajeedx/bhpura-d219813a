@@ -89,14 +89,14 @@ describe("what a package includes, on its page", () => {
     expect(screen.getByText("Prints × 2")).toBeInTheDocument();
     // 3 hours: booth 60 + two prints at 20 = 100 apart; the package is 80.
     expect(screen.getByText(/Apart:/)).toHaveTextContent(/100\.000/);
-    expect(screen.getByText(/Save 20%/)).toBeInTheDocument();
+    expect(screen.getByText(/Save BHD 20\.000 \(20%\)/)).toBeInTheDocument();
   });
 
   it("follows the chosen length", async () => {
     state.lang = "en";
     renderIt({ product: { id: "gold", is_package: true }, minutes: 300, price: 110 });
     // 5 hours: booth 90 + 40 = 130 apart, a saving of 15%.
-    expect(await screen.findByText(/Save 15%/)).toBeInTheDocument();
+    expect(await screen.findByText(/Save BHD 20\.000 \(15%\)/)).toBeInTheDocument();
   });
 
   it("speaks Arabic, with the services named in Arabic", async () => {

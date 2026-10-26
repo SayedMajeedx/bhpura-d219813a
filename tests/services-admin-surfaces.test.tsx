@@ -137,8 +137,62 @@ describe("the set-up list", () => {
     expect(services.items.length).toBe(shop.items.length - 1);
     expect(services.totalCount).toBe(shop.totalCount - 1);
   });
+
+  // Aurora on 2026-10-26: read 5 of 6 while a customer could not reach it, with no booking terms,
+  // no questions answered and the Diamond package without a photo.
+  const aurora = {
+    whatsappNumber: "",
+    phone: null,
+    policy: null,
+    faqCount: 0,
+    withoutPhoto: 1,
+  };
+
+  it("asks a services store for what it needs to open, each opening where it is done", () => {
+    const result = evaluateStoreReadiness({ ...input, services: true, servicesFacts: aurora });
+    const steps = result.items.filter((item) =>
+      ["contact", "booking_terms", "faq", "service_photos"].includes(item.id),
+    );
+    expect(steps.map((item) => [item.id, item.isComplete])).toEqual([
+      ["contact", false],
+      ["booking_terms", false],
+      ["faq", false],
+      ["service_photos", false],
+    ]);
+    expect(steps[0]).toMatchObject({ actionType: "tab", tabId: "identity", group: "contact" });
+    expect(steps.slice(1).map((item) => item.page)).toEqual(["bookings", "bookings", "inventory"]);
+    expect(result.isAllComplete).toBe(false);
+  });
+
+  it("counts them done once the store has them", () => {
+    const ready = servicesReadinessItems(
+      {
+        whatsappNumber: "+973 3999 0016",
+        policy: {
+          balance_due_days: 3,
+          reschedule_months: null,
+          deposit_refundable: false,
+          terms_en: null,
+          terms_ar: null,
+        },
+        faqCount: 3,
+        withoutPhoto: 0,
+      },
+      true,
+    );
+    expect(ready.every((item) => item.isComplete)).toBe(true);
+    expect(ready[2].title).toBe("3 أسئلة على الأقل في الأسئلة الشائعة");
+    expect(hasBookingTerms({ ...aurora, policy: null }.policy)).toBe(false);
+    expect(
+      servicesReadinessItems({ ...aurora, faqCount: 2, withoutPhoto: 2 }, true)
+        .slice(2)
+        .map((item) => item.description),
+    ).toEqual(["لديك الآن: سؤالان", "بلا صورة: خدمتان"]);
+  });
 });
 
+const { servicesReadinessItems, hasBookingTerms } =
+  await import("../src/features/settings/lib/services-readiness");
 const { DashboardCommandHeader } =
   await import("../src/components/dashboard/DashboardCommandHeader");
 const { DashboardActionStrip } = await import("../src/components/dashboard/DashboardActionStrip");

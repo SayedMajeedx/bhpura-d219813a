@@ -6,7 +6,6 @@ import {
   DEFAULT_PACKAGE_STYLE,
   PACKAGE_STYLES,
   packageCardClass,
-  packageSavingPercent,
   packageStyleFrom,
 } from "../src/lib/bookings/package-style";
 
@@ -44,13 +43,6 @@ describe("the package look rules", () => {
     expect(packageStyleFrom("neon")).toBe(DEFAULT_PACKAGE_STYLE);
     expect(packageStyleFrom(null)).toBe("glow");
     expect(packageCardClass("ribbon")).toBe("pkg-card pkg-card--ribbon");
-  });
-
-  it("works out what a package saves", () => {
-    expect(packageSavingPercent(90, 70)).toBe(22);
-    expect(packageSavingPercent(70, 70)).toBeNull();
-    expect(packageSavingPercent(null, 70)).toBeNull();
-    expect(packageSavingPercent(90, null)).toBeNull();
   });
 });
 

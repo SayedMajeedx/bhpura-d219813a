@@ -9,7 +9,13 @@ import type { Booking } from "@/lib/data/bookings";
 import { BookingDiscountEditor } from "@/features/bookings/components/BookingDiscountEditor";
 import { BookingInvoiceBlock } from "@/features/bookings/components/BookingInvoiceBlock";
 import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
-import { cardSteps, shownStatus } from "@/features/bookings/lib/booking-actions";
+import {
+  cardSteps,
+  holdRanOutText,
+  lateTransferHours,
+  shownStatus,
+  slotTaken,
+} from "@/features/bookings/lib/booking-actions";
 import {
   BookingCancelDialog,
   BookingDoneDialog,
@@ -72,6 +78,8 @@ export function BookingCard({
   const end = localTime(booking.ends_at, timezone);
   const place = bookingPlaceText(booking.location);
   const items = booking.booking_items ?? [];
+  const bumped = slotTaken(booking);
+  const lateHours = lateTransferHours(booking);
 
   return (
     <article className="space-y-2 rounded-xl border border-border bg-card p-3 text-sm">
@@ -207,10 +215,17 @@ export function BookingCard({
       {bookingInvoiceOf(booking)?.status === "pending_verification" && (
         <div className="space-y-2 rounded-lg border border-warning bg-warning-subtle p-2 text-xs">
           <p className="font-semibold text-foreground">
-            {isAr
-              ? "إيصال بنفت بانتظار تحققك. الموعد محجوز مؤقتاً لحين التأكد من التحويل."
-              : "A BenefitPay receipt is waiting for you to check. The day is held until you confirm the transfer."}
+            {lateHours === null
+              ? isAr
+                ? "إيصال بنفت بانتظار تحققك. الموعد محجوز مؤقتاً لحين التأكد من التحويل."
+                : "A BenefitPay receipt is waiting for you to check. The day is held until you confirm the transfer."
+              : isAr
+                ? "إيصال بنفت بانتظار تحققك."
+                : "A BenefitPay receipt is waiting for you to check."}
           </p>
+          {lateHours !== null && (
+            <p className="text-foreground">{holdRanOutText(lateHours, isAr)}</p>
+          )}
           <Button asChild size="sm" className="h-8 text-xs">
             <Link
               to="/admin/b/$slug/orders/$id"
@@ -234,10 +249,17 @@ export function BookingCard({
       {booking.status === "cancelled" && booking.cancel_reason && (
         <p className="text-xs text-destructive">{booking.cancel_reason}</p>
       )}
+      {bumped && (
+        <p className="rounded-lg border border-destructive bg-destructive/5 p-2 text-xs text-foreground">
+          {isAr
+            ? "دُفع بعد انتهاء المهلة، وكان عميل آخر قد حجز الموعد، فلم يُؤكَّد. انقله إلى موعد متاح، أو ألغِه وأعد المبلغ."
+            : "Paid after the hold ran out, when another customer had booked the date, so it was not confirmed. Move it to a free time, or cancel it and return the money."}
+        </p>
+      )}
 
-      {(status === "confirmed" || status === "requested") && (
+      {(status === "confirmed" || status === "requested" || bumped) && (
         <div className="flex flex-wrap gap-2">
-          <BookingReminderButton page={page} booking={booking} />
+          {!bumped && <BookingReminderButton page={page} booking={booking} />}
           <Button
             type="button"
             size="sm"
@@ -269,7 +291,11 @@ export function BookingCard({
                     : onStatus(next)
               }
             >
-              {actionText(status, next, isAr)}
+              {bumped
+                ? isAr
+                  ? "إلغاء وإعادة المبلغ"
+                  : "Cancel and refund"
+                : actionText(status, next, isAr)}
             </Button>
           ))}
         </footer>
