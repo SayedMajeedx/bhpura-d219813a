@@ -9577,6 +9577,7 @@ export type Database = {
           hold_expires_at: string | null;
           hold_token: string | null;
           id: string;
+          late_payment_slot_taken_at: string | null;
           location: Json;
           notes: string | null;
           order_id: string | null;
@@ -10607,6 +10608,7 @@ export type Database = {
           hold_expires_at: string | null;
           hold_token: string | null;
           id: string;
+          late_payment_slot_taken_at: string | null;
           location: Json;
           notes: string | null;
           order_id: string | null;
@@ -11078,6 +11080,7 @@ export type Database = {
           hold_expires_at: string | null;
           hold_token: string | null;
           id: string;
+          late_payment_slot_taken_at: string | null;
           location: Json;
           notes: string | null;
           order_id: string | null;
@@ -11121,6 +11124,7 @@ export type Database = {
           hold_expires_at: string | null;
           hold_token: string | null;
           id: string;
+          late_payment_slot_taken_at: string | null;
           location: Json;
           notes: string | null;
           order_id: string | null;
