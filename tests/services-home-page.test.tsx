@@ -16,11 +16,13 @@ vi.mock("@tanstack/react-router", () => ({
     children: React.ReactNode;
     to: string;
     params: Record<string, string>;
-    search?: Record<string, string>;
+    search?: Record<string, string | number>;
   }) => (
     <a
       href={`${to.replace("$slug", params.slug).replace("$id", params.id ?? "")}${
-        search?.service ? `?service=${search.service}` : ""
+        search?.service
+          ? `?service=${search.service}${search.minutes ? `&minutes=${search.minutes}` : ""}`
+          : ""
       }`}
     >
       {children}
@@ -205,17 +207,27 @@ describe("the services home page", () => {
     expect(screen.getByRole("heading", { name: "Rentals", level: 2 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Services", level: 2 })).toBeInTheDocument();
 
-    // A rental: a ticket with a Rental mark and what each length costs, where, extra hour, add-ons.
+    // A rental: where and how long, what comes with it, a length with its one price, the add-ons
+    // with theirs, and a booking that carries the length chosen. No label above its name.
     const rental = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
     expect(rental.className).toContain("rental-card");
-    expect(within(rental).getByText("Rental")).toBeInTheDocument();
-    expect(within(rental).getByText("1 hour")).toBeInTheDocument();
-    expect(within(rental).getByText("BHD 40")).toBeInTheDocument();
-    expect(within(rental).getByText("3 hours")).toBeInTheDocument();
-    expect(within(rental).getByText("BHD 95")).toBeInTheDocument();
+    expect(within(rental).queryByText("Rental")).toBeNull();
     expect(within(rental).getByText("At your place")).toBeInTheDocument();
-    expect(within(rental).getByText(/Extra hour at/)).toBeInTheDocument();
-    expect(await within(rental).findByText(/Guest book/)).toBeInTheDocument();
+    expect(within(rental).getByText("1–3 hours")).toBeInTheDocument();
+    expect(within(rental).getByText("Instant prints")).toBeInTheDocument();
+    const lengths = within(rental).getByRole("radiogroup", { name: "Length" });
+    expect(within(lengths).getByRole("radio", { name: "1 hour" })).toBeChecked();
+    expect(within(rental).getByText("BHD 40")).toBeInTheDocument();
+    fireEvent.click(within(lengths).getByRole("radio", { name: "3 hours" }));
+    expect(within(rental).getByText("BHD 95")).toBeInTheDocument();
+    expect(within(rental).queryByText("BHD 40")).toBeNull();
+    expect(within(rental).getByRole("link", { name: "Book 3 hours" })).toHaveAttribute(
+      "href",
+      "/$slug/book?service=booth&minutes=180".replace("$slug", "aurora"),
+    );
+    expect(within(rental).getByText(/Each extra hour/)).toBeInTheDocument();
+    const guestBook = (await within(rental).findByText(/Guest book/)).closest("li")!;
+    expect(within(guestBook).getByText("BHD 5")).toBeInTheDocument();
     expect(screen.queryByText(/Hidden add-on/)).toBeNull();
 
     // A plain service keeps the plain card: from price and what the booking includes.
@@ -297,7 +309,10 @@ describe("the cards' pictures", () => {
       </QueryClientProvider>,
     );
     const rental = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
-    expect(within(rental).getByRole("img", { name: "Photo booth" })).toHaveClass("w-full");
+    // A rental's photo stands whole in its own shape (3:4 unless the store chose one), never the
+    // services vertical's wide frame that showed a standing booth's middle half.
+    expect(within(rental).getByRole("img", { name: "Photo booth" })).toHaveClass("object-cover");
+    expect(rental.querySelector("div[aria-hidden='true']")?.className).toContain("aspect-[3/4]");
 
     // Prints has no picture, Album has one: Prints keeps a picture's space.
     const prints = screen.getByRole("heading", { name: "Prints" }).closest("article")!;

@@ -1,120 +1,233 @@
 import { useState } from "react";
 import { arNoun } from "@/lib/arabic-count";
 import { Link } from "@tanstack/react-router";
-import { Clock, KeyRound, MapPin, Plus } from "lucide-react";
+import { Check, Clock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
-import { optionName, type ServiceOption } from "@/lib/bookings/service-options";
+import { PRODUCT_PHOTO_CLASS } from "@/lib/brand-templates/design-presets";
+import { serviceLengthsText } from "@/lib/bookings/service-lengths";
+import type { ServiceOption } from "@/lib/bookings/service-options";
 import type { ProductRow } from "@/lib/data/storefront";
 import { ServiceDetailsDialog } from "@/features/services-home/components/ServiceDetailsDialog";
 import {
   extraHourPriceOf,
+  includeLinesOf,
   lengthPrices,
   minutesText,
   servicePlace,
 } from "@/features/services-home/lib/services-home";
+import {
+  addOnLines,
+  descriptionLead,
+  rentalPhotoRatio,
+} from "@/features/services-home/lib/rental-card";
 
-/** How many hourly prices show on the card before "and N more". */
-const SHOWN_LENGTHS = 4;
+/** How many of "what's included" show on the card before "+ N". */
+const SHOWN_INCLUDES = 4;
 
 /**
- * A rental: something hired by the hour. A ticket-style card (a bold top edge,
- * a perforated divider) that lists what each length costs, so it never reads as
- * a plain service or as a package. What is hired sells itself, so its picture
- * runs the card's full width; the mark says "rental" for any kind of store.
+ * A rental: something hired by the hour, shown as a wide card. Its photo stands whole in its own
+ * shape on one side (on a phone, above), and beside it what a customer needs to choose: what it
+ * is, where, what comes with it, a length with its one price, the add-ons with theirs, and a
+ * booking that carries the length chosen. The rows of a section alternate sides on a wide screen.
  */
 export function RentalCard({
   product,
   addOns,
+  flip = false,
 }: {
   product: ProductRow;
   addOns: readonly ServiceOption[];
+  /** Photo on the end side (every other row on a wide screen). */
+  flip?: boolean;
 }) {
-  const { brand, lang, currency, t } = useStorefront();
+  const { brand, lang, currency, settings, t } = useStorefront();
   const isAr = lang === "ar";
   const name = (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
   const lengths = lengthPrices(product);
   const place = servicePlace(product.service_location, isAr);
-  const extra = extraHourPriceOf(product);
-  const optional = addOns.filter((o) => o.mode === "optional" || o.mode === "default_on");
+  const lengthsText = serviceLengthsText(product.product_variants, isAr);
+  const lead = descriptionLead(product, isAr);
+  const includes = includeLinesOf(product, isAr);
+  const extras = addOnLines(addOns, isAr);
+  const extraHour = extraHourPriceOf(product);
+  const ratio = rentalPhotoRatio(settings);
+  const [minutes, setMinutes] = useState<number | null>(lengths[0]?.minutes ?? null);
+  const chosen = lengths.find((length) => length.minutes === minutes) ?? lengths[0] ?? null;
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const money = (amount: number) => formatPrice(amount, currency, lang);
 
   return (
-    <article className="rental-card flex flex-col">
-      {product.image_url && (
-        <img
-          src={product.image_url}
-          alt={name}
-          loading="lazy"
-          className="aspect-[4/3] w-full object-cover"
-        />
+    <article
+      className={cn(
+        "rental-card grid",
+        product.image_url && "sm:grid-cols-[minmax(0,clamp(14rem,38%,24rem))_minmax(0,1fr)]",
+        product.image_url &&
+          flip &&
+          "lg:grid-cols-[minmax(0,1fr)_minmax(0,clamp(14rem,38%,24rem))]",
       )}
-      <div className="space-y-1 p-4">
-        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-primary">
-          <KeyRound className="size-3.5" aria-hidden="true" />
-          {t("تأجير", "Rental")}
-        </p>
-        <h3 className="font-display text-lg leading-tight text-foreground">{name}</h3>
-        {place && (
-          <p className="flex items-center gap-1 text-xs text-muted-foreground">
-            <MapPin className="size-3.5" aria-hidden="true" />
-            {place}
-          </p>
-        )}
-      </div>
-      <div className="rental-card__tear" aria-hidden="true" />
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        {lengths.length > 0 && (
-          <ul className="grid grid-cols-2 gap-2" aria-label={t("المدة والسعر", "Length and price")}>
-            {lengths.slice(0, SHOWN_LENGTHS).map((length) => (
-              <li
-                key={length.minutes}
-                className="rounded-lg border border-border bg-background/70 px-3 py-2 text-center"
-              >
-                <span className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                  <Clock className="size-3" aria-hidden="true" />
-                  {minutesText(length.minutes, isAr)}
+    >
+      {product.image_url && (
+        <div className={cn("relative overflow-hidden bg-muted", flip && "lg:order-last")}>
+          {/* Holds the photo's shape; the row grows past it when the words need more room. */}
+          <div className={PRODUCT_PHOTO_CLASS[ratio]} aria-hidden="true" />
+          <img
+            src={product.image_url}
+            alt={name}
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-6">
+        <header className="space-y-2">
+          <h3 className="font-display text-xl leading-tight text-balance text-foreground sm:text-2xl">
+            {name}
+          </h3>
+          {(place || lengthsText) && (
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              {place && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="size-4" aria-hidden="true" />
+                  {place}
                 </span>
-                <span
-                  className="block font-display text-base font-semibold text-foreground"
-                  dir="ltr"
-                >
-                  {formatPrice(length.price, currency, lang)}
+              )}
+              {lengthsText && (
+                <span className="inline-flex items-center gap-1">
+                  <Clock className="size-4" aria-hidden="true" />
+                  {lengthsText}
                 </span>
+              )}
+            </p>
+          )}
+          {lead && (
+            <p className="line-clamp-3 max-w-prose text-sm leading-relaxed text-foreground/80">
+              {lead}
+            </p>
+          )}
+        </header>
+
+        {includes.length > 0 && (
+          <ul className="grid gap-x-4 gap-y-1.5 text-sm text-foreground sm:grid-cols-2">
+            {includes.slice(0, SHOWN_INCLUDES).map((line) => (
+              <li key={line} className="flex items-start gap-2">
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
+                <span className="min-w-0 break-words">{line}</span>
               </li>
             ))}
+            {includes.length > SHOWN_INCLUDES && (
+              <li className="text-xs text-muted-foreground sm:col-span-2">
+                {t(
+                  `+ ${arNoun(includes.length - SHOWN_INCLUDES, "line")}`,
+                  `+ ${includes.length - SHOWN_INCLUDES} more`,
+                )}
+              </li>
+            )}
           </ul>
         )}
-        {lengths.length > SHOWN_LENGTHS && (
-          <p className="text-xs text-muted-foreground">
-            {t(
-              `+ ${arNoun(lengths.length - SHOWN_LENGTHS, "length")}`,
-              `and ${lengths.length - SHOWN_LENGTHS} more lengths`,
+
+        <div className="rental-card__tear !mx-0" aria-hidden="true" />
+
+        {chosen && (
+          <div className="space-y-3">
+            {lengths.length > 1 && (
+              <div
+                role="radiogroup"
+                aria-label={t("المدة", "Length")}
+                className="flex flex-wrap gap-1.5"
+              >
+                {lengths.map((length) => {
+                  const active = length.minutes === chosen.minutes;
+                  return (
+                    <button
+                      key={length.minutes}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setMinutes(length.minutes)}
+                      className={cn(
+                        "min-h-11 rounded-full border px-3.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9",
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card text-foreground hover:border-primary/50",
+                      )}
+                    >
+                      {minutesText(length.minutes, isAr)}
+                    </button>
+                  );
+                })}
+              </div>
             )}
-          </p>
+            <p className="flex flex-wrap items-baseline gap-x-2" aria-live="polite">
+              <span className="font-display text-3xl font-semibold text-foreground">
+                {money(chosen.price)}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                {t(
+                  `لمدة ${minutesText(chosen.minutes, true)}`,
+                  `for ${minutesText(chosen.minutes, false)}`,
+                )}
+              </span>
+            </p>
+            {extraHour !== null && (
+              <p className="text-xs text-muted-foreground">
+                {t("كل ساعة إضافية ", "Each extra hour ")}
+                <span>{money(extraHour)}</span>
+              </p>
+            )}
+          </div>
         )}
-        {optional.length > 0 && (
-          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
-            <Plus className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            <span>
-              {t("إضافات: ", "Add-ons: ")}
-              {optional.map((option) => optionName(option, isAr)).join(isAr ? "، " : ", ")}
-            </span>
-          </p>
+
+        {extras.length > 0 && (
+          <section className="space-y-1.5" aria-label={t("الإضافات", "Add-ons")}>
+            <h4 className="text-xs font-semibold text-muted-foreground">
+              {t("الإضافات", "Add-ons")}
+            </h4>
+            <ul className="divide-y divide-border/60 text-sm">
+              {extras.map((extra) => (
+                <li key={extra.id} className="flex items-baseline justify-between gap-3 py-1.5">
+                  <span className="min-w-0 break-words text-foreground">
+                    {extra.name}
+                    {extra.always && extra.price !== null && (
+                      <span className="text-xs text-muted-foreground">
+                        {t(" · مع كل حجز", " · with every booking")}
+                      </span>
+                    )}
+                  </span>
+                  <span className="shrink-0 font-medium text-foreground">
+                    {extra.price === null ? (
+                      <span className="text-muted-foreground">{t("مشمولة", "Included")}</span>
+                    ) : (
+                      <>
+                        {extra.from ? t("من ", "from ") : "+ "}
+                        <span>{money(extra.price)}</span>
+                      </>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
-        {extra !== null && (
-          <p className="text-xs text-muted-foreground">
-            {t("ساعة إضافية بسعر ", "Extra hour at ")}
-            <span dir="ltr">{formatPrice(extra, currency, lang)}</span>
-          </p>
-        )}
-        <div className="mt-auto grid gap-2 sm:grid-cols-2">
+
+        <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2">
           <Button type="button" variant="outline" onClick={() => setDetailsOpen(true)}>
             {t("عرض التفاصيل", "View details")}
           </Button>
           <Button asChild>
-            <Link to="/$slug/book" params={{ slug: brand.slug }} search={{ service: product.id }}>
-              {t("احجز الآن", "Book now")}
+            <Link
+              to="/$slug/book"
+              params={{ slug: brand.slug }}
+              search={{ service: product.id, ...(chosen ? { minutes: chosen.minutes } : {}) }}
+            >
+              {chosen && lengths.length > 1
+                ? t(
+                    `احجز ${minutesText(chosen.minutes, true)}`,
+                    `Book ${minutesText(chosen.minutes, false)}`,
+                  )
+                : t("احجز الآن", "Book now")}
             </Link>
           </Button>
         </div>
