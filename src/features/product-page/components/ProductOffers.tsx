@@ -16,11 +16,13 @@ const ICONS: Record<StoreOffer["kind"], typeof Percent> = {
 /**
  * The store's live offers that reach this product, under its price: "10% off on orders of
  * 40.000 BHD or more", "Buy 2, get 1 free", "Free local delivery…". Said only by a shop that
- * shows its prices; what an order gets is worked out at checkout by the database.
+ * shows its prices, and never on a service (a booking gets its own offers, not these); what an
+ * order gets is worked out at checkout by the database.
  */
 export function ProductOffers({ product }: { product: Product }) {
   const { brand, settings, lang, currency } = useStorefront();
-  const sells = !isCatalogMode(settings) && shouldShowPrices(settings);
+  const sells =
+    !isCatalogMode(settings) && shouldShowPrices(settings) && product.item_kind !== "service";
   const offers = useQuery(offersQueries.live(brand.slug, sells)).data ?? [];
   if (!sells || offers.length === 0) return null;
   const reaching = offersForProduct(offers, {

@@ -2115,6 +2115,7 @@ export type Database = {
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
           next_invoice_number: number;
+          offers_combine: string;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -2325,6 +2326,7 @@ export type Database = {
           newsletter_title_ar?: string | null;
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
+          offers_combine?: string;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -2535,6 +2537,7 @@ export type Database = {
           newsletter_title_ar?: string | null;
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
+          offers_combine?: string;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -5354,6 +5357,7 @@ export type Database = {
           advance_returning: boolean | null;
           advance_rules: Json | null;
           advance_scope: string | null;
+          applied_offers: Json;
           assigned_at: string | null;
           assigned_by: string | null;
           assigned_to: string | null;
@@ -5404,6 +5408,7 @@ export type Database = {
           loyalty_discount: number;
           loyalty_points_redeemed: number;
           notes: string | null;
+          offer_discount: number;
           order_date: string;
           payment_account: string | null;
           payment_gateway_reference: string | null;
@@ -5435,6 +5440,7 @@ export type Database = {
           advance_returning?: boolean | null;
           advance_rules?: Json | null;
           advance_scope?: string | null;
+          applied_offers?: Json;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -5485,6 +5491,7 @@ export type Database = {
           loyalty_discount?: number;
           loyalty_points_redeemed?: number;
           notes?: string | null;
+          offer_discount?: number;
           order_date?: string;
           payment_account?: string | null;
           payment_gateway_reference?: string | null;
@@ -5516,6 +5523,7 @@ export type Database = {
           advance_returning?: boolean | null;
           advance_rules?: Json | null;
           advance_scope?: string | null;
+          applied_offers?: Json;
           assigned_at?: string | null;
           assigned_by?: string | null;
           assigned_to?: string | null;
@@ -5566,6 +5574,7 @@ export type Database = {
           loyalty_discount?: number;
           loyalty_points_redeemed?: number;
           notes?: string | null;
+          offer_discount?: number;
           order_date?: string;
           payment_account?: string | null;
           payment_gateway_reference?: string | null;
@@ -8075,6 +8084,98 @@ export type Database = {
           },
         ];
       };
+      store_offers: {
+        Row: {
+          brand_id: string;
+          buy_quantity: number | null;
+          category_slugs: string[];
+          created_at: string;
+          discount_type: string | null;
+          discount_value: number | null;
+          ends_at: string | null;
+          exclude_sale_items: boolean;
+          get_category_slugs: string[];
+          get_percent: number | null;
+          get_product_ids: string[];
+          get_quantity: number | null;
+          id: string;
+          is_active: boolean;
+          kind: string;
+          local_only: boolean;
+          max_discount: number | null;
+          max_sets: number | null;
+          min_items: number | null;
+          min_subtotal: number | null;
+          name_ar: string;
+          name_en: string;
+          product_ids: string[];
+          starts_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          buy_quantity?: number | null;
+          category_slugs?: string[];
+          created_at?: string;
+          discount_type?: string | null;
+          discount_value?: number | null;
+          ends_at?: string | null;
+          exclude_sale_items?: boolean;
+          get_category_slugs?: string[];
+          get_percent?: number | null;
+          get_product_ids?: string[];
+          get_quantity?: number | null;
+          id?: string;
+          is_active?: boolean;
+          kind: string;
+          local_only?: boolean;
+          max_discount?: number | null;
+          max_sets?: number | null;
+          min_items?: number | null;
+          min_subtotal?: number | null;
+          name_ar?: string;
+          name_en?: string;
+          product_ids?: string[];
+          starts_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          buy_quantity?: number | null;
+          category_slugs?: string[];
+          created_at?: string;
+          discount_type?: string | null;
+          discount_value?: number | null;
+          ends_at?: string | null;
+          exclude_sale_items?: boolean;
+          get_category_slugs?: string[];
+          get_percent?: number | null;
+          get_product_ids?: string[];
+          get_quantity?: number | null;
+          id?: string;
+          is_active?: boolean;
+          kind?: string;
+          local_only?: boolean;
+          max_discount?: number | null;
+          max_sets?: number | null;
+          min_items?: number | null;
+          min_subtotal?: number | null;
+          name_ar?: string;
+          name_en?: string;
+          product_ids?: string[];
+          starts_at?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "store_offers_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subcategories: {
         Row: {
           category_id: string | null;
@@ -9314,6 +9415,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_store_offers: {
+        Args: { p_country: string; p_fulfillment: string; p_order_id: string };
+        Returns: Json;
+      };
       apply_whatsapp_delivery_status: {
         Args: {
           p_error?: string;
@@ -9828,6 +9933,7 @@ export type Database = {
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
           next_invoice_number: number;
+          offers_combine: string;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -11194,6 +11300,29 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      store_offer_reaches: {
+        Args: { p_get?: boolean; p_line: Json; p_offer: Json };
+        Returns: boolean;
+      };
+      store_offer_saving: {
+        Args: { p_lines: Json; p_offer: Json };
+        Returns: number;
+      };
+      store_offers_live: {
+        Args: { p_at?: string; p_brand_id: string };
+        Returns: Json;
+      };
+      store_offers_outcome: {
+        Args: {
+          p_code_discount: number;
+          p_country: string;
+          p_fulfillment: string;
+          p_lines: Json;
+          p_mode: string;
+          p_offers: Json;
+        };
+        Returns: Json;
+      };
       store_review_reward: {
         Args: { p_brand_id: string };
         Returns: {
@@ -11201,6 +11330,10 @@ export type Database = {
           discount_type: string;
           discount_value: number;
         }[];
+      };
+      storefront_active_offers: {
+        Args: { p_brand_slug: string };
+        Returns: Json;
       };
       storefront_delivery_fee: {
         Args: {
@@ -11220,6 +11353,16 @@ export type Database = {
         Returns: Json;
       };
       storefront_my_bookings: { Args: { p_brand_id: string }; Returns: Json };
+      storefront_offers_preview: {
+        Args: {
+          p_brand_slug: string;
+          p_country?: string;
+          p_fulfillment?: string;
+          p_items: Json;
+          p_promo_code?: string;
+        };
+        Returns: Json;
+      };
       storefront_pickup_partners: {
         Args: { p_brand_id: string; p_items: Json };
         Returns: Json;

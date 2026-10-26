@@ -53,7 +53,10 @@ const categoryData = async (importOriginal: () => Promise<object>) => ({
   categoriesQueries: {
     active: () => ({
       queryKey: ["categories"],
-      queryFn: async () => [{ id: "c1", slug: "abayas", name_ar: "عبايات", name_en: "Abayas" }],
+      queryFn: async () => [
+        { id: "c1", slug: "abayas", name_ar: "عبايات", name_en: "Abayas" },
+        { id: "c2", slug: "sale", name_ar: "تنزيلات", name_en: "Sale" },
+      ],
     }),
   },
 });
@@ -137,6 +140,16 @@ describe("the Discounts page's automatic offers", () => {
     );
   });
 
+  it("offers real categories only, never an automatic collection", async () => {
+    state.offers = [];
+    withQuery(<StoreOffersSection brandId="b1" isAr={false} />);
+    fireEvent.click(await screen.findByRole("button", { name: /New offer/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Chosen products or categories" }));
+    expect(await within(dialog).findByText("Abayas")).toBeTruthy();
+    expect(within(dialog).queryByText("Sale")).toBeNull();
+  });
+
   it("does not save an offer the table would refuse", async () => {
     state.offers = [];
     withQuery(<StoreOffersSection brandId="b1" isAr />);
@@ -191,6 +204,20 @@ describe("what a shopper sees", () => {
     state.live = [live({})];
     const product = { id: "p1", category: null, product_variants: [] } as unknown as ProductProp;
     const { container } = withQuery(<ProductOffers product={product} />);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(container.textContent).toBe("");
+  });
+
+  it("says nothing on a service, which a booking prices", async () => {
+    state.storefront = shop();
+    state.live = [live({})];
+    const service = {
+      id: "s1",
+      category: null,
+      item_kind: "service",
+      product_variants: [],
+    } as unknown as ProductProp;
+    const { container } = withQuery(<ProductOffers product={service} />);
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(container.textContent).toBe("");
   });

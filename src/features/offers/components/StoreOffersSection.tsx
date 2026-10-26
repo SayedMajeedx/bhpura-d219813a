@@ -19,6 +19,7 @@ import {
   type StoreOfferRow,
 } from "@/lib/data/offers";
 import { formatMoney } from "@/lib/format";
+import { assignableCategories } from "@/lib/smart-categories";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { appliedOfferName, offerEnds, offerTerms } from "@/lib/offers";
 import { getFriendlyErrorMessage, cn } from "@/lib/utils";
@@ -74,7 +75,8 @@ export function StoreOffersSection({ brandId, isAr }: { brandId: string; isAr: b
   );
   const categories = useMemo(
     () =>
-      (categoryRows ?? [])
+      // A product is never filed under an automatic collection, so an offer cannot name one.
+      assignableCategories(categoryRows ?? [])
         .filter((c): c is typeof c & { slug: string } => Boolean(c.slug))
         .map((c) => ({
           slug: c.slug,
