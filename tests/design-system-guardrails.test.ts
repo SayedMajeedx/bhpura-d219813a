@@ -266,6 +266,21 @@ describe("design system guardrails", () => {
     expect(offenders.map((file) => file.rel)).toEqual([]);
   });
 
+  it("names a shopper's controls in the shopper's language, never in fixed English", () => {
+    // A button that shows only an icon is named for a screen reader; on a shopper's screen the
+    // name follows the page's language. The cart drawer once named its quantity buttons
+    // "increase" and "decrease" on every Arabic store (bug #50).
+    const shopperScreens = (rel: string) =>
+      rel.startsWith("routes/$slug.") ||
+      rel.startsWith("components/storefront/") ||
+      /^features\/(product-page|checkout|storefront-[a-z-]+|services-home)\//.test(rel);
+    const fixedEnglish = /aria-label="[A-Za-z][^"]*"/;
+    const offenders = FILES.filter(
+      (file) => shopperScreens(file.rel) && fixedEnglish.test(file.source),
+    );
+    expect(offenders.map((file) => file.rel)).toEqual([]);
+  });
+
   it("never sizes a grid column with a bare fr", () => {
     // `1fr` is `minmax(auto, 1fr)`: the column cannot get narrower than its widest content, so
     // one long product name pushes the page wider than a phone, and because the page hides
