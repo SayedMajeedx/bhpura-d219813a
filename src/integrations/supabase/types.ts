@@ -9601,6 +9601,12 @@ export type Database = {
         Returns: boolean;
       };
       bookings_enabled: { Args: { p_brand_id: string }; Returns: boolean };
+      brand_staff_two_factor: {
+        Args: { p_brand_id: string };
+        Returns: {
+          user_id: string;
+        }[];
+      };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
       can_view_brand_costs: { Args: { _brand_id: string }; Returns: boolean };
       cash_account_type_for_payment: {
@@ -11344,6 +11350,7 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      staff_session_verified: { Args: never; Returns: boolean };
       store_offer_reaches: {
         Args: { p_get?: boolean; p_line: Json; p_offer: Json };
         Returns: boolean;
