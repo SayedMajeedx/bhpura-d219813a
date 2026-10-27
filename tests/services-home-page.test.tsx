@@ -125,7 +125,8 @@ vi.mock("../src/features/store-content/components/StoreGallery", () => ({
   StoreGallery: () => <div>gallery</div>,
 }));
 vi.mock("../src/features/store-content/components/StoreFaq", () => ({
-  StoreFaq: () => <div>faq</div>,
+  // Folded to one row per group, as on the booking page.
+  StoreFaq: ({ folded }: { folded?: boolean }) => <div>{folded ? "faq folded" : "faq"}</div>,
 }));
 
 // The store's offers, listed once under the invitation to book.
@@ -241,7 +242,7 @@ describe("the services home page", () => {
     expect(screen.getByText("hero")).toBeInTheDocument();
     expect(screen.getAllByText("book-invite")).toHaveLength(2);
     expect(screen.getByText("gallery")).toBeInTheDocument();
-    expect(screen.getByText("faq")).toBeInTheDocument();
+    expect(screen.getByText("faq folded")).toBeInTheDocument();
     // The store's offers, once.
     expect(await screen.findAllByText("25% off · within 14 days")).toHaveLength(1);
 

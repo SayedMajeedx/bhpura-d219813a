@@ -144,7 +144,9 @@ export function ServicesHome({ products }: { products: readonly ProductRow[] }) 
       </div>
       <BookingInvite />
       <div className="mx-auto w-full max-w-3xl px-4 pb-12 pt-4 sm:px-6">
-        <StoreFaq brandId={brand.id} isAr={isAr} />
+        {/* One row per group with its count, as on the booking page: a long list of questions
+            once ran past the services and the gallery. */}
+        <StoreFaq brandId={brand.id} isAr={isAr} folded />
       </div>
     </div>
   );
