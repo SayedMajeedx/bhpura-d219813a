@@ -13,6 +13,7 @@ import {
 } from "@/lib/data/storefront";
 import { showsCustomSizing } from "@/features/product-page/lib/variant-options";
 import { AskOnWhatsAppButton } from "@/features/product-page/components/AskOnWhatsAppButton";
+import { offSaleUntil } from "@/lib/product-availability";
 
 /** Phone-only sticky bar with the price and the buy actions. */
 export function ProductMobileBuyBar({
@@ -117,6 +118,10 @@ export function ProductMobileBuyBar({
           >
             <MessageCircle className="h-4 w-4" />
             <span>{t("طلب عبر واتساب", "Inquire")}</span>
+          </Button>
+        ) : selectedVariantOutOfStock && offSaleUntil(product) ? (
+          <Button type="button" className="flex-1 h-11 px-4 font-semibold" disabled>
+            {t("غير متاح الآن", "Not available now")}
           </Button>
         ) : selectedVariantOutOfStock ? (
           <Button

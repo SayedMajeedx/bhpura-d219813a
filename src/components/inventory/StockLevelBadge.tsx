@@ -1,5 +1,6 @@
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { stockUnitsLabel } from "@/lib/inventory-labels";
+import { offSaleStatus } from "@/lib/off-sale";
 import {
   availabilityBadge,
   productAvailability,
@@ -18,7 +19,8 @@ const TONE_CLASSES: Record<AvailabilityTone, string> = {
 /**
  * A product's stock in one badge, the same on the desktop list and the mobile cards: out of
  * stock, N left, N available, or (for a made-to-order piece) "made to order" in the store's own
- * word, with the pieces left to make (when the store limits them) and the ready pieces beside it.
+ * word, with the pieces left to make (when the store limits them) and the ready pieces beside it,
+ * and when a product taken off sale (or its category) is back.
  */
 export function StockLevelBadge({
   product,
@@ -47,6 +49,11 @@ export function StockLevelBadge({
       >
         {badge.label}
       </span>
+      {availability.offSaleUntil && (
+        <span className="inline-flex rounded-md bg-warning/15 px-2 py-0.5 text-xs font-semibold text-foreground">
+          {offSaleStatus(availability.offSaleUntil, lang === "ar", new Date())}
+        </span>
+      )}
       {badge.details.map((detail) => (
         <span
           key={detail}

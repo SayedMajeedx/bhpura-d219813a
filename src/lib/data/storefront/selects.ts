@@ -12,7 +12,7 @@
 
 /** Product grids (home, category, search, wishlist, recently viewed). Type: `ProductRow`. */
 export const PRODUCT_CARD_SELECT =
-  "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, service_location, service_includes, custom_fields, occasion, details, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color, image_url, duration_minutes)";
+  "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, is_made_to_order, made_to_order_available, made_to_order_paused_at, unavailable_until, category_unavailable_until, item_kind, is_package, extra_hour_price, service_location, service_includes, custom_fields, occasion, details, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color, image_url, duration_minutes)";
 
 /**
  * Product page and quick view, without the per-product option labels.
@@ -21,11 +21,11 @@ export const PRODUCT_CARD_SELECT =
  * fail on every call.
  */
 export const PRODUCT_DETAIL_BASE_SELECT =
-  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, fabric_type, occasion, details, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
+  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, unavailable_until, category_unavailable_until, item_kind, is_package, extra_hour_price, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, fabric_type, occasion, details, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
 
 /** Product page and quick view, with option labels. Type: `StorefrontProductDetail`. */
 export const PRODUCT_DETAIL_SELECT =
-  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, fabric_type, occasion, details, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
+  "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, is_made_to_order, made_to_order_available, made_to_order_paused_at, unavailable_until, category_unavailable_until, item_kind, is_package, extra_hour_price, service_location, service_includes, base_price, size_guide_id, size_guide_hidden, fabric_type, occasion, details, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, variant_label_four_ar, variant_label_four_en, variant_label_five_ar, variant_label_five_en, product_variants(id, size, size_unit, color, fabric, option_four, option_five, selling_price, original_price, stock_main, stock_incubator, image_url, duration_minutes)";
 
 /**
  * "You may also like" rails and the product page's bundle. Type: `RecommendationProduct`.
@@ -33,14 +33,14 @@ export const PRODUCT_DETAIL_SELECT =
  * the shopper chose, never one it cannot name.
  */
 export const RECOMMENDATION_SELECT =
-  "id, name, name_ar, name_en, category, image_url, media, custom_fields, details, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, is_package, extra_hour_price, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)";
+  "id, name, name_ar, name_en, category, image_url, media, custom_fields, details, is_made_to_order, made_to_order_available, made_to_order_paused_at, unavailable_until, category_unavailable_until, item_kind, is_package, extra_hour_price, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, size_unit, color)";
 
 /**
  * Instant search boxes. Type: `QuickSearchResult`. The availability columns let a result's
  * price come from what can be bought now (`cardPrice`, src/lib/product-price.ts).
  */
 export const QUICK_SEARCH_SELECT =
-  "id, name, name_ar, name_en, category, image_url, media, is_made_to_order, made_to_order_available, made_to_order_paused_at, item_kind, product_variants(id, selling_price, original_price, stock, stock_main, stock_incubator)";
+  "id, name, name_ar, name_en, category, image_url, media, is_made_to_order, made_to_order_available, made_to_order_paused_at, unavailable_until, category_unavailable_until, item_kind, product_variants(id, selling_price, original_price, stock, stock_main, stock_incubator)";
 
 /** Every category surface: menus, home tiles, category pages, search. Type: `StorefrontCategory`. */
 export const CATEGORY_SELECT =

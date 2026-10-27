@@ -4,6 +4,7 @@ import migration from "../supabase/migrations/20261007120000_hide_cost_columns_f
 import madeToOrderLimit from "../supabase/migrations/20261010110000_made_to_order_limit.sql?raw";
 import madeToOrderPause from "../supabase/migrations/20261010120000_made_to_order_pause.sql?raw";
 import productDetails from "../supabase/migrations/20261024120000_product_details.sql?raw";
+import takeOffSale from "../supabase/migrations/20261027120000_take_off_sale.sql?raw";
 import {
   PRODUCT_CARD_SELECT,
   PRODUCT_DETAIL_BASE_SELECT,
@@ -27,7 +28,7 @@ const HIDDEN = {
 function granted(): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   // The first migration grants the list; a later one adds a column to it.
-  for (const sql of [migration, madeToOrderLimit, madeToOrderPause, productDetails]) {
+  for (const sql of [migration, madeToOrderLimit, madeToOrderPause, productDetails, takeOffSale]) {
     for (const m of sql.matchAll(/GRANT SELECT \(([^)]*)\) ON public\.(\w+) TO anon;/g)) {
       out[m[2]] = [
         ...(out[m[2]] ?? []),
@@ -100,7 +101,8 @@ describe("what a visitor can read of the catalog", () => {
     // A later migration's own grants to anon (a column added since).
     for (const grant of `${madeToOrderLimit}
 ${madeToOrderPause}
-${productDetails}`.match(/GRANT SELECT \([^)]*\) ON public\.\w+ TO anon;/g) ?? []) {
+${productDetails}
+${takeOffSale}`.match(/GRANT SELECT \([^)]*\) ON public\.\w+ TO anon;/g) ?? []) {
       await db.exec(grant);
     }
     const can = async (role: string, table: string, column: string) =>

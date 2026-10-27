@@ -32,6 +32,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
+import { CategoryOffSaleField } from "@/components/categories/CategoryOffSaleField";
 import { CropUploadButton } from "@/components/crop-upload-button";
 import { syncBrandVerticalCategories } from "@/lib/addons/vertical-categories";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -483,6 +484,7 @@ function CategoryDialog({
           />
           <Label htmlFor="active">{isAr ? "مفعّل في المتجر" : "Active in storefront"}</Label>
         </div>
+        {category && <CategoryOffSaleField brandId={brandId} category={category} isAr={isAr} />}
       </div>
       <DialogFooter>
         <Button onClick={save}>{isAr ? "حفظ" : "Save"}</Button>

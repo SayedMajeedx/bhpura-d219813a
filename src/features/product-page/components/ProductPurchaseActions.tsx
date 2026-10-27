@@ -14,6 +14,8 @@ import {
 
 import type { Dispatch, SetStateAction } from "react";
 import { arNoun } from "@/lib/arabic-count";
+import { offSaleUntil } from "@/lib/product-availability";
+import { offSaleSentence } from "@/lib/opening-hours";
 
 /** Quantity, the Add to cart / Buy now buttons (or the inquiry button in catalog mode), the choice error and the delivery estimate. */
 export function ProductPurchaseActions({
@@ -52,6 +54,7 @@ export function ProductPurchaseActions({
   variant: Variant | null | undefined;
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  const offSale = offSaleUntil(product);
   // A piece the shopper is having made takes the made-to-order estimate; a ready size does not.
   const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
   // A ready size is capped by its stock; a made-to-order piece by the store's limit, if it has one.
@@ -151,7 +154,14 @@ export function ProductPurchaseActions({
           </Button>
         </div>
       ) : selectedVariantOutOfStock ? (
-        settings?.back_in_stock_enabled !== false ? (
+        offSale ? (
+          <div
+            role="status"
+            className="rounded-xl border border-border bg-muted/40 p-4 text-center text-sm font-medium"
+          >
+            {offSaleSentence(offSale, settings?.opening_hours, new Date(), lang)}
+          </div>
+        ) : settings?.back_in_stock_enabled !== false ? (
           <div className="space-y-3">
             <NotifyMeForm brandId={brand.id} productId={product.id} variantId={variant?.id} />
           </div>

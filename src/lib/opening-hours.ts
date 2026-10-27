@@ -186,3 +186,21 @@ export function intakeSentence(
     ? `المتجر مغلق الآن، نستقبل الطلبات ${opens}.`
     : `We're closed now and take orders again ${opens}.`;
 }
+
+/**
+ * What a shopper reads on a product taken off sale (`offSaleUntil`): when it is back, on the
+ * store's clock, or that it is not available for now.
+ */
+export function offSaleSentence(
+  until: string,
+  hours: unknown,
+  at: Date,
+  lang: "ar" | "en",
+): string {
+  if (until === "infinity")
+    return lang === "ar" ? "غير متاح للطلب الآن." : "Not available to order right now.";
+  const back = momentLabel(until, readHours(hours).timezone, at, lang);
+  return lang === "ar"
+    ? `غير متاح للطلب الآن، يعود ${back}.`
+    : `Not available to order right now, back ${back}.`;
+}
