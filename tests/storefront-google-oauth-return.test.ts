@@ -37,6 +37,7 @@ import {
   readStorefrontOAuthReturn,
   rememberStorefrontOAuthReturn,
 } from "../src/lib/storefront-oauth-return";
+import { remembersSession } from "../src/lib/session-persistence";
 
 describe("storefront Google OAuth return", () => {
   beforeEach(() => {
@@ -75,8 +76,10 @@ describe("storefront Google OAuth return", () => {
   });
 
   it("keeps a Google shopper signed in and remembers where to return", () => {
+    // Even after someone on this browser chose not to stay signed in (session-persistence.ts).
+    localStorage.setItem("boutq.auth.remember", "no");
     prepareStorefrontGoogleSignIn("/pura/auth-confirmed");
-    expect(localStorage.getItem("boutq.auth.rememberMe")).toBe("1");
+    expect(remembersSession()).toBe(true);
     expect(readStorefrontOAuthReturn()).toBe("/pura/auth-confirmed");
   });
 
