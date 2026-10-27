@@ -42,6 +42,8 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      // The session is written where the choice keeps it: until the browser closes, or for good.
+      applyRememberMe(remember);
       const { error } = await signInWithPassword(email, password);
       if (error) throw error;
       const user = await getCurrentUser();
@@ -55,7 +57,6 @@ function AuthPage() {
             : "This is a storefront customer account, not a dashboard account.",
         );
       }
-      applyRememberMe(remember);
       await new Promise((r) => setTimeout(r, 100));
 
       const requiresPasswordChange =

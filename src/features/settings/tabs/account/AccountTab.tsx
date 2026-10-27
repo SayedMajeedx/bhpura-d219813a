@@ -5,6 +5,7 @@ import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigato
 import { SupportAccessCard } from "@/components/support-access-card";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { TwoFactorSettings } from "@/components/auth/TwoFactorSettings";
+import { SignOutEverywhere } from "@/components/auth/SignOutEverywhere";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
 
@@ -26,6 +27,7 @@ export function AccountTab() {
         <div className="space-y-6">
           <PasskeySettings />
           <TwoFactorSettings />
+          <SignOutEverywhere />
         </div>
       ),
     },

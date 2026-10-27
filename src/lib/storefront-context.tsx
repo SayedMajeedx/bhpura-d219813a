@@ -849,7 +849,8 @@ export function StorefrontProvider({
   }, [cartKey]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    // This browser only: the shopper's other devices stay signed in.
+    await supabase.auth.signOut({ scope: "local" });
     setIsStoreMember(false);
   }, []);
 

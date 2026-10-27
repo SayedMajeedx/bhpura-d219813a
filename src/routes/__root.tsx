@@ -159,18 +159,6 @@ function RootComponent() {
   const pageLang = documentLanguage(useMatches()).lang;
   useEffect(() => {
     installNumericInputBehavior();
-    // Enforce "Keep me logged in": if the user did not opt in and this is a
-    // fresh browser session, drop the persisted Supabase session before any
-    // protected route can hydrate.
-    (async () => {
-      const { shouldClearNonRememberedSession, markTabAlive } =
-        await import("@/lib/session-persistence");
-      if (shouldClearNonRememberedSession()) {
-        const { signOut } = await import("@/lib/auth/session");
-        await signOut();
-      }
-      markTabAlive();
-    })();
   }, []);
   useEffect(() => {
     const handleNativePush = async (event: Event) => {
