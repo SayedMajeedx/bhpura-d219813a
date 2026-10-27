@@ -25,13 +25,7 @@ import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-pac
 import { packageLength, packageLinesText, separatePrice } from "@/lib/bookings/service-package";
 import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
 import { packageStyleFrom } from "@/lib/bookings/package-style";
-import {
-  bestDiscount,
-  dayOffer,
-  discountLabel,
-  offersLegend,
-  type DiscountRule,
-} from "@/lib/bookings/discounts";
+import { bestDiscount, dayOffer, offersLegend, type DiscountRule } from "@/lib/bookings/discounts";
 import {
   bookingsKeys,
   bookingsQueries,
@@ -54,9 +48,13 @@ import {
   offeredDurations,
   missingStep,
   toBookingRequest,
+  variantFor,
   type BookableService,
   type FlowState,
 } from "@/features/storefront-booking/lib/booking-flow";
+import { offersQueries } from "@/lib/data/offers";
+import { appliedOfferName } from "@/lib/offers";
+import { betterBookingOffer } from "@/lib/bookings/booking-offer";
 
 export const BOOKING_WEEK_STARTS_ON = 0;
 
@@ -162,7 +160,7 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
       enabled: Boolean(rules),
     }).data ?? [];
   const chosenForOffer = services.filter((service) => flow.services.includes(service.id));
-  const offer = flow.day
+  const ruleOffer = flow.day
     ? bestDiscount(discountRules, {
         day: flow.day,
         today,
@@ -172,6 +170,37 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
         })),
       })
     : null;
+  // The store's automatic offers on the chosen services, priced by the database
+  // (storefront_offers_preview); the booking takes whichever saves more, as the database does
+  // when the day is held (apply_booking_discount).
+  const liveStoreOffers = useQuery(offersQueries.live(brand.slug, Boolean(rules))).data ?? [];
+  const offerItems = chosenForOffer.flatMap((service) => {
+    const variant = variantFor(service, flow.durationMinutes);
+    return variant
+      ? [
+          {
+            variant_id: variant.id,
+            quantity: 1,
+            line_total: priceFor(service, flow.durationMinutes) ?? 0,
+          },
+        ]
+      : [];
+  });
+  const storePreview = useQuery(
+    offersQueries.preview(
+      brand.slug,
+      { items: offerItems, promoCode: null, fulfillment: "appointment", country: null },
+      liveStoreOffers.length > 0 && Boolean(flow.day),
+    ),
+  ).data;
+  const storeApplied = storePreview?.applied.find((applied) => applied.kind !== "free_delivery");
+  const offer = betterBookingOffer(
+    ruleOffer,
+    storePreview && storePreview.offer_discount > 0 && storeApplied
+      ? { amount: storePreview.offer_discount, name: appliedOfferName(storeApplied, lang) }
+      : null,
+    isAr,
+  );
   /** The offer to mark on a calendar day: the exact one with services chosen, else the general one. */
   const offerOnDay = (day: string) =>
     chosenForOffer.length > 0
@@ -299,7 +328,15 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
           customer: { name: flow.name.trim(), phone: flow.phone.trim() },
           place: { area: flow.area, venue: flow.venue.trim() },
           notes: toBookingRequest(brand.id, flow, services, isAr).notes ?? null,
-          discountLabel: offer ? discountLabel(offer, isAr) : null,
+          // The database's own name for the discount it chose (a booking offer or the store's).
+          discountLabel:
+            (isAr ? hold.discount_label_ar : hold.discount_label_en) ??
+            hold.discount_label_en ??
+            hold.discount_label_ar ??
+            offer?.label ??
+            null,
+          discountFromOffer: hold.discount_from_offer === true,
+          offersCombine: hold.offers_combine ?? "best",
         },
         services,
       );

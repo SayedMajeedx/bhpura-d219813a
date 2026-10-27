@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
 import { optionName } from "@/lib/bookings/service-options";
-import { discountLabel } from "@/lib/bookings/discounts";
 import { depositSentence } from "@/lib/bookings/deposit";
 import { taxRateLabel, type TaxRule } from "@/lib/order-tax";
 import { claimBottomBar, releaseBottomBar } from "@/lib/bottom-bar-store";
@@ -119,7 +118,7 @@ export function BookingSummaryBar({
             )}
             {flow.offer && (
               <div className="flex items-center justify-between gap-3 text-success">
-                <span>{discountLabel(flow.offer, isAr)}</span>
+                <span>{flow.offer.label}</span>
                 <span dir="ltr">− {money(offerAmount)}</span>
               </div>
             )}
