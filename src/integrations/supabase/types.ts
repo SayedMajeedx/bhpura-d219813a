@@ -11420,6 +11420,10 @@ export type Database = {
         Args: { p_hidden: boolean; p_review_id: string };
         Returns: undefined;
       };
+      set_web_push_alert_choices: {
+        Args: { p_choices: Json; p_endpoint: string };
+        Returns: Json;
+      };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { "": string }; Returns: string[] };
       snapshot_order_packaging_cogs: {
@@ -11629,6 +11633,7 @@ export type Database = {
         Args: { p_payment_id: string; p_reason: string };
         Returns: undefined;
       };
+      web_push_alert_choices: { Args: { p_endpoint: string }; Returns: Json };
       web_push_targets: {
         Args: { p_brand_id: string; p_event_type: string };
         Returns: {
