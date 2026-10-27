@@ -32,10 +32,19 @@ export async function getAccessToken() {
 }
 
 /**
- * Signs out of this browser. Inside the merchant app, the phone's notifications for this person
- * are turned off first (it needs the session, so it cannot come after).
+ * Signs out of this browser only (`scope: "local"`): the person's other devices stay signed in.
+ * Supabase's default ends every session the person has, so one sign-out on a laptop signed the
+ * phone app out too. Inside the merchant app, the phone's notifications for this person are
+ * turned off first (it needs the session, so it cannot come after).
  */
 export async function signOut() {
   await releaseNativePushDevice();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
+}
+
+/** Ends every session the person has, on every device (Settings → Account → Security). */
+export async function signOutEverywhere() {
+  await releaseNativePushDevice();
+  const { error } = await supabase.auth.signOut({ scope: "global" });
+  if (error) throw error;
 }

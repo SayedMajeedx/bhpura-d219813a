@@ -20,6 +20,7 @@ import {
   signUpStorefrontCustomer,
 } from "@/lib/auth/sign-in";
 import { prepareStorefrontGoogleSignIn } from "@/lib/auth/storefront-return";
+import { applyRememberMe } from "@/lib/session-persistence";
 
 export const Route = createFileRoute("/$slug/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -88,6 +89,8 @@ function StorefrontAuth() {
   };
 
   const signInWithPasskey = async () => {
+    // A shopper stays signed in on this browser (the store offers no box to say otherwise).
+    applyRememberMe(true);
     setPasskeyLoading(true);
     try {
       const { data, error } = await signInWithPasskeyAuth();
@@ -158,6 +161,8 @@ function StorefrontAuth() {
   };
 
   const signIn = async () => {
+    // A shopper stays signed in on this browser (the store offers no box to say otherwise).
+    applyRememberMe(true);
     if (!form.email || !form.password)
       return toast.error(
         t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"),
@@ -190,6 +195,8 @@ function StorefrontAuth() {
   };
 
   const signUp = async () => {
+    // A shopper stays signed in on this browser (the store offers no box to say otherwise).
+    applyRememberMe(true);
     if (!form.email || (!session && !form.password))
       return toast.error(
         t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"),
