@@ -178,7 +178,10 @@ export function AddressesSection({
                   size="icon"
                   className="h-8 w-8 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
                   onClick={() => remove(a.id)}
-                  aria-label="Delete"
+                  aria-label={t(
+                    `حذف العنوان ${a.label ?? ""}`.trim(),
+                    `Delete address ${a.label ?? ""}`.trim(),
+                  )}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
