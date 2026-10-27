@@ -12,6 +12,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import type { Order } from "@/features/orders/types";
 import { currencyLabel } from "@/lib/currency-label";
+import { useOrderNumber } from "@/hooks/use-order-number";
 /** Confirm the cash a courier collected on delivery and complete the order. */
 export function CashCollectionModal({
   cashCollectedInput,
@@ -40,6 +41,7 @@ export function CashCollectionModal({
   setCashModalNotes: Dispatch<SetStateAction<string>>;
   setCashModalOrder: Dispatch<SetStateAction<any | null>>;
 }) {
+  const orderNo = useOrderNumber();
   return (
     <Dialog
       open={Boolean(cashModalOrder)}
@@ -66,7 +68,7 @@ export function CashCollectionModal({
                   {lang === "ar" ? "رقم الفاتورة / الطلب:" : "Invoice / Order #"}
                 </span>
                 <span className="font-mono font-bold text-primary">
-                  #{cashModalOrder.invoice_number || cashModalOrder.id.slice(0, 8)}
+                  {orderNo(cashModalOrder.invoice_number, cashModalOrder.id)}
                 </span>
               </div>
               <div className="flex justify-between items-center">

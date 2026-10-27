@@ -3,6 +3,7 @@ import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { matchesPaymentMethodFilter, type PaymentMethodFilter } from "@/lib/payment-method";
 import { resolvePaymentStatus } from "@/lib/payment-status";
 import type { Order } from "@/features/orders/types";
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * Pure rules for the orders list: stages, the quick tabs and their counts,
@@ -81,6 +82,8 @@ export type OrderQueueFilters = {
   tabFilter: string;
   includeHistorical: boolean;
   hasMadeToOrder: boolean;
+  /** How the store writes its order numbers: a search for "PL-0104" finds PL-01042 as shown. */
+  numberFormat?: OrderNumberFormat | null;
 };
 
 /**
@@ -99,6 +102,7 @@ export function filterQueueOrders(orders: Order[], f: OrderQueueFilters): Order[
       !f.search ||
       [
         order.invoice_number,
+        order.invoice_number ? orderNumberLabel(order.invoice_number, f.numberFormat) : null,
         getOrderCustomerName(order),
         order.status,
         order.payment_method,

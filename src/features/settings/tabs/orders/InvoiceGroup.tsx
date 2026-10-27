@@ -18,6 +18,7 @@ import { resolveStorefrontTypography } from "@/lib/typography";
 import { InvoiceLayoutControls } from "./InvoiceLayoutControls";
 import { InvoiceLogoPositioner } from "./InvoiceLogoPositioner";
 import { InvoiceSample } from "./InvoiceSample";
+import { OrderNumberField } from "./OrderNumberField";
 import { FileText } from "lucide-react";
 
 /**
@@ -73,6 +74,8 @@ export function InvoiceGroup() {
             </SelectContent>
           </Select>
         </div>
+
+        <OrderNumberField isAr={isAr} />
 
         <InvoiceLayoutControls part="content" />
 

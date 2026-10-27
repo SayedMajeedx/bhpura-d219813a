@@ -10,6 +10,7 @@ import {
   playNewOrderChime,
   unlockSound,
 } from "@/lib/new-order-sound";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 /**
  * While any admin page of a store is open: a chime and a note for each new order or booking a
@@ -23,6 +24,7 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
   const navigate = useNavigate();
   const profile = useProfileOptional();
   const courier = Boolean(profile?.isCourier);
+  const orderNo = useOrderNumber(brandId);
 
   useEffect(() => {
     if (courier || !brandId) return;
@@ -38,7 +40,7 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
       playNewOrderChime();
       const isAr = lang === "ar";
       if (table === "orders") {
-        const number = row.invoice_number ? `#${row.invoice_number}` : "";
+        const number = row.invoice_number ? orderNo(row.invoice_number as number) : "";
         toast.success(isAr ? `طلب جديد ${number}` : `New order ${number}`, {
           action: {
             label: isAr ? "افتح" : "Open",
@@ -64,7 +66,7 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
       window.removeEventListener("pointerdown", unlock);
       stop();
     };
-  }, [brandId, slug, lang, courier, navigate]);
+  }, [brandId, slug, lang, courier, navigate, orderNo]);
 
   return null;
 }

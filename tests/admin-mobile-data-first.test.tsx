@@ -8,6 +8,24 @@ import { Clock, Plus, ReceiptText, Settings2, Truck } from "lucide-react";
 // at 755px of an 812px screen); an order's card said its stage twice and neither its date nor
 // its pieces; the order filters cut their labels ("يحتاج متا…") and hid the one that showed.
 
+// The store's order number format (use-order-number.ts): none here, so "#1042" as before.
+vi.mock("../src/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+vi.mock("@/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, ...props }: { children: React.ReactNode }) => (
     <a {...(props as object)}>{children}</a>

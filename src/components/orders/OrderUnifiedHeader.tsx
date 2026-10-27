@@ -56,6 +56,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface OrderUnifiedHeaderProps {
   lang: "en" | "ar";
@@ -114,6 +115,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   renderPrimaryAction,
   children,
 }) => {
+  const orderNo = useOrderNumber();
   const router = useRouter();
   const isAr = lang === "ar";
   // An appointment is scheduled until it is done: not packed, shipped or delivered.
@@ -189,7 +191,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   ? isAr
                     ? "طلب جديد"
                     : "New Order"
-                  : `${isAr ? "الطلب" : "Order"} #${order.invoice_number ?? order.id?.slice(0, 8)}`}
+                  : `${isAr ? "الطلب" : "Order"} ${orderNo(order.invoice_number, order.id)}`}
               </h1>
 
               {/* A booking's order is a service on a date, not ready-made or made to order. */}

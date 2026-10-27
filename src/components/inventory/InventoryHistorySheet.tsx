@@ -42,6 +42,7 @@ import {
   User,
 } from "lucide-react";
 import { fetchInventoryMovements, type InventoryMovementRow } from "@/lib/data/catalog";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 export type InventoryMovement = InventoryMovementRow;
 
@@ -146,6 +147,7 @@ export function InventoryHistorySheet({
   productName,
   variantLabel,
 }: InventoryHistorySheetProps) {
+  const orderNo = useOrderNumber(brandId);
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
@@ -474,7 +476,7 @@ export function InventoryHistorySheet({
                             className="inline-flex items-center gap-1 text-primary hover:underline font-mono font-semibold"
                             title={isAr ? "عرض تفاصيل الطلب" : "View order details"}
                           >
-                            <span>#{order?.invoice_number || m.reference_id.slice(0, 8)}</span>
+                            <span>{orderNo(order?.invoice_number, m.reference_id)}</span>
                             <ExternalLink className="h-3 w-3" />
                           </Link>
                         ) : m.reference_type === "purchase_order" && m.reference_id ? (

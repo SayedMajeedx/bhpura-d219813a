@@ -18,6 +18,8 @@ import {
   formatNotifiedTimeAgo,
 } from "@/lib/courier-whatsapp";
 import { updateProfile } from "@/lib/data/profiles";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { orderNumberLabel } from "@/lib/order-number";
 
 interface CourierWhatsAppModalProps {
   isOpen: boolean;
@@ -47,6 +49,7 @@ export function CourierWhatsAppModal({
   const [phone, setPhone] = useState(courier?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
 
+  const numberFormat = useOrderNumberFormat();
   useEffect(() => {
     setPhone(courier?.phone || "");
   }, [courier?.phone, isOpen]);
@@ -54,7 +57,7 @@ export function CourierWhatsAppModal({
   if (!order || !courier) return null;
 
   const courierName = courier.name || courier.email || (isAr ? "المندوب" : "Courier");
-  const invNum = order.invoice_number || order.id?.slice(0, 8) || "N/A";
+  const invNum = orderNumberLabel(order.invoice_number, numberFormat, order.id);
   const notifiedAgo = formatNotifiedTimeAgo((order as any).courier_notified_at, lang);
 
   const previewUrl = generateCourierWhatsAppUrl({
@@ -63,6 +66,7 @@ export function CourierWhatsAppModal({
     courierName,
     brandSlug,
     lang,
+    numberFormat,
   });
 
   // Extract raw text from URL for preview box
@@ -104,6 +108,7 @@ export function CourierWhatsAppModal({
         courierName,
         brandSlug,
         lang,
+        numberFormat,
       });
 
       // 3. Record notification timestamp in database
@@ -114,8 +119,8 @@ export function CourierWhatsAppModal({
 
       toast.success(
         isAr
-          ? `تم فتح واتساب لإرسال بيانات الطلب #${invNum}`
-          : `WhatsApp opened for order #${invNum}`,
+          ? `تم فتح واتساب لإرسال بيانات الطلب ${invNum}`
+          : `WhatsApp opened for order ${invNum}`,
       );
 
       onNotified?.();
@@ -143,8 +148,8 @@ export function CourierWhatsAppModal({
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground">
                 {isAr
-                  ? `إرسال التفاصيل إلى ${courierName} للطلب #${invNum}`
-                  : `Send details to ${courierName} for Order #${invNum}`}
+                  ? `إرسال التفاصيل إلى ${courierName} للطلب ${invNum}`
+                  : `Send details to ${courierName} for Order ${invNum}`}
               </DialogDescription>
             </div>
           </div>

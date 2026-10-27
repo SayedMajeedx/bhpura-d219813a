@@ -1,3 +1,5 @@
+import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib/order-number";
+
 /**
  * A delivery as its courier needs to read it: who, where, what to hand over, how much to
  * collect, and what to do next. Pure: `CourierDeliveryPage` shows it and runs the actions.
@@ -196,8 +198,10 @@ export function onMyWayMessage(input: {
   storeName: string;
   customerName: string;
   number: string;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
 }): string {
   return input.isAr
-    ? `مرحباً ${input.customerName}، معك مندوب التوصيل من ${input.storeName}. طلبك رقم ${input.number} في الطريق إليك. هل العنوان والوقت مناسبان؟`
-    : `Hello ${input.customerName}, this is the courier from ${input.storeName}. Your order #${input.number} is on its way. Is the address and time fine for you?`;
+    ? `مرحباً ${input.customerName}، معك مندوب التوصيل من ${input.storeName}. طلبك رقم ${orderNumberText(input.number, input.numberFormat)} في الطريق إليك. هل العنوان والوقت مناسبان؟`
+    : `Hello ${input.customerName}, this is the courier from ${input.storeName}. Your order ${orderNumberLabel(input.number, input.numberFormat)} is on its way. Is the address and time fine for you?`;
 }

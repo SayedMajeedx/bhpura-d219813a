@@ -32,6 +32,24 @@ const state = vi.hoisted(() => ({
   recordBookingReminder: vi.fn(async (..._args: unknown[]) => undefined),
   policy: null as { reschedule_months: number | null } | null,
 }));
+// The store's order number format (use-order-number.ts): none here, so "#1042" as before.
+vi.mock("../src/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+vi.mock("@/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 // A booking with an order links to it (its invoice): a plain link, with no router mounted.
 vi.mock("@tanstack/react-router", async (importOriginal) => ({

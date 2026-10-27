@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import reviewsOnStore from "../supabase/migrations/20261022100000_product_reviews_on_store.sql?raw";
 import migration from "../supabase/migrations/20261022110000_store_review_reward.sql?raw";
+import reviewPageNumber from "../supabase/migrations/20261027170000_review_page_order_number.sql?raw";
 
 // Each store's own thank-you discount for a review (bug #41), run in a real Postgres (PGlite):
 // the live review page function, then migrations 20261022100000 and 20261022110000. Every store
@@ -201,5 +202,25 @@ describe("each store's own review reward", () => {
     await expect(asVisitor("SELECT * FROM public.store_review_reward($1)", [PURA])).rejects.toThrow(
       /permission denied/,
     );
+  });
+});
+
+describe("the review page's order number (migration 20261027170000)", () => {
+  it("tells the page how the store writes its order numbers, keeping everything else", async () => {
+    await db.exec(`
+      ALTER TABLE public.business_settings ADD COLUMN order_number_prefix text,
+        ADD COLUMN order_number_digits smallint;
+      UPDATE public.business_settings SET order_number_prefix = 'PL-', order_number_digits = 5
+       WHERE brand_id = '${PURA}';
+    `);
+    await db.exec(reviewPageNumber);
+    expect(await page(1)).toMatchObject({
+      state: "completed",
+      reward_code: "THANKU10",
+      currency: "BHD",
+      order_number_prefix: "PL-",
+      order_number_digits: 5,
+    });
+    expect(await page(2)).toMatchObject({ order_number_prefix: null, order_number_digits: null });
   });
 });

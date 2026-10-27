@@ -2,6 +2,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 type ThermalItem = {
   description: string;
@@ -27,6 +28,8 @@ type ThermalItem = {
 type ThermalArgs = {
   brand: string;
   invoiceNumber: string | number;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
   orderDate: string;
   status: string;
   customerName?: string | null;
@@ -158,7 +161,7 @@ export function printThermalReceipt(a: ThermalArgs) {
 <html lang="${a.lang}" dir="${isRTL ? "rtl" : "ltr"}">
 <head>
 <meta charset="utf-8" />
-<title>${escapeHtml(a.brand)} — #${escapeHtml(String(a.invoiceNumber))}</title>
+<title>${escapeHtml(a.brand)} — ${escapeHtml(orderNumberLabel(a.invoiceNumber, a.numberFormat))}</title>
 <style>
   @page { size: 80mm auto; margin: 0; }
   * { box-sizing: border-box; }
@@ -196,7 +199,7 @@ export function printThermalReceipt(a: ThermalArgs) {
   </div>
   <hr class="dash" />
   <div class="meta">
-    <div><span>${escapeHtml(a.labels.invoiceNumber)}</span><span>#${escapeHtml(String(a.invoiceNumber))}</span></div>
+    <div><span>${escapeHtml(a.labels.invoiceNumber)}</span><span>${escapeHtml(orderNumberLabel(a.invoiceNumber, a.numberFormat))}</span></div>
     <div><span>${escapeHtml(a.labels.date)}</span><span>${dateStr}</span></div>
     <div><span>${escapeHtml(a.labels.status)}</span><span>${escapeHtml(a.status)}</span></div>
     ${a.paymentMethod ? `<div><span>${escapeHtml(a.labels.payment)}</span><span>${escapeHtml(a.paymentMethod)}</span></div>` : ""}
@@ -245,6 +248,8 @@ export type DeliveryNoteArgs = {
   brand: string;
   logoUrl?: string | null;
   orderNumber: string | number;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
   orderDate: string;
   fulfillmentStatus?: string | null;
   fulfillmentStatusLabel?: string | null;
@@ -336,7 +341,7 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
 <html dir="${isRTL ? "rtl" : "ltr"}" lang="${a.lang}">
 <head>
   <meta charset="utf-8" />
-  <title>${isRTL ? "إذن تسليم وبوليصة شحن" : "Delivery Note"} #${escapeHtml(String(a.orderNumber))}</title>
+  <title>${isRTL ? "إذن تسليم وبوليصة شحن" : "Delivery Note"} ${escapeHtml(orderNumberLabel(a.orderNumber, a.numberFormat))}</title>
   <style>
     @page { size: A4; margin: 15mm; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #111; margin: 0; padding: 20px; font-size: 13px; }
@@ -363,7 +368,7 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
     </div>
     <div style="text-align:${isRTL ? "left" : "right"};">
       <div class="doc-title">${isRTL ? "إذن تسليم وبوليصة شحن" : "DELIVERY NOTE"}</div>
-      <div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px;">#${escapeHtml(String(a.orderNumber))}</div>
+      <div style="font-size:14px;font-weight:700;font-family:monospace;margin-top:2px;">${escapeHtml(orderNumberLabel(a.orderNumber, a.numberFormat))}</div>
       ${a.fulfillmentStatusLabel ? `<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:4px;background:rgb(239, 246, 255);color:rgb(29, 78, 216);font-size:11px;font-weight:700;border:1px solid rgb(191, 219, 254);">${escapeHtml(a.fulfillmentStatusLabel)}</div>` : ""}
     </div>
   </div>

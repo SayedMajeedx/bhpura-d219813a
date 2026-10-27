@@ -20,6 +20,7 @@ import { supplierOrderError } from "../lib/errors";
 import { customerOrderName } from "../lib/customer-pieces";
 import { piecesLabel, type SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /** One press of "Receive": sent again (a retry, a double tap), it changes nothing. */
 const newRequestId = () => crypto.randomUUID();
@@ -47,6 +48,7 @@ export function ReceiveDialog({
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const uid = useId();
   const qc = useQueryClient();
   const rows = useMemo(() => receiveRows(order.items, catalog.shelf), [order.items, catalog.shelf]);
@@ -125,7 +127,7 @@ export function ReceiveDialog({
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {row.customer
-                        ? customerOrderName(row.customer.invoice, isAr)
+                        ? customerOrderName(row.customer.invoice, isAr, numberFormat)
                         : catalog.sizeName(row.variantId)}
                       {" · "}
                       {isAr

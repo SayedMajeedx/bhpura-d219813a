@@ -10,6 +10,7 @@ import { maskPhoneForList } from "@/lib/privacy";
 import type { OrderListRow } from "@/lib/data/orders";
 import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
 import { orderCardWhen, orderIsSettled, orderItemsLine } from "@/features/orders/lib/order-card";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -32,6 +33,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   selected,
   onSelectedChange,
 }) => {
+  const orderNo = useOrderNumber();
   const isAr = lang === "ar";
   const contact = getOrderCustomerContact(order);
   const customerName = contact.name;
@@ -64,7 +66,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
             params={{ slug, id: order.id }}
             className="font-mono text-xs font-bold text-primary hover:underline flex items-center gap-1"
           >
-            #{order.invoice_number || order.id.slice(0, 8)}
+            {orderNo(order.invoice_number, order.id)}
             <ExternalLink className="h-3 w-3 opacity-60" />
           </Link>
         </div>

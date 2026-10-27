@@ -10,6 +10,24 @@ const state = vi.hoisted(() => ({
   days: [] as Array<number | null>,
   lang: "en" as "en" | "ar",
 }));
+// The store's order number format (use-order-number.ts): none here, so "#1042" as before.
+vi.mock("../src/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+vi.mock("@/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+
 vi.mock("../src/lib/i18n", () => ({ useI18n: () => ({ lang: state.lang }) }));
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: state.lang }) }));
 const brand = { id: "b1", slug: "pura", name_en: "Pura", name_ar: "بورا" };

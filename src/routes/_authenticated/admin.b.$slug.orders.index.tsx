@@ -67,6 +67,7 @@ import { CashCollectionModal } from "@/features/orders/components/CashCollection
 import { authenticatedJsonHeaders, copyInvoiceLink } from "@/features/orders/actions/order-links";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { arNounOblique } from "@/lib/arabic-count";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 type OrdersSearch = {
   tab?: string;
   queue?: string;
@@ -131,6 +132,7 @@ function OrdersList() {
   const routeSearch = Route.useSearch();
   const [view, setView] = useState<OrdersView>(routeSearch?.view === "board" ? "board" : "list");
   const currency = useStoreCurrency(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
 
   useEffect(() => {
     if (routeSearch?.action === "new_manual" || routeSearch?.action === "new") {
@@ -434,9 +436,11 @@ function OrdersList() {
         tabFilter,
         includeHistorical,
         hasMadeToOrder,
+        numberFormat,
       }),
     [
       orders,
+      numberFormat,
       normalizedSearch,
       paymentFilter,
       fulfillmentStatusFilter,

@@ -244,6 +244,9 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     // Whether the store takes orders now (opening-hours.ts): its busy pause and its hours.
     orders_paused_until: s?.orders_paused_until ?? null,
     opening_hours: s?.opening_hours ?? null,
+    // How order numbers are written (order-number.ts): a prefix and a least number of digits.
+    order_number_prefix: s?.order_number_prefix ?? null,
+    order_number_digits: s?.order_number_digits ?? null,
     quick_view_enabled: s?.quick_view_enabled ?? true,
     pdp_image_zoom: s?.pdp_image_zoom ?? true,
     category_filters_enabled: s?.category_filters_enabled ?? true,

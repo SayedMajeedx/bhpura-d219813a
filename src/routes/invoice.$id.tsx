@@ -27,6 +27,7 @@ import { policyLines } from "@/lib/bookings/policies";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { toast } from "sonner";
+import { orderNumberLabel, orderNumberText } from "@/lib/order-number";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -39,7 +40,9 @@ export const Route = createFileRoute("/invoice/$id")({
   head: ({ loaderData }) => {
     const inv = loaderData?.order?.invoice_number;
     const brand = loaderData?.settings?.business_name || "Boutq";
-    const title = inv ? `Invoice #${inv} — ${brand}` : `Invoice — ${brand}`;
+    const title = inv
+      ? `Invoice ${orderNumberLabel(inv, loaderData?.settings)} — ${brand}`
+      : `Invoice — ${brand}`;
     return {
       meta: [
         { title },
@@ -265,7 +268,8 @@ function PublicInvoice() {
           <div>
             <p className="text-sm font-semibold">{settings?.business_name}</p>
             <p className="text-xs text-neutral-500">
-              #{order.invoice_number} · {invoiceDate(order.created_at ?? order.order_date, lang)}
+              {orderNumberLabel(order.invoice_number, settings)} ·{" "}
+              {invoiceDate(order.created_at ?? order.order_date, lang)}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -289,7 +293,7 @@ function PublicInvoice() {
                 if (navigator.share) {
                   try {
                     await navigator.share({
-                      title: `${invoiceTitle} #${order.invoice_number}`,
+                      title: `${invoiceTitle} ${orderNumberLabel(order.invoice_number, settings)}`,
                       url,
                     });
                     return;
@@ -443,7 +447,7 @@ function PublicInvoice() {
                 </h1>
                 <div className="flex items-center justify-end gap-2 flex-wrap mt-1">
                   <p className="text-sm sm:text-base font-bold">
-                    {L.number}: {order.invoice_number}
+                    {L.number}: {orderNumberText(order.invoice_number, settings)}
                   </p>
                   <span
                     className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"

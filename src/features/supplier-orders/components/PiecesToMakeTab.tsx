@@ -14,6 +14,7 @@ import { daysWaiting } from "../lib/pieces-to-make";
 import { usePiecesToMake } from "../hooks/use-pieces-to-make";
 import { usePhoneBottomBar } from "../hooks/use-phone-bottom-bar";
 import { SendToTailorDialog } from "./SendToTailorDialog";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * Customers' made-to-order pieces waiting to go to the workshop, by order, the longest waiting
@@ -22,6 +23,7 @@ import { SendToTailorDialog } from "./SendToTailorDialog";
  */
 export function PiecesToMakeTab({ currency, lang }: { currency: string; lang: "ar" | "en" }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const brand = useBrand();
   const navigate = useNavigate();
   const { vocabulary } = useVocabulary();
@@ -91,8 +93,8 @@ export function PiecesToMakeTab({ currency, lang }: { currency: string; lang: "a
                     onCheckedChange={(checked) => toggle(ids, checked === true)}
                     aria-label={
                       isAr
-                        ? `كل قطع ${customerOrderName(group.invoice ?? null, true)}`
-                        : `Every piece of ${customerOrderName(group.invoice ?? null, false)}`
+                        ? `كل قطع ${customerOrderName(group.invoice ?? null, true, numberFormat)}`
+                        : `Every piece of ${customerOrderName(group.invoice ?? null, false, numberFormat)}`
                     }
                   />
                   <div className="min-w-0 flex-1">

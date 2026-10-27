@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-phone";
 import { arNoun } from "@/lib/arabic-count";
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 export { normalizePhoneForWhatsApp };
 
@@ -11,12 +12,14 @@ export function generateCourierWhatsAppUrl(input: {
   courierName: string;
   brandSlug: string;
   lang?: "ar" | "en";
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
 }): string {
   const isAr = input.lang === "ar";
   const phone = normalizePhoneForWhatsApp(input.courierPhone);
   if (!phone) return "";
 
-  const invNum = input.order.invoice_number || input.order.id?.slice(0, 8) || "N/A";
+  const invNum = orderNumberLabel(input.order.invoice_number, input.numberFormat, input.order.id);
   const orderUrl = `https://boutq.store/admin/b/${input.brandSlug}/orders/${input.order.id}`;
 
   // Customer delivery address
@@ -54,7 +57,7 @@ export function generateCourierWhatsAppUrl(input: {
     msg =
       `مرحباً ${input.courierName} 👋\n` +
       `تم إسناد طلب جديد لك:\n\n` +
-      `📌 *رقم الطلب:* #${invNum}\n` +
+      `📌 *رقم الطلب:* ${invNum}\n` +
       `👤 *العميل:* ${customerName || "عميل"}\n` +
       `📞 *هاتف العميل:* ${customerPhone || "غير محدد"}\n` +
       `📍 *العنوان:* ${addr}\n` +
@@ -65,7 +68,7 @@ export function generateCourierWhatsAppUrl(input: {
     msg =
       `Hi ${input.courierName} 👋\n` +
       `A new order has been assigned to you:\n\n` +
-      `📌 *Order #:* #${invNum}\n` +
+      `📌 *Order #:* ${invNum}\n` +
       `👤 *Customer:* ${customerName || "Customer"}\n` +
       `📞 *Phone:* ${customerPhone || "N/A"}\n` +
       `📍 *Address:* ${addr}\n` +

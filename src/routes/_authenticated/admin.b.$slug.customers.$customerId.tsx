@@ -67,6 +67,7 @@ import { CustomerAddressManager } from "@/components/customer-address-manager";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { CustomerConsentCard } from "@/features/outreach/components/CustomerConsentCard";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -120,6 +121,7 @@ function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
   const { lang } = useI18n();
   const brand = useBrand();
+  const orderNo = useOrderNumber(brand.id);
   const currency = useStoreCurrency(brand.id);
   const router = useRouter();
   useT();
@@ -129,9 +131,7 @@ function CustomerProfilePage() {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
 
   const customerQ = useQuery(customersQueries.detail(brand.id, customerId));
-
   const addressesQ = useQuery(customersQueries.customerAddresses(brand.id, customerId));
-
   const ordersQ = useQuery(ordersQueries.customerOrders(brand.id, customerId));
 
   const PAGE_SIZE = 8;
@@ -552,7 +552,7 @@ function CustomerProfilePage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-mono text-sm font-bold text-primary">
-                            #{order.invoice_number}
+                            {orderNo(order.invoice_number)}
                           </p>
                           <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CalendarDays className="h-3.5 w-3.5" />
@@ -648,7 +648,7 @@ function CustomerProfilePage() {
                               params={{ slug, id: order.id }}
                               className="font-semibold text-primary hover:underline"
                             >
-                              #{order.invoice_number}
+                              {orderNo(order.invoice_number)}
                             </Link>
                           </td>
                           <td className="p-4 text-muted-foreground whitespace-nowrap">

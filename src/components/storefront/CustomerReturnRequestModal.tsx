@@ -33,6 +33,8 @@ import {
   type CompensationMethod,
   type ReturnReasonCode,
 } from "@/lib/returns.types";
+import { orderNumberLabel } from "@/lib/order-number";
+import { useStorefront } from "@/lib/storefront-context";
 
 interface CustomerReturnRequestModalProps {
   open: boolean;
@@ -66,6 +68,7 @@ export function CustomerReturnRequestModal({
 }: CustomerReturnRequestModalProps) {
   // What the order was placed in: a return is worked out in the order's own currency.
   const currency: string = order?.currency || "BHD";
+  const { settings } = useStorefront();
   const [reasonCode, setReasonCode] = useState<ReturnReasonCode>("size_fit");
   const [reasonDetails, setReasonDetails] = useState("");
   const [preferredCompensation, setPreferredCompensation] =
@@ -183,8 +186,8 @@ export function CustomerReturnRequestModal({
           <DialogTitle className="flex items-center gap-2 text-base font-bold">
             <RotateCcw className="h-5 w-5 text-primary" />
             {isAr
-              ? `تقديم طلب إرجاع / استبدال (فاتورة #${order.invoice_number})`
-              : `Request Return / Exchange (Invoice #${order.invoice_number})`}
+              ? `تقديم طلب إرجاع / استبدال (فاتورة ${orderNumberLabel(order.invoice_number, settings)})`
+              : `Request Return / Exchange (Invoice ${orderNumberLabel(order.invoice_number, settings)})`}
           </DialogTitle>
         </DialogHeader>
 
