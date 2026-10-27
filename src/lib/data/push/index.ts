@@ -127,6 +127,26 @@ export async function registerWebPushSubscription(sub: {
   if (error) throw error;
 }
 
+/** The alerts a device takes (its own subscription only), or null when it has none. */
+export async function fetchAlertChoices(endpoint: string): Promise<Record<string, unknown> | null> {
+  const { data, error } = await supabase.rpc("web_push_alert_choices", { p_endpoint: endpoint });
+  if (error) throw error;
+  return (data as Record<string, unknown> | null) ?? null;
+}
+
+/** Saves some of a device's alert choices; the database keeps known kinds only, and answers all. */
+export async function saveAlertChoices(
+  endpoint: string,
+  choices: Record<string, boolean>,
+): Promise<Record<string, unknown>> {
+  const { data, error } = await supabase.rpc("set_web_push_alert_choices", {
+    p_endpoint: endpoint,
+    p_choices: choices,
+  });
+  if (error) throw error;
+  return (data as Record<string, unknown>) ?? {};
+}
+
 /** This device stops receiving order alerts (the person's own subscription only). */
 export async function removeWebPushSubscription(endpoint: string) {
   const { error } = await supabase.rpc("remove_web_push_subscription", { p_endpoint: endpoint });

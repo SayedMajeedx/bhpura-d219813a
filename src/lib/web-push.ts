@@ -1,4 +1,9 @@
-import { registerWebPushSubscription, removeWebPushSubscription } from "@/lib/data/push";
+import {
+  fetchAlertChoices,
+  registerWebPushSubscription,
+  removeWebPushSubscription,
+  saveAlertChoices,
+} from "@/lib/data/push";
 
 /**
  * Order alerts while the installed admin is closed (Web Push; the owner's request of 2026-10-27).
@@ -136,4 +141,20 @@ export async function showTestAlert(title: string, body: string): Promise<void> 
     tag: "boutq-test",
     silent: false,
   });
+}
+
+/** This device's alert choices, or null when it takes no alerts. */
+export async function deviceAlertChoices(): Promise<Record<string, unknown> | null> {
+  const subscription = await currentAlertSubscription();
+  return subscription ? fetchAlertChoices(subscription.endpoint) : null;
+}
+
+/** Turns one kind of alert on or off for this device; answers every choice as saved. */
+export async function setDeviceAlertChoice(
+  kind: string,
+  on: boolean,
+): Promise<Record<string, unknown>> {
+  const subscription = await currentAlertSubscription();
+  if (!subscription) throw new Error("NO_SUBSCRIPTION");
+  return saveAlertChoices(subscription.endpoint, { [kind]: on });
 }

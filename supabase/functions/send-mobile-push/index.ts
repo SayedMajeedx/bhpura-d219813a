@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { pushOutcome, webPushRequest } from "./web-push.ts";
+import { alertChoice, pushOutcome, webPushRequest } from "./web-push.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -29,7 +29,7 @@ async function deliverToWeb(event: any, base: string): Promise<number> {
   if (!vapid) return 0;
   const { data, error } = await supabase.rpc("web_push_targets", {
     p_brand_id: event.brand_id,
-    p_event_type: event.event_type,
+    p_event_type: alertChoice(event),
   });
   const targets = (data ?? []) as WebTarget[];
   if (error || !targets.length) return 0;
