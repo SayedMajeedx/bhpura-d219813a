@@ -688,6 +688,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   });
   const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
   const discountPercent = discountPercentFor(originalPriceWithAddons, displayPrice);
+  const priceRange = { min: minMatchingPrice, max: maxMatchingPrice };
 
   // A catalog asks by WhatsApp; a shop with WhatsApp on lets a shopper ask about this product.
   const inquiryUrl =
@@ -751,6 +752,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             lang={lang}
             originalPrice={originalPrice}
             priceLabel={priceLabel}
+            priceRange={priceRange}
             product={product}
             settings={settings}
             t={t}
@@ -945,6 +947,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             isTailoringActive={isTailoringActive}
             lang={lang}
             priceLabel={priceLabel}
+            priceShown={{ ...priceRange, price: displayPrice, was: originalPriceWithAddons }}
             primary={primary}
             product={product}
             scrollToOptions={scrollToOptions}

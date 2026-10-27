@@ -6,6 +6,8 @@ import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
 import { ProductOffers } from "@/features/product-page/components/ProductOffers";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredShownPrice } from "@/lib/offer-price";
 
 /** Product name with share and wishlist, the price with any original price and saving, and the store's offers that reach it. */
 export function ProductTitleAndPrice({
@@ -17,6 +19,7 @@ export function ProductTitleAndPrice({
   lang,
   originalPrice,
   priceLabel,
+  priceRange,
   product,
   settings,
   t,
@@ -30,11 +33,31 @@ export function ProductTitleAndPrice({
   lang: ReturnType<typeof useStorefront>["lang"];
   originalPrice: number;
   priceLabel: string;
+  /** The prices of the sizes still possible (the label shows a range when they differ). */
+  priceRange?: { min: number; max: number };
   product: Product;
   settings: ReturnType<typeof useStorefront>["settings"];
   t: ReturnType<typeof useStorefront>["t"];
   toggleWishlist: ReturnType<typeof useStorefront>["toggleWishlist"];
 }) {
+  // The store's offers on the shown price only (src/lib/offer-price.ts): the cart keeps the
+  // price, and checkout takes the offer off once.
+  const offers = useLiveOffers();
+  const offered = offeredShownPrice(offers, product, {
+    price: displayPrice,
+    was: originalPrice,
+    min: priceRange?.min ?? displayPrice,
+    max: priceRange?.max ?? displayPrice,
+    isRange: Boolean(priceRange && priceRange.min !== priceRange.max),
+  });
+  const shownLabel = !offered
+    ? priceLabel
+    : priceRange && priceRange.min !== priceRange.max
+      ? `${formatPrice(offered.min, currency, lang)} – ${formatPrice(offered.max, currency, lang)}`
+      : formatPrice(offered.price, currency, lang);
+  const shownWas = offered ? offered.was : originalPrice;
+  const shownPrice = offered ? offered.price : displayPrice;
+  const shownPercent = offered ? offered.percent : discountPercent;
   return (
     <>
       <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
@@ -74,18 +97,18 @@ export function ProductTitleAndPrice({
           </span>
         ) : (
           <>
-            <span>{priceLabel}</span>
-            {originalPrice > displayPrice && (
+            <span>{shownLabel}</span>
+            {shownWas > shownPrice && (
               <span className="text-base font-normal text-muted-foreground line-through">
-                {formatPrice(originalPrice, currency, lang)}
+                {formatPrice(shownWas, currency, lang)}
               </span>
             )}
-            {discountPercent > 0 && (
+            {shownPercent > 0 && (
               <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">
-                {t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}
+                {t(`وفر ${shownPercent}%`, `Save ${shownPercent}%`)}
               </span>
             )}
-            <ApproxPrice amount={displayPrice} className="basis-full text-sm" />
+            <ApproxPrice amount={shownPrice} className="basis-full text-sm" />
           </>
         )}
       </div>

@@ -27,6 +27,9 @@ import {
   descriptionLead,
   rentalPhotoRatio,
 } from "@/features/services-home/lib/rental-card";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice, offeredShownPrice } from "@/lib/offer-price";
+import { OfferTag } from "@/components/storefront/OfferTag";
 
 /** How many of "what's included" show on the card before "+ N". */
 const SHOWN_INCLUDES = 4;
@@ -63,6 +66,19 @@ export function RentalCard({
   const chosen = lengths.find((length) => length.minutes === minutes) ?? lengths[0] ?? null;
   const [detailsOpen, setDetailsOpen] = useState(false);
   const money = (amount: number) => formatPrice(amount, currency, lang);
+  // The store's offers on the chosen length's price and the card's badge (src/lib/offer-price.ts).
+  const offers = useLiveOffers();
+  const badge = offeredCardPrice(product, product.product_variants, offers).offerBadge;
+  const listed = chosen
+    ? priceWithDefaults(chosen.price, addOns, chosen.minutes, lengths[0]?.minutes)
+    : 0;
+  const offered = offeredShownPrice(offers, product, {
+    price: listed,
+    was: 0,
+    min: listed,
+    max: listed,
+    isRange: false,
+  });
 
   return (
     <article
@@ -100,6 +116,7 @@ export function RentalCard({
         <header className="space-y-2">
           <h3 className="font-display text-xl leading-tight text-balance text-foreground sm:text-2xl">
             {name}
+            <OfferTag badge={badge} className="ms-2 align-middle" />
           </h3>
           {(place || lengthsText) && (
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
@@ -177,10 +194,9 @@ export function RentalCard({
             )}
             <p className="flex flex-wrap items-baseline gap-x-2" aria-live="polite">
               <span className="font-display text-3xl font-semibold text-foreground">
-                {money(
-                  priceWithDefaults(chosen.price, addOns, chosen.minutes, lengths[0]?.minutes),
-                )}
+                {money(offered ? offered.price : listed)}
               </span>
+              {offered && <s className="text-sm text-muted-foreground">{money(offered.was)}</s>}
               <span className="text-sm text-muted-foreground">
                 {t(
                   `لمدة ${minutesText(chosen.minutes, true)}`,

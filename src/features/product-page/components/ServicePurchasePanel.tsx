@@ -16,6 +16,8 @@ import { priceWithDefaults } from "@/lib/bookings/service-options";
 import { addOnLines } from "@/features/services-home/lib/rental-card";
 import { AddOnList } from "@/features/services-home/components/AddOnList";
 import { BookingOffersList } from "@/features/storefront-booking/components/BookingOffersList";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredShownPrice } from "@/lib/offer-price";
 
 type ServiceProduct = {
   id: string;
@@ -73,8 +75,21 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
       variant?.duration_minutes ?? null,
       baseMinutes,
     );
-  const price = priceOf(chosen);
-  const was = Number(chosen?.original_price ?? 0);
+  // The store's offers on the shown prices (src/lib/offer-price.ts); the booking takes the better
+  // of these and its booking offers when the day is held.
+  const offers = useLiveOffers();
+  const offeredAt = (amount: number, before = 0) =>
+    offeredShownPrice(offers, product, {
+      price: amount,
+      was: before,
+      min: amount,
+      max: amount,
+      isRange: false,
+    });
+  const listed = priceOf(chosen);
+  const offered = offeredAt(listed, Number(chosen?.original_price ?? 0));
+  const price = offered ? offered.price : listed;
+  const was = offered ? offered.was : Number(chosen?.original_price ?? 0);
   const place = serviceLocationFrom(product.service_location);
   const includes = serviceIncludesFrom(product.service_includes).filter((line) =>
     isAr ? line.ar || line.en : line.en || line.ar,
@@ -113,7 +128,11 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
                     {formatDuration(Number(variant.duration_minutes), isAr)}
                   </span>
                   <span className="text-xs text-muted-foreground" dir="ltr">
-                    {formatPrice(priceOf(variant), currency, lang)}
+                    {formatPrice(
+                      offeredAt(priceOf(variant))?.price ?? priceOf(variant),
+                      currency,
+                      lang,
+                    )}
                   </span>
                 </Button>
               );

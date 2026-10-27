@@ -17,7 +17,8 @@ import { QuickViewModal } from "@/components/storefront/QuickViewModal";
 import { useReveal } from "@/lib/motion/use-reveal";
 import { serviceLengthsText } from "@/lib/bookings/service-lengths";
 import { hasAvailableStock } from "@/lib/data/storefront";
-import { cardPrice } from "@/lib/product-price";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
 
 export interface ProductCardV2Props {
   product: any;
@@ -77,8 +78,10 @@ export function ProductCardV2({
     mediaList.length > 1
       ? mediaList.find((m, i) => i > 0 && (m.type === "image" || !m.type))?.url || null
       : variants.find((v) => v.image_url && v.image_url !== primaryImage)?.image_url || null;
-  // What a shopper can buy now, and its own discount (one rule: src/lib/product-price.ts).
-  const price = cardPrice(product, variants);
+  // What a shopper can buy now, its own discount and the store's offers (one rule:
+  // src/lib/offer-price.ts over src/lib/product-price.ts).
+  const offers = useLiveOffers();
+  const price = offeredCardPrice(product, variants, offers);
   const minPrice = price.from;
   const maxPrice = price.to;
 
@@ -116,8 +119,16 @@ export function ProductCardV2({
     settings?.global_sale_badges_enabled !== false &&
     product.show_sale_badge !== false;
 
-  if (saleBadge) {
+  if (shouldShowPrices(settings) && price.offerBadge?.kind === "discount") {
+    // A store offer lowers the price: its percentage, struck price beside the new one.
+    badgeLabel = `-${price.offerBadge.percent}%`;
+    badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
+  } else if (saleBadge) {
     badgeLabel = price.percent ? `-${price.percent}%` : t("تخفيض", "Sale");
+    badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
+  } else if (shouldShowPrices(settings) && price.offerBadge?.kind === "offer") {
+    // An offer with terms (a minimum, buy X get Y): its terms are on the product's page.
+    badgeLabel = t("عرض", "Offer");
     badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
   } else if (isNewProduct) {
     badgeLabel = t("جديد", "New");

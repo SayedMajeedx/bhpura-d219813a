@@ -208,7 +208,7 @@ describe("what a shopper sees", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("says nothing on a service, which a booking prices", async () => {
+  it("names the offers on a service too, which its booking takes when they save more", async () => {
     state.storefront = shop();
     state.live = [live({})];
     const service = {
@@ -217,9 +217,8 @@ describe("what a shopper sees", () => {
       item_kind: "service",
       product_variants: [],
     } as unknown as ProductProp;
-    const { container } = withQuery(<ProductOffers product={service} />);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(container.textContent).toBe("");
+    withQuery(<ProductOffers product={service} />);
+    expect(await screen.findByText(/10% off/)).toBeTruthy();
   });
 
   it("tells the cart how far free delivery is", async () => {
