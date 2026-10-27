@@ -36,6 +36,11 @@
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
     },
+    "brand_staff_two_factor(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the store's members who have two-factor sign-in on (profile ids only), for the Team page; the function returns rows only to an admin of that store whose session gave its code (can_access_brand and is_admin inside)"
+    },
     "can_access_brand(_brand_id uuid)": {
       "anon": false,
       "authenticated": true,
