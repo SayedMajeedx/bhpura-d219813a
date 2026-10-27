@@ -898,6 +898,7 @@ export type Database = {
           discount_amount: number;
           discount_label_ar: string | null;
           discount_label_en: string | null;
+          discount_offer_id: string | null;
           discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
@@ -933,6 +934,7 @@ export type Database = {
           discount_amount?: number;
           discount_label_ar?: string | null;
           discount_label_en?: string | null;
+          discount_offer_id?: string | null;
           discount_rule_id?: string | null;
           ends_at: string;
           event_date: string;
@@ -968,6 +970,7 @@ export type Database = {
           discount_amount?: number;
           discount_label_ar?: string | null;
           discount_label_en?: string | null;
+          discount_offer_id?: string | null;
           discount_rule_id?: string | null;
           ends_at?: string;
           event_date?: string;
@@ -999,6 +1002,13 @@ export type Database = {
             columns: ["customer_id"];
             isOneToOne: false;
             referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "bookings_discount_offer_id_fkey";
+            columns: ["discount_offer_id"];
+            isOneToOne: false;
+            referencedRelation: "store_offers";
             referencedColumns: ["id"];
           },
           {
@@ -9794,6 +9804,7 @@ export type Database = {
           discount_amount: number;
           discount_label_ar: string | null;
           discount_label_en: string | null;
+          discount_offer_id: string | null;
           discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
@@ -10847,6 +10858,7 @@ export type Database = {
           discount_amount: number;
           discount_label_ar: string | null;
           discount_label_en: string | null;
+          discount_offer_id: string | null;
           discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
@@ -11323,6 +11335,7 @@ export type Database = {
           discount_amount: number;
           discount_label_ar: string | null;
           discount_label_en: string | null;
+          discount_offer_id: string | null;
           discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
@@ -11367,6 +11380,7 @@ export type Database = {
           discount_amount: number;
           discount_label_ar: string | null;
           discount_label_en: string | null;
+          discount_offer_id: string | null;
           discount_rule_id: string | null;
           ends_at: string;
           event_date: string;
