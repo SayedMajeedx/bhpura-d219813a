@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { replaceUrlQuietly } from "@/lib/quiet-url";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { Download } from "lucide-react";
@@ -37,11 +39,16 @@ import { getFulfillmentBadgeDetails } from "@/lib/status-labels";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useAddons } from "@/components/addons/AddonsProvider";
-import { invalidateOrders, ordersKeys, ordersQueries, type OrderListRow } from "@/lib/data/orders";
+import { invalidateOrders, ordersKeys, ordersQueries } from "@/lib/data/orders";
 
 import { OrderQuickInspectSheet } from "@/features/orders/components/OrderQuickInspectSheet";
 import { OrderImporterModal } from "@/features/orders/components/OrderImporterModal";
 import { renderOrderQueueAction } from "@/features/orders/components/order-queue-action";
+import { OrdersBoard } from "@/features/orders/components/OrdersBoard";
+import {
+  OrdersViewControls,
+  type OrdersView,
+} from "@/features/orders/components/OrdersViewControls";
 import { useBrandCouriers } from "@/features/orders/hooks/use-brand-couriers";
 import {
   filterQueueOrders,
@@ -66,6 +73,8 @@ type OrdersSearch = {
   fulfillment_status?: string;
   filter?: string;
   action?: string;
+  /** The board instead of the list. */
+  view?: string;
 };
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
@@ -77,6 +86,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
       result.fulfillment_status = search.fulfillment_status;
     if (typeof search.filter === "string") result.filter = search.filter;
     if (typeof search.action === "string") result.action = search.action;
+    if (search.view === "board") result.view = "board";
     return result;
   },
   component: OrdersList,
@@ -119,6 +129,8 @@ function OrdersList() {
 
   // Route search parameter integration for direct tab selection from dashboard
   const routeSearch = Route.useSearch();
+  const [view, setView] = useState<OrdersView>(routeSearch?.view === "board" ? "board" : "list");
+  const currency = useStoreCurrency(brandId);
 
   useEffect(() => {
     if (routeSearch?.action === "new_manual" || routeSearch?.action === "new") {
@@ -473,7 +485,7 @@ function OrdersList() {
     setPage(1);
   };
 
-  const renderContextualButton = (o: OrderListRow) =>
+  const renderContextualButton = (o: Parameters<typeof renderOrderQueueAction>[1]) =>
     renderOrderQueueAction(
       {
         brandId,
@@ -611,134 +623,161 @@ function OrdersList() {
         />
       )}
 
-      {/* 4. Mobile Purpose-Built Order Cards (375px) */}
-      <div className="space-y-3 block sm:hidden">
-        {paginatedOrders.map((o) => {
-          const paymentBadge = resolvePaymentStatus(
-            (o as any).payment_status,
-            o.status,
-            Number(o.total),
-            Number((o as any).advance_paid ?? 0),
-          );
-          const fulfillmentDetails = getFulfillmentBadgeDetails(
-            getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
-            lang,
-            (o as any).fulfillment_method,
-            vocabulary,
-          );
+      {/* Above the orders: the list or the board, and this browser's new-order sound. */}
+      <OrdersViewControls
+        view={view}
+        isAr={lang === "ar"}
+        onView={(next) => {
+          setView(next);
+          const url = new URL(window.location.href);
+          if (next === "board") url.searchParams.set("view", "board");
+          else url.searchParams.delete("view");
+          replaceUrlQuietly(url.pathname + url.search);
+        }}
+      />
 
-          return (
-            <OrderMobileCard
-              key={o.id}
+      {view === "board" ? (
+        <OrdersBoard
+          orders={sortedOrders}
+          slug={slug}
+          lang={lang}
+          currency={currency}
+          madeToOrder={hasMadeToOrder}
+          bookings={Boolean(storeProfile.modules.bookings)}
+          renderAction={(o) => renderContextualButton(o)}
+        />
+      ) : (
+        <>
+          {/* 4. Mobile Purpose-Built Order Cards (375px) */}
+          <div className="space-y-3 block sm:hidden">
+            {paginatedOrders.map((o) => {
+              const paymentBadge = resolvePaymentStatus(
+                (o as any).payment_status,
+                o.status,
+                Number(o.total),
+                Number((o as any).advance_paid ?? 0),
+              );
+              const fulfillmentDetails = getFulfillmentBadgeDetails(
+                getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
+                lang,
+                (o as any).fulfillment_method,
+                vocabulary,
+              );
+
+              return (
+                <OrderMobileCard
+                  key={o.id}
+                  lang={lang}
+                  slug={slug}
+                  order={o}
+                  paymentBadge={
+                    paymentBadge
+                      ? {
+                          label: t(`payStatus.${paymentBadge}`),
+                          className: PAYMENT_BADGE_CLASSES[paymentBadge],
+                        }
+                      : null
+                  }
+                  fulfillmentBadge={fulfillmentDetails}
+                  renderPrimaryAction={(ord: any) => renderContextualButton(ord)}
+                  selected={selectedOrderIds.has(o.id)}
+                  onSelectedChange={(selected) =>
+                    setSelectedOrderIds((current) => {
+                      const next = new Set(current);
+                      if (selected) next.add(o.id);
+                      else next.delete(o.id);
+                      return next;
+                    })
+                  }
+                />
+              );
+            })}
+          </div>
+
+          {/* 5. High-Density Desktop Work Queue Table */}
+          <div className="hidden sm:block">
+            <OrdersWorkQueue
               lang={lang}
               slug={slug}
-              order={o}
-              paymentBadge={
-                paymentBadge
+              orders={paginatedOrders}
+              isLoading={ordersQ.isLoading}
+              isError={ordersQ.isError}
+              getPaymentBadge={(o) => {
+                const pb = resolvePaymentStatus(
+                  (o as any).payment_status,
+                  o.status,
+                  Number(o.total),
+                  Number((o as any).advance_paid ?? 0),
+                );
+                return pb
                   ? {
-                      label: t(`payStatus.${paymentBadge}`),
-                      className: PAYMENT_BADGE_CLASSES[paymentBadge],
+                      label: t(`payStatus.${pb}`),
+                      className: PAYMENT_BADGE_CLASSES[pb],
                     }
-                  : null
+                  : null;
+              }}
+              getFulfillmentBadge={(o) =>
+                getFulfillmentBadgeDetails(
+                  getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
+                  lang,
+                  (o as any).fulfillment_method,
+                  vocabulary,
+                )
               }
-              fulfillmentBadge={fulfillmentDetails}
-              renderPrimaryAction={(ord: any) => renderContextualButton(ord)}
-              selected={selectedOrderIds.has(o.id)}
-              onSelectedChange={(selected) =>
+              renderPrimaryAction={(o) => renderContextualButton(o)}
+              onCopyInvoice={(id: string) => {
+                const ord = orders.find((x: any) => x.id === id);
+                if (ord) copyInvoiceLink((ord as any).public_invoice_token, t);
+              }}
+              onPrintThermal={(o) => {
+                setInspectOrder(o);
+              }}
+              onWhatsAppCustomer={(o) => {
+                const phone = getOrderCustomerContact(o)?.phone;
+                const waUrl = buildWhatsAppLink(phone);
+                if (waUrl) window.open(waUrl, "_blank");
+              }}
+              couriers={couriersQ.data ?? []}
+              onQuickViewOrder={(o) => setInspectOrder(o)}
+              onWhatsAppCourier={(o: any, courier: any) =>
+                setWaModalState({ isOpen: true, order: o, courier })
+              }
+              onAssignCourier={handleQuickAssignCourier}
+              onDeleteOrder={isAdmin ? (id: string) => setDeleteTarget(id) : undefined}
+              selectedOrderIds={selectedOrderIds}
+              onToggleOrder={(id, selected) =>
                 setSelectedOrderIds((current) => {
                   const next = new Set(current);
-                  if (selected) next.add(o.id);
-                  else next.delete(o.id);
+                  if (selected) next.add(id);
+                  else next.delete(id);
+                  return next;
+                })
+              }
+              onToggleAll={(selected) =>
+                setSelectedOrderIds((current) => {
+                  const next = new Set(current);
+                  for (const order of paginatedOrders) {
+                    if (selected) next.add(order.id);
+                    else next.delete(order.id);
+                  }
                   return next;
                 })
               }
             />
-          );
-        })}
-      </div>
+          </div>
 
-      {/* 5. High-Density Desktop Work Queue Table */}
-      <div className="hidden sm:block">
-        <OrdersWorkQueue
-          lang={lang}
-          slug={slug}
-          orders={paginatedOrders}
-          isLoading={ordersQ.isLoading}
-          isError={ordersQ.isError}
-          getPaymentBadge={(o) => {
-            const pb = resolvePaymentStatus(
-              (o as any).payment_status,
-              o.status,
-              Number(o.total),
-              Number((o as any).advance_paid ?? 0),
-            );
-            return pb
-              ? {
-                  label: t(`payStatus.${pb}`),
-                  className: PAYMENT_BADGE_CLASSES[pb],
-                }
-              : null;
-          }}
-          getFulfillmentBadge={(o) =>
-            getFulfillmentBadgeDetails(
-              getOrderWorkflow(o, { productionStages: hasMadeToOrder }).fulfillment,
-              lang,
-              (o as any).fulfillment_method,
-              vocabulary,
-            )
-          }
-          renderPrimaryAction={(o) => renderContextualButton(o)}
-          onCopyInvoice={(id: string) => {
-            const ord = orders.find((x: any) => x.id === id);
-            if (ord) copyInvoiceLink((ord as any).public_invoice_token, t);
-          }}
-          onPrintThermal={(o) => {
-            setInspectOrder(o);
-          }}
-          onWhatsAppCustomer={(o) => {
-            const phone = getOrderCustomerContact(o)?.phone;
-            const waUrl = buildWhatsAppLink(phone);
-            if (waUrl) window.open(waUrl, "_blank");
-          }}
-          couriers={couriersQ.data ?? []}
-          onQuickViewOrder={(o) => setInspectOrder(o)}
-          onWhatsAppCourier={(o: any, courier: any) =>
-            setWaModalState({ isOpen: true, order: o, courier })
-          }
-          onAssignCourier={handleQuickAssignCourier}
-          onDeleteOrder={isAdmin ? (id: string) => setDeleteTarget(id) : undefined}
-          selectedOrderIds={selectedOrderIds}
-          onToggleOrder={(id, selected) =>
-            setSelectedOrderIds((current) => {
-              const next = new Set(current);
-              if (selected) next.add(id);
-              else next.delete(id);
-              return next;
-            })
-          }
-          onToggleAll={(selected) =>
-            setSelectedOrderIds((current) => {
-              const next = new Set(current);
-              for (const order of paginatedOrders) {
-                if (selected) next.add(order.id);
-                else next.delete(order.id);
-              }
-              return next;
-            })
-          }
-        />
-      </div>
-
-      {/* Pagination Controls */}
-      <OrderListPagination
-        lang={lang}
-        page={page}
-        pageSize={pageSize}
-        setPage={setPage}
-        setPageSize={setPageSize}
-        sortedOrders={sortedOrders}
-        totalPages={totalPages}
-      />
+          {/* Pagination Controls */}
+          <OrderListPagination
+            lang={lang}
+            page={page}
+            pageSize={pageSize}
+            setPage={setPage}
+            setPageSize={setPageSize}
+            sortedOrders={sortedOrders}
+            totalPages={totalPages}
+          />
+        </>
+      )}
       {isAdmin && (
         <AlertDialog
           open={deleteTarget !== null}
