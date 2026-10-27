@@ -2116,6 +2116,8 @@ export type Database = {
           newsletter_title_en: string | null;
           next_invoice_number: number;
           offers_combine: string;
+          opening_hours: Json;
+          orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -2327,6 +2329,8 @@ export type Database = {
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
           offers_combine?: string;
+          opening_hours?: Json;
+          orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -2538,6 +2542,8 @@ export type Database = {
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
           offers_combine?: string;
+          opening_hours?: Json;
+          orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
           pdp_image_zoom?: boolean;
@@ -9059,6 +9065,8 @@ export type Database = {
           newsletter_enabled: boolean | null;
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
+          opening_hours: Json | null;
+          orders_paused_until: string | null;
           pages: Json | null;
           pdp_gallery_aspect_ratio: string | null;
           pdp_image_zoom: boolean | null;
@@ -9934,6 +9942,8 @@ export type Database = {
           newsletter_title_en: string | null;
           next_invoice_number: number;
           offers_combine: string;
+          opening_hours: Json;
+          orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
           pdp_image_zoom: boolean;
@@ -11321,6 +11331,10 @@ export type Database = {
           p_mode: string;
           p_offers: Json;
         };
+        Returns: Json;
+      };
+      store_open_state: {
+        Args: { p_at?: string; p_hours: Json };
         Returns: Json;
       };
       store_review_reward: {

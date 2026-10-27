@@ -39,6 +39,8 @@ import { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
 import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
+import { useOrderIntake } from "@/features/storefront-shell/hooks/use-order-intake";
+import { intakeSentence, intakeTakesOrders } from "@/lib/opening-hours";
 import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import { checkoutQueries } from "@/lib/data/checkout";
 import { PaymentFailedCard } from "@/features/checkout/components/PaymentFailedCard";
@@ -226,6 +228,17 @@ function Checkout() {
     country: selectedDestination === "BH" ? "BH" : selectedCountryCode,
     enabled: !appointment && !isCatalogMode(settings),
   });
+  // Whether the store takes the order now: busy, or closed by its hours (a booking only waits
+  // for a pause, never for the hours). The database refuses the same.
+  const orderStatus = useOrderIntake();
+  const intakeNote = orderStatus
+    ? intakeSentence(orderStatus.intake, settings.opening_hours, orderStatus.now, lang)
+    : null;
+  const closedToOrders = orderStatus
+    ? appointment
+      ? orderStatus.intake.state === "paused"
+      : !intakeTakesOrders(orderStatus.intake)
+    : false;
   const promoDiscount = Math.min(
     offers ? offers.code_discount : (appliedPromo?.amount ?? 0),
     cartTotal,
@@ -651,6 +664,8 @@ function Checkout() {
           tax={{ amount: totals.tax, added: totals.added, rate: taxRule.rate }}
           submit={submit}
           submitting={submitting}
+          closedToOrders={closedToOrders}
+          intakeNote={appointment && orderStatus?.intake.state === "closed" ? null : intakeNote}
           t={t}
         />
       </div>
@@ -666,6 +681,7 @@ function Checkout() {
         method={method}
         submit={submit}
         submitting={submitting}
+        closedToOrders={closedToOrders}
         t={t}
       />
 

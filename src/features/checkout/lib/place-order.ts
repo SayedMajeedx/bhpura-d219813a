@@ -213,6 +213,22 @@ export function placeOrderFailure(
       ),
       clearPromo: false,
     };
+  } else if (msg.includes("ORDERS_PAUSED")) {
+    return {
+      message: t(
+        "المتجر لا يستقبل طلبات جديدة الآن. حاول بعد قليل.",
+        "The store is not taking new orders right now. Please try again a little later.",
+      ),
+      clearPromo: false,
+    };
+  } else if (msg.includes("STORE_CLOSED")) {
+    return {
+      message: t(
+        "المتجر مغلق الآن ولا يستقبل طلبات. حاول في ساعات العمل.",
+        "The store is closed to orders now. Please order during its opening hours.",
+      ),
+      clearPromo: false,
+    };
   } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
     return { message: t("طريقة الدفع غير متاحة", "Payment method unavailable"), clearPromo: false };
   } else if (

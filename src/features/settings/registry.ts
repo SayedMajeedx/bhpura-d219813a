@@ -16,6 +16,7 @@ export type SettingsOwner =
   | "route:inventory" // low_stock_threshold يُدار من صفحة المخزون
   | "route:reviews" // review_reward_promo_id يُدار من صفحة التقييمات
   | "route:discounts" // offers_combine يُدار من صفحة الخصومات
+  | "route:dashboard" // orders_paused_until يُدار من لوحة التحكم
   | "system"; // لا يُعدَّل يدوياً (created_at, user_id, next_invoice_number...)
 
 export interface SettingsFieldDef {

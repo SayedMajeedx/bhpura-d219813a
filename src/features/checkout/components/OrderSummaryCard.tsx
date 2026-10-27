@@ -73,6 +73,8 @@ export function OrderSummaryCard({
   tax = NO_TAX_LINE,
   submit,
   submitting,
+  closedToOrders = false,
+  intakeNote = null,
   t,
   termsPage = null,
 }: {
@@ -121,6 +123,10 @@ export function OrderSummaryCard({
   tax?: SummaryTax;
   submit: ReturnType<typeof usePlaceOrder>["submit"];
   submitting: ReturnType<typeof usePlaceOrder>["submitting"];
+  /** The store takes no order now (busy, or closed and refusing): the button waits. */
+  closedToOrders?: boolean;
+  /** What the shopper is told about the store's pause or hours (`intakeSentence`). */
+  intakeNote?: string | null;
   t: Storefront["t"];
   /** The store's terms page (`termsPageSlug`), or null when it has none. */
   termsPage?: string | null;
@@ -489,10 +495,23 @@ export function OrderSummaryCard({
         </span>
       </label>
 
+      {intakeNote && (
+        <p
+          role="status"
+          className={
+            closedToOrders
+              ? "rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              : "rounded-lg bg-muted px-3 py-2 text-sm"
+          }
+        >
+          {intakeNote}
+        </p>
+      )}
       <Button
         className="w-full h-12 bg-primary text-primary-foreground rounded-lg"
         disabled={
           submitting ||
+          closedToOrders ||
           availableMethods.length === 0 ||
           fulfillmentOptions.length === 0 ||
           !acceptedTerms ||
