@@ -10,8 +10,8 @@ import { registerWebPushSubscription, removeWebPushSubscription } from "@/lib/da
  */
 
 /** The platform's public VAPID key (its private half is the push sender's secret). */
-export const VAPID_PUBLIC_KEY =
-  "BF7pwTsbHu-eE0lo3szbjRl9gmt9l5AeoD57e4h1b5kLRw_Yh6ARvbOBdouNY0h5GzrwAPbAzNa6nGDG5Ka2X6Y";
+// prettier-ignore
+export const VAPID_PUBLIC_KEY = "BF7pwTsbHu-eE0lo3szbjRl9gmt9l5AeoD57e4h1b5kLRw_Yh6ARvbOBdouNY0h5GzrwAPbAzNa6nGDG5Ka2X6Y"; // gitleaks:allow (a public key)
 
 export const ADMIN_WORKER = "/admin-sw.js";
 export const ADMIN_SCOPE = "/admin/";
