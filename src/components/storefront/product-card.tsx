@@ -27,6 +27,8 @@ export function ProductCard({
   className?: string;
 }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
+  // The store's live offers, before any early return (one request shared by every card).
+  const offers = useLiveOffers();
 
   if (settings?.storefront_design_version === 2) {
     return <ProductCardV2 product={product} badge={badge} index={index} className={className} />;
@@ -38,7 +40,6 @@ export function ProductCard({
     .sort((a, b) => a.selling_price - b.selling_price);
   // What a shopper can buy now, its own discount and the store's offers (one rule:
   // src/lib/offer-price.ts over src/lib/product-price.ts).
-  const offers = useLiveOffers();
   const price = offeredCardPrice(product, product.product_variants, offers);
   const minPrice = price.from;
   const maxPrice = price.to;
