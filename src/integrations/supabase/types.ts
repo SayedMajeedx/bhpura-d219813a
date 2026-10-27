@@ -8600,6 +8600,56 @@ export type Database = {
           },
         ];
       };
+      web_push_subscriptions: {
+        Row: {
+          auth: string;
+          brand_id: string;
+          created_at: string;
+          device_name: string | null;
+          endpoint: string;
+          id: string;
+          last_sent_at: string | null;
+          p256dh: string;
+          preferences: Json;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          brand_id: string;
+          created_at?: string;
+          device_name?: string | null;
+          endpoint: string;
+          id?: string;
+          last_sent_at?: string | null;
+          p256dh: string;
+          preferences?: Json;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          brand_id?: string;
+          created_at?: string;
+          device_name?: string | null;
+          endpoint?: string;
+          id?: string;
+          last_sent_at?: string | null;
+          p256dh?: string;
+          preferences?: Json;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "web_push_subscriptions_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       whatsapp_integrations: {
         Row: {
           brand_id: string;
@@ -10719,6 +10769,16 @@ export type Database = {
         };
         Returns: string;
       };
+      register_web_push_subscription: {
+        Args: {
+          p_auth: string;
+          p_brand_id: string;
+          p_device_name?: string;
+          p_endpoint: string;
+          p_p256dh: string;
+        };
+        Returns: string;
+      };
       reject_benefit_payment:
         | { Args: { p_order_id: string }; Returns: Json }
         | { Args: { p_order_id: string; p_reason: string }; Returns: Json };
@@ -10727,6 +10787,10 @@ export type Database = {
         Returns: string;
       };
       release_due_loyalty_points: { Args: never; Returns: number };
+      remove_web_push_subscription: {
+        Args: { p_endpoint: string };
+        Returns: undefined;
+      };
       reorder_categories: {
         Args: { p_brand_id: string; p_category_ids: string[] };
         Returns: undefined;
@@ -11564,6 +11628,15 @@ export type Database = {
       void_supplier_payment: {
         Args: { p_payment_id: string; p_reason: string };
         Returns: undefined;
+      };
+      web_push_targets: {
+        Args: { p_brand_id: string; p_event_type: string };
+        Returns: {
+          auth: string;
+          endpoint: string;
+          id: string;
+          p256dh: string;
+        }[];
       };
     };
     Enums: {

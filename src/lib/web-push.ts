@@ -60,10 +60,12 @@ export function thisDevice() {
   };
 }
 
-function keyBytes(base64url: string): Uint8Array {
+function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
   const binary = atob(base64 + "=".repeat((4 - (base64.length % 4)) % 4));
-  return Uint8Array.from(binary, (c) => c.charCodeAt(0));
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
 }
 
 async function adminRegistration(): Promise<ServiceWorkerRegistration | undefined> {
