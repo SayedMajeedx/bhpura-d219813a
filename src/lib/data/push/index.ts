@@ -106,6 +106,33 @@ export async function createPushCampaign(args: {
   if (error) throw error;
 }
 
+/**
+ * An installed admin's browser subscription for order alerts (src/lib/web-push.ts): kept for the
+ * store being looked at, by staff who handle its orders (`register_web_push_subscription`).
+ */
+export async function registerWebPushSubscription(sub: {
+  brandId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  deviceName: string;
+}) {
+  const { error } = await supabase.rpc("register_web_push_subscription", {
+    p_brand_id: sub.brandId,
+    p_endpoint: sub.endpoint,
+    p_p256dh: sub.p256dh,
+    p_auth: sub.auth,
+    p_device_name: sub.deviceName,
+  });
+  if (error) throw error;
+}
+
+/** This device stops receiving order alerts (the person's own subscription only). */
+export async function removeWebPushSubscription(endpoint: string) {
+  const { error } = await supabase.rpc("remove_web_push_subscription", { p_endpoint: endpoint });
+  if (error) throw error;
+}
+
 /** The merchant app shell registers its device for staff notifications (best-effort). */
 export async function registerMobilePushDevice(device: {
   token: string;
