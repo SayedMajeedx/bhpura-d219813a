@@ -401,7 +401,7 @@ function AnnouncementBar() {
           variant="ghost"
           size="icon"
           className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-md hover:bg-white/15 opacity-80 hover:opacity-100"
-          aria-label="Dismiss announcement"
+          aria-label={lang === "ar" ? "إغلاق الإعلان" : "Dismiss announcement"}
           onClick={() => {
             try {
               sessionStorage.setItem(key, "1");

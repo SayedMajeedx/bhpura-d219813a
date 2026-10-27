@@ -211,7 +211,10 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                             size="icon"
                             className="h-11 w-11 rounded-none"
                             onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
-                            aria-label="decrease"
+                            aria-label={t(
+                              `تقليل كمية ${displayName}`,
+                              `Decrease ${displayName} quantity`,
+                            )}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -225,7 +228,10 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                             className="h-11 w-11 rounded-none"
                             disabled={item.qty >= item.max_stock}
                             onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
-                            aria-label="increase"
+                            aria-label={t(
+                              `زيادة كمية ${displayName}`,
+                              `Increase ${displayName} quantity`,
+                            )}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>

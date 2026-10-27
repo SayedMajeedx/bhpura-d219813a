@@ -334,7 +334,7 @@ export function QuickViewModal({
                       disabled={qty <= 1}
                       onClick={() => setQty((q) => Math.max(1, q - 1))}
                       className="h-auto rounded-md p-2 text-muted-foreground hover:text-foreground disabled:opacity-40"
-                      aria-label="Decrease quantity"
+                      aria-label={t("تقليل الكمية", "Decrease quantity")}
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </Button>
@@ -345,7 +345,7 @@ export function QuickViewModal({
                       size="sm"
                       onClick={() => setQty((q) => q + 1)}
                       className="h-auto rounded-md p-2 text-muted-foreground hover:text-foreground"
-                      aria-label="Increase quantity"
+                      aria-label={t("زيادة الكمية", "Increase quantity")}
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </Button>
