@@ -6,9 +6,11 @@ import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { profilesQueries } from "@/lib/data/profiles";
 import { prefetchAdminShell } from "@/lib/auth/admin-prefetch";
+import { adminAppHead } from "@/lib/admin-app-head";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  head: adminAppHead,
   beforeLoad: async ({ context: { queryClient }, location }) => {
     const storefrontReturn = readStorefrontOAuthReturn();
     if (storefrontReturn) throw redirect({ to: storefrontReturn as any });
