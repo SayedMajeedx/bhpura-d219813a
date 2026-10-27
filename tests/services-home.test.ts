@@ -4,6 +4,8 @@ import {
   fromPriceOf,
   includeLinesOf,
   isServicesStore,
+  compareAtAt,
+  fromCompareAtOf,
   lengthPrices,
   lengthRangeText,
   minutesText,
@@ -19,6 +21,7 @@ import {
   packageSaving,
   packageSavingText,
   separatePrice,
+  wasPrice,
 } from "../src/lib/bookings/service-package";
 
 const variant = (price: number, minutes: number | null = null, was: number | null = null) => ({
@@ -116,9 +119,9 @@ describe("the home page of a services store", () => {
     expect(serviceImages(framed)).toEqual(["https://cdn.test/cover.jpg", "https://cdn.test/a.jpg"]);
     expect(serviceImages(product({}))).toEqual([]);
     expect(lengthPrices(booth)).toEqual([
-      { minutes: 60, price: 40 },
-      { minutes: 120, price: 70 },
-      { minutes: 180, price: 95 },
+      { minutes: 60, price: 40, was: null },
+      { minutes: 120, price: 70, was: null },
+      { minutes: 180, price: 95, was: null },
     ]);
     expect(lengthPrices(prints)).toEqual([]);
   });
@@ -155,6 +158,7 @@ describe("the home page of a services store", () => {
     expect(packageOffer(bundle, [], [booth], name)).toEqual({
       price: 50,
       apart: null,
+      was: null,
       saving: null,
       includes: [],
     });
@@ -226,5 +230,56 @@ describe("the cards' shared words and pictures", () => {
     const card = (image_url: string | null) => ({ image_url }) as never;
     expect(reservesPicture([card(null), card("https://cdn/booth.jpg")])).toBe(true);
     expect(reservesPicture([card(null), card(null)])).toBe(false);
+  });
+});
+
+describe("the price a service is struck against", () => {
+  const hours = (h: number) => h * 60;
+  const photobooth = product({ id: "photobooth", product_variants: [variant(50, hours(5))] });
+  const videobooth = product({ id: "videobooth", product_variants: [variant(85, hours(5))] });
+  const lines = ["photobooth", "videobooth"].map((id) => ({ product_id: id, quantity: 1 }));
+
+  it("is the merchant's own price before discount, over the services apart", () => {
+    // Aurora's Diamond Package: 160 for 5 hours, 215 before discount, 135 apart.
+    const diamond = product({
+      id: "diamond",
+      is_package: true,
+      product_variants: [variant(160, hours(5), 215)],
+    });
+    const offer = packageOffer(diamond, lines, [photobooth, videobooth], (p) => p.name);
+    expect(offer).toMatchObject({
+      price: 160,
+      apart: 135,
+      was: 215,
+      saving: { amount: 55, percent: 26 },
+    });
+  });
+
+  it("is the services apart when no price before discount is set, and nothing when neither is above", () => {
+    const pearl = product({
+      id: "pearl",
+      is_package: true,
+      product_variants: [variant(120, hours(5))],
+    });
+    expect(packageOffer(pearl, lines, [photobooth, videobooth], (p) => p.name)).toMatchObject({
+      was: 135,
+      saving: { amount: 15, percent: 11 },
+    });
+    expect(wasPrice(null, 100, 120)).toBeNull();
+    expect(wasPrice(100, null, 120)).toBeNull();
+    expect(wasPrice(130, 140, 120)).toBe(130);
+  });
+
+  it("is each length's own, on a rental and a service card", () => {
+    const booth = product({
+      product_variants: [variant(45, hours(4), 60), variant(40, hours(3))],
+    });
+    expect(lengthPrices(booth)).toEqual([
+      { minutes: 180, price: 40, was: null },
+      { minutes: 240, price: 45, was: 60 },
+    ]);
+    expect(compareAtAt(booth, hours(4))).toBe(60);
+    // The card's "from" price is 3 hours, which has none.
+    expect(fromCompareAtOf(booth)).toBeNull();
   });
 });

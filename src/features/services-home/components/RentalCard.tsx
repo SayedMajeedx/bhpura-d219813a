@@ -72,9 +72,14 @@ export function RentalCard({
   const listed = chosen
     ? priceWithDefaults(chosen.price, addOns, chosen.minutes, lengths[0]?.minutes)
     : 0;
+  // The chosen length's own price before discount, with the same add-ons (0: none).
+  const listedWas =
+    chosen && chosen.was !== null
+      ? priceWithDefaults(chosen.was, addOns, chosen.minutes, lengths[0]?.minutes)
+      : 0;
   const offered = offeredShownPrice(offers, product, {
     price: listed,
-    was: 0,
+    was: listedWas,
     min: listed,
     max: listed,
     isRange: false,
@@ -196,7 +201,11 @@ export function RentalCard({
               <span className="font-display text-3xl font-semibold text-foreground">
                 {money(offered ? offered.price : listed)}
               </span>
-              {offered && <s className="text-sm text-muted-foreground">{money(offered.was)}</s>}
+              {offered ? (
+                <s className="text-sm text-muted-foreground">{money(offered.was)}</s>
+              ) : listedWas > listed ? (
+                <s className="text-sm text-muted-foreground">{money(listedWas)}</s>
+              ) : null}
               <span className="text-sm text-muted-foreground">
                 {t(
                   `لمدة ${minutesText(chosen.minutes, true)}`,

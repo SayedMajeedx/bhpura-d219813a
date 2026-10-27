@@ -14,12 +14,15 @@ export function PackageIncludes({
   product,
   minutes,
   price,
+  compareAt = null,
 }: {
   product: { id: string; is_package?: boolean | null };
   /** The chosen length (null for a package priced at one fixed price). */
   minutes: number | null;
   /** The package's price at that length. */
   price: number;
+  /** Its own price before discount, struck above it: then its saving is that one, not this. */
+  compareAt?: number | null;
 }) {
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
@@ -36,7 +39,7 @@ export function PackageIncludes({
     variants: item.product_variants,
   }));
   const apart = separatePrice(lines, services, minutes);
-  const saving = packageSaving(apart, price);
+  const saving = compareAt !== null && compareAt > price ? null : packageSaving(apart, price);
 
   return (
     <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">

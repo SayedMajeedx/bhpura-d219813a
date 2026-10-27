@@ -187,7 +187,12 @@ export function ServicePurchasePanel({ product }: { product: ServiceProduct }) {
         </li>
       </ul>
 
-      <PackageIncludes product={product} minutes={chosen?.duration_minutes ?? null} price={price} />
+      <PackageIncludes
+        product={product}
+        minutes={chosen?.duration_minutes ?? null}
+        price={price}
+        compareAt={was > price ? was : null}
+      />
 
       {includes.length > 0 && (
         <div className="space-y-2 rounded-xl border border-border bg-muted/30 p-4">

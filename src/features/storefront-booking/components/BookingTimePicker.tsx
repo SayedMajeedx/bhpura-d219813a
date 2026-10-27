@@ -15,6 +15,7 @@ import {
   blockedReasonText,
   startBlockedReason,
 } from "@/features/storefront-booking/lib/service-availability";
+import { formatPrice } from "@/lib/storefront-context";
 
 function Chip({
   selected,
@@ -157,7 +158,10 @@ function PeriodPicker({ flow, times }: { flow: BookingFlow; times: string[] }) {
 
 /** Step 3: how long, and from when; the end time follows. */
 export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
-  const { isAr, rules } = flow;
+  const { isAr, rules, currency } = flow;
+  // Each length's price for what is chosen, so a length past a service's own (its extra hours)
+  // says what it costs; none in a store that hides its prices, or before a service is chosen.
+  const priced = flow.showPrices && flow.flow.services.length > 0;
   if (!rules) return null;
   const { durationMinutes, start } = flow.flow;
   const end = start && durationMinutes ? bookingEnd(start, durationMinutes) : null;
@@ -175,7 +179,14 @@ export function BookingTimePicker({ flow }: { flow: BookingFlow }) {
               selected={durationMinutes === minutes}
               onClick={() => flow.update({ durationMinutes: minutes })}
             >
-              {formatDuration(minutes, isAr)}
+              <span className="flex flex-col items-center leading-tight">
+                <span>{formatDuration(minutes, isAr)}</span>
+                {priced && flow.totalFor(minutes) > 0 && (
+                  <span className="text-xs font-normal opacity-80" dir="ltr">
+                    {formatPrice(flow.totalFor(minutes), currency, isAr ? "ar" : "en")}
+                  </span>
+                )}
+              </span>
             </Chip>
           ))}
         </div>

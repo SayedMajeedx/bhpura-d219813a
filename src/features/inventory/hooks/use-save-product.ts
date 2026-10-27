@@ -8,12 +8,11 @@ import {
   countProductVariants,
   createProduct,
   createVariants,
-  deleteVariants,
   saveProductCost,
   setMadeToOrderLimit,
+  setServiceLengths,
   syncVariantsWithProduct,
   updateProduct,
-  updateVariant,
 } from "@/lib/data/catalog";
 import { savePackageItems } from "@/lib/data/service-packages";
 import { saveServiceOptions } from "@/lib/data/service-options";
@@ -31,7 +30,7 @@ import { partsChanged, partsToSave } from "@/features/inventory/lib/cost-parts";
 import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-limit";
 import {
   serviceFromPrice,
-  servicePricingChanges,
+  serviceLengths,
   servicePricingError,
   type ServicePricing,
 } from "@/features/inventory/lib/service-pricing";
@@ -112,26 +111,15 @@ export function useSaveProduct({
     const columns = productColumnsFrom(form);
     // A service's base price is its "from" price: its lowest offered price.
     if (isService && service?.pricing) columns.base_price = serviceFromPrice(service.pricing);
-    // A service's prices become its variants, each at the service's cost.
+    // A service's prices become its variants, one per length, each at the service's cost: one
+    // set the database saves whole (set_service_lengths), so saving twice changes nothing.
     const saveServicePrices = async (productId: string) => {
       if (!service?.pricing) return;
-      const changes = servicePricingChanges(service.pricing, service.variants, isAr);
-      if (changes.create.length) {
-        await createVariants(
-          brand.id,
-          changes.create.map((values) => ({
-            user_id: user.id,
-            brand_id: brand.id,
-            product_id: productId,
-            cost_price: columns.cost_price,
-            ...values,
-          })),
-        );
-      }
-      for (const { id, patch } of changes.update) {
-        await updateVariant(brand.id, id, { ...patch, cost_price: columns.cost_price });
-      }
-      if (changes.remove.length) await deleteVariants(brand.id, changes.remove);
+      await setServiceLengths(
+        productId,
+        serviceLengths(service.pricing, isAr),
+        columns.cost_price ?? null,
+      );
     };
     // What a package includes is saved after the product (the package flag comes first).
     const savePackage = async (productId: string, wasPackage: boolean) => {

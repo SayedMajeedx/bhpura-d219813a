@@ -5,6 +5,7 @@ import {
   packageLength,
   separatePrice,
   servicePriceAt,
+  wasPrice,
   type PackageLine,
   type PriceableService,
 } from "@/lib/bookings/service-package";
@@ -90,21 +91,51 @@ export function serviceImages(product: ProductRow): string[] {
 }
 
 /** What each length costs, shortest first (empty for a service not priced by length). */
-export function lengthPrices(product: ProductRow): Array<{ minutes: number; price: number }> {
+export function lengthPrices(
+  product: ProductRow,
+): Array<{ minutes: number; price: number; was: number | null }> {
   return product.product_variants
     .flatMap((variant) =>
       typeof variant.duration_minutes === "number" && variant.duration_minutes > 0
-        ? [{ minutes: variant.duration_minutes, price: Number(variant.selling_price) }]
+        ? [
+            {
+              minutes: variant.duration_minutes,
+              price: Number(variant.selling_price),
+              was: compareAtOf(variant),
+            },
+          ]
         : [],
     )
     .sort((a, b) => a.minutes - b.minutes);
 }
+
+/** A variant's own price before discount, when it is above its price. */
+function compareAtOf(variant: { selling_price: unknown; original_price?: unknown }): number | null {
+  const was = Number(variant.original_price ?? 0);
+  return was > Number(variant.selling_price ?? 0) ? was : null;
+}
+
+/** The service's own price before discount at a length (null: its fixed price), if it set one. */
+export function compareAtAt(product: ProductRow, minutes: number | null): number | null {
+  const variant = product.product_variants.find((candidate) =>
+    minutes === null
+      ? typeof candidate.duration_minutes !== "number"
+      : candidate.duration_minutes === minutes,
+  );
+  return variant ? compareAtOf(variant) : null;
+}
+
+/** The before-discount price at the service's "from" price (its cheapest length). */
+export const fromCompareAtOf = (product: ProductRow): number | null =>
+  compareAtAt(product, packageLength(asPriceable(product).variants, null));
 
 export type PackageOffer = {
   /** What the package costs (its "from" price). */
   price: number;
   /** What its services cost apart, or null when one has no price. */
   apart: number | null;
+  /** The price it is struck against: its own before-discount price, else its services apart. */
+  was: number | null;
   /** What it saves, or null when it saves nothing. */
   saving: { amount: number; percent: number } | null;
   /** The included services, named for the reader, with how many. */
@@ -134,7 +165,9 @@ export function packageOffer(
     const service = products.find((p) => p.id === line.product_id);
     return service ? [{ id: service.id, name: nameOf(service), quantity: line.quantity }] : [];
   });
-  return { price, apart, saving: packageSaving(apart, price), includes };
+  const length = packageLength(asPriceable(pkg).variants, null);
+  const was = wasPrice(compareAtAt(pkg, length), apart, price);
+  return { price, apart, was, saving: packageSaving(was, price), includes };
 }
 
 /** Where a service happens, in the shopper's words (`products.service_location`). */
