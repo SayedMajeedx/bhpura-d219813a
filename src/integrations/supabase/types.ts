@@ -2031,6 +2031,7 @@ export type Database = {
           delivery_fee: number;
           delivery_schedule: Json;
           digital_delivery_enabled: boolean;
+          display_currencies: string[];
           email: string | null;
           email_footer_ar: string | null;
           email_footer_en: string | null;
@@ -2244,6 +2245,7 @@ export type Database = {
           delivery_fee?: number;
           delivery_schedule?: Json;
           digital_delivery_enabled?: boolean;
+          display_currencies?: string[];
           email?: string | null;
           email_footer_ar?: string | null;
           email_footer_en?: string | null;
@@ -2457,6 +2459,7 @@ export type Database = {
           delivery_fee?: number;
           delivery_schedule?: Json;
           digital_delivery_enabled?: boolean;
+          display_currencies?: string[];
           email?: string | null;
           email_footer_ar?: string | null;
           email_footer_en?: string | null;
@@ -3300,6 +3303,27 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      exchange_rates: {
+        Row: {
+          currency: string;
+          per_usd: number;
+          source: string;
+          updated_at: string;
+        };
+        Insert: {
+          currency: string;
+          per_usd: number;
+          source?: string;
+          updated_at?: string;
+        };
+        Update: {
+          currency?: string;
+          per_usd?: number;
+          source?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       expenses: {
         Row: {
@@ -9866,6 +9890,7 @@ export type Database = {
           delivery_fee: number;
           delivery_schedule: Json;
           digital_delivery_enabled: boolean;
+          display_currencies: string[];
           email: string | null;
           email_footer_ar: string | null;
           email_footer_en: string | null;
@@ -11355,6 +11380,10 @@ export type Database = {
         }[];
       };
       storefront_active_offers: {
+        Args: { p_brand_slug: string };
+        Returns: Json;
+      };
+      storefront_currency_display: {
         Args: { p_brand_slug: string };
         Returns: Json;
       };
