@@ -131,9 +131,7 @@ function CustomerProfilePage() {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
 
   const customerQ = useQuery(customersQueries.detail(brand.id, customerId));
-
   const addressesQ = useQuery(customersQueries.customerAddresses(brand.id, customerId));
-
   const ordersQ = useQuery(ordersQueries.customerOrders(brand.id, customerId));
 
   const PAGE_SIZE = 8;

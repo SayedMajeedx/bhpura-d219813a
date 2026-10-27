@@ -3,6 +3,24 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { orderEditLock, shouldWarnBeforeLeaving } from "../src/features/orders/lib/order-editor";
 
+// The store's order number format (use-order-number.ts): none here, so "#1042" as before.
+vi.mock("../src/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+vi.mock("@/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+
 vi.mock("@tanstack/react-router", () => ({
   useRouter: () => ({ history: { back: vi.fn() }, navigate: vi.fn() }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,

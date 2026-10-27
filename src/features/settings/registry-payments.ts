@@ -189,7 +189,7 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     table: "business_settings",
     tab: "orders",
     group: "invoice",
-    level: "basic",
+    level: "advanced",
     owner: "settings",
     type: "text",
     label: { ar: "بادئة رقم الطلب", en: "Order number prefix" },
