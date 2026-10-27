@@ -9,6 +9,7 @@ import { costLocked, type FormProblem, type FormProduct } from "../lib/order-for
 import { customerOrderName } from "../lib/customer-pieces";
 import { piecesLabel } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /** One product of a supplier's order: its cost per piece and how many of each size. */
 export function ProductLinesCard({
@@ -34,6 +35,7 @@ export function ProductLinesCard({
   onRemove: () => void;
 }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const uid = useId();
   const info = catalog.productById.get(product.productId);
   const sizes = catalog.sizes.get(product.productId) ?? [];
@@ -64,7 +66,7 @@ export function ProductLinesCard({
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-primary">
-              {customerOrderName(product.customer.invoice, isAr)}
+              {customerOrderName(product.customer.invoice, isAr, numberFormat)}
             </p>
             <h3 dir="auto" className="text-page-start line-clamp-2 break-words font-bold">
               {product.customer.label}

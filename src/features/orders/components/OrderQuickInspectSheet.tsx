@@ -7,6 +7,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useProfile } from "@/lib/profile-context";
 import { getOrderCustomerContact, getOrderCustomerName } from "@/lib/order-customer-snapshot";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 export function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
   if (!customer?.phone) return null;
@@ -55,6 +56,7 @@ export function OrderQuickInspectSheet({
   locale: string;
   onClose: () => void;
 }) {
+  const orderNo = useOrderNumber();
   const { isAdmin } = useProfile();
   if (!order) return null;
   const isAr = lang === "ar";
@@ -69,7 +71,7 @@ export function OrderQuickInspectSheet({
         <div className="p-6 pe-16 ps-12 border-b space-y-2">
           <div className="flex items-center justify-between gap-3">
             <SheetTitle className="text-2xl font-extrabold font-display">
-              #{order.invoice_number}
+              {orderNo(order.invoice_number)}
             </SheetTitle>
             <span className="text-xs font-mono font-bold text-muted-foreground">
               {formatDate(order.created_at ?? order.order_date, locale)}

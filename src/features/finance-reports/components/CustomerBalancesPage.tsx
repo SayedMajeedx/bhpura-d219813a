@@ -31,6 +31,7 @@ import {
 import { accountingFigure } from "../lib/statement";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
 import { arNoun } from "@/lib/arabic-count";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * What customers owe the store today, aged from the day each piece was handed over, by customer
@@ -348,6 +349,8 @@ function OrderRow({
   money: (value: number) => string;
   lang: "ar" | "en";
 }) {
+  const orderNo = useOrderNumber();
+  const numberFormat = useOrderNumberFormat();
   const isAr = lang === "ar";
   const chat = whatsappChatUrl(customer.phone);
   const invoice =
@@ -361,6 +364,7 @@ function OrderRow({
           brandName: storeName,
           customerName: customer.name,
           invoiceNumber: order.invoice_number,
+          numberFormat,
           stage: "balance",
           balance: order.balance,
           currency: order.currency,
@@ -375,7 +379,7 @@ function OrderRow({
           params={{ slug, id: order.id }}
           className="font-semibold text-primary hover:underline"
         >
-          #{order.invoice_number ?? "—"}
+          {orderNo(order.invoice_number)}
         </Link>
         <span className="block text-muted-foreground">
           {order.handed_over_at

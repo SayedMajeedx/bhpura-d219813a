@@ -12,6 +12,7 @@ import {
   reviewsQueries,
   updateReviewRequestStatus,
 } from "@/lib/data/reviews";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 
 type ReviewRequest = {
   request_id: string;
@@ -33,6 +34,8 @@ export function ReviewRequestQueue({
   brandName: string;
   isAr: boolean;
 }) {
+  const orderNo = useOrderNumber(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
   const queryClient = useQueryClient();
   // The store's own thank-you discount, promised only while it gives one.
   const reward = useReviewReward(brandId);
@@ -66,6 +69,7 @@ export function ReviewRequestQueue({
       customerName: request.customer_name,
       brandName,
       invoiceNumber: request.invoice_number,
+      numberFormat,
       reviewUrl,
       offer,
     });
@@ -124,7 +128,7 @@ export function ReviewRequestQueue({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
                 <span>{request.customer_name}</span>
-                <span className="text-muted-foreground">#{request.invoice_number}</span>
+                <span className="text-muted-foreground">{orderNo(request.invoice_number)}</span>
                 {request.request_status === "sent" && (
                   <Badge variant="outline" className="gap-1">
                     <CheckCheck className="size-3" />

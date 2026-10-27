@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/format";
+import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * The advance-payment report: of the orders that were placed under an advance rule, what has
@@ -123,6 +124,7 @@ export function reminderMessage({
   brandName,
   customerName,
   invoiceNumber,
+  numberFormat,
   stage,
   balance,
   currency,
@@ -132,6 +134,8 @@ export function reminderMessage({
   brandName: string;
   customerName?: string | null;
   invoiceNumber: number;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
   stage: "awaiting" | "balance";
   balance: number;
   currency: string;
@@ -149,8 +153,8 @@ export function reminderMessage({
     ? [
         hello,
         stage === "awaiting"
-          ? `تذكير من ${brandName}: طلبك رقم ${invoiceNumber} بانتظار الدفعة المقدمة لنبدأ بتجهيزه.`
-          : `تذكير من ${brandName}: المتبقي على طلبك رقم ${invoiceNumber} هو ${amount}.`,
+          ? `تذكير من ${brandName}: طلبك رقم ${orderNumberText(invoiceNumber, numberFormat)} بانتظار الدفعة المقدمة لنبدأ بتجهيزه.`
+          : `تذكير من ${brandName}: المتبقي على طلبك رقم ${orderNumberText(invoiceNumber, numberFormat)} هو ${amount}.`,
         stage === "awaiting" ? `المبلغ المستحق: ${amount}` : "",
         `الفاتورة: ${link}`,
         "شكراً لك.",
@@ -158,8 +162,8 @@ export function reminderMessage({
     : [
         hello,
         stage === "awaiting"
-          ? `A reminder from ${brandName}: order #${invoiceNumber} is waiting for its advance payment before we can start on it.`
-          : `A reminder from ${brandName}: the balance on order #${invoiceNumber} is ${amount}.`,
+          ? `A reminder from ${brandName}: order ${orderNumberLabel(invoiceNumber, numberFormat)} is waiting for its advance payment before we can start on it.`
+          : `A reminder from ${brandName}: the balance on order ${orderNumberLabel(invoiceNumber, numberFormat)} is ${amount}.`,
         stage === "awaiting" ? `Amount due: ${amount}` : "",
         `Invoice: ${link}`,
         "Thank you.",

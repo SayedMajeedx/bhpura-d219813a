@@ -3,6 +3,7 @@ import { AlertTriangle } from "lucide-react";
 import { piecesAwaitingChoice } from "../lib/after-sending";
 import { customerOrderName } from "../lib/customer-pieces";
 import type { SupplierOrder } from "../lib/order-state";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * Customers who cancelled while their piece was with a supplier: each piece waits for the store
@@ -18,6 +19,7 @@ export function CancelledPiecesNotice({
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const waiting = piecesAwaitingChoice(orders);
   if (waiting.length === 0) return null;
 
@@ -36,7 +38,7 @@ export function CancelledPiecesNotice({
         {waiting.map(({ order, line }) => (
           <li key={line.id} className="flex min-w-0 flex-wrap items-center gap-x-2 text-xs">
             <span className="min-w-0 break-words">
-              {customerOrderName(line.customer_order?.invoice_number ?? null, isAr)}
+              {customerOrderName(line.customer_order?.invoice_number ?? null, isAr, numberFormat)}
             </span>
             <Link
               to="/admin/b/$slug/supplier-orders/$id"

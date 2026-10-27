@@ -17,6 +17,7 @@ import {
 import { statusMeta } from "@/features/storefront-account/lib/account-shared";
 import type { OrderRow } from "@/features/storefront-account/lib/account-shared";
 import { OrderTimelineTracker } from "@/features/storefront-account/components/OrderTimelineTracker";
+import { orderNumberLabel, orderNumberText } from "@/lib/order-number";
 
 export function OrdersSection({
   currency,
@@ -49,8 +50,8 @@ export function OrdersSection({
     );
 
     const text = isAr
-      ? `مرحباً! لدي استفسار بخصوص الطلب رقم #${order.invoice_number} (القيمة إجمالاً: ${totalText}، تاريخ الطلب: ${dateText}). هل يمكنكم مساعدتي؟`
-      : `Hello! I have an inquiry regarding my Order #${order.invoice_number} (Total value: ${totalText}, Date: ${dateText}). Could you please assist me?`;
+      ? `مرحباً! لدي استفسار بخصوص الطلب رقم ${orderNumberText(order.invoice_number, settings)} (القيمة إجمالاً: ${totalText}، تاريخ الطلب: ${dateText}). هل يمكنكم مساعدتي؟`
+      : `Hello! I have an inquiry regarding my Order ${orderNumberLabel(order.invoice_number, settings)} (Total value: ${totalText}, Date: ${dateText}). Could you please assist me?`;
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -119,7 +120,7 @@ export function OrdersSection({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-base" style={{ color: "var(--sf-heading)" }}>
-                    {t("طلب رقم", "Order")} #{o.invoice_number}
+                    {t("طلب رقم", "Order")} {orderNumberLabel(o.invoice_number, settings)}
                   </span>
                   <Badge
                     className={`${st.tone} text-xs font-bold border-0 px-2.5 py-0.5 rounded-full`}

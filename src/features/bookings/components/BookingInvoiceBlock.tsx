@@ -19,6 +19,7 @@ import {
   paymentBadge,
   whatsAppToCustomer,
 } from "@/features/bookings/lib/booking-invoice";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 const TONES = {
   success: "bg-success-subtle text-success",
@@ -42,6 +43,7 @@ export function BookingInvoiceBlock({
   const invoice = bookingInvoiceOf(booking);
   const [copied, setCopied] = useState(false);
   const policy = useQuery(bookingPoliciesQueries.policy(brand.id)).data;
+  const orderNo = useOrderNumber(brand.id);
 
   if (!invoice) {
     // A card payment still holding the day has its order when it is placed.
@@ -120,7 +122,7 @@ export function BookingInvoiceBlock({
       <p className="flex flex-wrap items-center justify-between gap-2 text-xs">
         <span className="flex items-center gap-1.5 font-semibold text-foreground">
           <FileText className="size-3.5 text-muted-foreground" aria-hidden="true" />
-          {isAr ? `فاتورة #${invoice.number}` : `Invoice #${invoice.number}`}
+          {isAr ? `فاتورة ${orderNo(invoice.number)}` : `Invoice ${orderNo(invoice.number)}`}
         </span>
         <span className="flex items-center gap-2">
           <span className={cn("rounded-full px-2 py-0.5 font-medium", TONES[badge.tone])}>

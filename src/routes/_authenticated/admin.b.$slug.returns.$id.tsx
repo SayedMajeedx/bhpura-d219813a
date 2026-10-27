@@ -47,6 +47,7 @@ import {
 import { returnsKeys, returnsQueries } from "@/lib/data/returns";
 import { returnVariantLabel } from "@/lib/returns-variant";
 import { activityLogsQueries } from "@/lib/data/activity-logs";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 /** The shared return type over the typed row (JSON and status columns narrowed). */
 const asReturnRequest = (row: unknown) => row as ReturnRequest;
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/$id"
 
 function ReturnDetailPage() {
   const brand = useBrand();
+  const orderNo = useOrderNumber(brand?.id);
   const slug = brand?.slug;
   const { id } = useParams({ strict: false }) as { slug?: string; id?: string };
   useProfile();
@@ -213,7 +215,7 @@ function ReturnDetailPage() {
                 params={{ slug, id: returnReq.order_id }}
                 className="font-mono font-bold text-primary hover:underline inline-flex items-center gap-0.5"
               >
-                #{returnReq.order?.invoice_number}
+                {orderNo(returnReq.order?.invoice_number)}
                 <ExternalLink className="h-3 w-3" />
               </Link>{" "}
               • {formatDate(returnReq.created_at, isAr ? "ar-BH" : "en-US")}

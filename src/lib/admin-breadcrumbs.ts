@@ -1,3 +1,5 @@
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
+
 /**
  * The admin menu bar's breadcrumbs: "Boutq OS" (home), the current section,
  * then the record open in it (an order by invoice number, a customer by name,
@@ -25,6 +27,8 @@ export function buildBreadcrumbs(args: {
   isOrderRoute: boolean;
   isCustomerRoute: boolean;
   invoiceNumber?: string | number | null;
+  /** How the store writes its order numbers (`orderNumberLabel`). */
+  numberFormat?: OrderNumberFormat | null;
   customerName?: string | null;
 }): Breadcrumb[] {
   const { pathname, lang, trailingSegment } = args;
@@ -44,7 +48,9 @@ export function buildBreadcrumbs(args: {
     items.push({ label: subPage[lang] });
   } else if (args.isOrderRoute) {
     const order = lang === "ar" ? "الطلب" : "Order";
-    items.push({ label: `${order} #${args.invoiceNumber || trailingSegment.slice(0, 8)}` });
+    items.push({
+      label: `${order} ${orderNumberLabel(args.invoiceNumber, args.numberFormat, trailingSegment)}`,
+    });
   } else if (args.isCustomerRoute) {
     items.push({ label: args.customerName || decodeURIComponent(trailingSegment.slice(0, 8)) });
   } else {

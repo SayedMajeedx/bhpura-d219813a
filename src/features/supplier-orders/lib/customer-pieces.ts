@@ -1,6 +1,7 @@
 import { isWorkshopLine, type JobSheetLine } from "@/features/orders/lib/job-sheet";
 import { roundCost } from "./landed-cost";
 import type { SupplierOrderStatus } from "./order-state";
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * A customer's made-to-order pieces and the tailor: which of an order's lines go to the workshop,
@@ -166,7 +167,14 @@ export function piecesBySupplierOrder(pieces: readonly PieceWithSupplier[]) {
 }
 
 /** A customer's order, named for the tailor's side: its number, never the customer's name. */
-export function customerOrderName(invoice: number | string | null, isAr: boolean) {
-  const number = invoice !== null && invoice !== undefined && invoice !== "" ? ` #${invoice}` : "";
+export function customerOrderName(
+  invoice: number | string | null,
+  isAr: boolean,
+  numberFormat?: OrderNumberFormat | null,
+) {
+  const number =
+    invoice !== null && invoice !== undefined && invoice !== ""
+      ? ` ${orderNumberLabel(invoice, numberFormat)}`
+      : "";
   return isAr ? `قطعة زبون · طلب${number}` : `Customer piece · order${number}`;
 }

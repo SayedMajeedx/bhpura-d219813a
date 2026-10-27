@@ -7,6 +7,7 @@ import { getDashboardOrderStatus } from "@/lib/dashboard-order-status";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface RecentOrder {
   id: string;
@@ -41,6 +42,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
   locale,
 }: DashboardActivityQueueProps) {
   const isAr = lang === "ar";
+  const orderNo = useOrderNumber();
   const { vocabulary } = useVocabulary();
 
   if (orders.length === 0) {
@@ -80,7 +82,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                   className="transition-colors hover:bg-muted/20 text-foreground font-medium"
                 >
                   <td className="py-3 px-4 font-mono font-bold text-primary">
-                    #{o.invoice_number}
+                    {orderNo(o.invoice_number)}
                   </td>
                   <td className="py-3 px-4 text-muted-foreground font-mono">
                     {formatDate(o.created_at, locale)}
@@ -124,7 +126,7 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-xs text-primary">
-                  #{o.invoice_number}
+                  {orderNo(o.invoice_number)}
                 </span>
                 <OsStatusPill variant={displayStatus.variant} dot>
                   {displayStatus.label}

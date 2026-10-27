@@ -7,6 +7,7 @@ import { countOf } from "@/lib/arabic-count";
 import { cn } from "@/lib/utils";
 import { orderCardWhen, orderItemsLine } from "@/features/orders/lib/order-card";
 import { boardColumns, canDrop, type BoardColumn } from "@/features/orders/lib/order-board";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 /**
  * The orders as a board: a column per stage (to confirm, preparing, at the workshop, ready, on
@@ -42,6 +43,7 @@ export function OrdersBoard<T extends BoardCard>({
   bookings: boolean;
   renderAction: (order: T) => ReactNode;
 }) {
+  const orderNo = useOrderNumber();
   const isAr = lang === "ar";
   const columns = boardColumns(orders, { madeToOrder, bookings });
   const [dragging, setDragging] = useState<T | null>(null);
@@ -134,7 +136,7 @@ export function OrdersBoard<T extends BoardCard>({
                       params={{ slug, id: order.id }}
                       className="font-mono text-sm font-extrabold text-primary hover:underline"
                     >
-                      #{order.invoice_number || order.id.slice(0, 8)}
+                      {orderNo(order.invoice_number, order.id)}
                     </Link>
                     <span className="shrink-0 text-xs text-muted-foreground">
                       {orderCardWhen(order.created_at, lang)}

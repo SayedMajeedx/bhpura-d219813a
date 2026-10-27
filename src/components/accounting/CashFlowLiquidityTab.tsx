@@ -37,6 +37,7 @@ import {
 } from "@/lib/data/accounting";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 const TRANSFER_REFUSAL_MESSAGES: Record<CashTransferRefusal, { ar: string; en: string }> = {
   INVALID_TRANSFER_AMOUNT: {
@@ -62,6 +63,7 @@ export function CashFlowLiquidityTab() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const orderNo = useOrderNumber();
   const currency = useStoreCurrency(brandId);
   const money = useMoneyLabel(isAr ? "ar" : "en");
   const qc = useQueryClient();
@@ -269,7 +271,7 @@ export function CashFlowLiquidityTab() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-x-2">
                         <span className="font-bold text-xs text-foreground">
-                          #{o.invoice_number}
+                          {orderNo(o.invoice_number)}
                         </span>
                         <span className="min-w-0 break-words text-xs text-muted-foreground">
                           • {customerName}

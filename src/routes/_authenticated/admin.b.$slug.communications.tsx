@@ -34,6 +34,7 @@ import {
   type CommunicationsScope,
 } from "@/components/communications/CommunicationsScopeSwitcher";
 import { notificationRecipientsQueries } from "@/lib/data/notification-recipients";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 function CommunicationsPage() {
   useT();
@@ -98,6 +99,7 @@ type EmailActivityRow = {
 
 function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }) {
   const [channel, setChannel] = useState<"all" | "customer" | "admin">("all");
+  const orderNo = useOrderNumber(brandId);
   const [sortField, setSortField] = useState<"created_at" | "event_type" | "recipient" | "status">(
     "created_at",
   );
@@ -311,9 +313,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
                   </div>
                   <div>
                     <dt className="text-muted-foreground">{labels.order}</dt>
-                    <dd className="mt-0.5 font-semibold">
-                      {row.invoice_number ? `#${row.invoice_number}` : "—"}
-                    </dd>
+                    <dd className="mt-0.5 font-semibold">{orderNo(row.invoice_number)}</dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground">{labels.time}</dt>
@@ -396,9 +396,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
                         {statusLabel(row.status)}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
-                      {row.invoice_number ? `#${row.invoice_number}` : "—"}
-                    </td>
+                    <td className="px-3 py-3">{orderNo(row.invoice_number)}</td>
                     <td className="px-3 py-3 max-w-[280px] break-words text-muted-foreground">
                       {detailLabel(row)}
                     </td>

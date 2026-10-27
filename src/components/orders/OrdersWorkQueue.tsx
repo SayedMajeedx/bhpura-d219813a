@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { OrderListRow } from "@/lib/data/orders";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -79,6 +80,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   onToggleOrder,
   onToggleAll,
 }) => {
+  const orderNo = useOrderNumber();
   const isAr = lang === "ar";
   const selectedOnPage = orders.filter((order) => selectedOrderIds.has(order.id)).length;
   const allSelected = orders.length > 0 && selectedOnPage === orders.length;
@@ -196,7 +198,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       onClick={(e) => e.stopPropagation()}
                       className="font-mono font-extrabold text-primary hover:underline inline-flex items-center gap-1"
                     >
-                      #{order.invoice_number || order.id.slice(0, 8)}
+                      {orderNo(order.invoice_number, order.id)}
                       <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Link>
                     <div className="text-xs text-muted-foreground font-mono mt-0.5">

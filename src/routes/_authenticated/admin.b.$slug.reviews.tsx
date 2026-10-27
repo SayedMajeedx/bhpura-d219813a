@@ -45,6 +45,7 @@ import { reviewsKeys, reviewsQueries, setReviewHidden } from "@/lib/data/reviews
 import { ReviewRewardCard } from "@/components/reviews/ReviewRewardCard";
 import { useProfile } from "@/lib/profile-context";
 import { arNoun } from "@/lib/arabic-count";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -415,6 +416,7 @@ function ReviewCard({
   onToggleHidden: () => void;
   togglingHidden: boolean;
 }) {
+  const orderNo = useOrderNumber();
   const low = Number(review.rating) <= 3;
   const onStore = reviewStoreState(review);
   return (
@@ -424,7 +426,7 @@ function ReviewCard({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold">{review.customer_name}</h3>
-              <Badge variant="outline">#{review.invoice_number}</Badge>
+              <Badge variant="outline">{orderNo(review.invoice_number)}</Badge>
               {low && (
                 <Badge variant="destructive">{isAr ? "تحتاج متابعة" : "Needs follow-up"}</Badge>
               )}

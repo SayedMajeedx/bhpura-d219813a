@@ -12,6 +12,7 @@ import { ADVANCE_REPORT_LIMIT, advanceReportQueries } from "@/lib/data/advance-r
 import { invoiceLink, whatsAppToCustomer } from "@/features/bookings/lib/booking-invoice";
 import { owedRows, reminderMessage, summarizeAdvance } from "../lib/advance-report";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 
 const PERIODS: Array<{ days: number | null; ar: string; en: string }> = [
   { days: 30, ar: "30 يوماً", en: "30 days" },
@@ -27,6 +28,8 @@ const PERIODS: Array<{ days: number | null; ar: string; en: string }> = [
  */
 export function AdvanceReportView() {
   const brand = useBrand();
+  const orderNo = useOrderNumber(brand.id);
+  const numberFormat = useOrderNumberFormat(brand.id);
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [days, setDays] = useState<number | null>(90);
@@ -143,6 +146,7 @@ export function AdvanceReportView() {
                       brandName,
                       customerName: order.customer_name_snapshot,
                       invoiceNumber: order.invoice_number,
+                      numberFormat,
                       stage: row.stage,
                       balance: row.balance,
                       currency: order.currency,
@@ -160,7 +164,7 @@ export function AdvanceReportView() {
                           params={{ slug: brand.slug, id: order.id }}
                           className="text-sm font-semibold text-foreground hover:underline"
                         >
-                          #{order.invoice_number}
+                          {orderNo(order.invoice_number)}
                         </Link>
                         <span className="text-sm text-muted-foreground">
                           {" · "}

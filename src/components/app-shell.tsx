@@ -38,6 +38,7 @@ import {
   workspaceLabel,
 } from "@/lib/admin-workspace";
 import { buildBreadcrumbs } from "@/lib/admin-breadcrumbs";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * Theme is provided here rather than at the router root so the `.dark` class
@@ -340,6 +341,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     activeNavItem?.to.includes("/orders") && trailingSegment && trailingSegment !== "new",
   );
 
+  const numberFormat = useOrderNumberFormat(activeBrand?.id);
   const orderNumberQuery = useQuery({
     ...ordersQueries.invoiceNumber(activeBrand?.id ?? "", trailingSegment ?? ""),
     enabled: isOrderRoute && Boolean(activeBrand?.id),
@@ -383,6 +385,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
       isOrderRoute,
       isCustomerRoute,
       invoiceNumber: orderNumberQuery.data?.invoice_number ?? cachedOrder?.invoice_number,
+      numberFormat,
       customerName: customerBreadcrumbQuery.data?.name,
     });
   }, [
@@ -394,6 +397,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     isCustomerRoute,
     isOrderRoute,
     lang,
+    numberFormat,
     orderNumberQuery.data?.invoice_number,
     pathname,
     queryClient,

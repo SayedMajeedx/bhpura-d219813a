@@ -36,6 +36,7 @@ import { piecesLabel, piecesOf } from "../lib/order-state";
 import { supplierOrderError } from "../lib/errors";
 import { useSupplierCatalog } from "../hooks/use-supplier-catalog";
 import { SupplierField } from "./SupplierField";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * Sends a customer's made-to-order pieces to the tailor: which tailor, on which of their open
@@ -69,6 +70,7 @@ export function SendToTailorDialog({
   onPlainSend?: () => Promise<void> | void;
 }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const uid = useId();
   const qc = useQueryClient();
   const moneyLabel = useMoneyLabel(lang);
@@ -258,7 +260,7 @@ export function SendToTailorDialog({
                   <Fragment key={line.id}>
                     {firstOfGroup && (
                       <p className="pt-1 text-xs font-bold text-muted-foreground">
-                        {customerOrderName(group.invoice ?? null, isAr)}
+                        {customerOrderName(group.invoice ?? null, isAr, numberFormat)}
                       </p>
                     )}
                     <div className="flex min-w-0 items-center gap-3 rounded-lg border border-border-subtle p-2.5">

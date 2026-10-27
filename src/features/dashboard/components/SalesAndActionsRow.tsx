@@ -11,6 +11,7 @@ import type {
   ordersNeedingAction,
 } from "@/features/dashboard/lib/dashboard-metrics";
 import { countOf } from "@/lib/arabic-count";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 /** The 30-day sales trajectory and the orders that need action. */
 export function SalesAndActionsRow({
@@ -38,6 +39,7 @@ export function SalesAndActionsRow({
   locale: string;
   slug: string;
 }) {
+  const orderNo = useOrderNumber();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
       {isCatalog ? (
@@ -250,7 +252,8 @@ export function SalesAndActionsRow({
                     params={{ slug, id: o.id }}
                     className="font-bold text-primary hover:underline block truncate"
                   >
-                    #{o.invoice_number} — {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
+                    {orderNo(o.invoice_number)} —{" "}
+                    {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
                   </Link>
                   <span className="text-xs text-muted-foreground">
                     {formatDate(o.created_at, locale)}
