@@ -153,3 +153,17 @@ export function pushOutcome(status: number): "sent" | "gone" | "failed" {
   if (status === 404 || status === 410) return "gone";
   return "failed";
 }
+
+/**
+ * Which of a device's choices an event answers to (Settings → Account → Mobile Apps): its kind,
+ * except a new order a member of staff typed in themselves, which has a choice of its own.
+ */
+export function alertChoice(event: {
+  event_type: string;
+  payload?: { channel?: unknown } | null;
+}): string {
+  if (event.event_type === "order_new" && event.payload?.channel === "admin") {
+    return "order_new_staff";
+  }
+  return event.event_type;
+}

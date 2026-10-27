@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { AlertChoices } from "./AlertChoices";
 import {
   alertsAvailability,
   currentAlertSubscription,
@@ -16,8 +17,9 @@ import {
 type State = "loading" | "needs-install" | "unsupported" | "blocked" | "off" | "on";
 
 /**
- * In the account settings: this device's alerts for new orders while the app is closed (Web Push,
- * src/lib/web-push.ts). Per device and per person; the sound is the device's own.
+ * In the account settings: this device's alerts while the app is closed (Web Push,
+ * src/lib/web-push.ts), and which kinds it takes (`AlertChoices`). Per device and per person; the
+ * sound is the device's own.
  */
 export function OrderAlertsSettings() {
   const { lang } = useI18n();
@@ -72,12 +74,12 @@ export function OrderAlertsSettings() {
         <BellRing className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
         <div className="min-w-0">
           <h3 id={`${id}-t`} className="text-sm font-semibold">
-            {isAr ? "تنبيهات الطلبات على هذا الجهاز" : "Order alerts on this device"}
+            {isAr ? "التنبيهات على هذا الجهاز" : "Alerts on this device"}
           </h3>
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? "إشعار بصوت الجهاز عند كل طلب جديد، حتى والتطبيق مغلق."
-              : "A notification with your device's sound for every new order, even while the app is closed."}
+              ? "إشعار بصوت الجهاز عند كل طلب جديد وما تختاره، حتى والتطبيق مغلق."
+              : "A notification with your device's sound for each new order and whatever else you choose, even while the app is closed."}
           </p>
         </div>
       </div>
@@ -108,6 +110,7 @@ export function OrderAlertsSettings() {
           </Button>
         </div>
       ) : null}
+      {state === "on" ? <AlertChoices brandId={brand.id} isAr={isAr} /> : null}
     </section>
   );
 }

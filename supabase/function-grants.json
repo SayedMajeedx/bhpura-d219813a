@@ -621,6 +621,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_customers) before hiding a review's words on the store"
     },
+    "set_web_push_alert_choices(p_endpoint text, p_choices jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in person setting their own device's alert choices: only the caller's own subscription, known kinds and true/false only"
+    },
     "storefront_active_offers(p_brand_slug text)": {
       "anon": true,
       "authenticated": true,
@@ -725,6 +730,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who see the finances of the payment's store: checked inside (can_access_brand, has_permission); the payment stays on record with who and why"
+    },
+    "web_push_alert_choices(p_endpoint text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in person reading their own device's alert choices: only the caller's own subscription"
     }
   }
 }

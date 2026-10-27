@@ -2,9 +2,9 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Order alerts on the installed admin, on screen: which devices can take them (an iPhone only
-// from the app on its home screen), and the account settings' card turning them on, testing and
-// off for this device. The database's rule is tests/web-push-alerts-migration.test.ts; the
+// Alerts on the installed admin, on screen: which devices can take them (an iPhone only from the
+// app on its home screen), the account settings' card turning them on, testing and off for this
+// device, and the kinds of alert it takes (src/lib/alert-choices.ts). The database's rule is tests/web-push-alerts-migration.test.ts; the
 // encryption, tests/web-push-crypto.test.ts.
 
 const state = vi.hoisted(() => ({
@@ -19,6 +19,9 @@ const state = vi.hoisted(() => ({
   on: vi.fn(async (_brand: string): Promise<"on" | "blocked"> => "on"),
   off: vi.fn(async () => undefined),
   test: vi.fn(async (_title: string, _body: string) => undefined),
+  choices: {} as Record<string, unknown>,
+  setChoice: vi.fn(async (kind: string, on: boolean) => ({ order_new: true, [kind]: on })),
+  modules: { bookings: false } as Record<string, boolean>,
 }));
 
 const webPush = async (importOriginal: () => Promise<object>) => ({
@@ -28,6 +31,8 @@ const webPush = async (importOriginal: () => Promise<object>) => ({
   turnOnOrderAlerts: state.on,
   turnOffOrderAlerts: state.off,
   showTestAlert: state.test,
+  deviceAlertChoices: async () => state.choices,
+  setDeviceAlertChoice: state.setChoice,
 });
 vi.mock("../src/lib/web-push", (io) => webPush(io));
 vi.mock("@/lib/web-push", (io) => webPush(io));
@@ -37,6 +42,11 @@ vi.mock("../src/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));
 vi.mock("../src/lib/brand-context", () => ({ useBrand: () => ({ id: "brand-1" }) }));
 vi.mock("@/lib/brand-context", () => ({ useBrand: () => ({ id: "brand-1" }) }));
+const storeProfile = () => ({
+  useAdminStoreProfile: () => ({ profile: { modules: state.modules } }),
+});
+vi.mock("../src/hooks/use-store-profile", () => storeProfile());
+vi.mock("@/hooks/use-store-profile", () => storeProfile());
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { alertsAvailability } = await import("../src/lib/web-push");
@@ -52,6 +62,8 @@ afterEach(() => {
     standalone: false,
   };
   state.subscribed = false;
+  state.choices = {};
+  state.modules = { bookings: false };
   vi.clearAllMocks();
 });
 
@@ -115,5 +127,63 @@ describe("the order alerts card", () => {
     state.subscribed = true;
     render(<OrderAlertsSettings />);
     expect(await screen.findByRole("button", { name: "Send a test" })).toBeTruthy();
+  });
+});
+
+describe("the kinds of alert a device takes", () => {
+  const subscribedDevice = () => {
+    Object.defineProperty(window, "Notification", {
+      value: { permission: "granted" },
+      configurable: true,
+    });
+    state.subscribed = true;
+  };
+
+  it("starts with new orders on and the rest off, and saves a change on its switch", async () => {
+    subscribedDevice();
+    render(<OrderAlertsSettings />);
+    const newOrder = await screen.findByRole("switch", { name: "New order from the store" });
+    expect(newOrder.getAttribute("aria-checked")).toBe("true");
+    const staff = screen.getByRole("switch", { name: "Order added by staff" });
+    expect(staff.getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByRole("switch", { name: "Low stock" }).getAttribute("aria-checked")).toBe(
+      "false",
+    );
+    fireEvent.click(staff);
+    await waitFor(() => expect(state.setChoice).toHaveBeenCalledWith("order_new_staff", true));
+    await waitFor(() => expect(staff.getAttribute("aria-checked")).toBe("true"));
+  });
+
+  it("shows what the device saved, and offers booking requests only to a store that books", async () => {
+    subscribedDevice();
+    state.choices = { order_new: false, low_stock: true };
+    render(<OrderAlertsSettings />);
+    expect(
+      (await screen.findByRole("switch", { name: "New order from the store" })).getAttribute(
+        "aria-checked",
+      ),
+    ).toBe("false");
+    expect(screen.getByRole("switch", { name: "Low stock" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    expect(screen.queryByRole("switch", { name: "New booking request" })).toBeNull();
+  });
+
+  it("offers booking requests, on, where the store takes bookings", async () => {
+    subscribedDevice();
+    state.modules = { bookings: true };
+    render(<OrderAlertsSettings />);
+    const booking = await screen.findByRole("switch", { name: "New booking request" });
+    expect(booking.getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("shows no choices before alerts are on", async () => {
+    Object.defineProperty(window, "Notification", {
+      value: { permission: "default" },
+      configurable: true,
+    });
+    render(<OrderAlertsSettings />);
+    await screen.findByRole("button", { name: "Turn on alerts" });
+    expect(screen.queryByRole("switch")).toBeNull();
   });
 });

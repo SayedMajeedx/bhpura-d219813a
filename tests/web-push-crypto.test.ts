@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  alertChoice,
   encryptPayload,
   fromBase64Url,
   pushOutcome,
@@ -145,5 +146,20 @@ describe("web push for the installed admin", () => {
     expect(pushOutcome(404)).toBe("gone");
     expect(pushOutcome(429)).toBe("failed");
     expect(pushOutcome(500)).toBe("failed");
+  });
+});
+
+describe("which choice an event answers to", () => {
+  it("is its kind, except a new order staff typed in themselves", () => {
+    expect(alertChoice({ event_type: "order_new", payload: { channel: "storefront" } })).toBe(
+      "order_new",
+    );
+    expect(alertChoice({ event_type: "order_new", payload: { channel: "admin" } })).toBe(
+      "order_new_staff",
+    );
+    // An event written before orders said their channel counts as a shopper's.
+    expect(alertChoice({ event_type: "order_new", payload: {} })).toBe("order_new");
+    expect(alertChoice({ event_type: "booking_new", payload: null })).toBe("booking_new");
+    expect(alertChoice({ event_type: "low_stock" })).toBe("low_stock");
   });
 });
