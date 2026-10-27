@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { AppShell } from "@/components/app-shell";
+import { TwoFactorGate } from "@/components/auth/TwoFactorGate";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 import { profilesQueries } from "@/lib/data/profiles";
@@ -37,9 +38,12 @@ export const Route = createFileRoute("/_authenticated")({
     return { user };
   },
   pendingComponent: RoutePendingSkeleton,
+  // A member with two-factor on gives the code before the admin opens (migration 20261027150000).
   component: () => (
-    <AppShell>
-      <Outlet />
-    </AppShell>
+    <TwoFactorGate>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </TwoFactorGate>
   ),
 });
