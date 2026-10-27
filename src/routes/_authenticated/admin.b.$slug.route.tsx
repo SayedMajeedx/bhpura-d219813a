@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { NewOrderAlert } from "@/features/orders/components/NewOrderAlert";
 import { ensureSessionUser } from "@/lib/auth/ensure-session-user";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -178,6 +179,8 @@ function BrandLayout() {
       <AdminAddonsBridge brandId={brand.id}>
         <Outlet />
       </AdminAddonsBridge>
+      {/* A chime for a shopper's new order or booking, for whoever switched it on. */}
+      <NewOrderAlert brandId={brand.id} slug={brand.slug} />
     </BrandProvider>
   );
 }
