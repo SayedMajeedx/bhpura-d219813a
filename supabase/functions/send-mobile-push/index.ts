@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { pushOutcome, webPushRequest } from "./web-push.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -7,6 +8,59 @@ const supabase = createClient(
     auth: { persistSession: false },
   },
 );
+
+// The platform's VAPID keys (secrets VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT); without
+// them the installed admin gets no alerts and the merchant app goes on as before.
+const vapid = (() => {
+  const publicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
+  const privateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+  if (!publicKey || !privateKey) return null;
+  return { publicKey, privateKey, subject: Deno.env.get("VAPID_SUBJECT") || "https://boutq.store" };
+})();
+
+type WebTarget = { id: string; endpoint: string; p256dh: string; auth: string };
+
+/**
+ * An event to every installed admin that wants it (`web_push_targets`: the store's staff who handle
+ * its orders, still active). Best effort per device: a subscription the browser dropped is
+ * removed, and one push service failing never holds back the others or the merchant app.
+ */
+async function deliverToWeb(event: any, base: string): Promise<number> {
+  if (!vapid) return 0;
+  const { data, error } = await supabase.rpc("web_push_targets", {
+    p_brand_id: event.brand_id,
+    p_event_type: event.event_type,
+  });
+  const targets = (data ?? []) as WebTarget[];
+  if (error || !targets.length) return 0;
+  const message = {
+    title: event.title,
+    body: event.body,
+    url: `${base}${event.target_url ?? ""}`,
+    tag: `${event.event_type}-${event.entity_id ?? event.id}`,
+  };
+  const results = await Promise.all(
+    targets.map(async (target) => {
+      try {
+        const { url, init } = await webPushRequest(target, message, vapid);
+        const response = await fetch(url, { ...init, redirect: "manual" });
+        const outcome = pushOutcome(response.status);
+        if (outcome === "gone") {
+          await supabase.from("web_push_subscriptions").delete().eq("id", target.id);
+        } else if (outcome === "sent") {
+          await supabase
+            .from("web_push_subscriptions")
+            .update({ last_sent_at: new Date().toISOString() })
+            .eq("id", target.id);
+        }
+        return outcome === "sent";
+      } catch {
+        return false;
+      }
+    }),
+  );
+  return results.filter(Boolean).length;
+}
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -106,6 +160,9 @@ Deno.serve(async (req) => {
       .eq("enabled", true)
       .or(`brand_id.eq.${event.brand_id},brand_id.is.null`);
     const recipients = (devices ?? []).filter((d) => d.preferences?.[event.event_type] !== false);
+    const base = `https://boutq.store/admin/b/${brand?.slug ?? "pura"}`;
+    // The installed admin first: once per event, whatever happens to the merchant app's send.
+    if (event.attempts === 0) sent += await deliverToWeb(event, base);
     if (!recipients.length) {
       await supabase
         .from("push_notification_events")
@@ -114,7 +171,6 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    const base = `https://boutq.store/admin/b/${brand?.slug ?? "pura"}`;
     const messages = recipients.map((device) => ({
       to: device.expo_push_token,
       sound: "default",

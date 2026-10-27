@@ -8,6 +8,7 @@ import { TwoFactorSettings } from "@/components/auth/TwoFactorSettings";
 import { SignOutEverywhere } from "@/components/auth/SignOutEverywhere";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
+import { OrderAlertsSettings } from "./OrderAlertsSettings";
 
 export function AccountTab() {
   const { lang } = useI18n();
@@ -40,7 +41,12 @@ export function AccountTab() {
     {
       id: "apps",
       icon: Smartphone,
-      render: () => <MobileAppDownloadsCard brandSlug={brand.slug || ""} isAr={isAr} />,
+      render: () => (
+        <div className="space-y-6">
+          <OrderAlertsSettings />
+          <MobileAppDownloadsCard brandSlug={brand.slug || ""} isAr={isAr} />
+        </div>
+      ),
     },
   ];
 

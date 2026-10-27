@@ -386,6 +386,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "register_web_push_subscription(p_brand_id uuid, p_endpoint text, p_p256dh text, p_auth text, p_device_name text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff turning order alerts on for a device: checks can_access_brand and manage_orders; the table only takes a browser's own push service"
+    },
     "reject_benefit_payment(p_order_id uuid)": {
       "anon": false,
       "authenticated": true,
@@ -400,6 +405,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who handle orders and see the finances of the store: checked inside (can_access_brand, has_permission; manage_inventory to keep a piece for sale); only for a piece of a cancelled order"
+    },
+    "remove_web_push_subscription(p_endpoint text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in person turning a device's order alerts off: deletes only their own subscription"
     },
     "replace_order_items(p_order_id uuid, p_items jsonb)": {
       "anon": false,

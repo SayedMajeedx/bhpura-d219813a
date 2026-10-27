@@ -1,0 +1,4 @@
+# Findings that are not secrets, by gitleaks fingerprint (commit:file:rule:line), each with why.
+# The platform's VAPID public key: the browser needs it to subscribe to order alerts; its private
+# half is only the push sender's secret (src/lib/web-push.ts).
+d4e4d71abc40ee39397d3dee8644781d2ef89849:src/lib/web-push.ts:generic-api-key:13

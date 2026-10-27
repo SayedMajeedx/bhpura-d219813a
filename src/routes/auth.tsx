@@ -13,9 +13,11 @@ import { fetchCallerProfile } from "@/lib/data/profiles";
 import { getCurrentUser, signOut } from "@/lib/auth/session";
 import { signInWithPasskey as signInWithPasskeyAuth, signInWithPassword } from "@/lib/auth/sign-in";
 import { continueToStorefrontWhenSignedIn } from "@/lib/auth/storefront-return";
+import { adminAppHead } from "@/lib/admin-app-head";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  head: adminAppHead,
   component: AuthPage,
 });
 
