@@ -27,6 +27,7 @@ import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { returnsQueries } from "@/lib/data/returns";
 import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -75,6 +76,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const [copiedInvoice, setCopiedInvoice] = React.useState(false);
   const brandId = brand?.id || order?.brand_id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
+  const orderNo = useOrderNumber(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
   const { vocabulary } = useVocabulary();
   const workshop = vocabulary.workshop?.[lang] || (isAr ? "الورشة" : "Workshop");
   const onPrintJobSheet = workshopActions?.printJobSheet;
@@ -129,8 +132,8 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
     if (!publicInvoiceUrl) return;
     const customerPhone = (order.customer_phone_snapshot || order.phone || "").replace(/\D/g, "");
     const msg = isAr
-      ? `مرحباً، تفضل رابط فاتورة طلبك #${order.invoice_number || order.id?.slice(0, 8)} من ${resolvedBrandName}: ${publicInvoiceUrl}`
-      : `Hello, here is the invoice for your order #${order.invoice_number || order.id?.slice(0, 8)} from ${resolvedBrandName}: ${publicInvoiceUrl}`;
+      ? `مرحباً، تفضل رابط فاتورة طلبك ${orderNo(order.invoice_number, order.id)} من ${resolvedBrandName}: ${publicInvoiceUrl}`
+      : `Hello, here is the invoice for your order ${orderNo(order.invoice_number, order.id)} from ${resolvedBrandName}: ${publicInvoiceUrl}`;
     const url = customerPhone
       ? `https://wa.me/${customerPhone.startsWith("973") ? customerPhone : `973${customerPhone.replace(/^0+/, "")}`}?text=${encodeURIComponent(msg)}`
       : `https://wa.me/?text=${encodeURIComponent(msg)}`;
@@ -156,6 +159,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
       brand: resolvedBrandName,
       logoUrl: resolvedLogoUrl,
       orderNumber: order.invoice_number || order.id?.slice(0, 8) || "—",
+      numberFormat,
       orderDate: formatDate(order.created_at || new Date().toISOString(), lang),
       fulfillmentStatus: order.fulfillment_status || order.status,
       fulfillmentStatusLabel: fulfillmentDetails.label,
@@ -275,7 +279,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 </span>
               </div>
               <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-muted-foreground">
-                #{order?.invoice_number || order?.id?.slice(0, 8)}
+                {orderNo(order?.invoice_number, order?.id)}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">

@@ -29,6 +29,8 @@ import { fetchBrandIdBySlug } from "@/lib/data/brands";
 import { searchProducts } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import type { AdminNavItemConfig } from "@/config/admin-navigation";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
+import { orderNumberQuery } from "@/lib/order-number";
 
 export function SpotlightCommandPalette({
   open,
@@ -47,6 +49,8 @@ export function SpotlightCommandPalette({
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const { lang, setLang } = useI18n();
   const brand = useBrandOptional();
+  const orderNo = useOrderNumber(brand?.id);
+  const numberFormat = useOrderNumberFormat(brand?.id);
   const storeCurrency = useStoreCurrency(brand?.id);
   const isAr = lang === "ar";
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,7 +59,13 @@ export function SpotlightCommandPalette({
 
   // Query live matching orders, products, and customers
   const liveSearchResults = useQuery({
-    queryKey: ["spotlight-search", activeSlug, brand?.id, searchQuery],
+    queryKey: [
+      "spotlight-search",
+      activeSlug,
+      brand?.id,
+      searchQuery,
+      numberFormat?.order_number_prefix ?? null,
+    ],
     queryFn: async () => {
       const q = searchQuery.trim();
       if (!q) {
@@ -71,7 +81,7 @@ export function SpotlightCommandPalette({
       if (!bId) return { orders: [], products: [], customers: [] };
 
       const [ordersRes, productsRes, customersRes] = await Promise.all([
-        searchOrders(bId, q),
+        searchOrders(bId, orderNumberQuery(q, numberFormat)),
         searchProducts(bId, q),
         searchCustomers(bId, q),
       ]);
@@ -134,7 +144,7 @@ export function SpotlightCommandPalette({
               >
                 <div className="flex items-center gap-2">
                   <ReceiptText className="h-4 w-4 text-primary" />
-                  <span className="font-semibold">#{o.invoice_number}</span>
+                  <span className="font-semibold">{orderNo(o.invoice_number)}</span>
                   <span className="text-xs text-muted-foreground truncate max-w-[180px]">
                     {o.customer_name_snapshot || (isAr ? "عميل زائر" : "Guest Customer")}
                   </span>

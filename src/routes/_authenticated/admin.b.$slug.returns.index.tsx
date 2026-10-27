@@ -15,6 +15,7 @@ import { ReturnPolicyEditor } from "@/components/returns/ReturnPolicyEditor";
 import { RETURN_STATUS_CONFIG, type ReturnRequest } from "@/lib/returns.types";
 import { returnsQueries } from "@/lib/data/returns";
 import { countOf, arNounOblique } from "@/lib/arabic-count";
+import { useOrderNumber } from "@/hooks/use-order-number";
 
 /** The shared return types over the typed rows (JSON and status columns narrowed). */
 const asReturnRequests = (rows: unknown[]) => rows as ReturnRequest[];
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/returns/")({
 
 function ReturnsIndexPage() {
   const brand = useBrand();
+  const orderNo = useOrderNumber(brand?.id);
   const slug = brand?.slug;
   useProfile();
   const { lang } = useI18n();
@@ -266,7 +268,7 @@ function ReturnsIndexPage() {
                             {r.return_number}
                           </td>
                           <td className="p-3.5 font-mono font-semibold text-foreground">
-                            #{r.order?.invoice_number || "---"}
+                            {orderNo(r.order?.invoice_number)}
                           </td>
                           <td className="p-3.5">
                             <span className="font-semibold text-foreground block">{custName}</span>

@@ -2118,6 +2118,8 @@ export type Database = {
           next_invoice_number: number;
           offers_combine: string;
           opening_hours: Json;
+          order_number_digits: number | null;
+          order_number_prefix: string | null;
           orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
@@ -2332,6 +2334,8 @@ export type Database = {
           next_invoice_number?: number;
           offers_combine?: string;
           opening_hours?: Json;
+          order_number_digits?: number | null;
+          order_number_prefix?: string | null;
           orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
@@ -2546,6 +2550,8 @@ export type Database = {
           next_invoice_number?: number;
           offers_combine?: string;
           opening_hours?: Json;
+          order_number_digits?: number | null;
+          order_number_prefix?: string | null;
           orders_paused_until?: string | null;
           pages?: Json;
           pdp_gallery_aspect_ratio?: string;
@@ -9099,6 +9105,8 @@ export type Database = {
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
           opening_hours: Json | null;
+          order_number_digits: number | null;
+          order_number_prefix: string | null;
           orders_paused_until: string | null;
           pages: Json | null;
           pdp_gallery_aspect_ratio: string | null;
@@ -9983,6 +9991,8 @@ export type Database = {
           next_invoice_number: number;
           offers_combine: string;
           opening_hours: Json;
+          order_number_digits: number | null;
+          order_number_prefix: string | null;
           orders_paused_until: string | null;
           pages: Json;
           pdp_gallery_aspect_ratio: string;
@@ -10185,6 +10195,8 @@ export type Database = {
           currency: string;
           customer_name: string;
           invoice_number: number;
+          order_number_digits: number;
+          order_number_prefix: string;
           reward_code: string;
           reward_discount_type: string;
           reward_discount_value: number;

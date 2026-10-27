@@ -31,6 +31,24 @@ const mocks: Record<string, unknown> = {
   i18n: { useI18n: () => ({ lang: "en" }) },
   currency: { useStoreCurrency: () => "BHD" },
 };
+// The store's order number format (use-order-number.ts): none here, so "#1042" as before.
+vi.mock("../src/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+vi.mock("@/hooks/use-order-number", async () => {
+  const { orderNumberLabel } = await import("../src/lib/order-number");
+  return {
+    useOrderNumber: () => (n: number | string | null | undefined, id?: string | null) =>
+      orderNumberLabel(n, null, id),
+    useOrderNumberFormat: () => null,
+  };
+});
+
 vi.mock("../src/lib/data/reporting", () => mocks["data/reporting"]);
 vi.mock("@/lib/data/reporting", () => mocks["data/reporting"]);
 vi.mock("../src/lib/brand-context", () => mocks["brand-context"]);

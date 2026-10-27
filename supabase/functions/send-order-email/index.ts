@@ -8,6 +8,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { appointmentHtml, escapeHtml, fulfillmentText } from "./appointment.ts";
+import { orderNumberLabel, orderNumberText } from "./order-number.ts";
 
 const allowedOrigins = Array.from(
   new Set(
@@ -333,14 +334,14 @@ function renderHtml(
         `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.line_total), cur, isAr)}</td></tr>`,
     )
     .join("");
-  return `<!doctype html><html lang="${isAr ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${escapeHtml(brandName)} — ${L.inv} ${escapeHtml(o.invoice_number)}</title></head>
+  return `<!doctype html><html lang="${isAr ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${escapeHtml(brandName)} — ${L.inv} ${escapeHtml(o.invoice_text ?? o.invoice_number)}</title></head>
 <body dir="${dir}" style="margin:0;background:#f7f7f8;font-family:Arial,'Segoe UI',Tahoma,sans-serif;color:#111;direction:${dir};text-align:${isAr ? "right" : "left"}">
 <div dir="${dir}" style="max-width:640px;margin:0 auto;background:#fff;direction:${dir};text-align:${isAr ? "right" : "left"}">
 <div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
 <div style="padding:24px 28px">
 <div style="margin:0 0 18px;padding:14px 16px;border-radius:10px;background:#f7f5f4;border:1px solid #eee;direction:${dir};text-align:${isAr ? "right" : "left"}"><strong>${escapeHtml(eventMessage.title)}</strong><div style="margin-top:5px;color:#444;line-height:1.55">${escapeHtml(eventMessage.body)}</div></div>
 ${appointmentHtml(o, isAr)}<p style="margin:0 0 16px">${L.intro}</p>
-<p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
+<p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_text ?? o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
 <table dir="${dir}" style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;direction:${dir};text-align:${isAr ? "right" : "left"}"><thead><tr>
 <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:${isAr ? "right" : "left"}">${L.item}</th>
@@ -432,7 +433,7 @@ function subjectForEvent(event: NotificationEvent, invoiceNumber: unknown, brand
     order_cancelled: "Order Cancelled",
     order_delivered: "Order Delivered",
   };
-  return `${label[event]} #${invoiceNumber} - ${brandName}`;
+  return `${label[event]} ${invoiceNumber} - ${brandName}`;
 }
 
 function adminSubjectForEvent(event: NotificationEvent, invoiceNumber: unknown, brandName: string) {
@@ -443,7 +444,7 @@ function adminSubjectForEvent(event: NotificationEvent, invoiceNumber: unknown, 
     order_cancelled: "Order Cancelled",
     order_delivered: "Order Delivered",
   };
-  return `[${label[event]}] #${invoiceNumber} - ${brandName}`;
+  return `[${label[event]}] ${invoiceNumber} - ${brandName}`;
 }
 
 async function sendCustomerEmail(input: {
@@ -466,7 +467,7 @@ async function sendCustomerEmail(input: {
   const brandName = input.settings?.business_name ?? "Boutq";
   const senderName = input.settings?.email_sender_name?.trim() || brandName;
   const primary = input.settings?.primary_color ?? "#111827";
-  const subject = subjectForEvent(input.event, input.order.invoice_number, brandName);
+  const subject = subjectForEvent(input.event, input.order.invoice_label, brandName);
   const html = renderHtml(
     input.order,
     input.order.order_items ?? [],
@@ -599,9 +600,9 @@ async function sendAdminNotification(input: {
     : "https://boutq.store/admin";
   const payload = {
     email: {
-      html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p>${appointmentHtml(input.order, false)}<p><a href="${orderUrl}">Open order in Boutq</a></p>`,
-      text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
-      subject: adminSubjectForEvent(input.event, input.order.invoice_number, brandName),
+      html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order ${escapeHtml(input.order.invoice_label)}</strong></p>${appointmentHtml(input.order, false)}<p><a href="${orderUrl}">Open order in Boutq</a></p>`,
+      text: `${eventMessage.title}\n${eventMessage.body}\nOrder ${input.order.invoice_label}\n${orderUrl}`,
+      subject: adminSubjectForEvent(input.event, input.order.invoice_label, brandName),
       from: { name: brandName, email: fromAddress },
       to: recipients.map((recipient) => ({
         email: recipient.email,
@@ -677,11 +678,16 @@ async function sendAndLog(
 
     const { data: settings, error: se } = await admin
       .from("business_settings")
-      .select("business_name, primary_color, email_sender_name")
+      .select(
+        "business_name, primary_color, email_sender_name, order_number_prefix, order_number_digits",
+      )
       .eq("brand_id", order.brand_id)
       .maybeSingle();
 
     if (se) console.warn("[send-order-email] settings lookup failed", se.message);
+    // The order's number as the store writes it ("PL-01042"; "#1042" with no format).
+    order.invoice_label = orderNumberLabel(order.invoice_number, settings);
+    order.invoice_text = orderNumberText(order.invoice_number, settings);
 
     order.customer = {
       ...(order.customer ?? {}),

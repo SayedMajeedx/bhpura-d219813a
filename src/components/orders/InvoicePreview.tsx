@@ -30,6 +30,7 @@ import { policyLines } from "@/lib/bookings/policies";
 import { invoiceDepositPercent } from "@/lib/bookings/deposit";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName } from "@/lib/order-line-name";
+import { orderNumberText } from "@/lib/order-number";
 
 type SavedAddress = {
   id?: string;
@@ -500,7 +501,7 @@ export default function InvoicePreview({
               </h2>
               <div className="flex items-center justify-end gap-2 flex-wrap mt-1">
                 <p className="text-base sm:text-lg font-bold">
-                  {L.invoiceNumber}: {num(order.invoice_number)}
+                  {L.invoiceNumber}: {num(orderNumberText(order.invoice_number, settings))}
                 </p>
                 <span
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"

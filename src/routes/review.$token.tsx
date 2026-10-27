@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
 import { rewardOffer } from "@/lib/review-reward";
+import { orderNumberLabel } from "@/lib/order-number";
 
 export const Route = createFileRoute("/review/$token")({ component: ReviewPage });
 
@@ -32,6 +33,9 @@ type PublicReview = {
   reward_discount_type: string | null;
   reward_discount_value: number | string | null;
   currency: string | null;
+  /** How the store writes its order numbers (order-number.ts); absent before migration 20261027170000. */
+  order_number_prefix?: string | null;
+  order_number_digits?: number | null;
 };
 
 const choices = [
@@ -323,7 +327,7 @@ function PageShell({ review, children }: { review: PublicReview; children: React
           <CardContent className="p-6 sm:p-8">{children}</CardContent>
         </Card>
         <p className="text-center text-xs text-muted-foreground">
-          طلب #{review.invoice_number} • {review.brand_name}
+          طلب {orderNumberLabel(review.invoice_number, review)} • {review.brand_name}
         </p>
       </div>
     </main>

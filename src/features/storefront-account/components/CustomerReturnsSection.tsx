@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Loader2, RotateCcw } from "lucide-react";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
+import { orderNumberLabel } from "@/lib/order-number";
 
 export function CustomerReturnsSection({
   currency,
@@ -17,7 +18,7 @@ export function CustomerReturnsSection({
   returns?: any[];
   isLoading: boolean;
 }) {
-  const { t } = useStorefront();
+  const { t, settings } = useStorefront();
 
   if (isLoading) {
     return (
@@ -75,8 +76,8 @@ export function CustomerReturnsSection({
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {isAr ? "مرتبط بالفاتورة:" : "Linked to Invoice:"} #
-                  {r.order?.invoice_number || "---"} • {date}
+                  {isAr ? "مرتبط بالفاتورة:" : "Linked to Invoice:"}{" "}
+                  {orderNumberLabel(r.order?.invoice_number, settings)} • {date}
                 </p>
               </div>
 

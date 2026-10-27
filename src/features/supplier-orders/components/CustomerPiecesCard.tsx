@@ -9,6 +9,7 @@ import { customerOrderName } from "../lib/customer-pieces";
 import { awaitsChoice, purposeLabel } from "../lib/after-sending";
 import type { SupplierOrderLine } from "../lib/order-state";
 import { CancelledPieceDialog } from "./CancelledPieceDialog";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
  * A supplier order's customers' pieces: each with its customer's order (by number, never a
@@ -33,6 +34,7 @@ export function CustomerPiecesCard({
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
+  const numberFormat = useOrderNumberFormat();
   const brand = useBrand();
   const profile = useProfileOptional();
   const may = (permission: string) =>
@@ -66,10 +68,10 @@ export function CustomerPiecesCard({
                         params={{ slug: brand.slug, id: line.customer_order.id }}
                         className="text-primary hover:underline"
                       >
-                        {customerOrderName(line.customer_order.invoice_number, isAr)}
+                        {customerOrderName(line.customer_order.invoice_number, isAr, numberFormat)}
                       </Link>
                     ) : (
-                      customerOrderName(null, isAr)
+                      customerOrderName(null, isAr, numberFormat)
                     )}
                   </p>
                   {line.work_note && (

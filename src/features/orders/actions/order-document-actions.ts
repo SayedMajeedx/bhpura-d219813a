@@ -20,6 +20,7 @@ import { tailoredEstimate, type EstimateSettings } from "@/lib/delivery-estimate
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { detectOrderType } from "@/lib/order-type-detector";
 import { logActivity } from "@/lib/activity-log";
+import type { OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * Share and print actions for a loaded order: copy the public invoice link,
@@ -104,6 +105,7 @@ export function createOrderDocumentActions({
     const ok = printThermalReceipt({
       brand,
       invoiceNumber: order.invoice_number,
+      numberFormat: (settingsQ.data ?? null) as OrderNumberFormat | null,
       orderDate: order.order_date,
       status: statusLabel,
       customerName: getOrderCustomerName(order) || null,
@@ -175,6 +177,7 @@ export function createOrderDocumentActions({
         brand: (settings.business_name ?? "").trim() || (lang === "ar" ? "المتجر" : "Store"),
         workshop: vocabulary.workshop?.[lang] || (lang === "ar" ? "الورشة" : "Workshop"),
         orderNumber: order.invoice_number ?? order.id.slice(0, 8),
+        numberFormat: (settingsQ.data ?? null) as OrderNumberFormat | null,
         orderDate: order.order_date,
         customerName: getOrderCustomerName(order) || null,
         orderNote: order.notes ?? null,
@@ -195,6 +198,7 @@ export function createOrderDocumentActions({
           brandName: (lang === "ar" ? brand.name_ar : null) || brand.name_en || "",
           customerName: getOrderCustomerName(order) || null,
           invoiceNumber: order.invoice_number ?? order.id.slice(0, 8),
+          numberFormat: (settingsQ.data ?? null) as OrderNumberFormat | null,
           estimate: tailoredEstimate((settingsQ.data ?? {}) as EstimateSettings, lang),
         }),
       )

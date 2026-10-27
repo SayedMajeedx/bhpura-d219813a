@@ -1,3 +1,5 @@
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
+
 /** What the list rules read of an expense. */
 type ListedExpense = {
   category: string;
@@ -66,7 +68,12 @@ type CogsCsvOrder = {
 };
 
 /** The cost-of-goods download: a line per order line, then the total. */
-export function cogsCsv(rows: readonly CogsCsvOrder[], lang: string, locale: string): string {
+export function cogsCsv(
+  rows: readonly CogsCsvOrder[],
+  lang: string,
+  locale: string,
+  numberFormat?: OrderNumberFormat | null,
+): string {
   const lines: string[] = [
     lang === "ar"
       ? "التاريخ,رقم الطلب,المنتج,الكمية,تكلفة الوحدة,إجمالي التكلفة"
@@ -81,7 +88,7 @@ export function cogsCsv(rows: readonly CogsCsvOrder[], lang: string, locale: str
       lines.push(
         [
           new Date(order.created_at).toLocaleDateString(locale),
-          `#${order.invoice_number}`,
+          orderNumberLabel(order.invoice_number, numberFormat),
           `"${(item.description ?? "").replace(/"/g, '""')}"`,
           item.quantity,
           cost.toFixed(3),

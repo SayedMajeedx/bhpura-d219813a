@@ -281,6 +281,14 @@ describe("design system guardrails", () => {
     expect(offenders.map((file) => file.rel)).toEqual([]);
   });
 
+  it("writes an order's number in the store's own format", () => {
+    // A store may write its numbers "PL-01042" (order_number_prefix, order_number_digits); a "#"
+    // glued to an invoice number by hand writes "#1042" in every store (order-number.ts).
+    const handWritten = /#\$?\{[^}]*invoice_number/;
+    const offenders = FILES.filter((file) => handWritten.test(file.source));
+    expect(offenders.map((file) => file.rel)).toEqual([]);
+  });
+
   it("never sizes a grid column with a bare fr", () => {
     // `1fr` is `minmax(auto, 1fr)`: the column cannot get narrower than its widest content, so
     // one long product name pushes the page wider than a phone, and because the page hides

@@ -27,6 +27,7 @@ import { authenticatedJsonHeaders } from "@/features/orders/actions/order-links"
 import type { Dispatch, SetStateAction } from "react";
 
 import type { Order } from "@/features/orders/types";
+import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 /** Packing checklist and courier/shipping details before an order leaves the store. */
 export function OrderFulfillmentModal({
   brandId,
@@ -65,6 +66,8 @@ export function OrderFulfillmentModal({
   setSelectedCourierId: Dispatch<SetStateAction<string>>;
   slug: string;
 }) {
+  const orderNo = useOrderNumber(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
   return (
     <Dialog open={isFulfillModalOpen} onOpenChange={setIsFulfillModalOpen}>
       <DialogContent
@@ -80,8 +83,8 @@ export function OrderFulfillmentModal({
                   <PackageCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
                   <span>
                     {lang === "ar"
-                      ? `قائمة التعبئة والتجهيز #${selectedFulfillOrder.invoice_number}`
-                      : `Packing Slip Verification #${selectedFulfillOrder.invoice_number}`}
+                      ? `قائمة التعبئة والتجهيز ${orderNo(selectedFulfillOrder.invoice_number)}`
+                      : `Packing Slip Verification ${orderNo(selectedFulfillOrder.invoice_number)}`}
                   </span>
                 </DialogTitle>
               </div>
@@ -347,6 +350,7 @@ export function OrderFulfillmentModal({
                           courierName: courierObj.name || courierObj.email || "",
                           brandSlug: slug,
                           lang,
+                          numberFormat,
                         });
                         toast(
                           lang === "ar"

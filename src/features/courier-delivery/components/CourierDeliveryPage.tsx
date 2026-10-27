@@ -46,6 +46,8 @@ import {
   type CourierOrder,
   type CourierStage,
 } from "../lib/courier-delivery";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { orderNumberLabel } from "@/lib/order-number";
 
 /**
  * One delivery, for the courier it is assigned to: who to reach, where to go, what to hand
@@ -67,6 +69,7 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
+  const numberFormat = useOrderNumberFormat(brand.id);
   const qc = useQueryClient();
   const orderQ = useQuery(ordersQueries.detail(brand.id, orderId, "assigned-courier"));
   const [working, setWorking] = useState(false);
@@ -186,7 +189,7 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
       </div>
 
       <h1 className="font-display text-xl font-bold text-foreground">
-        {isAr ? "طلب" : "Order"} #{delivery.number}
+        {isAr ? "طلب" : "Order"} {orderNumberLabel(delivery.number, numberFormat)}
       </h1>
 
       {/* What to collect, and the one thing to do next */}
@@ -283,6 +286,7 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
                     storeName,
                     customerName: delivery.customerName,
                     number: delivery.number,
+                    numberFormat,
                   }),
                 )}`}
               >

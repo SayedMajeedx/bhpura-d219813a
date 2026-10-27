@@ -1,5 +1,6 @@
 import { currencyLabel } from "@/lib/currency-label";
 import { moneyFractionDigits } from "@/lib/format";
+import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * A store's thank-you discount for a review: one of its own promo codes, or none
@@ -65,6 +66,7 @@ export function reviewRequestMessage({
   customerName,
   brandName,
   invoiceNumber,
+  numberFormat,
   reviewUrl,
   offer,
 }: {
@@ -72,13 +74,15 @@ export function reviewRequestMessage({
   customerName: string;
   brandName: string;
   invoiceNumber: number | string;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
   reviewUrl: string;
   offer: string | null;
 }): string {
   if (lang === "ar") {
     const thanks = offer ? `، وبعد إكماله لك ${offer} على طلبك القادم 🎁` : "";
-    return `هلا ${customerName} 🌿\n\nسعدنا بخدمتك في ${brandName}، ونتمنى أن طلبك رقم ${invoiceNumber} نال رضاك.\n\nشاركنا رأيك بتقييم سريع لا يستغرق أكثر من 30 ثانية${thanks}\n\n${reviewUrl}\n\nرأيك يفرق معنا ويساعدنا نقدم لك تجربة أجمل دائمًا 🤍`;
+    return `هلا ${customerName} 🌿\n\nسعدنا بخدمتك في ${brandName}، ونتمنى أن طلبك رقم ${orderNumberText(invoiceNumber, numberFormat)} نال رضاك.\n\nشاركنا رأيك بتقييم سريع لا يستغرق أكثر من 30 ثانية${thanks}\n\n${reviewUrl}\n\nرأيك يفرق معنا ويساعدنا نقدم لك تجربة أجمل دائمًا 🤍`;
   }
   const thanks = offer ? ` and get ${offer} your next order 🎁` : "";
-  return `Hi ${customerName} 🌿\n\nWe loved serving you at ${brandName}. Share a quick review of order #${invoiceNumber} in under 30 seconds${thanks}\n\n${reviewUrl}\n\nYour feedback helps us make every experience better 🤍`;
+  return `Hi ${customerName} 🌿\n\nWe loved serving you at ${brandName}. Share a quick review of order ${orderNumberLabel(invoiceNumber, numberFormat)} in under 30 seconds${thanks}\n\n${reviewUrl}\n\nYour feedback helps us make every experience better 🤍`;
 }

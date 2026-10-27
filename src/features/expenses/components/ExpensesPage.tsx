@@ -46,6 +46,7 @@ import { reportingQueries } from "@/lib/data/reporting";
 import { prepareReceiptForScanning } from "@/features/expenses/lib/receipt-scan";
 import { ExpenseDialog } from "@/features/expenses/components/ExpenseDialog";
 import { ReceiptReviewDialog } from "@/features/expenses/components/ReceiptReviewDialog";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /** The expenses page: the list, the profit and loss strip, the accounting tabs and the dialogs. */
 export function ExpensesPage() {
@@ -93,12 +94,13 @@ export function ExpensesPage() {
   // The strip above the list is the store's own money (its orders and its costs); a row is in
   // its expense's own currency, with the store's when it has none.
   const currency = useStoreCurrency(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
 
   // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
   const cogsQ = useQuery(ordersQueries.cogs(brandId, activeRange.from, activeRange.to));
 
   const downloadCogsCsv = () => {
-    const blob = new Blob([cogsCsv(cogsQ.data ?? [], lang, locale)], {
+    const blob = new Blob([cogsCsv(cogsQ.data ?? [], lang, locale, numberFormat)], {
       type: "text/csv;charset=utf-8;",
     });
     const url = URL.createObjectURL(blob);

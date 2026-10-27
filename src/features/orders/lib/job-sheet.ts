@@ -2,6 +2,7 @@ import { formatDate } from "@/lib/format";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 /**
  * The job sheet: the page that goes to the workshop with a made-to-order piece. It says what to
@@ -135,6 +136,8 @@ export type JobSheetArgs = {
   /** The store's own word for where the piece is made ("Tailor", "Workshop"). */
   workshop: string;
   orderNumber: string | number;
+  /** How the store writes its order numbers (`orderNumberLabel`); none: "#1042". */
+  numberFormat?: OrderNumberFormat | null;
   orderDate: string | null | undefined;
   customerName?: string | null;
   /** The note the customer left on the whole order, if any. */
@@ -195,7 +198,7 @@ export function jobSheetHtml(a: JobSheetArgs): string {
   const isRTL = a.lang === "ar";
   const words = WORDS[a.lang];
   const e = escapeHtml;
-  const number = e(String(a.orderNumber));
+  const number = e(orderNumberLabel(a.orderNumber, a.numberFormat));
   const blank = `<span class="blank"></span>`;
 
   const rows = (list: JobSheetRow[]) =>
@@ -251,7 +254,7 @@ export function jobSheetHtml(a: JobSheetArgs): string {
 <html dir="${isRTL ? "rtl" : "ltr"}" lang="${a.lang}">
 <head>
   <meta charset="utf-8" />
-  <title>${e(words.title)} #${number}</title>
+  <title>${e(words.title)} ${number}</title>
   <style>
     @page { size: A4; margin: 12mm; }
     * { box-sizing: border-box; }
@@ -293,13 +296,13 @@ export function jobSheetHtml(a: JobSheetArgs): string {
   <div class="header">
     <div class="brand">${e(a.brand)}</div>
     <div style="text-align:end;">
-      <div class="doc">${e(words.title)} #${number}</div>
+      <div class="doc">${e(words.title)} ${number}</div>
       <div class="to">${e(words.to)}: ${e(a.workshop)}</div>
     </div>
   </div>
 
   <div class="meta">
-    <div><span>${e(words.order)}</span><b>#${number}</b></div>
+    <div><span>${e(words.order)}</span><b>${number}</b></div>
     <div><span>${e(words.date)}</span><b>${e(formatDate(a.orderDate, isRTL ? "ar-BH-u-nu-latn" : "en-US"))}</b></div>
     <div><span>${e(words.customer)}</span><b>${e(filled(a.customerName) || "—")}</b></div>
     <div><span>${e(words.neededBy)}</span>${blank}</div>
