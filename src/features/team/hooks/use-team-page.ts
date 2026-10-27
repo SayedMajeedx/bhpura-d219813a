@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { staffTwoFactorQueries } from "@/lib/data/profiles";
 import { useState } from "react";
 import { generateSecureTempPassword } from "@/lib/team-credentials-utils";
 import { toast } from "sonner";
@@ -49,6 +50,10 @@ export function useTeamPage() {
       );
     },
   });
+
+  // Who has two-factor sign-in on (the owner and admins see it).
+  const twoFactorQ = useQuery(staffTwoFactorQueries.list(brand.id));
+  const twoFactorIds = new Set(twoFactorQ.data ?? []);
 
   const [form, setForm] = useState({
     email: "",
@@ -276,6 +281,7 @@ export function useTeamPage() {
 
   return {
     t,
+    twoFactorIds,
     isAr,
     isSuperAdmin,
     addOpen,

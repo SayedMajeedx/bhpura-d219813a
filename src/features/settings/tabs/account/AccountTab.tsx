@@ -4,6 +4,7 @@ import { useBrand } from "@/lib/brand-context";
 import { GroupNavigator, type GroupDef } from "@/features/settings/GroupNavigator";
 import { SupportAccessCard } from "@/components/support-access-card";
 import { PasskeySettings } from "@/components/passkey-settings";
+import { TwoFactorSettings } from "@/components/auth/TwoFactorSettings";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
 
@@ -24,6 +25,7 @@ export function AccountTab() {
       render: () => (
         <div className="space-y-6">
           <PasskeySettings />
+          <TwoFactorSettings />
         </div>
       ),
     },

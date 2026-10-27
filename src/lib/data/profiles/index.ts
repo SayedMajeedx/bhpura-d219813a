@@ -99,3 +99,22 @@ export async function updateProfile(userId: string, patch: TablesUpdate<"profile
   const { error } = await supabase.from("profiles").update(patch).eq("id", userId);
   if (error) throw error;
 }
+
+/**
+ * The store's members who have two-factor sign-in on (their profile ids), for the Team page; the
+ * owner and admins only (migration 20261027150000). Empty for anyone else.
+ */
+export async function fetchStaffTwoFactor(brandId: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc("brand_staff_two_factor", { p_brand_id: brandId });
+  if (error) throw error;
+  return (data ?? []).map((row: { user_id: string }) => row.user_id);
+}
+
+export const staffTwoFactorQueries = {
+  list: (brandId: string) =>
+    queryOptions({
+      queryKey: ["staff-two-factor", brandId] as const,
+      queryFn: () => fetchStaffTwoFactor(brandId),
+      enabled: Boolean(brandId),
+    }),
+};
