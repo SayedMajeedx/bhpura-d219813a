@@ -60,6 +60,7 @@ import {
   appointmentCheckoutForm,
   appointmentFormApplied,
 } from "@/features/checkout/lib/appointment-checkout";
+import { bookingWithCode } from "@/lib/bookings/booking-offer";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -239,16 +240,24 @@ function Checkout() {
       ? orderStatus.intake.state === "paused"
       : !intakeTakesOrders(orderStatus.intake)
     : false;
+  // A booking's discount and a typed code, as place_booking_order settles them: a booking offer
+  // adds to the code, a store's automatic offer meets it by the store's rule (bookingWithCode).
+  const withBooking = bookingWithCode({
+    booking: Math.min(Number(appointment?.discount ?? 0), cartTotal),
+    fromStoreOffer: Boolean(appointment?.discountFromOffer),
+    code: Math.min(appliedPromo?.amount ?? 0, cartTotal),
+    mode: appointment?.offersCombine,
+  });
   const promoDiscount = Math.min(
-    offers ? offers.code_discount : (appliedPromo?.amount ?? 0),
+    offers ? offers.code_discount : appointment ? withBooking.code : (appliedPromo?.amount ?? 0),
     cartTotal,
   );
   const offerDiscount = Math.min(
     offers?.offer_discount ?? 0,
     Math.max(cartTotal - promoDiscount, 0),
   );
-  // The booking's own offer (last minute, early bird): the order carries it too.
-  const bookingDiscount = Math.min(Number(appointment?.discount ?? 0), cartTotal);
+  // The booking's offer (last minute, early bird, or the store's): the order carries it too.
+  const bookingDiscount = withBooking.booking;
 
   const {
     loyaltyAccount,
@@ -650,6 +659,8 @@ function Checkout() {
           pointsToRedeemInput={pointsToRedeemInput}
           promoDiscount={promoDiscount}
           offers={offers}
+          bookingDiscount={appointment ? bookingDiscount : null}
+          bookingCodeDropped={withBooking.codeDropped}
           promoInput={promoInput}
           redeemedPoints={redeemedPoints}
           setAcceptedTerms={setAcceptedTerms}

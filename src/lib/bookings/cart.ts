@@ -29,6 +29,9 @@ export type CartBooking = {
   /** The booking-time offer taken off the services (the server sets the real amount). */
   discount?: number;
   discountLabel?: string | null;
+  /** The discount is the store's automatic offer, which meets a code by the store's rule. */
+  discountFromOffer?: boolean;
+  offersCombine?: "best" | "code_first" | "together";
 };
 
 /** What hold_booking returns. */
@@ -43,6 +46,12 @@ export type BookingHold = {
   discount?: number;
   /** What the chosen add-ons cost. */
   options_total?: number;
+  /** The discount's own name (a booking offer's, or the store's automatic offer's). */
+  discount_label_en?: string | null;
+  discount_label_ar?: string | null;
+  /** Whether the discount is a store's automatic offer (migration 20261028120000). */
+  discount_from_offer?: boolean;
+  offers_combine?: "best" | "code_first" | "together";
   items: Array<{ product_id: string; variant_id: string; quantity: number; unit_price: number }>;
 };
 

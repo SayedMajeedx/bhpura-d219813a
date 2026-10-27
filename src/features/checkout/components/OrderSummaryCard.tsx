@@ -61,6 +61,8 @@ export function OrderSummaryCard({
   pointsToRedeemInput,
   promoDiscount,
   offers = null,
+  bookingDiscount = null,
+  bookingCodeDropped = false,
   promoInput,
   redeemedPoints,
   setAcceptedTerms,
@@ -110,6 +112,10 @@ export function OrderSummaryCard({
   promoDiscount: number;
   /** What the store's automatic offers give the cart (null: none, or not asked yet). */
   offers?: OffersOutcome | null;
+  /** A booking's discount after a typed code was weighed against it (`bookingWithCode`). */
+  bookingDiscount?: number | null;
+  /** The booking's store offer saved more than the typed code, which the order will not use. */
+  bookingCodeDropped?: boolean;
   promoInput: ReturnType<typeof usePromoCode>["promoInput"];
   redeemedPoints: ReturnType<typeof useCheckoutLoyalty>["redeemedPoints"];
   setAcceptedTerms: Dispatch<SetStateAction<boolean>>;
@@ -285,10 +291,12 @@ export function OrderSummaryCard({
             <span>{formatPrice(Number(appointment?.optionsTotal), currency, lang)}</span>
           </div>
         )}
-        {Number(appointment?.discount ?? 0) > 0 && (
+        {Number(bookingDiscount ?? appointment?.discount ?? 0) > 0 && (
           <div className="flex justify-between font-medium text-emerald-700 dark:text-emerald-400">
             <span>{appointment?.discountLabel || t("عرض الحجز", "Booking offer")}</span>
-            <span>− {formatPrice(Number(appointment?.discount), currency, lang)}</span>
+            <span>
+              − {formatPrice(Number(bookingDiscount ?? appointment?.discount), currency, lang)}
+            </span>
           </div>
         )}
         {promoDiscount > 0 && (
@@ -361,7 +369,7 @@ export function OrderSummaryCard({
             {t("تطبيق", "Apply")}
           </Button>
         </div>
-        {appliedPromo && offers?.code_dropped && (
+        {appliedPromo && (offers?.code_dropped || bookingCodeDropped) && (
           <p className="text-xs text-muted-foreground" role="status">
             {t(
               "عرض المتجر يوفّر لك أكثر من هذا الرمز، فطُبّق العرض بدلًا منه.",
