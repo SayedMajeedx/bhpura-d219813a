@@ -1,4 +1,4 @@
-import { useStorefront } from "@/lib/storefront-context";
+import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { formatSizeWithUnit } from "@/lib/format";
 import { ShoppingBag, Sparkles, MessageCircle, Bell } from "lucide-react";
@@ -14,6 +14,8 @@ import {
 import { showsCustomSizing } from "@/features/product-page/lib/variant-options";
 import { AskOnWhatsAppButton } from "@/features/product-page/components/AskOnWhatsAppButton";
 import { offSaleUntil } from "@/lib/product-availability";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredShownPrice } from "@/lib/offer-price";
 
 /** Phone-only sticky bar with the price and the buy actions. */
 export function ProductMobileBuyBar({
@@ -24,6 +26,7 @@ export function ProductMobileBuyBar({
   isTailoringActive,
   lang,
   priceLabel,
+  priceShown,
   primary,
   product,
   scrollToOptions,
@@ -43,6 +46,8 @@ export function ProductMobileBuyBar({
   isTailoringActive: boolean;
   lang: ReturnType<typeof useStorefront>["lang"];
   priceLabel: string;
+  /** The chosen price, its price before a sale (0: none) and the sizes' range, for the store's offers. */
+  priceShown?: { price: number; was: number; min: number; max: number };
   primary: string;
   product: Product;
   scrollToOptions: () => void;
@@ -55,6 +60,20 @@ export function ProductMobileBuyBar({
   variant: Variant | null | undefined;
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  // The store's offers on the shown price only (src/lib/offer-price.ts), as above the fold.
+  const { currency } = useStorefront();
+  const offers = useLiveOffers();
+  const offered = priceShown
+    ? offeredShownPrice(offers, product, {
+        ...priceShown,
+        isRange: priceShown.min !== priceShown.max,
+      })
+    : null;
+  const shownLabel = !offered
+    ? priceLabel
+    : priceShown && priceShown.min !== priceShown.max
+      ? `${formatPrice(offered.min, currency, lang)} – ${formatPrice(offered.max, currency, lang)}`
+      : formatPrice(offered.price, currency, lang);
   return (
     <div
       ref={stickyCtaRef}
@@ -90,7 +109,7 @@ export function ProductMobileBuyBar({
                 {t("تواصل معنا للسعر", "Contact us for price")}
               </span>
             ) : (
-              priceLabel
+              shownLabel
             )}
           </div>
         </div>

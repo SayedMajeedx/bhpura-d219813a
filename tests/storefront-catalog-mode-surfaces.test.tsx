@@ -28,6 +28,13 @@ const storefront = vi.hoisted(() => ({
   session: null,
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+// A catalog store asks no offer preview (its cart never reaches checkout).
+vi.mock("../src/features/checkout/hooks/use-checkout-offers", () => ({
+  useCheckoutOffers: () => null,
+}));
+vi.mock("@/features/checkout/hooks/use-checkout-offers", () => ({
+  useCheckoutOffers: () => null,
+}));
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: object) => ({ options }),
   useNavigate: () => state.navigate,

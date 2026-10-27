@@ -19,6 +19,9 @@ import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
 import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
+import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
+import { appliedOfferName } from "@/lib/offers";
+import { bookingOfCart } from "@/lib/bookings/cart";
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
@@ -27,6 +30,22 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const servicesStore = useIsServicesStore();
+  // The store's offers on this cart, as the database works them out at checkout (the same
+  // preview): named, with what they take off, and the total after them. A booking's cart has its
+  // own discount (apply_booking_discount).
+  const offers = useCheckoutOffers({
+    brand,
+    cart,
+    appliedPromo: null,
+    fulfillment: "delivery",
+    country: null,
+    enabled: !isCatalogMode(settings) && !bookingOfCart(cart) && cart.length > 0,
+  });
+  const offerLines = (offers?.applied ?? []).filter(
+    (offer) => offer.kind !== "free_delivery" && offer.amount > 0,
+  );
+  const offerOff = Math.min(offers?.offer_discount ?? 0, cartTotal);
+  const totalAfterOffers = Math.max(cartTotal - offerOff, 0);
   const [isGift, setIsGift] = useState(() => {
     try {
       const saved = sessionStorage.getItem("boutq_gift_details");
@@ -292,14 +311,28 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                 )}
 
                 {!servicesStore && <FreeDeliveryNudge />}
+                {offerLines.map((offer) => (
+                  <div
+                    key={offer.id}
+                    className="flex justify-between text-sm font-medium text-success"
+                  >
+                    <span>{appliedOfferName(offer, lang)}</span>
+                    <span dir="ltr">− {formatPrice(offer.amount, currency, lang)}</span>
+                  </div>
+                ))}
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("الإجمالي", "Total")}</span>
                   <span
                     className="flex flex-col items-end"
                     style={{ color: settings.primary_color }}
                   >
-                    {formatPrice(cartTotal, currency, lang)}
-                    <ApproxPrice amount={cartTotal} />
+                    {formatPrice(totalAfterOffers, currency, lang)}
+                    {offerOff > 0 && (
+                      <span className="text-xs font-normal text-muted-foreground line-through">
+                        {formatPrice(cartTotal, currency, lang)}
+                      </span>
+                    )}
+                    <ApproxPrice amount={totalAfterOffers} />
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

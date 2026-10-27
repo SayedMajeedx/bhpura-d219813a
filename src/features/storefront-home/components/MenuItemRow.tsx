@@ -11,6 +11,9 @@ import {
   menuPrice,
   type MenuVariant,
 } from "@/features/storefront-home/lib/menu-home";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
+import { OfferTag } from "@/components/storefront/OfferTag";
 
 /**
  * One variant's quantity in the basket, changed in place: "Add", then − n +. The basket's own
@@ -88,6 +91,7 @@ export function MenuItemRow({
   onChoose: (product: ProductRow) => void;
 }) {
   const { brand, lang, currency, cart, t } = useStorefront();
+  const offers = useLiveOffers();
   const isAr = lang === "ar";
   const name = pickName(lang, product);
   const description = (
@@ -97,6 +101,9 @@ export function MenuItemRow({
   ).trim();
   const action = menuItemAction(product);
   const price = menuPrice(product);
+  // The store's offers on the row's price: struck and lowered, or an "Offer" tag (offer-price.ts).
+  const offered = offeredCardPrice(product, product.product_variants, offers);
+  const lowered = offered.offerBadge?.kind === "discount" ? offered : null;
   const inBasket = (product.product_variants ?? []).reduce(
     (sum, v) => sum + basketQty(cart, v.id),
     0,
@@ -136,7 +143,18 @@ export function MenuItemRow({
             {price ? (
               <>
                 {price.from ? t("من ", "From ") : ""}
-                <span dir="ltr">{formatPrice(price.amount, currency, lang)}</span>
+                <span dir="ltr">
+                  {formatPrice(lowered ? lowered.from : price.amount, currency, lang)}
+                </span>
+                {lowered?.was ? (
+                  <span
+                    dir="ltr"
+                    className="ms-1.5 text-xs font-normal text-muted-foreground line-through"
+                  >
+                    {formatPrice(lowered.was, currency, lang)}
+                  </span>
+                ) : null}
+                <OfferTag badge={offered.offerBadge} className="ms-1.5" />
               </>
             ) : null}
           </p>

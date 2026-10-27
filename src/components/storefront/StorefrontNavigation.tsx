@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
-import { cardPrice } from "@/lib/product-price";
 import {
   Search,
   Menu,
@@ -24,6 +23,8 @@ import {
   User,
   Grid2X2,
 } from "lucide-react";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
 
 /** How many products the header search lists while typing. */
 const HEADER_SEARCH_RESULT_LIMIT = 8;
@@ -703,6 +704,7 @@ function DesktopStoreNavigation() {
 
 function SearchBar() {
   const { brand, lang, t, currency } = useStorefront();
+  const offers = useLiveOffers();
   const servicesStore = useIsServicesStore();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
@@ -867,7 +869,7 @@ function SearchBar() {
                     {results.map((p: any) => {
                       const displayName = pickName(lang, p);
                       // What can be bought now, and its own discount (src/lib/product-price.ts).
-                      const shown = cardPrice(p, p.product_variants);
+                      const shown = offeredCardPrice(p, p.product_variants, offers);
                       const price = shown.from;
                       const oldPrice = shown.was ?? 0;
                       const imageUrl =

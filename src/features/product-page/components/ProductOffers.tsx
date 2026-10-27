@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Gift, Percent, Truck } from "lucide-react";
 import { offersQueries } from "@/lib/data/offers";
-import { offerEnds, offersForProduct, offerTerms, type StoreOffer } from "@/lib/offers";
+import { offerCountdown, offersForProduct, offerTerms, type StoreOffer } from "@/lib/offers";
 import { productOnSale } from "@/lib/product-price";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
@@ -15,14 +15,14 @@ const ICONS: Record<StoreOffer["kind"], typeof Percent> = {
 
 /**
  * The store's live offers that reach this product, under its price: "10% off on orders of
- * 40.000 BHD or more", "Buy 2, get 1 free", "Free local delivery…". Said only by a shop that
- * shows its prices, and never on a service (a booking gets its own offers, not these); what an
- * order gets is worked out at checkout by the database.
+ * 40.000 BHD or more", "Buy 2, get 1 free", "Free local delivery…", with when it ends. Said only
+ * by a shop that shows its prices, on a product and on a service (a booking takes the better of
+ * these and its booking offers, apply_booking_discount); what an order gets is worked out by the
+ * database.
  */
 export function ProductOffers({ product }: { product: Product }) {
   const { brand, settings, lang, currency } = useStorefront();
-  const sells =
-    !isCatalogMode(settings) && shouldShowPrices(settings) && product.item_kind !== "service";
+  const sells = !isCatalogMode(settings) && shouldShowPrices(settings);
   const offers = useQuery(offersQueries.live(brand.slug, sells)).data ?? [];
   if (!sells || offers.length === 0) return null;
   const reaching = offersForProduct(offers, {
@@ -37,7 +37,7 @@ export function ProductOffers({ product }: { product: Product }) {
     <ul className="mb-4 space-y-1.5" aria-label={lang === "ar" ? "عروض المتجر" : "Store offers"}>
       {reaching.map((offer) => {
         const Icon = ICONS[offer.kind];
-        const ends = offerEnds(offer, lang);
+        const ends = offerCountdown(offer, lang);
         return (
           <li
             key={offer.id}

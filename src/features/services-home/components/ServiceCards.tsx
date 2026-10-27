@@ -17,6 +17,9 @@ import {
   servicePlace,
   type PackageOffer,
 } from "@/features/services-home/lib/services-home";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice, offeredShownPrice } from "@/lib/offer-price";
+import { OfferTag } from "@/components/storefront/OfferTag";
 
 const nameOf = (product: ProductRow, isAr: boolean) =>
   (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
@@ -35,7 +38,21 @@ export function ServiceCard({
   const { brand, lang, currency, t } = useStorefront();
   const isAr = lang === "ar";
   const fromPrice = fromPriceOf(product);
-  const price = fromPrice === null ? null : priceWithDefaults(fromPrice, addOns, null, null);
+  const listed = fromPrice === null ? null : priceWithDefaults(fromPrice, addOns, null, null);
+  // The store's offers on its price and its badge (src/lib/offer-price.ts).
+  const offers = useLiveOffers();
+  const offered =
+    listed === null
+      ? null
+      : offeredShownPrice(offers, product, {
+          price: listed,
+          was: 0,
+          min: listed,
+          max: listed,
+          isRange: false,
+        });
+  const price = offered ? offered.price : listed;
+  const badge = offeredCardPrice(product, product.product_variants, offers).offerBadge;
   const lengths = lengthRangeText(product, isAr);
   const place = servicePlace(product.service_location, isAr);
   const includes = includeLinesOf(product, isAr);
@@ -64,13 +81,21 @@ export function ServiceCard({
       )}
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-display text-lg text-foreground">{nameOf(product, isAr)}</h3>
+          <h3 className="flex flex-wrap items-center gap-2 font-display text-lg text-foreground">
+            {nameOf(product, isAr)}
+            <OfferTag badge={badge} />
+          </h3>
           {price !== null && (
             <p className="shrink-0 text-end text-sm text-muted-foreground">
               {t("من", "From")}{" "}
               <span className="font-semibold text-foreground" dir="ltr">
                 {formatPrice(price, currency, lang)}
               </span>
+              {offered && (
+                <s className="ms-1.5 text-xs" dir="ltr">
+                  {formatPrice(offered.was, currency, lang)}
+                </s>
+              )}
             </p>
           )}
         </div>
@@ -163,6 +188,16 @@ export function PackageOfferCard({
   const isAr = lang === "ar";
   const own = includeLinesOf(product, isAr);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // The store's offers on the package's price and its badge (src/lib/offer-price.ts).
+  const offers = useLiveOffers();
+  const offered = offeredShownPrice(offers, product, {
+    price: offer.price,
+    was: 0,
+    min: offer.price,
+    max: offer.price,
+    isRange: false,
+  });
+  const badge = offeredCardPrice(product, product.product_variants, offers).offerBadge;
   return (
     <article
       className={`${packageCardClass(look)} flex flex-col gap-3 p-5 ${look === "ribbon" ? "pt-10" : ""}`}
@@ -183,6 +218,7 @@ export function PackageOfferCard({
         <h3 className="font-display text-2xl leading-tight text-foreground">
           {nameOf(product, isAr)}
         </h3>
+        <OfferTag badge={badge} />
         {offer.saving && (
           <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">
             {packageSavingText(
@@ -195,13 +231,17 @@ export function PackageOfferCard({
       </div>
       <p className="flex flex-wrap items-baseline gap-2">
         <span className="font-display text-3xl font-semibold text-foreground" dir="ltr">
-          {formatPrice(offer.price, currency, lang)}
+          {formatPrice(offered ? offered.price : offer.price, currency, lang)}
         </span>
-        {offer.saving && offer.apart !== null && (
+        {offer.saving && offer.apart !== null ? (
           <s className="text-sm text-muted-foreground" dir="ltr">
             {formatPrice(offer.apart, currency, lang)}
           </s>
-        )}
+        ) : offered ? (
+          <s className="text-sm text-muted-foreground" dir="ltr">
+            {formatPrice(offered.was, currency, lang)}
+          </s>
+        ) : null}
       </p>
       {offer.includes.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">

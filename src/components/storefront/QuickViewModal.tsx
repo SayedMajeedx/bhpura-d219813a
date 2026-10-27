@@ -18,6 +18,8 @@ import {
 } from "@/lib/variant-axes";
 import type { ProductVariantLabels } from "@/lib/addons/addon-registry";
 import { toast } from "sonner";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredPiecePrice } from "@/lib/offer-price";
 
 export interface QuickViewModalProps {
   open: boolean;
@@ -61,6 +63,7 @@ export function QuickViewModal({
   brandSlug,
 }: QuickViewModalProps) {
   const { lang, currency, addToCart, t, brand } = useStorefront();
+  const offers = useLiveOffers();
   const navigate = useNavigate();
   const isAr = lang === "ar";
   const NextIcon = isAr ? ArrowLeft : ArrowRight;
@@ -106,8 +109,14 @@ export function QuickViewModal({
     variants.find(inStock) ||
     (variants.length > 0 ? variants[0] : null);
 
-  const activePrice = Number(selectedVariant?.selling_price ?? product.base_price ?? 0);
-  const rawOriginal = selectedVariant?.original_price ?? product.original_price;
+  // The chosen variant's price after the store's offers (src/lib/offer-price.ts).
+  const offered = selectedVariant ? offeredPiecePrice(offers, product, selectedVariant) : null;
+  const activePrice = offered?.offer
+    ? offered.price
+    : Number(selectedVariant?.selling_price ?? product.base_price ?? 0);
+  const rawOriginal = offered?.offer
+    ? offered.was
+    : (selectedVariant?.original_price ?? product.original_price);
   const activeOriginalPrice =
     rawOriginal && Number(rawOriginal) > activePrice ? Number(rawOriginal) : null;
 

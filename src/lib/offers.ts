@@ -158,6 +158,27 @@ export function offerTerms(offer: StoreOffer, lang: Lang, money: Money): string 
   return condition ? `${head} ${condition}` : head;
 }
 
+/**
+ * When an offer ends, as a shopper reads it near its end: "Ends today", "Ends tomorrow", "Ends in
+ * 3 days" within the week, else "Until 31 Oct" (`offerEnds`); null with no end.
+ */
+export function offerCountdown(
+  offer: Pick<StoreOffer, "ends_at">,
+  lang: Lang,
+  now: Date = new Date(),
+): string | null {
+  if (!offer.ends_at) return null;
+  const at = new Date(offer.ends_at);
+  if (Number.isNaN(at.getTime())) return null;
+  const days = Math.ceil((at.getTime() - now.getTime()) / 86_400_000);
+  if (days <= 1) return lang === "ar" ? "ينتهي اليوم" : "Ends today";
+  if (days === 2) return lang === "ar" ? "ينتهي غدًا" : "Ends tomorrow";
+  if (days <= 6) {
+    return lang === "ar" ? `ينتهي خلال ${arNounOblique(days, "day")}` : `Ends in ${days} days`;
+  }
+  return offerEnds(offer, lang);
+}
+
 /** When an offer ends, in the shopper's words: "Until 31 Oct" / "حتى 31 أكتوبر". */
 export function offerEnds(offer: Pick<StoreOffer, "ends_at">, lang: Lang): string | null {
   if (!offer.ends_at) return null;

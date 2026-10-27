@@ -5,9 +5,10 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { type RecommendationProduct } from "@/lib/data/storefront";
-import { cardPrice } from "@/lib/product-price";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
 
 export function RecommendationRail({
   title,
@@ -17,6 +18,7 @@ export function RecommendationRail({
   products: RecommendationProduct[];
 }) {
   const { brand, currency, lang, t, settings } = useStorefront();
+  const offers = useLiveOffers();
   // The store's own photo shape, as its cards (a bakery's square, not a portrait).
   const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
 
@@ -33,7 +35,7 @@ export function RecommendationRail({
       >
         {products.map((item) => {
           // What a shopper can buy now, and its own discount (src/lib/product-price.ts).
-          const price = cardPrice(item, item.product_variants);
+          const price = offeredCardPrice(item, item.product_variants, offers);
           const media = Array.isArray(item.media)
             ? (item.media as Array<{ type: string; url: string }>)
             : [];

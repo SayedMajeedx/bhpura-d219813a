@@ -8,11 +8,12 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
 import { hasAvailableStock, type ProductRow } from "@/lib/data/storefront";
-import { cardPrice } from "@/lib/product-price";
 import { Button } from "@/components/ui/button";
 
 import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
 
 export function ProductCard({
   product,
@@ -26,6 +27,8 @@ export function ProductCard({
   className?: string;
 }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
+  // The store's live offers, before any early return (one request shared by every card).
+  const offers = useLiveOffers();
 
   if (settings?.storefront_design_version === 2) {
     return <ProductCardV2 product={product} badge={badge} index={index} className={className} />;
@@ -35,8 +38,9 @@ export function ProductCard({
   const pricedVariants = product.product_variants
     .filter((variant) => Number(variant.selling_price || 0) >= 0)
     .sort((a, b) => a.selling_price - b.selling_price);
-  // What a shopper can buy now, and its own discount (one rule: src/lib/product-price.ts).
-  const price = cardPrice(product, product.product_variants);
+  // What a shopper can buy now, its own discount and the store's offers (one rule:
+  // src/lib/offer-price.ts over src/lib/product-price.ts).
+  const price = offeredCardPrice(product, product.product_variants, offers);
   const minPrice = price.from;
   const maxPrice = price.to;
   const originalPrice = price.was ?? 0;
@@ -60,7 +64,11 @@ export function ProductCard({
   let badgeStyle = "";
   let badgeLabel = "";
 
-  if (
+  if (shouldShowPrices(settings) && price.offerBadge?.kind === "discount") {
+    // A store offer lowers the price: its percentage, struck price beside the new one.
+    badgeStyle = "bg-primary text-primary-foreground border-primary";
+    badgeLabel = isAr ? `وفر ${price.offerBadge.percent}%` : `${price.offerBadge.percent}% off`;
+  } else if (
     shouldShowPrices(settings) &&
     price.onSale &&
     settings.global_sale_badges_enabled &&
@@ -74,6 +82,10 @@ export function ProductCard({
       : isAr
         ? "تخفيض"
         : "Sale";
+  } else if (shouldShowPrices(settings) && price.offerBadge?.kind === "offer") {
+    // An offer with terms (a minimum, buy X get Y): its terms are on the product's page.
+    badgeStyle = "bg-primary text-primary-foreground border-primary";
+    badgeLabel = isAr ? "عرض" : "Offer";
   } else if (badge === "best") {
     badgeStyle = "bg-secondary text-secondary-foreground border-border";
     badgeLabel = isAr ? "الأكثر مبيعاً" : "Best Seller";

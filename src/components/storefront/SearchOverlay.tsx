@@ -7,8 +7,9 @@ import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
-import { cardPrice } from "@/lib/product-price";
 import { Search, X, Sparkles, Clock, ShoppingBag } from "lucide-react";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { offeredCardPrice } from "@/lib/offer-price";
 
 /** How many products the overlay lists while typing. */
 const OVERLAY_RESULT_LIMIT = 10;
@@ -22,6 +23,7 @@ const RECENT_SEARCHES_KEY_PREFIX = "boutq_recent_searches_";
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const { brand, settings, lang, t } = useStorefront();
+  const offers = useLiveOffers();
   const navigate = useNavigate();
   const isAr = lang === "ar";
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -333,7 +335,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
               {results.map((product: any) => {
                 const displayName = pickName(lang, product);
                 // What can be bought now, and its own discount (src/lib/product-price.ts).
-                const shown = cardPrice(product, product.product_variants);
+                const shown = offeredCardPrice(product, product.product_variants, offers);
                 const price = shown.from;
                 const oldPrice = shown.was ?? 0;
                 const imageUrl =
