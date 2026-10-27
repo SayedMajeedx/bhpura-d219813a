@@ -16,6 +16,7 @@ export const HEARTBEAT_MINUTES = 15;
 export const DAILY_SERVICES: ReadonlySet<string> = new Set([
   "benefit_receipt_cleanup",
   "health_event_retention",
+  "exchange_rates_refresh",
 ]);
 
 /** The worker's two schedules, as `wrangler.json` lists them. */

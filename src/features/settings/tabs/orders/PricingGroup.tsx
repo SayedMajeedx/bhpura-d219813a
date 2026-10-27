@@ -1,4 +1,5 @@
 import { useI18n } from "@/lib/i18n";
+import { DisplayCurrenciesField } from "@/features/settings/tabs/orders/DisplayCurrenciesField";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,7 @@ export function PricingGroup() {
               onChange={(e) => setBs(vatNumberPatch(e.target.value))}
             />
           </div>
+          <DisplayCurrenciesField isAr={isAr} />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

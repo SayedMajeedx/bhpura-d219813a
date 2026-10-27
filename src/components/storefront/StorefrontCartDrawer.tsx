@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { FreeDeliveryNudge } from "@/components/storefront/FreeDeliveryNudge";
+import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
@@ -293,8 +294,12 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                 {!servicesStore && <FreeDeliveryNudge />}
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("الإجمالي", "Total")}</span>
-                  <span style={{ color: settings.primary_color }}>
+                  <span
+                    className="flex flex-col items-end"
+                    style={{ color: settings.primary_color }}
+                  >
                     {formatPrice(cartTotal, currency, lang)}
+                    <ApproxPrice amount={cartTotal} />
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">

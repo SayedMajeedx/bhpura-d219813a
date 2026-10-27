@@ -611,6 +611,11 @@
       "authenticated": true,
       "reason": "Public read for the product page and the cart: an active store's offers that are on now, with the terms a shopper is shown (names, amounts, which products and categories, least amount and pieces); nothing about orders or customers"
     },
+    "storefront_currency_display(p_brand_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public read for showing prices in a shopper's own currency: an active store's own currency, the currencies it chose to offer and their public exchange rates; nothing for a store that offers none, and nothing about orders or customers"
+    },
     "storefront_my_bookings(p_brand_id uuid)": {
       "anon": false,
       "authenticated": true,

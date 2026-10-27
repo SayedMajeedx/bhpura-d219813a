@@ -168,6 +168,11 @@ async function runDailyTasks(
     cron,
     ...(await pruneHealthEvents(env)),
   }));
+  // The day's rates for showing prices in a shopper's own currency (display only).
+  await runObservedTask(env, "exchange_rates_refresh", correlationId, async () => {
+    const { refreshExchangeRates } = await import("./lib/exchange-rates.server");
+    return { cron, ...(await refreshExchangeRates()) };
+  });
 }
 
 export default {

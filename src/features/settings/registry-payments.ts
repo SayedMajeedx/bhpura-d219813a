@@ -170,4 +170,18 @@ export const PAYMENTS_SETTINGS: SettingsFieldDef[] = [
     label: { ar: "رسوم معالجة بنفت باي", en: "BenefitPay Processing Fee" },
     keywords: { ar: ["رسوم بنفت"], en: ["benefit fee"] },
   },
+  {
+    key: "display_currencies",
+    table: "business_settings",
+    tab: "orders",
+    group: "pricing",
+    level: "advanced",
+    owner: "settings",
+    type: "json",
+    label: { ar: "عملات العرض للعميل", en: "Currencies shown to shoppers" },
+    keywords: {
+      ar: ["عملات", "ريال", "درهم", "تحويل العملة"],
+      en: ["currencies", "currency switcher", "sar", "aed", "exchange rate"],
+    },
+  },
 ];

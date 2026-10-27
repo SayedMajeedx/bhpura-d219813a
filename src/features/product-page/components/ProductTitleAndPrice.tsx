@@ -5,6 +5,7 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
 import { ProductOffers } from "@/features/product-page/components/ProductOffers";
+import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 
 /** Product name with share and wishlist, the price with any original price and saving, and the store's offers that reach it. */
 export function ProductTitleAndPrice({
@@ -84,6 +85,7 @@ export function ProductTitleAndPrice({
                 {t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}
               </span>
             )}
+            <ApproxPrice amount={displayPrice} className="basis-full text-sm" />
           </>
         )}
       </div>
