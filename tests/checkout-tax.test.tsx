@@ -156,30 +156,33 @@ describe("a store that charges no VAT, or includes it in its prices", () => {
   });
 
   it("draws no tax when the summary is given none", () => {
+    // The summary reads data (the store's currencies for its total's approximation).
     render(
-      <OrderSummaryCard
-        {...({
-          appliedPromo: null,
-          availableMethods: [],
-          brand: storefront.brand,
-          cart: [abaya],
-          cartTotal: 34,
-          currency: "BHD",
-          estimatedDeliveryLines: [],
-          estimatedPointsToEarn: 0,
-          fulfillment: "pickup",
-          fulfillmentOptions: [],
-          advance: { applies: false, percent: 0, dueNow: 0, balance: 0 },
-          grandTotal: 34,
-          lang: "en",
-          loyaltyDiscount: 0,
-          promoDiscount: 0,
-          promoInput: "",
-          redeemedPoints: 0,
-          shipping: 0,
-          t: storefront.t,
-        } as unknown as React.ComponentProps<typeof OrderSummaryCard>)}
-      />,
+      <QueryClientProvider client={new QueryClient()}>
+        <OrderSummaryCard
+          {...({
+            appliedPromo: null,
+            availableMethods: [],
+            brand: storefront.brand,
+            cart: [abaya],
+            cartTotal: 34,
+            currency: "BHD",
+            estimatedDeliveryLines: [],
+            estimatedPointsToEarn: 0,
+            fulfillment: "pickup",
+            fulfillmentOptions: [],
+            advance: { applies: false, percent: 0, dueNow: 0, balance: 0 },
+            grandTotal: 34,
+            lang: "en",
+            loyaltyDiscount: 0,
+            promoDiscount: 0,
+            promoInput: "",
+            redeemedPoints: 0,
+            shipping: 0,
+            t: storefront.t,
+          } as unknown as React.ComponentProps<typeof OrderSummaryCard>)}
+        />
+      </QueryClientProvider>,
     );
     expect(screen.queryByText(/VAT/)).toBeNull();
   });
