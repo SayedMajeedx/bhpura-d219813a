@@ -9,6 +9,7 @@ import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPla
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import type { PdpMediaItem } from "@/features/product-page/types";
+import { productPhotoName } from "@/lib/motion/view-transition";
 /** Product images and videos: main view with swipe, thumbnails and badges. */
 export function ProductGallery({
   displayName,
@@ -92,9 +93,7 @@ export function ProductGallery({
                   alt={displayName}
                   className="w-full h-full max-w-full"
                   aspectRatio="w-full h-full"
-                  style={{
-                    viewTransitionName: `product-img-${product.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`,
-                  }}
+                  style={{ viewTransitionName: productPhotoName(product.id) }}
                 />
               ) : (
                 <ResponsiveImage
@@ -103,6 +102,7 @@ export function ProductGallery({
                   sizes="(min-width: 1024px) 55vw, 100vw"
                   alt={displayName}
                   className="w-full h-full object-cover max-w-full"
+                  style={{ viewTransitionName: productPhotoName(product.id) }}
                   fetchPriority="high"
                   loading="eager"
                 />

@@ -522,7 +522,7 @@ export function HeroV2View({
                             dense
                               ? "min-h-10 px-4 py-2 text-xs sm:text-sm"
                               : "min-h-11 px-5 py-2.5 sm:px-6 sm:py-3 text-xs sm:text-sm"
-                          } items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground shadow-md transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
+                          } items-center justify-center rounded-xl bg-primary font-semibold text-primary-foreground shadow-md transition-[transform,background-color,box-shadow] duration-200 hover:scale-[1.03] active:scale-[0.98]`}
                         >
                           {button}
                         </a>
@@ -538,7 +538,7 @@ export function HeroV2View({
                             item.look.tone === "dark"
                               ? "bg-background/70 hover:bg-background/85 border-border text-foreground"
                               : "bg-white/20 hover:bg-white/30 border-white/30 text-white"
-                          } items-center justify-center rounded-xl backdrop-blur-md border font-semibold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]`}
+                          } items-center justify-center rounded-xl backdrop-blur-md border font-semibold transition-[transform,background-color,border-color] duration-200 hover:scale-[1.03] active:scale-[0.98]`}
                         >
                           {isAr ? "طلب مخصص" : "Bespoke Order"}
                         </a>
@@ -559,7 +559,7 @@ export function HeroV2View({
                 size="icon"
                 aria-label={isAr ? "الشريحة السابقة" : "Previous slide"}
                 onClick={() => goTo(isAr ? activeIdx + 1 : activeIdx - 1)}
-                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-all duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-[color,transform] duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
               >
                 <ChevronLeft className="size-9 sm:size-11 text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] filter" />
               </Button>
@@ -569,7 +569,7 @@ export function HeroV2View({
                 size="icon"
                 aria-label={isAr ? "الشريحة التالية" : "Next slide"}
                 onClick={() => goTo(isAr ? activeIdx - 1 : activeIdx + 1)}
-                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-all duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
+                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 hidden md:flex items-center justify-center min-h-11 min-w-11 p-2 text-white/85 hover:text-white transition-[color,transform] duration-200 hover:scale-120 active:scale-90 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none cursor-pointer bg-transparent hover:bg-transparent border-0 shadow-none"
               >
                 <ChevronRight className="size-9 sm:size-11 text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.85)] filter" />
               </Button>
@@ -595,7 +595,7 @@ export function HeroV2View({
                 >
                   <span
                     aria-hidden="true"
-                    className={`block h-2 rounded-full transition-all duration-300 ${
+                    className={`block h-2 rounded-full transition-[width,background-color] duration-300 ease-(--motion-ease-smooth) ${
                       activeIdx === i
                         ? "w-8 bg-white shadow-sm"
                         : "w-2 bg-white/40 hover:bg-white/70"
@@ -628,7 +628,7 @@ export function HeroV2View({
               >
                 <span
                   aria-hidden="true"
-                  className={`block h-2 rounded-full transition-all duration-300 ${
+                  className={`block h-2 rounded-full transition-[width,background-color] duration-300 ease-(--motion-ease-smooth) ${
                     activeIdx === i
                       ? "w-8 bg-primary"
                       : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"

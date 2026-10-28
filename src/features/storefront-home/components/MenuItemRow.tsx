@@ -14,6 +14,7 @@ import {
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice } from "@/lib/offer-price";
 import { OfferTag } from "@/components/storefront/OfferTag";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 /**
  * One variant's quantity in the basket, changed in place: "Add", then − n +. The basket's own
@@ -61,7 +62,7 @@ export function BasketStepper({
         <Minus className="size-4" aria-hidden="true" />
       </Button>
       <span className="min-w-5 text-center text-sm font-semibold tabular-nums" aria-live="polite">
-        {qty}
+        <AnimatedNumber value={String(qty)} />
       </span>
       <Button
         type="button"

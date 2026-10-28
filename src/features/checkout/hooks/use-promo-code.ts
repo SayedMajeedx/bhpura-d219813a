@@ -31,9 +31,17 @@ export function usePromoCode({
     setAppliedPromo(null);
   }, [cart, brand.id]);
 
+  // Each refusal counts, so the field can shake once per refusal (transitions.dev's error
+  // state shake, in OrderSummaryCard).
+  const [refusals, setRefusals] = useState(0);
+  const refuse = (message: string) => {
+    setRefusals((n) => n + 1);
+    toast.error(message);
+  };
+
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
-    if (!code) return toast.error(t("أدخل رمز الخصم", "Enter a promo code"));
+    if (!code) return refuse(t("أدخل رمز الخصم", "Enter a promo code"));
     setCheckingPromo(true);
     const promoItems = cart.map((item) => ({
       variant_id: item.variant_id && item.variant_id.trim() ? item.variant_id : null,
@@ -48,13 +56,13 @@ export function usePromoCode({
         items: promoItems,
       });
     } catch {
-      return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
+      return refuse(t("تعذر التحقق من الرمز", "Could not validate this code"));
     } finally {
       setCheckingPromo(false);
     }
     if (!result?.valid) {
       setAppliedPromo(null);
-      return toast.error(promoRejectionMessage(result, { currency, lang, t }));
+      return refuse(promoRejectionMessage(result, { currency, lang, t }));
     }
     setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
     setPromoInput(result.code);
@@ -68,5 +76,6 @@ export function usePromoCode({
     setAppliedPromo,
     checkingPromo,
     applyPromo,
+    refusals,
   };
 }

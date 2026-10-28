@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // On a phone the settings' tabs started about 1,050px down (found 2026-10-15): a heading card of
@@ -80,7 +80,7 @@ describe("an advanced fold", () => {
     expect(screen.queryByText("Banner fields")).toBeNull();
   });
 
-  it("opens on its own, leaving the page and the other folds as they were", () => {
+  it("opens on its own, leaving the page and the other folds as they were", async () => {
     twoFolds();
     const [first] = screen.getAllByRole("button", { name: "Show" });
     fireEvent.click(first);
@@ -88,7 +88,8 @@ describe("an advanced fold", () => {
     expect(screen.queryByText("Title fields")).toBeNull();
     expect(localStorage.getItem("boutq_settings_level")).toBe("basic");
     fireEvent.click(screen.getByRole("button", { name: "Hide" }));
-    expect(screen.queryByText("Banner fields")).toBeNull();
+    // It folds away, then leaves the page.
+    await waitFor(() => expect(screen.queryByText("Banner fields")).toBeNull());
   });
 
   it("is open on the advanced level", () => {

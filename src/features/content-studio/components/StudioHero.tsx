@@ -19,6 +19,7 @@ import {
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
 import { DraftsDialog } from "@/features/content-studio/components/DraftsDialog";
+import { ShimmerText } from "@/components/motion/ShimmerText";
 
 /** The page header: what the studio does, the caption copy and the export actions. */
 export function StudioHero({ studio }: { studio: ContentStudio }) {
@@ -106,19 +107,22 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
                 className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-3.5 sm:px-4"
               >
                 <Video className="size-4" />
-                <span>
-                  {exporting
-                    ? exportProgress > 0
-                      ? isAr
-                        ? `جارٍ التصدير (${exportProgress}%)…`
-                        : `Exporting (${exportProgress}%)…`
-                      : isAr
-                        ? "جارٍ التجهيز…"
-                        : "Preparing…"
-                    : isAr
-                      ? "تنزيل فيديو MP4"
-                      : "Download Video (MP4)"}
-                </span>
+                {exporting ? (
+                  // Work going on: a highlight sweeps the words (shimmer text).
+                  <ShimmerText
+                    text={
+                      exportProgress > 0
+                        ? isAr
+                          ? `جارٍ التصدير (${exportProgress}%)…`
+                          : `Exporting (${exportProgress}%)…`
+                        : isAr
+                          ? "جارٍ التجهيز…"
+                          : "Preparing…"
+                    }
+                  />
+                ) : (
+                  <span>{isAr ? "تنزيل فيديو MP4" : "Download Video (MP4)"}</span>
+                )}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -192,15 +196,11 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
               className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4 shadow-2xs"
             >
               <Download className="size-4" />
-              <span>
-                {exporting
-                  ? isAr
-                    ? "جارٍ التصدير…"
-                    : "Exporting…"
-                  : isAr
-                    ? "تنزيل PNG"
-                    : "Download PNG"}
-              </span>
+              {exporting ? (
+                <ShimmerText text={isAr ? "جارٍ التصدير…" : "Exporting…"} />
+              ) : (
+                <span>{isAr ? "تنزيل PNG" : "Download PNG"}</span>
+              )}
             </Button>
           )}
         </div>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export interface OsIslandDockItem {
   id: string;
@@ -85,8 +86,12 @@ export function OsIslandDock({
                 )}
               />
               {item.badge !== undefined && (
-                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-xs border-2 border-background">
-                  {item.badge}
+                <span className="t-badge-enter absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground shadow-xs border-2 border-background">
+                  {typeof item.badge === "number" ? (
+                    <AnimatedNumber value={String(item.badge)} />
+                  ) : (
+                    item.badge
+                  )}
                 </span>
               )}
             </div>

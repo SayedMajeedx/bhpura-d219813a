@@ -180,10 +180,12 @@ export function ProductAccordion({
     <div className="divide-y divide-border/70 border-y border-border my-6">
       {sections.map((section) => {
         const isOpen = Boolean(openItems[section.id]);
+        // Every section stays in the page so it can grow and fold away (transitions.dev's
+        // accordion, src/styles/motion.css); a closed one is hidden from reading and tabbing.
         const IconComponent = section.icon;
 
         return (
-          <div key={section.id} className="py-1">
+          <div key={section.id} className="t-acc py-1" data-open={isOpen ? "true" : "false"}>
             <Button
               type="button"
               variant="ghost"
@@ -196,18 +198,16 @@ export function ProductAccordion({
                 <IconComponent className="h-4 w-4 text-muted-foreground shrink-0" />
                 <span>{section.title}</span>
               </span>
-              <ChevronDown
-                className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                  isOpen ? "rotate-180" : ""
-                }`}
-              />
+              <span className="t-acc-chevron" data-open={isOpen ? "true" : "false"}>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </span>
             </Button>
 
-            {isOpen && (
-              <div className="pb-3.5 pt-1 text-foreground/90 animate-in fade-in slide-in-from-top-1 duration-150">
-                {section.content}
+            <div className="t-acc-panel">
+              <div className="t-acc-panel-inner">
+                <div className="pb-3.5 pt-1 text-foreground/90">{section.content}</div>
               </div>
-            )}
+            </div>
           </div>
         );
       })}

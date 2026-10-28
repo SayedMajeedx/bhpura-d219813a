@@ -34,6 +34,8 @@ import {
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { MorphText } from "@/components/motion/MorphText";
 
 interface ApiKeysManagerProps {
   brandId: string;
@@ -462,12 +464,14 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
                   onClick={handleCopySecret}
                   className="min-h-[44px] min-w-[44px] px-3 gap-1.5"
                 >
-                  {copied ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                  {copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
+                  <IconSwap
+                    showSecond={copied}
+                    first={<Copy className="h-4 w-4" />}
+                    second={<Check className="h-4 w-4 text-green-500" />}
+                  />
+                  <MorphText
+                    text={copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
+                  />
                 </Button>
               </div>
             </div>

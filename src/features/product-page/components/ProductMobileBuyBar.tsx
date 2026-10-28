@@ -1,7 +1,9 @@
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { formatSizeWithUnit } from "@/lib/format";
-import { ShoppingBag, Sparkles, MessageCircle, Bell } from "lucide-react";
+import { ShoppingBag, Sparkles, MessageCircle, Bell, Check } from "lucide-react";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { useFlash } from "@/components/motion/use-flash";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { useVocabulary } from "@/hooks/use-vocabulary";
@@ -40,7 +42,7 @@ export function ProductMobileBuyBar({
   vocabulary,
 }: {
   brand: ReturnType<typeof useStorefront>["brand"];
-  doAdd: (thenBuy?: boolean) => void;
+  doAdd: (thenBuy?: boolean) => boolean;
   hasReadySizes: boolean;
   inquiryUrl: string | null;
   isTailoringActive: boolean;
@@ -60,6 +62,7 @@ export function ProductMobileBuyBar({
   variant: Variant | null | undefined;
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  const [added, flashAdded] = useFlash();
   // The store's offers on the shown price only (src/lib/offer-price.ts), as above the fold.
   const { currency } = useStorefront();
   const offers = useLiveOffers();
@@ -157,7 +160,9 @@ export function ProductMobileBuyBar({
               className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-              onClick={() => doAdd(false)}
+              onClick={() => {
+                if (doAdd(false)) flashAdded();
+              }}
               aria-label={
                 isTailoringActive
                   ? vocabulary.custom_order?.[lang]
@@ -168,11 +173,18 @@ export function ProductMobileBuyBar({
                   : t("أضف للسلة", "Add to cart")
               }
             >
-              {isTailoringActive ? (
-                <Sparkles className="h-4 w-4" />
-              ) : (
-                <ShoppingBag className="h-4 w-4" />
-              )}
+              {/* The bag turns into a tick once the piece is in it (icon swap). */}
+              <IconSwap
+                showSecond={added}
+                first={
+                  isTailoringActive ? (
+                    <Sparkles className="h-4 w-4" />
+                  ) : (
+                    <ShoppingBag className="h-4 w-4" />
+                  )
+                }
+                second={<Check className="h-4 w-4" />}
+              />
             </Button>
             <Button
               variant="outline"

@@ -1,6 +1,7 @@
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { SoftText } from "@/components/motion/SoftText";
+import { LikeHeart } from "@/components/motion/LikeHeart";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
@@ -81,8 +82,10 @@ export function ProductTitleAndPrice({
             onClick={() => toggleWishlist(product.id)}
             aria-label={t("المفضلة", "Wishlist")}
           >
-            <Heart
-              className={`h-5 w-5 ${isWishlisted(product.id) ? "fill-red-600 text-red-600" : ""}`}
+            <LikeHeart
+              liked={isWishlisted(product.id)}
+              className="h-5 w-5"
+              likedClassName="fill-red-600 text-red-600"
             />
           </Button>
         </div>
@@ -97,7 +100,8 @@ export function ProductTitleAndPrice({
           </span>
         ) : (
           <>
-            <span>{shownLabel}</span>
+            {/* Another size's price blurs in where the last one was (text swap soft). */}
+            <SoftText value={shownLabel} />
             {shownWas > shownPrice && (
               <span className="text-base font-normal text-muted-foreground line-through">
                 {formatPrice(shownWas, currency, lang)}

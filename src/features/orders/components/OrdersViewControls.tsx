@@ -3,6 +3,7 @@ import { Bell, BellOff, Columns3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { newOrderSoundOn, playNewOrderChime, setNewOrderSound } from "@/lib/new-order-sound";
 import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
 
 export type OrdersView = "list" | "board";
 
@@ -27,8 +28,9 @@ export function OrdersViewControls({
       <div
         role="group"
         aria-label={isAr ? "طريقة العرض" : "View"}
-        className="inline-flex rounded-lg border border-border p-0.5"
+        className="t-tabs relative inline-flex rounded-lg border border-border p-0.5"
       >
+        <TabsPill />
         {(["list", "board"] as const).map((option) => {
           const Icon = option === "list" ? List : Columns3;
           return (
@@ -39,7 +41,7 @@ export function OrdersViewControls({
               variant="ghost"
               aria-pressed={view === option}
               className={cn(
-                "h-8 gap-1.5 px-3 text-xs",
+                "t-tab h-8 gap-1.5 px-3 text-xs",
                 view === option && "bg-muted font-semibold",
               )}
               onClick={() => onView(option)}

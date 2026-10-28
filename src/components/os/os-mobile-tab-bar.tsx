@@ -1,5 +1,6 @@
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export interface OsMobileTabItem {
   id: string;
@@ -33,7 +34,7 @@ export function OsMobileTabBar({ items, className, lang = "en" }: OsMobileTabBar
             type="button"
             onClick={item.onClick}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[44px] py-1 px-2.5 rounded-xl transition-all duration-200 outline-none select-none",
+              "relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[44px] py-1 px-2.5 rounded-xl transition-[color,background-color] duration-200 outline-none select-none",
               item.active
                 ? "bg-gradient-to-b from-primary/80 to-primary/60 dark:from-primary/75 dark:to-primary/55 backdrop-blur-xl border border-white/50 dark:border-white/35 text-primary-foreground font-bold shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1.5px_1.5px_rgba(255,255,255,0.7)] scale-105"
                 : "text-muted-foreground hover:text-foreground hover:bg-white/20 active:scale-95",
@@ -42,8 +43,12 @@ export function OsMobileTabBar({ items, className, lang = "en" }: OsMobileTabBar
             <div className="relative">
               <Icon className="h-5 w-5 stroke-[1.75]" />
               {item.badge !== undefined && (
-                <span className="absolute -top-1.5 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground">
-                  {item.badge}
+                <span className="t-badge-enter absolute -top-1.5 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-xs font-bold text-destructive-foreground">
+                  {typeof item.badge === "number" ? (
+                    <AnimatedNumber value={String(item.badge)} />
+                  ) : (
+                    item.badge
+                  )}
                 </span>
               )}
             </div>

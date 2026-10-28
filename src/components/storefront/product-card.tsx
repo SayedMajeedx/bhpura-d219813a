@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { CardFactLine } from "@/components/storefront/CardFactLine";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
-import { Heart } from "lucide-react";
+import { LikeHeart } from "@/components/motion/LikeHeart";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { shouldShowPrices } from "@/lib/storefront-mode";
@@ -14,6 +14,7 @@ import { ProductCardV2 } from "@/components/storefront/ProductCardV2";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice } from "@/lib/offer-price";
+import { nameTappedPhoto } from "@/lib/motion/view-transition";
 
 export function ProductCard({
   product,
@@ -115,17 +116,17 @@ export function ProductCard({
         }
         className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
       >
-        <Heart
-          className={`h-4 w-4 transition-colors duration-200 ${wished ? "fill-destructive text-destructive" : ""}`}
-        />
+        <LikeHeart liked={wished} className="h-4 w-4" />
       </Button>
 
       <Link
         to="/$slug/product/$id"
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
-        className="flex flex-1 flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5"
-        onClick={() => {
+        viewTransition
+        className="flex flex-1 flex-col transition-transform duration-250 ease-(--motion-ease-smooth) hover:-translate-y-1 sm:hover:-translate-y-1.5"
+        onClick={(event) => {
+          nameTappedPhoto(event.currentTarget, product.id);
           void trackProductEngagement(brand.slug, product.id, "click");
         }}
       >
