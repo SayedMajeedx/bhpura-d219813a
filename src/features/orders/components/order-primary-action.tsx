@@ -528,6 +528,38 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     );
   }
 
+  // A paid digital order: the files or the link were sent to the customer's channel; record it.
+  if (workflow.nextAction === "deliver_digital") {
+    return (
+      <Button
+        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+        onClick={async () => {
+          try {
+            await completeOrder(false);
+            toast.success(lang === "ar" ? "تم تسليم الطلب الرقمي" : "Digital order delivered");
+            await logActivity({
+              action: "status_change",
+              order_id: order.id,
+              en: "Marked the digital order delivered",
+              ar: "تم تسليم الطلب الرقمي",
+            });
+            await orderQ.refetch();
+            invalidateOrders(qc, brandId);
+            invalidateActivityLogs(qc);
+          } catch (err: unknown) {
+            toast.error(
+              getFriendlyErrorMessage(err) ||
+                (lang === "ar" ? "تعذر تسجيل التسليم" : "Unable to record the delivery"),
+            );
+          }
+        }}
+      >
+        <CheckCircle2 className="h-4 w-4 me-1.5" />
+        {lang === "ar" ? "تم تسليم الطلب الرقمي" : "Mark digital order delivered"}
+      </Button>
+    );
+  }
+
   if (
     workflow.nextAction === "hand_over_pickup" ||
     workflow.nextAction === "collect_and_hand_over"

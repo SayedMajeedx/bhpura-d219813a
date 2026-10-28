@@ -13,6 +13,7 @@ import {
 import { Plus, Minus, Pencil, Trash2, Scissors, SlidersHorizontal, FileText } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
+import { useProfileOptional } from "@/lib/profile-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
@@ -81,6 +82,9 @@ export function OrderLineCard({
 }) {
   // Each line's labels name its own fields (an order has several lines).
   const fieldId = useId();
+  // What a piece cost the store is for staff who may see its finances.
+  // Without a profile (none loaded) the figures stay hidden.
+  const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
   const variant = it.variant_id
     ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
     : null;
@@ -350,7 +354,7 @@ export function OrderLineCard({
                     : "Manual Item (No Ready Stock Deduction)"}
               </span>
               <div className="flex items-center gap-2">
-                {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
+                {!canViewFinancials ? null : it.unit_cost != null && Number(it.unit_cost) > 0 ? (
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
                     {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
                     {formatMoney(it.unit_cost, currency, isAr ? "ar" : "en")}

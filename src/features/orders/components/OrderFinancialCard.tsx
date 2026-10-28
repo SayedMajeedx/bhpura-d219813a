@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Pencil, Loader2, X, Tag, Package, CreditCard } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
+import { useProfileOptional } from "@/lib/profile-context";
 import { cn } from "@/lib/utils";
 import { PAYMENT_BADGE_CLASSES, type PaymentBadge } from "@/lib/payment-status";
 import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
@@ -103,6 +104,8 @@ export function OrderFinancialCard({
   totals: ReturnType<typeof orderTotals>;
   variantsQ: OrderDetailData["variantsQ"];
 }) {
+  // Without a profile (none loaded) the figures stay hidden.
+  const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
   // What the shopper was asked to pay now, from the rule the order was placed under.
   const expected = useMemo(
     () =>
@@ -445,77 +448,79 @@ export function OrderFinancialCard({
         )}
       </div>
 
-      {/* Direct Order COGS Breakdown Badge */}
-      {(() => {
-        const isAr = lang === "ar";
-        const productCogsTotal = items.reduce((sum, it: any) => {
-          const qty = Number(it.quantity || 1);
-          const unitCost = Number(it.unit_cost || 0);
-          return sum + unitCost * qty;
-        }, 0);
+      {/* What the order cost to make and pack, for staff who may see the store's finances. */}
+      {canViewFinancials &&
+        (() => {
+          const isAr = lang === "ar";
+          const productCogsTotal = items.reduce((sum, it: any) => {
+            const qty = Number(it.quantity || 1);
+            const unitCost = Number(it.unit_cost || 0);
+            return sum + unitCost * qty;
+          }, 0);
 
-        // This card is an estimated order margin, so show the configured BOM
-        // before fulfillment as well. Financial reports recognize actual COGS
-        // according to the order lifecycle.
-        const packagingCogsTotal = calculateOrderPackagingCogs(
-          items,
-          true,
-          productsQ.data ?? [],
-          variantsQ.data ?? [],
-          bomItemsQ.data ?? [],
-          packagingMaterialsQ.data ?? [],
-        );
+          // This card is an estimated order margin, so show the configured BOM
+          // before fulfillment as well. Financial reports recognize actual COGS
+          // according to the order lifecycle.
+          const packagingCogsTotal = calculateOrderPackagingCogs(
+            items,
+            true,
+            productsQ.data ?? [],
+            variantsQ.data ?? [],
+            bomItemsQ.data ?? [],
+            packagingMaterialsQ.data ?? [],
+          );
 
-        const orderTotalCogs = productCogsTotal + packagingCogsTotal;
-        const orderNetProfit = totals.total - orderTotalCogs;
+          const orderTotalCogs = productCogsTotal + packagingCogsTotal;
+          // On what the goods sold for: the delivery fee and the tax are not the store's takings.
+          const orderNetProfit = totals.netSales - orderTotalCogs;
 
-        return (
-          <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
-            <div className="flex items-center justify-between font-bold text-foreground">
-              <span className="flex items-center gap-1.5">
-                <Package className="h-4 w-4 text-primary shrink-0" />
-                <span>
-                  {isAr
-                    ? "تكاليف الإنتاج والتغليف المباشرة للطلب"
-                    : "What this order cost to make and pack"}
+          return (
+            <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-foreground">
+                <span className="flex items-center gap-1.5">
+                  <Package className="h-4 w-4 text-primary shrink-0" />
+                  <span>
+                    {isAr
+                      ? "تكاليف الإنتاج والتغليف المباشرة للطلب"
+                      : "What this order cost to make and pack"}
+                  </span>
                 </span>
-              </span>
-              <span className="font-mono text-sm font-extrabold text-primary">
-                {formatMoney(orderTotalCogs, currency, lang)}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
-              <div>
-                <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
-                <strong className="text-foreground">
-                  {formatMoney(productCogsTotal, currency, lang)}
-                </strong>
+                <span className="font-mono text-sm font-extrabold text-primary">
+                  {formatMoney(orderTotalCogs, currency, lang)}
+                </span>
               </div>
-              <div>
-                <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
-                <strong className="text-foreground">
-                  {formatMoney(packagingCogsTotal, currency, lang)}
-                </strong>
+
+              <div className="grid grid-cols-2 gap-2 font-mono text-xs pt-1.5 border-t border-border-subtle text-muted-foreground">
+                <div>
+                  <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
+                  <strong className="text-foreground">
+                    {formatMoney(productCogsTotal, currency, lang)}
+                  </strong>
+                </div>
+                <div>
+                  <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
+                  <strong className="text-foreground">
+                    {formatMoney(packagingCogsTotal, currency, lang)}
+                  </strong>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
+                  totals.remaining > 0
+                    ? "text-amber-700 dark:text-amber-300"
+                    : "text-emerald-600 dark:text-emerald-400",
+                )}
+              >
+                <span>{grossProfitLabel(totals.remaining, lang)}</span>
+                <span className="font-mono text-sm font-extrabold">
+                  {formatMoney(orderNetProfit, currency, lang)}
+                </span>
               </div>
             </div>
-
-            <div
-              className={cn(
-                "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
-                totals.remaining > 0
-                  ? "text-amber-700 dark:text-amber-300"
-                  : "text-emerald-600 dark:text-emerald-400",
-              )}
-            >
-              <span>{grossProfitLabel(totals.remaining, lang)}</span>
-              <span className="font-mono text-sm font-extrabold">
-                {formatMoney(orderNetProfit, currency, lang)}
-              </span>
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </Card>
   );
 }

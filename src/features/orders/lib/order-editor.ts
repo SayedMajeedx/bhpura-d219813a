@@ -334,7 +334,10 @@ export function orderTotals(
   }
   const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
   const remaining = Math.max(0, total - advancePaid);
-  return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
+  // What the goods sold for: after the discount, with neither the delivery fee nor the tax
+  // (which is the state's, or carved out of the prices of a VAT-inclusive store).
+  const netSales = Math.max(0, vatInclusive ? taxable - taxAmount : taxable);
+  return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining, netSales };
 }
 
 /** Why `validate_promo_code` rejected a code, for the merchant (amounts in the order's currency). */
