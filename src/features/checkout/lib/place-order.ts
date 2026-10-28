@@ -285,8 +285,26 @@ export function placeOrderFailure(
   } else if (msg.includes("PROMO_NO_ELIGIBLE_ITEMS")) {
     return {
       message: t(
-        "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
-        "This promo code cannot be applied to items already on discount/sale.",
+        "لا ينطبق رمز الخصم هذا على المنتجات في سلتك.",
+        "This promo code does not apply to the items in your cart.",
+      ),
+      clearPromo: true,
+    };
+  } else if (msg.includes("PROMO_CODE_NOT_STARTED")) {
+    return {
+      message: t("رمز الخصم هذا لم يبدأ بعد.", "This promo code has not started yet."),
+      clearPromo: true,
+    };
+  } else if (msg.includes("PROMO_CODE_EXPIRED")) {
+    return {
+      message: t("انتهى رمز الخصم هذا.", "This promo code has ended."),
+      clearPromo: true,
+    };
+  } else if (msg.includes("PROMO_CODE_MAX_REDEMPTIONS_REACHED")) {
+    return {
+      message: t(
+        "استُخدم رمز الخصم هذا الحد الأقصى المسموح من المرات.",
+        "This promo code has been used as many times as it allows.",
       ),
       clearPromo: true,
     };

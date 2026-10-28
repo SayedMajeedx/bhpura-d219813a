@@ -360,8 +360,16 @@ export function promoFailureMessage(
         : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), currency, lang)}.`;
     case "NO_ELIGIBLE_ITEMS":
       return lang === "ar"
-        ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً."
-        : "This promo code cannot be applied to items already on discount/sale.";
+        ? "لا ينطبق رمز الخصم هذا على المنتجات في الطلب."
+        : "This promo code does not apply to the items in the order.";
+    case "CODE_NOT_STARTED":
+      return lang === "ar" ? "رمز الخصم هذا لم يبدأ بعد." : "This promo code has not started yet.";
+    case "CODE_EXPIRED":
+      return lang === "ar" ? "انتهى رمز الخصم هذا." : "This promo code has ended.";
+    case "CODE_MAX_REDEMPTIONS_REACHED":
+      return lang === "ar"
+        ? "استُخدم رمز الخصم هذا الحد الأقصى المسموح من المرات."
+        : "This promo code has been used as many times as it allows.";
     case "CODE_INACTIVE":
       return lang === "ar"
         ? "رمز الخصم هذا لم يعد نشطاً."

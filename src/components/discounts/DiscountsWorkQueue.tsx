@@ -1,3 +1,4 @@
+import { promoScopeText } from "@/lib/promo-scope";
 import { Pencil, Trash2, Tag, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ type Promo = {
   first_time_customers_only: boolean;
   returning_customers_only: boolean;
   exclude_sale_items: boolean;
+  product_ids: string[];
+  category_slugs: string[];
   usage_limit_per_customer: number | null;
   is_active: boolean;
   created_at: string;
@@ -174,7 +177,13 @@ export function DiscountsWorkQueue({
                             ↩ {isAr ? "لعملاء سابقين فقط" : "Returning buyers only"}
                           </span>
                         )}
+                        {promoScopeText(p, isAr ? "ar" : "en") && (
+                          <span className="text-xs font-semibold text-primary">
+                            {promoScopeText(p, isAr ? "ar" : "en")}
+                          </span>
+                        )}
                         {!p.minimum_order_amount &&
+                          !promoScopeText(p, isAr ? "ar" : "en") &&
                           !p.maximum_discount_amount &&
                           !p.first_time_customers_only &&
                           !p.returning_customers_only && (

@@ -32,8 +32,17 @@ export function promoRejectionMessage(
     );
   if (result?.reason === "NO_ELIGIBLE_ITEMS")
     return t(
-      "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
-      "This promo code cannot be applied to items already on discount/sale.",
+      "لا ينطبق رمز الخصم هذا على المنتجات في سلتك.",
+      "This promo code does not apply to the items in your cart.",
+    );
+  if (result?.reason === "CODE_NOT_STARTED")
+    return t("رمز الخصم هذا لم يبدأ بعد.", "This promo code has not started yet.");
+  if (result?.reason === "CODE_EXPIRED")
+    return t("انتهى رمز الخصم هذا.", "This promo code has ended.");
+  if (result?.reason === "CODE_MAX_REDEMPTIONS_REACHED")
+    return t(
+      "استُخدم رمز الخصم هذا الحد الأقصى المسموح من المرات.",
+      "This promo code has been used as many times as it allows.",
     );
   if (result?.reason === "CODE_NOT_FOUND")
     return t("رمز الخصم غير موجود لهذا المتجر.", "This promo code does not exist for this brand.");
