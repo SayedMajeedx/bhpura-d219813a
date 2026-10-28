@@ -1,3 +1,4 @@
+import { isServicesStorefront } from "@/lib/storefront-modules";
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -155,6 +156,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
       // For the page's Google data: the store's currency, and whether it shows prices at all.
       currency: layout.settings?.currency ?? null,
       vertical: layout.settings?.store_vertical ?? null,
+      servicesStore: isServicesStorefront(layout.settings, layout.bootstrapData?.addons),
       showPrices: !(
         layout.settings?.storefront_mode === "catalog" &&
         layout.settings?.catalog_show_prices === false

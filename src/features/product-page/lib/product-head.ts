@@ -2,6 +2,8 @@ import { jsonForScript } from "@/lib/seo/json-for-script";
 import { availabilityOf } from "@/lib/product-availability";
 import { cardPrice, type PricedProduct, type PricedVariant } from "@/lib/product-price";
 import { factLines } from "@/lib/product-facts";
+import { productSnippet } from "@/features/product-page/lib/product-snippet";
+import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
 import {
   buildBreadcrumbsSchema,
   buildProductSchema,
@@ -43,6 +45,7 @@ export function productHead({
     currency?: unknown;
     showPrices?: unknown;
     vertical?: unknown;
+    servicesStore?: unknown;
     productReviews?: { count?: unknown; average?: unknown } | null;
   };
   params: { slug: string; id: string };
@@ -53,11 +56,10 @@ export function productHead({
 
   const lang: "ar" | "en" = loaderData?.initialLang === "en" ? "en" : "ar";
   const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
-  const rawDesc =
-    (lang === "ar"
+  const written =
+    lang === "ar"
       ? product.description_ar || product.description || product.description_en
-      : product.description_en || product.description || product.description_ar) || name;
-  const description = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
+      : product.description_en || product.description || product.description_ar;
   // The store's own name in the page's language, as written (it was the address in capitals:
   // "فوتوبوث | AURORA" on an Arabic page).
   const storeName =
@@ -70,6 +72,23 @@ export function productHead({
   // the cheapest size a shopper can buy now (and the dearest, when they differ).
   const variants = product.product_variants ?? [];
   const price = cardPrice(product, variants);
+  const vertical = typeof loaderData?.vertical === "string" ? loaderData.vertical : null;
+  const facts = factLines(product.details, vertical, lang).map((line) => ({
+    name: line.label,
+    value: line.value,
+  }));
+  // The product's own words, else a sentence of what its page says (never just its name).
+  const description = productSnippet({
+    name,
+    description: written,
+    storeName,
+    lang,
+    facts: facts.map((fact) => ({ label: fact.name, value: fact.value })),
+    price: { from: price.from, to: price.to },
+    currency: typeof loaderData?.currency === "string" ? loaderData.currency : null,
+    showPrice: loaderData?.showPrices !== false,
+    service: loaderData?.servicesStore === true,
+  });
   const productSchema = buildProductSchema(
     {
       id: product.id,
@@ -90,11 +109,7 @@ export function productHead({
         : null,
       sku: variants[0]?.id || product.id,
       // The facts its page shows, in the same words.
-      properties: factLines(
-        product.details,
-        typeof loaderData?.vertical === "string" ? loaderData.vertical : null,
-        lang,
-      ).map((line) => ({ name: line.label, value: line.value })),
+      properties: facts,
       primary_image_url: product.image_url,
       images: Array.isArray(product.media)
         ? product.media.map(mediaUrl).filter((url): url is string => Boolean(url))
@@ -108,9 +123,15 @@ export function productHead({
     lang,
   );
 
+  // The store's main address (its own domain, else its subdomain), and the page in both languages.
+  const store = {
+    slug: params.slug,
+    custom_domain: (brand as { custom_domain?: string | null } | undefined)?.custom_domain,
+  };
+  const path = `product/${params.id}`;
   const breadcrumbsSchema = buildBreadcrumbsSchema([
-    { name: lang === "ar" ? "الرئيسية" : "Home", url: `https://boutq.store/${params.slug}` },
-    { name, url: `https://boutq.store/${params.slug}/product/${params.id}` },
+    { name: lang === "ar" ? "الرئيسية" : "Home", url: storefrontCanonical(store, "", lang) },
+    { name, url: storefrontCanonical(store, path, lang) },
   ]);
 
   return {
@@ -124,18 +145,14 @@ export function productHead({
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:type", content: "product" },
+      { property: "og:url", content: storefrontCanonical(store, path, lang) },
       ...(image ? [{ property: "og:image", content: image }] : []),
       { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
       ...(image ? [{ name: "twitter:image", content: image }] : []),
     ],
-    links: [
-      {
-        rel: "canonical",
-        href: `https://boutq.store/${params.slug}/product/${params.id}`,
-      },
-    ],
+    links: pageAddressLinks(store, path, lang),
     scripts: [
       {
         type: "application/ld+json",

@@ -12,6 +12,7 @@ import {
   runObservedTask,
 } from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
+import { storeHostRedirectResponse } from "./lib/seo/host-redirect";
 import { isHeartbeatMinute, scheduledWork } from "./lib/system-health";
 
 const SECURITY_HEADERS = {
@@ -209,6 +210,10 @@ export default {
           correlationId,
         );
       }
+
+      // A store's page on the platform's address goes to the store's own (one address for Google).
+      const toStoreAddress = storeHostRedirectResponse(request);
+      if (toStoreAddress) return withSecurityHeaders(toStoreAddress, correlationId);
 
       // SEO fast paths: never let crawler probes fall through to /$slug SSR.
       if (url.pathname === "/robots.txt") {

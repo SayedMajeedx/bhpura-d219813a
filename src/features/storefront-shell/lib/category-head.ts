@@ -1,7 +1,7 @@
 import { faviconType } from "@/lib/favicon";
 import { smartKindOf } from "@/lib/smart-categories";
 import { jsonForScript } from "@/lib/seo/json-for-script";
-import { socialImage, storefrontCanonical } from "@/lib/seo/canonical";
+import { pageAddressLinks, socialImage, storefrontCanonical } from "@/lib/seo/canonical";
 import { buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 
 /** The collections that are not rows in `categories` (see CategoryPage). */
@@ -109,11 +109,12 @@ export function categoryHead({
     return {};
   }
 
-  const url = storefrontCanonical(store, encodeURIComponent(categorySlug));
+  const path = encodeURIComponent(categorySlug);
+  const url = storefrontCanonical(store, path, lang);
   const picture = socialImage(image);
   const favicon = loaderData?.faviconUrl;
   const breadcrumbs = buildBreadcrumbsSchema([
-    { name: lang === "ar" ? "الرئيسية" : "Home", url: storefrontCanonical(store) },
+    { name: lang === "ar" ? "الرئيسية" : "Home", url: storefrontCanonical(store, "", lang) },
     { name, url },
   ]);
 
@@ -132,7 +133,7 @@ export function categoryHead({
       { name: "twitter:image", content: picture },
     ],
     links: [
-      { rel: "canonical", href: url },
+      ...pageAddressLinks(store, path, lang),
       ...(favicon
         ? [
             {

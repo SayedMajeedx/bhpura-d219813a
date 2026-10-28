@@ -32,7 +32,7 @@ describe("Storefront V2 Foundation - SEO & Structured Data", () => {
     expect(schema["@context"]).toBe("https://schema.org");
     expect(schema["@type"]).toBe("Organization");
     expect(schema.name).toBe("Boutique Pura");
-    expect(schema.url).toBe("https://boutq.store/pura");
+    expect(schema.url).toBe("https://pura.boutq.store/pura");
     expect(schema.logo).toBe("https://boutq.app/pura/logo.png");
     expect(schema.sameAs).toEqual(["https://instagram.com/pura", "https://twitter.com/pura"]);
   });
@@ -54,7 +54,7 @@ describe("Storefront V2 Foundation - SEO & Structured Data", () => {
     expect(schema.potentialAction).toBeDefined();
     expect(schema.potentialAction["@type"]).toBe("SearchAction");
     expect(schema.potentialAction.target.urlTemplate).toBe(
-      "https://boutq.store/pura/search?q={search_term_string}",
+      "https://pura.boutq.store/pura/search?q={search_term_string}",
     );
   });
 

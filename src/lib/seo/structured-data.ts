@@ -3,6 +3,8 @@
  * Conforms to schema.org specifications and Google Merchant Center / Search requirements.
  */
 
+import { storefrontBase } from "@/lib/seo/canonical";
+
 export interface SeoBrandInfo {
   id?: string;
   slug?: string;
@@ -11,6 +13,7 @@ export interface SeoBrandInfo {
   logo_url?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  custom_domain?: string | null;
 }
 
 export interface SeoPublicSettings {
@@ -55,12 +58,12 @@ export interface SeoBreadcrumbItem {
   url: string;
 }
 
+/** The store's main address (its own domain, else its subdomain), the one every page names. */
 function resolveStoreUrl(brand?: SeoBrandInfo, settings?: SeoPublicSettings): string {
-  if (settings?.custom_domain) {
-    return `https://${settings.custom_domain.replace(/^https?:\/\//, "")}`;
-  }
-  const slug = brand?.slug || "";
-  return `https://boutq.store/${slug}`;
+  return storefrontBase({
+    slug: brand?.slug || "",
+    custom_domain: settings?.custom_domain ?? brand?.custom_domain,
+  });
 }
 
 function stripHtml(input?: string | null): string {

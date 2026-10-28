@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { bookingHead } from "@/features/storefront-booking/lib/booking-head";
 import { StorefrontBookingPage } from "@/features/storefront-booking/components/StorefrontBookingPage";
 
 /** The service to book and, from its page, the length the customer picked. */
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/$slug/book")({
       minutes: Number.isInteger(minutes) && minutes >= 15 && minutes <= 1440 ? minutes : undefined,
     };
   },
+  head: ({ matches }) => bookingHead({ matches }),
   component: BookRoute,
 });
 

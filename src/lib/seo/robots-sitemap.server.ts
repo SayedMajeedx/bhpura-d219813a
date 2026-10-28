@@ -8,6 +8,9 @@
  * as timed out and fails the SEO / agentic-browsing audits.
  */
 
+import { sitemapEntries, sitemapXml } from "@/lib/seo/sitemap";
+import { storefrontOrigin } from "@/lib/seo/canonical";
+
 const PLATFORM_HOSTS = new Set(["boutq.store", "www.boutq.store", "localhost", "127.0.0.1"]);
 
 const SITEMAP_CACHE = "public, max-age=3600, s-maxage=86400, stale-while-revalidate=86400";
@@ -17,15 +20,6 @@ function hostnameOf(request: Request): string {
   const forwarded = request.headers.get("x-forwarded-host");
   const host = forwarded || new URL(request.url).hostname;
   return host.split(":")[0].toLowerCase();
-}
-
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 export function handleRobotsRequest(request: Request): Response {
@@ -45,7 +39,6 @@ export function handleRobotsRequest(request: Request): Response {
     "Disallow: /*/auth-confirmed",
     "Disallow: /*/thank-you/",
     "Disallow: /*/wishlist",
-    "Disallow: /*?*lang=",
     "Allow: /",
     "",
     ...(isPlatform ? [] : [`Sitemap: ${origin}/sitemap.xml`]),
@@ -61,12 +54,6 @@ export function handleRobotsRequest(request: Request): Response {
   });
 }
 
-/** The address the request came in on ("https://pura.boutq.store"), for links back to it. */
-export function storeOrigin(request: Request): string {
-  const url = new URL(request.url);
-  return `${url.protocol}//${request.headers.get("x-forwarded-host") || url.host}`;
-}
-
 /**
  * Resolves the store for a sitemap or feed request: an explicit /{slug}/sitemap.xml
  * path wins; otherwise the *.boutq.store subdomain or a mapped custom domain.
@@ -74,14 +61,14 @@ export function storeOrigin(request: Request): string {
 export async function resolveStoreBrand(
   request: Request,
   explicitSlug: string | null,
-): Promise<{ id: string; slug: string } | null> {
+): Promise<{ id: string; slug: string; custom_domain: string | null } | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
 
   if (explicitSlug) {
     const { data } = await db
       .from("brands")
-      .select("id, slug")
+      .select("id, slug, custom_domain")
       .eq("slug", explicitSlug)
       .eq("is_active", true)
       .maybeSingle();
@@ -96,7 +83,7 @@ export async function resolveStoreBrand(
     if (subdomain && !subdomain.includes(".")) {
       const { data } = await db
         .from("brands")
-        .select("id, slug")
+        .select("id, slug, custom_domain")
         .eq("slug", subdomain)
         .eq("is_active", true)
         .maybeSingle();
@@ -106,20 +93,32 @@ export async function resolveStoreBrand(
 
   const { data } = await db
     .from("brands")
-    .select("id, slug")
+    .select("id, slug, custom_domain")
     .eq("custom_domain", hostname)
     .eq("is_active", true)
     .maybeSingle();
   return data ?? null;
 }
 
+/**
+ * Whether a host is one of the platform's live addresses (the platform itself, a store's subdomain)
+ * or a store's own domain. A development host (localhost, a preview) is none of them.
+ */
+function isLiveHost(hostname: string, brand: { custom_domain: string | null }): boolean {
+  if (hostname === "boutq.store" || hostname === "www.boutq.store") return true;
+  if (hostname.endsWith(".boutq.store")) return true;
+  const own = brand.custom_domain
+    ?.trim()
+    .replace(/^https?:\/\//i, "")
+    .replace(/\/+$/, "")
+    .toLowerCase();
+  return Boolean(own) && hostname === own;
+}
+
 export async function handleSitemapRequest(
   request: Request,
   explicitSlug: string | null = null,
 ): Promise<Response> {
-  const url = new URL(request.url);
-  const origin = `${url.protocol}//${hostnameOf(request)}`;
-
   const brand = await resolveStoreBrand(request, explicitSlug);
   if (!brand) {
     return new Response("Not found", {
@@ -131,9 +130,20 @@ export async function handleSitemapRequest(
     });
   }
 
+  // A store has one sitemap, on its main address: the platform's address and a subdomain of a store
+  // with its own domain send the crawler there (a sitemap lists only addresses of its own host).
+  const mainOrigin = storefrontOrigin(brand);
+  const hostname = hostnameOf(request);
+  if (isLiveHost(hostname, brand) && `https://${hostname}` !== mainOrigin) {
+    return new Response(null, {
+      status: 301,
+      headers: { Location: `${mainOrigin}/sitemap.xml`, "Cache-Control": "public, max-age=3600" },
+    });
+  }
+
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as any;
-  const [{ data: products }, { data: categories }] = await Promise.all([
+  const [{ data: products }, { data: categories }, { data: settings }] = await Promise.all([
     db
       .from("products")
       .select("id, updated_at")
@@ -148,39 +158,22 @@ export async function handleSitemapRequest(
       .eq("is_active", true)
       .not("slug", "is", null)
       .limit(500),
+    db
+      .from("business_settings")
+      .select("pages, store_vertical, store_modules")
+      .eq("brand_id", brand.id)
+      .maybeSingle(),
   ]);
 
-  const base = `${origin}/${brand.slug}`;
-  const entries: Array<{ loc: string; lastmod?: string; priority: string; changefreq: string }> = [
-    { loc: base, priority: "1.0", changefreq: "daily" },
-  ];
-  for (const c of (categories ?? []) as Array<{ slug: string; updated_at?: string }>) {
-    entries.push({
-      loc: `${base}/${encodeURIComponent(c.slug)}`,
-      lastmod: c.updated_at,
-      priority: "0.7",
-      changefreq: "weekly",
-    });
-  }
-  for (const p of (products ?? []) as Array<{ id: string; updated_at?: string }>) {
-    entries.push({
-      loc: `${base}/product/${p.id}`,
-      lastmod: p.updated_at,
-      priority: "0.8",
-      changefreq: "weekly",
-    });
-  }
-
-  const body =
-    `<?xml version="1.0" encoding="UTF-8"?>\n` +
-    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    entries
-      .map((e) => {
-        const lastmod = e.lastmod ? `<lastmod>${new Date(e.lastmod).toISOString()}</lastmod>` : "";
-        return `  <url><loc>${xmlEscape(e.loc)}</loc>${lastmod}<changefreq>${e.changefreq}</changefreq><priority>${e.priority}</priority></url>`;
-      })
-      .join("\n") +
-    `\n</urlset>\n`;
+  const body = sitemapXml(
+    brand,
+    sitemapEntries({
+      categories: categories ?? [],
+      products: products ?? [],
+      pages: settings?.pages,
+      settings,
+    }),
+  );
 
   return new Response(body, {
     status: 200,

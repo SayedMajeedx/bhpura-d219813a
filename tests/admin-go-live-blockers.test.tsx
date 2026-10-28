@@ -9,9 +9,9 @@ import { ConfirmDialogHost, confirmDialog } from "../src/components/ui/confirm-d
 // Found walking Pura's live admin before going live (2026-10-24).
 
 describe("the platform's address", () => {
-  it("is boutq.store for a store and its admin", () => {
+  it("is boutq.store for the admin and a subdomain of it for a store", () => {
     expect(PLATFORM_HOST).toBe("boutq.store");
-    expect(storeAddress("pura")).toBe("https://boutq.store/pura");
+    expect(storeAddress("pura")).toBe("https://pura.boutq.store/pura");
     expect(adminAddress("pura")).toBe("https://boutq.store/admin/b/pura");
   });
 });
