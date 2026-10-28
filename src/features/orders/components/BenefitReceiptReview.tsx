@@ -55,7 +55,13 @@ export function BenefitReceiptReview({
   const approved = transferApproved(order.payment_status);
   const advanceOnly = approved && order.payment_status !== "paid";
   return (
-    <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
+    <div
+      className={
+        approved
+          ? "rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 text-emerald-950"
+          : "rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950"
+      }
+    >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ImageIcon className="h-5 w-5" />

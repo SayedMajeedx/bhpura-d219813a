@@ -190,10 +190,12 @@ export function getOrderWorkflow(
   // approving again does nothing (approve_benefit_payment answers "already paid").
   const advanceApproved = pStatus === "partially_paid" || pStatus === "partial";
 
-  // An online (card) payment still to come, with no advance recorded: the order waits for it.
+  // An online (card) payment still to come, with nothing recorded: the order waits for it. Any
+  // amount already recorded (an approved advance, or one typed in by staff) means it has arrived.
   const awaitingOnlinePayment =
     normalizePaymentMethod(method) === "card" &&
     payment !== "paid" &&
+    payment !== "partial" &&
     !advanceApproved &&
     outstanding > 0;
 

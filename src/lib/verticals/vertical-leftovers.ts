@@ -4,7 +4,7 @@ import {
   type StoreModules,
   type StoreVertical,
 } from "@/lib/store-profile";
-import { arNoun } from "@/lib/arabic-count";
+import { arNoun, countOf } from "@/lib/arabic-count";
 
 /**
  * What a change of vertical leaves behind. The change switches a store's modules, wording,
@@ -145,7 +145,7 @@ export function planLeftovers({
       count: strandedOrders,
       text: {
         ar: `طلبات مفتوحة بطريقة تسليم لا يعتمدها النشاط الجديد: ${strandedOrders}.`,
-        en: `${strandedOrders} open order(s) use a way of fulfilling that the new vertical does not use.`,
+        en: `${countOf(strandedOrders, "order", "en")} open, in a way of fulfilling that the new vertical does not use.`,
       },
       advice: {
         ar: "أنهِها من صفحة الطلبات قبل التغيير أو بعده؛ تبقى متاحة هناك.",

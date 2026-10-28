@@ -16,6 +16,7 @@ import { catalogQueries } from "@/lib/data/catalog";
 import { categoriesQueries } from "@/lib/data/categories";
 import { assignableCategories } from "@/lib/smart-categories";
 import { OfferScopeFields } from "@/features/offers/components/OfferScopeFields";
+import { inPromoScope } from "@/lib/promo-scope";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { countOf } from "@/lib/arabic-count";
 import { ordersQueries, type OrderPromoRow } from "@/lib/data/orders";
@@ -210,7 +211,12 @@ function DiscountCodes() {
         setShowMarginWarning(false);
         return;
       }
-      const hasLowMargin = variantsList.some((v) => {
+      // Only the products the code is for: a code for abayas says nothing about the scarves.
+      const categoryOfProduct = new Map((productRows ?? []).map((p) => [p.id, p.category]));
+      const scope = { product_ids: form.product_ids, category_slugs: form.category_slugs };
+      const inScope = (v: { product_id: string }) =>
+        inPromoScope(scope, { id: v.product_id, category: categoryOfProduct.get(v.product_id) });
+      const hasLowMargin = variantsList.filter(inScope).some((v) => {
         const sell = Number(v.selling_price || 0);
         const cost = Number(v.cost_price || 0);
         if (sell <= 0 || cost <= 0) return false;
@@ -229,6 +235,9 @@ function DiscountCodes() {
     form.discount_value,
     form.exclude_low_margin,
     form.margin_threshold,
+    form.product_ids,
+    form.category_slugs,
+    productRows,
     variantsQ.data,
   ]);
 
@@ -625,6 +634,17 @@ function DiscountCodes() {
               </p>
             </div>
 
+            {/* Which products the code is for */}
+            <OfferScopeFields
+              isAr={ar}
+              legend={ar ? "المنتجات التي يخصها الرمز" : "What the code is for"}
+              products={scopeProducts}
+              categories={scopeCategories}
+              productIds={form.product_ids}
+              categorySlugs={form.category_slugs}
+              onChange={(scope) => setForm({ ...form, ...scope })}
+            />
+
             {/* Minimum Order Limit */}
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">
@@ -646,6 +666,11 @@ function DiscountCodes() {
                 placeholder={getCurrencyPrecision(currency) === 3 ? "0.000" : "0.00"}
                 className="h-11 font-mono"
               />
+              <p className="px-1 text-xs text-muted-foreground">
+                {ar
+                  ? "يُحسب على الطلب كاملاً، لا على المنتجات المحددة فقط."
+                  : "Counted on the whole order, not only on the products the code is for."}
+              </p>
             </div>
 
             {/* Maximum Discount limit (For Percentage Type) */}
@@ -753,17 +778,6 @@ function DiscountCodes() {
                   : "Automatically pauses the code globally once the redemptions cap is met."}
               </p>
             </div>
-
-            {/* Which products the code is for */}
-            <OfferScopeFields
-              isAr={ar}
-              legend={ar ? "المنتجات التي يخصها الرمز" : "What the code is for"}
-              products={scopeProducts}
-              categories={scopeCategories}
-              productIds={form.product_ids}
-              categorySlugs={form.category_slugs}
-              onChange={(scope) => setForm({ ...form, ...scope })}
-            />
 
             {/* Eligibility Constraints Section */}
             <div className="space-y-4 rounded-xl border p-4 bg-muted/10">
