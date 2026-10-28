@@ -230,6 +230,35 @@ describe("a service's details view", () => {
     expect(within(dialog).getByText("Guest book")).toBeInTheDocument();
     expect(within(dialog).getByRole("link", { name: "Book this service" })).toBeInTheDocument();
   });
+
+  it("marks the length chosen on the card, books it, and folds a long description", async () => {
+    const story = "A booth for the whole evening. ".repeat(12).trim();
+    const withStory = (products as unknown as Array<Record<string, unknown>>).map((p) =>
+      p.id === "booth" ? { ...p, description_en: story } : p,
+    );
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ServicesHome products={withStory as never} />
+      </QueryClientProvider>,
+    );
+    await screen.findByText(/Guest book/);
+    const booth = screen.getByRole("heading", { name: "Photo booth" }).closest("article")!;
+    fireEvent.click(within(booth).getByRole("radio", { name: "3 hours" }));
+    fireEvent.click(within(booth).getByRole("button", { name: "View details" }));
+    const dialog = await screen.findByRole("dialog");
+    // The chosen length is marked, and the booking carries it.
+    const chosen = within(dialog).getByText("BHD 95").closest("li")!;
+    expect(chosen).toHaveAttribute("aria-current", "true");
+    expect(within(dialog).getByRole("link", { name: "Book this service" })).toHaveAttribute(
+      "href",
+      expect.stringContaining("minutes=180"),
+    );
+    // The description folds to a few lines, and opens on a tap.
+    expect(within(dialog).getByText(story)).toHaveClass("line-clamp-4");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Read more" }));
+    expect(within(dialog).getByText(story)).not.toHaveClass("line-clamp-4");
+    expect(within(dialog).getByRole("button", { name: "Show less" })).toBeInTheDocument();
+  });
 });
 
 describe("the services home page", () => {

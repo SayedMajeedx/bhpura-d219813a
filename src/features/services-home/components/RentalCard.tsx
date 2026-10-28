@@ -258,6 +258,7 @@ export function RentalCard({
           addOns={addOns}
           open={detailsOpen}
           onOpenChange={setDetailsOpen}
+          minutes={chosen?.minutes ?? null}
         />
       )}
     </article>
