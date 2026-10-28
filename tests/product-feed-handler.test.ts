@@ -67,7 +67,8 @@ describe("the shopping feed's address", () => {
     expect(res.headers.get("cache-control")).toContain("max-age=600");
     const body = await res.text();
     expect(body).toContain("<title>عباية</title>");
-    expect(body).toContain("<link>https://boutq.store/pura/product/p1</link>");
+    // Whatever address asked, the links are the store's main one (here its own domain).
+    expect(body).toContain("<link>https://shop.pura.bh/pura/product/p1</link>");
     expect(body).toContain("<g:price>22.000 BHD</g:price>");
     // The catalog is read for this store only.
     expect(filters).toContainEqual(["product_variants", "brand_id", "b1"]);

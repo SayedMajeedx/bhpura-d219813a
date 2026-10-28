@@ -27,14 +27,18 @@ const canonicalOf = (head: { links?: Array<Record<string, string>> }) =>
   head.links?.find((l) => l.rel === "canonical")?.href;
 
 describe("canonical addresses", () => {
-  it("uses the platform address, or the store's own domain when it has one", () => {
-    expect(storefrontBase({ slug: "pura" })).toBe("https://boutq.store/pura");
+  it("uses the store's own subdomain, or the store's own domain when it has one", () => {
+    expect(storefrontBase({ slug: "pura" })).toBe("https://pura.boutq.store/pura");
     expect(storefrontBase({ slug: "pura", custom_domain: " https://pura.bh/ " })).toBe(
       "https://pura.bh/pura",
     );
-    expect(storefrontCanonical({ slug: "pura" })).toBe("https://boutq.store/pura");
+    expect(storefrontCanonical({ slug: "pura" })).toBe("https://pura.boutq.store/pura");
     expect(storefrontCanonical({ slug: "pura" }, "/abayas")).toBe(
-      "https://boutq.store/pura/abayas",
+      "https://pura.boutq.store/pura/abayas",
+    );
+    // The English page is its own address.
+    expect(storefrontCanonical({ slug: "pura" }, "/abayas", "en")).toBe(
+      "https://pura.boutq.store/pura/abayas?lang=en",
     );
   });
 
@@ -75,7 +79,7 @@ describe("category head", () => {
       },
     });
     expect(metaOf(head as never, "property", "og:title")).toBe("Daily | Pura");
-    expect(canonicalOf(head as never)).toBe("https://boutq.store/pura/daily");
+    expect(canonicalOf(head as never)).toBe("https://pura.boutq.store/pura/daily?lang=en");
     expect(metaOf(head as never, "property", "og:image")).toBe(
       "https://boutq.store/og-placeholder.png",
     );
@@ -139,8 +143,8 @@ describe("storefront (home) head", () => {
       meta: Array<Record<string, string>>;
       links: Array<Record<string, string>>;
     };
-    expect(canonicalOf(home)).toBe("https://boutq.store/pura");
-    expect(metaOf(home, "property", "og:url")).toBe("https://boutq.store/pura");
+    expect(canonicalOf(home)).toBe("https://pura.boutq.store/pura?lang=en");
+    expect(metaOf(home, "property", "og:url")).toBe("https://pura.boutq.store/pura?lang=en");
     expect(metaOf(home, "property", "og:image")).toBe("https://boutq.store/og-placeholder.png");
 
     const inner = storefrontHead(data) as never as { links: Array<Record<string, string>> };
@@ -152,6 +156,6 @@ describe("storefront (home) head", () => {
       { ...data, brand: { ...brand, custom_domain: "pura.bh" } },
       { home: true },
     ) as never as { links: Array<Record<string, string>> };
-    expect(canonicalOf(home)).toBe("https://pura.bh/pura");
+    expect(canonicalOf(home)).toBe("https://pura.bh/pura?lang=en");
   });
 });

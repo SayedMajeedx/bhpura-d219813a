@@ -7,7 +7,7 @@ import {
 } from "@/lib/typography";
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import { jsonForScript } from "@/lib/seo/json-for-script";
-import { storefrontCanonical } from "@/lib/seo/canonical";
+import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
 import { storeShareImage } from "@/lib/seo/share-image";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
@@ -67,13 +67,15 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
   const orgSchema = buildOrganizationSchema(b, settings);
   const webSiteSchema = buildWebSiteSchema(b, settings);
 
-  // The home page says which address is its own (each page below sets its own).
-  const homeUrl = storefrontCanonical({
+  // The home page says which address is its own, and where the same page is in the other language
+  // (each page below sets its own).
+  const store = {
     slug: b.slug,
     custom_domain: (b as { custom_domain?: string | null }).custom_domain,
-  });
+  };
+  const homeUrl = storefrontCanonical(store, "", lang);
   const links: Array<Record<string, any>> = [
-    ...(options.home ? [{ rel: "canonical", href: homeUrl }] : []),
+    ...(options.home ? pageAddressLinks(store, "", lang) : []),
     {
       rel: "icon",
       href: favicon,

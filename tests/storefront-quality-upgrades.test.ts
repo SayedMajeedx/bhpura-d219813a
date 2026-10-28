@@ -44,7 +44,10 @@ describe("storefront quality upgrades", () => {
         { name: "twitter:title", content: "Silk Abaya | Pura Line" },
       ]),
     );
-    expect(head.links).toEqual([{ rel: "canonical", href: "https://boutq.store/pura/product/p1" }]);
+    expect(head.links).toContainEqual({
+      rel: "canonical",
+      href: "https://pura.boutq.store/pura/product/p1?lang=en",
+    });
     expect(head.htmlAttrs).toEqual({ lang: "en", dir: "ltr" });
     expect(productHead({ loaderData: {}, params: { slug: "pura", id: "p1" } })).toEqual({});
   });

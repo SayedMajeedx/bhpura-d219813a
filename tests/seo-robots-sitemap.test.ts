@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 // Minimal supabaseAdmin stub: every chained call returns the builder, and
 // awaiting it resolves to the canned rows for the table being queried.
 const rows: Record<string, any[]> = {
-  brands: [{ id: "brand-1", slug: "qoffee" }],
+  brands: [
+    { id: "brand-1", slug: "qoffee", custom_domain: null },
+    { id: "brand-2", slug: "owned", custom_domain: "owned.example.com" },
+  ],
+  business_settings: [],
   products: [
     { id: "p-1", updated_at: "2026-09-20T10:00:00Z" },
     { id: "p-2", updated_at: "2026-09-19T10:00:00Z" },
@@ -26,7 +30,9 @@ function builder(table: string) {
     const wantSlug = state.filters.find((f) => f[0] === "eq" && f[1] === "slug")?.[2];
     const wantDomain = state.filters.find((f) => f[0] === "eq" && f[1] === "custom_domain")?.[2];
     if (wantSlug) return { data: rows.brands.find((r) => r.slug === wantSlug) ?? null };
-    if (wantDomain === "shop.example.com") return { data: rows.brands[0] };
+    if (wantDomain === "shop.example.com") {
+      return { data: { ...rows.brands[0], custom_domain: "shop.example.com" } };
+    }
     return { data: null };
   };
   b.then = (resolve: (v: unknown) => void) => resolve({ data: rows[table] ?? [] });
@@ -72,6 +78,8 @@ describe("robots.txt fast path", () => {
       expect(body).toContain("User-agent: *");
       expect(body).toContain("Disallow: /admin");
       expect(body).toContain("Disallow: /*/checkout");
+      // English pages (?lang=en) are indexed: each page names the other language.
+      expect(body).not.toContain("lang=");
       expect(body).toContain("Sitemap: https://qoffee.boutq.store/sitemap.xml");
     });
   });
@@ -105,18 +113,34 @@ describe("sitemap.xml fast path", () => {
     expect(xml).not.toContain("beans & more");
   });
 
-  it("resolves an explicit /{slug}/sitemap.xml path", async () => {
+  it("sends an explicit /{slug}/sitemap.xml on the platform's address to the store's own", async () => {
     const res = await handleSitemapRequest(
       new Request("https://boutq.store/qoffee/sitemap.xml"),
       "qoffee",
     );
-    expect(res.status).toBe(200);
-    expect(await res.text()).toContain("<loc>https://boutq.store/qoffee</loc>");
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe("https://qoffee.boutq.store/sitemap.xml");
   });
 
-  it("resolves a mapped custom domain", async () => {
+  it("lists the main address whatever development host asked", async () => {
+    const res = await handleSitemapRequest(
+      new Request("http://localhost:3000/qoffee/sitemap.xml"),
+      "qoffee",
+    );
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain("<loc>https://qoffee.boutq.store/qoffee</loc>");
+  });
+
+  it("resolves a mapped custom domain, which is that store's main address", async () => {
     const res = await handleSitemapRequest(new Request("https://shop.example.com/sitemap.xml"));
     expect(res.status).toBe(200);
+    expect(await res.text()).toContain("<loc>https://shop.example.com/qoffee</loc>");
+  });
+
+  it("sends the subdomain of a store with its own domain to that domain", async () => {
+    const res = await handleSitemapRequest(new Request("https://owned.boutq.store/sitemap.xml"));
+    expect(res.status).toBe(301);
+    expect(res.headers.get("location")).toBe("https://owned.example.com/sitemap.xml");
   });
 
   it("returns 404 for unknown hosts and the bare platform domain without a slug", async () => {

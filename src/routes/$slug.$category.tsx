@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button";
 import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import { JsonLd } from "@/components/storefront/seo/JsonLd";
 import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
+import { storefrontCanonical } from "@/lib/seo/canonical";
 import { CategoryFilters } from "@/components/storefront/CategoryFilters";
 import { replaceUrlQuietly } from "@/lib/quiet-url";
 import { CATEGORY_BANNER, resolveBannerSize } from "@/lib/banner-size";
@@ -387,16 +388,16 @@ function CategoryPage() {
               })),
               brand,
               settings,
-              `https://boutq.store/${brand.slug}/${categorySlug}`,
+              storefrontCanonical(brand, encodeURIComponent(categorySlug), lang),
             ),
             buildBreadcrumbsSchema([
               {
                 name: lang === "ar" ? "الرئيسية" : "Home",
-                url: `https://boutq.store/${brand.slug}`,
+                url: storefrontCanonical(brand, "", lang),
               },
               {
                 name: (lang === "ar" ? category.name_ar : category.name_en) || categorySlug,
-                url: `https://boutq.store/${brand.slug}/${categorySlug}`,
+                url: storefrontCanonical(brand, encodeURIComponent(categorySlug), lang),
               },
             ]),
           ]}

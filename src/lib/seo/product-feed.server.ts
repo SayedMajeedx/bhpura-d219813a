@@ -1,7 +1,8 @@
 import { readAll } from "@/lib/data/read-all";
 import { storeAxisDefaults } from "@/lib/variant-axes";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";
-import { resolveStoreBrand, storeOrigin } from "@/lib/seo/robots-sitemap.server";
+import { storefrontBase } from "@/lib/seo/canonical";
+import { resolveStoreBrand } from "@/lib/seo/robots-sitemap.server";
 import { feedItems, feedXml, type FeedProduct, type FeedVariant } from "@/lib/seo/product-feed";
 
 /**
@@ -70,7 +71,7 @@ export async function handleProductFeedRequest(
   }
 
   const store = {
-    base: `${storeOrigin(request)}/${brand.slug}`,
+    base: storefrontBase(brand),
     name: settings?.business_name || brand.slug,
     currency: settings?.currency || "BHD",
     lang,
