@@ -13,7 +13,9 @@ import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
 import type { Order } from "@/features/orders/types";
 import { orderTotals } from "@/features/orders/lib/order-editor";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
-import type { Dispatch, SetStateAction } from "react";
+import { useMemo, type Dispatch, type SetStateAction } from "react";
+import { expectedAdvance } from "@/features/orders/lib/expected-advance";
+import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 
@@ -101,6 +103,15 @@ export function OrderFinancialCard({
   totals: ReturnType<typeof orderTotals>;
   variantsQ: OrderDetailData["variantsQ"];
 }) {
+  // What the shopper was asked to pay now, from the rule the order was placed under.
+  const expected = useMemo(
+    () =>
+      expectedAdvance(order, (productId) => {
+        const product = (productsQ.data ?? []).find((p: { id: string }) => p.id === productId);
+        return (product as { category?: string | null } | undefined)?.category ?? null;
+      }),
+    [order, productsQ.data],
+  );
   return (
     <Card
       className={cn(
@@ -110,6 +121,8 @@ export function OrderFinancialCard({
     >
       {order.payment_method === "benefit" && order.benefit_receipt_key && (
         <BenefitReceiptReview
+          expected={expected}
+          currency={currency}
           approveBenefitPayment={approveBenefitPayment}
           approvingBenefit={approvingBenefit}
           lang={lang}
@@ -191,6 +204,15 @@ export function OrderFinancialCard({
           </div>
         )}
       </div>
+
+      {expected && (
+        <AdvanceRequirementNotice
+          expected={expected}
+          currency={currency}
+          lang={lang}
+          appointment={order.fulfillment_method === "appointment"}
+        />
+      )}
 
       {/* Collapsible Fee & Discount Edit Inputs */}
       {isEditingFees && (

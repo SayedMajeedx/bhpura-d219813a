@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { useProfile } from "@/lib/profile-context";
 import { getOrderCustomerContact, getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import { expectedAdvance } from "@/features/orders/lib/expected-advance";
+import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
 
 export function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
   if (!customer?.phone) return null;
@@ -204,66 +206,81 @@ export function OrderQuickInspectSheet({
             }
 
             const codRemaining = Math.max(0, netTotal - advancePaid);
+            const expected = expectedAdvance(order);
 
             return (
-              <div className="rounded-xl border border-border-subtle p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
-                <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
-                  {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
-                </h4>
+              <div className="space-y-3">
+                {expected && (
+                  <AdvanceRequirementNotice
+                    expected={expected}
+                    currency={currency}
+                    lang={isAr ? "ar" : "en"}
+                    appointment={order.fulfillment_method === "appointment"}
+                  />
+                )}
+                <div className="rounded-xl border border-border-subtle p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
+                  <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
+                    {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
+                  </h4>
 
-                <div className="space-y-2 font-mono text-muted-foreground">
-                  <div className="flex justify-between items-center">
-                    <span>{isAr ? "مجموع المنتجات:" : "Items Subtotal:"}</span>
-                    <span className="font-bold text-foreground">
-                      {formatMoney(subtotal, currency, locale)}
-                    </span>
+                  <div className="space-y-2 font-mono text-muted-foreground">
+                    <div className="flex justify-between items-center">
+                      <span>{isAr ? "مجموع المنتجات:" : "Items Subtotal:"}</span>
+                      <span className="font-bold text-foreground">
+                        {formatMoney(subtotal, currency, locale)}
+                      </span>
+                    </div>
+
+                    {discount > 0 && (
+                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                        <span>{isAr ? "الخصم المستقطع:" : "Discount Applied:"}</span>
+                        <span className="font-bold">
+                          -{formatMoney(discount, currency, locale)}
+                        </span>
+                      </div>
+                    )}
+
+                    {shipping > 0 && (
+                      <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
+                        <span>{isAr ? "رسوم الشحن والتوصيل:" : "Shipping & Delivery Fee:"}</span>
+                        <span className="font-bold">
+                          +{formatMoney(shipping, currency, locale)}
+                        </span>
+                      </div>
+                    )}
+
+                    {tax > 0 && (
+                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                        <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
+                        <span className="font-bold">+{formatMoney(tax, currency, locale)}</span>
+                      </div>
+                    )}
+
+                    {advancePaid > 0 && (
+                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
+                        <span>{isAr ? "الدفعة المقدمة المدفوعة:" : "Advance Paid / Deposit:"}</span>
+                        <span className="font-bold">
+                          -{formatMoney(advancePaid, currency, locale)}
+                        </span>
+                      </div>
+                    )}
+
+                    {advancePaid > 0 && codRemaining > 0 && (
+                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                        <span>
+                          {isAr ? "المتبقي للتحصيل عند التسليم:" : "Remaining COD Balance:"}
+                        </span>
+                        <span>{formatMoney(codRemaining, currency, locale)}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                      <span>{isAr ? "الخصم المستقطع:" : "Discount Applied:"}</span>
-                      <span className="font-bold">-{formatMoney(discount, currency, locale)}</span>
-                    </div>
-                  )}
-
-                  {shipping > 0 && (
-                    <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                      <span>{isAr ? "رسوم الشحن والتوصيل:" : "Shipping & Delivery Fee:"}</span>
-                      <span className="font-bold">+{formatMoney(shipping, currency, locale)}</span>
-                    </div>
-                  )}
-
-                  {tax > 0 && (
-                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                      <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
-                      <span className="font-bold">+{formatMoney(tax, currency, locale)}</span>
-                    </div>
-                  )}
-
-                  {advancePaid > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
-                      <span>{isAr ? "الدفعة المقدمة المدفوعة:" : "Advance Paid / Deposit:"}</span>
-                      <span className="font-bold">
-                        -{formatMoney(advancePaid, currency, locale)}
-                      </span>
-                    </div>
-                  )}
-
-                  {advancePaid > 0 && codRemaining > 0 && (
-                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
-                      <span>
-                        {isAr ? "المتبقي للتحصيل عند التسليم:" : "Remaining COD Balance:"}
-                      </span>
-                      <span>{formatMoney(codRemaining, currency, locale)}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
-                  <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
-                  <span className="text-base text-primary font-mono font-extrabold">
-                    {formatMoney(netTotal, currency, locale)}
-                  </span>
+                  <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
+                    <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
+                    <span className="text-base text-primary font-mono font-extrabold">
+                      {formatMoney(netTotal, currency, locale)}
+                    </span>
+                  </div>
                 </div>
               </div>
             );
