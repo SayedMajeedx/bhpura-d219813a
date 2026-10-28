@@ -15,6 +15,7 @@ import type { Order } from "@/features/orders/types";
 import { orderTotals } from "@/features/orders/lib/order-editor";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import { useMemo, type Dispatch, type SetStateAction } from "react";
+import { discountLines } from "@/features/orders/lib/discount-parts";
 import { taxToggle } from "@/features/orders/lib/tax-toggle";
 import { expectedAdvance } from "@/features/orders/lib/expected-advance";
 import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
@@ -41,6 +42,7 @@ export function OrderFinancialCard({
   items,
   lang,
   mobileTab,
+  onUnlockEditing,
   order,
   packagingMaterialsQ,
   paymentBadge,
@@ -79,6 +81,8 @@ export function OrderFinancialCard({
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
   mobileTab: "items" | "customer" | "activity";
+  /** Opens the order for editing, when it may be: "Edit fees & discounts" then needs one tap, not two. */
+  onUnlockEditing?: () => void;
   order: Order;
   packagingMaterialsQ: OrderDetailData["packagingMaterialsQ"];
   paymentBadge: PaymentBadge;
@@ -148,12 +152,19 @@ export function OrderFinancialCard({
             {lang === "ar" ? "الملخص المالي والرسوم" : "Financial Summary & Ledger"}
           </span>
         </div>
-        {!isReadOnly && (
+        {(!isReadOnly || onUnlockEditing) && (
           <Button
             type="button"
             variant={isEditingFees ? "secondary" : "outline"}
             size="sm"
-            onClick={() => setIsEditingFees(!isEditingFees)}
+            onClick={() => {
+              if (isReadOnly) {
+                onUnlockEditing?.();
+                setIsEditingFees(true);
+              } else {
+                setIsEditingFees(!isEditingFees);
+              }
+            }}
             className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border-strong"
           >
             <Pencil className="h-3 w-3" />
@@ -416,6 +427,15 @@ export function OrderFinancialCard({
           label={`${t("orderDetail.discount")}${discountSources(order, lang) ? ` (${discountSources(order, lang)})` : ""}`}
           value={`− ${formatMoney(totals.discount, currency, lang)}`}
         />
+        {discountLines(order, lang).map((line) => (
+          <div
+            key={line.key}
+            className="flex justify-between gap-3 ps-3 text-xs text-muted-foreground"
+          >
+            <span className="min-w-0 break-words">{line.label}</span>
+            <span className="shrink-0">{`− ${formatMoney(line.amount, currency, lang)}`}</span>
+          </div>
+        ))}
         <SummaryRow
           label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
           value={formatMoney(totals.taxAmount, currency, lang)}

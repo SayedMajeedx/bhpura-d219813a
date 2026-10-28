@@ -778,6 +778,7 @@ function OrderEditor() {
                 lang={lang}
                 storeTaxRate={chargedTaxRate(settingsQ.data ?? {})}
                 mobileTab={mobileTab}
+                onUnlockEditing={canUnlockEditing ? () => setEditingUnlocked(true) : undefined}
                 order={order}
                 packagingMaterialsQ={packagingMaterialsQ}
                 paymentBadge={paymentBadge}

@@ -39,6 +39,12 @@ import {
   type DiscountStatusTab,
 } from "@/components/discounts/DiscountsScopeSwitcher";
 import { StoreOffersSection } from "@/features/offers/components/StoreOffersSection";
+import {
+  DiscountsKindSwitcher,
+  type DiscountKind,
+} from "@/components/discounts/DiscountsKindSwitcher";
+import { offersQueries } from "@/lib/data/offers";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
@@ -145,6 +151,7 @@ function DiscountCodes() {
 
   // Filter tabs state: 'all' | 'active' | 'scheduled' | 'expired'
   const [activeTab, setActiveTab] = useState<DiscountStatusTab>("all");
+  const [kind, setKind] = useState<DiscountKind>("codes");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
@@ -159,6 +166,8 @@ function DiscountCodes() {
   };
 
   const promos = useQuery({ ...promoCodesQueries.list(brand.id), select: asPromos });
+  const offersQ = useQuery(offersQueries.list(brand.id));
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
 
   // Client-side analytics aggregation to show redemption counts and revenue driven
   const analyticsQ = useQuery({ ...ordersQueries.promoOrders(brand.id), select: promoUsageFrom });
@@ -418,67 +427,80 @@ function DiscountCodes() {
       <DiscountsCommandHeader
         lang={ar ? "ar" : "en"}
         promoCount={allList.length}
-        onCreateNew={beginCreate}
+        onCreateNew={kind === "codes" ? beginCreate : undefined}
+      />
+
+      <DiscountsKindSwitcher
+        lang={ar ? "ar" : "en"}
+        kind={kind}
+        onKindChange={setKind}
+        counts={{ codes: allList.length, offers: offersQ.data?.length ?? 0 }}
+        slug={brand.slug}
+        bookings={Boolean(storeProfile.modules.bookings)}
       />
 
       {/* Automatic offers: no code, applied by the order builder */}
-      <StoreOffersSection brandId={brand.id} isAr={ar} />
+      {kind === "offers" && <StoreOffersSection brandId={brand.id} isAr={ar} />}
 
       {/* 2. Scope Switcher Tabs */}
-      <DiscountsScopeSwitcher
-        lang={ar ? "ar" : "en"}
-        currentTab={activeTab}
-        onTabChange={setActiveTab}
-        counts={{
-          all: allList.length,
-          active: activeCount,
-          scheduled: scheduledCount,
-          expired: expiredCount,
-        }}
-      />
-
-      {/* 3. Toolbar */}
-      <DiscountsToolbar
-        lang={ar ? "ar" : "en"}
-        search={search}
-        onSearchChange={setSearch}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        activeFilterCount={(search ? 1 : 0) + (typeFilter !== "all" ? 1 : 0)}
-        onClearFilters={() => {
-          setSearch("");
-          setTypeFilter("all");
-        }}
-      />
-
-      {/* 4. Mobile View */}
-      <div className="space-y-2.5 block sm:hidden">
-        {displayedPromos.map((p) => (
-          <DiscountMobileCard
-            key={p.id}
+      {kind === "codes" && (
+        <>
+          <DiscountsScopeSwitcher
             lang={ar ? "ar" : "en"}
-            promo={p}
-            currency={currency}
-            analyticsData={analyticsQ.data}
-            onEdit={beginEdit}
-            onToggleActive={toggleActive}
-            onDelete={remove}
+            currentTab={activeTab}
+            onTabChange={setActiveTab}
+            counts={{
+              all: allList.length,
+              active: activeCount,
+              scheduled: scheduledCount,
+              expired: expiredCount,
+            }}
           />
-        ))}
-      </div>
 
-      {/* 5. Desktop Work Queue */}
-      <div className="hidden sm:block">
-        <DiscountsWorkQueue
-          lang={ar ? "ar" : "en"}
-          promos={displayedPromos}
-          currency={currency}
-          analyticsData={analyticsQ.data}
-          onEdit={beginEdit}
-          onToggleActive={toggleActive}
-          onDelete={remove}
-        />
-      </div>
+          {/* 3. Toolbar */}
+          <DiscountsToolbar
+            lang={ar ? "ar" : "en"}
+            search={search}
+            onSearchChange={setSearch}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            activeFilterCount={(search ? 1 : 0) + (typeFilter !== "all" ? 1 : 0)}
+            onClearFilters={() => {
+              setSearch("");
+              setTypeFilter("all");
+            }}
+          />
+
+          {/* 4. Mobile View */}
+          <div className="space-y-2.5 block sm:hidden">
+            {displayedPromos.map((p) => (
+              <DiscountMobileCard
+                key={p.id}
+                lang={ar ? "ar" : "en"}
+                promo={p}
+                currency={currency}
+                analyticsData={analyticsQ.data}
+                onEdit={beginEdit}
+                onToggleActive={toggleActive}
+                onDelete={remove}
+              />
+            ))}
+          </div>
+
+          {/* 5. Desktop Work Queue */}
+          <div className="hidden sm:block">
+            <DiscountsWorkQueue
+              lang={ar ? "ar" : "en"}
+              promos={displayedPromos}
+              currency={currency}
+              analyticsData={analyticsQ.data}
+              onEdit={beginEdit}
+              onToggleActive={toggleActive}
+              onDelete={remove}
+            />
+          </div>
+        </>
+      )}
 
       {/* Editor Modal Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

@@ -7,6 +7,8 @@
  * applies and removes a code on its own, so it must keep the other two: the database owns them.
  */
 
+import { appliedOfferName, appliedOffersOf } from "@/lib/offers";
+
 type DiscountSource = {
   discount?: unknown;
   offer_discount?: unknown;
@@ -37,4 +39,49 @@ export function discountParts(order: DiscountSource | null | undefined): Discoun
 export function keptDiscount(order: DiscountSource | null | undefined): number {
   const { offers, points } = discountParts(order);
   return fils(offers + points);
+}
+
+type Lang = "ar" | "en";
+
+export type DiscountLine = { key: "offers" | "points" | "code"; label: string; amount: number };
+
+/**
+ * The discount as the summary reads it when more than one thing made it up: the store's offers
+ * (by name), the shopper's points, and the code or the amount staff typed. Empty when the whole
+ * discount has one source, which the discount row already names.
+ */
+export function discountLines(
+  order:
+    (DiscountSource & { promo_code?: string | null; applied_offers?: unknown }) | null | undefined,
+  lang: Lang,
+): DiscountLine[] {
+  const ar = lang === "ar";
+  const parts = discountParts(order);
+  const lines: DiscountLine[] = [];
+  if (parts.offers > 0) {
+    const names = appliedOffersOf(order?.applied_offers)
+      .filter((offer) => offer.kind !== "free_delivery")
+      .map((offer) => appliedOfferName(offer, lang));
+    lines.push({
+      key: "offers",
+      label: names.length > 0 ? names.join(ar ? "، " : ", ") : ar ? "عرض المتجر" : "Store offer",
+      amount: parts.offers,
+    });
+  }
+  if (parts.points > 0) {
+    lines.push({
+      key: "points",
+      label: ar ? "نقاط الولاء" : "Loyalty points",
+      amount: parts.points,
+    });
+  }
+  if (parts.code > 0) {
+    const code = String(order?.promo_code ?? "").trim();
+    lines.push({
+      key: "code",
+      label: code ? (ar ? `رمز ${code}` : `Promo: ${code}`) : ar ? "خصم يدوي" : "Manual discount",
+      amount: parts.code,
+    });
+  }
+  return lines.length > 1 ? lines : [];
 }

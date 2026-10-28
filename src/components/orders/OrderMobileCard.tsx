@@ -10,6 +10,7 @@ import { maskPhoneForList } from "@/lib/privacy";
 import type { OrderListRow } from "@/lib/data/orders";
 import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
 import { orderCardWhen, orderIsSettled, orderItemsLine } from "@/features/orders/lib/order-card";
+import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface OrderMobileCardProps {
@@ -145,6 +146,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
         {when && <span className="ms-auto text-xs text-muted-foreground">{when}</span>}
       </div>
 
+      <OrderWaitingBadge order={order} lang={isAr ? "ar" : "en"} />
       <OrderAppointmentLine order={order} isAr={isAr} />
 
       {/* Primary Action Button Bar: only when there is a next step */}
