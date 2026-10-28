@@ -20,7 +20,7 @@ export async function fetchPromoCodes(brandId: string) {
     supabase
       .from("promo_codes")
       .select(
-        "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
+        "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions,product_ids,category_slugs",
         { count: "exact" },
       )
       .eq("brand_id", brandId)

@@ -13,6 +13,9 @@ import {
   type PromoCodeRow,
 } from "@/lib/data/promo-codes";
 import { catalogQueries } from "@/lib/data/catalog";
+import { categoriesQueries } from "@/lib/data/categories";
+import { assignableCategories } from "@/lib/smart-categories";
+import { OfferScopeFields } from "@/features/offers/components/OfferScopeFields";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { countOf } from "@/lib/arabic-count";
 import { ordersQueries, type OrderPromoRow } from "@/lib/data/orders";
@@ -90,6 +93,9 @@ type Promo = {
   start_date: string | null;
   end_date: string | null;
   max_redemptions: number | null;
+  /** The products and categories the code is for; none chosen: every line. */
+  product_ids: string[];
+  category_slugs: string[];
 };
 
 type PromoForm = Omit<Promo, "id" | "brand_id" | "created_at">;
@@ -113,6 +119,8 @@ const EMPTY: PromoForm = {
   start_date: null,
   end_date: null,
   max_redemptions: null,
+  product_ids: [],
+  category_slugs: [],
 };
 
 // Converts ISO date to local input string YYYY-MM-DDThh:mm
@@ -167,6 +175,18 @@ function DiscountCodes() {
 
   const promos = useQuery({ ...promoCodesQueries.list(brand.id), select: asPromos });
   const offersQ = useQuery(offersQueries.list(brand.id));
+  const productRows = useQuery({ ...catalogQueries.products(brand.id), enabled: open }).data;
+  const categoryRows = useQuery({ ...categoriesQueries.active(brand.id), enabled: open }).data;
+  const scopeProducts = (productRows ?? []).map((p) => ({
+    id: p.id,
+    name: (ar ? p.name_ar || p.name : p.name_en || p.name) ?? "",
+  }));
+  const scopeCategories = assignableCategories(categoryRows ?? [])
+    .filter((c): c is typeof c & { slug: string } => Boolean(c.slug))
+    .map((c) => ({
+      slug: c.slug,
+      name: (ar ? c.name_ar || c.name_en : c.name_en || c.name_ar) ?? c.slug,
+    }));
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
 
   // Client-side analytics aggregation to show redemption counts and revenue driven
@@ -236,6 +256,8 @@ function DiscountCodes() {
       start_date: p.start_date,
       end_date: p.end_date,
       max_redemptions: p.max_redemptions,
+      product_ids: p.product_ids ?? [],
+      category_slugs: p.category_slugs ?? [],
     });
     setOpen(true);
   };
@@ -731,6 +753,17 @@ function DiscountCodes() {
                   : "Automatically pauses the code globally once the redemptions cap is met."}
               </p>
             </div>
+
+            {/* Which products the code is for */}
+            <OfferScopeFields
+              isAr={ar}
+              legend={ar ? "المنتجات التي يخصها الرمز" : "What the code is for"}
+              products={scopeProducts}
+              categories={scopeCategories}
+              productIds={form.product_ids}
+              categorySlugs={form.category_slugs}
+              onChange={(scope) => setForm({ ...form, ...scope })}
+            />
 
             {/* Eligibility Constraints Section */}
             <div className="space-y-4 rounded-xl border p-4 bg-muted/10">

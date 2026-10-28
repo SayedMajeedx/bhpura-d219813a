@@ -6502,6 +6502,8 @@ export type Database = {
           is_active: boolean;
           margin_threshold: number;
           max_redemptions: number | null;
+          product_ids: string[];
+          category_slugs: string[];
           maximum_discount_amount: number | null;
           minimum_order_amount: number | null;
           returning_customers_only: boolean;
@@ -6523,6 +6525,8 @@ export type Database = {
           is_active?: boolean;
           margin_threshold?: number;
           max_redemptions?: number | null;
+          product_ids?: string[];
+          category_slugs?: string[];
           maximum_discount_amount?: number | null;
           minimum_order_amount?: number | null;
           returning_customers_only?: boolean;
@@ -6544,6 +6548,8 @@ export type Database = {
           is_active?: boolean;
           margin_threshold?: number;
           max_redemptions?: number | null;
+          product_ids?: string[];
+          category_slugs?: string[];
           maximum_discount_amount?: number | null;
           minimum_order_amount?: number | null;
           returning_customers_only?: boolean;
