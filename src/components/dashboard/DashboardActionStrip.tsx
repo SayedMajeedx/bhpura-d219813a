@@ -11,7 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import { arNoun, arNounOblique, countOf } from "@/lib/arabic-count";
 
 export interface DashboardActionStripProps {
   slug: string;
@@ -44,7 +44,7 @@ export function DashboardActionStrip({
       title: isAr ? "مواعيد حان وقتها" : "Appointments to Complete",
       description: isAr
         ? `حان وقت ${arNounOblique(appointmentsToCompleteCount, "appointment")}: أنجز الخدمة وحصّل المتبقي إن وُجد`
-        : `${appointmentsToCompleteCount} appointment(s) whose time has come: carry out the service and collect any balance`,
+        : `${countOf(appointmentsToCompleteCount, "appointment", "en")} whose time has come: carry out the service and collect any balance`,
       to: "/admin/b/$slug/orders" as const,
       search: { tab: "action_required" },
       actionLabel: isAr ? "فتح الطلبات" : "Open Orders",
@@ -60,7 +60,7 @@ export function DashboardActionStrip({
       title: isAr ? "طلبات بانتظار التجهيز والشحن" : "Orders Awaiting Fulfillment",
       description: isAr
         ? `بانتظار التغليف وتجهيز البوليصة: ${arNoun(unfulfilledOrdersCount, "order")}`
-        : `${unfulfilledOrdersCount} paid/confirmed order(s) waiting for dispatch`,
+        : `${countOf(unfulfilledOrdersCount, "order", "en")} paid or confirmed, waiting for dispatch`,
       to: "/admin/b/$slug/orders" as const,
       search: { tab: "to_prepare", fulfillment_status: "unfulfilled" },
       actionLabel: isAr ? "بدء التجهيز" : "Fulfill Orders",
@@ -76,7 +76,7 @@ export function DashboardActionStrip({
       title: isAr ? "منتجات قاربت على النفاد" : "Low Stock & Depleted Items",
       description: isAr
         ? `بمخزون حرج يحتاج إعادة الطلب: ${arNoun(lowStockCount, "product")}`
-        : `${lowStockCount} product(s) at or below critical reorder threshold`,
+        : `${countOf(lowStockCount, "product", "en")} at or below the critical reorder level`,
       to: "/admin/b/$slug/inventory" as const,
       search: { filter: "low", scope: "low" },
       actionLabel: isAr ? "مراجعة المخزون" : "Review Stock",
@@ -144,7 +144,7 @@ export function DashboardActionStrip({
             <p className="text-xs text-muted-foreground">
               {isAr
                 ? `لديك ${arNoun(totalActionItems, "task")} تشغيلية بانتظار الإجراء للحفاظ على سرعة خدمة عملائك`
-                : `You have ${totalActionItems} operational task(s) awaiting your action to keep orders moving`}
+                : `You have ${countOf(totalActionItems, "task", "en")} awaiting your action to keep orders moving`}
             </p>
           </div>
         </div>

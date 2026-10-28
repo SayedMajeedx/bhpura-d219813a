@@ -109,11 +109,16 @@ export type OrderWaiting = { days: number; late: boolean };
 /**
  * How long an order has waited on the team, or null when it is not waiting (settled, waiting for
  * the customer's payment, an appointment before its day) or has waited only a day. It counts from
- * the last change of the order, and from the start of an appointment's booking, so an order
- * that sat for weeks does not look like one placed this morning.
+ * the order's last change of stage, status or payment (`stage_changed_at`, kept by the database,
+ * so a note added to an order that sat for weeks does not restart it), and from the start of an
+ * appointment's booking. An order the database has not stamped yet falls back to its last write.
  */
 export function orderWaiting(
-  order: OrderWorkflowInput & { created_at?: string | null; updated_at?: string | null },
+  order: OrderWorkflowInput & {
+    created_at?: string | null;
+    updated_at?: string | null;
+    stage_changed_at?: string | null;
+  },
   options: { now?: Date; productionStages?: boolean } = {},
 ): OrderWaiting | null {
   const now = options.now ?? new Date();
@@ -122,7 +127,7 @@ export function orderWaiting(
   const appointment = String(order.fulfillment_method ?? "").toLowerCase() === "appointment";
   const since = appointment
     ? (order.bookings?.[0]?.starts_at ?? order.created_at)
-    : (order.updated_at ?? order.created_at);
+    : (order.stage_changed_at ?? order.updated_at ?? order.created_at);
   if (!since) return null;
   const started = new Date(since).getTime();
   if (Number.isNaN(started)) return null;

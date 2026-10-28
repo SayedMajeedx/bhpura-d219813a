@@ -5495,6 +5495,7 @@ export type Database = {
           requested_slot: string | null;
           shipping: number;
           shipping_address_id: string | null;
+          stage_changed_at: string | null;
           status: string;
           subtotal: number;
           tax_amount: number;
@@ -5578,6 +5579,7 @@ export type Database = {
           requested_slot?: string | null;
           shipping?: number;
           shipping_address_id?: string | null;
+          stage_changed_at?: string | null;
           status?: string;
           subtotal?: number;
           tax_amount?: number;
@@ -5661,6 +5663,7 @@ export type Database = {
           requested_slot?: string | null;
           shipping?: number;
           shipping_address_id?: string | null;
+          stage_changed_at?: string | null;
           status?: string;
           subtotal?: number;
           tax_amount?: number;

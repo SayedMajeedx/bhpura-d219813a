@@ -19,3 +19,20 @@ export function promoScopeText(
   const joined = parts.join(lang === "ar" ? " و" : " and ");
   return lang === "ar" ? `لـ ${joined} محددة` : `For ${joined} chosen`;
 }
+
+/**
+ * Whether a product is one the code is for: none chosen reaches every product, else a product
+ * counts when it is chosen or its category is (as the database reads `validate_promo_code`).
+ */
+export function inPromoScope(
+  promo: { product_ids?: readonly string[] | null; category_slugs?: readonly string[] | null },
+  product: { id: string; category?: string | null },
+): boolean {
+  const products = promo.product_ids ?? [];
+  const categories = promo.category_slugs ?? [];
+  if (products.length === 0 && categories.length === 0) return true;
+  return (
+    products.includes(product.id) ||
+    (product.category != null && categories.includes(product.category))
+  );
+}

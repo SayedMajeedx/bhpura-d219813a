@@ -173,7 +173,9 @@ export function OrderFinancialCard({
             <button
               type="button"
               onClick={() => setManagePaymentOpen(true)}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
+              // Safe view mode locks payment changes, here as on the header's payment pill.
+              disabled={isReadOnly}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer disabled:cursor-default disabled:no-underline disabled:opacity-50"
               title={lang === "ar" ? "تعديل طريقة الدفع" : "Edit payment method"}
             >
               <Pencil className="h-2.5 w-2.5 shrink-0" />
