@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
 import { BulkDeleteOrdersDialog } from "@/features/orders/components/BulkDeleteOrdersDialog";
+import { orderDeletable, orderKeptMessage } from "@/lib/order-deletion";
 import { Sparkles } from "lucide-react";
 import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
@@ -258,13 +259,22 @@ function OrdersList() {
     setUpdatingOrderId,
   });
 
+  // Paid and handed-over orders stay on record: only the others of a selection are deleted.
+  const deletableSelected = new Set(
+    [...selectedOrderIds].filter((id) => orderDeletable(orders.find((order) => order.id === id))),
+  );
+
   const del = async (id: string) => {
     try {
       await deleteOrderWithPrivateReceipt({ data: { orderId: id } });
       toast.success(lang === "ar" ? "تم حذف الطلب بنجاح" : "Order deleted successfully");
       invalidateOrders(qc, brandId);
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete order");
+      toast.error(
+        String(err?.message ?? "").includes("ORDER_NOT_DELETABLE")
+          ? orderKeptMessage(lang === "ar" ? "ar" : "en")
+          : err.message || "Failed to delete order",
+      );
     } finally {
       setDeleteTarget(null);
     }
@@ -818,7 +828,8 @@ function OrdersList() {
           open={bulkDeleteOpen}
           onOpenChange={setBulkDeleteOpen}
           brandId={brandId}
-          orderIds={selectedOrderIds}
+          orderIds={deletableSelected}
+          keptCount={selectedOrderIds.size - deletableSelected.size}
           lang={lang}
           onDeleted={() => setSelectedOrderIds(new Set())}
         />

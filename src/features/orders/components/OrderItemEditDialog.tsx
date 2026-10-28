@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
+import { useProfileOptional } from "@/lib/profile-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
@@ -64,6 +65,8 @@ export function OrderItemEditDialog({
   variantsQ: OrderDetailData["variantsQ"];
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
+  // Without a profile (none loaded) the figures stay hidden.
+  const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
   return (
     <Dialog
       open={editingItemSheetIdx === idx}
@@ -188,23 +191,25 @@ export function OrderItemEditDialog({
               />
             </div>
 
-            <div>
-              <Label className="text-xs font-semibold">
-                {isAr ? "تكلفة المنتج" : "Product cost"}
-              </Label>
-              <Input
-                type="number"
-                step="0.001"
-                placeholder="0.000"
-                value={it.unit_cost ?? ""}
-                onChange={(e) =>
-                  updateItem(idx, {
-                    unit_cost: e.target.value === "" ? null : Number(e.target.value),
-                  })
-                }
-                className="mt-1.5 h-10 text-sm rounded-xl"
-              />
-            </div>
+            {canViewFinancials && (
+              <div>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "تكلفة المنتج" : "Product cost"}
+                </Label>
+                <Input
+                  type="number"
+                  step="0.001"
+                  placeholder="0.000"
+                  value={it.unit_cost ?? ""}
+                  onChange={(e) =>
+                    updateItem(idx, {
+                      unit_cost: e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                  className="mt-1.5 h-10 text-sm rounded-xl"
+                />
+              </div>
+            )}
           </div>
 
           {/* Made-To-Order & Tailoring Specs Customizer */}

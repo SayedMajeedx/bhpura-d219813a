@@ -14,6 +14,7 @@ import {
 } from "@/lib/data/promo-codes";
 import { catalogQueries } from "@/lib/data/catalog";
 import { getFriendlyErrorMessage } from "@/lib/utils";
+import { countOf } from "@/lib/arabic-count";
 import { ordersQueries, type OrderPromoRow } from "@/lib/data/orders";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { useBrand } from "@/lib/brand-context";
@@ -38,6 +39,12 @@ import {
   type DiscountStatusTab,
 } from "@/components/discounts/DiscountsScopeSwitcher";
 import { StoreOffersSection } from "@/features/offers/components/StoreOffersSection";
+import {
+  DiscountsKindSwitcher,
+  type DiscountKind,
+} from "@/components/discounts/DiscountsKindSwitcher";
+import { offersQueries } from "@/lib/data/offers";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
@@ -140,9 +147,11 @@ function DiscountCodes() {
   const [form, setForm] = useState<PromoForm>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [showMarginWarning, setShowMarginWarning] = useState(false);
+  const [marginFloor, setMarginFloor] = useState(15);
 
   // Filter tabs state: 'all' | 'active' | 'scheduled' | 'expired'
   const [activeTab, setActiveTab] = useState<DiscountStatusTab>("all");
+  const [kind, setKind] = useState<DiscountKind>("codes");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
@@ -157,6 +166,8 @@ function DiscountCodes() {
   };
 
   const promos = useQuery({ ...promoCodesQueries.list(brand.id), select: asPromos });
+  const offersQ = useQuery(offersQueries.list(brand.id));
+  const { profile: storeProfile } = useAdminStoreProfile(brand.id);
 
   // Client-side analytics aggregation to show redemption counts and revenue driven
   const analyticsQ = useQuery({ ...ordersQueries.promoOrders(brand.id), select: promoUsageFrom });
@@ -173,6 +184,8 @@ function DiscountCodes() {
     const timer = setTimeout(() => {
       const variantsList = variantsQ.data ?? [];
       const val = Number(form.discount_value);
+      // The code's own margin floor when it has one, else the usual 15%.
+      const floor = form.exclude_low_margin ? Number(form.margin_threshold) || 0 : 15;
       if (isNaN(val) || val <= 0 || val > 100) {
         setShowMarginWarning(false);
         return;
@@ -184,13 +197,20 @@ function DiscountCodes() {
         const discountedSelling = sell * (1 - val / 100);
         if (discountedSelling <= 0) return true;
         const margin = ((discountedSelling - cost) / discountedSelling) * 100;
-        return margin < 15;
+        return margin < floor;
       });
+      setMarginFloor(floor);
       setShowMarginWarning(hasLowMargin);
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [form.discount_type, form.discount_value, variantsQ.data]);
+  }, [
+    form.discount_type,
+    form.discount_value,
+    form.exclude_low_margin,
+    form.margin_threshold,
+    variantsQ.data,
+  ]);
 
   const beginCreate = () => {
     setEditing(null);
@@ -229,14 +249,13 @@ function DiscountCodes() {
       return old.map((item) => (item.id === p.id ? { ...item, is_active: nextActive } : item));
     });
 
-    toast.success(
-      ar
-        ? `رمز الخصم ${p.code} ${nextActive ? "تم تفعيله" : "تم إيقافه"} بنجاح!`
-        : `Promo code ${p.code} ${nextActive ? "activated" : "paused"} successfully!`,
-    );
-
     try {
       await updatePromoCode(brand.id, p.id, { is_active: nextActive });
+      toast.success(
+        ar
+          ? `رمز الخصم ${p.code} ${nextActive ? "تم تفعيله" : "تم إيقافه"} بنجاح!`
+          : `Promo code ${p.code} ${nextActive ? "activated" : "paused"} successfully!`,
+      );
     } catch (err) {
       // Revert cache on error
       qc.setQueryData(promoCodesKeys.list(brand.id), (old: PromoCodeRow[] | undefined) => {
@@ -338,8 +357,15 @@ function DiscountCodes() {
   };
 
   const remove = async (p: Promo) => {
+    const used = analyticsQ.data?.[p.id]?.count ?? 0;
     const ok = await confirmDialog({
       title: ar ? `حذف الرمز ${p.code}؟` : `Delete ${p.code}?`,
+      description:
+        used > 0
+          ? ar
+            ? `استُخدم هذا الرمز في ${countOf(used, "order", "ar")}. تبقى خصوماتها كما هي، لكن تختفي إحصاءاته من هذه الصفحة. للإيقاف المؤقت استخدم المفتاح بدل الحذف.`
+            : `This code was used on ${countOf(used, "order", "en")}. Their discounts stay as they are, but its figures leave this page. To stop it for a while, use the switch instead.`
+          : undefined,
       destructive: true,
     });
     if (!ok) return;
@@ -401,67 +427,80 @@ function DiscountCodes() {
       <DiscountsCommandHeader
         lang={ar ? "ar" : "en"}
         promoCount={allList.length}
-        onCreateNew={beginCreate}
+        onCreateNew={kind === "codes" ? beginCreate : undefined}
+      />
+
+      <DiscountsKindSwitcher
+        lang={ar ? "ar" : "en"}
+        kind={kind}
+        onKindChange={setKind}
+        counts={{ codes: allList.length, offers: offersQ.data?.length ?? 0 }}
+        slug={brand.slug}
+        bookings={Boolean(storeProfile.modules.bookings)}
       />
 
       {/* Automatic offers: no code, applied by the order builder */}
-      <StoreOffersSection brandId={brand.id} isAr={ar} />
+      {kind === "offers" && <StoreOffersSection brandId={brand.id} isAr={ar} />}
 
       {/* 2. Scope Switcher Tabs */}
-      <DiscountsScopeSwitcher
-        lang={ar ? "ar" : "en"}
-        currentTab={activeTab}
-        onTabChange={setActiveTab}
-        counts={{
-          all: allList.length,
-          active: activeCount,
-          scheduled: scheduledCount,
-          expired: expiredCount,
-        }}
-      />
-
-      {/* 3. Toolbar */}
-      <DiscountsToolbar
-        lang={ar ? "ar" : "en"}
-        search={search}
-        onSearchChange={setSearch}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        activeFilterCount={(search ? 1 : 0) + (typeFilter !== "all" ? 1 : 0)}
-        onClearFilters={() => {
-          setSearch("");
-          setTypeFilter("all");
-        }}
-      />
-
-      {/* 4. Mobile View */}
-      <div className="space-y-2.5 block sm:hidden">
-        {displayedPromos.map((p) => (
-          <DiscountMobileCard
-            key={p.id}
+      {kind === "codes" && (
+        <>
+          <DiscountsScopeSwitcher
             lang={ar ? "ar" : "en"}
-            promo={p}
-            currency={currency}
-            analyticsData={analyticsQ.data}
-            onEdit={beginEdit}
-            onToggleActive={toggleActive}
-            onDelete={remove}
+            currentTab={activeTab}
+            onTabChange={setActiveTab}
+            counts={{
+              all: allList.length,
+              active: activeCount,
+              scheduled: scheduledCount,
+              expired: expiredCount,
+            }}
           />
-        ))}
-      </div>
 
-      {/* 5. Desktop Work Queue */}
-      <div className="hidden sm:block">
-        <DiscountsWorkQueue
-          lang={ar ? "ar" : "en"}
-          promos={displayedPromos}
-          currency={currency}
-          analyticsData={analyticsQ.data}
-          onEdit={beginEdit}
-          onToggleActive={toggleActive}
-          onDelete={remove}
-        />
-      </div>
+          {/* 3. Toolbar */}
+          <DiscountsToolbar
+            lang={ar ? "ar" : "en"}
+            search={search}
+            onSearchChange={setSearch}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            activeFilterCount={(search ? 1 : 0) + (typeFilter !== "all" ? 1 : 0)}
+            onClearFilters={() => {
+              setSearch("");
+              setTypeFilter("all");
+            }}
+          />
+
+          {/* 4. Mobile View */}
+          <div className="space-y-2.5 block sm:hidden">
+            {displayedPromos.map((p) => (
+              <DiscountMobileCard
+                key={p.id}
+                lang={ar ? "ar" : "en"}
+                promo={p}
+                currency={currency}
+                analyticsData={analyticsQ.data}
+                onEdit={beginEdit}
+                onToggleActive={toggleActive}
+                onDelete={remove}
+              />
+            ))}
+          </div>
+
+          {/* 5. Desktop Work Queue */}
+          <div className="hidden sm:block">
+            <DiscountsWorkQueue
+              lang={ar ? "ar" : "en"}
+              promos={displayedPromos}
+              currency={currency}
+              analyticsData={analyticsQ.data}
+              onEdit={beginEdit}
+              onToggleActive={toggleActive}
+              onDelete={remove}
+            />
+          </div>
+        </>
+      )}
 
       {/* Editor Modal Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
@@ -548,8 +587,8 @@ function DiscountCodes() {
                   <span>
                     ⚠️{" "}
                     {ar
-                      ? "هذه القيمة تقلل هامش الربح لبعض المنتجات عن 15%."
-                      : "This value cuts into profit margins for certain collections."}
+                      ? `هذه القيمة تُنزل هامش الربح لبعض المنتجات عن ${marginFloor}%.`
+                      : `This value takes the profit margin of some products below ${marginFloor}%.`}
                   </span>
                 </div>
               )}

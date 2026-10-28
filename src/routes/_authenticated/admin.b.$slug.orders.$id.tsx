@@ -42,6 +42,9 @@ import {
   promoSignature,
   shouldWarnBeforeLeaving,
 } from "@/features/orders/lib/order-editor";
+import { chargedTaxRate } from "@/lib/vat-registration";
+import { discountParts } from "@/features/orders/lib/discount-parts";
+import { usePromoContextGuard } from "@/features/orders/hooks/use-promo-context-guard";
 import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
@@ -261,7 +264,6 @@ function OrderEditor() {
   const [checkingPromo, setCheckingPromo] = useState(false);
   const [discountMode, setDiscountMode] = useState<"fixed" | "percent">("fixed");
   const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
-  const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const promoContextRef = useRef<string | null>(null);
 
@@ -314,7 +316,8 @@ function OrderEditor() {
           ? {
               code: savedPromo,
               id: orderQ.data.promo_code_id ?? "",
-              amount: Number(orderQ.data.discount ?? 0),
+              // The code's own part: the offers and points on the order are not its discount.
+              amount: discountParts(orderQ.data).code,
             }
           : null,
       );
@@ -374,28 +377,16 @@ function OrderEditor() {
     [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid, settingsQ.data],
   );
 
-  useEffect(() => {
-    const signature = promoSignature(order?.customer_id, items);
-    if (promoContextRef.current === null) {
-      promoContextRef.current = signature;
-      return;
-    }
-    if (promoContextRef.current !== signature) {
-      promoContextRef.current = signature;
-      if (appliedPromo) {
-        setAppliedPromo(null);
-        setPromoInput("");
-        setOrder((current: any) =>
-          current ? { ...current, discount: 0, promo_code: null, promo_code_id: null } : current,
-        );
-        toast.info(
-          lang === "ar"
-            ? "تمت إزالة رمز الخصم بعد تغيير العميل أو المنتجات."
-            : "Promo code removed after the customer or items changed.",
-        );
-      }
-    }
-  }, [items, order?.customer_id, appliedPromo, lang]);
+  usePromoContextGuard({
+    appliedPromo,
+    contextRef: promoContextRef,
+    customerId: order?.customer_id,
+    items,
+    lang,
+    setAppliedPromo,
+    setOrder,
+    setPromoInput,
+  });
 
   const { applyAdminPromo, removeAdminPromo } = useOrderPromoCode({
     brand,
@@ -785,8 +776,9 @@ function OrderEditor() {
                 isReadOnly={isReadOnly}
                 items={items}
                 lang={lang}
-                lastNonZeroTaxRate={lastNonZeroTaxRate}
+                storeTaxRate={chargedTaxRate(settingsQ.data ?? {})}
                 mobileTab={mobileTab}
+                onUnlockEditing={canUnlockEditing ? () => setEditingUnlocked(true) : undefined}
                 order={order}
                 packagingMaterialsQ={packagingMaterialsQ}
                 paymentBadge={paymentBadge}
@@ -801,7 +793,6 @@ function OrderEditor() {
                 setDiscountMode={setDiscountMode}
                 setDiscountPercentInput={setDiscountPercentInput}
                 setIsEditingFees={setIsEditingFees}
-                setLastNonZeroTaxRate={setLastNonZeroTaxRate}
                 setManagePaymentOpen={setManagePaymentOpen}
                 setOrder={setOrder}
                 setPromoInput={setPromoInput}

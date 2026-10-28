@@ -1,3 +1,4 @@
+import { orderTotals as sharedOrderTotals } from "@/lib/order-tax";
 import { regionLabel } from "@/lib/bahrain-regions";
 import { chargedTaxRate } from "@/lib/vat-registration";
 import { formatMoney } from "@/lib/format";
@@ -321,20 +322,21 @@ export function orderTotals(
   const subtotal = items.reduce((s, i) => s + i.line_total, 0);
   const discount = Number(order?.discount ?? 0);
   const shipping = Number(order?.shipping ?? 0);
-  const taxable = Math.max(0, subtotal - discount);
-  const taxRate = Number(order?.tax_rate ?? 0);
-  let taxAmount = 0;
-  let total = 0;
-  if (vatInclusive) {
-    taxAmount = taxable - taxable / (1 + taxRate / 100);
-    total = taxable + shipping;
-  } else {
-    taxAmount = (taxable * taxRate) / 100;
-    total = taxable + taxAmount + shipping;
-  }
+  // The order builder's own rule and rounding (src/lib/order-tax.ts), so what is saved here is
+  // what the database would write: tax on what is left after the discount, never on the fee.
+  const worked = sharedOrderTotals(
+    { subtotal, discount, shipping },
+    { rate: Number(order?.tax_rate ?? 0), inclusive: vatInclusive },
+  );
+  const taxable = worked.taxable;
+  const taxAmount = worked.tax;
+  const total = worked.total;
   const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
   const remaining = Math.max(0, total - advancePaid);
-  return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
+  // What the goods sold for: after the discount, with neither the delivery fee nor the tax
+  // (which is the state's, or carved out of the prices of a VAT-inclusive store).
+  const netSales = Math.max(0, vatInclusive ? taxable - taxAmount : taxable);
+  return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining, netSales };
 }
 
 /** Why `validate_promo_code` rejected a code, for the merchant (amounts in the order's currency). */

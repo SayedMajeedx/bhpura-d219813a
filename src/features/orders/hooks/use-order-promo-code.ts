@@ -5,11 +5,12 @@ import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import type { Order } from "@/features/orders/types";
 import { orderTotals, promoFailureMessage } from "@/features/orders/lib/order-editor";
+import { keptDiscount } from "@/features/orders/lib/discount-parts";
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 
-/** The part of an order's discount an automatic offer gave at checkout: a code applied or removed here keeps it. */
-const offerPart = (order: Order) => Number(order.offer_discount ?? 0);
+/** The part of an order's discount an automatic offer or the shopper's points gave: a code applied or removed here keeps it. */
+const offerPart = (order: Order) => keptDiscount(order);
 
 /** Applying a promo code (validated by validate_promo_code for this customer and these lines) and removing it. */
 export function useOrderPromoCode({

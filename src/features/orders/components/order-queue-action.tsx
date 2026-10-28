@@ -20,6 +20,11 @@ import {
 } from "@/features/orders/lib/transfer-approval";
 
 import { authenticatedJsonHeaders } from "@/features/orders/actions/order-links";
+import { orderItemFromRow } from "@/features/orders/lib/order-editor";
+import {
+  ReceiveFromTailorButton,
+  SendToTailorButton,
+} from "@/features/supplier-orders/components/TailorButtons";
 import type { Dispatch, SetStateAction } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import {
@@ -179,9 +184,11 @@ export type QueueActionState = ReturnType<typeof queueActionState>;
  */
 export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
   const {
+    brandId,
     handleCompleteDelivery,
     hasMadeToOrder,
     lang,
+    qc,
     setFulfillNotes,
     setIsFulfillModalOpen,
     setSelectedCourierId,
@@ -311,30 +318,33 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     );
   }
 
+  // The workshop's steps are the order page's: which supplier, each piece's price, and the
+  // supplier's own order. Staff without the finances move the stage alone, as the page does.
   if (
     hasMadeToOrder &&
     (workflow.nextAction === "send_to_tailor" || workflow.nextAction === "send_to_workshop")
   ) {
+    const sent =
+      vocabulary.sent_to_workshop_success[lang] ||
+      (lang === "ar" ? "تم الإرسال للورشة بنجاح!" : "Order sent to workshop!");
     return (
-      <Button
-        size="sm"
-        className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition-all dark:bg-purple-700 dark:hover:bg-purple-800"
-        disabled={updatingOrderId !== null}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleStatusUpdate(
-            { fulfillment_status: "SENT_TO_TAILOR" },
-            vocabulary.sent_to_workshop_success[lang] ||
-              (lang === "ar" ? "تم الإرسال للورشة بنجاح!" : "Order sent to workshop!"),
-          );
-        }}
-      >
-        {isUpdating ? (
-          <Loader2 className="animate-spin h-3.5 w-3.5" />
-        ) : (
-          workshopActionLabels(vocabulary, lang).send
-        )}
-      </Button>
+      <span onClick={(e) => e.stopPropagation()}>
+        <SendToTailorButton
+          brandId={brandId}
+          orderId={o.id}
+          lines={(o.order_items ?? []).map(orderItemFromRow)}
+          lang={lang === "ar" ? "ar" : "en"}
+          className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition-all dark:bg-purple-700 dark:hover:bg-purple-800"
+          title={workshopActionLabels(vocabulary, lang).send}
+          onPlainSend={() => handleStatusUpdate({ fulfillment_status: "SENT_TO_TAILOR" }, sent)}
+          onSent={async () => {
+            toast.success(sent);
+            await invalidateOrders(qc, brandId);
+          }}
+        >
+          {workshopActionLabels(vocabulary, lang).send}
+        </SendToTailorButton>
+      </span>
     );
   }
 
@@ -343,26 +353,27 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     (workflow.nextAction === "receive_from_tailor" ||
       workflow.nextAction === "receive_from_workshop")
   ) {
+    const received =
+      vocabulary.received_from_workshop_success[lang] ||
+      (lang === "ar" ? "تم استلام الطلب من الورشة بنجاح!" : "Received from workshop!");
     return (
-      <Button
-        size="sm"
-        className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition-all dark:bg-teal-700 dark:hover:bg-teal-800"
-        disabled={updatingOrderId !== null}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleStatusUpdate(
-            { fulfillment_status: "RECEIVED_FROM_TAILOR" },
-            vocabulary.received_from_workshop_success[lang] ||
-              (lang === "ar" ? "تم استلام الطلب من الورشة بنجاح!" : "Received from workshop!"),
-          );
-        }}
-      >
-        {isUpdating ? (
-          <Loader2 className="animate-spin h-3.5 w-3.5" />
-        ) : (
-          workshopActionLabels(vocabulary, lang).receive
-        )}
-      </Button>
+      <span onClick={(e) => e.stopPropagation()}>
+        <ReceiveFromTailorButton
+          brandId={brandId}
+          lines={(o.order_items ?? []).map(orderItemFromRow)}
+          lang={lang === "ar" ? "ar" : "en"}
+          className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition-all dark:bg-teal-700 dark:hover:bg-teal-800"
+          onPlainReceive={() =>
+            handleStatusUpdate({ fulfillment_status: "RECEIVED_FROM_TAILOR" }, received)
+          }
+          onReceived={async () => {
+            toast.success(received);
+            await invalidateOrders(qc, brandId);
+          }}
+        >
+          {workshopActionLabels(vocabulary, lang).receive}
+        </ReceiveFromTailorButton>
+      </span>
     );
   }
 
@@ -481,14 +492,25 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     if (action !== undefined) return action;
   } else if (workflow.nextAction === "deliver_digital") {
     return (
-      <Button size="sm" className="h-8 px-3 text-xs font-semibold" asChild>
-        <Link
-          to="/admin/b/$slug/orders/$id"
-          params={{ slug, id: o.id }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {lang === "ar" ? "إرسال الطلب الرقمي" : "Deliver digital order"}
-        </Link>
+      <Button
+        size="sm"
+        className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+        disabled={updatingOrderId !== null}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleStatusUpdate(
+            { fulfillment_status: "COMPLETED", status: "completed" },
+            lang === "ar" ? "تم تسليم الطلب الرقمي!" : "Digital order delivered!",
+          );
+        }}
+      >
+        {isUpdating ? (
+          <Loader2 className="animate-spin h-3.5 w-3.5" />
+        ) : lang === "ar" ? (
+          "تم التسليم"
+        ) : (
+          "Mark delivered"
+        )}
       </Button>
     );
   }

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { orderDeletable } from "@/lib/order-deletion";
 
 const imageTypes: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -173,7 +174,9 @@ export const deleteOrderWithPrivateReceipt = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: order, error } = await context.supabase
       .from("orders")
-      .select("id, brand_id, benefit_receipt_key")
+      .select(
+        "id, brand_id, benefit_receipt_key, status, fulfillment_status, payment_status, advance_paid",
+      )
       .eq("id", data.orderId)
       .maybeSingle();
     if (error || !order) throw new Error("ORDER_NOT_FOUND");
@@ -186,6 +189,9 @@ export const deleteOrderWithPrivateReceipt = createServerFn({ method: "POST" })
     // Secure Impersonation Safeguard Block: restrict mutation
     const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
     await enforceMutationSafeguard(context.supabase, context.userId, order.brand_id);
+
+    // A paid or delivered order is a record of the store's books: cancel or refund it instead.
+    if (!orderDeletable(order)) throw new Error("ORDER_NOT_DELETABLE");
 
     if (order.benefit_receipt_key) {
       const { deletePrivateObject, isPrivateReceiptKey } = await import("@/lib/private-r2.server");
@@ -224,11 +230,15 @@ export const deleteOrdersWithPrivateReceipts = createServerFn({ method: "POST" }
 
     const { data: orders, error: readError } = await context.supabase
       .from("orders")
-      .select("id, brand_id, benefit_receipt_key")
+      .select(
+        "id, brand_id, benefit_receipt_key, status, fulfillment_status, payment_status, advance_paid",
+      )
       .eq("brand_id", data.brandId)
       .in("id", uniqueIds);
     if (readError) throw readError;
     if (!orders || orders.length !== uniqueIds.length) throw new Error("ORDER_SET_MISMATCH");
+    // Nothing is deleted unless every selected order may be (the receipts go with the orders).
+    if (!orders.every((order) => orderDeletable(order))) throw new Error("ORDER_NOT_DELETABLE");
 
     const { deletePrivateObject, isPrivateReceiptKey } = await import("@/lib/private-r2.server");
     for (const order of orders) {

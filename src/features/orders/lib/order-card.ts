@@ -1,4 +1,5 @@
 import { resolvePaymentStatus } from "@/lib/payment-status";
+import { getOrderWorkflow, type OrderWorkflowInput } from "@/lib/order-workflow";
 
 /**
  * What an order's card in the list says on a phone, beyond its number, total
@@ -96,4 +97,35 @@ export function orderItemsLine(
     "";
   const qty = Number(item.quantity) || 1;
   return { first: qty > 1 ? `${name} × ${qty}` : name, more: lines.length - 1 };
+}
+
+const DAY = 86_400_000;
+/** From this many days an order waiting on the team is marked, and from this many it is late. */
+export const WAITING_AFTER_DAYS = 2;
+export const LATE_AFTER_DAYS = 5;
+
+export type OrderWaiting = { days: number; late: boolean };
+
+/**
+ * How long an order has waited on the team, or null when it is not waiting (settled, waiting for
+ * the customer's payment, an appointment before its day) or has waited only a day. It counts from
+ * the last change of the order, and from the start of an appointment's booking, so an order
+ * that sat for weeks does not look like one placed this morning.
+ */
+export function orderWaiting(
+  order: OrderWorkflowInput & { created_at?: string | null; updated_at?: string | null },
+  options: { now?: Date; productionStages?: boolean } = {},
+): OrderWaiting | null {
+  const now = options.now ?? new Date();
+  const workflow = getOrderWorkflow(order, { productionStages: options.productionStages, now });
+  if (!workflow.needsAttention) return null;
+  const appointment = String(order.fulfillment_method ?? "").toLowerCase() === "appointment";
+  const since = appointment
+    ? (order.bookings?.[0]?.starts_at ?? order.created_at)
+    : (order.updated_at ?? order.created_at);
+  if (!since) return null;
+  const started = new Date(since).getTime();
+  if (Number.isNaN(started)) return null;
+  const days = Math.floor((now.getTime() - started) / DAY);
+  return days >= WAITING_AFTER_DAYS ? { days, late: days >= LATE_AFTER_DAYS } : null;
 }

@@ -7,6 +7,7 @@ import { orderPaymentUpdate, type PaymentDetailsInput } from "@/features/orders/
 import { invalidateOrders, updateOrder } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { isSavedOrderId } from "@/features/orders/lib/order-editor";
+import { formatMoney } from "@/lib/format";
 
 /** Saving payment status, method, advance and reference from the payment modal; saved orders persist and log it immediately. */
 export function useOrderPaymentDetails({
@@ -29,6 +30,8 @@ export function useOrderPaymentDetails({
     const oldStatus = order.payment_status;
     const oldMethod = order.payment_method;
     const oldAdvance = order.advance_paid;
+    // The log says the amount in the order's own currency, never a fixed one.
+    const currency = order.currency || "BHD";
 
     const paymentFields = orderPaymentUpdate(updatedFields, order.payment_reference);
     const finalMethod = paymentFields.payment_method;
@@ -61,8 +64,8 @@ export function useOrderPaymentDetails({
       await logActivity({
         action: "payment_update",
         order_id: order.id,
-        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${(finalMethod || "unspecified").toUpperCase()}), Advance: BHD ${updatedFields.advance_paid.toFixed(3)}`,
-        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${finalMethod || "غير محدد"})، المبلغ المستلم: ${updatedFields.advance_paid.toFixed(3)} د.ب`,
+        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${(finalMethod || "unspecified").toUpperCase()}), Advance: ${formatMoney(updatedFields.advance_paid, currency, "en")}`,
+        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${finalMethod || "غير محدد"})، المبلغ المستلم: ${formatMoney(updatedFields.advance_paid, currency, "ar")}`,
         metadata: {
           oldStatus,
           oldMethod,

@@ -23,6 +23,7 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { courierCompleteDelivery, invalidateOrders, updateOrder } from "@/lib/data/orders";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { workshopActionLabels } from "@/lib/store-vocabulary";
+import { renderDoneAction } from "@/features/orders/components/order-done-actions";
 import {
   ReceiveFromTailorButton,
   SendToTailorButton,
@@ -92,6 +93,12 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
       delivered_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
+  };
+
+  /** Every step is in the order's activity trail, as the packing, shipping and completion steps were. */
+  const record = async (en: string, ar: string) => {
+    await logActivity({ action: "status_change", order_id: order.id, en, ar });
+    invalidateActivityLogs(qc);
   };
 
   if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
@@ -307,51 +314,9 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
     );
   }
 
-  // An appointment whose time has come: the service was carried out. Any
-  // balance (cash, or the rest after a deposit) is collected with it; the
-  // booking follows the order to "completed" (sync_bookings_with_order).
-  if (
-    workflow.nextAction === "complete_service" ||
-    workflow.nextAction === "collect_and_complete_service"
-  ) {
-    const collects = workflow.nextAction === "collect_and_complete_service";
-    return (
-      <Button
-        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
-        onClick={async () => {
-          try {
-            await completeOrder(collects);
-            toast.success(lang === "ar" ? "تم تنفيذ الخدمة وإتمام الطلب" : "Service completed");
-            await logActivity({
-              action: "status_change",
-              order_id: order.id,
-              en: collects
-                ? "Collected the balance and completed the service"
-                : "Completed the service",
-              ar: collects ? "تحصيل المبلغ المتبقي وإتمام الخدمة" : "تم تنفيذ الخدمة",
-            });
-            await orderQ.refetch();
-            invalidateOrders(qc, brandId);
-            invalidateActivityLogs(qc);
-          } catch (err: unknown) {
-            toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر إتمام الخدمة" : "Unable to complete the service"),
-            );
-          }
-        }}
-      >
-        <CheckCircle2 className="h-4 w-4 me-1.5" />
-        {collects
-          ? lang === "ar"
-            ? "تحصيل المتبقي وإتمام الخدمة"
-            : "Collect balance & complete"
-          : lang === "ar"
-            ? "تم تنفيذ الخدمة"
-            : "Service done"}
-      </Button>
-    );
-  }
+  // The steps that end a service or a digital order (see order-done-actions).
+  const done = renderDoneAction({ workflow, completeOrder, lang, order, orderQ, qc, brandId });
+  if (done) return done;
 
   if (workflow.nextAction === "mark_completed") {
     return (
@@ -404,6 +369,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             toast.success(
               lang === "ar" ? "تم جاهزية الطلب وتعيينه للمندوب" : "Packed & Assigned to Courier",
             );
+            await record(
+              "Packed the order and assigned it to a courier",
+              "تجهيز الطلب وتعيينه للمندوب",
+            );
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
@@ -434,6 +403,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               lang === "ar"
                 ? "تم استلام الشحنة من المندوب وخرجت للتوصيل"
                 : "Courier picked up parcel - Out for Delivery",
+            );
+            await record(
+              "Courier picked up the parcel: out for delivery",
+              "استلم المندوب الشحنة وخرجت للتوصيل",
             );
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
@@ -479,6 +452,12 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             toast.success(
               lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed",
             );
+            await record(
+              collects
+                ? "Collected the balance and delivered the order"
+                : "Marked the order delivered",
+              collects ? "تحصيل المتبقي وتسليم الطلب" : "تم تسليم الطلب",
+            );
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
@@ -512,6 +491,7 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
               updated_at: new Date().toISOString(),
             });
             toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
+            await record("Prepared the order for pickup", "تجهيز الطلب للاستلام");
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
@@ -540,6 +520,12 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
           try {
             await completeOrder(collects);
             toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
+            await record(
+              collects
+                ? "Collected the balance and handed the order over"
+                : "Handed the order over to the customer",
+              collects ? "تحصيل المتبقي وتسليم الطلب للعميل" : "تسليم الطلب للعميل",
+            );
             await orderQ.refetch();
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {

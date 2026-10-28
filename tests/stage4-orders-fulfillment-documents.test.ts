@@ -98,13 +98,29 @@ describe("Stage 4 - Order Progress Model & Sales Documents", () => {
     const needsAttentionOrder = {
       id: "ord-5",
       payment_status: "unpaid",
+      payment_method: "cod",
+      status: "pending",
+      fulfillment_status: "delivery_failed",
+      total: 100,
+    };
+    const wf = getOrderWorkflow(needsAttentionOrder);
+    expect(wf.nextAction).toBe("resolve_delivery_failure");
+    expect(wf.needsAttention).toBe(true);
+  });
+
+  it("does not count a card payment still to come as work for the team", () => {
+    // The customer's turn: nothing to prepare, pack or send until the gateway confirms it.
+    const wf = getOrderWorkflow({
+      id: "ord-6",
+      payment_status: "unpaid",
       payment_method: "card",
       status: "pending",
       fulfillment_status: "pending",
       total: 100,
-    };
-    const wf = getOrderWorkflow(needsAttentionOrder);
-    expect(wf.needsAttention).toBe(true);
+    });
+    expect(wf.needsAttention).toBe(false);
+    expect(wf.nextAction).toBe("none");
+    expect(wf.awaitingPayment).toBe(true);
   });
 
   it("printDeliveryNote handles all delivery document parameters cleanly without throwing", () => {

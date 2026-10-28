@@ -6,6 +6,7 @@ import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { countOf } from "@/lib/arabic-count";
 import { cn } from "@/lib/utils";
 import { orderCardWhen, orderItemsLine } from "@/features/orders/lib/order-card";
+import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { boardColumns, canDrop, type BoardColumn } from "@/features/orders/lib/order-board";
 import { useOrderNumber } from "@/hooks/use-order-number";
 
@@ -145,6 +146,11 @@ export function OrdersBoard<T extends BoardCard>({
                   <p className="line-clamp-2 break-words text-sm font-medium" dir="auto">
                     {contact.name || (isAr ? "عميل زائر" : "Guest customer")}
                   </p>
+                  <OrderWaitingBadge
+                    order={order}
+                    lang={isAr ? "ar" : "en"}
+                    productionStages={madeToOrder}
+                  />
                   {items && (
                     <p
                       className="line-clamp-2 break-words text-xs text-muted-foreground"

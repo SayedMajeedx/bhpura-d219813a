@@ -9,7 +9,8 @@ import { countOf } from "@/lib/arabic-count";
 interface DiscountsCommandHeaderProps {
   lang: "ar" | "en";
   promoCount: number;
-  onCreateNew: () => void;
+  /** The button makes a promo code: it is offered on the codes view only. */
+  onCreateNew?: () => void;
 }
 
 export function DiscountsCommandHeader({
@@ -22,20 +23,22 @@ export function DiscountsCommandHeader({
   return (
     <AdminPageHeader
       icon={Tag}
-      title={isAr ? "رموز الخصم والعروض" : "Discount Codes & Promotions"}
+      title={isAr ? "الخصومات والعروض" : "Discounts & Offers"}
       badges={<AdminPageCount>{countOf(promoCount, "code", isAr ? "ar" : "en")}</AdminPageCount>}
       description={
         isAr
-          ? "أنشئ رموز خصم مخصصة، وحدد شروط الأهلية، وجدولة المبيعات، والحد الأقصى للاستخدام."
-          : "Create custom promo codes, set eligibility rules, schedules, and redemption caps."
+          ? "رموز خصم يكتبها المتسوق، وعروض تلقائية تُطبَّق على الطلبات: شروطها وجدولتها وحدود استخدامها."
+          : "Promo codes shoppers type and offers applied automatically: their rules, schedules and limits."
       }
       actions={
-        <AdminPageAction
-          icon={Plus}
-          label={isAr ? "إنشاء رمز خصم" : "Create Promo Code"}
-          short={isAr ? "رمز جديد" : "New code"}
-          onClick={onCreateNew}
-        />
+        onCreateNew ? (
+          <AdminPageAction
+            icon={Plus}
+            label={isAr ? "إنشاء رمز خصم" : "Create Promo Code"}
+            short={isAr ? "رمز جديد" : "New code"}
+            onClick={onCreateNew}
+          />
+        ) : undefined
       }
     />
   );
