@@ -63,6 +63,27 @@ export function transferRefusedMessage(error: unknown, lang: Lang): string {
   return lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve the payment";
 }
 
+/**
+ * Whether the order's transfer receipt is still to be checked and so shown at the top of the
+ * order (`PendingTransferReview`). Once approved it is a record and sits with the money.
+ */
+export function receiptOnTop(
+  order:
+    | {
+        payment_method?: string | null;
+        benefit_receipt_key?: string | null;
+        payment_status?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  return (
+    order?.payment_method === "benefit" &&
+    Boolean(order.benefit_receipt_key) &&
+    !transferApproved(order.payment_status)
+  );
+}
+
 /** Whether a transfer's approval is on record: in full, or for the advance. */
 export function transferApproved(paymentStatus: string | null | undefined): boolean {
   return ["paid", "partially_paid", "partial"].includes(String(paymentStatus ?? "").toLowerCase());
