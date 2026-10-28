@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
 import { type AdminNavItemConfig, workspaceTabs } from "@/config/admin-navigation";
 
 export interface OsWorkspaceTabsProps {
@@ -40,7 +41,7 @@ export function OsWorkspaceTabs({
     <div
       data-os-workspace-tabs="true"
       className={cn(
-        "no-print shrink-0 w-full bg-card/85 backdrop-blur-md border-b border-border-subtle transition-all select-none z-10",
+        "no-print shrink-0 w-full bg-card/85 backdrop-blur-md border-b border-border-subtle transition-colors select-none z-10",
         className,
       )}
     >
@@ -61,7 +62,9 @@ export function OsWorkspaceTabs({
         </div>
 
         {/* Scrollable Tab Strip */}
-        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 overscroll-contain">
+        <div className="t-tabs relative flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 overscroll-contain">
+          {/* The current page's fill slides to the next one (transitions.dev's tabs sliding). */}
+          <TabsPill />
           {items.map((tab) => {
             const isActive = tab.id === activeItem?.id;
             const TabIcon = tab.icon;
@@ -73,8 +76,9 @@ export function OsWorkspaceTabs({
                 to={tab.to as any}
                 params={tab.params as any}
                 preload="intent"
+                data-active={isActive ? "true" : "false"}
                 className={cn(
-                  "group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] pointer-coarse:min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                  "t-tab group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] pointer-coarse:min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                   isActive
                     ? "bg-primary text-primary-foreground shadow-2xs font-bold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-background/50 border border-border-subtle",

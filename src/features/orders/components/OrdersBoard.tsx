@@ -9,6 +9,7 @@ import { orderCardWhen, orderItemsLine } from "@/features/orders/lib/order-card"
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { boardColumns, canDrop, type BoardColumn } from "@/features/orders/lib/order-board";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import { useBoardFlip } from "@/features/orders/hooks/use-board-flip";
 
 /**
  * The orders as a board: a column per stage (to confirm, preparing, at the workshop, ready, on
@@ -50,6 +51,8 @@ export function OrdersBoard<T extends BoardCard>({
   const [dragging, setDragging] = useState<T | null>(null);
   const [over, setOver] = useState<BoardColumn | null>(null);
   const actions = useRef(new Map<string, HTMLDivElement | null>());
+  const board = useRef<HTMLDivElement>(null);
+  useBoardFlip(board, orders);
 
   const drop = (column: BoardColumn) => {
     const order = dragging;
@@ -70,6 +73,7 @@ export function OrdersBoard<T extends BoardCard>({
 
   return (
     <div
+      ref={board}
       className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2"
       aria-label={isAr ? "لوحة الطلبات" : "Orders board"}
     >
@@ -88,7 +92,7 @@ export function OrdersBoard<T extends BoardCard>({
             drop(column.id);
           }}
           className={cn(
-            "flex w-[85vw] max-w-80 shrink-0 snap-start flex-col rounded-2xl border border-border bg-muted/30 sm:w-72",
+            "flex w-[85vw] max-w-80 shrink-0 snap-start flex-col rounded-2xl border border-border bg-muted/30 transition-colors duration-150 sm:w-72",
             over === column.id &&
               dragging &&
               (canDrop(dragging, column.id, madeToOrder)
@@ -116,6 +120,7 @@ export function OrdersBoard<T extends BoardCard>({
               return (
                 <li
                   key={order.id}
+                  data-flip-id={order.id}
                   draggable
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "move";
@@ -126,9 +131,10 @@ export function OrdersBoard<T extends BoardCard>({
                     setOver(null);
                   }}
                   className={cn(
-                    "space-y-2 rounded-xl border border-border bg-card p-3 shadow-2xs",
-                    "[@media(hover:hover)_and_(pointer:fine)]:cursor-grab",
-                    dragging?.id === order.id && "opacity-60",
+                    "space-y-2 rounded-xl border border-border bg-card p-3 shadow-2xs transition-[opacity,scale,box-shadow] duration-150 ease-(--motion-ease-smooth)",
+                    "[@media(hover:hover)_and_(pointer:fine)]:cursor-grab [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-sm",
+                    // The card being carried stays behind as a lighter, smaller outline.
+                    dragging?.id === order.id && "scale-[0.98] opacity-50",
                   )}
                 >
                   <div className="flex items-start justify-between gap-2">

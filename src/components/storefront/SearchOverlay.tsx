@@ -327,7 +327,8 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
 
         {/* Case D: Live Results */}
         {debounced.length >= 2 && !isFetching && results.length > 0 && (
-          <div className="space-y-2">
+          // The results take the placeholders' place with their blur (skeleton reveal).
+          <div className="t-skel-reveal space-y-2">
             <p className="text-xs font-semibold text-muted-foreground px-1">
               {t(`${results.length} نتائج مطابقة`, `${results.length} matching products`)}
             </p>

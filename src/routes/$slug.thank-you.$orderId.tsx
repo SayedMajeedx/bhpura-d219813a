@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { requestedTimeLabel } from "@/lib/delivery-schedule";
 import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2 } from "lucide-react";
+import { SuccessCheck } from "@/components/motion/SuccessCheck";
 import { confirmationSearch, parseConfirmation } from "@/lib/bookings/confirmation";
 import { AppointmentSummary } from "@/features/storefront-booking/components/AppointmentSummary";
 import { useEffect } from "react";
@@ -80,8 +80,9 @@ function ThankYou() {
           style={{ backgroundColor: settings.primary_color }}
         ></div>
 
-        <CheckCircle2
-          className="h-14 w-14 mx-auto mb-4 animate-bounce duration-1000"
+        {/* The order is placed: the check arrives once and draws its tick (it bounced forever). */}
+        <SuccessCheck
+          className="h-14 w-14 mx-auto mb-4"
           style={{ color: settings.primary_color }}
         />
         <h1 className="font-display text-2xl sm:text-3xl mb-2">

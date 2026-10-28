@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 import type { primaryKpisFor } from "@/features/dashboard/lib/dashboard-kpis";
@@ -76,7 +77,12 @@ export function DashboardKpiCards({
 
               <div className="mt-2.5 flex items-baseline">
                 <p className="font-display text-lg sm:text-2xl font-extrabold tracking-tight text-foreground tabular-nums truncate">
-                  {k.value}
+                  {/* A figure that changes (another period, a new order) pops its new digits in. */}
+                  {typeof k.value === "string" || typeof k.value === "number" ? (
+                    <AnimatedNumber value={String(k.value)} />
+                  ) : (
+                    k.value
+                  )}
                 </p>
               </div>
               <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground break-words">

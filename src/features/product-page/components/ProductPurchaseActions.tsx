@@ -1,6 +1,9 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, AlertCircle, Sparkles, Truck, MessageCircle } from "lucide-react";
+import { ShoppingBag, AlertCircle, Sparkles, Truck, MessageCircle, Check } from "lucide-react";
+import { MorphText } from "@/components/motion/MorphText";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { useFlash } from "@/components/motion/use-flash";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { deliveryEstimateLines, readyEstimate } from "@/lib/delivery-estimate";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
@@ -37,7 +40,7 @@ export function ProductPurchaseActions({
   vocabulary,
 }: {
   brand: ReturnType<typeof useStorefront>["brand"];
-  doAdd: (thenBuy?: boolean) => void;
+  doAdd: (thenBuy?: boolean) => boolean;
   errorMsg: string | null;
   inquiryUrl: string | null;
   isTailoringActive: boolean;
@@ -55,6 +58,8 @@ export function ProductPurchaseActions({
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
   const offSale = offSaleUntil(product);
+  // The button says the piece is in the bag, where the tap was (text morph and icon swap).
+  const [added, flashAdded] = useFlash();
   // A piece the shopper is having made takes the made-to-order estimate; a ready size does not.
   const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
   // A ready size is capped by its stock; a made-to-order piece by the store's limit, if it has one.
@@ -176,22 +181,34 @@ export function ProductPurchaseActions({
             className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground gap-2"
             disabled={selectedVariantOutOfStock}
             aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
-            onClick={() => doAdd(false)}
+            onClick={() => {
+              if (doAdd(false)) flashAdded();
+            }}
           >
-            {isTailoringActive ? (
-              <Sparkles className="h-4 w-4" />
-            ) : (
-              <ShoppingBag className="h-4 w-4" />
-            )}
-            <span>
-              {isTailoringActive
-                ? vocabulary.custom_order?.[lang]
-                  ? lang === "ar"
-                    ? `طلب ${vocabulary.custom_order[lang]} القطعة`
-                    : `Order ${vocabulary.custom_order[lang]} Piece`
-                  : t("طلب تجهيز القطعة", "Order Custom Piece")
-                : t("أضف للسلة", "Add to cart")}
-            </span>
+            <IconSwap
+              showSecond={added}
+              first={
+                isTailoringActive ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <ShoppingBag className="h-4 w-4" />
+                )
+              }
+              second={<Check className="h-4 w-4" />}
+            />
+            <MorphText
+              text={
+                added
+                  ? t("أُضيفت إلى السلة", "Added to cart")
+                  : isTailoringActive
+                    ? vocabulary.custom_order?.[lang]
+                      ? lang === "ar"
+                        ? `طلب ${vocabulary.custom_order[lang]} القطعة`
+                        : `Order ${vocabulary.custom_order[lang]} Piece`
+                      : t("طلب تجهيز القطعة", "Order Custom Piece")
+                    : t("أضف للسلة", "Add to cart")
+              }
+            />
           </Button>
           <Button
             variant="outline"

@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Share2, Copy, Check, MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { MorphText } from "@/components/motion/MorphText";
 
 interface ProductShareModalProps {
   isAr: boolean;
@@ -196,17 +198,12 @@ export function ProductShareModal({
                 onClick={copyToClipboard}
                 className="h-8 px-3 rounded-lg text-xs font-semibold flex items-center gap-1.5 shrink-0"
               >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 stroke-[3]" />
-                    <span>{isAr ? "تم النسخ" : "Copied"}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>{isAr ? "نسخ" : "Copy"}</span>
-                  </>
-                )}
+                <IconSwap
+                  showSecond={copied}
+                  first={<Copy className="h-3.5 w-3.5" />}
+                  second={<Check className="h-3.5 w-3.5 stroke-[3]" />}
+                />
+                <MorphText text={copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"} />
               </Button>
             </div>
           </div>

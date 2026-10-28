@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { TabsPill } from "@/components/motion/TabsPill";
 import { formatPrice, pickName, useStorefront } from "@/lib/storefront-context";
 import { ownCustomerQueries } from "@/lib/data/customers";
 import type { ProductRow } from "@/lib/data/storefront";
@@ -107,9 +108,19 @@ export function MenuHome({
           className="sticky z-30 mt-4 border-b border-border bg-background/95 backdrop-blur"
           style={{ top: "var(--sf-header-h, 0px)" }}
         >
-          <ul className="mx-auto flex max-w-3xl snap-x gap-2 overflow-x-auto px-4 py-2.5 scrollbar-none">
+          {/* The lit section's fill slides along the row as the page scrolls (transitions.dev's
+              tabs sliding): the fill is the row's one pill, the tabs are its words. */}
+          <ul className="t-tabs relative mx-auto flex max-w-3xl snap-x gap-2 overflow-x-auto px-4 py-2.5 scrollbar-none">
+            <TabsPill as="li" />
             {sections.map((section) => (
-              <li key={section.id} className="snap-start">
+              <li
+                key={section.id}
+                data-active={active === section.id ? "true" : "false"}
+                className={cn(
+                  "t-tab snap-start rounded-full",
+                  active === section.id ? "bg-primary" : "bg-muted/60",
+                )}
+              >
                 <Button
                   type="button"
                   variant="ghost"
@@ -117,10 +128,10 @@ export function MenuHome({
                   aria-current={active === section.id ? "true" : undefined}
                   onClick={() => goTo(section.id)}
                   className={cn(
-                    "h-10 rounded-full px-4 text-sm font-medium",
+                    "h-10 rounded-full bg-transparent px-4 text-sm font-medium hover:bg-transparent",
                     active === section.id
-                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted hover:text-foreground",
+                      ? "text-primary-foreground hover:text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {section.title}

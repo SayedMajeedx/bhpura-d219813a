@@ -593,7 +593,7 @@ function OrderEditor() {
   return (
     <>
       <div
-        className="mx-auto max-w-[1500px] space-y-3 p-1 pb-24 sm:space-y-4 sm:p-2 sm:pb-12 md:pb-12 lg:pb-8 animate-fade-in"
+        className="mx-auto max-w-[1500px] space-y-3 p-1 pb-24 sm:space-y-4 sm:p-2 sm:pb-12 md:pb-12 lg:pb-8 t-skel-reveal"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* 1. Unified Status Header */}

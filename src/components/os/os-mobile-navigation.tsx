@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNewArrivals } from "@/lib/new-arrivals";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Menu,
@@ -75,6 +76,7 @@ export function OsMobileNavigation({
   const isDetailPage = false;
 
   // Pick top items for quick mobile tabs + "More" item
+  const arrivals = useNewArrivals();
   const primaryTabItems: OsIslandDockItem[] = React.useMemo(() => {
     if (!activeSlug) {
       if (isSuperAdmin) {
@@ -120,6 +122,7 @@ export function OsMobileNavigation({
         icon: workspace.icon,
         label: lang === "ar" ? workspace.shortLabelAr : workspace.shortLabelEn,
         active,
+        badge: workspace.id === "orders" && arrivals > 0 ? arrivals : undefined,
         onClick: () => navigate({ to: first.to as any, params: first.params as any }),
       }),
     );
@@ -141,6 +144,7 @@ export function OsMobileNavigation({
     navigate,
     mobileOpen,
     onOpenChangeMobile,
+    arrivals,
   ]);
 
   // Organize navigation items into iOS Control Center Groups

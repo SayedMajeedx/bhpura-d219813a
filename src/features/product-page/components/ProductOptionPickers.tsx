@@ -14,6 +14,7 @@ import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import { resolveColorHex } from "@/lib/color-names";
+import { TabsPill } from "@/components/motion/TabsPill";
 /** Option pickers: ready/custom size mode, colour swatches, size, fabric and extra option pills, and a fallback variant list. */
 export function ProductOptionPickers({
   hasReadySizes,
@@ -107,9 +108,12 @@ export function ProductOptionPickers({
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
             {t("طريقة اختيار المقاس", "Sizing Method")}
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="t-tabs relative grid grid-cols-2 gap-2">
+            {/* The chosen choice's fill slides to the next one (transitions.dev's tabs sliding). */}
+            <TabsPill />
             <Button
               type="button"
+              aria-pressed={sizeMode === "ready"}
               variant={sizeMode === "ready" ? "default" : "outline"}
               onClick={() => {
                 setSizeMode("ready");
@@ -125,8 +129,8 @@ export function ProductOptionPickers({
                 });
                 setMeasurementsApplied(false);
               }}
-              className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                sizeMode === "ready" ? "shadow-sm" : ""
+              className={`t-tab h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                sizeMode === "ready" ? "shadow-sm" : "bg-transparent"
               }`}
             >
               <Ruler className="h-4 w-4" />
@@ -134,13 +138,14 @@ export function ProductOptionPickers({
             </Button>
             <Button
               type="button"
+              aria-pressed={sizeMode === "custom"}
               variant={sizeMode === "custom" ? "default" : "outline"}
               onClick={() => {
                 setSizeMode("custom");
                 setErrorMsg(null);
               }}
-              className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                sizeMode === "custom" ? "shadow-sm" : ""
+              className={`t-tab h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                sizeMode === "custom" ? "shadow-sm" : "bg-transparent"
               }`}
             >
               <Scissors className="h-4 w-4" />
@@ -248,7 +253,8 @@ export function ProductOptionPickers({
               })}
             </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <div className="t-tabs relative flex flex-wrap gap-2">
+              <TabsPill />
               {uniqueColors.map((color) => {
                 const active = selectedColor === color;
                 const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
@@ -261,10 +267,13 @@ export function ProductOptionPickers({
                       setSelectedColor(color);
                       setErrorMsg(null);
                     }}
-                    className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                    aria-pressed={active}
+                    className={`t-tab min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
                       oos
                         ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                        : ""
+                        : active
+                          ? ""
+                          : "bg-transparent"
                     }`}
                   >
                     {translateOptionValue(color, lang)}
@@ -305,7 +314,8 @@ export function ProductOptionPickers({
                 }}
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="t-tabs relative flex flex-wrap gap-2">
+              <TabsPill />
               {uniqueSizes.map((sz) => {
                 const active = selectedSize === sz;
                 const matchingVariant = variants.find((v) => v.size === sz && v.size_unit);
@@ -332,10 +342,13 @@ export function ProductOptionPickers({
                       setSelectedSize(sz);
                       setErrorMsg(null);
                     }}
-                    className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                    aria-pressed={active}
+                    className={`t-tab min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
                       oos
                         ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                        : ""
+                        : active
+                          ? ""
+                          : "bg-transparent"
                     }`}
                   >
                     {sizeLabel}
@@ -357,7 +370,8 @@ export function ProductOptionPickers({
               </span>
             )}
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="t-tabs relative flex flex-wrap gap-2">
+            <TabsPill />
             {uniqueFabrics.map((fb) => {
               const active = selectedFabric === fb;
               const oos =
@@ -381,10 +395,13 @@ export function ProductOptionPickers({
                     setSelectedFabric(fb);
                     setErrorMsg(null);
                   }}
-                  className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                  aria-pressed={active}
+                  className={`t-tab min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
                     oos
                       ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
-                      : ""
+                      : active
+                        ? ""
+                        : "bg-transparent"
                   }`}
                 >
                   {translateOptionValue(fb, lang)}

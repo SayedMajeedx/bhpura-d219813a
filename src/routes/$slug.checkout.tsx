@@ -183,8 +183,15 @@ function Checkout() {
       sessionStorage.setItem("checkout_digitalContact", digitalContact);
     }
   }, [form, method, fulfillment, branchId, digitalChannel, digitalContact]);
-  const { promoInput, setPromoInput, appliedPromo, setAppliedPromo, checkingPromo, applyPromo } =
-    usePromoCode({ brand, cart, cartTotal, currency, lang, t });
+  const {
+    promoInput,
+    setPromoInput,
+    appliedPromo,
+    setAppliedPromo,
+    checkingPromo,
+    applyPromo,
+    refusals: promoRefusals,
+  } = usePromoCode({ brand, cart, cartTotal, currency, lang, t });
   const [benefitReceipt, setBenefitReceipt] = useState<File | null>(null);
 
   // Total quantity of items in cart for per-piece / bundle shipping formula
@@ -662,6 +669,7 @@ function Checkout() {
           bookingDiscount={appointment ? bookingDiscount : null}
           bookingCodeDropped={withBooking.codeDropped}
           promoInput={promoInput}
+          promoRefusals={promoRefusals}
           redeemedPoints={redeemedPoints}
           setAcceptedTerms={setAcceptedTerms}
           setAppliedPromo={setAppliedPromo}

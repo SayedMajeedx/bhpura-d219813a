@@ -1,7 +1,8 @@
 import * as React from "react";
-import { ChevronDown, ChevronUp, type LucideIcon } from "lucide-react";
+import { ChevronDown, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useDisclosure } from "@/components/motion/use-disclosure";
 
 /**
  * One section of the home page as a row: its name and what it shows now, its switch when it has
@@ -35,6 +36,7 @@ export function HomeSectionRow({
   children?: React.ReactNode;
 }) {
   const panelId = `home-section-${id}`;
+  const fold = useDisclosure(open);
   const hasBody = React.Children.count(children) > 0;
   const heading = (
     <>
@@ -49,17 +51,18 @@ export function HomeSectionRow({
         <span className="block text-sm font-semibold text-foreground">{title}</span>
         <span className="block break-words text-xs text-muted-foreground">{summary}</span>
       </span>
-      {hasBody &&
-        (open ? (
-          <ChevronUp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        ) : (
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        ))}
+      {hasBody && (
+        <span className="t-acc-chevron shrink-0" data-open={open ? "true" : "false"}>
+          <ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
+        </span>
+      )}
     </>
   );
   return (
     <div
-      className={`rounded-xl border bg-card shadow-2xs ${
+      // The section's settings grow open and fold away (transitions.dev's accordion).
+      data-open={fold.shown ? "true" : "false"}
+      className={`t-acc rounded-xl border bg-card shadow-2xs transition-colors duration-250 ${
         open ? "border-primary/40" : "border-border"
       }`}
     >
@@ -90,9 +93,11 @@ export function HomeSectionRow({
           />
         )}
       </div>
-      {open && hasBody && (
-        <div id={panelId} className="space-y-4 border-t border-border p-3 sm:p-4">
-          {children}
+      {fold.mounted && hasBody && (
+        <div id={panelId} className="t-acc-panel">
+          <div className="t-acc-panel-inner">
+            <div className="space-y-4 border-t border-border p-3 sm:p-4">{children}</div>
+          </div>
         </div>
       )}
     </div>

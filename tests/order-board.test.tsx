@@ -48,6 +48,12 @@ vi.mock("sonner", () => ({ toast: { success: state.toast, error: state.toast } }
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="#order">{children}</a>,
   useNavigate: () => vi.fn(),
+  // The alert asks whether the orders page is open (it clears the menu's new-order count).
+  useRouterState: ({
+    select,
+  }: {
+    select: (state: { location: { pathname: string } }) => unknown;
+  }) => select({ location: { pathname: "/admin/b/pura" } }),
 }));
 vi.mock("../src/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));

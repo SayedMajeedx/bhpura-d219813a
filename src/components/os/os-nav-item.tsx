@@ -1,6 +1,7 @@
 import * as React from "react";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
 export interface OsNavItemProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   icon: LucideIcon;
@@ -17,7 +18,7 @@ export const OsNavItem = React.forwardRef<HTMLAnchorElement, OsNavItemProps>(
       <a
         ref={ref}
         className={cn(
-          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 outline-none os-focus-ring select-none",
+          "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-[color,background-color,box-shadow] duration-200 outline-none os-focus-ring select-none",
           active
             ? "bg-primary text-primary-foreground shadow-md font-semibold"
             : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
@@ -34,14 +35,15 @@ export const OsNavItem = React.forwardRef<HTMLAnchorElement, OsNavItemProps>(
         {badge !== undefined && (
           <span
             className={cn(
-              "ms-auto rounded-full px-2 py-0.5 text-xs font-bold tracking-tight shrink-0",
+              "t-badge-enter ms-auto rounded-full px-2 py-0.5 text-xs font-bold tracking-tight shrink-0",
               active
                 ? "bg-primary-foreground/20 text-primary-foreground"
                 : "bg-muted text-muted-foreground",
               collapsed && "absolute -top-1 -end-1 px-1 py-0 text-xs",
             )}
           >
-            {badge}
+            {/* It pops in when it appears and its number pops when it grows. */}
+            {typeof badge === "number" ? <AnimatedNumber value={String(badge)} /> : badge}
           </span>
         )}
       </a>

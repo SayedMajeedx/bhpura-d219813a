@@ -12,9 +12,11 @@ import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
-import { Heart, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
+import { LikeHeart } from "@/components/motion/LikeHeart";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
 import { useReveal } from "@/lib/motion/use-reveal";
+import { nameTappedPhoto } from "@/lib/motion/view-transition";
 import { serviceLengthsText } from "@/lib/bookings/service-lengths";
 import { hasAvailableStock } from "@/lib/data/storefront";
 import { useLiveOffers } from "@/hooks/use-live-offers";
@@ -145,10 +147,9 @@ export function ProductCardV2({
     ? product.name_ar || product.name_en || product.name
     : product.name_en || product.name_ar || product.name;
 
-  const staggerClass =
-    typeof index === "number"
-      ? `storefront-fade-in-up stagger-${(index % 8) + 1}`
-      : "storefront-fade-in-up";
+  // One entrance: the scroll reveal, staggered along a row (it once also ran a mount
+  // animation, so a card below the fold faded in unseen, vanished and faded in again).
+  const staggerClass = typeof index === "number" ? `sf-stagger-${(index % 8) + 1}` : "";
 
   const handlePointerEnter = () => {
     setIsHovered(true);
@@ -202,19 +203,17 @@ export function ProductCardV2({
         }
         className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
       >
-        <Heart
-          className={`h-4 w-4 transition-colors duration-200 ${
-            wished ? "fill-destructive text-destructive" : ""
-          }`}
-        />
+        <LikeHeart liked={wished} className="h-4 w-4" />
       </Button>
 
       <Link
         to="/$slug/product/$id"
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
-        className="flex flex-1 flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
-        onClick={() => {
+        viewTransition
+        className="flex flex-1 flex-col transition-transform duration-250 ease-(--motion-ease-smooth) hover:-translate-y-1 sm:hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+        onClick={(event) => {
+          nameTappedPhoto(event.currentTarget, product.id);
           void trackProductEngagement(brand.slug, product.id, "click");
         }}
       >

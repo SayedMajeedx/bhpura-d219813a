@@ -4,6 +4,7 @@ import { Store, ChevronLeft, ChevronRight, Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsNavItem } from "./os-nav-item";
+import { useNewArrivals } from "@/lib/new-arrivals";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import {
@@ -56,6 +57,7 @@ export function OsSidebar({
     [navItems, isPlatformMode, isCourier],
   );
   const isActive = (item: AdminNavItemConfig) => isNavItemActive(item, pathname);
+  const arrivals = useNewArrivals();
   const linkTo = (item: AdminNavItemConfig, compact: boolean) => (
     <Link
       key={item.id}
@@ -69,7 +71,7 @@ export function OsSidebar({
         label={isAr ? item.labelAr : item.labelEn}
         active={isActive(item)}
         collapsed={compact}
-        badge={item.badge}
+        badge={item.id === "orders" && arrivals > 0 ? arrivals : item.badge}
       />
     </Link>
   );

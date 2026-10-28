@@ -601,14 +601,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       t,
     });
 
-  const doAdd = (thenBuy = false) => {
-    if (isCatalogMode(settings)) return;
+  const doAdd = (thenBuy = false): boolean => {
+    if (isCatalogMode(settings)) return false;
     const err = validate();
     if (err) {
       setErrorMsg(err);
       toast.error(err);
       scrollToOptions();
-      return;
+      return false;
     }
     const targetVariant = cartTargetVariant({
       isTailoringActive,
@@ -623,7 +623,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       setErrorMsg(msg);
       toast.error(msg);
       scrollToOptions();
-      return;
+      return false;
     }
     setErrorMsg(null);
 
@@ -670,6 +670,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     } else {
       toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
     }
+    return true;
   };
 
   const isRange = minMatchingPrice !== maxMatchingPrice;

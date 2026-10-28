@@ -1,5 +1,6 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { currencyLabel } from "@/lib/currency-label";
+import { SoftText } from "@/components/motion/SoftText";
 import { useDisplayCurrency } from "@/features/storefront-shell/hooks/use-display-currency";
 
 /**
@@ -48,9 +49,10 @@ export function ApproxPrice({
   const paidIn = currencyLabel(currency, lang);
   const note = charged ? (lang === "ar" ? ` · الدفع بـ${paidIn}` : ` · you pay in ${paidIn}`) : "";
   return (
+    // Another currency chosen: every approximate price blurs into the new one in place
+    // (transitions.dev's text swap soft, the rule for "a currency changed").
     <span className={`text-xs font-normal text-muted-foreground ${className}`} dir="auto">
-      {text}
-      {note}
+      <SoftText value={`${text}${note}`} />
     </span>
   );
 }

@@ -132,7 +132,16 @@ function ReportsCustomers() {
                           cy="50%"
                           innerRadius={60}
                           outerRadius={90}
-                          paddingAngle={5}
+                          // transitions.dev's donut chart: even gaps with no border between
+                          // segments, small round corners, from twelve o'clock clockwise, and
+                          // the ring eases to new figures.
+                          paddingAngle={3}
+                          cornerRadius={4}
+                          stroke="none"
+                          startAngle={90}
+                          endAngle={-270}
+                          animationDuration={500}
+                          animationEasing="ease-out"
                           dataKey="value"
                         >
                           {pieData.map((entry, index) => (

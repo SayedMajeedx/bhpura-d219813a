@@ -10,6 +10,7 @@ import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { ShoppingBag, Heart, User, Languages, X, Bell, Search } from "lucide-react";
 import { SearchOverlay } from "@/components/storefront/SearchOverlay";
+import { CountBadge } from "@/components/motion/CountBadge";
 
 function StoreHeader() {
   const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } =
@@ -91,17 +92,15 @@ function StoreHeader() {
                     aria-label={t("سلة التسوق", "Shopping cart")}
                   >
                     <ShoppingBag className="h-5 w-5" />
-                    {cartCount > 0 && (
-                      <span
-                        className="absolute top-1 end-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
-                        style={{
-                          backgroundColor: "var(--sf-btn-primary-bg)",
-                          color: "var(--sf-btn-primary-fg)",
-                        }}
-                      >
-                        {cartCount}
-                      </span>
-                    )}
+                    <CountBadge
+                      count={cartCount}
+                      placement="absolute top-1 end-1"
+                      className="min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
+                      style={{
+                        backgroundColor: "var(--sf-btn-primary-bg)",
+                        color: "var(--sf-btn-primary-fg)",
+                      }}
+                    />
                   </Button>
                 </CartDrawer>
               )}
@@ -251,17 +250,15 @@ function StoreHeader() {
               >
                 <Heart className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
-                {wishlistCount > 0 && (
-                  <span
-                    className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-xs font-semibold"
-                    style={{
-                      backgroundColor: "var(--sf-btn-primary-bg)",
-                      color: "var(--sf-btn-primary-fg)",
-                    }}
-                  >
-                    {wishlistCount}
-                  </span>
-                )}
+                <CountBadge
+                  count={wishlistCount}
+                  placement="absolute -top-1 -right-1"
+                  className="grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: "var(--sf-btn-primary-bg)",
+                    color: "var(--sf-btn-primary-fg)",
+                  }}
+                />
               </Link>
             </Button>
 
@@ -276,17 +273,15 @@ function StoreHeader() {
                 >
                   <ShoppingBag className="h-5 w-5" />
                   <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
-                  {cartCount > 0 && (
-                    <span
-                      className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
-                      style={{
-                        backgroundColor: "var(--sf-btn-primary-bg)",
-                        color: "var(--sf-btn-primary-fg)",
-                      }}
-                    >
-                      {cartCount}
-                    </span>
-                  )}
+                  <CountBadge
+                    count={cartCount}
+                    placement="absolute -top-1 -right-1"
+                    className="min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
+                    style={{
+                      backgroundColor: "var(--sf-btn-primary-bg)",
+                      color: "var(--sf-btn-primary-fg)",
+                    }}
+                  />
                 </Button>
               </CartDrawer>
             )}

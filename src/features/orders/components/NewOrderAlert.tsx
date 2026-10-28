@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { newArrivals } from "@/lib/new-arrivals";
 import { toast } from "sonner";
 import { subscribeToArrivals } from "@/lib/data/orders";
 import { useI18n } from "@/lib/i18n";
@@ -25,6 +26,13 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
   const profile = useProfileOptional();
   const courier = Boolean(profile?.isCourier);
   const orderNo = useOrderNumber(brandId);
+  // The Orders menu's count of new orders clears once the orders page is open.
+  const onOrders = useRouterState({
+    select: (state) => /\/orders(\/|$)/.test(state.location.pathname),
+  });
+  useEffect(() => {
+    if (onOrders) newArrivals.clear();
+  }, [onOrders]);
 
   useEffect(() => {
     if (courier || !brandId) return;
@@ -36,6 +44,7 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
 
     const announce = (table: "orders" | "bookings", row: Record<string, unknown>) => {
       if (!isShopperArrival(table, row)) return;
+      if (table === "orders" && !onOrders) newArrivals.add();
       if (!newOrderSoundOn()) return;
       playNewOrderChime();
       const isAr = lang === "ar";
@@ -66,7 +75,7 @@ export function NewOrderAlert({ brandId, slug }: { brandId: string; slug: string
       window.removeEventListener("pointerdown", unlock);
       stop();
     };
-  }, [brandId, slug, lang, courier, navigate, orderNo]);
+  }, [brandId, slug, lang, courier, navigate, orderNo, onOrders]);
 
   return null;
 }

@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { CalendarClock, Sparkles, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
 
 export type DiscountKind = "codes" | "offers";
 
@@ -45,8 +46,9 @@ export function DiscountsKindSwitcher({
       <div
         role="tablist"
         aria-label={isAr ? "نوع الخصم" : "Kind of discount"}
-        className="grid grid-cols-2 gap-1.5 rounded-xl border border-border-subtle bg-muted/40 p-1 sm:inline-flex"
+        className="t-tabs relative grid grid-cols-2 gap-1.5 rounded-xl border border-border-subtle bg-muted/40 p-1 sm:inline-flex"
       >
+        <TabsPill />
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = kind === tab.id;
@@ -59,7 +61,7 @@ export function DiscountsKindSwitcher({
               aria-selected={active}
               onClick={() => onKindChange(tab.id)}
               className={cn(
-                "h-9 gap-1.5 rounded-lg px-3 text-sm font-semibold",
+                "t-tab h-9 gap-1.5 rounded-lg px-3 text-sm font-semibold",
                 active
                   ? "bg-background text-foreground shadow-xs hover:bg-background"
                   : "text-muted-foreground hover:text-foreground",

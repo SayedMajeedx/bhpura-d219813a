@@ -20,6 +20,7 @@ import {
   whatsAppToCustomer,
 } from "@/features/bookings/lib/booking-invoice";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import { MorphText } from "@/components/motion/MorphText";
 
 const TONES = {
   success: "bg-success-subtle text-success",
@@ -148,7 +149,9 @@ export function BookingInvoiceBlock({
           onClick={() => void copy()}
         >
           <Copy className="size-3.5" aria-hidden="true" />
-          {copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ الرابط" : "Copy link"}
+          <MorphText
+            text={copied ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ الرابط" : "Copy link"}
+          />
         </Button>
         {whatsapp && (
           <Button asChild type="button" size="sm" className="h-8 gap-1.5 text-xs">

@@ -181,7 +181,7 @@ function SettingsPageInner() {
   }
 
   return (
-    <div className="space-y-6 w-full max-w-[1500px] mx-auto pb-24 px-2 sm:px-4">
+    <div className="t-skel-reveal space-y-6 w-full max-w-[1500px] mx-auto pb-24 px-2 sm:px-4">
       {/* Universal Command Header */}
       <SettingsHeader activeTab={activeTab} onTabChange={handleTabChange} />
 

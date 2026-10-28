@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
 import type { LucideIcon } from "lucide-react";
 
 export interface ScopeTab {
@@ -39,13 +40,13 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
         onClick={() => onTabChange(tab.id)}
         aria-pressed={isActive}
         className={cn(
-          "group inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all touch-manipulation focus:outline-hidden focus:ring-2 focus:ring-primary/40",
+          "t-tab group inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors touch-manipulation focus:outline-hidden focus:ring-2 focus:ring-primary/40",
           "shrink-0",
           isActive
             ? "bg-primary text-primary-foreground shadow-2xs"
             : tab.urgent
               ? "border border-amber-500/40 bg-amber-500/10 text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
-              : "border border-border-subtle bg-card text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              : "border border-border-subtle text-muted-foreground hover:bg-muted/60 hover:text-foreground",
         )}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
@@ -68,8 +69,10 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
     <div
       role="group"
       aria-label={isAr ? "حالات الطلبات" : "Order views"}
-      className="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar select-none"
+      className="t-tabs relative -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar select-none"
     >
+      {/* The chosen view's fill slides to the next one (transitions.dev's tabs sliding). */}
+      <TabsPill />
       {tabs.map((tab) => renderTab(tab))}
     </div>
   );

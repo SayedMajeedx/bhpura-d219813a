@@ -28,6 +28,8 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { returnsQueries } from "@/lib/data/returns";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { MorphText } from "@/components/motion/MorphText";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -403,18 +405,22 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                   onClick={handleCopyInvoiceUrl}
                   className="h-8 flex-1 text-xs gap-1.5"
                 >
-                  {copiedInvoice ? (
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  {copiedInvoice
-                    ? isAr
-                      ? "تم النسخ"
-                      : "Copied"
-                    : isAr
-                      ? "نسخ الرابط"
-                      : "Copy Link"}
+                  <IconSwap
+                    showSecond={copiedInvoice}
+                    first={<Copy className="h-3.5 w-3.5 text-muted-foreground" />}
+                    second={<Check className="h-3.5 w-3.5 text-emerald-600" />}
+                  />
+                  <MorphText
+                    text={
+                      copiedInvoice
+                        ? isAr
+                          ? "تم النسخ"
+                          : "Copied"
+                        : isAr
+                          ? "نسخ الرابط"
+                          : "Copy Link"
+                    }
+                  />
                 </Button>
                 <Button
                   variant="outline"

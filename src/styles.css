@@ -1,4 +1,5 @@
 @import "./fonts.css";
+@import "./styles/motion.css";
 @import "./styles/storefront-motion.css";
 @import "./styles/auth-motion.css";
 @import "tailwindcss" source(none);
@@ -828,7 +829,7 @@ html.is-embedded .hero-carousel-text-card a {
       var(--muted) 100%
     );
     background-size: 200% 100%;
-    animation: osShimmer 1.8s ease-in-out infinite;
+    animation: osShimmer 1.8s linear infinite;
   }
 }
 

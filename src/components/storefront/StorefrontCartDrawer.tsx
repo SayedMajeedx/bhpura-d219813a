@@ -22,6 +22,9 @@ import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
 import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
 import { appliedOfferName } from "@/lib/offers";
 import { bookingOfCart } from "@/lib/bookings/cart";
+import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
+import { SoftText } from "@/components/motion/SoftText";
+import { useLeavingRows } from "@/components/motion/use-leaving-rows";
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
@@ -29,6 +32,9 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
 
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // A line taken out folds away before it leaves the list (transitions.dev's card resize).
+  const { isLeaving, leave } = useLeavingRows();
+  const takeOut = (lineId: string) => leave(lineId, () => removeFromCart(lineId));
   const servicesStore = useIsServicesStore();
   // The store's offers on this cart, as the database works them out at checkout (the same
   // preview): named, with what they take off, and the total after them. A booking's cart has its
@@ -139,132 +145,146 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                   return (
                     <div
                       key={item.cart_line_id}
-                      className="flex gap-3 border rounded-lg p-2 items-center"
+                      className="t-collapse"
+                      data-leaving={isLeaving(item.cart_line_id) ? "true" : "false"}
                     >
-                      {item.image ? (
-                        <img
-                          src={cloudflareImageUrl(item.image, 160)}
-                          alt={displayName}
-                          width={64}
-                          height={64}
-                          loading="lazy"
-                          decoding="async"
-                          className="h-16 w-16 rounded object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="h-16 w-16 rounded bg-muted shrink-0" />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div
-                          dir="auto"
-                          className="font-medium line-clamp-2 break-words text-page-start"
-                        >
-                          {displayName}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {displayVariantParts(
-                            {
-                              size: item.size,
-                              size_unit: item.size_unit,
-                              color: item.color,
-                              fabric: item.fabric,
-                            },
-                            lang,
-                          ).join(" · ")}
-                        </div>
-                        {(() => {
-                          const formattedFields = formatCustomFieldsList(item.custom_fields, lang);
-                          if (formattedFields.length === 0) return null;
-                          return (
-                            <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border-subtle">
-                              {formattedFields.map((field) => (
-                                <div
-                                  key={field.key}
-                                  className="flex items-center justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
-                                >
-                                  <span className="text-muted-foreground font-medium">
-                                    {field.label}:
-                                  </span>
-                                  {field.isLink ? (
-                                    <a
-                                      href={field.value}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
-                                    >
-                                      📎 {lang === "ar" ? "عرض الملف" : "View File"}
-                                    </a>
-                                  ) : (
-                                    <span className="font-semibold text-foreground" dir="auto">
-                                      {field.value}
+                      <div className="flex gap-3 border rounded-lg p-2 items-center">
+                        {item.image ? (
+                          <img
+                            src={cloudflareImageUrl(item.image, 160)}
+                            alt={displayName}
+                            width={64}
+                            height={64}
+                            loading="lazy"
+                            decoding="async"
+                            className="h-16 w-16 rounded object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="h-16 w-16 rounded bg-muted shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div
+                            dir="auto"
+                            className="font-medium line-clamp-2 break-words text-page-start"
+                          >
+                            {displayName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {displayVariantParts(
+                              {
+                                size: item.size,
+                                size_unit: item.size_unit,
+                                color: item.color,
+                                fabric: item.fabric,
+                              },
+                              lang,
+                            ).join(" · ")}
+                          </div>
+                          {(() => {
+                            const formattedFields = formatCustomFieldsList(
+                              item.custom_fields,
+                              lang,
+                            );
+                            if (formattedFields.length === 0) return null;
+                            return (
+                              <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border-subtle">
+                                {formattedFields.map((field) => (
+                                  <div
+                                    key={field.key}
+                                    className="flex items-center justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
+                                  >
+                                    <span className="text-muted-foreground font-medium">
+                                      {field.label}:
                                     </span>
+                                    {field.isLink ? (
+                                      <a
+                                        href={field.value}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
+                                      >
+                                        📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                      </a>
+                                    ) : (
+                                      <span className="font-semibold text-foreground" dir="auto">
+                                        {field.value}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                          <div
+                            className="text-sm font-semibold mt-1"
+                            style={{ color: settings.primary_color }}
+                          >
+                            <span className="flex flex-col items-end">
+                              <SoftText
+                                align="end"
+                                value={formatPrice(item.price * item.qty, currency, lang)}
+                              />
+                              {Number(item.original_price || 0) > item.price && (
+                                <span className="text-xs text-muted-foreground line-through">
+                                  {formatPrice(
+                                    Number(item.original_price) * item.qty,
+                                    currency,
+                                    lang,
                                   )}
-                                </div>
-                              ))}
-                            </div>
-                          );
-                        })()}
-                        <div
-                          className="text-sm font-semibold mt-1"
-                          style={{ color: settings.primary_color }}
-                        >
-                          <span className="flex flex-col items-end">
-                            <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
-                            {Number(item.original_price || 0) > item.price && (
-                              <span className="text-xs text-muted-foreground line-through">
-                                {formatPrice(
-                                  Number(item.original_price) * item.qty,
-                                  currency,
-                                  lang,
-                                )}
-                              </span>
-                            )}
-                          </span>
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 shrink-0">
-                        <div className="flex items-center border rounded overflow-hidden">
+                        <div className="flex flex-col items-center gap-1 shrink-0">
+                          <div className="flex items-center border rounded overflow-hidden">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-11 w-11 rounded-none"
+                              onClick={() =>
+                                item.qty <= 1
+                                  ? takeOut(item.cart_line_id)
+                                  : updateQty(item.cart_line_id, item.qty - 1)
+                              }
+                              aria-label={t(
+                                `تقليل كمية ${displayName}`,
+                                `Decrease ${displayName} quantity`,
+                              )}
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <AnimatedNumber
+                              value={String(item.qty)}
+                              className="px-2 text-sm min-w-[24px] text-center font-medium"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-11 w-11 rounded-none"
+                              disabled={item.qty >= item.max_stock}
+                              onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
+                              aria-label={t(
+                                `زيادة كمية ${displayName}`,
+                                `Increase ${displayName} quantity`,
+                              )}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
-                            size="icon"
-                            className="h-11 w-11 rounded-none"
-                            onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
-                            aria-label={t(
-                              `تقليل كمية ${displayName}`,
-                              `Decrease ${displayName} quantity`,
-                            )}
+                            size="sm"
+                            className="flex min-h-11 items-center gap-1 px-2 text-xs text-destructive hover:text-destructive"
+                            onClick={() => takeOut(item.cart_line_id)}
                           >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="px-2 text-sm min-w-[24px] text-center font-medium">
-                            {item.qty}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-11 w-11 rounded-none"
-                            disabled={item.qty >= item.max_stock}
-                            onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
-                            aria-label={t(
-                              `زيادة كمية ${displayName}`,
-                              `Increase ${displayName} quantity`,
-                            )}
-                          >
-                            <Plus className="h-3 w-3" />
+                            <Trash2 className="h-3 w-3" />
+                            {t("حذف", "Remove")}
                           </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="flex min-h-11 items-center gap-1 px-2 text-xs text-destructive hover:text-destructive"
-                          onClick={() => removeFromCart(item.cart_line_id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          {t("حذف", "Remove")}
-                        </Button>
                       </div>
                     </div>
                   );
@@ -326,7 +346,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                     className="flex flex-col items-end"
                     style={{ color: settings.primary_color }}
                   >
-                    {formatPrice(totalAfterOffers, currency, lang)}
+                    <SoftText align="end" value={formatPrice(totalAfterOffers, currency, lang)} />
                     {offerOff > 0 && (
                       <span className="text-xs font-normal text-muted-foreground line-through">
                         {formatPrice(cartTotal, currency, lang)}

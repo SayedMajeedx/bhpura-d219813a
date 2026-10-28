@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { buildCartShareUrl, buildWhatsAppShareUrl, createSharedCartLink } from "@/lib/cart-sharing";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode } from "@/lib/storefront-mode";
+import { IconSwap } from "@/components/motion/IconSwap";
+import { MorphText } from "@/components/motion/MorphText";
 
 interface ShareCartModalProps {
   open: boolean;
@@ -161,17 +163,15 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
                 className="h-11 min-w-[44px] shrink-0 gap-1.5 px-3"
                 onClick={handleCopy}
               >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs">{t("تم النسخ", "Copied")}</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    <span className="text-xs">{t("نسخ", "Copy")}</span>
-                  </>
-                )}
+                <IconSwap
+                  showSecond={copied}
+                  first={<Copy className="h-4 w-4" />}
+                  second={<Check className="h-4 w-4 text-emerald-600" />}
+                />
+                <MorphText
+                  className="text-xs"
+                  text={copied ? t("تم النسخ", "Copied") : t("نسخ", "Copy")}
+                />
               </Button>
             </div>
           </div>

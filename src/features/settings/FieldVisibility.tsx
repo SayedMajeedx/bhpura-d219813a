@@ -3,6 +3,8 @@ import { useSettingsLevel } from "./settings-level";
 import { SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { useDisclosure } from "@/components/motion/use-disclosure";
+import { SoftText } from "@/components/motion/SoftText";
 
 interface AdvancedOnlyProps {
   children: React.ReactNode;
@@ -26,6 +28,8 @@ export function AdvancedOnly({ children, fallback, labelAr, labelEn, reason }: A
   const isAr = lang === "ar";
   const [open, setOpen] = React.useState(false);
   const panelId = React.useId();
+  // The options grow open and fold away (transitions.dev's accordion).
+  const fold = useDisclosure(open);
 
   if (level === "advanced") {
     return <>{children}</>;
@@ -41,7 +45,7 @@ export function AdvancedOnly({ children, fallback, labelAr, labelEn, reason }: A
     (isAr ? "خيارات تحكّم متقدمة إضافية" : "More advanced options");
 
   return (
-    <div className="my-2 space-y-3">
+    <div className="t-acc my-2" data-open={fold.shown ? "true" : "false"}>
       <div className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-3.5 py-2 text-xs text-muted-foreground">
         <div className="flex min-w-0 items-center gap-2">
           <SlidersHorizontal
@@ -59,10 +63,16 @@ export function AdvancedOnly({ children, fallback, labelAr, labelEn, reason }: A
           onClick={() => setOpen((value) => !value)}
           className="h-8 shrink-0 px-2 text-xs font-medium text-primary hover:bg-primary/10"
         >
-          {open ? (isAr ? "إخفاء" : "Hide") : isAr ? "إظهار" : "Show"}
+          <SoftText value={open ? (isAr ? "إخفاء" : "Hide") : isAr ? "إظهار" : "Show"} />
         </Button>
       </div>
-      {open && <div id={panelId}>{children}</div>}
+      {fold.mounted && (
+        <div id={panelId} className="t-acc-panel">
+          <div className="t-acc-panel-inner">
+            <div className="pt-3">{children}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -17,7 +17,9 @@ import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import type { Dispatch, SetStateAction } from "react";
+import { type Dispatch, type SetStateAction, useEffect } from "react";
+import { useShake } from "@/components/motion/use-replay";
+import { SoftText } from "@/components/motion/SoftText";
 import type { Storefront } from "@/features/checkout/types";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 import type { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
@@ -64,6 +66,7 @@ export function OrderSummaryCard({
   bookingDiscount = null,
   bookingCodeDropped = false,
   promoInput,
+  promoRefusals,
   redeemedPoints,
   setAcceptedTerms,
   setAppliedPromo,
@@ -117,6 +120,8 @@ export function OrderSummaryCard({
   /** The booking's store offer saved more than the typed code, which the order will not use. */
   bookingCodeDropped?: boolean;
   promoInput: ReturnType<typeof usePromoCode>["promoInput"];
+  /** How many times a code was refused: the field shakes once each time. */
+  promoRefusals: number;
   redeemedPoints: ReturnType<typeof useCheckoutLoyalty>["redeemedPoints"];
   setAcceptedTerms: Dispatch<SetStateAction<boolean>>;
   setAppliedPromo: ReturnType<typeof usePromoCode>["setAppliedPromo"];
@@ -138,6 +143,12 @@ export function OrderSummaryCard({
   /** The store's terms page (`termsPageSlug`), or null when it has none. */
   termsPage?: string | null;
 }) {
+  // A refused code shakes its field (transitions.dev's error state shake).
+  const [promoRow, shakePromo] = useShake<HTMLDivElement>();
+  useEffect(() => {
+    if (promoRefusals > 0) shakePromo();
+  }, [promoRefusals, shakePromo]);
+
   return (
     <Card className="p-5 sticky top-20 space-y-3">
       <div className="flex items-center justify-between">
@@ -344,7 +355,7 @@ export function OrderSummaryCard({
       {/* Promo Code Box */}
       <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
         <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
-        <div className="flex gap-2">
+        <div ref={promoRow} className="flex gap-2">
           <Input
             id="promo-code"
             name="promo-code"
@@ -450,7 +461,9 @@ export function OrderSummaryCard({
       <div className="border-t pt-3 flex justify-between font-semibold text-lg">
         <span>{t("الإجمالي", "Total")}</span>
         <span className="flex flex-col items-end">
-          <span className="text-primary font-bold">{formatPrice(grandTotal, currency, lang)}</span>
+          <span className="text-primary font-bold">
+            <SoftText value={formatPrice(grandTotal, currency, lang)} />
+          </span>
           <ApproxPrice amount={grandTotal} charged />
         </span>
       </div>
