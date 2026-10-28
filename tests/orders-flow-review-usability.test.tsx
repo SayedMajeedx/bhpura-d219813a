@@ -53,6 +53,18 @@ describe("an order waiting on the team", () => {
     });
   });
 
+  it("counts from the last change of stage, not from the last write of any kind", () => {
+    // A note was added yesterday to an order that has been waiting since the 20th.
+    const waiting = orderWaiting(open({ stage_changed_at: daysAgo(8), updated_at: daysAgo(1) }), {
+      now: NOW,
+    });
+    expect(waiting).toEqual({ days: 8, late: true });
+    // An order the database has not stamped yet counts from its last write, as before.
+    expect(
+      orderWaiting(open({ stage_changed_at: null, updated_at: daysAgo(3) }), { now: NOW }),
+    ).toEqual({ days: 3, late: false });
+  });
+
   it("is silent when nothing is waiting on the team", () => {
     expect(orderWaiting(open({ fulfillment_status: "COMPLETED" }), { now: NOW })).toBeNull();
     expect(orderWaiting(open({ status: "cancelled" }), { now: NOW })).toBeNull();

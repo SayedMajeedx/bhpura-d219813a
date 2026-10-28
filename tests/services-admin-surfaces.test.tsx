@@ -243,7 +243,7 @@ describe("the dashboard's words", () => {
   it("ask a services store to complete appointments, not to fulfil and dispatch orders", () => {
     strip({ appointmentsToCompleteCount: 2 });
     expect(screen.getAllByText("Appointments to Complete").length).toBeGreaterThan(0);
-    expect(screen.getByText(/2 appointment\(s\) whose time has come/)).toBeInTheDocument();
+    expect(screen.getByText(/2 appointments whose time has come/)).toBeInTheDocument();
     expect(screen.queryByText(/Fulfill Orders|waiting for dispatch/)).not.toBeInTheDocument();
   });
 
