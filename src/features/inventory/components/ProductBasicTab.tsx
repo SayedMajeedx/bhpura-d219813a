@@ -1,6 +1,7 @@
 import { ServicePricingFields } from "@/features/inventory/components/ServicePricingFields";
 import { ProductOffSaleField } from "@/features/inventory/components/ProductOffSaleField";
 import { ProductFactsFields } from "@/features/inventory/components/ProductFactsFields";
+import { ProductSeoFields } from "@/features/inventory/components/ProductSeoFields";
 import { ServiceDetailsFields } from "@/features/inventory/components/ServiceDetailsFields";
 import { ServicePackageFields } from "@/features/inventory/components/ServicePackageFields";
 import { ServiceOptionsFields } from "@/features/inventory/components/ServiceOptionsFields";
@@ -329,6 +330,8 @@ export function ProductBasicTab({
           isAr={isAr}
         />
       )}
+
+      <ProductSeoFields product={product} form={form} setForm={setForm} isAr={isAr} />
 
       <div className="flex items-center justify-between rounded-xl border border-border-strong p-4 bg-secondary/10 transition hover:bg-secondary/20">
         <div>

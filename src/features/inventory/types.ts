@@ -25,6 +25,11 @@ export type Product = {
   description: string | null;
   description_ar: string | null;
   description_en: string | null;
+  /** What Google shows for the product, in each language (null: the page says what it always did). */
+  seo_title_ar?: string | null;
+  seo_title_en?: string | null;
+  seo_description_ar?: string | null;
+  seo_description_en?: string | null;
   category: string | null;
   image_url: string | null;
   is_active: boolean;

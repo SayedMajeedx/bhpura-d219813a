@@ -125,6 +125,10 @@ export type Brand = {
   about_en: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  /** The English home page's own words, and Search Console's verification token. */
+  meta_title_en?: string | null;
+  meta_description_en?: string | null;
+  google_site_verification?: string | null;
 };
 
 export type PublicSettings = {

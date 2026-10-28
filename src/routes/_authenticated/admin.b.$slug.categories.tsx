@@ -32,6 +32,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
+import { CategorySeoFields } from "@/components/categories/CategorySeoFields";
 import { CategoryOffSaleField } from "@/components/categories/CategoryOffSaleField";
 import { CropUploadButton } from "@/components/crop-upload-button";
 import { syncBrandVerticalCategories } from "@/lib/addons/vertical-categories";
@@ -232,6 +233,10 @@ function CategoryDialog({
     sort_order: category?.sort_order ?? 0,
     is_active: category?.is_active ?? true,
     size_guide_id: category?.size_guide_id ?? "",
+    seo_title_ar: category?.seo_title_ar ?? "",
+    seo_title_en: category?.seo_title_en ?? "",
+    seo_description_ar: category?.seo_description_ar ?? "",
+    seo_description_en: category?.seo_description_en ?? "",
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -254,6 +259,10 @@ function CategoryDialog({
       sort_order: category?.sort_order ?? 0,
       is_active: category?.is_active ?? true,
       size_guide_id: category?.size_guide_id ?? "",
+      seo_title_ar: category?.seo_title_ar ?? "",
+      seo_title_en: category?.seo_title_en ?? "",
+      seo_description_ar: category?.seo_description_ar ?? "",
+      seo_description_en: category?.seo_description_en ?? "",
     });
   }, [category]);
 
@@ -295,6 +304,10 @@ function CategoryDialog({
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
       size_guide_id: form.size_guide_id || null,
+      seo_title_ar: form.seo_title_ar.trim() || null,
+      seo_title_en: form.seo_title_en.trim() || null,
+      seo_description_ar: form.seo_description_ar.trim() || null,
+      seo_description_en: form.seo_description_en.trim() || null,
     };
     try {
       if (category) await updateCategory(brandId, category.id, payload);
@@ -484,6 +497,7 @@ function CategoryDialog({
           />
           <Label htmlFor="active">{isAr ? "مفعّل في المتجر" : "Active in storefront"}</Label>
         </div>
+        <CategorySeoFields form={form} setForm={setForm} isAr={isAr} />
         {category && <CategoryOffSaleField brandId={brandId} category={category} isAr={isAr} />}
       </div>
       <DialogFooter>

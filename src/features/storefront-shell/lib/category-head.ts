@@ -2,6 +2,7 @@ import { faviconType } from "@/lib/favicon";
 import { smartKindOf } from "@/lib/smart-categories";
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { pageAddressLinks, socialImage, storefrontCanonical } from "@/lib/seo/canonical";
+import { categoryListing } from "@/lib/seo/listing";
 import { buildBreadcrumbsSchema } from "@/lib/seo/structured-data";
 
 /** The collections that are not rows in `categories` (see CategoryPage). */
@@ -41,7 +42,15 @@ type CmsPage = {
   meta_description?: string | null;
   image_url?: string | null;
 };
-type CategoryRow = { name_en: string; name_ar: string | null; image_url: string | null };
+type CategoryRow = {
+  name_en: string;
+  name_ar: string | null;
+  image_url: string | null;
+  seo_title_ar?: string | null;
+  seo_title_en?: string | null;
+  seo_description_ar?: string | null;
+  seo_description_en?: string | null;
+};
 
 /**
  * The head of `/{store}/{category}`: a CMS page keeps its own title and description; a category
@@ -93,17 +102,10 @@ export function categoryHead({
     name = category
       ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) || categorySlug
       : smartName(smart!, lang, servicesStore);
-    title = `${name} | ${storeName}`;
-    // Only what is true of every store: it once also promised every store's prices and speed of
-    // delivery, a catalog with no prices and a store that makes to order included.
-    // A services store is booked, not shopped.
-    description = servicesStore
-      ? lang === "ar"
-        ? `احجز ${name} من ${storeName}.`
-        : `Book ${name} with ${storeName}.`
-      : lang === "ar"
-        ? `تسوّق ${name} من ${storeName}.`
-        : `Shop ${name} at ${storeName}.`;
+    // The store's own words for this category, else one sentence that is true of every store
+    // (it once also promised every store's prices and speed of delivery, a catalog with no
+    // prices and a store that makes to order included; a services store is booked, not shopped).
+    ({ title, description } = categoryListing(category, lang, { name, storeName, servicesStore }));
     image = category?.image_url || loaderData?.shareImage || brand.logo_url;
   } else {
     return {};

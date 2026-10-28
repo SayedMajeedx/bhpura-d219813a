@@ -26,7 +26,7 @@ export async function fetchBrandProfile(brandId: string) {
   const { data, error } = await supabase
     .from("brands")
     .select(
-      "id, slug, name_en, name_ar, hero_media, about_ar, about_en, meta_title, meta_description, logo_url, custom_domain, support_access_enabled, primary_color, plan_type, trial_ends_at",
+      "id, slug, name_en, name_ar, hero_media, about_ar, about_en, meta_title, meta_description, meta_title_en, meta_description_en, google_site_verification, logo_url, custom_domain, support_access_enabled, primary_color, plan_type, trial_ends_at",
     )
     .eq("id", brandId)
     .maybeSingle();

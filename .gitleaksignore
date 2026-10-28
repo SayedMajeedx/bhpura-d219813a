@@ -2,3 +2,5 @@
 # The platform's VAPID public key: the browser needs it to subscribe to order alerts; its private
 # half is only the push sender's secret (src/lib/web-push.ts).
 d4e4d71abc40ee39397d3dee8644781d2ef89849:src/lib/web-push.ts:generic-api-key:13
+# A made-up Search Console code in a test (tests/store-seo-settings.test.tsx), not a secret.
+c9c57252c0bc778c4947618a182db6e2f3ab6d8a:tests/store-seo-settings.test.tsx:generic-api-key:158

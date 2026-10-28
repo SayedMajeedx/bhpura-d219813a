@@ -2,6 +2,7 @@ import { jsonForScript } from "@/lib/seo/json-for-script";
 import { availabilityOf } from "@/lib/product-availability";
 import { cardPrice, type PricedProduct, type PricedVariant } from "@/lib/product-price";
 import { factLines } from "@/lib/product-facts";
+import { writtenListing } from "@/lib/seo/listing";
 import { productSnippet } from "@/features/product-page/lib/product-snippet";
 import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
 import {
@@ -23,6 +24,10 @@ type HeadProduct = PricedProduct & {
   media?: unknown;
   /** Its facts (`product-facts.ts`), read by the store's vertical. */
   details?: unknown;
+  seo_title_ar?: string | null;
+  seo_title_en?: string | null;
+  seo_description_ar?: string | null;
+  seo_description_en?: string | null;
   product_variants?: Array<PricedVariant & { id: string }> | null;
 };
 
@@ -56,7 +61,7 @@ export function productHead({
 
   const lang: "ar" | "en" = loaderData?.initialLang === "en" ? "en" : "ar";
   const name = (lang === "ar" ? product.name_ar : product.name_en) || product.name || "";
-  const written =
+  const ownDescription =
     lang === "ar"
       ? product.description_ar || product.description || product.description_en
       : product.description_en || product.description || product.description_ar;
@@ -65,7 +70,8 @@ export function productHead({
   const storeName =
     (lang === "ar" ? brand?.name_ar || brand?.name_en : brand?.name_en || brand?.name_ar) ||
     String(params?.slug || "");
-  const title = `${name} | ${storeName}`;
+  const written = writtenListing(product, lang);
+  const title = written.title || `${name} | ${storeName}`;
   const image = product.image_url || undefined;
 
   // The price and availability the cards and the shopping feed say, so Google reads one story:
@@ -78,17 +84,19 @@ export function productHead({
     value: line.value,
   }));
   // The product's own words, else a sentence of what its page says (never just its name).
-  const description = productSnippet({
-    name,
-    description: written,
-    storeName,
-    lang,
-    facts: facts.map((fact) => ({ label: fact.name, value: fact.value })),
-    price: { from: price.from, to: price.to },
-    currency: typeof loaderData?.currency === "string" ? loaderData.currency : null,
-    showPrice: loaderData?.showPrices !== false,
-    service: loaderData?.servicesStore === true,
-  });
+  const description =
+    written.description ||
+    productSnippet({
+      name,
+      description: ownDescription,
+      storeName,
+      lang,
+      facts: facts.map((fact) => ({ label: fact.name, value: fact.value })),
+      price: { from: price.from, to: price.to },
+      currency: typeof loaderData?.currency === "string" ? loaderData.currency : null,
+      showPrice: loaderData?.showPrices !== false,
+      service: loaderData?.servicesStore === true,
+    });
   const productSchema = buildProductSchema(
     {
       id: product.id,
