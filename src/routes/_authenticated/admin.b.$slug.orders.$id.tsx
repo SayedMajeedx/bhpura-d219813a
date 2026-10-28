@@ -42,6 +42,7 @@ import {
   promoSignature,
   shouldWarnBeforeLeaving,
 } from "@/features/orders/lib/order-editor";
+import { chargedTaxRate } from "@/lib/vat-registration";
 import { discountParts } from "@/features/orders/lib/discount-parts";
 import { usePromoContextGuard } from "@/features/orders/hooks/use-promo-context-guard";
 import { useOrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
@@ -263,7 +264,6 @@ function OrderEditor() {
   const [checkingPromo, setCheckingPromo] = useState(false);
   const [discountMode, setDiscountMode] = useState<"fixed" | "percent">("fixed");
   const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
-  const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const promoContextRef = useRef<string | null>(null);
 
@@ -776,7 +776,7 @@ function OrderEditor() {
                 isReadOnly={isReadOnly}
                 items={items}
                 lang={lang}
-                lastNonZeroTaxRate={lastNonZeroTaxRate}
+                storeTaxRate={chargedTaxRate(settingsQ.data ?? {})}
                 mobileTab={mobileTab}
                 order={order}
                 packagingMaterialsQ={packagingMaterialsQ}
@@ -792,7 +792,6 @@ function OrderEditor() {
                 setDiscountMode={setDiscountMode}
                 setDiscountPercentInput={setDiscountPercentInput}
                 setIsEditingFees={setIsEditingFees}
-                setLastNonZeroTaxRate={setLastNonZeroTaxRate}
                 setManagePaymentOpen={setManagePaymentOpen}
                 setOrder={setOrder}
                 setPromoInput={setPromoInput}

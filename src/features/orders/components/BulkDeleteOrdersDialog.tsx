@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteOrdersWithPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { invalidateOrders } from "@/lib/data/orders";
-import { arNounOblique } from "@/lib/arabic-count";
+import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import { orderKeptMessage } from "@/lib/order-deletion";
 
 /**
  * Confirms and deletes the selected orders of one brand (with their private
@@ -24,6 +25,7 @@ export function BulkDeleteOrdersDialog({
   onOpenChange,
   brandId,
   orderIds,
+  keptCount = 0,
   lang,
   onDeleted,
 }: {
@@ -31,6 +33,8 @@ export function BulkDeleteOrdersDialog({
   onOpenChange: (open: boolean) => void;
   brandId: string;
   orderIds: ReadonlySet<string>;
+  /** Selected orders that stay (paid or handed over): not part of what is deleted. */
+  keptCount?: number;
   lang: string;
   onDeleted: () => void;
 }) {
@@ -52,9 +56,11 @@ export function BulkDeleteOrdersDialog({
       onOpenChange(false);
       await invalidateOrders(qc, brandId);
     } catch (error) {
+      const message = (error as { message?: string } | null)?.message ?? "";
       toast.error(
-        (error as { message?: string } | null)?.message ||
-          (lang === "ar" ? "تعذر حذف الطلبات" : "Unable to delete orders"),
+        message.includes("ORDER_NOT_DELETABLE")
+          ? orderKeptMessage(lang === "ar" ? "ar" : "en", 2)
+          : message || (lang === "ar" ? "تعذر حذف الطلبات" : "Unable to delete orders"),
       );
     } finally {
       setDeleting(false);
@@ -73,6 +79,14 @@ export function BulkDeleteOrdersDialog({
               ? "سيتم حذف الطلبات المحددة نهائياً واستعادة مخزونها حسب سجلات الحجز. لا يمكن التراجع عن هذا الإجراء."
               : "The selected orders will be permanently deleted and reserved stock will be restored according to the inventory records. This cannot be undone."}
           </AlertDialogDescription>
+          {keptCount > 0 && (
+            <p className="text-sm font-medium text-foreground">
+              {lang === "ar"
+                ? `${arNoun(keptCount, "order")} من المحدد لن تُحذف. `
+                : `${keptCount} of the selected ${keptCount === 1 ? "order" : "orders"} will stay. `}
+              {orderKeptMessage(lang === "ar" ? "ar" : "en", keptCount)}
+            </p>
+          )}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>

@@ -1,5 +1,6 @@
 import { resolvePaymentStatus, type PaymentBadge } from "./payment-status";
 import { detectOrderType, type OrderType } from "./order-type-detector";
+import { normalizePaymentMethod } from "./payment-method";
 
 export type OrderWorkflowInput = {
   status?: string | null;
@@ -189,6 +190,13 @@ export function getOrderWorkflow(
   // approving again does nothing (approve_benefit_payment answers "already paid").
   const advanceApproved = pStatus === "partially_paid" || pStatus === "partial";
 
+  // An online (card) payment still to come, with no advance recorded: the order waits for it.
+  const awaitingOnlinePayment =
+    normalizePaymentMethod(method) === "card" &&
+    payment !== "paid" &&
+    !advanceApproved &&
+    outstanding > 0;
+
   let nextAction: OrderNextAction = "none";
 
   if (!terminal) {
@@ -204,6 +212,10 @@ export function getOrderWorkflow(
       if (started) {
         nextAction = requiresCollection ? "collect_and_complete_service" : "complete_service";
       }
+    } else if (awaitingOnlinePayment) {
+      // A card payment that has not arrived: nothing is prepared, packed or sent until it does
+      // (the gateway confirms it). An abandoned checkout is not work for the team.
+      nextAction = "none";
     } else if (isTailoring) {
       if (["pending", "on_hold", "needs_packing", "awaiting_tailor"].includes(fulfillment)) {
         nextAction = "send_to_tailor";

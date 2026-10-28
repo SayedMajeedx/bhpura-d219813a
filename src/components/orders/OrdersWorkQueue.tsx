@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import type { OrderListRow } from "@/lib/data/orders";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import { orderDeletable } from "@/lib/order-deletion";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -381,7 +382,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                             {isAr ? "واتساب المندوب" : "WhatsApp Courier"}
                           </DropdownMenuItem>
                         )}
-                        {onDeleteOrder && (
+                        {onDeleteOrder && orderDeletable(order) && (
                           <DropdownMenuItem
                             onClick={() => onDeleteOrder(order.id)}
                             className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"

@@ -15,6 +15,7 @@ import type { Order } from "@/features/orders/types";
 import { orderTotals } from "@/features/orders/lib/order-editor";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import { useMemo, type Dispatch, type SetStateAction } from "react";
+import { taxToggle } from "@/features/orders/lib/tax-toggle";
 import { expectedAdvance } from "@/features/orders/lib/expected-advance";
 import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
 import type { OrderItem } from "@/features/orders/types";
@@ -39,7 +40,6 @@ export function OrderFinancialCard({
   isReadOnly,
   items,
   lang,
-  lastNonZeroTaxRate,
   mobileTab,
   order,
   packagingMaterialsQ,
@@ -55,12 +55,12 @@ export function OrderFinancialCard({
   setDiscountMode,
   setDiscountPercentInput,
   setIsEditingFees,
-  setLastNonZeroTaxRate,
   setManagePaymentOpen,
   setOrder,
   setPromoInput,
   setRejectReason,
   setRejectReasonOpen,
+  storeTaxRate,
   t,
   totals,
   variantsQ,
@@ -78,7 +78,6 @@ export function OrderFinancialCard({
   isReadOnly: boolean;
   items: OrderItem[];
   lang: ReturnType<typeof useI18n>["lang"];
-  lastNonZeroTaxRate: number;
   mobileTab: "items" | "customer" | "activity";
   order: Order;
   packagingMaterialsQ: OrderDetailData["packagingMaterialsQ"];
@@ -94,18 +93,20 @@ export function OrderFinancialCard({
   setDiscountMode: Dispatch<SetStateAction<"fixed" | "percent">>;
   setDiscountPercentInput: Dispatch<SetStateAction<string>>;
   setIsEditingFees: Dispatch<SetStateAction<boolean>>;
-  setLastNonZeroTaxRate: Dispatch<SetStateAction<number>>;
   setManagePaymentOpen: Dispatch<SetStateAction<boolean>>;
   setOrder: Dispatch<SetStateAction<Order | null>>;
   setPromoInput: Dispatch<SetStateAction<string>>;
   setRejectReason: ReturnType<typeof useBenefitReview>["setRejectReason"];
   setRejectReasonOpen: ReturnType<typeof useBenefitReview>["setRejectReasonOpen"];
+  /** The rate the store charges (none without a VAT number): `chargedTaxRate`. */
+  storeTaxRate: number;
   t: ReturnType<typeof useT>;
   totals: ReturnType<typeof orderTotals>;
   variantsQ: OrderDetailData["variantsQ"];
 }) {
   // Without a profile (none loaded) the figures stay hidden.
   const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
+  const toggle = taxToggle(order.tax_rate, storeTaxRate, lang);
   // What the shopper was asked to pay now, from the rule the order was placed under.
   const expected = useMemo(
     () =>
@@ -364,20 +365,13 @@ export function OrderFinancialCard({
             <div>
               <div className="flex items-center justify-between mb-1 text-xs">
                 <Label className="text-xs font-bold">{t("orderDetail.taxRate")}</Label>
-                {!isReadOnly && (
+                {!isReadOnly && toggle && (
                   <button
                     type="button"
                     className="text-xs text-primary font-bold hover:underline"
-                    onClick={() => {
-                      if (Number(order.tax_rate) > 0) {
-                        setLastNonZeroTaxRate(Number(order.tax_rate));
-                        setOrder({ ...order, tax_rate: 0 });
-                      } else {
-                        setOrder({ ...order, tax_rate: lastNonZeroTaxRate || 10 });
-                      }
-                    }}
+                    onClick={() => setOrder({ ...order, tax_rate: toggle.next })}
                   >
-                    {Number(order.tax_rate) === 0 ? "Exempt (0%)" : "Tax Exempt?"}
+                    {toggle.label}
                   </button>
                 )}
               </div>
@@ -385,9 +379,18 @@ export function OrderFinancialCard({
                 type="number"
                 step="0.01"
                 value={order.tax_rate}
+                disabled={!toggle}
+                aria-describedby={!toggle ? "order-no-vat-note" : undefined}
                 onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
                 className="h-8 text-xs font-mono"
               />
+              {!toggle && (
+                <p id="order-no-vat-note" className="mt-1 text-xs text-muted-foreground">
+                  {lang === "ar"
+                    ? "المتجر لا يحتسب ضريبة: أضف رقم الضريبة في الإعدادات."
+                    : "The store charges no tax: add its VAT number in settings."}
+                </p>
+              )}
             </div>
 
             <div>
