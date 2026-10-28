@@ -67,6 +67,7 @@ import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCar
 import { OrderBookingCard } from "@/features/orders/components/OrderBookingCard";
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
+import { PendingTransferReview } from "@/features/orders/components/PendingTransferReview";
 import { assignOrderCourier } from "@/lib/data/orders";
 import { OrderForRole } from "@/features/courier-delivery/components/OrderForRole";
 
@@ -128,16 +129,7 @@ function OrderEditor() {
     customQ,
     settingsQ,
   } = useOrderDetailData({ id, brandId, isCourier, isAdmin });
-  const {
-    approvingBenefit,
-    rejectingBenefit,
-    rejectReasonOpen,
-    setRejectReasonOpen,
-    rejectReason,
-    setRejectReason,
-    approveBenefitPayment,
-    rejectBenefitPayment,
-  } = useBenefitReview({ id, brandId, lang, orderQ });
+  const benefit = useBenefitReview({ id, brandId, lang, orderQ });
 
   const [waModalOpen, setWaModalOpen] = useState(false);
 
@@ -575,8 +567,8 @@ function OrderEditor() {
 
   const renderTopPrimaryAction = () =>
     renderOrderPrimaryAction({
-      approveBenefitPayment,
-      approvingBenefit,
+      approveBenefitPayment: benefit.approveBenefitPayment,
+      approvingBenefit: benefit.approvingBenefit,
       brandId,
       isCreationMode,
       items,
@@ -714,6 +706,17 @@ function OrderEditor() {
             {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
             <div className="space-y-3 sm:space-y-6 lg:col-span-2">
               {!isCreationMode && order?.id && (
+                <PendingTransferReview
+                  benefit={benefit}
+                  currency={currency}
+                  lang={lang === "ar" ? "ar" : "en"}
+                  mobileTab={mobileTab}
+                  order={order}
+                  productsQ={productsQ}
+                  receiptViewQ={receiptViewQ}
+                />
+              )}
+              {!isCreationMode && order?.id && (
                 <OrderBookingCard
                   brandId={brand.id}
                   slug={brand.slug}
@@ -765,8 +768,7 @@ function OrderEditor() {
               <OrderFinancialCard
                 appliedPromo={appliedPromo}
                 applyAdminPromo={applyAdminPromo}
-                approveBenefitPayment={approveBenefitPayment}
-                approvingBenefit={approvingBenefit}
+                benefit={benefit}
                 bomItemsQ={bomItemsQ}
                 checkingPromo={checkingPromo}
                 currency={currency}
@@ -785,10 +787,6 @@ function OrderEditor() {
                 productsQ={productsQ}
                 promoInput={promoInput}
                 receiptViewQ={receiptViewQ}
-                rejectBenefitPayment={rejectBenefitPayment}
-                rejectReason={rejectReason}
-                rejectReasonOpen={rejectReasonOpen}
-                rejectingBenefit={rejectingBenefit}
                 removeAdminPromo={removeAdminPromo}
                 setDiscountMode={setDiscountMode}
                 setDiscountPercentInput={setDiscountPercentInput}
@@ -796,8 +794,6 @@ function OrderEditor() {
                 setManagePaymentOpen={setManagePaymentOpen}
                 setOrder={setOrder}
                 setPromoInput={setPromoInput}
-                setRejectReason={setRejectReason}
-                setRejectReasonOpen={setRejectReasonOpen}
                 t={t}
                 totals={totals}
                 variantsQ={variantsQ}

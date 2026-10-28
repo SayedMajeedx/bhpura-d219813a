@@ -14,10 +14,11 @@ import { calculateOrderPackagingCogs } from "@/lib/bom-calculator";
 import type { Order } from "@/features/orders/types";
 import { orderTotals } from "@/features/orders/lib/order-editor";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
-import { useMemo, type Dispatch, type SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { discountLines } from "@/features/orders/lib/discount-parts";
 import { taxToggle } from "@/features/orders/lib/tax-toggle";
-import { expectedAdvance } from "@/features/orders/lib/expected-advance";
+import { useExpectedAdvance } from "@/features/orders/hooks/use-expected-advance";
+import { receiptOnTop } from "@/features/orders/lib/transfer-approval";
 import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
@@ -30,8 +31,7 @@ import { grossProfitLabel } from "@/lib/order-profit-label";
 export function OrderFinancialCard({
   appliedPromo,
   applyAdminPromo,
-  approveBenefitPayment,
-  approvingBenefit,
+  benefit,
   bomItemsQ,
   checkingPromo,
   currency,
@@ -49,10 +49,6 @@ export function OrderFinancialCard({
   productsQ,
   promoInput,
   receiptViewQ,
-  rejectBenefitPayment,
-  rejectReason,
-  rejectReasonOpen,
-  rejectingBenefit,
   removeAdminPromo,
   setDiscountMode,
   setDiscountPercentInput,
@@ -60,8 +56,6 @@ export function OrderFinancialCard({
   setManagePaymentOpen,
   setOrder,
   setPromoInput,
-  setRejectReason,
-  setRejectReasonOpen,
   storeTaxRate,
   t,
   totals,
@@ -69,8 +63,8 @@ export function OrderFinancialCard({
 }: {
   appliedPromo: { code: string; id: string; amount: number } | null;
   applyAdminPromo: () => Promise<unknown>;
-  approveBenefitPayment: ReturnType<typeof useBenefitReview>["approveBenefitPayment"];
-  approvingBenefit: ReturnType<typeof useBenefitReview>["approvingBenefit"];
+  /** The transfer receipt's review: shown here once approved (before, at the top of the order). */
+  benefit: ReturnType<typeof useBenefitReview>;
   bomItemsQ: OrderDetailData["bomItemsQ"];
   checkingPromo: boolean;
   currency: string;
@@ -89,10 +83,6 @@ export function OrderFinancialCard({
   productsQ: OrderDetailData["productsQ"];
   promoInput: string;
   receiptViewQ: OrderDetailData["receiptViewQ"];
-  rejectBenefitPayment: ReturnType<typeof useBenefitReview>["rejectBenefitPayment"];
-  rejectReason: ReturnType<typeof useBenefitReview>["rejectReason"];
-  rejectReasonOpen: ReturnType<typeof useBenefitReview>["rejectReasonOpen"];
-  rejectingBenefit: ReturnType<typeof useBenefitReview>["rejectingBenefit"];
   removeAdminPromo: () => void;
   setDiscountMode: Dispatch<SetStateAction<"fixed" | "percent">>;
   setDiscountPercentInput: Dispatch<SetStateAction<string>>;
@@ -100,8 +90,6 @@ export function OrderFinancialCard({
   setManagePaymentOpen: Dispatch<SetStateAction<boolean>>;
   setOrder: Dispatch<SetStateAction<Order | null>>;
   setPromoInput: Dispatch<SetStateAction<string>>;
-  setRejectReason: ReturnType<typeof useBenefitReview>["setRejectReason"];
-  setRejectReasonOpen: ReturnType<typeof useBenefitReview>["setRejectReasonOpen"];
   /** The rate the store charges (none without a VAT number): `chargedTaxRate`. */
   storeTaxRate: number;
   t: ReturnType<typeof useT>;
@@ -112,14 +100,7 @@ export function OrderFinancialCard({
   const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
   const toggle = taxToggle(order.tax_rate, storeTaxRate, lang);
   // What the shopper was asked to pay now, from the rule the order was placed under.
-  const expected = useMemo(
-    () =>
-      expectedAdvance(order, (productId) => {
-        const product = (productsQ.data ?? []).find((p: { id: string }) => p.id === productId);
-        return (product as { category?: string | null } | undefined)?.category ?? null;
-      }),
-    [order, productsQ.data],
-  );
+  const expected = useExpectedAdvance(order, productsQ.data);
   return (
     <Card
       className={cn(
@@ -127,21 +108,14 @@ export function OrderFinancialCard({
         mobileTab !== "items" && "hidden sm:block",
       )}
     >
-      {order.payment_method === "benefit" && order.benefit_receipt_key && (
+      {order.payment_method === "benefit" && order.benefit_receipt_key && !receiptOnTop(order) && (
         <BenefitReceiptReview
+          {...benefit}
           expected={expected}
           currency={currency}
-          approveBenefitPayment={approveBenefitPayment}
-          approvingBenefit={approvingBenefit}
           lang={lang}
           order={order}
           receiptViewQ={receiptViewQ}
-          rejectBenefitPayment={rejectBenefitPayment}
-          rejectReason={rejectReason}
-          rejectReasonOpen={rejectReasonOpen}
-          rejectingBenefit={rejectingBenefit}
-          setRejectReason={setRejectReason}
-          setRejectReasonOpen={setRejectReasonOpen}
         />
       )}
       {/* Consolidated Financial Card Header with Toggle Button */}

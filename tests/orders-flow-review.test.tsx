@@ -168,8 +168,16 @@ describe("the order's cost and profit are for staff who see the finances", () =>
       <OrderFinancialCard
         {...({
           appliedPromo: null,
-          approveBenefitPayment: vi.fn(),
-          approvingBenefit: false,
+          benefit: {
+            approveBenefitPayment: vi.fn(),
+            approvingBenefit: false,
+            rejectBenefitPayment: vi.fn(),
+            rejectReason: "",
+            rejectReasonOpen: false,
+            rejectingBenefit: false,
+            setRejectReason: vi.fn(),
+            setRejectReasonOpen: vi.fn(),
+          },
           bomItemsQ: { data: [] },
           checkingPromo: false,
           currency: "BHD",
@@ -201,9 +209,6 @@ describe("the order's cost and profit are for staff who see the finances", () =>
           productsQ: { data: [] },
           promoInput: "",
           receiptViewQ: { isLoading: false, data: null },
-          rejectReason: "",
-          rejectReasonOpen: false,
-          rejectingBenefit: false,
           t: (key: string) => key,
           totals: orderTotals(
             [{ line_total: 100 } as never],

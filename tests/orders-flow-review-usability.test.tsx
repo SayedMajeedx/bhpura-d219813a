@@ -22,6 +22,9 @@ const { discountLines } = await import("../src/features/orders/lib/discount-part
 const { OrderFinancialCard } = await import("../src/features/orders/components/OrderFinancialCard");
 const { orderTotals } = await import("../src/features/orders/lib/order-editor");
 const { DiscountsKindSwitcher } = await import("../src/components/discounts/DiscountsKindSwitcher");
+const transferLib = await import("../src/features/orders/lib/transfer-approval");
+const { PendingTransferReview } =
+  await import("../src/features/orders/components/PendingTransferReview");
 
 const NOW = new Date("2026-10-28T12:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
@@ -136,8 +139,16 @@ describe("the order's money card", () => {
       <OrderFinancialCard
         {...({
           appliedPromo: null,
-          approveBenefitPayment: vi.fn(),
-          approvingBenefit: false,
+          benefit: {
+            approveBenefitPayment: vi.fn(),
+            approvingBenefit: false,
+            rejectBenefitPayment: vi.fn(),
+            rejectReason: "",
+            rejectReasonOpen: false,
+            rejectingBenefit: false,
+            setRejectReason: vi.fn(),
+            setRejectReasonOpen: vi.fn(),
+          },
           bomItemsQ: { data: [] },
           checkingPromo: false,
           currency: "BHD",
@@ -170,9 +181,6 @@ describe("the order's money card", () => {
           productsQ: { data: [] },
           promoInput: "",
           receiptViewQ: { isLoading: false, data: null },
-          rejectReason: "",
-          rejectReasonOpen: false,
-          rejectingBenefit: false,
           setIsEditingFees: vi.fn(),
           storeTaxRate: 0,
           t: (key: string) => key,
@@ -248,5 +256,65 @@ describe("the Discounts page's two kinds", () => {
       />,
     );
     expect(screen.getByText(/عروض الحجز/)).toBeTruthy();
+  });
+});
+
+describe("the transfer receipt on the order page", () => {
+  const { receiptOnTop } = transferLib;
+  const base = { payment_method: "benefit", benefit_receipt_key: "brands/b/receipts/a.png" };
+
+  it("is at the top while it is still to be checked", () => {
+    expect(receiptOnTop({ ...base, payment_status: "unpaid" })).toBe(true);
+    expect(receiptOnTop({ ...base, payment_status: "pending" })).toBe(true);
+  });
+
+  it("goes down to the money card once approved, in full or as the advance", () => {
+    expect(receiptOnTop({ ...base, payment_status: "paid" })).toBe(false);
+    expect(receiptOnTop({ ...base, payment_status: "partially_paid" })).toBe(false);
+  });
+
+  it("is not there for an order with no receipt or another way of paying", () => {
+    expect(receiptOnTop({ payment_method: "benefit", payment_status: "unpaid" })).toBe(false);
+    expect(receiptOnTop({ ...base, payment_method: "card", payment_status: "unpaid" })).toBe(false);
+    expect(receiptOnTop(null)).toBe(false);
+  });
+
+  const benefit = {
+    approveBenefitPayment: vi.fn(),
+    approvingBenefit: false,
+    rejectBenefitPayment: vi.fn(),
+    rejectReason: "",
+    rejectReasonOpen: false,
+    rejectingBenefit: false,
+    setRejectReason: vi.fn(),
+    setRejectReasonOpen: vi.fn(),
+  };
+  const top = (order: Record<string, unknown>, mobileTab = "items") =>
+    render(
+      <PendingTransferReview
+        benefit={benefit as never}
+        currency="BHD"
+        lang="en"
+        mobileTab={mobileTab as never}
+        order={{ id: "o1", total: 30, ...base, ...order } as never}
+        productsQ={{ data: [] } as never}
+        receiptViewQ={{ isLoading: false, data: null } as never}
+      />,
+    );
+
+  it("shows the receipt with the amount it should match and the way to approve it", () => {
+    top({
+      payment_status: "unpaid",
+      advance_rules: [{ kind: "percent", value: 50, include_fee: true }],
+      order_items: [{ line_total: 30, location: "main" }],
+    });
+    expect(screen.getByText("Benefit transfer receipt")).toBeTruthy();
+    expect(screen.getByText(/Amount the receipt should show: .*15\.000/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Approve Payment/ })).toBeTruthy();
+  });
+
+  it("shows nothing at the top once the payment is approved", () => {
+    top({ payment_status: "partially_paid" });
+    expect(screen.queryByText("Benefit transfer receipt")).toBeNull();
   });
 });
