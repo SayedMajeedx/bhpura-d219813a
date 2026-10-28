@@ -1,3 +1,4 @@
+import type { ShippingZone } from "@/lib/shipping";
 import type { StorefrontCategory, StorefrontPageData } from "@/lib/data/storefront";
 
 /**
@@ -23,6 +24,10 @@ export type StoreLayoutData = {
     store_vertical?: string | null;
     /** The brand story's picture: a listing's shared link may show it (`storeShareImage`). */
     brand_story_image_url?: string | null;
+    /** How the store delivers: the product page's Google data says it (`offer-policies.ts`). */
+    delivery_enabled?: boolean | null;
+    delivery_fee?: number | string | null;
+    shipping_zones?: ShippingZone[] | null;
   } | null;
   bootstrapData: StorefrontPageData | null;
   isSuspended: boolean;

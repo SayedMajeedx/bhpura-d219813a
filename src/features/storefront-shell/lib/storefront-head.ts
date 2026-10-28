@@ -9,6 +9,7 @@ import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structure
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
 import { homeListing } from "@/lib/seo/listing";
+import { buildLocalBusinessSchema } from "@/lib/seo/local-business";
 import { storeShareImage } from "@/lib/seo/share-image";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
@@ -103,6 +104,23 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
       type: "application/ld+json",
       children: jsonForScript(webSiteSchema),
     },
+    // A store that books is a local business for Google: who, where it serves and its hours.
+    ...(options.home && takesBookings
+      ? [
+          {
+            type: "application/ld+json",
+            children: jsonForScript(
+              buildLocalBusinessSchema({
+                brand: b,
+                settings,
+                lang,
+                image: img,
+                description: desc,
+              }),
+            ),
+          },
+        ]
+      : []),
   ];
 
   return {

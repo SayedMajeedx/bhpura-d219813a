@@ -6,6 +6,12 @@ import { writtenListing } from "@/lib/seo/listing";
 import { productSnippet } from "@/features/product-page/lib/product-snippet";
 import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
 import {
+  returnPolicyFor,
+  shippingDetailsFor,
+  type DeliverySettings,
+  type ReturnPolicyForGoogle,
+} from "@/lib/seo/offer-policies";
+import {
   buildBreadcrumbsSchema,
   buildProductSchema,
   type SeoBrandInfo,
@@ -51,6 +57,13 @@ export function productHead({
     showPrices?: unknown;
     vertical?: unknown;
     servicesStore?: unknown;
+    returnPolicy?: ReturnPolicyForGoogle | null;
+    delivery?: DeliverySettings | null;
+    pages?: ReadonlyArray<{
+      slug?: string | null;
+      title_en?: string | null;
+      title_ar?: string | null;
+    }> | null;
     productReviews?: { count?: unknown; average?: unknown } | null;
   };
   params: { slug: string; id: string };
@@ -97,6 +110,14 @@ export function productHead({
       showPrice: loaderData?.showPrices !== false,
       service: loaderData?.servicesStore === true,
     });
+  // The store's main address (its own domain, else its subdomain), and the page in both languages.
+  const store = {
+    slug: params.slug,
+    custom_domain: (brand as { custom_domain?: string | null } | undefined)?.custom_domain,
+  };
+  const path = `product/${params.id}`;
+  // A service is booked, not delivered; a product is delivered and returned as the store set.
+  const delivered = loaderData?.servicesStore !== true && product.item_kind !== "service";
   const productSchema = buildProductSchema(
     {
       id: product.id,
@@ -118,6 +139,15 @@ export function productHead({
       sku: variants[0]?.id || product.id,
       // The facts its page shows, in the same words.
       properties: facts,
+      shippingDetails: delivered ? shippingDetailsFor(loaderData?.delivery) : null,
+      returnPolicy: delivered
+        ? returnPolicyFor({
+            policy: loaderData?.returnPolicy,
+            settings: loaderData?.delivery,
+            store,
+            pages: loaderData?.pages,
+          })
+        : null,
       primary_image_url: product.image_url,
       images: Array.isArray(product.media)
         ? product.media.map(mediaUrl).filter((url): url is string => Boolean(url))
@@ -131,12 +161,6 @@ export function productHead({
     lang,
   );
 
-  // The store's main address (its own domain, else its subdomain), and the page in both languages.
-  const store = {
-    slug: params.slug,
-    custom_domain: (brand as { custom_domain?: string | null } | undefined)?.custom_domain,
-  };
-  const path = `product/${params.id}`;
   const breadcrumbsSchema = buildBreadcrumbsSchema([
     { name: lang === "ar" ? "الرئيسية" : "Home", url: storefrontCanonical(store, "", lang) },
     { name, url: storefrontCanonical(store, path, lang) },
