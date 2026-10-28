@@ -1,4 +1,4 @@
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 
@@ -22,7 +22,9 @@ export function CountBadge({
   className?: string;
   style?: CSSProperties;
 }) {
-  const [last, setLast] = useState({ count, grew: 0, shown: Math.max(count, 1) });
+  // `shown` is the number drawn: the count, or at zero the last one while the dot pops away,
+  // then nothing, so a closed badge holds no text (a page's search for a price found "1").
+  const [last, setLast] = useState({ count, grew: 0, shown: count });
   if (last.count !== count) {
     setLast({
       count,
@@ -42,6 +44,15 @@ export function CountBadge({
   }, [last.grew]);
 
   const open = count > 0;
+  useEffect(() => {
+    if (open || last.shown === 0) return;
+    const timer = window.setTimeout(
+      () => setLast((l) => (l.count === 0 ? { ...l, shown: 0 } : l)),
+      250,
+    );
+    return () => window.clearTimeout(timer);
+  }, [open, last.shown]);
+
   return (
     <span
       className={cn("t-badge pointer-events-none", placement)}
@@ -49,8 +60,7 @@ export function CountBadge({
       aria-hidden={open ? undefined : true}
     >
       <span ref={dot} className={cn("t-badge-dot", className)} style={style}>
-        {/* At zero the dot keeps its last number while it pops away. */}
-        <AnimatedNumber value={String(last.shown)} />
+        {last.shown > 0 && <AnimatedNumber value={String(last.shown)} />}
       </span>
     </span>
   );

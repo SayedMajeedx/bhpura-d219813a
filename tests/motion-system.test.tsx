@@ -192,9 +192,25 @@ describe("animated values", () => {
     const badge = container.querySelector(".t-badge")!;
     expect(badge.getAttribute("data-open")).toBe("false");
     expect(badge.getAttribute("aria-hidden")).toBe("true");
+    // A closed badge holds no number (a page's search for a price once found its "1").
+    expect(badge.textContent).toBe("");
     rerender(<CountBadge count={2} placement="absolute" />);
     expect(badge.getAttribute("data-open")).toBe("true");
     expect(container.querySelector(".t-badge-dot")).toHaveClass("is-bumping");
+    expect(badge.textContent).toBe("2");
+  });
+
+  it("lets a badge's last number go once it has popped away", () => {
+    vi.useFakeTimers();
+    const { container, rerender } = render(<CountBadge count={3} placement="absolute" />);
+    rerender(<CountBadge count={0} placement="absolute" />);
+    const badge = container.querySelector(".t-badge")!;
+    expect(badge.textContent).toBe("3");
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    expect(badge.textContent).toBe("");
+    vi.useRealTimers();
   });
 
   it("pops a heart when it is filled, not when it is drawn filled", () => {
