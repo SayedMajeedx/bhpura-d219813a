@@ -178,9 +178,20 @@ export type AdvanceSplit = {
 
 /** How an order divides into the advance and the balance. */
 export function advanceForOrder(order: AdvanceOrder, rule: AdvanceRule): AdvanceSplit {
+  return advanceSplitUnderRules(order, rule.enabled ? advanceRulesOf(rule) : []);
+}
+
+/**
+ * The same split for an order already placed: under the rules it carries (`orders.advance_rules`),
+ * not the store's rules as they are now.
+ */
+export function advanceSplitUnderRules(
+  order: AdvanceOrder,
+  rules: readonly AdvanceRuleDef[],
+): AdvanceSplit {
   const total = Number(order.total) || 0;
-  const parts = rule.enabled ? advanceParts(order, advanceRulesOf(rule)) : [];
-  const due = advanceDue(order, rule);
+  const parts = advanceParts(order, rules);
+  const due = advanceRulesDue(order, rules);
   if (due === null) {
     return { applies: false, percent: null, of: "order", dueNow: total, balance: 0 };
   }

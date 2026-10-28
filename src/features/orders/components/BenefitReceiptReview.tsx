@@ -15,9 +15,13 @@ import type { Order } from "@/features/orders/types";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 import { transferApproved } from "@/features/orders/lib/transfer-approval";
+import type { ExpectedAdvance } from "@/features/orders/lib/expected-advance";
+import { formatMoney } from "@/lib/format";
 
 /** BenefitPay transfer receipt: view it, approve the payment or reject it with a reason. */
 export function BenefitReceiptReview({
+  currency,
+  expected,
   approveBenefitPayment,
   approvingBenefit,
   lang,
@@ -30,6 +34,9 @@ export function BenefitReceiptReview({
   setRejectReason,
   setRejectReasonOpen,
 }: {
+  currency: string;
+  /** What the transfer should pay now, from the order's advance rule; null for a plain order. */
+  expected: ExpectedAdvance | null;
   approveBenefitPayment: ReturnType<typeof useBenefitReview>["approveBenefitPayment"];
   approvingBenefit: ReturnType<typeof useBenefitReview>["approvingBenefit"];
   lang: ReturnType<typeof useI18n>["lang"];
@@ -99,6 +106,17 @@ export function BenefitReceiptReview({
               ? "تعذر تحميل صورة الإيصال الخاصة."
               : "The private receipt could not be loaded."}
         </div>
+      )}
+      {expected && !approved && (
+        <p className="mt-3 rounded-lg bg-white/70 px-3 py-2 text-sm font-semibold">
+          {lang === "ar"
+            ? `المبلغ المتوقع في الإيصال: ${formatMoney(expected.split.dueNow, currency, lang)}`
+            : `Amount the receipt should show: ${formatMoney(expected.split.dueNow, currency, lang)}`}
+          {!expected.payInFull &&
+            (lang === "ar"
+              ? ` · المتبقي ${formatMoney(expected.split.balance, currency, lang)}`
+              : ` · ${formatMoney(expected.split.balance, currency, lang)} stays due`)}
+        </p>
       )}
       {!approved && (
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
