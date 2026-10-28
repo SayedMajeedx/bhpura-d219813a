@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { useStorefront } from "@/lib/storefront-context";
+import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { bookingCartLines } from "@/lib/bookings/cart";
 import { storefrontQueries } from "@/lib/data/storefront";
@@ -25,7 +25,13 @@ import { packageLinesById, servicePackagesQueries } from "@/lib/data/service-pac
 import { packageLength, packageLinesText, separatePrice } from "@/lib/bookings/service-package";
 import { bookingPageOptionsQueries } from "@/lib/data/booking-page-options";
 import { packageStyleFrom } from "@/lib/bookings/package-style";
-import { bestDiscount, dayOffer, offersLegend, type DiscountRule } from "@/lib/bookings/discounts";
+import {
+  bestDiscount,
+  dayMark,
+  dayOffer,
+  type DayMark,
+  type DiscountRule,
+} from "@/lib/bookings/discounts";
 import {
   bookingsKeys,
   bookingsQueries,
@@ -152,6 +158,14 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
   const startRows = flow.services.length > 0 ? startsQuery.data : undefined;
   const freeStarts = useMemo(() => freeStartSet(startRows), [startRows]);
 
+  // What each package includes, shown with it in the service list (and met by an offer that
+  // needs another service, as the database counts a package's own lines).
+  const packageRows = useQuery({
+    ...servicePackagesQueries.items(brand.id),
+    enabled: Boolean(rules) && services.some((service) => service.is_package),
+  }).data;
+  const packageLines = useMemo(() => packageLinesById(packageRows ?? []), [packageRows]);
+
   // The store's offers (last minute, early bird...): shown on the calendar and
   // in the summary; the database applies the same rule when the booking is made.
   const discountRules: DiscountRule[] =
@@ -160,16 +174,17 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
       enabled: Boolean(rules),
     }).data ?? [];
   const chosenForOffer = services.filter((service) => flow.services.includes(service.id));
-  const ruleOffer = flow.day
-    ? bestDiscount(discountRules, {
-        day: flow.day,
-        today,
-        lines: chosenForOffer.map((service) => ({
-          product_id: service.id,
-          line_total: priceFor(service, flow.durationMinutes) ?? 0,
-        })),
-      })
-    : null;
+  const offerLines = chosenForOffer.map((service) => ({
+    product_id: service.id,
+    line_total: priceFor(service, flow.durationMinutes) ?? 0,
+  }));
+  const offerIncluded = chosenForOffer.flatMap((service) =>
+    (packageLines.get(service.id) ?? []).map((line) => line.product_id),
+  );
+  const servicesForOffer = offerLines.reduce((sum, line) => sum + line.line_total, 0);
+  const ruleOn = (day: string) =>
+    bestDiscount(discountRules, { day, today, lines: offerLines, included: offerIncluded });
+  const ruleOffer = flow.day ? ruleOn(flow.day) : null;
   // The store's automatic offers on the chosen services, priced by the database
   // (storefront_offers_preview); the booking takes whichever saves more, as the database does
   // when the day is held (apply_booking_discount).
@@ -190,36 +205,33 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     offersQueries.preview(
       brand.slug,
       { items: offerItems, promoCode: null, fulfillment: "appointment", country: null },
-      liveStoreOffers.length > 0 && Boolean(flow.day),
+      // The store's offer does not depend on the day: asked once services are chosen, so the
+      // calendar can weigh it on every day.
+      liveStoreOffers.length > 0 && offerItems.length > 0,
     ),
   ).data;
   const storeApplied = storePreview?.applied.find((applied) => applied.kind !== "free_delivery");
-  const offer = betterBookingOffer(
-    ruleOffer,
+  const storeOffer =
     storePreview && storePreview.offer_discount > 0 && storeApplied
       ? { amount: storePreview.offer_discount, name: appliedOfferName(storeApplied, lang) }
-      : null,
-    isAr,
-  );
-  /** The offer to mark on a calendar day: the exact one with services chosen, else the general one. */
-  const offerOnDay = (day: string) =>
-    chosenForOffer.length > 0
-      ? bestDiscount(discountRules, {
-          day,
-          today,
-          lines: chosenForOffer.map((service) => ({
-            product_id: service.id,
-            line_total: priceFor(service, flow.durationMinutes) ?? 0,
-          })),
-        })
-      : dayOffer(discountRules, day, today);
+      : null;
+  const offer = betterBookingOffer(ruleOffer, storeOffer, isAr);
+  const money = (amount: number) => formatPrice(amount, currency, lang);
+  /**
+   * A calendar day's mark: with services chosen, what that day saves on them (the booking offer
+   * or the store's, whichever the database will take, as `offer` does for the chosen day); before,
+   * the general offer of the day.
+   */
+  const offerOnDay = (day: string): DayMark | null => {
+    if (chosenForOffer.length === 0)
+      return dayMark(dayOffer(discountRules, day, today), null, money);
+    const rule = ruleOn(day);
+    const store = storeOffer?.amount ?? 0;
+    return store > (rule?.amount ?? 0)
+      ? dayMark({ amount: store, rule: null }, servicesForOffer, money)
+      : dayMark(rule, servicesForOffer, money);
+  };
 
-  // What each package includes, shown with it in the service list.
-  const packageRows = useQuery({
-    ...servicePackagesQueries.items(brand.id),
-    enabled: Boolean(rules) && services.some((service) => service.is_package),
-  }).data;
-  const packageLines = useMemo(() => packageLinesById(packageRows ?? []), [packageRows]);
   const includedNames = (id: string) => {
     const item = services.find((candidate) => candidate.id === id);
     return item ? (isAr ? item.name_ar || item.name : item.name_en || item.name) : "";
@@ -407,8 +419,6 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     /** The offer this booking gets (null: none), and the one to mark on a calendar day. */
     offer,
     offerOnDay,
-    /** "up to 25% off · free gift" for the calendar (null: no offers). */
-    offersLegendText: offersLegend(discountRules, isAr),
     /** The services at the chosen duration's prices. */
     servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
     /** What the chosen services cost for a length: each length's own price, else the longest's

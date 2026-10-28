@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { monthGrid, type DayState } from "@/lib/bookings/rules";
 import { dayTitle, monthTitle, weekdayNames } from "@/lib/bookings/format";
-import { offerBadgeText } from "@/lib/bookings/discounts";
+import { marksLegend } from "@/lib/bookings/discounts";
 import {
   BOOKING_WEEK_STARTS_ON,
   type BookingFlow,
@@ -31,6 +31,14 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
   const weeks = monthGrid(cursor.year, cursor.month, BOOKING_WEEK_STARTS_ON);
   const thisMonth = flow.today.slice(0, 7);
   const shownMonth = `${cursor.year}-${String(cursor.month).padStart(2, "0")}`;
+  // Each open day's mark, once: the legend says what these marks offer, nothing more.
+  const marks = new Map(
+    weeks
+      .flat()
+      .filter(({ inMonth, day }) => inMonth && dayStates.get(day) === "available")
+      .map(({ day }) => [day, flow.offerOnDay(day)] as const),
+  );
+  const legend = marksLegend([...marks.values()], isAr);
 
   return (
     <div aria-busy={flow.availabilityLoading}>
@@ -81,7 +89,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
               const state = dayStates.get(day);
               const available = state === "available";
               const selected = flow.flow.day === day;
-              const offer = available ? flow.offerOnDay(day) : null;
+              const offer = marks.get(day) ?? null;
               return (
                 <Button
                   key={day}
@@ -89,7 +97,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
                   variant="ghost"
                   role="gridcell"
                   aria-selected={selected}
-                  aria-label={`${dayTitle(day, isAr)}: ${unavailableText(state, isAr)}${offer ? ` · ${offerBadgeText(offer.rule)}` : ""}`}
+                  aria-label={`${dayTitle(day, isAr)}: ${unavailableText(state, isAr)}${offer ? ` · ${offer.text}` : ""}`}
                   disabled={!available}
                   onClick={() => flow.update({ day, start: null })}
                   className={cn(
@@ -110,7 +118,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
                         )}
                         dir="ltr"
                       >
-                        {offerBadgeText(offer.rule)}
+                        {offer.text}
                       </span>
                     )}
                   </span>
@@ -120,9 +128,7 @@ export function BookingDayPicker({ flow }: { flow: BookingFlow }) {
           </div>
         ))}
       </div>
-      {flow.offersLegendText && (
-        <p className="mt-2 text-xs font-semibold text-success">{flow.offersLegendText}</p>
-      )}
+      {legend && <p className="mt-2 text-xs font-semibold text-success">{legend}</p>}
       <p className="mt-2 text-xs text-muted-foreground">
         {isAr
           ? "الأيام المشطوبة محجوزة أو غير متاحة."

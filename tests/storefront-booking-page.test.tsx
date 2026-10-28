@@ -517,6 +517,33 @@ describe("a store's booking offers", () => {
     expect(screen.getByRole("gridcell", { name: /9 October: Booked$/ })).toBeDisabled();
   });
 
+  it("marks what a day saves on the chosen services, and its legend says only that", async () => {
+    // Aurora: half off one service when booked with another. On the photo booth (55) and prints
+    // (35) it saves 17.500 of 90, so a day reads −19% and the legend "up to 19%"; the day read
+    // −50% and the legend "up to 50%" over a total 19% lower.
+    state.discountRules = [
+      {
+        ...offer,
+        id: "half",
+        value: 50,
+        min_days: 0,
+        max_days: null,
+        product_ids: ["p2"],
+        requires_product_ids: ["p1"],
+      },
+    ];
+    renderWithQuery(<StorefrontBookingPage initialService="p1" />);
+    // The photo booth alone: the offer reaches nothing chosen, so no day is marked.
+    expect(await screen.findByRole("gridcell", { name: /10 October: Available$/ })).toBeEnabled();
+    expect(screen.queryByText(/on the marked days/)).toBeNull();
+    fireEvent.click(await screen.findByRole("checkbox", { name: /Prints/ }));
+    expect(
+      await screen.findByRole("gridcell", { name: /10 October: Available · −19%/ }),
+    ).toBeEnabled();
+    expect(screen.getByText("up to 19% off on the marked days")).toBeInTheDocument();
+    expect(screen.queryByText(/50%/)).toBeNull();
+  });
+
   it("shows no mark when the store has no offers", async () => {
     renderWithQuery(<StorefrontBookingPage />);
     expect(await screen.findByRole("gridcell", { name: /10 October: Available$/ })).toBeEnabled();

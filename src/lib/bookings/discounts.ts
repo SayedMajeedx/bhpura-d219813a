@@ -87,10 +87,19 @@ export function ruleApplies(rule: DiscountRule, day: string, today: string): boo
 }
 
 /** Whether the booking has a service the rule asks for ("needs another service"). */
-export function ruleRequirementMet(rule: DiscountRule, lines: readonly DiscountLine[]): boolean {
+export function ruleRequirementMet(
+  rule: DiscountRule,
+  lines: readonly DiscountLine[],
+  included: readonly string[] = [],
+): boolean {
   const required = rule.requires_product_ids;
   if (!required || required.length === 0) return true;
-  return lines.some((line) => line.product_id !== null && required.includes(line.product_id));
+  // A chosen package's own services count, as the database counts every line of the booking: a
+  // package with a photo booth meets "with a photo booth".
+  return (
+    lines.some((line) => line.product_id !== null && required.includes(line.product_id)) ||
+    included.some((id) => required.includes(id))
+  );
 }
 
 /** A free gift: all of a service, for chosen event dates. */
@@ -105,16 +114,23 @@ export type DiscountResult = { rule: DiscountRule; rules: DiscountRule[]; amount
  * The discount for a booking, as the database gives it (apply_booking_discount):
  * the best non-stackable rule (ties: the longer lead, then the order given)
  * plus every stackable one that applies, capped at the service lines. Pass
- * service lines only: an offer never takes anything off an add-on.
+ * service lines only: an offer never takes anything off an add-on. `included`
+ * is the services inside the chosen packages (they cost nothing of their own,
+ * but meet a rule that needs another service).
  */
 export function bestDiscount(
   rules: readonly DiscountRule[],
-  booking: { day: string; today: string; lines: readonly DiscountLine[] },
+  booking: {
+    day: string;
+    today: string;
+    lines: readonly DiscountLine[];
+    included?: readonly string[];
+  },
 ): DiscountResult | null {
   const matched: Array<{ rule: DiscountRule; amount: number }> = [];
   for (const rule of rules) {
     if (!ruleApplies(rule, booking.day, booking.today)) continue;
-    if (!ruleRequirementMet(rule, booking.lines)) continue;
+    if (!ruleRequirementMet(rule, booking.lines, booking.included)) continue;
     const amount = ruleAmount(rule, booking.lines);
     if (amount > 0) matched.push({ rule, amount });
   }
@@ -194,12 +210,49 @@ export function discountWindowText(
   return isAr ? `قبل ${min} إلى ${daysText(max, true)}` : `${min} to ${max} days ahead`;
 }
 
-/** One line for the merchant or the customer: "25% off · within 1 day · Sun, Mon". */
-export function describeDiscountRule(rule: DiscountRule, isAr: boolean): string {
-  const parts = [
-    isAr ? `خصم ${discountValueText(rule)}` : `${discountValueText(rule)} off`,
-    discountWindowText(rule, isAr),
-  ];
+/**
+ * What a rule's words may name: a service by its id, and an amount in the store's money. Without
+ * them a rule reads as before ("with a chosen service", "5 off").
+ */
+export type RuleWords = {
+  name?: (productId: string) => string | null | undefined;
+  money?: (amount: number) => string;
+};
+
+/** "Photo booth, Video booth or Memory phone" (four or more: "4 services"). */
+function servicesText(
+  ids: readonly string[],
+  isAr: boolean,
+  name: RuleWords["name"],
+  joiner: "and" | "or",
+): string | null {
+  const names = ids.map((id) => name?.(id)?.trim()).filter((text): text is string => !!text);
+  if (names.length === 0 || names.length !== ids.length) return null;
+  if (names.length > 3) return isAr ? arNoun(names.length, "service") : `${names.length} services`;
+  if (names.length === 1) return names[0];
+  const last = names[names.length - 1];
+  const word = isAr ? (joiner === "and" ? " و" : " أو ") : joiner === "and" ? " and " : " or ";
+  return `${names.slice(0, -1).join(isAr ? "، " : ", ")}${word}${last}`;
+}
+
+/**
+ * One line for the merchant or the customer: "25% off · within 1 day · Sun, Mon". With `words`,
+ * it says what an offer is for and what it needs ("on the photo booth", "when booked with a video
+ * booth"): a shopper read "25% off within 14 days" and expected it on a package it did not reach.
+ */
+export function describeDiscountRule(
+  rule: DiscountRule,
+  isAr: boolean,
+  words: RuleWords = {},
+): string {
+  const value =
+    rule.kind === "fixed" && words.money ? words.money(rule.value) : discountValueText(rule);
+  const parts = [isAr ? `خصم ${value}` : `${value} off`];
+  const on = rule.product_ids?.length
+    ? servicesText(rule.product_ids, isAr, words.name, "and")
+    : null;
+  if (on) parts[0] += isAr ? ` على ${on}` : ` ${on}`;
+  parts.push(discountWindowText(rule, isAr));
   if (rule.weekdays && rule.weekdays.length > 0 && rule.weekdays.length < 7) {
     parts.push(
       [...rule.weekdays]
@@ -222,7 +275,16 @@ export function describeDiscountRule(rule: DiscountRule, isAr: boolean): string 
     );
   }
   if (rule.requires_product_ids && rule.requires_product_ids.length > 0) {
-    parts.push(isAr ? "مع خدمة محددة" : "with a chosen service");
+    const needs = servicesText(rule.requires_product_ids, isAr, words.name, "or");
+    parts.push(
+      needs
+        ? isAr
+          ? `عند الحجز مع ${needs}`
+          : `when booked with ${needs}`
+        : isAr
+          ? "مع خدمة محددة"
+          : "with a chosen service",
+    );
   }
   if (rule.stackable) parts.push(isAr ? "يضاف إلى العروض الأخرى" : "adds to other offers");
   return parts.join(" · ");
@@ -252,9 +314,9 @@ export function offersToShow(
 }
 
 /** One offer as a shopper reads it: its name, then its terms ("خصم 25% · خلال 14 يوماً"). */
-export function offerLine(rule: DiscountRule, isAr: boolean): string {
+export function offerLine(rule: DiscountRule, isAr: boolean, words: RuleWords = {}): string {
   const name = (isAr ? rule.name_ar || rule.name_en : rule.name_en || rule.name_ar)?.trim();
-  const terms = describeDiscountRule(rule, isAr);
+  const terms = describeDiscountRule(rule, isAr, words);
   return name ? `${name}: ${terms}` : terms;
 }
 
@@ -460,18 +522,54 @@ export function dayOffer(
   return gift ? { rule: gift, rules: [gift], amount: referenceTotal } : null;
 }
 
-/** "−25%" or "−5": the short mark on a calendar day. */
-export function offerBadgeText(rule: Pick<DiscountRule, "kind" | "value">): string {
-  return isGiftRule(rule) ? "🎁" : `−${discountValueText(rule)}`;
+/** A calendar day's mark: its text, the share of the booking it saves (null: not a share), a gift. */
+export type DayMark = { text: string; percent: number | null; gift: boolean };
+
+/**
+ * What a day saves, as its calendar mark. With services chosen it is the share of their total the
+ * day's offer takes off ("−17%"), never the rule's own percentage: a rule that halves one of two
+ * services saves 17%, and the mark read "−50%" over a total that was 17% lower. Before any is
+ * chosen, the rule's own value (a percentage, or an amount in the store's money). A free gift is
+ * "🎁". Null when the day saves nothing.
+ */
+export function dayMark(
+  offer: { amount: number; rule: Pick<DiscountRule, "kind" | "value"> | null } | null,
+  servicesTotal: number | null,
+  money: (amount: number) => string,
+): DayMark | null {
+  if (!offer || !(offer.amount > 0)) return null;
+  if (offer.rule && isGiftRule(offer.rule)) return { text: "🎁", percent: null, gift: true };
+  if (servicesTotal !== null && servicesTotal > 0) {
+    const percent = Math.max(1, Math.round((offer.amount / servicesTotal) * 100));
+    return { text: `−${percent}%`, percent, gift: false };
+  }
+  if (!offer.rule) return null;
+  return offer.rule.kind === "percent"
+    ? { text: `−${offer.rule.value}%`, percent: offer.rule.value, gift: false }
+    : { text: `−${money(offer.rule.value)}`, percent: null, gift: false };
 }
 
-/** "up to 25% off" over a set of offers, for the calendar's legend (null: nothing to say). */
-export function offersLegend(rules: readonly DiscountRule[], isAr: boolean): string | null {
-  const percents = rules.filter((rule) => rule.kind === "percent" && !isGiftRule(rule));
-  const top = Math.max(0, ...percents.map((rule) => rule.value));
-  const gift = rules.some(isGiftRule);
+/**
+ * The calendar's legend, said of the marks it shows (null: none): "up to 17% off · 🎁 free gift".
+ * It once took the highest percentage of every offer the store has, so a month of "−25%" read
+ * "up to 50% off" from an offer on one service booked with another.
+ */
+export function marksLegend(marks: readonly (DayMark | null)[], isAr: boolean): string | null {
+  const shown = marks.filter((mark): mark is DayMark => mark !== null);
+  if (shown.length === 0) return null;
+  const top = Math.max(0, ...shown.map((mark) => mark.percent ?? 0));
+  const gift = shown.some((mark) => mark.gift);
+  const amounts = shown.some((mark) => !mark.gift && mark.percent === null);
   const parts = [
-    top > 0 ? (isAr ? `خصم حتى ${top}%` : `up to ${top}% off`) : null,
+    top > 0
+      ? isAr
+        ? `خصم حتى ${top}% على الأيام المعلّمة`
+        : `up to ${top}% off on the marked days`
+      : amounts
+        ? isAr
+          ? "خصم على الأيام المعلّمة"
+          : "a discount on the marked days"
+        : null,
     gift ? (isAr ? "🎁 هدية مجانية" : "🎁 free gift") : null,
   ].filter(Boolean);
   return parts.length > 0 ? parts.join(" · ") : null;

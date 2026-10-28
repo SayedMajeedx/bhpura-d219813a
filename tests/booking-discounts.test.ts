@@ -12,8 +12,8 @@ import {
   discountName,
   EMPTY_DISCOUNT_FORM,
   leadDays,
-  offerBadgeText,
-  offersLegend,
+  dayMark,
+  marksLegend,
   ruleApplies,
   weekdayOf,
   type DiscountRule,
@@ -430,6 +430,68 @@ describe("the richer offers agree with the database", () => {
   });
 });
 
+describe("an offer that needs another service, met inside a package", () => {
+  it("is given by the database and the page alike", async () => {
+    const brand = await db.store({ dailyCapacity: 50, leadDays: 0 });
+    const booth = await db.service(brand, { name: "Booth" });
+    const video = await db.service(brand, { name: "Video" });
+    const phone = await db.service(brand, { name: "Phone" });
+    const pearl = await db.servicePackage(brand, [{ id: booth.id }, { id: phone.id }], {
+      name: "Pearl",
+      price: 120,
+    });
+    await addRule(brand, { value: 25, min: 0, max: 14, products: [booth.id, video.id, phone.id] });
+    await addRule(brand, {
+      value: 50,
+      min: 0,
+      products: [phone.id],
+      requires: [booth.id, video.id],
+    });
+    const rules = (
+      await db.rows<Record<string, unknown>>(
+        `select id, name_en, name_ar, kind, value::float8 as value, min_days, max_days, weekdays,
+                product_ids, requires_product_ids, stackable, null as valid_from, null as valid_to,
+                null as event_from, null as event_to
+           from booking_discount_rules where brand_id = $1 and is_active
+          order by min_days, created_at`,
+        [brand],
+      )
+    ).map((row) => ({ ...row, weekdays: null })) as DiscountRule[];
+    const price = new Map([
+      [booth.id, 40],
+      [video.id, 75],
+      [phone.id, 40],
+      [pearl.id, 120],
+    ]);
+    const included = new Map([[pearl.id, [booth.id, phone.id]]]);
+    const combos = [[phone, video], [pearl, phone], [phone], [pearl]];
+    for (const lead of [3, 20]) {
+      for (const picks of combos) {
+        const made = await db.staff(
+          brand,
+          db.day(lead),
+          "12:00",
+          60,
+          picks.map((pick) => ({
+            product_id: pick.id,
+            variant_id: pick.variantId,
+            unit_price: price.get(pick.id)!,
+          })),
+        );
+        const sql = Number((await bookingOf(made.id)).discount_amount);
+        const ts =
+          bestDiscount(rules, {
+            day: db.day(lead),
+            today: db.day(0),
+            lines: picks.map((pick) => ({ product_id: pick.id, line_total: price.get(pick.id)! })),
+            included: picks.flatMap((pick) => included.get(pick.id) ?? []),
+          })?.amount ?? 0;
+        expect(ts, `lead ${lead}, ${picks.length} services`).toBe(sql);
+      }
+    }
+  });
+});
+
 describe("a free gift and the calendar's marks", () => {
   const gift = (patch: Partial<DiscountRule> = {}): DiscountRule => ({
     id: "g",
@@ -453,8 +515,15 @@ describe("a free gift and the calendar's marks", () => {
     const today = "2026-10-01";
     expect(dayOffer([gift()], "2026-10-11", today)?.rule.id).toBe("g");
     expect(dayOffer([gift()], "2026-10-13", today)).toBeNull();
-    expect(offerBadgeText(gift())).toBe("🎁");
-    expect(offerBadgeText({ kind: "percent", value: 25 })).toBe("−25%");
+    const money = (n: number) => `BHD ${n}`;
+    expect(dayMark({ amount: 30, rule: gift() }, 100, money)?.text).toBe("🎁");
+    // Before any service is chosen, the rule's own value.
+    expect(dayMark({ amount: 25, rule: { kind: "percent", value: 25 } }, null, money)?.text).toBe(
+      "−25%",
+    );
+    expect(dayMark({ amount: 5, rule: { kind: "fixed", value: 5 } }, null, money)?.text).toBe(
+      "−BHD 5",
+    );
     const percent = { ...gift(), id: "p", value: 25, product_ids: null, stackable: false };
     const result = bestDiscount([percent, gift()], {
       day: "2026-10-11",
@@ -486,11 +555,55 @@ describe("a free gift and the calendar's marks", () => {
     ).toBe(35);
   });
 
-  it("says what the calendar offers", () => {
-    expect(offersLegend([], false)).toBeNull();
-    expect(offersLegend([gift(), { ...gift(), value: 25, id: "x" }], false)).toBe(
-      "up to 25% off · 🎁 free gift",
+  it("marks what a day saves on the chosen services, and says only what the marks offer", () => {
+    // Aurora's memory phone (40) and video booth (75): half off the phone with a booth saves 20 of
+    // 115, so the day reads −17%, as its total does; it once read −50%.
+    const money = (n: number) => `BHD ${n}`;
+    const half = gift({
+      id: "half",
+      value: 50,
+      stackable: false,
+      event_from: null,
+      event_to: null,
+    });
+    const mark = dayMark({ amount: 20, rule: half }, 115, money);
+    expect(mark).toEqual({ text: "−17%", percent: 17, gift: false });
+    // A store's automatic offer has no rule of its own: its share of the total.
+    expect(dayMark({ amount: 28.75, rule: null }, 115, money)?.text).toBe("−25%");
+    expect(dayMark({ amount: 0.2, rule: null }, 115, money)?.text).toBe("−1%");
+    expect(dayMark(null, 115, money)).toBeNull();
+
+    const quarter = { text: "−25%", percent: 25, gift: false };
+    expect(marksLegend([], false)).toBeNull();
+    expect(marksLegend([null, null], false)).toBeNull();
+    expect(marksLegend([quarter, mark, null], true)).toBe("خصم حتى 25% على الأيام المعلّمة");
+    expect(marksLegend([mark, { text: "🎁", percent: null, gift: true }], false)).toBe(
+      "up to 17% off on the marked days · 🎁 free gift",
     );
+    expect(marksLegend([{ text: "−BHD 5", percent: null, gift: false }], false)).toBe(
+      "a discount on the marked days",
+    );
+  });
+
+  it("counts a chosen package's own services for an offer that needs another service", () => {
+    const needsBooth = gift({
+      id: "phone-half",
+      value: 50,
+      stackable: false,
+      product_ids: ["phone"],
+      requires_product_ids: ["booth"],
+      event_from: null,
+      event_to: null,
+    });
+    const day = { day: "2026-10-11", today: "2026-10-01" };
+    const lines = [
+      { product_id: "pearl", line_total: 120 },
+      { product_id: "phone", line_total: 50 },
+    ];
+    expect(bestDiscount([needsBooth], { ...day, lines })).toBeNull();
+    expect(
+      bestDiscount([needsBooth], { ...day, lines, included: ["booth", "phone"] })?.amount,
+    ).toBe(25);
   });
 
   it("refuses booking dates that end before they start", () => {
@@ -610,6 +723,46 @@ describe("the offers a shopper is told about before booking", () => {
     expect(offerLine(rule({}), true)).toBe("خصم 25% · خلال 14 يومًا");
     expect(offerLine(rule({ name_en: "Early bird" }), false)).toBe(
       "Early bird: 25% off · within 14 days",
+    );
+  });
+
+  it("say which services they are for and need, and an amount in the store's money", () => {
+    const names: Record<string, [string, string]> = {
+      booth: ["Photo booth", "فوتوبوث"],
+      video: ["Video booth", "فيديوبوث"],
+      phone: ["Memory phone", "هاتف الذكريات"],
+    };
+    const words = (isAr: boolean) => ({
+      name: (id: string) => names[id]?.[isAr ? 1 : 0],
+      money: (n: number) => (isAr ? `${n} د.ب` : `BHD ${n}`),
+    });
+    // Aurora's last-minute offer reaches its three rentals only: a package booked within 14 days
+    // gets nothing, and the line said "25% off within 14 days".
+    const rentals = rule({ product_ids: ["booth", "video", "phone"] });
+    expect(offerLine(rentals, false, words(false))).toBe(
+      "25% off Photo booth, Video booth and Memory phone · within 14 days",
+    );
+    expect(offerLine(rentals, true, words(true))).toBe(
+      "خصم 25% على فوتوبوث، فيديوبوث وهاتف الذكريات · خلال 14 يومًا",
+    );
+    const bundle = rule({
+      value: 50,
+      max_days: null,
+      product_ids: ["phone"],
+      requires_product_ids: ["booth", "video"],
+    });
+    expect(offerLine(bundle, false, words(false))).toBe(
+      "50% off Memory phone · any time · when booked with Photo booth or Video booth",
+    );
+    expect(offerLine(bundle, true, words(true))).toBe(
+      "خصم 50% على هاتف الذكريات · أي وقت · عند الحجز مع فوتوبوث أو فيديوبوث",
+    );
+    expect(offerLine(rule({ kind: "fixed", value: 5 }), false, words(false))).toBe(
+      "BHD 5 off · within 14 days",
+    );
+    // A service it cannot name (not on the store) leaves the old words, never a wrong list.
+    expect(offerLine(rule({ product_ids: ["gone"] }), false, words(false))).toBe(
+      "25% off · within 14 days",
     );
   });
 });
