@@ -95,6 +95,32 @@ export async function fetchCustomerReturns(brandId: string, customerId: string) 
   return data ?? [];
 }
 
+/**
+ * The return window and fees of the store with this address, for the product page's Google data.
+ * Asked by the store's address so the product page's loader can start it with its other reads.
+ * It never rejects: a store whose policy cannot be read publishes no return policy.
+ */
+export async function fetchReturnPolicyBySlug(slug: string) {
+  try {
+    const { data } = await supabase
+      .from("brand_return_policies")
+      .select(
+        "return_window_days, customer_shipping_fee_borne_by, return_shipping_fee, brands!inner(slug)",
+      )
+      .eq("brands.slug", slug)
+      .maybeSingle();
+    return data
+      ? {
+          return_window_days: data.return_window_days,
+          customer_shipping_fee_borne_by: data.customer_shipping_fee_borne_by,
+          return_shipping_fee: data.return_shipping_fee,
+        }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 /** The brand's return policy, or null when it has none yet. */
 export async function fetchReturnPolicy(brandId: string) {
   const { data, error } = await supabase

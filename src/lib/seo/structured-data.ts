@@ -51,6 +51,9 @@ export interface SeoProductInfo {
   rating?: { average: number; count: number } | null;
   /** What the product is (its facts, `product-facts.ts`), as Google's additionalProperty. */
   properties?: Array<{ name: string; value: string }>;
+  /** How it is delivered and returned, from the store's settings (`offer-policies.ts`). */
+  shippingDetails?: ReadonlyArray<Record<string, unknown>> | null;
+  returnPolicy?: Record<string, unknown> | null;
 }
 
 export interface SeoBreadcrumbItem {
@@ -235,6 +238,10 @@ export function buildProductSchema(
               ? "https://schema.org/OutOfStock"
               : "https://schema.org/InStock",
             seller: { "@type": "Organization", name: sellerName },
+            ...(product.shippingDetails?.length
+              ? { shippingDetails: product.shippingDetails }
+              : {}),
+            ...(product.returnPolicy ? { hasMerchantReturnPolicy: product.returnPolicy } : {}),
           },
         }),
   };
