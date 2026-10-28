@@ -11,6 +11,18 @@ export function sanitizeMetaText(value: unknown, maxLength: number): string {
     .slice(0, maxLength);
 }
 
+/**
+ * The same cleaning for a field being typed in: markup and control characters go, the length is
+ * bounded, but spaces stay (trimming on every keystroke would make a second word impossible to
+ * type). The database trims what is saved.
+ */
+export function typingMetaText(value: unknown, maxLength: number): string {
+  return String(value ?? "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\p{Cc}/gu, " ")
+    .slice(0, maxLength);
+}
+
 export function slugifyPageTitle(value: unknown): string {
   const slug = String(value ?? "")
     .normalize("NFKD")

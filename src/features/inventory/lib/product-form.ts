@@ -37,6 +37,11 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     name_en: product?.name_en ?? product?.name ?? "",
     description_ar: product?.description_ar ?? "",
     description_en: product?.description_en ?? product?.description ?? "",
+    // What Google shows for the product, in each language (empty: the page says what it always did).
+    seo_title_ar: product?.seo_title_ar ?? "",
+    seo_title_en: product?.seo_title_en ?? "",
+    seo_description_ar: product?.seo_description_ar ?? "",
+    seo_description_en: product?.seo_description_en ?? "",
     category: product?.category ?? "",
     base_price: product?.base_price ? String(product.base_price) : "0",
     cost_price: product?.cost_price ? String(product.cost_price) : "",
@@ -182,6 +187,10 @@ export function productColumnsFrom(form: ProductForm) {
     description: form.description_en.trim() || form.description_ar.trim() || null,
     description_ar: form.description_ar.trim() || null,
     description_en: form.description_en.trim() || null,
+    seo_title_ar: form.seo_title_ar.trim() || null,
+    seo_title_en: form.seo_title_en.trim() || null,
+    seo_description_ar: form.seo_description_ar.trim() || null,
+    seo_description_en: form.seo_description_en.trim() || null,
     category: form.category && form.category.trim() !== "" ? form.category.trim() : null,
     base_price: form.base_price ? Number(form.base_price) : 0,
     // TODO (Tech Debt / Financial Reporting): Currently defaults to 0 due to database NOT NULL constraint.

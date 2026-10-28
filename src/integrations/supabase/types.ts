@@ -1885,6 +1885,9 @@ export type Database = {
       };
       brands: {
         Row: {
+          meta_title_en: string | null;
+          meta_description_en: string | null;
+          google_site_verification: string | null;
           about_ar: string | null;
           about_en: string | null;
           business_type: string | null;
@@ -1914,6 +1917,9 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          meta_title_en?: string | null;
+          meta_description_en?: string | null;
+          google_site_verification?: string | null;
           about_ar?: string | null;
           about_en?: string | null;
           business_type?: string | null;
@@ -1943,6 +1949,9 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          meta_title_en?: string | null;
+          meta_description_en?: string | null;
+          google_site_verification?: string | null;
           about_ar?: string | null;
           about_en?: string | null;
           business_type?: string | null;
@@ -2679,6 +2688,10 @@ export type Database = {
       };
       categories: {
         Row: {
+          seo_title_ar: string | null;
+          seo_title_en: string | null;
+          seo_description_ar: string | null;
+          seo_description_en: string | null;
           brand_id: string | null;
           created_at: string;
           id: string;
@@ -2695,6 +2708,10 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
           brand_id?: string | null;
           created_at?: string;
           id?: string;
@@ -2711,6 +2728,10 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
           brand_id?: string | null;
           created_at?: string;
           id?: string;
@@ -6199,6 +6220,10 @@ export type Database = {
       };
       products: {
         Row: {
+          seo_title_ar: string | null;
+          seo_title_en: string | null;
+          seo_description_ar: string | null;
+          seo_description_en: string | null;
           auto_deactivated_out_of_stock: boolean | null;
           base_price: number | null;
           booking_buffer_minutes: number;
@@ -6258,6 +6283,10 @@ export type Database = {
           vendor_id: string | null;
         };
         Insert: {
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;
@@ -6317,6 +6346,10 @@ export type Database = {
           vendor_id?: string | null;
         };
         Update: {
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;

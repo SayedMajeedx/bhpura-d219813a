@@ -8,6 +8,7 @@ import {
 import { buildOrganizationSchema, buildWebSiteSchema } from "@/lib/seo/structured-data";
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { pageAddressLinks, storefrontCanonical } from "@/lib/seo/canonical";
+import { homeListing } from "@/lib/seo/listing";
 import { storeShareImage } from "@/lib/seo/share-image";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { faviconType, resolveBrandFavicon } from "@/lib/favicon";
@@ -33,28 +34,10 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
     store_modules: settings?.store_modules,
   });
   const takesBookings = isServicesProfile(modules);
-  const nameAr = settings?.business_name || b.name_ar || b.name_en;
-  const nameEn = settings?.business_name || b.name_en || b.name_ar;
-  const title =
-    lang === "ar"
-      ? b.meta_title ||
-        (takesBookings ? `${nameAr} — احجز موعدك أونلاين` : settings?.business_name) ||
-        b.name_ar ||
-        `${b.name_en} — متجر إلكتروني`
-      : b.meta_title ||
-        (takesBookings ? `${nameEn} — Book online` : settings?.business_name) ||
-        b.name_en ||
-        `${b.name_ar} — Online Store`;
-  const desc =
-    lang === "ar"
-      ? b.meta_description ||
-        (takesBookings
-          ? `احجز مع ${nameAr} أونلاين: شاهد التواريخ المتاحة وخدماتنا وعروضنا.`
-          : `تسوق من ${b.name_ar || b.name_en} أونلاين.`)
-      : b.meta_description ||
-        (takesBookings
-          ? `Book ${nameEn} online: see the free dates, our services and offers.`
-          : `Shop ${b.name_en || b.name_ar} online.`);
+  const { title, description: desc } = homeListing(b, lang, {
+    businessName: settings?.business_name,
+    bookings: takesBookings,
+  });
   // The store's own picture when its link is shared (not the logo alone: an SVG is not drawn).
   const img = storeShareImage({ brand: b, settings });
   const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
@@ -141,6 +124,10 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
       { name: "twitter:image", content: img },
       // The phone's status bar takes the store's header colour.
       { name: "theme-color", content: storefrontThemeColor(settings?.header_bg) },
+      // Google Search Console's proof that the store is its owner's (the token it gave).
+      ...(b.google_site_verification
+        ? [{ name: "google-site-verification", content: b.google_site_verification }]
+        : []),
     ],
     links,
     scripts,

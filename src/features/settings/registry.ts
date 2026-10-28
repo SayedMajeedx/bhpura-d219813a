@@ -1,5 +1,6 @@
 import type { SettingsScope } from "@/lib/storefront-engine";
 import { PAYMENTS_SETTINGS } from "@/features/settings/registry-payments";
+import { SEO_SETTINGS } from "@/features/settings/registry-seo";
 import { BANNER_SETTINGS } from "@/features/settings/registry-banners";
 import { PHOTO_SHAPE_SETTINGS } from "@/features/settings/registry-photos";
 import { DELIVERY_ESTIMATE_SETTINGS } from "@/features/settings/registry-delivery";
@@ -1631,31 +1632,8 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
   },
 
   // storefront.seo
-  {
-    key: "meta_title",
-    table: "brands",
-    tab: "storefront",
-    group: "seo",
-    level: "advanced",
-    owner: "settings",
-    type: "text",
-    label: { ar: "عنوان المتجر في محركات البحث", en: "SEO Meta Title" },
-    keywords: { ar: ["سيو", "عنوان البحث", "قوقل"], en: ["seo", "meta title", "google title"] },
-  },
-  {
-    key: "meta_description",
-    table: "brands",
-    tab: "storefront",
-    group: "seo",
-    level: "advanced",
-    owner: "settings",
-    type: "textarea",
-    label: { ar: "وصف المتجر في محركات البحث", en: "SEO Meta Description" },
-    keywords: {
-      ar: ["وصف البحث", "سيو", "قوقل"],
-      en: ["seo", "meta description", "google snippet"],
-    },
-  },
+
+  ...SEO_SETTINGS,
 
   // ==========================================
   // ORDERS TAB

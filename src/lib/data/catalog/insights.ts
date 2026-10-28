@@ -17,6 +17,8 @@ export const catalogInsightKeys = {
     [...catalogKeys.products(brandId), "back-in-stock-count"] as const,
   activeCount: (brandId: string) => [...catalogKeys.products(brandId), "active-count"] as const,
   withoutPhoto: (brandId: string) => [...catalogKeys.products(brandId), "without-photo"] as const,
+  withoutDescription: (brandId: string) =>
+    [...catalogKeys.products(brandId), "without-description"] as const,
   contentStudio: (brandId: string) => [...catalogKeys.products(brandId), "content-studio"] as const,
 };
 
@@ -59,6 +61,23 @@ export async function countActiveWithoutPhoto(brandId: string) {
   return (data ?? []).filter(
     (product) => !hasProductPhoto(product as Parameters<typeof hasProductPhoto>[0]),
   ).length;
+}
+
+/**
+ * How many of the brand's active products have no description in either language (the product
+ * page's snippet then has only what the page says, `productSnippet`). A failed read counts none.
+ */
+export async function countActiveWithoutDescription(brandId: string) {
+  const { count, error } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("brand_id", brandId)
+    .eq("is_active", true)
+    .or("description.is.null,description.eq.")
+    .or("description_ar.is.null,description_ar.eq.")
+    .or("description_en.is.null,description_en.eq.");
+  if (error) return 0;
+  return count ?? 0;
 }
 
 /** Up to six products whose English or Arabic name contains the text. A failed read finds none. */
@@ -139,6 +158,12 @@ export const catalogInsightQueries = {
     queryOptions({
       queryKey: catalogInsightKeys.withoutPhoto(brandId),
       queryFn: () => countActiveWithoutPhoto(brandId),
+      enabled: Boolean(brandId),
+    }),
+  withoutDescription: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogInsightKeys.withoutDescription(brandId),
+      queryFn: () => countActiveWithoutDescription(brandId),
       enabled: Boolean(brandId),
     }),
   contentStudio: (brandId: string) =>
