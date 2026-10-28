@@ -155,11 +155,11 @@ describe("the page heads", () => {
 
 describe("the Search Console tag", () => {
   it("takes the tag Google shows or its code, and refuses anything else", () => {
-    const token = "AbC123_-xyz987";
+    const code = "AbC123_-xyz987";
     expect(
-      parseVerificationInput(`<meta name="google-site-verification" content="${token}" />`),
-    ).toEqual({ status: "ok", token });
-    expect(parseVerificationInput(`  ${token} `)).toEqual({ status: "ok", token });
+      parseVerificationInput(`<meta name="google-site-verification" content="${code}" />`),
+    ).toEqual({ status: "ok", token: code });
+    expect(parseVerificationInput(`  ${code} `)).toEqual({ status: "ok", token: code });
     expect(parseVerificationInput("")).toEqual({ status: "empty" });
     expect(parseVerificationInput("short")).toEqual({ status: "invalid" });
     expect(parseVerificationInput('"><script>alert(1)</script>')).toEqual({ status: "invalid" });
