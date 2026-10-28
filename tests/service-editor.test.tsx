@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import {
   serviceFromPrice,
-  servicePricingChanges,
+  serviceLengths,
   servicePricingError,
   servicePricingFrom,
   type ServicePricing,
@@ -73,7 +73,7 @@ describe("a service's prices", () => {
     expect(serviceFromPrice(servicePricingFrom(timed, []))).toBe(55);
   });
 
-  it("become variants: update the kept lengths, add new ones, remove the dropped", () => {
+  it("become the set of lengths the database saves: the ticked ones only", () => {
     const pricing = servicePricingFrom(timed, [180, 240, 300]);
     const edited: ServicePricing = {
       ...pricing,
@@ -85,25 +85,23 @@ describe("a service's prices", () => {
             : row,
       ),
     };
-    expect(servicePricingChanges(edited, timed, false)).toEqual({
-      create: [{ size: "4 hours", selling_price: 70, original_price: null, duration_minutes: 240 }],
-      update: [{ id: "v3", patch: { size: "3 hours", selling_price: 55, original_price: null } }],
-      remove: ["v5"],
-    });
+    // 5 hours unticked: it is not sent, and the database removes it (set_service_lengths).
+    expect(serviceLengths(edited, false)).toEqual([
+      { minutes: 180, price: 55, compare_at: null, size: "3 hours" },
+      { minutes: 240, price: 70, compare_at: null, size: "4 hours" },
+    ]);
   });
 
-  it("switching to a fixed price replaces the lengths with one variant", () => {
+  it("switching to a fixed price sends one price for any length", () => {
     const pricing = servicePricingFrom(timed, []);
     const fixed: ServicePricing = {
       ...pricing,
       mode: "fixed",
       fixed: { price: "40", compareAt: "" },
     };
-    expect(servicePricingChanges(fixed, timed, true)).toEqual({
-      create: [{ size: "الخدمة", selling_price: 40, original_price: null, duration_minutes: null }],
-      update: [],
-      remove: ["v3", "v5"],
-    });
+    expect(serviceLengths(fixed, true)).toEqual([
+      { minutes: null, price: 40, compare_at: null, size: "الخدمة" },
+    ]);
   });
 });
 

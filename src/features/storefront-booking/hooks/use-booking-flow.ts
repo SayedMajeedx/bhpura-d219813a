@@ -411,6 +411,9 @@ export function useBookingFlow(initialService?: string, initialMinutes?: number)
     offersLegendText: offersLegend(discountRules, isAr),
     /** The services at the chosen duration's prices. */
     servicesTotal: chosenTotal(flow.services, services, flow.durationMinutes),
+    /** What the chosen services cost for a length: each length's own price, else the longest's
+     *  with its extra hours (a 5-hour package's 6 hours), shown under the length to choose. */
+    totalFor: (minutes: number) => chosenTotal(flow.services, services, minutes),
     /** The trip to the event's area (null: the store charges none). */
     travelFee,
     /** The deposit the booking really takes (by card only) and when the rest is due. */

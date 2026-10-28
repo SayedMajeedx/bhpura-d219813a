@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
 import { packageCardClass } from "@/lib/bookings/package-style";
-import { packageSaving, packageSavingText } from "@/lib/bookings/service-package";
+import { packageSaving, packageSavingText, wasPrice } from "@/lib/bookings/service-package";
 import {
   compareAtFor,
   priceFor,
@@ -30,8 +30,15 @@ export function BookingPackageCard({
   const chosen = flow.flow.services.includes(service.id);
   const minutes = flow.flow.durationMinutes;
   const price = priceFor(service, minutes);
-  // Its services apart, as on the home card and the package's page; else its own compare-at price.
-  const was = flow.packageApart(service, minutes ?? null) ?? compareAtFor(service, minutes);
+  // Its own before-discount price, else its services apart, as on the home card (wasPrice).
+  const was =
+    price === null
+      ? null
+      : wasPrice(
+          compareAtFor(service, minutes),
+          flow.packageApart(service, minutes ?? null),
+          price,
+        );
   const saving = price === null ? null : packageSaving(was, price);
   const from = !minutes && serviceDurations(service).length > 0;
   const includes = flow.includesList(service.id);

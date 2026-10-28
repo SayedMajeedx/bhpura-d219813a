@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import type { Json, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { catalogKeys } from "./keys";
 
 /**
@@ -144,6 +144,29 @@ export async function syncVariantsWithProduct(
     .is("duration_minutes", null)
     .not("original_price", "is", null);
   if (onSale.error) throw onSale.error;
+}
+
+/**
+ * A service's lengths, saved as one set (`set_service_lengths`): its variants become exactly these,
+ * matched by length, whatever the editor read before. `cost` is the service's cost for each length
+ * (null: left as it is).
+ */
+export async function setServiceLengths(
+  productId: string,
+  lengths: ReadonlyArray<{
+    minutes: number | null;
+    price: number;
+    compare_at: number | null;
+    size: string;
+  }>,
+  cost: number | null,
+) {
+  const { error } = await supabase.rpc("set_service_lengths", {
+    p_product_id: productId,
+    p_lengths: lengths as unknown as Json,
+    p_cost: cost ?? undefined,
+  });
+  if (error) throw error;
 }
 
 /** Deletes variants of the brand. */

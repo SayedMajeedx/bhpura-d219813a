@@ -11434,6 +11434,10 @@ export type Database = {
         Args: { p_hidden: boolean; p_review_id: string };
         Returns: undefined;
       };
+      set_service_lengths: {
+        Args: { p_cost?: number; p_lengths: Json; p_product_id: string };
+        Returns: Json;
+      };
       set_web_push_alert_choices: {
         Args: { p_choices: Json; p_endpoint: string };
         Returns: Json;

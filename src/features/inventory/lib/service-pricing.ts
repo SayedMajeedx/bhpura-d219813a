@@ -104,41 +104,26 @@ export function serviceFromPrice(pricing: ServicePricing): number {
   return prices.length ? Math.min(...prices) : 0;
 }
 
-/**
- * What saving the prices does to the service's variants: the lengths (or the
- * fixed price) to create, the ones to update, and the variants to remove
- * (lengths no longer offered, or the other mode's variants).
- */
-export function servicePricingChanges(
-  pricing: ServicePricing,
-  variants: readonly VariantLike[],
-  isAr: boolean,
-) {
-  const keep = new Set<string>();
-  const create: Array<{
-    size: string;
-    selling_price: number;
-    original_price: number | null;
-    duration_minutes: number | null;
-  }> = [];
-  const update: Array<{
-    id: string;
-    patch: { selling_price: number; original_price: number | null; size: string };
-  }> = [];
+export type ServiceLength = {
+  /** Null: one fixed price, for any length the store allows. */
+  minutes: number | null;
+  price: number;
+  compare_at: number | null;
+  size: string;
+};
 
-  for (const row of offered(pricing)) {
-    const values = {
-      size: row.minutes ? formatDuration(row.minutes, isAr) : isAr ? "الخدمة" : "Service",
-      selling_price: amount(row.price),
-      original_price: row.compareAt === "" ? null : amount(row.compareAt),
-    };
-    if (row.variantId) {
-      keep.add(row.variantId);
-      update.push({ id: row.variantId, patch: values });
-    } else {
-      create.push({ ...values, duration_minutes: row.minutes });
-    }
-  }
-  const remove = variants.map((variant) => variant.id).filter((id) => !keep.has(id));
-  return { create, update, remove };
+/**
+ * The lengths the service is offered at, as the database saves them (`set_service_lengths`): its
+ * variants become exactly these, matched by length, the others removed. The editor once created,
+ * updated and deleted variants one by one from the list it read when it opened, so saving twice
+ * made a length twice and a length made after it opened could not be taken out (Aurora's Diamond
+ * Package showed 4 hours, twice, when only 5 were chosen).
+ */
+export function serviceLengths(pricing: ServicePricing, isAr: boolean): ServiceLength[] {
+  return offered(pricing).map((row) => ({
+    minutes: row.minutes,
+    price: amount(row.price),
+    compare_at: row.compareAt === "" ? null : amount(row.compareAt),
+    size: row.minutes ? formatDuration(row.minutes, isAr) : isAr ? "الخدمة" : "Service",
+  }));
 }

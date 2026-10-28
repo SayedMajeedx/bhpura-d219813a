@@ -346,7 +346,9 @@ describe("booking from the storefront", () => {
     expect(screen.queryByRole("button", { name: "Send booking request" })).toBeNull();
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Prints/ }));
-    fireEvent.click(screen.getByRole("button", { name: "4 hours" }));
+    // Each length says what the chosen services cost for it, extra hours included.
+    expect(screen.getByRole("button", { name: /^4 hours/ })).toHaveTextContent(/BHD \d+\.\d{3}/);
+    fireEvent.click(screen.getByRole("button", { name: /^4 hours/ }));
     await pickStart("Evening", "6:00 PM");
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
@@ -388,7 +390,7 @@ describe("booking from the storefront", () => {
     ];
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
-    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^3 hours/ }));
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
@@ -467,7 +469,7 @@ describe("a service with its own capacity", () => {
     state.taken = ["18:00"];
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^3 hours/ }));
     fireEvent.click(await screen.findByRole("button", { name: /^Evening/ }));
     const taken = await waitFor(() => {
       const chip = screen.getByRole("button", { name: "6:00 PM" });
@@ -485,7 +487,7 @@ describe("a service with its own capacity", () => {
     );
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "3 hours" }));
+    fireEvent.click(await screen.findByRole("button", { name: /^3 hours/ }));
     expect(await screen.findByText(/No time is free for this length/)).toBeInTheDocument();
   });
 });
@@ -539,7 +541,7 @@ describe("a store's booking offers", () => {
     });
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
-    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^3 hours/ }));
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
@@ -564,9 +566,11 @@ describe("a package in the booking flow", () => {
     await waitFor(() => expect(pkg).toHaveTextContent("Prints × 2"));
     expect(pkg).toHaveTextContent("Photo booth");
     expect(pkg).toHaveTextContent("Package");
-    // Against its services apart (55 + 2 x 35 = 125), as the home card and its page compare it,
-    // in money first.
-    expect(pkg).toHaveTextContent("Save BHD 55.000 (44%)");
+    // Against its own price before discount (90), which the merchant set, over its services
+    // apart (55 + 2 x 35 = 125), as the home card and its page compare it, in money first (the
+    // owner's report of 2026-10-28: a before-discount price never showed on a package).
+    expect(pkg).toHaveTextContent("Save BHD 20.000 (22%)");
+    expect(pkg).toHaveTextContent("BHD 90.000");
     expect(pkg.className).toContain("pkg-card--glow");
     // Grouped under its own heading, apart from the services it is made of.
     expect(screen.getByRole("heading", { name: "Packages" })).toBeInTheDocument();
@@ -642,7 +646,7 @@ describe("a service's add-ons in the booking flow", () => {
     fireEvent.click(within(list).getByRole("button", { name: "More Envelopes" }));
     expect(within(list).getByRole("button", { name: "More Envelopes" })).toBeDisabled();
 
-    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^3 hours/ }));
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
@@ -669,7 +673,7 @@ describe("a service's add-ons in the booking flow", () => {
   it("sends the prints off when they were taken off (an empty choice is still a choice)", async () => {
     const list = await open();
     fireEvent.click(within(list).getByRole("checkbox", { name: "Instant prints" }));
-    fireEvent.click(screen.getByRole("button", { name: "3 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^3 hours/ }));
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
@@ -685,7 +689,7 @@ describe("a service's add-ons in the booking flow", () => {
   it("shows nothing for a service with no add-ons", async () => {
     renderWithQuery(<StorefrontBookingPage initialService="p1" />);
     fireEvent.click(await screen.findByRole("gridcell", { name: /10 October: Available/ }));
-    await screen.findByRole("button", { name: "3 hours" });
+    await screen.findByRole("button", { name: /^3 hours/ });
     expect(screen.queryByRole("list", { name: "Add-ons" })).toBeNull();
   });
 

@@ -123,7 +123,24 @@ export function packageSavingText(
   return isAr ? `وفّر ${money} (${saving.percent}%)` : `Save ${money} (${saving.percent}%)`;
 }
 
-/** What a package price saves against the services apart. */
+/**
+ * The price a package, or any service, is struck against at a length: the merchant's own price
+ * before discount when it set one above the price, else its services apart. The services apart
+ * once won over it, so a before-discount price typed in the editor never showed on a package
+ * (the owner's report of 2026-10-28).
+ */
+export function wasPrice(
+  compareAt: number | null | undefined,
+  apart: number | null | undefined,
+  price: number,
+): number | null {
+  if (price <= 0) return null;
+  if (compareAt != null && compareAt > price) return compareAt;
+  if (apart != null && apart > price) return apart;
+  return null;
+}
+
+/** What a package price saves against the price it is struck against (`wasPrice`). */
 export function packageSaving(
   separate: number | null,
   price: number,

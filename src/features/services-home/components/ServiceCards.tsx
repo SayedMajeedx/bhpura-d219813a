@@ -20,6 +20,7 @@ import {
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice, offeredShownPrice } from "@/lib/offer-price";
 import { OfferTag } from "@/components/storefront/OfferTag";
+import { fromCompareAtOf } from "@/features/services-home/lib/services-home";
 
 const nameOf = (product: ProductRow, isAr: boolean) =>
   (isAr ? product.name_ar || product.name : product.name_en || product.name) ?? "";
@@ -39,6 +40,9 @@ export function ServiceCard({
   const isAr = lang === "ar";
   const fromPrice = fromPriceOf(product);
   const listed = fromPrice === null ? null : priceWithDefaults(fromPrice, addOns, null, null);
+  // Its own price before discount at that length, with the same add-ons (null: none).
+  const ownWas = fromCompareAtOf(product);
+  const listedWas = ownWas === null ? 0 : priceWithDefaults(ownWas, addOns, null, null);
   // The store's offers on its price and its badge (src/lib/offer-price.ts).
   const offers = useLiveOffers();
   const offered =
@@ -46,12 +50,13 @@ export function ServiceCard({
       ? null
       : offeredShownPrice(offers, product, {
           price: listed,
-          was: 0,
+          was: listedWas,
           min: listed,
           max: listed,
           isRange: false,
         });
   const price = offered ? offered.price : listed;
+  const struck = offered ? offered.was : listedWas > (listed ?? 0) ? listedWas : null;
   const badge = offeredCardPrice(product, product.product_variants, offers).offerBadge;
   const lengths = lengthRangeText(product, isAr);
   const place = servicePlace(product.service_location, isAr);
@@ -91,9 +96,9 @@ export function ServiceCard({
               <span className="font-semibold text-foreground" dir="ltr">
                 {formatPrice(price, currency, lang)}
               </span>
-              {offered && (
+              {struck !== null && (
                 <s className="ms-1.5 text-xs" dir="ltr">
-                  {formatPrice(offered.was, currency, lang)}
+                  {formatPrice(struck, currency, lang)}
                 </s>
               )}
             </p>
@@ -192,7 +197,7 @@ export function PackageOfferCard({
   const offers = useLiveOffers();
   const offered = offeredShownPrice(offers, product, {
     price: offer.price,
-    was: 0,
+    was: offer.was ?? 0,
     min: offer.price,
     max: offer.price,
     isRange: false,
@@ -233,13 +238,13 @@ export function PackageOfferCard({
         <span className="font-display text-3xl font-semibold text-foreground" dir="ltr">
           {formatPrice(offered ? offered.price : offer.price, currency, lang)}
         </span>
-        {offer.saving && offer.apart !== null ? (
-          <s className="text-sm text-muted-foreground" dir="ltr">
-            {formatPrice(offer.apart, currency, lang)}
-          </s>
-        ) : offered ? (
+        {offered ? (
           <s className="text-sm text-muted-foreground" dir="ltr">
             {formatPrice(offered.was, currency, lang)}
+          </s>
+        ) : offer.was !== null ? (
+          <s className="text-sm text-muted-foreground" dir="ltr">
+            {formatPrice(offer.was, currency, lang)}
           </s>
         ) : null}
       </p>
