@@ -6490,6 +6490,7 @@ export type Database = {
       promo_codes: {
         Row: {
           brand_id: string;
+          category_slugs: string[];
           code: string;
           created_at: string;
           discount_type: string;
@@ -6502,10 +6503,9 @@ export type Database = {
           is_active: boolean;
           margin_threshold: number;
           max_redemptions: number | null;
-          product_ids: string[];
-          category_slugs: string[];
           maximum_discount_amount: number | null;
           minimum_order_amount: number | null;
+          product_ids: string[];
           returning_customers_only: boolean;
           start_date: string | null;
           updated_at: string;
@@ -6513,6 +6513,7 @@ export type Database = {
         };
         Insert: {
           brand_id: string;
+          category_slugs?: string[];
           code: string;
           created_at?: string;
           discount_type: string;
@@ -6525,10 +6526,9 @@ export type Database = {
           is_active?: boolean;
           margin_threshold?: number;
           max_redemptions?: number | null;
-          product_ids?: string[];
-          category_slugs?: string[];
           maximum_discount_amount?: number | null;
           minimum_order_amount?: number | null;
+          product_ids?: string[];
           returning_customers_only?: boolean;
           start_date?: string | null;
           updated_at?: string;
@@ -6536,6 +6536,7 @@ export type Database = {
         };
         Update: {
           brand_id?: string;
+          category_slugs?: string[];
           code?: string;
           created_at?: string;
           discount_type?: string;
@@ -6548,10 +6549,9 @@ export type Database = {
           is_active?: boolean;
           margin_threshold?: number;
           max_redemptions?: number | null;
-          product_ids?: string[];
-          category_slugs?: string[];
           maximum_discount_amount?: number | null;
           minimum_order_amount?: number | null;
+          product_ids?: string[];
           returning_customers_only?: boolean;
           start_date?: string | null;
           updated_at?: string;
