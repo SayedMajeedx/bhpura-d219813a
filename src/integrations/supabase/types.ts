@@ -1885,21 +1885,21 @@ export type Database = {
       };
       brands: {
         Row: {
-          meta_title_en: string | null;
-          meta_description_en: string | null;
-          google_site_verification: string | null;
           about_ar: string | null;
           about_en: string | null;
           business_type: string | null;
           created_at: string;
           created_by: string | null;
           custom_domain: string | null;
+          google_site_verification: string | null;
           hero_media: Json;
           id: string;
           is_active: boolean;
           logo_url: string | null;
           meta_description: string | null;
+          meta_description_en: string | null;
           meta_title: string | null;
+          meta_title_en: string | null;
           name_ar: string | null;
           name_en: string;
           payment_receipt_uploaded_at: string | null;
@@ -1917,21 +1917,21 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          meta_title_en?: string | null;
-          meta_description_en?: string | null;
-          google_site_verification?: string | null;
           about_ar?: string | null;
           about_en?: string | null;
           business_type?: string | null;
           created_at?: string;
           created_by?: string | null;
           custom_domain?: string | null;
+          google_site_verification?: string | null;
           hero_media?: Json;
           id?: string;
           is_active?: boolean;
           logo_url?: string | null;
           meta_description?: string | null;
+          meta_description_en?: string | null;
           meta_title?: string | null;
+          meta_title_en?: string | null;
           name_ar?: string | null;
           name_en: string;
           payment_receipt_uploaded_at?: string | null;
@@ -1949,21 +1949,21 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          meta_title_en?: string | null;
-          meta_description_en?: string | null;
-          google_site_verification?: string | null;
           about_ar?: string | null;
           about_en?: string | null;
           business_type?: string | null;
           created_at?: string;
           created_by?: string | null;
           custom_domain?: string | null;
+          google_site_verification?: string | null;
           hero_media?: Json;
           id?: string;
           is_active?: boolean;
           logo_url?: string | null;
           meta_description?: string | null;
+          meta_description_en?: string | null;
           meta_title?: string | null;
+          meta_title_en?: string | null;
           name_ar?: string | null;
           name_en?: string;
           payment_receipt_uploaded_at?: string | null;
@@ -2688,10 +2688,6 @@ export type Database = {
       };
       categories: {
         Row: {
-          seo_title_ar: string | null;
-          seo_title_en: string | null;
-          seo_description_ar: string | null;
-          seo_description_en: string | null;
           brand_id: string | null;
           created_at: string;
           id: string;
@@ -2701,6 +2697,10 @@ export type Database = {
           name_ar: string | null;
           name_en: string | null;
           parent_id: string | null;
+          seo_description_ar: string | null;
+          seo_description_en: string | null;
+          seo_title_ar: string | null;
+          seo_title_en: string | null;
           size_guide_id: string | null;
           slug: string | null;
           sort_order: number;
@@ -2708,10 +2708,6 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
-          seo_title_ar?: string | null;
-          seo_title_en?: string | null;
-          seo_description_ar?: string | null;
-          seo_description_en?: string | null;
           brand_id?: string | null;
           created_at?: string;
           id?: string;
@@ -2721,6 +2717,10 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           parent_id?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
@@ -2728,10 +2728,6 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
-          seo_title_ar?: string | null;
-          seo_title_en?: string | null;
-          seo_description_ar?: string | null;
-          seo_description_en?: string | null;
           brand_id?: string | null;
           created_at?: string;
           id?: string;
@@ -2741,6 +2737,10 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           parent_id?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
           size_guide_id?: string | null;
           slug?: string | null;
           sort_order?: number;
@@ -6220,10 +6220,6 @@ export type Database = {
       };
       products: {
         Row: {
-          seo_title_ar: string | null;
-          seo_title_en: string | null;
-          seo_description_ar: string | null;
-          seo_description_en: string | null;
           auto_deactivated_out_of_stock: boolean | null;
           base_price: number | null;
           booking_buffer_minutes: number;
@@ -6258,6 +6254,10 @@ export type Database = {
           name_ar: string | null;
           name_en: string | null;
           occasion: string | null;
+          seo_description_ar: string | null;
+          seo_description_en: string | null;
+          seo_title_ar: string | null;
+          seo_title_en: string | null;
           service_includes: Json;
           service_location: string | null;
           show_sale_badge: boolean;
@@ -6283,10 +6283,6 @@ export type Database = {
           vendor_id: string | null;
         };
         Insert: {
-          seo_title_ar?: string | null;
-          seo_title_en?: string | null;
-          seo_description_ar?: string | null;
-          seo_description_en?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;
@@ -6321,6 +6317,10 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
           service_includes?: Json;
           service_location?: string | null;
           show_sale_badge?: boolean;
@@ -6346,10 +6346,6 @@ export type Database = {
           vendor_id?: string | null;
         };
         Update: {
-          seo_title_ar?: string | null;
-          seo_title_en?: string | null;
-          seo_description_ar?: string | null;
-          seo_description_en?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;
@@ -6384,6 +6380,10 @@ export type Database = {
           name_ar?: string | null;
           name_en?: string | null;
           occasion?: string | null;
+          seo_description_ar?: string | null;
+          seo_description_en?: string | null;
+          seo_title_ar?: string | null;
+          seo_title_en?: string | null;
           service_includes?: Json;
           service_location?: string | null;
           show_sale_badge?: boolean;
@@ -9747,6 +9747,10 @@ export type Database = {
           recipient: string;
           template_name: string;
         }[];
+      };
+      clean_seo_text: {
+        Args: { p_max: number; p_value: string };
+        Returns: string;
       };
       complete_first_sign_in_password_change: { Args: never; Returns: boolean };
       consume_api_quota: {
