@@ -393,7 +393,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نص الترويسة", "أيقونات الترويسة"], en: ["header fg"] },
   },
   {
-    scope: "simple_footer",
     key: "footer_bg",
     table: "business_settings",
     tab: "storefront",
@@ -405,7 +404,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تذييل", "فوتر"], en: ["footer bg"] },
   },
   {
-    scope: "simple_footer",
     key: "footer_fg",
     table: "business_settings",
     tab: "storefront",
