@@ -109,8 +109,13 @@ describe("the Header & footer group", () => {
     expect(screen.getByLabelText("Newsletter title (English)")).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText("Payment icons"));
     expect(form.setBs).toHaveBeenCalledWith({ footer_show_payment_methods: false });
-    // The columns footer takes its colours from the theme.
-    expect(screen.queryByRole("group", { name: "Footer colours" })).toBeNull();
+    // The columns footer reads the footer colours too (--sf-footer-bg / --sf-footer-fg).
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Footer colours" })).getByRole("button", {
+        name: /Dark/,
+      }),
+    );
+    expect(form.setBs).toHaveBeenCalledWith({ footer_bg: "#111111", footer_fg: "#ffffff" });
   });
 
   it("offers the classic footer its colours and store name, and no layout to choose", () => {

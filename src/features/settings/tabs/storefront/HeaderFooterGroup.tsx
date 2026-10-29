@@ -316,16 +316,15 @@ export function HeaderFooterGroup() {
           </div>
         )}
 
-        {footerVariant === "simple" && (
-          <BarColorsField
-            label={isAr ? "ألوان التذييل" : "Footer colours"}
-            bg={bs.footer_bg}
-            fg={bs.footer_fg}
-            brandColor={brandColor}
-            isAr={isAr}
-            onChange={(colors) => setBs({ footer_bg: colors.bg, footer_fg: colors.fg })}
-          />
-        )}
+        {/* Both footers read these (the columns footer through --sf-footer-bg / -fg). */}
+        <BarColorsField
+          label={isAr ? "ألوان التذييل" : "Footer colours"}
+          bg={bs.footer_bg}
+          fg={bs.footer_fg}
+          brandColor={brandColor}
+          isAr={isAr}
+          onChange={(colors) => setBs({ footer_bg: colors.bg, footer_fg: colors.fg })}
+        />
 
         {footerVariant === "columns" && (
           <>
