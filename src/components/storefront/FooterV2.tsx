@@ -115,9 +115,10 @@ export function FooterV2() {
           <Link
             to="/$slug/$category"
             params={{ slug: brand.slug, category: "sale" }}
-            className={`${linkClass} text-destructive font-medium`}
+            className={`${linkClass} font-semibold`}
+            style={FG}
           >
-            {t("التخفيضات", "Sale")}
+            {t("تنزيلات", "Sale")}
           </Link>
         </>
       )}

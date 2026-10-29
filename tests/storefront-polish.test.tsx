@@ -56,7 +56,9 @@ describe("a product's photo", () => {
     expect(screen.getByText("PL")).toBeTruthy();
     expect(screen.queryByText(/no image|لا توجد صورة/i)).toBeNull();
     expect(storeInitials("  zh  ")).toBe("Z");
-    expect(storeInitials("بيورا لاين")).toBe("بل");
+    // Apart, not joined into the word "بل" ("but") as Pura's no-photo card read it.
+    expect(storeInitials("بيورا لاين")).toBe("ب ل");
+    expect(storeInitials("Pura Line")).toBe("PL");
   });
 
   it("is the initials on a product's own page too (Aurora's Diamond package read 'لا توجد صورة')", () => {
