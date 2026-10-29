@@ -645,22 +645,65 @@
   transform: scale(var(--icon-swap-start-scale));
 }
 
-/* ---------------------------------------------------------------- Card resize (leaving row) */
+/* ---------------------------------------------------------------- A row that leaves a list */
+/* Two beats (useLeavingRows waits for both): the row slides toward its end edge, where its
+   remove button is, shrinking a touch and blurring out; then the space it held closes (its
+   height and the list's gap), so the rows under it glide up. The slide follows the reading
+   direction. */
+:root {
+  --leave-x: 2.5rem;
+  --leave-out: 220ms;
+  --leave-close: 300ms;
+  --leave-close-delay: 160ms;
+}
+[dir="rtl"] .t-collapse {
+  --leave-x: -2.5rem;
+}
 .t-collapse {
   display: grid;
   grid-template-rows: 1fr;
   transition:
-    grid-template-rows var(--resize-dur) var(--resize-ease),
-    opacity var(--motion-quick) var(--motion-ease-smooth);
+    grid-template-rows var(--leave-close) var(--motion-ease-smooth) var(--leave-close-delay),
+    margin-block var(--leave-close) var(--motion-ease-smooth) var(--leave-close-delay);
 }
 .t-collapse > * {
   min-height: 0;
   overflow: hidden;
+  transition:
+    opacity var(--leave-out) var(--motion-ease-out),
+    translate var(--leave-out) var(--motion-ease-smooth),
+    scale var(--leave-out) var(--motion-ease-smooth),
+    filter var(--leave-out) var(--motion-ease-out);
 }
 .t-collapse[data-leaving="true"] {
   grid-template-rows: 0fr;
-  opacity: 0;
+  margin-block: 0;
   pointer-events: none;
+}
+.t-collapse[data-leaving="true"] > * {
+  opacity: 0;
+  translate: var(--leave-x) 0;
+  scale: 0.97;
+  filter: blur(var(--motion-blur-small));
+}
+
+/* Rows that come in with their list (a drawer's lines as it opens, a line just added) rise
+   in one after another, at most six beats apart. Each row gives its place in `--i`. */
+@keyframes t-rise-in {
+  from {
+    opacity: 0;
+    translate: 0 var(--motion-distance-medium);
+    filter: blur(var(--motion-blur-small));
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+.t-rise-in {
+  animation: t-rise-in var(--motion-slow) var(--motion-ease-smooth) both;
+  animation-delay: calc(120ms + min(var(--i, 0), 6) * var(--motion-stagger));
 }
 
 /* ---------------------------------------------------------------- Shared photo morph */
@@ -696,6 +739,7 @@
   .t-toggle-thumb,
   .t-shake,
   .t-skel-reveal,
+  .t-rise-in,
   .t-shimmer-band {
     animation: none !important;
   }
@@ -711,7 +755,8 @@
   .t-check,
   .t-check svg path,
   .t-icon-swap .t-icon,
-  .t-collapse {
+  .t-collapse,
+  .t-collapse > * {
     transition: none !important;
   }
   .t-success-check {

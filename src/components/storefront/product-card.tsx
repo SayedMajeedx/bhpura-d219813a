@@ -102,6 +102,7 @@ export function ProductCard({
 
   return (
     <div
+      data-product-id={product.id}
       className={`group relative flex flex-col sf-cv-card ${staggerClass} ${className || "w-full"}`}
     >
       <Button

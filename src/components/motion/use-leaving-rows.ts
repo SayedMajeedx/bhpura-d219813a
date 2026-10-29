@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/** --resize-dur in src/styles/motion.css, and a beat. */
-const COLLAPSE_MS = 320;
+/** --leave-close-delay + --leave-close in src/styles/motion.css (the row slides out, then its
+ * space closes), and a beat. */
+const COLLAPSE_MS = 500;
 
 /**
- * A row that leaves a list folds away first (transitions.dev's card resize: `t-collapse`
- * with `data-leaving`), then is removed, so the rows under it glide up instead of jumping.
+ * A row that leaves a list slides out and folds away first (`t-collapse` with
+ * `data-leaving`: the row's own exit, then transitions.dev's card resize on its space), then
+ * is removed, so the rows under it glide up instead of jumping.
  * Someone who asked for less motion sees it go at once.
  */
 export function useLeavingRows() {

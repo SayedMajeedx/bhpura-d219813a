@@ -6,6 +6,7 @@ import { ChevronDown, FileText, Grid2X2 } from "lucide-react";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { type ProductRow, type StorefrontCategory } from "@/lib/data/storefront";
 import { getDescendantCategories } from "@/features/storefront-home/lib/home-products";
+import { TabsPill } from "@/components/motion/TabsPill";
 
 /** The category chips (with sub-categories) that filter the home page product grid. */
 export function Categories({
@@ -158,9 +159,12 @@ export function Categories({
         className={
           navigation
             ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center flex flex-wrap gap-3"
-            : "-mx-4 flex snap-x snap-proximity gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-3 sm:overflow-visible sm:px-0"
+            : // The chosen category's fill slides to the next one (transitions.dev's tabs
+              // sliding): the other chips are outlines it passes under.
+              "t-tabs relative -mx-4 flex snap-x snap-proximity gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-3 sm:overflow-visible sm:px-0"
         }
       >
+        {!navigation && <TabsPill />}
         {navigation && (
           <details className="group relative shrink-0">
             <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden">
@@ -239,7 +243,11 @@ export function Categories({
             variant={activeCategorySlugs.length === 0 ? "default" : "outline"}
             aria-pressed={activeCategorySlugs.length === 0}
             onClick={() => setActiveCategorySlugs([])}
-            className="inline-flex min-h-[44px] shrink-0 snap-start rounded-full px-4 py-2.5"
+            className={`t-tab inline-flex min-h-[44px] shrink-0 snap-start rounded-full px-4 py-2.5 ${
+              activeCategorySlugs.length === 0
+                ? ""
+                : "bg-transparent shadow-none hover:bg-background/60"
+            }`}
           >
             {t("الكل", "All")}
           </Button>
@@ -259,7 +267,9 @@ export function Categories({
                   setActiveCategorySlugs([c.key]);
                 }
               }}
-              className={`shrink-0 snap-start px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "inline-flex"} rounded-full gap-2 min-h-[44px]`}
+              className={`shrink-0 snap-start px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "t-tab inline-flex"} rounded-full gap-2 min-h-[44px] ${
+                !navigation && !active ? "bg-transparent shadow-none hover:bg-background/60" : ""
+              }`}
             >
               {c.image && (
                 <ResponsiveImage

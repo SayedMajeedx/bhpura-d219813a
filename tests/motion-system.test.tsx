@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { numberRuns, morphParts } from "../src/lib/motion/text-diff";
 import { pillBox, ACTIVE_TAB_SELECTORS } from "../src/lib/motion/pill";
 import { productPhotoName, nameTappedPhoto } from "../src/lib/motion/view-transition";
+import { flipOffset, flipSnapshot, playFlip } from "../src/lib/motion/flip";
 import { AnimatedNumber } from "../src/components/motion/AnimatedNumber";
 import { CountBadge } from "../src/components/motion/CountBadge";
 import { LikeHeart } from "../src/components/motion/LikeHeart";
@@ -332,10 +333,55 @@ describe("folds and leaving rows", () => {
     fireEvent.click(screen.getByRole("button"));
     expect(screen.getByRole("button").dataset.leaving).toBe("true");
     expect(remove).not.toHaveBeenCalled();
+    // It slides out, then its space closes: still there partway through.
     act(() => {
-      vi.advanceTimersByTime(400);
+      vi.advanceTimersByTime(300);
+    });
+    expect(remove).not.toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(300);
     });
     expect(remove).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
+  });
+});
+
+describe("the product grid's glide when a category is chosen", () => {
+  it("starts a card that stayed from where it was, and a newcomer from its place", () => {
+    expect(flipOffset({ left: 100, top: 500 }, { left: 340, top: 200 })).toEqual({
+      x: -240,
+      y: 300,
+    });
+    expect(flipOffset(undefined, { left: 340, top: 200 })).toEqual({ x: 0, y: 0 });
+  });
+
+  it("reads each card once, by its product", () => {
+    const grid = document.createElement("div");
+    grid.innerHTML =
+      '<div data-product-id="a"></div><div data-product-id="b"></div><div data-product-id="a"></div>';
+    expect([...flipSnapshot(grid, "data-product-id").keys()]).toEqual(["a", "b"]);
+    expect(flipSnapshot(null, "data-product-id").size).toBe(0);
+  });
+
+  it("glides only the cards that moved", () => {
+    const grid = document.createElement("div");
+    grid.innerHTML = '<div data-product-id="a"></div><div data-product-id="b"></div>';
+    document.body.append(grid);
+    const [a, b] = [...grid.children] as HTMLElement[];
+    const animate = vi.fn();
+    a.animate = animate;
+    b.animate = animate;
+    // Both now at the top left (jsdom draws nothing): "a" was 120px lower, "b" did not move.
+    playFlip(
+      grid,
+      "data-product-id",
+      new Map([
+        ["a", { left: 0, top: 120 }],
+        ["b", { left: 0, top: 0 }],
+      ]),
+    );
+    expect(animate).toHaveBeenCalledTimes(1);
+    expect(animate.mock.calls[0][0][0]).toEqual({ translate: "0px 120px" });
+    grid.remove();
   });
 });
