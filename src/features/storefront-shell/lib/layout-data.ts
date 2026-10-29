@@ -24,6 +24,8 @@ export type StoreLayoutData = {
     store_vertical?: string | null;
     /** The brand story's picture: a listing's shared link may show it (`storeShareImage`). */
     brand_story_image_url?: string | null;
+    /** Where the store's chosen share picture is kept (`shareImageSetting`). */
+    homepage_editorial_sections?: unknown;
     /** How the store delivers: the product page's Google data says it (`offer-policies.ts`). */
     delivery_enabled?: boolean | null;
     delivery_fee?: number | string | null;
