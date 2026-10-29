@@ -136,7 +136,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                   />
                 </div>
               ) : (
-                cart.map((item) => {
+                cart.map((item, index) => {
                   const displayName = pickName(lang, {
                     name: item.name,
                     name_ar: item.name_ar,
@@ -145,7 +145,10 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                   return (
                     <div
                       key={item.cart_line_id}
-                      className="t-collapse"
+                      // Lines rise in as the drawer opens (and a new one as it is added); a line
+                      // taken out slides away and its space closes.
+                      className="t-collapse t-rise-in"
+                      style={{ "--i": index } as React.CSSProperties}
                       data-leaving={isLeaving(item.cart_line_id) ? "true" : "false"}
                     >
                       <div className="flex gap-3 border rounded-lg p-2 items-center">

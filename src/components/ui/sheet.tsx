@@ -22,7 +22,9 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "fixed inset-0 z-40 bg-black/35 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      // It fades with the panel, on its curve and timing, and blurs nothing: a blurred page
+      // behind a sliding panel is redrawn on every frame, and the drawer stuttered on phones.
+      "fixed inset-0 z-40 bg-black/40 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:duration-400 data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -31,11 +33,11 @@ const SheetOverlay = React.forwardRef<
 ));
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
-// The drawer curve (fast off the mark, long settle) at 300ms in and 200ms out: a sheet (the cart,
-// a phone menu, filters) opened at 500ms ease-in-out, slow off the mark, and closed slower than
-// the shopper's tap.
+// The drawer curve (fast off the mark, long settle) at a panel's timing (motion.css): 400ms in,
+// 300ms out. At 300 and 200 the cart drawer read as a jump rather than a slide; at 500ms
+// ease-in-out it had been slow off the mark and closed slower than the shopper's tap.
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:duration-200 data-[state=open]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform data-[state=closed]:duration-300 data-[state=open]:duration-400 data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {

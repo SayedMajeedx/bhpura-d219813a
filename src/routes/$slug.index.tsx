@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, useStoreModules } from "@/lib/storefront-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCallback, useMemo, useRef, useEffect } from "react";
+import { useCallback, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { BrandStorySection } from "@/components/storefront/BrandStorySection";
@@ -35,6 +35,7 @@ import {
   storefrontHomeLayout,
 } from "@/lib/brand-templates/design-presets";
 import { isServicesStore } from "@/features/services-home/lib/services-home";
+import { flipSnapshot, playFlip, type FlipSnapshot } from "@/lib/motion/flip";
 
 export const Route = createFileRoute("/$slug/")({
   // The chosen category lives in the address (?cat=...), so the logo and the back button work.
@@ -62,16 +63,37 @@ function StoreHome() {
   const navigate = useNavigate({ from: Route.fullPath });
   const activeCategorySlugs = useMemo(() => parseCategoryPath(cat), [cat]);
   const activeCat = activeCategorySlugs[0] || null;
+  const productsSectionRef = useRef<HTMLDivElement>(null);
+  const prevCatRef = useRef<string | null>(null);
+  // Where the products section sat on screen when a choice was made. A category hides the
+  // rails above it and "All" brings them back, so the page grows or shrinks above what the
+  // shopper is reading; Safari keeps no place, and "All" landed on the sale rail.
+  const productsAnchor = useRef<number | null>(null);
+  // Where each product card was, so the cards that stay glide to their new places.
+  const cardPlaces = useRef<FlipSnapshot>(new Map());
+
   // A new history entry per choice: back returns to the previous filter, the logo to the
   // unfiltered page. The page scrolls to the products itself (below), not to the top.
   const setActiveCategorySlugs = useCallback(
-    (path: string[]) =>
-      void navigate({ search: { cat: categoryPathParam(path) }, resetScroll: false }),
+    (path: string[]) => {
+      productsAnchor.current = productsSectionRef.current?.getBoundingClientRect().top ?? null;
+      cardPlaces.current = flipSnapshot(productsSectionRef.current, "data-product-id");
+      void navigate({ search: { cat: categoryPathParam(path) }, resetScroll: false });
+    },
     [navigate],
   );
 
-  const productsSectionRef = useRef<HTMLDivElement>(null);
-  const prevCatRef = useRef<string | null>(null);
+  // The section is put back where it was before the page is drawn, so nothing moves.
+  useLayoutEffect(() => {
+    const before = productsAnchor.current;
+    productsAnchor.current = null;
+    const section = productsSectionRef.current;
+    if (before === null || !section) return;
+    const drift = section.getBoundingClientRect().top - before;
+    if (Math.abs(drift) > 1) window.scrollBy({ top: drift, behavior: "instant" });
+    playFlip(section, "data-product-id", cardPlaces.current);
+    cardPlaces.current = new Map();
+  }, [activeCategorySlugs]);
 
   useEffect(() => {
     if (activeCat && prevCatRef.current !== activeCat) {
