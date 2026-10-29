@@ -51,6 +51,24 @@ export function originalPriceFor({
   return 0;
 }
 
+/**
+ * The variant whose "was" price the page strikes through: the chosen one, else (no size chosen
+ * yet) the matching variant with the highest original price, as a card reads it (`cardPrice`).
+ * The page struck nothing until a size was chosen, so a piece on sale on its card ("24, was 30,
+ * -20%") read as full price on its own page and in its phone bar (Pura's Sabeeka, 2026-10-29).
+ */
+export function wasPriceVariant(
+  chosen: Variant | null | undefined,
+  matchingVariants: Variant[],
+): Variant | null {
+  if (chosen) return chosen;
+  let best: Variant | null = null;
+  for (const candidate of matchingVariants) {
+    if (Number(candidate.original_price || 0) > Number(best?.original_price || 0)) best = candidate;
+  }
+  return best;
+}
+
 /** Whole-percent discount from the original price, or 0. */
 export function discountPercentFor(originalPriceWithAddons: number, displayPrice: number): number {
   return originalPriceWithAddons > displayPrice

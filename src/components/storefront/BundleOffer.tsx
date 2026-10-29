@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
 import { bundleBlock, companionVariant } from "@/lib/cart/bundle-offer";
+import { cardPrice } from "@/lib/product-price";
 import { toast } from "sonner";
 import { Plus, Check, ShoppingBag, Sparkles, Image as ImageIcon } from "lucide-react";
 
@@ -56,14 +57,13 @@ export function BundleOffer({
   const chosen = offered.find((entry) => entry.item.id === selectedComplementaryId) ?? offered[0];
   const selectedItem = chosen.item;
 
+  // Until a size names the variant, a piece costs what its card says (`cardPrice`): the product's
+  // `base_price` is not a price a shopper pays (Pura's Sabeeka read 30 here and 24 on its card).
   const mainPrice = Number(
-    mainVariant?.selling_price ?? mainVariant?.price ?? mainProduct.base_price ?? 0,
+    mainVariant?.selling_price ?? cardPrice(mainProduct, mainProduct.product_variants).from,
   );
   const compPrice = Number(
-    chosen.variant?.selling_price ??
-      selectedItem.product_variants?.[0]?.selling_price ??
-      selectedItem.base_price ??
-      0,
+    chosen.variant?.selling_price ?? cardPrice(selectedItem, selectedItem.product_variants).from,
   );
   const bundleTotal = mainPrice + compPrice;
 

@@ -571,6 +571,12 @@ function DesktopSubMenu({
   );
 }
 
+/**
+ * A sale link stands out by weight and an underline in the bar's own colour: a fixed red read
+ * 2.6:1 on Pura's mauve bar, a colour from no store's palette.
+ */
+const SALE_LINK = "font-bold underline decoration-2 underline-offset-4";
+
 function DesktopStoreNavigation() {
   const { brand, lang, t } = useStorefront();
   const { data = [] } = useStorefrontCategories();
@@ -640,7 +646,7 @@ function DesktopStoreNavigation() {
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: url }}
                   className={`flex items-center gap-1.5 rounded-[var(--radius)] px-5 py-2.5 text-base font-semibold transition hover:-translate-y-0.5 hover:bg-current/10 ${
-                    isSale(c) ? "font-bold text-red-500" : ""
+                    isSale(c) ? SALE_LINK : ""
                   }`}
                 >
                   <span>{name}</span>
@@ -684,7 +690,7 @@ function DesktopStoreNavigation() {
               to="/$slug/$category"
               params={{ slug: brand.slug, category: url }}
               className={`shrink-0 rounded-[var(--radius)] px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-current/10 ${
-                isSale(c) ? "font-bold text-red-500" : "font-semibold"
+                isSale(c) ? SALE_LINK : "font-semibold"
               }`}
               onMouseEnter={() => {
                 if (timeoutRef.current) {

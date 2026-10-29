@@ -1,4 +1,5 @@
 import { faviconType } from "@/lib/favicon";
+import { META_DESCRIPTION_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { smartKindOf } from "@/lib/smart-categories";
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { pageAddressLinks, socialImage, storefrontCanonical } from "@/lib/seo/canonical";
@@ -40,6 +41,8 @@ type CmsPage = {
   title_ar?: string | null;
   meta_title?: string | null;
   meta_description?: string | null;
+  content_ar?: string | null;
+  content_en?: string | null;
   image_url?: string | null;
 };
 type CategoryRow = {
@@ -93,10 +96,17 @@ export function categoryHead({
   let image: string | null | undefined;
   let name: string;
   if (page) {
-    name = page.title_en || page.title_ar || storeName;
-    title = page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
+    // In the page's language, named with the store like a category: Pura's Arabic terms page was
+    // titled "Terms & Conditions" and described as "Learn more about PURA LINE."
+    name =
+      (lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar) ||
+      storeName;
+    title = page.meta_title || `${name} | ${storeName}`;
+    const content = lang === "ar" ? page.content_ar || page.content_en : page.content_en;
     description =
-      page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
+      page.meta_description ||
+      sanitizeMetaText(content, META_DESCRIPTION_LIMIT) ||
+      (lang === "ar" ? `${name} في ${storeName}.` : `${name} at ${storeName}.`);
     image = page.image_url || loaderData?.shareImage || brand.logo_url;
   } else if (category || smart) {
     name = category

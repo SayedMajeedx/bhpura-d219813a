@@ -373,7 +373,8 @@ export function OrderSummaryCard({
                 applyPromo();
               }
             }}
-            placeholder="EID20"
+            // Not a sample code: "EID20" read as a code every store gives (Pura has none).
+            placeholder={t("أدخل الرمز", "Enter code")}
           />
           <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>
             {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}

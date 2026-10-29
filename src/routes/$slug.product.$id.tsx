@@ -55,6 +55,7 @@ import {
   displayPriceFor,
   matchingPriceRange,
   originalPriceFor,
+  wasPriceVariant,
 } from "@/features/product-page/lib/pdp-pricing";
 import type { CustomField } from "@/features/product-page/types";
 import {
@@ -92,35 +93,11 @@ import { ServicePurchasePanel } from "@/features/product-page/components/Service
 import { ServiceMobileBookBar } from "@/features/product-page/components/ServiceMobileBookBar";
 import { useVariantSelectionSync } from "@/features/product-page/hooks/use-variant-selection-sync";
 import { ProductTitleAndPrice } from "@/features/product-page/components/ProductTitleAndPrice";
+import { ProductUnavailable } from "@/features/product-page/components/ProductUnavailable";
+import { resolveInitialLang } from "@/features/storefront-shell/lib/initial-lang";
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params, location, parentMatchPromise }) => {
-    let initialLang: "ar" | "en" = "ar";
-    const searchParams = location?.search as any;
-    const queryLang = searchParams?.lang;
-    if (queryLang === "en" || queryLang === "ar") {
-      initialLang = queryLang;
-    } else if (typeof window === "undefined") {
-      try {
-        const { getStorefrontInitialLang } = await import("@/lib/storefront-cookies.functions");
-        const cookieLang = await getStorefrontInitialLang({ data: { slug: params.slug } });
-        if (cookieLang === "en" || cookieLang === "ar") {
-          initialLang = cookieLang;
-        }
-      } catch {
-        /* fallback to default */
-      }
-    } else {
-      try {
-        const cookieMatch =
-          document.cookie.match(new RegExp(`(?:^|; )boutq_lang_${params.slug}=([^;]*)`)) ||
-          document.cookie.match(/(?:^|; )boutq_lang=([^;]*)/);
-        if (cookieMatch && (cookieMatch[1] === "en" || cookieMatch[1] === "ar")) {
-          initialLang = cookieMatch[1] as "ar" | "en";
-        }
-      } catch {
-        /* fallback */
-      }
-    }
+    const initialLang = await resolveInitialLang(params.slug, location?.search);
 
     // One round trip, not two: the product (matched to the store by a join) and the best sellers are
     // asked for at once, beside the store layout's own call, instead of after a lookup of the store.
@@ -163,6 +140,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
   },
   head: productHead,
   component: ProductDetail,
+  // Inside the store, as a missing category is: the layout's own screen says the store does not exist.
+  notFoundComponent: ProductUnavailable,
 });
 
 function ProductDetail({ splatId }: { splatId?: string } = {}) {
@@ -683,7 +662,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   // Calculate original price only when displaying a single price
   const originalPrice = originalPriceFor({
     isRange,
-    variant,
+    variant: wasPriceVariant(variant, matchingVariants),
     basePrice,
     productOriginalPrice: Number((product as any).original_price || 0),
   });

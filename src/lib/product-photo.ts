@@ -34,12 +34,13 @@ export function hasProductPhoto(product: PhotoSource | null | undefined): boolea
   return productCover(product) !== null;
 }
 
+/** Keeps two Arabic letters apart: joined, "بيورا لاين"'s initials read as the word "بل" ("but"). */
+const THIN_SPACE = " ";
+
 /** The letters a store's placeholder shows when it has no logo: "Pura Line" gives "PL". */
 export function storeInitials(name: string | null | undefined): string {
   const words = (name ?? "").trim().split(/\s+/).filter(Boolean);
-  return words
-    .slice(0, 2)
-    .map((word) => Array.from(word)[0] ?? "")
-    .join("")
-    .toUpperCase();
+  const letters = words.slice(0, 2).map((word) => Array.from(word)[0] ?? "");
+  const joining = letters.some((letter) => /\p{Script=Arabic}/u.test(letter));
+  return letters.join(joining ? THIN_SPACE : "").toUpperCase();
 }
