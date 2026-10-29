@@ -5,6 +5,7 @@ import { resolveStorefrontTypography } from "@/lib/typography";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile";
 import { storedFooterTitles, storedPages } from "@/lib/cms-pages";
+import { categoryBannerTextColor } from "@/lib/banner-size";
 import { shareImageSetting } from "@/lib/seo/share-image";
 import { storyBackground, storyPoints } from "@/lib/brand-templates/brand-story";
 import type { fetchStorefrontPageData } from "@/lib/data/storefront";
@@ -232,6 +233,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     brand_story_points: storyPoints(rawEditorialSections),
     brand_story_background: storyBackground(rawEditorialSections),
     share_image_url: shareImageSetting(rawEditorialSections),
+    category_banner_text_color: categoryBannerTextColor(rawEditorialSections),
     social_proof_enabled: s?.social_proof_enabled ?? true,
     recently_viewed_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
     recent_views_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,

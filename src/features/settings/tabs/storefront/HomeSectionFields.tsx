@@ -21,6 +21,8 @@ import {
   type StoryPoint,
 } from "@/lib/brand-templates/brand-story";
 import { ColorField } from "@/features/settings/shared/ColorField";
+import { useI18n } from "@/lib/i18n";
+import { categoryBannerTextColor } from "@/lib/banner-size";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 
 /** Where the trust bar shows, and its badges (the footer's badges on the classic look). */
@@ -357,7 +359,35 @@ export function CategoryBannerField({ isAr }: { isAr: boolean }) {
           </Button>
         )}
       </div>
+      <CategoryBannerTextColor />
     </div>
+  );
+}
+
+/**
+ * The colour of the banner's text (the breadcrumb, the name and the count). Empty is automatic:
+ * white over a picture, else a colour that reads on the band. Kept in
+ * `homepage_editorial_sections.category_banner_text_color`.
+ */
+function CategoryBannerTextColor() {
+  const { form, setBs } = useBrandSettingsFormContext();
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const sections =
+    form.bs.homepage_editorial_sections && typeof form.bs.homepage_editorial_sections === "object"
+      ? (form.bs.homepage_editorial_sections as Record<string, unknown>)
+      : {};
+  return (
+    <ColorField
+      label={isAr ? "لون نص اللافتة (فارغ = تلقائي)" : "Banner text colour (empty = automatic)"}
+      value={categoryBannerTextColor(sections)}
+      onChange={(value) => {
+        const next = { ...sections };
+        if (value) next.category_banner_text_color = value;
+        else delete next.category_banner_text_color;
+        setBs({ homepage_editorial_sections: next as any });
+      }}
+    />
   );
 }
 

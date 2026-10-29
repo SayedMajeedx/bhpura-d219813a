@@ -1,3 +1,5 @@
+import { readableOn } from "@/lib/brand-palette-apply";
+
 /**
  * How tall the storefront's banners are: the picture-and-title bands above a home page section
  * and above a category's products. The merchant keeps the picture and the title they chose; this
@@ -81,3 +83,38 @@ export const CATEGORY_BANNER: Record<BannerSize, BannerSpec> = {
     gap: "mb-5",
   },
 };
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/**
+ * The colour the store chose for the text of a category's banner (`homepage_editorial_sections.
+ * category_banner_text_color`, a #rrggbb), or null for the automatic one.
+ */
+export function categoryBannerTextColor(editorialSections: unknown): string | null {
+  const raw =
+    editorialSections && typeof editorialSections === "object"
+      ? (editorialSections as { category_banner_text_color?: unknown }).category_banner_text_color
+      : null;
+  return typeof raw === "string" && HEX.test(raw.trim()) ? raw.trim() : null;
+}
+
+/**
+ * The text colour of a category's banner: the store's own choice; white over its picture (with its
+ * shade); else the store's heading colour, unless that cannot be read on the band's background (the
+ * header colour), when white or the heading colour is taken, whichever reads better. The heading
+ * colour alone once put a dark title on a dark band.
+ */
+export function categoryBannerInk(input: {
+  own: string | null | undefined;
+  hasPicture: boolean;
+  headingColor: string | null | undefined;
+  backgroundColor: string | null | undefined;
+}): string | null {
+  const own = input.own?.trim();
+  if (own && HEX.test(own)) return own;
+  if (input.hasPicture) return "#ffffff";
+  const background = input.backgroundColor?.trim();
+  if (!background || !HEX.test(background)) return input.headingColor?.trim() || null;
+  const heading = input.headingColor?.trim();
+  return readableOn(background, heading && HEX.test(heading) ? heading : "#111111");
+}
