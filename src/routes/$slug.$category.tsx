@@ -31,7 +31,7 @@ import { buildCollectionSchema, buildBreadcrumbsSchema } from "@/lib/seo/structu
 import { storefrontCanonical } from "@/lib/seo/canonical";
 import { CategoryFilters } from "@/components/storefront/CategoryFilters";
 import { replaceUrlQuietly } from "@/lib/quiet-url";
-import { CATEGORY_BANNER, resolveBannerSize } from "@/lib/banner-size";
+import { CATEGORY_BANNER, categoryBannerInk, resolveBannerSize } from "@/lib/banner-size";
 import {
   catalogFacets,
   filterProducts,
@@ -412,10 +412,13 @@ function CategoryPage() {
         desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
         className={`${banner.height} border-b`}
         style={{
-          color: settings.category_banner_background_url
-            ? "#ffffff"
-            : settings.heading_color ||
-              "var(--sf-heading, var(--sf-header-fg, var(--foreground, #111111))",
+          color:
+            categoryBannerInk({
+              own: settings.category_banner_text_color,
+              hasPicture: Boolean(settings.category_banner_background_url),
+              headingColor: settings.heading_color,
+              backgroundColor: settings.header_bg,
+            }) || "var(--sf-heading, var(--sf-header-fg, var(--foreground, #111111)))",
         }}
         backgroundStyle={{
           backgroundColor: "var(--sf-header-bg, var(--background, #ffffff))",

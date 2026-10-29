@@ -277,6 +277,8 @@ export type PublicSettings = {
   brand_story_background?: string | null;
   /** The picture the store chose for its shared links; null = the first hero picture. */
   share_image_url?: string | null;
+  /** The text colour the store chose for a category banner; null = automatic. */
+  category_banner_text_color?: string | null;
   trust_badges?: TrustBadgesConfig | null;
   trust_bar_enabled?: boolean;
   trust_bar_position?: "above_footer" | "below_header" | "both" | string;
