@@ -259,11 +259,6 @@ function OrdersList() {
     setUpdatingOrderId,
   });
 
-  // Paid and handed-over orders stay on record: only the others of a selection are deleted.
-  const deletableSelected = new Set(
-    [...selectedOrderIds].filter((id) => orderDeletable(orders.find((order) => order.id === id))),
-  );
-
   const del = async (id: string) => {
     try {
       await deleteOrderWithPrivateReceipt({ data: { orderId: id } });
@@ -425,6 +420,11 @@ function OrdersList() {
   };
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
+  // Paid and handed-over orders stay on record: only the others of a selection are deleted.
+  // Worked out after `orders` exists: read before it, ticking any order took the page down.
+  const deletableSelected = new Set(
+    [...selectedOrderIds].filter((id) => orderDeletable(orders.find((order) => order.id === id))),
+  );
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = deferredSearch.trim().toLowerCase();
 

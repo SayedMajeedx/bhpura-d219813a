@@ -1,6 +1,6 @@
 import { type Ref, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ACTIVE_TAB_SELECTORS, PILL_LOOK, pillBox } from "@/lib/motion/pill";
+import { ACTIVE_TAB_ATTRIBUTES, ACTIVE_TAB_SELECTORS, PILL_LOOK, pillBox } from "@/lib/motion/pill";
 
 /**
  * The pill that slides to the active tab (transitions.dev's tabs sliding, classes in
@@ -57,15 +57,34 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
     };
 
     place(true);
-    const changes = new MutationObserver(() => place(false));
-    changes.observe(bar, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-state", "aria-selected", "aria-current", "data-active"],
-    });
+    // A tab that changes size (a font arriving, a count growing) moves the pill at once.
     const resizes =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => place(true));
-    resizes?.observe(bar);
+    const watchSizes = () => {
+      if (!resizes) return;
+      resizes.disconnect();
+      resizes.observe(bar);
+      bar.querySelectorAll(":scope > .t-tab").forEach((tab) => resizes.observe(tab));
+    };
+    watchSizes();
+
+    const changes = new MutationObserver((records) => {
+      // A bar whose tabs were replaced (the workspace tabs, on moving to another workspace)
+      // watches the new ones: the pill once stayed where the last workspace's tab had been.
+      if (records.some((record) => record.type === "childList" && record.target === bar)) {
+        watchSizes();
+      }
+      place(false);
+    });
+    changes.observe(bar, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      // Every way a bar marks its choice (ACTIVE_TAB_SELECTORS), and a class, for a bar that
+      // only restyles its chosen tab. `aria-pressed` was once missing: the switchers' and the
+      // product page's pills never moved after the first tap.
+      attributeFilter: [...ACTIVE_TAB_ATTRIBUTES, "class"],
+    });
     return () => {
       changes.disconnect();
       resizes?.disconnect();

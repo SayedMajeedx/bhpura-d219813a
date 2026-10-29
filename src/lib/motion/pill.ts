@@ -40,13 +40,20 @@ export function pillBox(bar: BarMetrics, tab: Rect): PillBox {
  * `data-active` (a row of links may have more than one the router calls current), Radix's
  * `data-state="active"`, `aria-selected`, `aria-pressed`, then `aria-current`.
  */
-export const ACTIVE_TAB_SELECTORS = [
-  '[data-active="true"]',
-  '[data-state="active"]',
-  '[aria-selected="true"]',
-  '[aria-pressed="true"]',
-  '[aria-current="page"]',
-].map((state) => `:scope > .t-tab${state}`);
+export const ACTIVE_TAB_STATES = [
+  ["data-active", "true"],
+  ["data-state", "active"],
+  ["aria-selected", "true"],
+  ["aria-pressed", "true"],
+  ["aria-current", "page"],
+] as const;
+
+export const ACTIVE_TAB_SELECTORS = ACTIVE_TAB_STATES.map(
+  ([name, value]) => `:scope > .t-tab[${name}="${value}"]`,
+);
+
+/** The attributes the pill watches: one list with the selectors, so neither can miss one. */
+export const ACTIVE_TAB_ATTRIBUTES = ACTIVE_TAB_STATES.map(([name]) => name);
 
 /** What the pill takes from the active tab's own look, so each bar keeps its design. */
 export const PILL_LOOK = [
