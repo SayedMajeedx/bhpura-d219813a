@@ -140,6 +140,38 @@ describe("tabs sliding: where the pill sits", () => {
     expect(pill.style.backgroundColor).toBe(fills[1]);
   });
 
+  it("moves to a new set of tabs, as the workspace tabs are replaced", async () => {
+    // Each workspace has its own tabs: moving to another one replaces them all.
+    function Bar({ set }: { set: "home" | "orders" }) {
+      const tabs = set === "home" ? ["home", "reports"] : ["orders", "returns"];
+      return (
+        <div className="t-tabs">
+          <TabsPill />
+          {tabs.map((id, i) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="t-tab"
+              data-active={i === 0 ? "true" : "false"}
+              style={{
+                backgroundColor:
+                  i === 0 ? (set === "home" ? "rgb(1, 1, 1)" : "rgb(2, 2, 2)") : undefined,
+              }}
+            >
+              {id}
+            </a>
+          ))}
+        </div>
+      );
+    }
+    const { container, rerender } = render(<Bar set="home" />);
+    const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
+    expect(pill.style.backgroundColor).toBe("rgb(1, 1, 1)");
+    rerender(<Bar set="orders" />);
+    await act(async () => {});
+    expect(pill.style.backgroundColor).toBe("rgb(2, 2, 2)");
+  });
+
   it("finds its first tab when the first choice is made", async () => {
     function Chips({ active }: { active: number | null }) {
       return (
