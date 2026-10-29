@@ -150,23 +150,18 @@ export function MerchandisingSection({
           desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
           className={`${banner.height} rounded-none`}
           backgroundClassName="bg-muted"
+          // The white title sits at the foot: a shade there keeps it readable on a light picture
+          // (Pura's pale pink silk under "تنزيلات" read 1.6:1 with none).
+          overlayClassName="bg-gradient-to-t from-black/55 via-black/20 to-transparent"
           background={
-            <>
-              <ResponsiveImage
-                src={editorial.banner_image_url}
-                preset="hero"
-                sizes="100vw"
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-              {/* The white title sits at the foot: a shade there keeps it readable on a light
-                  picture (Pura's pale pink silk under "تنزيلات" read 1.6:1 with none). */}
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-black/15 to-transparent"
-              />
-            </>
+            <ResponsiveImage
+              src={editorial.banner_image_url}
+              preset="hero"
+              sizes="100vw"
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
           }
         >
           <div

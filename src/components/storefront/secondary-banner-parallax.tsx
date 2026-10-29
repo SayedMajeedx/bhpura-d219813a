@@ -135,8 +135,19 @@ type SecondaryBannerParallaxProps = {
   backgroundClassName?: string;
   backgroundStyle?: CSSProperties;
   background?: ReactNode;
+  /**
+   * A layer over the background that stays on the banner's own box (a shade under its title). In
+   * the background it would move with the picture and spread over its overscan: Pura's shade lay
+   * mostly outside the banner, and was about a fifth as dark as asked where the title sits.
+   */
+  overlayClassName?: string;
   children: ReactNode;
 };
+
+function BannerOverlay({ className }: { className?: string }) {
+  if (!className) return null;
+  return <div aria-hidden="true" className={`pointer-events-none absolute inset-0 ${className}`} />;
+}
 
 export function SecondaryBannerParallax({ enabled, ...props }: SecondaryBannerParallaxProps) {
   // Keep the disabled path completely inert: no effect hooks, observer, listener, or timeline node.
@@ -150,6 +161,7 @@ export function SecondaryBannerParallax({ enabled, ...props }: SecondaryBannerPa
         >
           {props.background}
         </div>
+        <BannerOverlay className={props.overlayClassName} />
         <div className="relative z-10">{props.children}</div>
       </div>
     );
@@ -165,6 +177,7 @@ function ActiveSecondaryBannerParallax({
   backgroundClassName = "",
   backgroundStyle,
   background,
+  overlayClassName,
   children,
 }: Omit<SecondaryBannerParallaxProps, "enabled">) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -264,6 +277,7 @@ function ActiveSecondaryBannerParallax({
       >
         {background}
       </div>
+      <BannerOverlay className={overlayClassName} />
       <div ref={foregroundRef} className="secondary-banner-parallax__foreground relative z-10">
         {children}
       </div>
