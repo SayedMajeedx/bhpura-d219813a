@@ -273,6 +273,8 @@ export type PublicSettings = {
   brand_story_image_url?: string | null;
   /** The story's points as the store wrote them (`storyPoints`); none until it does. */
   brand_story_points?: StoryPoint[];
+  /** The story section's background colour as the store chose it; null = the theme's. */
+  brand_story_background?: string | null;
   trust_badges?: TrustBadgesConfig | null;
   trust_bar_enabled?: boolean;
   trust_bar_position?: "above_footer" | "below_header" | "both" | string;

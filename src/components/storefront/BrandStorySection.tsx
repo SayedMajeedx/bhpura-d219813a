@@ -1,5 +1,5 @@
 import React from "react";
-import { useStorefront } from "@/lib/storefront-context";
+import { readableOn, useStorefront } from "@/lib/storefront-context";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
@@ -60,10 +60,16 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
     text: storyPointText(point, isAr ? "ar" : "en"),
   }));
 
+  // The store's own background: its words take the colour that reads on it.
+  const customBg = settings?.brand_story_background ?? null;
+  const ink = customBg ? readableOn(customBg) : undefined;
+  const inkStyle = ink ? { color: ink } : undefined;
+
   return (
     <section
       ref={revealRef}
-      className={`py-12 sm:py-16 border-y border-border bg-muted/20 sf-reveal ${className}`}
+      style={customBg ? { backgroundColor: customBg } : undefined}
+      className={`py-12 sm:py-16 border-y border-border sf-reveal ${customBg ? "" : "bg-muted/20"} ${className}`}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -91,16 +97,25 @@ export function BrandStorySection({ className = "" }: BrandStorySectionProps) {
           {/* Editorial Content Side (7 columns on desktop) */}
           <div className="lg:col-span-7 order-1 lg:order-2 space-y-6 text-start">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
+              <span
+                style={inkStyle}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary"
+              >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>{subtitle}</span>
               </span>
-              <h2 className="font-display text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight">
+              <h2
+                style={inkStyle}
+                className="font-display text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight"
+              >
                 {title}
               </h2>
             </div>
 
-            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line">
+            <p
+              style={ink ? { color: ink, opacity: 0.85 } : undefined}
+              className="text-sm sm:text-base text-muted-foreground leading-relaxed whitespace-pre-line"
+            >
               {description}
             </p>
 

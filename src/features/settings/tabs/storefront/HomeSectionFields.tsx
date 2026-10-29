@@ -17,8 +17,10 @@ import {
 import {
   STORY_POINTS_MAX,
   brandStoryDefaults,
+  storyBackground,
   type StoryPoint,
 } from "@/lib/brand-templates/brand-story";
+import { ColorField } from "@/features/settings/shared/ColorField";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 
 /** Where the trust bar shows, and its badges (the footer's badges on the classic look). */
@@ -178,6 +180,7 @@ export function BrandStoryFields({ isAr }: { isAr: boolean }) {
           />
         </div>
         <StoryPointsFields isAr={isAr} suggestions={defaults.values} />
+        <StoryBackgroundField isAr={isAr} />
         <p className="text-xs text-muted-foreground">
           {ownWords
             ? isAr
@@ -253,6 +256,31 @@ function StoryPointsFields({
         </div>
       ))}
     </fieldset>
+  );
+}
+
+/**
+ * The story section's background colour. Kept in `homepage_editorial_sections.story_background`
+ * beside the points; empty keeps the theme's soft grey, and the storefront picks the text colour
+ * that reads on it.
+ */
+function StoryBackgroundField({ isAr }: { isAr: boolean }) {
+  const { form, setBs } = useBrandSettingsFormContext();
+  const sections =
+    form.bs.homepage_editorial_sections && typeof form.bs.homepage_editorial_sections === "object"
+      ? (form.bs.homepage_editorial_sections as Record<string, unknown>)
+      : {};
+  return (
+    <ColorField
+      label={isAr ? "لون خلفية القسم (فارغ = الافتراضي)" : "Section background (empty = default)"}
+      value={storyBackground(sections)}
+      onChange={(value) => {
+        const next = { ...sections };
+        if (value) next.story_background = value;
+        else delete next.story_background;
+        setBs({ homepage_editorial_sections: next as any });
+      }}
+    />
   );
 }
 
