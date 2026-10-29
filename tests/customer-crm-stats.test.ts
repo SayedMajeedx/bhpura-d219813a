@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { buildCustomerCrmStats, resolveCustomerSegmentBadge } from "../src/lib/commerce-metrics";
 
+// Recent, not a fixed date: a customer with repeat orders is "Churn Risk" after 60 quiet days,
+// so a hard-coded day turned these cases into churn once it was two months old.
+const RECENT_ORDER_DATE = new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString();
+
 const order = (overrides: Record<string, unknown> = {}) => ({
   customer_id: "customer-1",
   total: 20,
-  created_at: "2026-08-30T12:00:00.000Z",
+  created_at: RECENT_ORDER_DATE,
   status: "confirmed",
   fulfillment_status: "processing",
   payment_status: "paid",

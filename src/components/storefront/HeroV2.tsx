@@ -33,6 +33,7 @@ import {
   HERO_TEXT_SCALE,
   headlinePhrases,
   headlineSettings,
+  heroButtonStyle,
   heroScrim,
   slideLook,
 } from "@/lib/hero-headline";
@@ -518,6 +519,7 @@ export function HeroV2View({
                       {button && (
                         <a
                           href={slide.button_href || "#products"}
+                          style={heroButtonStyle(slide)}
                           className={`inline-flex ${
                             dense
                               ? "min-h-10 px-4 py-2 text-xs sm:text-sm"

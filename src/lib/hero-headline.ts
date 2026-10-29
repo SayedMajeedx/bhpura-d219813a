@@ -33,6 +33,9 @@ export type HeroHeadlineFields = {
   text_tone?: HeroTextTone;
   shade?: number;
   text_color?: string;
+  /** The slide's button: its background and its text; empty = the store's primary colour. */
+  button_color?: string;
+  button_text_color?: string;
 };
 
 /** The headline fields a stored slide adds (the storefront's and the editor's slide types). */
@@ -50,7 +53,34 @@ export type HeroHeadlineSlideFields = Pick<
   | "text_tone"
   | "shade"
   | "text_color"
+  | "button_color"
+  | "button_text_color"
 >;
+
+/**
+ * The inline colours of a slide's button: its own background and text when the store chose them
+ * (a valid #rrggbb), the text readable on that background when only the background was chosen;
+ * nothing otherwise, so the button keeps the store's primary colour.
+ */
+export function heroButtonStyle(
+  slide: Pick<HeroHeadlineFields, "button_color" | "button_text_color">,
+): { backgroundColor?: string; color?: string } | undefined {
+  const hex = /^#[0-9a-f]{6}$/i;
+  const background = slide.button_color?.trim();
+  const text = slide.button_text_color?.trim();
+  const bg = background && hex.test(background) ? background : undefined;
+  const fg = text && hex.test(text) ? text : undefined;
+  if (!bg && !fg) return undefined;
+  const style: { backgroundColor?: string; color?: string } = {};
+  if (bg) style.backgroundColor = bg;
+  if (fg) style.color = fg;
+  else if (bg) {
+    const n = parseInt(bg.slice(1), 16);
+    const luma = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    style.color = luma > 0.6 ? "#111111" : "#ffffff";
+  }
+  return style;
+}
 
 export const HERO_TEXT_ANIMATIONS: readonly HeroTextAnimation[] = [
   "blur_in",

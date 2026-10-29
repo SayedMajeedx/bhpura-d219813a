@@ -4,7 +4,10 @@ import { Label } from "@/components/ui/label";
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { HERO_LOOK_PRESETS, slideLook, type HeroHeadlineFields } from "@/lib/hero-headline";
 
-type SlideLookFields = Pick<HeroHeadlineFields, "text_tone" | "shade" | "text_color">;
+type SlideLookFields = Pick<
+  HeroHeadlineFields,
+  "text_tone" | "shade" | "text_color" | "button_color" | "button_text_color"
+>;
 type StoreLook = { hero_overlay_strength?: number | null; hero_title_color_v2?: string | null };
 
 const SHADE_MAX = 80;
@@ -138,6 +141,18 @@ export function HeroSlideLookFields({
           label={isAr ? "لون العنوان (فارغ = حسب النص)" : "Title colour (empty = follows the text)"}
           value={slide.text_color?.trim() || null}
           onChange={(value) => onChange({ text_color: value ?? "" })}
+        />
+        <ColorField
+          label={
+            isAr ? "لون الزر (فارغ = لون المتجر)" : "Button colour (empty = the store's colour)"
+          }
+          value={slide.button_color?.trim() || null}
+          onChange={(value) => onChange({ button_color: value ?? "" })}
+        />
+        <ColorField
+          label={isAr ? "لون نص الزر (فارغ = تلقائي)" : "Button text colour (empty = automatic)"}
+          value={slide.button_text_color?.trim() || null}
+          onChange={(value) => onChange({ button_text_color: value ?? "" })}
         />
       </div>
     </fieldset>

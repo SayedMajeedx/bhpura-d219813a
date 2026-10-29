@@ -239,6 +239,18 @@ export function storyPoints(editorialSections: unknown): StoryPoint[] {
     .slice(0, STORY_POINTS_MAX);
 }
 
+/**
+ * The colour the store gave the brand story's background (`homepage_editorial_sections.story_background`,
+ * a #rrggbb), or null to keep the theme's own.
+ */
+export function storyBackground(editorialSections: unknown): string | null {
+  const raw =
+    editorialSections && typeof editorialSections === "object"
+      ? (editorialSections as { story_background?: unknown }).story_background
+      : null;
+  return typeof raw === "string" && /^#[0-9a-f]{6}$/i.test(raw.trim()) ? raw.trim() : null;
+}
+
 /** A point in the reader's language, else in the other one. */
 export function storyPointText(point: StoryPoint, lang: "ar" | "en"): string {
   return lang === "ar" ? point.ar || point.en : point.en || point.ar;

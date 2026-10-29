@@ -5,7 +5,7 @@ import { resolveStorefrontTypography } from "@/lib/typography";
 import type { TrustBadgesConfig } from "@/lib/trust-badges";
 import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile";
 import { storedFooterTitles, storedPages } from "@/lib/cms-pages";
-import { storyPoints } from "@/lib/brand-templates/brand-story";
+import { storyBackground, storyPoints } from "@/lib/brand-templates/brand-story";
 import type { fetchStorefrontPageData } from "@/lib/data/storefront";
 
 type PageData = NonNullable<Awaited<ReturnType<typeof fetchStorefrontPageData>>>;
@@ -229,6 +229,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     brand_story_enabled: s?.brand_story_enabled ?? true,
     brand_story_image_url: s?.brand_story_image_url ?? null,
     brand_story_points: storyPoints(rawEditorialSections),
+    brand_story_background: storyBackground(rawEditorialSections),
     social_proof_enabled: s?.social_proof_enabled ?? true,
     recently_viewed_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
     recent_views_enabled: s?.recently_viewed_enabled ?? s?.recent_views_enabled ?? true,
