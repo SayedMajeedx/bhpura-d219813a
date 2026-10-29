@@ -1,6 +1,6 @@
 import { type Ref, useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { ACTIVE_TAB_SELECTORS, PILL_LOOK, pillBox } from "@/lib/motion/pill";
+import { ACTIVE_TAB_ATTRIBUTES, ACTIVE_TAB_SELECTORS, PILL_LOOK, pillBox } from "@/lib/motion/pill";
 
 /**
  * The pill that slides to the active tab (transitions.dev's tabs sliding, classes in
@@ -61,7 +61,10 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
     changes.observe(bar, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-state", "aria-selected", "aria-current", "data-active"],
+      // Every way a bar marks its choice (ACTIVE_TAB_SELECTORS), and a class, for a bar that
+      // only restyles its chosen tab. `aria-pressed` was once missing: the switchers' and the
+      // product page's pills never moved after the first tap.
+      attributeFilter: [...ACTIVE_TAB_ATTRIBUTES, "class"],
     });
     const resizes =
       typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => place(true));

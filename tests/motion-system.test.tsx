@@ -107,7 +107,9 @@ describe("tabs sliding: where the pill sits", () => {
     expect(ACTIVE_TAB_SELECTORS.at(-1)).toContain('[aria-current="page"]');
   });
 
-  it("follows the active tab and wears its look", () => {
+  it("follows the active tab, marked by aria-pressed, and wears its look", async () => {
+    // Each tab its own fill when chosen, so the pill's colour says which tab it sits on.
+    const fills = ["rgb(10, 20, 30)", "rgb(200, 100, 50)"];
     function Bar({ active }: { active: number }) {
       return (
         <div className="t-tabs" data-testid="bar">
@@ -118,7 +120,7 @@ describe("tabs sliding: where the pill sits", () => {
               type="button"
               className="t-tab"
               aria-pressed={active === i}
-              style={{ backgroundColor: active === i ? "rgb(10, 20, 30)" : undefined }}
+              style={{ backgroundColor: active === i ? fills[i] : undefined }}
             >
               {i}
             </button>
@@ -129,9 +131,31 @@ describe("tabs sliding: where the pill sits", () => {
     const { container, rerender } = render(<Bar active={0} />);
     const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
     expect(pill.dataset.ready).toBe("true");
-    expect(pill.style.backgroundColor).toBe("rgb(10, 20, 30)");
+    expect(pill.style.backgroundColor).toBe(fills[0]);
     expect(pill.getAttribute("aria-hidden")).toBe("true");
+    // The switchers and the product page's chips mark their choice with aria-pressed: the pill
+    // once never heard it change, and stayed on the first tab.
     rerender(<Bar active={1} />);
+    await act(async () => {});
+    expect(pill.style.backgroundColor).toBe(fills[1]);
+  });
+
+  it("finds its first tab when the first choice is made", async () => {
+    function Chips({ active }: { active: number | null }) {
+      return (
+        <div className="t-tabs">
+          <TabsPill />
+          <button type="button" className="t-tab" aria-pressed={active === 0}>
+            S
+          </button>
+        </div>
+      );
+    }
+    const { container, rerender } = render(<Chips active={null} />);
+    const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
+    expect(pill.dataset.ready).toBe("false");
+    rerender(<Chips active={0} />);
+    await act(async () => {});
     expect(pill.dataset.ready).toBe("true");
   });
 
