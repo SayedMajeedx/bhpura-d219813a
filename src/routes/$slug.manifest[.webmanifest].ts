@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { fetchStorefrontPageData } from "@/lib/data/storefront";
+import { manifestIcon } from "@/lib/storefront-manifest";
 
 export const Route = createFileRoute("/$slug/manifest.webmanifest")({
   server: {
@@ -52,15 +53,6 @@ export const Route = createFileRoute("/$slug/manifest.webmanifest")({
           const shortName = brand?.name_ar || brand?.name_en || slug;
           const themeColor = settings?.storefront_accent_color || brand?.primary_color || "#3f121a";
           const bgColor = settings?.storefront_background_color || "#ffffff";
-          const rawIconUrl =
-            settings?.logo_url || brand?.logo_url || "https://boutq.store/placeholder.svg";
-
-          const iconUrl =
-            rawIconUrl.startsWith("http://") || rawIconUrl.startsWith("https://")
-              ? rawIconUrl
-              : `https://boutq.store${rawIconUrl.startsWith("/") ? "" : "/"}${rawIconUrl}`;
-
-          const isSvg = /\.svg(\?.*)?$/i.test(iconUrl);
 
           const manifest = {
             name,
@@ -70,14 +62,7 @@ export const Route = createFileRoute("/$slug/manifest.webmanifest")({
             background_color: bgColor,
             theme_color: themeColor,
             orientation: "portrait-primary",
-            icons: [
-              {
-                src: iconUrl,
-                sizes: isSvg ? "any" : "192x192 512x512",
-                type: isSvg ? "image/svg+xml" : "image/png",
-                purpose: "any maskable",
-              },
-            ],
+            icons: [manifestIcon(settings, brand)],
           };
 
           return new Response(JSON.stringify(manifest), {

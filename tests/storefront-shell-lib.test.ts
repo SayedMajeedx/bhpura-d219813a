@@ -268,6 +268,13 @@ describe("shellTheme", () => {
       unknown
     >;
 
+  it("writes the sale badge in the colour the store chose (maroon unless it chose)", () => {
+    expect(vars({ badge_accent: "emerald" } as Partial<PublicSettings>)["--badge-accent-bg"]).toBe(
+      "#059669",
+    );
+    expect(vars({})["--badge-accent-bg"]).toBe("#330a0a");
+  });
+
   it("derives button, heading and price colours from the brand colour", () => {
     const style = vars({});
     expect(style["--primary"]).toBe("#224466");

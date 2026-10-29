@@ -113,7 +113,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "whatsapp"
               ? "bg-white/20 text-white shadow-xs font-semibold"
-              : "opacity-60 hover:opacity-100"
+              : "opacity-80 hover:opacity-100"
           }`}
           style={{ color: "var(--sf-footer-fg)" }}
         >
@@ -128,7 +128,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
             channel === "email"
               ? "bg-white/20 text-white shadow-xs font-semibold"
-              : "opacity-60 hover:opacity-100"
+              : "opacity-80 hover:opacity-100"
           }`}
           style={{ color: "var(--sf-footer-fg)" }}
         >
