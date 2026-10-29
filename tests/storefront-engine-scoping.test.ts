@@ -79,8 +79,12 @@ describe("registry scoping", () => {
   });
 
   it("scopes the classic footer controls FooterV2 ignores to the simple footer", () => {
-    for (const key of ["footer_bg", "footer_fg", "show_footer_name"]) {
-      expect(byKey.get(key)?.scope, key).toBe("simple_footer");
+    expect(byKey.get("show_footer_name")?.scope).toBe("simple_footer");
+  });
+
+  it("leaves the footer colours open to both footers, which both read them", () => {
+    for (const key of ["footer_bg", "footer_fg"]) {
+      expect(byKey.get(key)?.scope, key).toBeUndefined();
     }
   });
 
