@@ -5,6 +5,7 @@ import { storefrontBase, storefrontOrigin } from "@/lib/seo/canonical";
 import { isServicesProfile, resolveStoreModules } from "@/lib/store-profile";
 import { HomeListingFields } from "./seo/HomeListingFields";
 import { SearchConsoleCard } from "./seo/SearchConsoleCard";
+import { ShareImageCard } from "./seo/ShareImageCard";
 import { SeoChecklistCard } from "./seo/SeoChecklistCard";
 
 /**
@@ -15,7 +16,7 @@ import { SeoChecklistCard } from "./seo/SeoChecklistCard";
 export function SeoGroup() {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const { form, setBrand } = useBrandSettingsFormContext();
+  const { form, setBrand, setBs, brandId } = useBrandSettingsFormContext();
   const brand = form.brand;
   const bs = form.bs;
 
@@ -51,6 +52,13 @@ export function SeoGroup() {
           onChange={(patch) => setBrand(patch)}
         />
       ))}
+
+      <ShareImageCard
+        isAr={isAr}
+        brandId={brandId}
+        sections={bs.homepage_editorial_sections}
+        onChange={(next) => setBs({ homepage_editorial_sections: next as any })}
+      />
 
       <SearchConsoleCard
         isAr={isAr}

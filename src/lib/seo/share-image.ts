@@ -6,7 +6,9 @@ import { socialImage } from "@/lib/seo/canonical";
  * store's logo, and a store whose logo is an SVG (which link previews do not draw) or that had
  * none shared Boutq's placeholder: every Aurora link showed Boutq's picture, not Aurora's.
  *
- * In order: the first hero slide's still (its poster, or its picture), the hero's background
+ * The store may choose the picture itself (Settings > SEO, `homepage_editorial_sections.share_image_url`):
+ * a hero video's first frame is often a flat dark colour, and that is what a shared link then showed.
+ * Without a chosen one, in order: the first hero slide's still (its poster, or its picture), the hero's background
  * still, the brand story's picture, the logo; else the platform's placeholder (`socialImage`).
  */
 
@@ -31,7 +33,14 @@ export type ShareImageStore = {
     logo_url?: string | null;
     hero_media?: { background?: Media | string; slides?: readonly Slide[] } | null;
   };
-  settings?: { logo_url?: string | null; brand_story_image_url?: string | null } | null;
+  settings?: {
+    logo_url?: string | null;
+    brand_story_image_url?: string | null;
+    /** The picture the store chose for shared links, as the shell reads it (`shareImageSetting`). */
+    share_image_url?: string | null;
+    /** The raw settings row's sections, where that choice is kept. */
+    homepage_editorial_sections?: unknown;
+  } | null;
 };
 
 const isVideo = (url: string) => /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
@@ -53,8 +62,19 @@ function backgroundStill(background: Media | string | undefined): string | null 
   return url && background.type !== "video" && !isVideo(url) ? url : null;
 }
 
+/** The share picture the store chose (`homepage_editorial_sections.share_image_url`), or null. */
+export function shareImageSetting(editorialSections: unknown): string | null {
+  const raw =
+    editorialSections && typeof editorialSections === "object"
+      ? (editorialSections as { share_image_url?: unknown }).share_image_url
+      : null;
+  return typeof raw === "string" && /^https:\/\//i.test(raw.trim()) ? raw.trim() : null;
+}
+
 export function storeShareImage({ brand, settings }: ShareImageStore): string {
   const candidates = [
+    settings?.share_image_url,
+    shareImageSetting(settings?.homepage_editorial_sections),
     slideStill(brand.hero_media?.slides?.[0]),
     backgroundStill(brand.hero_media?.background ?? undefined),
     settings?.brand_story_image_url,
