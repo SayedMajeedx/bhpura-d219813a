@@ -573,11 +573,14 @@
   }
   to {
     opacity: 1;
-    filter: blur(0);
+    filter: none;
   }
 }
+/* Fill backwards only: a `filter` kept after the animation (even blur(0)) makes this box
+   the containing block of every `position: fixed` child, so a screen's save bar sat at the
+   end of the page instead of the foot of the window. */
 .t-skel-reveal {
-  animation: t-skel-reveal var(--reveal-dur) var(--reveal-ease) both;
+  animation: t-skel-reveal var(--reveal-dur) var(--reveal-ease) backwards;
 }
 
 /* ---------------------------------------------------------------- Shimmer text */
