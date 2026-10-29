@@ -15,6 +15,7 @@ import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice } from "@/lib/offer-price";
 import { nameTappedPhoto } from "@/lib/motion/view-transition";
+import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
 
 export function ProductCard({
   product,
@@ -67,7 +68,7 @@ export function ProductCard({
 
   if (shouldShowPrices(settings) && price.offerBadge?.kind === "discount") {
     // A store offer lowers the price: its percentage, struck price beside the new one.
-    badgeStyle = "bg-primary text-primary-foreground border-primary";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
     badgeLabel = isAr ? `وفر ${price.offerBadge.percent}%` : `${price.offerBadge.percent}% off`;
   } else if (
     shouldShowPrices(settings) &&
@@ -75,7 +76,7 @@ export function ProductCard({
     settings.global_sale_badges_enabled &&
     product.show_sale_badge !== false
   ) {
-    badgeStyle = "bg-primary text-primary-foreground border-primary";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
     badgeLabel = price.percent
       ? isAr
         ? `وفر ${price.percent}%`
@@ -85,7 +86,7 @@ export function ProductCard({
         : "Sale";
   } else if (shouldShowPrices(settings) && price.offerBadge?.kind === "offer") {
     // An offer with terms (a minimum, buy X get Y): its terms are on the product's page.
-    badgeStyle = "bg-primary text-primary-foreground border-primary";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
     badgeLabel = isAr ? "عرض" : "Offer";
   } else if (badge === "best") {
     badgeStyle = "bg-secondary text-secondary-foreground border-border";

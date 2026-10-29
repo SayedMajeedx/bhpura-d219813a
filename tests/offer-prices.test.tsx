@@ -247,7 +247,9 @@ describe("a card in the store", () => {
     withQuery(<ProductCardV2 product={card as never} />);
     expect(screen.getByText(/118\.400/)).toBeInTheDocument();
     expect(screen.getByText(/160\.000/)).toHaveClass("line-through");
-    expect(screen.getByText("-26%")).toBeInTheDocument();
+    // In the store's own badge colour (Settings → Palette), never the error red.
+    expect(screen.getByText("-26%").className).toContain("--badge-accent-bg");
+    expect(screen.getByText("-26%")).not.toHaveClass("bg-destructive");
   });
 
   it("wears Offer, with its price as it is, for an offer with terms", () => {

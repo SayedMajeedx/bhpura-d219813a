@@ -9,6 +9,7 @@ import { ProductOffers } from "@/features/product-page/components/ProductOffers"
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredShownPrice } from "@/lib/offer-price";
+import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
 
 /** Product name with share and wishlist, the price with any original price and saving, and the store's offers that reach it. */
 export function ProductTitleAndPrice({
@@ -108,7 +109,7 @@ export function ProductTitleAndPrice({
               </span>
             )}
             {shownPercent > 0 && (
-              <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">
+              <span className={`rounded-full px-3 py-1 text-xs ${SALE_BADGE_CLASS}`}>
                 {t(`وفر ${shownPercent}%`, `Save ${shownPercent}%`)}
               </span>
             )}

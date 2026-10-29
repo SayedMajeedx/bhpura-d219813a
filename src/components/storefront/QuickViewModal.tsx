@@ -10,6 +10,7 @@ import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
 import { resolveColorHex } from "@/lib/color-names";
 import { storefrontQueries } from "@/lib/data/storefront";
+import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
 import {
   formatAxisValue,
   pickVariantForAxis,
@@ -233,7 +234,7 @@ export function QuickViewModal({
                   {product.category || (isAr ? "مختارات حصرية" : "Exclusive")}
                 </span>
                 {activeOriginalPrice && (
-                  <Badge variant="destructive" className="text-xs font-semibold">
+                  <Badge className={`border-transparent text-xs font-semibold ${SALE_BADGE_CLASS}`}>
                     {Math.round(((activeOriginalPrice - activePrice) / activeOriginalPrice) * 100)}%{" "}
                     {isAr ? "خصم" : "OFF"}
                   </Badge>

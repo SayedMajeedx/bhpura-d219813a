@@ -21,6 +21,7 @@ import { serviceLengthsText } from "@/lib/bookings/service-lengths";
 import { hasAvailableStock } from "@/lib/data/storefront";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice } from "@/lib/offer-price";
+import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
 
 export interface ProductCardV2Props {
   product: any;
@@ -124,23 +125,23 @@ export function ProductCardV2({
   if (shouldShowPrices(settings) && price.offerBadge?.kind === "discount") {
     // A store offer lowers the price: its percentage, struck price beside the new one.
     badgeLabel = `-${price.offerBadge.percent}%`;
-    badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (saleBadge) {
     badgeLabel = price.percent ? `-${price.percent}%` : t("تخفيض", "Sale");
-    badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (shouldShowPrices(settings) && price.offerBadge?.kind === "offer") {
     // An offer with terms (a minimum, buy X get Y): its terms are on the product's page.
     badgeLabel = t("عرض", "Offer");
-    badgeStyle = "bg-destructive text-destructive-foreground border-transparent";
+    badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (isNewProduct) {
     badgeLabel = t("جديد", "New");
     badgeStyle = "bg-primary text-primary-foreground border-transparent";
   } else if (badge === "best") {
     badgeLabel = t("الأكثر طلباً", "Best Seller");
-    badgeStyle = "bg-warning text-white border-transparent";
+    badgeStyle = "bg-background/95 text-foreground border-border";
   } else if (badge === "trending") {
     badgeLabel = t("رائج", "Trending");
-    badgeStyle = "bg-violet-600 text-white border-transparent";
+    badgeStyle = "bg-background/95 text-foreground border-border";
   }
 
   const displayName = isAr
