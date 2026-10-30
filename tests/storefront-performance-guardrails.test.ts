@@ -41,11 +41,12 @@ describe("storefront performance guardrails", () => {
   });
 
   it("does not eagerly prioritize every hero carousel slide", () => {
-    const home = homeSource();
+    // The one hero (HeroV2) asks first for its first slide only; the rest wait their turn.
+    const hero = read("src/components/storefront/HeroV2.tsx");
 
-    expect(home).toContain("prioritizeHero && slideIndex === 0");
-    expect(home).toContain('loading={slideIndex === 0 ? "eager" : "lazy"}');
-    expect(home).not.toContain('fetchPriority={idx === 0 ? "high" : "auto"}');
+    expect(hero).toContain('loading={idx === 0 ? "eager" : "lazy"}');
+    expect(hero).toContain('fetchPriority={idx === 0 ? "high" : "auto"}');
+    expect(hero).not.toContain('fetchPriority="high"');
   });
 
   it("keeps admin-only chart and PDF libraries out of forced shared chunks", () => {
