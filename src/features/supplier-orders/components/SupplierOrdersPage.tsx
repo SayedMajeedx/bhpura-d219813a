@@ -26,6 +26,8 @@ import {
 import { SupplierOrderCard } from "./SupplierOrderCard";
 import { SupplierBalancesList } from "./SupplierBalancesList";
 import { PiecesToMakeTab } from "./PiecesToMakeTab";
+import { ReorderTab } from "./ReorderTab";
+import { useReorderSuggestions } from "../hooks/use-reorder";
 import { CancelledPiecesNotice } from "./CancelledPiecesNotice";
 import { usePiecesToMake } from "../hooks/use-pieces-to-make";
 import { useProfile } from "@/lib/profile-context";
@@ -37,7 +39,7 @@ import { cn } from "@/lib/utils";
  * Supplier orders: what was ordered from a supplier (a tailor, a workshop, a wholesaler), what has arrived, and what is
  * still owed. Receiving an order adds its pieces to the stock and sets their cost.
  */
-type PageTab = SupplierOrdersTab | "suppliers" | "pieces";
+type PageTab = SupplierOrdersTab | "suppliers" | "pieces" | "reorder";
 
 export function SupplierOrdersPage() {
   const { lang: rawLang } = useI18n();
@@ -55,13 +57,18 @@ export function SupplierOrdersPage() {
   const { profile: storeProfile } = useAdminStoreProfile(brand.id);
   const makes = Boolean(storeProfile.modules.made_to_order) && hasPermission("manage_orders");
   const waiting = usePiecesToMake(brand.id, makes);
+  // Sizes about to run out, for a store that keeps stock.
+  const keepsStock = Boolean(storeProfile.modules.stock);
   const today = localToday();
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
+  const reorder = useReorderSuggestions(brand.id, orders, lang, keepsStock);
   const summary = useMemo(() => ordersSummary(orders, today), [orders, today]);
   const shown = useMemo(
     () =>
-      tab === "suppliers" || tab === "pieces" ? [] : sortOrders(ordersInTab(orders, tab), today),
+      tab === "suppliers" || tab === "pieces" || tab === "reorder"
+        ? []
+        : sortOrders(ordersInTab(orders, tab), today),
     [orders, tab, today],
   );
   const balances = useMemo(() => supplierBalances(orders, today), [orders, today]);
@@ -78,6 +85,15 @@ export function SupplierOrdersPage() {
             id: "pieces" as const,
             label: isAr ? "قطع للتفصيل" : "Pieces to make",
             count: waiting.pieces,
+          },
+        ]
+      : []),
+    ...(keepsStock
+      ? [
+          {
+            id: "reorder" as const,
+            label: isAr ? "لإعادة الطلب" : "To reorder",
+            count: reorder.lines.length,
           },
         ]
       : []),
@@ -181,6 +197,13 @@ export function SupplierOrdersPage() {
 
           {tab === "pieces" ? (
             <PiecesToMakeTab currency={currency} lang={lang} />
+          ) : tab === "reorder" ? (
+            <ReorderTab
+              lines={reorder.lines}
+              catalog={reorder.catalog}
+              isLoading={reorder.isLoading}
+              lang={lang}
+            />
           ) : tab === "suppliers" ? (
             <SupplierBalancesList balances={balances} currency={currency} lang={lang} />
           ) : shown.length === 0 ? (

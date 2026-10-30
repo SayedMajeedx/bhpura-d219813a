@@ -1,3 +1,4 @@
+import type { SupplierOrderForm } from "../lib/order-form";
 import { useId, useMemo, useState } from "react";
 import { PackagePlus, Plus, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,10 +32,13 @@ export function SupplierOrderEditor({
   lang,
   onSaved,
   onCancel,
+  startWith,
 }: {
   brandId: string;
   order: SupplierOrder | null;
   catalog: SupplierCatalog;
+  /** A new order's first lines (the sizes chosen to order again). */
+  startWith?: SupplierOrderForm | null;
   currency: string;
   moneyLabel: string;
   lang: "ar" | "en";
@@ -43,7 +47,7 @@ export function SupplierOrderEditor({
 }) {
   const isAr = lang === "ar";
   const uid = useId();
-  const editor = useSupplierOrderEditor({ brandId, order, catalog, lang, onSaved });
+  const editor = useSupplierOrderEditor({ brandId, order, catalog, lang, onSaved, startWith });
   const { form, setForm, figures, problems } = editor;
   const [picking, setPicking] = useState(false);
   // A product not in the store yet: the name typed in the search, while its dialog is open.
