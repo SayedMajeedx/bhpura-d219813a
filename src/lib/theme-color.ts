@@ -8,7 +8,7 @@
  * light/dark pair of tags with `media` cannot be declared in a route's head. A store's pages use
  * its own header colour (`storefrontThemeColor`).
  */
-export const ADMIN_THEME_COLOR = { light: "#fdf9f8", dark: "#251d1c" } as const;
+export const ADMIN_THEME_COLOR = { light: "#fcfcfd", dark: "#1c1e28" } as const;
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
 

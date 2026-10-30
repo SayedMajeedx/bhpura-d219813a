@@ -244,13 +244,15 @@ describe("design system guardrails", () => {
     expect(css).toMatch(/\.storefront-shell \{[^}]*overflow-x: clip;/);
   });
 
-  it("keeps the dark theme on the maroon brand hue", () => {
+  it("keeps both themes on Boutq's ink hue, not one store's maroon", () => {
+    // The admin is the platform's: its ink (#1e202c, the installed app's colour) in light and dark,
+    // with each store's own colour on its main buttons (useAdminAccent). It wore one store's maroon.
     const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const light = css.slice(css.indexOf(":root {", css.indexOf("@theme")), css.indexOf(".dark {"));
     const darkBlock = css.slice(css.indexOf(".dark {"), css.indexOf("@layer base"));
-    // The old palette re-hued primary to a gold-tan (hue 70), which shipped a
-    // different brand in dark mode than in light.
-    expect(darkBlock).not.toMatch(/--primary:\s*oklch\([^)]*\s7\d\)/);
-    expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s25\)/);
+    expect(light).toMatch(/--primary:\s*oklch\([^)]*\s275\)/);
+    expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s275\)/);
+    expect(light).not.toMatch(/rgba\(51, 10, 10/);
   });
 
   it("never cuts a product's name to one line", () => {
