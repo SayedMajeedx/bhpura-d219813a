@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { primaryKpisFor } from "../src/features/dashboard/lib/dashboard-kpis";
 import { InventoryImportMenu } from "../src/features/inventory/components/InventoryImportMenu";
 import { IntegrationsScopeSwitcher } from "../src/components/integrations/IntegrationsScopeSwitcher";
+import { PROVIDER_PRESETS, shownIntegration } from "../src/lib/integration-providers";
 import { IntegrationsCommandHeader } from "../src/components/integrations/IntegrationsCommandHeader";
 
 // The rest of the services-store audit (docs/vertical-fit-audit.md): what a store that does not
@@ -99,14 +100,13 @@ describe("the inventory import menu", () => {
 
 describe("the integrations page", () => {
   // The secondary tabs live in a "More" menu, so it is opened to look at them.
-  const tabs = (shipping?: boolean, activeScope: "all" | "shipping" = "all") => {
+  const tabs = () => {
     const view = render(
       <IntegrationsScopeSwitcher
         lang="en"
-        activeScope={activeScope}
+        activeScope="all"
         onScopeChange={() => undefined}
         integrationCount={3}
-        shipping={shipping}
       />,
     );
     const more = screen.getAllByRole("button").find((b) => /more/i.test(b.textContent ?? ""));
@@ -116,28 +116,30 @@ describe("the integrations page", () => {
     return text;
   };
 
-  it("lists the couriers tab for a store that ships", () => {
-    expect(tabs()).toContain("Logistics & Shipping");
-    expect(tabs(true)).toContain("Logistics & Shipping");
+  it("offers no couriers tab: no courier is connected through the platform yet", () => {
+    expect(tabs()).toContain("Webhooks");
+    expect(tabs()).not.toContain("Logistics & Shipping");
   });
 
-  it("leaves it out for a store that does not, unless it is the tab already open", () => {
-    expect(tabs(false)).toContain("Webhooks");
-    expect(tabs(false)).not.toContain("Logistics & Shipping");
-    expect(tabs(false, "shipping")).toContain("Logistics & Shipping");
+  it("names only what the platform really connects", () => {
+    const { container } = render(
+      <IntegrationsCommandHeader
+        lang="en"
+        integrationCount={0}
+        onNewIntegration={() => undefined}
+      />,
+    );
+    expect(container.textContent).toContain("Tap");
+    expect(container.textContent).not.toMatch(/courier|Aramex|Stripe/i);
   });
 
-  it("describes what can be connected without couriers when there are none to connect", () => {
-    const header = (shipping: boolean) =>
-      render(
-        <IntegrationsCommandHeader
-          lang="en"
-          integrationCount={0}
-          onNewIntegration={() => undefined}
-          shipping={shipping}
-        />,
-      );
-    expect(header(true).container.textContent).toContain("shipping couriers (Aramex)");
-    expect(header(false).container.textContent).not.toMatch(/courier|Aramex/i);
+  it("hides the integrations nothing uses, and any row already saved for them", () => {
+    expect(PROVIDER_PRESETS.map((p) => p.value)).not.toEqual(expect.arrayContaining(["aramex"]));
+    for (const hidden of ["aramex", "posta_plus", "stripe"]) {
+      expect(PROVIDER_PRESETS.some((p) => p.value === hidden)).toBe(false);
+      expect(shownIntegration({ provider: hidden })).toBe(false);
+    }
+    expect(shownIntegration({ provider: "tap" })).toBe(true);
+    expect(shownIntegration({ provider: "my-erp" })).toBe(true);
   });
 });
