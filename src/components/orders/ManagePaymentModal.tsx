@@ -190,27 +190,23 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                 <SelectValue placeholder={isAr ? "اختر طريقة الدفع" : "Select Payment Method"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="unspecified">
-                  ⚪ {isAr ? "غير محدد" : "Not specified"}
-                </SelectItem>
+                <SelectItem value="unspecified">{isAr ? "غير محدد" : "Not specified"}</SelectItem>
                 <SelectItem value="cod">
-                  💵 {isAr ? "الدفع عند الاستلام (COD)" : "Cash on Delivery (COD)"}
+                  {isAr ? "الدفع عند الاستلام (COD)" : "Cash on Delivery (COD)"}
                 </SelectItem>
                 <SelectItem value="card">
-                  💳 {isAr ? "بطاقة ائتمانية / خصم" : "Credit / Debit Card"}
+                  {isAr ? "بطاقة ائتمانية / خصم" : "Credit / Debit Card"}
                 </SelectItem>
                 <SelectItem value="benefit">
-                  📲 {isAr ? "تطبيق بنفت باي (BenefitPay)" : "BenefitPay"}
+                  {isAr ? "تطبيق بنفت باي (BenefitPay)" : "BenefitPay"}
                 </SelectItem>
                 <SelectItem value="tap">
-                  💳 {isAr ? "بوابة تاب للدفع" : "Tap Payment Gateway"}
+                  {isAr ? "بوابة تاب للدفع" : "Tap Payment Gateway"}
                 </SelectItem>
                 <SelectItem value="bank_transfer">
-                  🏛️ {isAr ? "تحويل بنكي مباشر" : "Bank Transfer"}
+                  {isAr ? "تحويل بنكي مباشر" : "Bank Transfer"}
                 </SelectItem>
-                <SelectItem value="cash">
-                  💶 {isAr ? "نقداً في المحل" : "Cash at Counter"}
-                </SelectItem>
+                <SelectItem value="cash">{isAr ? "نقداً في المحل" : "Cash at Counter"}</SelectItem>
               </SelectContent>
             </Select>
           </div>

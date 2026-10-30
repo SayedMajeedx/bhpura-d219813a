@@ -497,3 +497,33 @@ describe("a name's start edge (text-page-start)", () => {
     expect(guards).not.toMatch(/\[dir="(rtl|ltr)"\] \.text-page-start/);
   });
 });
+
+describe("icons are icons, not emoji", () => {
+  it("draws no emoji as a screen's icon (Lucide does that); a message or caption may carry them", () => {
+    // 145 emoji stood in for icons across 37 files (💳 beside a card option, 📦 beside a product,
+    // 🎉 on a finished checklist, ⚠️ before a warning): each platform draws them its own way and
+    // they read as a template. Typographic marks (→ ← ✓ ★) are text and stay.
+    const MESSAGES_AND_CAPTIONS = new Set([
+      "../src/components/super/SuperGrantsManager.tsx", // the WhatsApp message a person sends
+      "../src/routes/review.$token.tsx", // the WhatsApp message a shopper sends
+      "../src/features/content-studio/components/CopyPanel.tsx", // a post's caption presets
+    ]);
+    const PICTOGRAPH =
+      /[\u{1F300}-\u{1FAFF}\u{2600}-\u{2604}\u{2606}-\u{26FF}\u{2700}-\u{2712}\u{2714}-\u{27BF}]/u;
+    const sources = import.meta.glob("../src/**/*.tsx", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const offenders: string[] = [];
+    for (const [file, text] of Object.entries(sources)) {
+      if (MESSAGES_AND_CAPTIONS.has(file)) continue;
+      text.split("\n").forEach((line, index) => {
+        const code = line.trim();
+        if (/^(\/\/|\*|\/\*|\{\/\*)/.test(code)) return;
+        if (PICTOGRAPH.test(code)) offenders.push(`${file}:${index + 1}`);
+      });
+    }
+    expect(offenders).toEqual([]);
+  });
+});

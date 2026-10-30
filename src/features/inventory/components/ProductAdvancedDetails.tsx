@@ -151,7 +151,7 @@ export function ProductAdvancedDetails({
               <div className="rounded-lg border border-border-subtle p-3.5 bg-secondary/5 space-y-3">
                 <div>
                   <p className="text-xs font-bold text-foreground">
-                    {isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}
+                    {isAr ? "مسميات المتغيرات المخصصة" : "Custom variant labels"}
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {isAr
@@ -366,7 +366,7 @@ export function ProductAdvancedDetails({
             <div className="rounded-lg border border-border-subtle p-3.5 bg-secondary/5 space-y-3">
               <div>
                 <p className="text-xs font-bold text-foreground">
-                  {isAr ? "📏 دليل المقاسات لهذا المنتج" : "📏 Product Size Guide"}
+                  {isAr ? "دليل المقاسات لهذا المنتج" : "Product size guide"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr
@@ -395,9 +395,7 @@ export function ProductAdvancedDetails({
                       : "Automatic (Inherit from category or store default)"}
                   </option>
                   <option value="__hidden__">
-                    {isAr
-                      ? "🚫 إخفاء دليل المقاسات لهذا المنتج"
-                      : "🚫 Hide size guide for this product"}
+                    {isAr ? "إخفاء دليل المقاسات لهذا المنتج" : "Hide size guide for this product"}
                   </option>
                   {(sizeGuidesQ.data ?? []).map((g) => (
                     <option key={g.id} value={g.id}>

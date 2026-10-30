@@ -358,8 +358,7 @@ export function OrderFulfillmentModal({
                             : `Assigned to ${courierObj.name || "Courier"}`,
                           {
                             action: {
-                              label:
-                                lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
+                              label: lang === "ar" ? "إشعار عبر واتساب" : "Notify on WhatsApp",
                               onClick: async () => {
                                 await recordCourierNotified(selectedFulfillOrder.id);
                                 invalidateOrders(qc, brandId);

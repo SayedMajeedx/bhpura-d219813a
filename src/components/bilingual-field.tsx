@@ -90,7 +90,7 @@ export function BilingualField({
             ) : (
               <Sparkles className="h-3 w-3" />
             )}
-            <span>✨ {isAr ? "ترجم → EN" : "Translate → EN"}</span>
+            <span>{isAr ? "ترجم → EN" : "Translate → EN"}</span>
           </button>
         </div>
         {multiline ? (
@@ -127,7 +127,7 @@ export function BilingualField({
             ) : (
               <Sparkles className="h-3 w-3" />
             )}
-            <span>✨ {isAr ? "ترجم → AR" : "Translate → AR"}</span>
+            <span>{isAr ? "ترجم → AR" : "Translate → AR"}</span>
           </button>
         </div>
         {multiline ? (

@@ -205,7 +205,7 @@ function GrantSurveyPage() {
           </div>
 
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-            برنامج انطلاقة للمتاجر 🚀
+            برنامج انطلاقة للمتاجر
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
@@ -241,7 +241,7 @@ function GrantSurveyPage() {
                   تم استلام طلبك بنجاح
                 </Badge>
                 <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground">
-                  شكراً لمشاركتنا شغفك ومشروعك 🌟
+                  شكراً لمشاركتنا شغفك ومشروعك
                 </h2>
                 <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto leading-relaxed">
                   سعيدون جداً باهتمامك، سنقوم بمراجعة حسابكم والتواصل معكم عبر الواتساب في الموعد
@@ -491,7 +491,7 @@ function GrantSurveyPage() {
                                     variant="outline"
                                     className="text-xs bg-primary/15 border-primary/30 text-primary font-bold"
                                   >
-                                    أولوية ترشيح ⚡
+                                    أولوية ترشيح
                                   </Badge>
                                 )}
                               </div>

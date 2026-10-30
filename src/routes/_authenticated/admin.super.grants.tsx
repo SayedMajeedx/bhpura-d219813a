@@ -34,7 +34,7 @@ function SuperAdminGrantsPage() {
               <span>BOUTQ OS • إدارة مبادرات المتاجر</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-foreground">
-              استبيانات منحة الـ 6 شهور (برنامج انطلاقة) 🚀
+              استبيانات منحة الـ 6 شهور (برنامج انطلاقة)
             </h1>
             <p className="text-xs text-muted-foreground max-w-xl">
               مراجعة وفرز طلبات أصحاب المشاريع المتقدمين من إعلان الإنستغرام، تصفية الحسابات

@@ -169,12 +169,12 @@ export function DiscountsWorkQueue({
                         )}
                         {p.first_time_customers_only && (
                           <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
-                            ✨ {isAr ? "للعملاء الجدد فقط" : "First-time buyers only"}
+                            {isAr ? "للعملاء الجدد فقط" : "First-time buyers only"}
                           </span>
                         )}
                         {p.returning_customers_only && (
                           <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300">
-                            ↩ {isAr ? "لعملاء سابقين فقط" : "Returning buyers only"}
+                            {isAr ? "لعملاء سابقين فقط" : "Returning buyers only"}
                           </span>
                         )}
                         {promoScopeText(p, isAr ? "ar" : "en") && (

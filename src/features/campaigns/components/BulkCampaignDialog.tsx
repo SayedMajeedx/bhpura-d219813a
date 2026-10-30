@@ -99,11 +99,11 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
               <p className="text-xs text-muted-foreground mt-1.5">
                 {bulkMode === "guided"
                   ? isAr
-                    ? "💡 ينصح به لتخطي حواجب منبثقات المتصفح بالكامل. اضغط لفتح المحادثة التالية فوراً."
-                    : "💡 Recommended mode. 100% bypasses popup-blockers and lets you review before sending."
+                    ? "ينصح به لتخطي حواجب منبثقات المتصفح بالكامل. اضغط لفتح المحادثة التالية فوراً."
+                    : "Recommended mode. 100% bypasses popup-blockers and lets you review before sending."
                   : isAr
-                    ? "⚡ يقوم النظام بفتح المحادثات تلو الأخرى تلقائياً. تأكد من تفعيل المنبثقات في المتصفح."
-                    : "⚡ Sequentially opens WhatsApp Web tabs automatically. Please enable popups in your browser address bar."}
+                    ? "يقوم النظام بفتح المحادثات تلو الأخرى تلقائياً. تأكد من تفعيل المنبثقات في المتصفح."
+                    : "Sequentially opens WhatsApp Web tabs automatically. Please enable popups in your browser address bar."}
               </p>
             </div>
 

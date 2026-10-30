@@ -399,10 +399,10 @@ export function OrderImporterModal({
 
             <div className="grid grid-cols-2 gap-3">
               {[
-                { id: "shopify", label: "🛒 Shopify Orders", desc: "orders_export.csv" },
-                { id: "woocommerce", label: "📦 WooCommerce CSV", desc: "wc_orders.csv" },
-                { id: "salla", label: "🟢 Salla (سلة)", desc: "salla_orders.csv" },
-                { id: "zid", label: "🟣 Zid (زد)", desc: "zid_orders.csv" },
+                { id: "shopify", label: "Shopify Orders", desc: "orders_export.csv" },
+                { id: "woocommerce", label: "WooCommerce CSV", desc: "wc_orders.csv" },
+                { id: "salla", label: "Salla (سلة)", desc: "salla_orders.csv" },
+                { id: "zid", label: "Zid (زد)", desc: "zid_orders.csv" },
               ].map((p) => (
                 <button
                   key={p.id}

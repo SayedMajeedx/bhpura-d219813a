@@ -19,7 +19,7 @@ import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2, Paperclip } from "lucide-react";
 import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
 import { appliedOfferName } from "@/lib/offers";
 import { bookingOfCart } from "@/lib/bookings/cart";
@@ -221,7 +221,8 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                                         rel="noreferrer"
                                         className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
                                       >
-                                        📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                        <Paperclip className="h-3 w-3" aria-hidden="true" />
+                                        {lang === "ar" ? "عرض الملف" : "View File"}
                                       </a>
                                     ) : (
                                       <span className="font-semibold text-foreground" dir="auto">
@@ -323,7 +324,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                         className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       />
                       <Gift className="h-4 w-4 text-primary" />
-                      <span>{t("هل هذا الطلب إهداء؟ 🎁", "Is this order a gift? 🎁")}</span>
+                      <span>{t("هل هذا الطلب إهداء؟", "Is this order a gift?")}</span>
                     </label>
                     {isGift && (
                       <div className="space-y-2 pt-1 border-t border-border-subtle">

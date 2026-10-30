@@ -117,7 +117,7 @@ export function CustomerDetailsCard({
             <Checkbox checked={isGift} onCheckedChange={(checked) => setIsGift(checked === true)} />
             <Gift className="h-4 w-4 text-primary shrink-0" />
             <span className="text-sm font-semibold text-foreground">
-              {t("هل ترغب في إرسال هذا الطلب كهدية؟ 🎁", "Send this order as a gift? 🎁")}
+              {t("هل ترغب في إرسال هذا الطلب كهدية؟", "Send this order as a gift?")}
             </span>
           </label>
           {isGift && (

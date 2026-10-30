@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Paperclip } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
@@ -802,7 +803,8 @@ export default function InvoicePreview({
                                   rel="noreferrer"
                                   className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
                                 >
-                                  📎 {isRTL ? "تحميل/عرض الملف" : "View File"}
+                                  <Paperclip className="h-3 w-3" aria-hidden="true" />
+                                  {isRTL ? "تحميل/عرض الملف" : "View File"}
                                 </a>
                               ) : (
                                 customFieldValue(cf, isRTL ? "ar" : "en")

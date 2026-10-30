@@ -85,8 +85,8 @@ export function OnboardingChecklist({
               <span>
                 {isAllStepsCompleted
                   ? isAr
-                    ? "🎉 مبروك! اكتمل إعداد المتجر بنجاح"
-                    : "🎉 Store Launch Checklist Complete!"
+                    ? "مبروك، اكتمل إعداد المتجر"
+                    : "Your store is set up"
                   : isAr
                     ? "ابدأ هنا — 3 خطوات لإطلاق متجرك بنجاح"
                     : "Start Here — 3 Steps to Launch Your Store"}

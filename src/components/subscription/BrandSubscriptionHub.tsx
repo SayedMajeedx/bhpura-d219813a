@@ -674,7 +674,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       >
                         {isRecommended && (
                           <span className="absolute -top-2.5 left-4 px-2 py-0.5 rounded-full text-xs font-bold bg-primary text-primary-foreground shadow-xs">
-                            {isAr ? "الأكثر طلباً ⭐" : "Most Popular ⭐"}
+                            {isAr ? "الأكثر طلباً" : "Most popular"}
                           </span>
                         )}
 

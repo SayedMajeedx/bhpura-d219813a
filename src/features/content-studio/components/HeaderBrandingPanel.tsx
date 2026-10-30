@@ -323,7 +323,11 @@ export function HeaderBrandingPanel({ studio }: { studio: ContentStudio }) {
                       : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  ⚪ {isAr ? "أبيض" : "Light"}
+                  <span
+                    className="inline-block size-2.5 rounded-full border border-border bg-white"
+                    aria-hidden="true"
+                  />{" "}
+                  {isAr ? "أبيض" : "Light"}
                 </button>
                 <button
                   type="button"
@@ -335,7 +339,11 @@ export function HeaderBrandingPanel({ studio }: { studio: ContentStudio }) {
                       : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  ⚫ {isAr ? "داكن" : "Dark"}
+                  <span
+                    className="inline-block size-2.5 rounded-full border border-border bg-neutral-900"
+                    aria-hidden="true"
+                  />{" "}
+                  {isAr ? "داكن" : "Dark"}
                 </button>
               </div>
             </div>

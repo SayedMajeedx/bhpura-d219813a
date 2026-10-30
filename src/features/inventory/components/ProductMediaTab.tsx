@@ -66,13 +66,7 @@ export function ProductMediaTab({
                   />
                 )}
                 <span className="absolute top-2 start-2 bg-black/80 text-white text-xs font-bold px-2 py-0.5 rounded shadow">
-                  {m.type === "video"
-                    ? isAr
-                      ? "🎬 فيديو"
-                      : "🎬 Video"
-                    : isAr
-                      ? "📷 صورة"
-                      : "📷 Image"}
+                  {m.type === "video" ? (isAr ? "فيديو" : "Video") : isAr ? "صورة" : "Image"}
                 </span>
                 {i === 0 && (
                   <span className="absolute top-2 end-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded shadow">

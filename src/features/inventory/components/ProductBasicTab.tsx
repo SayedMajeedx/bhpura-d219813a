@@ -310,7 +310,7 @@ export function ProductBasicTab({
           className="h-8 text-xs font-bold gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-lg"
         >
           <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-          {isAr ? "✨ صياغة وصف ذكي" : "✨ AI Copywriter"}
+          {isAr ? "صياغة وصف ذكي" : "AI copywriter"}
         </Button>
       </div>
       <BilingualField
@@ -363,8 +363,8 @@ export function ProductBasicTab({
         <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span className="leading-relaxed">
             {isAr
-              ? "💡 هل لديك مقاسات أو ألوان متعددة؟ سيتم نشر هذا المنتج بمقاس قياسي تلقائياً، ويمكنك إضافة وتخصيص تفاصيل المقاسات والألوان في أي وقت بعد الحفظ."
-              : "💡 Have multiple sizes or colors? This product will be published with a standard size automatically; you can add and customize variants anytime after saving."}
+              ? "هل لديك مقاسات أو ألوان متعددة؟ سيتم نشر هذا المنتج بمقاس قياسي تلقائياً، ويمكنك إضافة وتخصيص تفاصيل المقاسات والألوان في أي وقت بعد الحفظ."
+              : "Have multiple sizes or colors? This product will be published with a standard size automatically; you can add and customize variants anytime after saving."}
           </span>
         </div>
       )}

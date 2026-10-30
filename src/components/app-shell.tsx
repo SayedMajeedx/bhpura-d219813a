@@ -462,8 +462,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
             <Shield className="h-4 w-4 text-white animate-pulse" />
             <span className="leading-relaxed">
               {lang === "ar"
-                ? "⚠️ وضع المحاكاة: استعراض المتجر بصفة مسؤول خارق. جميع الإجراءات مسجلة."
-                : "⚠️ IMPERSONATION MODE: Viewing store as Superadmin. All actions are audited."}
+                ? "وضع المحاكاة: استعراض المتجر بصفة مسؤول خارق. جميع الإجراءات مسجلة."
+                : "IMPERSONATION MODE: Viewing store as Superadmin. All actions are audited."}
             </span>
           </div>
           <Button

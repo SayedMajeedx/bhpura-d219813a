@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { setPromoAudience } from "@/lib/promo-audience";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Tags, Calendar } from "lucide-react";
+import { Tags, Calendar, AlertTriangle } from "lucide-react";
 import {
   createPromoCode,
   deletePromoCode,
@@ -615,8 +615,8 @@ function DiscountCodes() {
               />
               {showMarginWarning && (
                 <div className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50 p-2.5 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 flex items-center gap-1.5 animate-pulse">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                   <span>
-                    ⚠️{" "}
                     {ar
                       ? `هذه القيمة تُنزل هامش الربح لبعض المنتجات عن ${marginFloor}%.`
                       : `This value takes the profit margin of some products below ${marginFloor}%.`}
