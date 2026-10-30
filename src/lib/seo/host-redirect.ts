@@ -35,6 +35,7 @@ const PRIVATE_PAGES = new Set([
   "auth",
   "auth-confirmed",
   "thank-you",
+  "track-order",
   "wishlist",
 ]);
 

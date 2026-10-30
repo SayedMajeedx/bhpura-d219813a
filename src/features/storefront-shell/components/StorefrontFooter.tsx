@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useStorefront, useStoreModules } from "@/lib/storefront-context";
+import { isServicesProfile } from "@/lib/store-profile";
 import { renderTrustBadgeIcon, resolveStorefrontTrustBadges } from "@/lib/trust-badges";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
@@ -15,6 +16,7 @@ export function StorefrontFooter() {
   const { brand, settings, lang, t } = useStorefront();
   // Hooks must run unconditionally; the v2 footer branch is decided after them.
   const storeModules = useStoreModules();
+  const servicesStore = isServicesProfile(storeModules);
   const showSizeGuideFooterLink = Boolean(storeModules?.size_guide);
   const isAr = lang === "ar";
   const [openCompany, setOpenCompany] = useState(false);
@@ -212,8 +214,8 @@ export function StorefrontFooter() {
               </div>
             )}
 
-            {/* Group B: Help */}
-            {(helpPages.length > 0 || showSizeGuideFooterLink) && (
+            {/* Group B: Help (always for a store that ships: tracking an order needs no page) */}
+            {(helpPages.length > 0 || showSizeGuideFooterLink || !servicesStore) && (
               <div className="border-b border-current/10 last:border-0">
                 <button
                   type="button"
@@ -235,6 +237,16 @@ export function StorefrontFooter() {
                   }`}
                 >
                   <div className="overflow-hidden space-y-1 px-1">
+                    {!servicesStore && (
+                      <Link
+                        to="/$slug/track-order"
+                        params={{ slug: brand.slug }}
+                        className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"
+                        style={{ color: "var(--sf-footer-fg)" }}
+                      >
+                        {t("تتبّع طلبك", "Track your order")}
+                      </Link>
+                    )}
                     {helpPages.map((p) => (
                       <Link
                         key={p.idx}

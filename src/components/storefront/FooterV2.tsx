@@ -137,10 +137,19 @@ export function FooterV2() {
 
   const helpLinks = (linkClass: string) => (
     <>
+      {/* Tracking needs no account: an order's number and phone open it. */}
+      {!servicesStore && (
+        <Link
+          to="/$slug/track-order"
+          params={{ slug: brand.slug }}
+          className={linkClass}
+          style={FG}
+        >
+          {t("تتبّع طلبك", "Track your order")}
+        </Link>
+      )}
       <Link to="/$slug/account" params={{ slug: brand.slug }} className={linkClass} style={FG}>
-        {servicesStore
-          ? t("حجوزاتي وحسابي", "My bookings & account")
-          : t("تتبع الطلبات وحسابي", "Track Order & Account")}
+        {servicesStore ? t("حجوزاتي وحسابي", "My bookings & account") : t("حسابي", "My account")}
       </Link>
       {pageLinks(helpPages, linkClass)}
       <AddonSlot
