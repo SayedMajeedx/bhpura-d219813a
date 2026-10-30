@@ -95,7 +95,6 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
 import { soldOnlyByBooking } from "@/lib/bookings/service";
-import { descriptionAboveOptions } from "@/features/product-page/lib/product-details";
 import { useServiceBookingTerms } from "@/features/product-page/hooks/use-service-booking-terms";
 import { ServicePurchasePanel } from "@/features/product-page/components/ServicePurchasePanel";
 import { ServiceMobileBookBar } from "@/features/product-page/components/ServiceMobileBookBar";
@@ -258,12 +257,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     },
     // The loader asked in the same round trip as the product: no second request after the page shows.
     initialData: loaderData?.socialProofCount,
-    enabled: Boolean(
-      brand?.id &&
-      product?.id &&
-      settings?.storefront_design_version === 2 &&
-      settings?.social_proof_enabled !== false,
-    ),
+    enabled: Boolean(brand?.id && product?.id && settings?.social_proof_enabled !== false),
     staleTime: 10 * 60_000,
   });
 
@@ -764,14 +758,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             toggleWishlist={toggleWishlist}
           />
 
-          {settings?.storefront_design_version === 2 &&
-            settings?.social_proof_enabled !== false &&
-            socialProofQuery.data && <SocialProofBadge count={socialProofQuery.data} lang={lang} />}
-
-          {displayDescription && descriptionAboveOptions(settings?.storefront_design_version) && (
-            <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
-              {displayDescription}
-            </p>
+          {settings?.social_proof_enabled !== false && socialProofQuery.data && (
+            <SocialProofBadge count={socialProofQuery.data} lang={lang} />
           )}
 
           {!isService && (hasVariants || customFields.length > 0) && (
@@ -900,21 +888,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             />
           )}
 
-          {/* Layer 2 Product Accordions */}
-          {settings?.storefront_design_version === 2 && (
-            <ProductAccordion
-              description={displayDescription}
-              product={product}
-              hasSizeGuide={Boolean(
-                modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
-              )}
-              bookingTerms={bookingTerms}
-              deliveryKinds={{ ready: !isMadeToOrder || hasReadySizes, tailored: isMadeToOrder }}
-            />
-          )}
+          {/* The description, the details, delivery and returns, the size guide: drawn once, here. */}
+          <ProductAccordion
+            description={displayDescription}
+            product={product}
+            hasSizeGuide={Boolean(
+              modules?.size_guide || (product?.size_guide_id && !product?.size_guide_hidden),
+            )}
+            bookingTerms={bookingTerms}
+            deliveryKinds={{ ready: !isMadeToOrder || hasReadySizes, tailored: isMadeToOrder }}
+          />
 
-          {/* Layer 2 Bundle Offer */}
-          {settings?.storefront_design_version === 2 && !isService && bundleItems.length > 0 && (
+          {!isService && bundleItems.length > 0 && (
             <BundleOffer
               mainProduct={product}
               mainVariant={variant}

@@ -2,8 +2,6 @@ import * as React from "react";
 import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -118,11 +116,10 @@ export interface HeroSlidesEditorProps {
   framing?: HeroFramingSettings;
   background?: HeroBackgroundInput;
   /**
-   * The store's design version, brand and settings being edited. On the V2 hero every slide has
-   * its animated headline, line and button, and the preview is the store's own hero.
+   * The brand and settings being edited: every slide has its animated headline, line and button,
+   * and the preview is the store's own hero.
    */
   livePreview?: {
-    version: number;
     brand: HeroPreviewBrand;
     settings: Record<string, unknown>;
   };
@@ -143,7 +140,6 @@ export function HeroSlidesEditor({
   background,
   livePreview,
 }: HeroSlidesEditorProps) {
-  const isV2 = livePreview?.version === 2;
   const { lang } = useI18n();
   const isAr = propIsAr ?? lang === "ar";
   const [internalUploading, setInternalUploading] = React.useState(false);
@@ -541,101 +537,16 @@ export function HeroSlidesEditor({
                   </div>
                 )}
 
-                {!isV2 && slide.type !== "text" && (
-                  <div>
-                    <Label>{isAr ? "رابط الشريحة عند الضغط" : "Slide click link"}</Label>
-                    <Input
-                      dir="ltr"
-                      value={slide.button_href}
-                      onChange={(event) => update(index, { button_href: event.target.value })}
-                      placeholder="#products"
-                    />
-                  </div>
-                )}
+                <HeroHeadlineFields
+                  idPrefix={`slide-${slide.id || index}`}
+                  slide={slide}
+                  isAr={isAr}
+                  onChange={(patch) => update(index, patch)}
+                  withText
+                  storeNames={[livePreview?.brand.name_ar, livePreview?.brand.name_en]}
+                />
 
-                {!isV2 && slide.type === "text" && (
-                  <>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label>العنوان — عربي</Label>
-                        <Input
-                          dir="rtl"
-                          value={slide.title_ar}
-                          onChange={(event) => update(index, { title_ar: event.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>العنوان — English</Label>
-                        <Input
-                          dir="ltr"
-                          value={slide.title_en}
-                          onChange={(event) => update(index, { title_en: event.target.value })}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <Label>الوصف — عربي</Label>
-                        <Textarea
-                          dir="rtl"
-                          value={slide.body_ar}
-                          onChange={(event) => update(index, { body_ar: event.target.value })}
-                          rows={2}
-                        />
-                      </div>
-                      <div>
-                        <Label>الوصف — English</Label>
-                        <Textarea
-                          dir="ltr"
-                          value={slide.body_en}
-                          onChange={(event) => update(index, { body_en: event.target.value })}
-                          rows={2}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div>
-                        <Label>الزر — English</Label>
-                        <Input
-                          dir="ltr"
-                          value={slide.button_en}
-                          onChange={(event) => update(index, { button_en: event.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>الزر — عربي</Label>
-                        <Input
-                          dir="rtl"
-                          value={slide.button_ar}
-                          onChange={(event) => update(index, { button_ar: event.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label>{isAr ? "رابط الزر" : "Button link"}</Label>
-                        <Input
-                          value={slide.button_href}
-                          onChange={(event) => update(index, { button_href: event.target.value })}
-                          placeholder="#products"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {isV2 && (
-                  <HeroHeadlineFields
-                    idPrefix={`slide-${slide.id || index}`}
-                    slide={slide}
-                    isAr={isAr}
-                    onChange={(patch) => update(index, patch)}
-                    withText
-                    storeNames={[livePreview?.brand.name_ar, livePreview?.brand.name_en]}
-                  />
-                )}
-
-                {isV2 && livePreview && (
+                {livePreview && (
                   <HeroSlideLookFields
                     idPrefix={`slide-${slide.id || index}`}
                     slide={slide}
@@ -644,7 +555,7 @@ export function HeroSlidesEditor({
                     onChange={(patch) => update(index, patch)}
                   />
                 )}
-                {isV2 && livePreview && (
+                {livePreview && (
                   <HeroContrastNote
                     slide={slide}
                     store={livePreview.settings}
@@ -681,7 +592,7 @@ export function HeroSlidesEditor({
                   isAr={isAr}
                 />
 
-                {isV2 && livePreview ? (
+                {livePreview ? (
                   <HeroLivePreview
                     brand={livePreview.brand}
                     settings={livePreview.settings}

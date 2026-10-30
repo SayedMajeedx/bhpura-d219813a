@@ -1,7 +1,10 @@
 # Moving every store to the new storefront (V1 → V2): the plan
 
-Status: **plan only** (the owner's decision of 2026-10-30). Nothing here has been applied; no
-store's storefront has changed. Each step below is the owner's to approve.
+Status: **done in code** (2026-10-30). The owner confirmed every store was on V2 and asked for
+the classic engine to be removed. Nothing reads `storefront_design_version` any more, so a store
+whose row says 1 (self-serve sign-up still starts there through the column's default) draws the
+one storefront all the same; no migration was needed. Steps 1 and 5 below are therefore done by
+the removal itself; the column can be dropped later, in an additive way.
 
 ## Why
 

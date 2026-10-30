@@ -2,7 +2,12 @@ import { describe, it, expect } from "vitest";
 import { evaluateStoreReadiness } from "../src/components/settings/StoreReadinessChecklist";
 
 describe("evaluateStoreReadiness", () => {
+  // Every store has the palette and the kind of store among its steps (the classic storefront,
+  // which left them out, is gone), so a store set up in full chose both.
+  const evaluate = (input: Parameters<typeof evaluateStoreReadiness>[0]) =>
+    evaluateStoreReadiness({ storeVertical: "fashion", ...input });
   const puraBusinessSettings = {
+    brand_palette: { source: "logo" },
     logo_url:
       "https://media.boutq.store/brands/b2f628c9-cfeb-444b-befe-5dbbb9d5c9e6/logo/170acff7-a39b-40ae-b796-06da268e8ec1.svg",
     cod_enabled: true,
@@ -23,8 +28,8 @@ describe("evaluateStoreReadiness", () => {
     ],
   };
 
-  it("evaluates a fully configured brand (like pura) as 5/5 complete (100%)", () => {
-    const result = evaluateStoreReadiness({
+  it("evaluates a fully configured brand (like pura) as 7/7 complete (100%)", () => {
+    const result = evaluate({
       logoUrl: puraBusinessSettings.logo_url,
       activeProductsCount: 9,
       businessSettings: puraBusinessSettings,
@@ -36,15 +41,15 @@ describe("evaluateStoreReadiness", () => {
     expect(result.hasPayments).toBe(true);
     expect(result.hasFulfillment).toBe(true);
     expect(result.hasPolicies).toBe(true);
-    expect(result.completedCount).toBe(5);
-    expect(result.totalCount).toBe(5);
+    expect(result.completedCount).toBe(7);
+    expect(result.totalCount).toBe(7);
     expect(result.progressPercent).toBe(100);
     expect(result.isAllComplete).toBe(true);
     expect(result.pagesCount).toBe(5);
   });
 
   it("detects missing fulfillment when all fulfillment flags are disabled and no zones exist", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
       businessSettings: {
@@ -57,12 +62,12 @@ describe("evaluateStoreReadiness", () => {
     });
 
     expect(result.hasFulfillment).toBe(false);
-    expect(result.completedCount).toBe(4);
+    expect(result.completedCount).toBe(6);
     expect(result.isAllComplete).toBe(false);
   });
 
   it("detects missing policies when pages array is empty", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
       businessSettings: {
@@ -73,12 +78,12 @@ describe("evaluateStoreReadiness", () => {
     });
 
     expect(result.hasPolicies).toBe(false);
-    expect(result.completedCount).toBe(4);
+    expect(result.completedCount).toBe(6);
     expect(result.isAllComplete).toBe(false);
   });
 
   it("recognizes pages stored in { items: [...] } payload structure", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
       businessSettings: {
@@ -100,7 +105,7 @@ describe("evaluateStoreReadiness", () => {
   });
 
   it("satisfies policy requirement when brand has configured return policy terms", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
       businessSettings: {
@@ -116,7 +121,7 @@ describe("evaluateStoreReadiness", () => {
   });
 
   it("detects incomplete products when activeProductsCount is 0", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 0,
       businessSettings: puraBusinessSettings,
@@ -124,12 +129,12 @@ describe("evaluateStoreReadiness", () => {
     });
 
     expect(result.hasProducts).toBe(false);
-    expect(result.completedCount).toBe(4);
+    expect(result.completedCount).toBe(6);
     expect(result.isAllComplete).toBe(false);
   });
 
   it("detects incomplete payments when all payment options are falsy", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
       businessSettings: {
@@ -142,11 +147,11 @@ describe("evaluateStoreReadiness", () => {
     });
 
     expect(result.hasPayments).toBe(false);
-    expect(result.completedCount).toBe(4);
+    expect(result.completedCount).toBe(6);
   });
 
   it("determines that 100% complete stores are collapsed by default and dismissible", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: puraBusinessSettings.logo_url,
       activeProductsCount: 9,
       businessSettings: puraBusinessSettings,
@@ -164,7 +169,7 @@ describe("evaluateStoreReadiness", () => {
   });
 
   it("ensures that incomplete stores are never collapsed by default and cannot stay dismissed", () => {
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: puraBusinessSettings.logo_url,
       activeProductsCount: 0,
       businessSettings: puraBusinessSettings,
@@ -195,7 +200,7 @@ describe("evaluateStoreReadiness", () => {
       whatsapp_number: "+97333000000",
     };
 
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: catalogSettings.logo_url,
       activeProductsCount: 5,
       businessSettings: catalogSettings,
@@ -203,13 +208,13 @@ describe("evaluateStoreReadiness", () => {
     });
 
     expect(result.isCatalog).toBe(true);
-    expect(result.totalCount).toBe(4);
-    expect(result.completedCount).toBe(4);
+    expect(result.totalCount).toBe(6);
+    expect(result.completedCount).toBe(6);
     expect(result.progressPercent).toBe(100);
     expect(result.isAllComplete).toBe(true);
 
     const itemIds = result.items.map((i) => i.id);
-    expect(itemIds).toEqual(["logo", "products", "whatsapp", "policies"]);
+    expect(itemIds).toEqual(["logo", "palette", "vertical", "products", "whatsapp", "policies"]);
     expect(itemIds).not.toContain("payments");
     expect(itemIds).not.toContain("fulfillment");
   });
@@ -221,7 +226,7 @@ describe("evaluateStoreReadiness", () => {
       whatsapp_number: "",
     };
 
-    const result = evaluateStoreReadiness({
+    const result = evaluate({
       logoUrl: catalogSettings.logo_url,
       activeProductsCount: 5,
       businessSettings: catalogSettings,
@@ -230,8 +235,8 @@ describe("evaluateStoreReadiness", () => {
 
     expect(result.isCatalog).toBe(true);
     expect(result.hasWhatsApp).toBe(false);
-    expect(result.totalCount).toBe(4);
-    expect(result.completedCount).toBe(3);
+    expect(result.totalCount).toBe(6);
+    expect(result.completedCount).toBe(5);
     expect(result.isAllComplete).toBe(false);
 
     const whatsappItem = result.items.find((i) => i.id === "whatsapp");

@@ -129,7 +129,6 @@ export function DesignV2Group() {
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
   const bs = form.bs;
-  const isV2 = bs.storefront_design_version === 2;
 
   return (
     <div className="rounded-xl border border-border p-5 bg-card shadow-sm space-y-5">
@@ -139,13 +138,9 @@ export function DesignV2Group() {
           <span>{isAr ? "بطاقة المنتج وصفحته" : "Product card & page"}</span>
         </h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          {isV2
-            ? isAr
-              ? "ما تعرضه بطاقة المنتج، وما تقدّمه صفحة المنتج وصفحات الأقسام. كلها مفعّلة افتراضياً."
-              : "What a product card shows, and what the product page and category pages offer. Everything is on by default."
-            : isAr
-              ? 'هذه الخيارات تعمل بعد تفعيل المظهر الجديد من بطاقة "ترقية المظهر" أعلاه.'
-              : 'These options apply once the new look is enabled from the "Upgrade design" card above.'}
+          {isAr
+            ? "ما تعرضه بطاقة المنتج، وما تقدّمه صفحة المنتج وصفحات الأقسام. كلها مفعّلة افتراضياً."
+            : "What a product card shows, and what the product page and category pages offer. Everything is on by default."}
         </p>
       </div>
 

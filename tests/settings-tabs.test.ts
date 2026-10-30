@@ -111,26 +111,18 @@ describe("Settings Search Universal Filtering", () => {
 });
 
 describe("Store Readiness Checklist Integration", () => {
-  it("adds palette/vertical readiness items only for Storefront 2.0 brands", () => {
-    const v1 = evaluateStoreReadiness({
+  it("asks every store for its palette and its kind of store", () => {
+    // Only stores on the new look were asked until the classic storefront was retired.
+    const store = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
-      businessSettings: { storefront_design_version: 1 },
+      businessSettings: {},
       storeVertical: "general",
       lang: "ar",
     });
-    expect(v1.items.find((i) => i.id === "palette")).toBeUndefined();
-    expect(v1.items.find((i) => i.id === "vertical")).toBeUndefined();
-    expect(v1.totalCount).toBe(5);
-
-    const v2 = evaluateStoreReadiness({
-      logoUrl: "https://example.com/logo.png",
-      activeProductsCount: 5,
-      businessSettings: { storefront_design_version: 2 },
-      storeVertical: "general",
-      lang: "ar",
-    });
-    expect(v2.totalCount).toBe(7);
+    expect(store.items.find((i) => i.id === "palette")).toBeDefined();
+    expect(store.items.find((i) => i.id === "vertical")).toBeDefined();
+    expect(store.totalCount).toBe(7);
   });
 
   it("marks the palette item complete for a logo-extracted or manually chosen palette", () => {
@@ -142,20 +134,20 @@ describe("Store Readiness Checklist Integration", () => {
     };
     const unset = evaluateStoreReadiness({
       ...base,
-      businessSettings: { storefront_design_version: 2 },
+      businessSettings: {},
     });
     expect(unset.items.find((i) => i.id === "palette")?.isComplete).toBe(false);
 
     const manual = evaluateStoreReadiness({
       ...base,
-      businessSettings: { storefront_design_version: 2, storefront_accent_color: "#800020" },
+      businessSettings: { storefront_accent_color: "#800020" },
       brandPalette: { source: "manual" },
     });
     expect(manual.items.find((i) => i.id === "palette")?.isComplete).toBe(true);
 
     const extracted = evaluateStoreReadiness({
       ...base,
-      businessSettings: { storefront_design_version: 2 },
+      businessSettings: {},
       brandPalette: { source: "logo", meta: { source: "logo" } },
     });
     const item = extracted.items.find((i) => i.id === "palette");
@@ -167,7 +159,7 @@ describe("Store Readiness Checklist Integration", () => {
     const general = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
-      businessSettings: { storefront_design_version: 2 },
+      businessSettings: {},
       storeVertical: "general",
       lang: "ar",
     });
@@ -176,7 +168,7 @@ describe("Store Readiness Checklist Integration", () => {
     const selected = evaluateStoreReadiness({
       logoUrl: "https://example.com/logo.png",
       activeProductsCount: 5,
-      businessSettings: { storefront_design_version: 2 },
+      businessSettings: {},
       storeVertical: "beauty",
       lang: "ar",
     });

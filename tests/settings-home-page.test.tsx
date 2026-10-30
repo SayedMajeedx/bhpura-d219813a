@@ -95,8 +95,8 @@ const showGroup = (setActiveGroup = vi.fn()) => {
 };
 
 describe("the home page's sections", () => {
-  it("are in the order a shopper scrolls them; the brand story is the new look's", () => {
-    expect(homePageSections(true)).toEqual([
+  it("are in the order a shopper scrolls them", () => {
+    expect(homePageSections()).toEqual([
       "hero",
       "trust_bar",
       "promo_cards",
@@ -108,7 +108,6 @@ describe("the home page's sections", () => {
       "recently_viewed",
       "category_pages",
     ]);
-    expect(homePageSections(false)).not.toContain("brand_story");
   });
 
   it("are on unless switched off, as the storefront reads them", () => {

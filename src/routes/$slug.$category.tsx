@@ -575,53 +575,35 @@ function CategoryPage() {
       </SecondaryBannerParallax>
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        {settings?.storefront_design_version === 2 ? (
-          <>
-            {/* Desktop 2-column layout: Sidebar + Grid */}
-            <div className="flex gap-8 items-start">
-              {settings?.category_filters_enabled !== false && (
-                <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
-                  <CategoryFilters
-                    filters={filters}
-                    onChange={setFilters}
-                    facets={facets}
-                    totalFilteredCount={filteredProducts.length}
-                  />
-                </aside>
-              )}
+        {/* Desktop 2-column layout: Sidebar + Grid */}
+        <div className="flex gap-8 items-start">
+          {settings?.category_filters_enabled !== false && (
+            <aside className="hidden lg:block w-60 shrink-0 sticky top-24">
+              <CategoryFilters
+                filters={filters}
+                onChange={setFilters}
+                facets={facets}
+                totalFilteredCount={filteredProducts.length}
+              />
+            </aside>
+          )}
 
-              <div className="flex-1 min-w-0">
-                <ProductGrid
-                  withSidebar={settings?.category_filters_enabled !== false}
-                  toolbar={
-                    <div className="flex items-center gap-2">
-                      {settings?.category_filters_enabled !== false && (
-                        <CategoryFiltersSheet
-                          filters={filters}
-                          onChange={setFilters}
-                          facets={facets}
-                          totalFilteredCount={filteredProducts.length}
-                        />
-                      )}
-                      {sortSelect}
-                    </div>
-                  }
-                  products={filteredProducts}
-                  loading={
-                    categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
-                  }
-                  categoryEmpty
-                  onViewAll={() => {
-                    void navigate({ to: "/$slug", params: { slug: brand.slug } });
-                  }}
-                />
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
+          <div className="flex-1 min-w-0">
             <ProductGrid
-              toolbar={sortSelect}
+              withSidebar={settings?.category_filters_enabled !== false}
+              toolbar={
+                <div className="flex items-center gap-2">
+                  {settings?.category_filters_enabled !== false && (
+                    <CategoryFiltersSheet
+                      filters={filters}
+                      onChange={setFilters}
+                      facets={facets}
+                      totalFilteredCount={filteredProducts.length}
+                    />
+                  )}
+                  {sortSelect}
+                </div>
+              }
               products={filteredProducts}
               loading={
                 categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
@@ -631,8 +613,8 @@ function CategoryPage() {
                 void navigate({ to: "/$slug", params: { slug: brand.slug } });
               }}
             />
-          </>
-        )}
+          </div>
+        </div>
       </section>
     </main>
   );

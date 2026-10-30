@@ -649,12 +649,14 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
 
   // storefront.mode
   {
+    // Read by nothing: every store has the one storefront (the classic one was retired on
+    // 2026-10-30, docs/storefront-v1-to-v2-plan.md); the column stays until it is dropped.
     key: "storefront_design_version",
     table: "business_settings",
-    tab: "storefront",
-    group: "mode",
+    tab: null,
+    group: null,
     level: "basic",
-    owner: "settings",
+    owner: "system",
     type: "number",
     label: {
       ar: "إصدار تصميم الواجهة (1=كلاسيك, 2=الجديد)",
@@ -759,25 +761,25 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نبذة إنجليزي"], en: ["about brand english"] },
   },
   {
-    scope: "v1_only",
+    // Read by nothing: the classic storefront's hero carousel was its only reader (retired 2026-10-30).
     key: "show_hero_title",
     table: "business_settings",
-    tab: "storefront",
-    group: "home_hero",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "boolean",
     label: { ar: "عرض عنوان الواجهة الترحيبي", en: "Show Hero Title" },
     keywords: { ar: ["عرض العنوان", "هيرو"], en: ["show hero title"] },
   },
   {
-    scope: "v1_only",
+    // Read by nothing: the classic storefront's hero carousel was its only reader (retired 2026-10-30).
     key: "show_hero_about",
     table: "business_settings",
-    tab: "storefront",
-    group: "home_hero",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "boolean",
     label: { ar: "عرض نبذة المتجر في الواجهة", en: "Show About Section in Hero" },
     keywords: { ar: ["عرض النبذة"], en: ["show hero about"] },
@@ -805,37 +807,37 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عنوان ترحيبي عربي"], en: ["hero title ar"] },
   },
   {
-    scope: "v1_only",
+    // Read by nothing: the classic storefront's hero carousel was its only reader (retired 2026-10-30).
     key: "hero_title_size",
     table: "business_settings",
-    tab: "storefront",
-    group: "home_hero",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "number",
     label: { ar: "حجم خط عنوان الواجهة (px)", en: "Hero Title Size (px)" },
     keywords: { ar: ["حجم خط العنوان"], en: ["hero title font size"] },
   },
   {
-    scope: "v1_only",
+    // Read by nothing: the classic storefront's hero carousel was its only reader (retired 2026-10-30).
     key: "hero_title_color",
     table: "business_settings",
-    tab: "storefront",
-    group: "home_hero",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "color",
     label: { ar: "لون عنوان الواجهة", en: "Hero Title Color" },
     keywords: { ar: ["لون عنوان الواجهة"], en: ["hero title color"] },
   },
   {
-    scope: "v1_only",
+    // Read by nothing: the classic storefront's hero carousel was its only reader (retired 2026-10-30).
     key: "hero_title_align",
     table: "business_settings",
-    tab: "storefront",
-    group: "home_hero",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "select",
     label: { ar: "محاذاة عنوان الواجهة", en: "Hero Title Alignment" },
     keywords: {
@@ -844,7 +846,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_layout",
     table: "business_settings",
     tab: "storefront",
@@ -859,7 +860,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_aspect_mobile",
     table: "business_settings",
     tab: "storefront",
@@ -874,7 +874,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_height_desktop",
     table: "business_settings",
     tab: "storefront",
@@ -889,7 +888,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_show_arrows",
     table: "business_settings",
     tab: "storefront",
@@ -904,7 +902,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_video_fit",
     table: "business_settings",
     tab: "storefront",
@@ -919,7 +916,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "hero_overlay_strength",
     table: "business_settings",
     tab: "storefront",
@@ -931,7 +927,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تظليل الهيرو", "شفافية الهيرو"], en: ["hero overlay", "overlay opacity"] },
   },
   {
-    scope: "v2_only",
     key: "hero_title_color_v2",
     table: "business_settings",
     tab: "storefront",
@@ -1085,7 +1080,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["موضع شريط الثقة"], en: ["trust bar position"] },
   },
   {
-    scope: "v2_only",
     key: "brand_story_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1097,7 +1091,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["قصة البراند", "عن المتجر"], en: ["brand story", "about brand"] },
   },
   {
-    scope: "v2_only",
     key: "brand_story_image_url",
     table: "business_settings",
     tab: "storefront",
@@ -1109,7 +1102,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["صورة قصة البراند"], en: ["brand story image"] },
   },
   {
-    scope: "v2_only",
     key: "product_card_hover_image",
     table: "business_settings",
     tab: "storefront",
@@ -1121,7 +1113,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تبديل صورة", "تحويم"], en: ["hover image", "secondary image"] },
   },
   {
-    scope: "v2_only",
     key: "product_card_color_dots",
     table: "business_settings",
     tab: "storefront",
@@ -1136,7 +1127,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نقاط ألوان", "خيارات ألوان"], en: ["color dots", "swatches"] },
   },
   {
-    scope: "v2_only",
     key: "product_card_quick_add",
     table: "business_settings",
     tab: "storefront",
@@ -1162,7 +1152,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["تخطيط المنتج"], en: ["pdp layout"] },
   },
   {
-    scope: "v2_only",
     key: "new_badge_days",
     table: "business_settings",
     tab: "storefront",
@@ -1174,7 +1163,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["شارة جديد", "أيام"], en: ["new badge days", "badge threshold"] },
   },
   {
-    scope: "v2_only",
     key: "category_filters_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1186,7 +1174,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["فلاتر", "تصفية", "فرز"], en: ["filters", "category filters"] },
   },
   {
-    scope: "v2_only",
     key: "pdp_image_zoom",
     table: "business_settings",
     tab: "storefront",
@@ -1200,7 +1187,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
   // The shape of a product's photos on the cards and the product page (registry-photos.ts)
   ...PHOTO_SHAPE_SETTINGS,
   {
-    scope: "v2_only",
     key: "social_proof_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1212,7 +1198,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["إثبات اجتماعي", "اشترى مؤخراً"], en: ["social proof", "recent sales"] },
   },
   {
-    scope: "v2_only",
     key: "recently_viewed_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1224,7 +1209,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["مشاهدة مؤخراً", "تاريخ التصفح"], en: ["recently viewed"] },
   },
   {
-    scope: "v2_only",
     key: "motion_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1236,7 +1220,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["حركة", "انتقالات", "أنيميشن"], en: ["motion", "animations"] },
   },
   {
-    scope: "v2_only",
     key: "quick_view_enabled",
     table: "business_settings",
     tab: "storefront",
@@ -1251,7 +1234,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["معاينة سريعة"], en: ["quick view", "preview modal"] },
   },
   {
-    scope: "v2_only",
     key: "fabric_care_ar",
     table: "business_settings",
     tab: "storefront",
@@ -1266,7 +1248,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["عناية أقمشة", "غسيل"], en: ["fabric care arabic"] },
   },
   {
-    scope: "v2_only",
     key: "fabric_care_en",
     table: "business_settings",
     tab: "storefront",
@@ -1697,7 +1678,6 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["خصم مجموعة", "بندل"], en: ["bundle discount", "bundle percent"] },
   },
   {
-    scope: "v2_only",
     key: "back_in_stock_enabled",
     table: "business_settings",
     tab: "storefront",

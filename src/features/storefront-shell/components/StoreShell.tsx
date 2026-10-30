@@ -1,4 +1,5 @@
 import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
+import { useAutoHideHeader } from "@/features/storefront-shell/hooks/use-auto-hide-header";
 import { StoreStatusBanner } from "@/features/storefront-shell/components/StoreStatusBanner";
 import React, { useEffect, useRef, useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
@@ -41,6 +42,8 @@ export function StoreShell() {
     setHeaderHeight(header.offsetHeight);
     return () => observer.disconnect();
   }, []);
+  // Out of view on a scroll down, back for a moment on a scroll up, always at the top of the page.
+  const headerHidden = useAutoHideHeader(headerRef);
 
   useEffect(() => {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
@@ -77,7 +80,14 @@ export function StoreShell() {
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
       className="storefront-shell min-h-screen flex flex-col w-full max-w-full"
-      style={{ ...style, "--sf-header-h": `${headerHeight}px` } as React.CSSProperties}
+      style={
+        {
+          ...style,
+          "--sf-header-h": `${headerHeight}px`,
+          // What sticks under the header (the gallery, a menu's tabs) sits under what is shown of it.
+          "--sf-header-offset": headerHidden ? "0px" : `${headerHeight}px`,
+        } as React.CSSProperties
+      }
     >
       {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack
           (Readex Pro first) and outspecifies anything set here. It is harmless
@@ -91,14 +101,15 @@ export function StoreShell() {
         ref={headerRef}
         // Its colour runs under the status bar of a store added to the home screen (the page
         // is `viewport-fit=cover`); its content starts below it. Zero in a browser tab.
-        className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] ${isGlass ? "backdrop-blur-md" : ""}`}
+        className={`sticky top-0 z-40 pt-[env(safe-area-inset-top,0px)] transition-transform duration-(--motion-medium) ease-(--motion-ease-smooth) ${isGlass ? "backdrop-blur-md" : ""}`}
+        data-hidden={headerHidden ? "true" : undefined}
         style={{
           backgroundColor: "var(--sf-header-bg)",
           color: "var(--sf-header-fg)",
           // Inset hairline instead of a border: it adds no layout height, so a
           // full-bleed hero can sit flush under the header without a seam.
           boxShadow: "inset 0 -1px 0 rgba(0, 0, 0, 0.08)",
-          transform: "translateZ(0)",
+          transform: headerHidden ? "translate3d(0, -100%, 0)" : "translateZ(0)",
         }}
       >
         <AnnouncementBar />

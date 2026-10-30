@@ -8,7 +8,6 @@ import type { SettingsFieldDef } from "@/features/settings/registry";
  */
 export const PHOTO_SHAPE_SETTINGS: SettingsFieldDef[] = [
   {
-    scope: "v2_only",
     key: "product_card_aspect_ratio",
     table: "business_settings",
     tab: "storefront",
@@ -23,7 +22,6 @@ export const PHOTO_SHAPE_SETTINGS: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "v2_only",
     key: "pdp_gallery_aspect_ratio",
     table: "business_settings",
     tab: "storefront",

@@ -78,6 +78,7 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     brand_id: "test-brand-id",
     logo_url: "https://example.com/logo.png",
     storefront_mode: "shop",
+    brand_palette: { source: "manual" },
     cod_enabled: true,
     card_enabled: true,
     benefit_enabled: true,
@@ -89,8 +90,9 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     whatsapp_number: "+97333000000",
   };
 
-  it("evaluates shop mode with 5 requirements including payments and fulfillment", () => {
+  it("evaluates shop mode with 7 requirements including payments and fulfillment", () => {
     const readiness = evaluateStoreReadiness({
+      storeVertical: "fashion",
       logoUrl: baseSettings.logo_url,
       activeProductsCount: 3,
       businessSettings: baseSettings,
@@ -98,9 +100,11 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     });
 
     expect(readiness.isCatalog).toBe(false);
-    expect(readiness.totalCount).toBe(5);
+    expect(readiness.totalCount).toBe(7);
     expect(readiness.items.map((i) => i.id)).toEqual([
       "logo",
+      "palette",
+      "vertical",
       "products",
       "payments",
       "fulfillment",
@@ -109,7 +113,7 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     expect(readiness.isAllComplete).toBe(true);
   });
 
-  it("evaluates catalog mode with 4 requirements, omitting payments/fulfillment and requiring whatsapp", () => {
+  it("evaluates catalog mode with 6 requirements, omitting payments/fulfillment and requiring whatsapp", () => {
     const catalogSettings = {
       ...baseSettings,
       storefront_mode: "catalog",
@@ -124,6 +128,7 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     };
 
     const readiness = evaluateStoreReadiness({
+      storeVertical: "fashion",
       logoUrl: catalogSettings.logo_url,
       activeProductsCount: 4,
       businessSettings: catalogSettings,
@@ -131,10 +136,17 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     });
 
     expect(readiness.isCatalog).toBe(true);
-    expect(readiness.totalCount).toBe(4);
-    expect(readiness.items.map((i) => i.id)).toEqual(["logo", "products", "whatsapp", "policies"]);
+    expect(readiness.totalCount).toBe(6);
+    expect(readiness.items.map((i) => i.id)).toEqual([
+      "logo",
+      "palette",
+      "vertical",
+      "products",
+      "whatsapp",
+      "policies",
+    ]);
     expect(readiness.hasWhatsApp).toBe(true);
-    expect(readiness.completedCount).toBe(4);
+    expect(readiness.completedCount).toBe(6);
     expect(readiness.isAllComplete).toBe(true);
   });
 
@@ -146,6 +158,7 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
     };
 
     const readiness = evaluateStoreReadiness({
+      storeVertical: "fashion",
       logoUrl: catalogWithoutPhone.logo_url,
       activeProductsCount: 4,
       businessSettings: catalogWithoutPhone,
@@ -154,8 +167,8 @@ describe("Admin Storefront Mode — Store Readiness Checklist Integration", () =
 
     expect(readiness.isCatalog).toBe(true);
     expect(readiness.hasWhatsApp).toBe(false);
-    expect(readiness.completedCount).toBe(3);
-    expect(readiness.totalCount).toBe(4);
+    expect(readiness.completedCount).toBe(5);
+    expect(readiness.totalCount).toBe(6);
     expect(readiness.isAllComplete).toBe(false);
 
     const whatsappItem = readiness.items.find((i) => i.id === "whatsapp");

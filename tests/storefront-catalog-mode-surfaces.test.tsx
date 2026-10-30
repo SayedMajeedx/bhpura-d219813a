@@ -241,7 +241,7 @@ describe("product cards and made-to-order stock", () => {
           }
         />,
       );
-      const soldOut = Boolean(screen.queryByText("Sold out"));
+      const soldOut = Boolean(screen.queryByText(/^(Sold out|Out of stock)/));
       view.unmount();
       return soldOut;
     };
@@ -266,7 +266,7 @@ describe("product cards and made-to-order stock", () => {
         }
       />,
     );
-    expect(screen.queryByText("Sold out")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^(Sold out|Out of stock)/)).not.toBeInTheDocument();
     view.unmount();
   });
 });
