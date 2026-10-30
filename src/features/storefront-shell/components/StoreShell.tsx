@@ -11,6 +11,7 @@ import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNaviga
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
 import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
+import { CheckoutHeader } from "@/features/storefront-shell/components/CheckoutHeader";
 import { shellTheme } from "@/features/storefront-shell/lib/shell-theme";
 import { isEmbeddedWindow } from "@/features/storefront-shell/lib/embedded";
 
@@ -119,10 +120,17 @@ export function StoreShell() {
           transform: headerHidden ? "translate3d(0, -100%, 0)" : "translateZ(0)",
         }}
       >
-        <AnnouncementBar />
+        {/* Checkout keeps the logo and a way back; whether the store takes orders now stays. */}
+        {!isCheckout && <AnnouncementBar />}
         <StoreStatusBanner />
-        <StoreHeader />
-        <DesktopStoreNavigation />
+        {isCheckout ? (
+          <CheckoutHeader />
+        ) : (
+          <>
+            <StoreHeader />
+            <DesktopStoreNavigation />
+          </>
+        )}
       </div>
       <main id="store-main" tabIndex={-1} className="flex-1 focus:outline-none">
         <Outlet />
