@@ -105,8 +105,9 @@ export function MenuHome({
       {sections.length > 1 && (
         <nav
           aria-label={t("أقسام القائمة", "Menu sections")}
-          className="sticky z-30 mt-4 border-b border-border bg-background/95 backdrop-blur"
-          style={{ top: "var(--sf-header-h, 0px)" }}
+          className="sticky z-30 mt-4 border-b border-border bg-background/95 backdrop-blur transition-[top] duration-(--motion-medium) ease-(--motion-ease-smooth)"
+          // Under what is shown of the header: it leaves on a scroll down (useAutoHideHeader).
+          style={{ top: "var(--sf-header-offset, 0px)" }}
         >
           {/* The lit section's fill slides along the row as the page scrolls (transitions.dev's
               tabs sliding): the fill is the row's one pill, the tabs are its words. */}
