@@ -223,6 +223,45 @@ describe("Storefront 2.0 respects catalog (inquiry-only) mode", () => {
   });
 });
 
+describe("a card on a mouse's rest does one thing", () => {
+  const product = {
+    id: "p2",
+    name: "Linen Abaya",
+    name_en: "Linen Abaya",
+    base_price: 30,
+    image_url: "https://media.boutq.store/front.jpg",
+    media: [
+      { type: "image", url: "https://media.boutq.store/front.jpg" },
+      { type: "image", url: "https://media.boutq.store/back.jpg" },
+    ],
+    product_variants: [{ id: "v1", size: "52", selling_price: 30, stock_main: 3 }],
+  };
+  const photos = () => Array.from(document.querySelectorAll("img"));
+
+  it("fades its second photo in over the first, and neither lifts nor recolours", () => {
+    storefront.settings = { storefront_design_version: 2 };
+    const { container } = withI18n(<ProductCardV2 product={product} />);
+    expect(photos()).toHaveLength(1);
+    const card = container.querySelector("[data-product-id='p2']") as HTMLElement;
+    fireEvent.pointerEnter(card);
+    const [front, back] = photos();
+    expect(front.getAttribute("src")).toContain("front.jpg");
+    expect(back.getAttribute("src")).toContain("back.jpg");
+    expect(back.className).toContain("opacity-100");
+    fireEvent.pointerLeave(card);
+    expect(photos()[1].className).toContain("opacity-0");
+    expect(container.innerHTML).not.toMatch(
+      /hover:-translate-y|group-hover:shadow|group-hover:text-primary/,
+    );
+  });
+
+  it("with one photo, lets it grow a touch instead", () => {
+    storefront.settings = { storefront_design_version: 2 };
+    withI18n(<ProductCardV2 product={{ ...product, media: [] }} />);
+    expect(photos()[0].className).toContain("group-hover:scale-[1.02]");
+  });
+});
+
 describe("Storefront 2.0 cards for made-to-order items and services", () => {
   it("never shows a service or made-to-order item as sold out, and says how long a service lasts", () => {
     storefront.settings = { storefront_design_version: 2 };

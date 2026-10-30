@@ -31,6 +31,10 @@ export interface ProductCardV2Props {
   onOpenQuickView?: () => void;
 }
 
+/** The width a card's photo is drawn at, for the browser's choice of file. */
+const CARD_SIZES =
+  "(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw";
+
 export function ProductCardV2({
   product,
   index,
@@ -163,11 +167,11 @@ export function ProductCardV2({
     setIsHovered(false);
   };
 
-  const allowHoverImage = settings?.product_card_hover_image !== false;
-  const activeImage =
-    isHovered && allowHoverImage && secondaryImage && hasHoveredOnce
-      ? secondaryImage
-      : primaryImage;
+  // On a mouse's rest the card does one thing: its second photo fades in over the first (it was
+  // swapped in a jump), or, with no second photo, the photo grows a touch. The card no longer
+  // lifts, deepens its shadow and recolours its name as well.
+  const hoverImage =
+    settings?.product_card_hover_image !== false && secondaryImage ? secondaryImage : null;
 
   return (
     <div
@@ -185,7 +189,7 @@ export function ProductCardV2({
           size="icon-touch"
           onClick={handleTriggerQuickView}
           aria-label={t("معاينة سريعة", "Quick view")}
-          className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
+          className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-(--motion-quick) hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
         >
           <Eye className="h-4 w-4" />
         </Button>
@@ -202,7 +206,7 @@ export function ProductCardV2({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-200 hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-(--motion-quick) hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
       >
         <LikeHeart liked={wished} className="h-4 w-4" />
       </Button>
@@ -212,7 +216,7 @@ export function ProductCardV2({
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
         viewTransition
-        className="flex flex-1 flex-col transition-transform duration-250 ease-(--motion-ease-smooth) hover:-translate-y-1 sm:hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+        className="flex flex-1 flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
         onClick={(event) => {
           nameTappedPhoto(event.currentTarget, product.id);
           void trackProductEngagement(brand.slug, product.id, "click");
@@ -220,7 +224,7 @@ export function ProductCardV2({
       >
         {/* Card Media Container */}
         <div
-          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} rounded-xl overflow-hidden bg-muted relative border border-border shadow-xs group-hover:shadow-md transition-shadow duration-300`}
+          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} rounded-xl overflow-hidden bg-muted relative border border-border`}
         >
           {/* Badge */}
           {badgeLabel && (
@@ -234,17 +238,33 @@ export function ProductCardV2({
           )}
 
           {/* Primary / Secondary Image */}
-          {activeImage ? (
-            <ResponsiveImage
-              src={activeImage}
-              preset="card"
-              sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
-              alt={displayName}
-              className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              loading="lazy"
-              decoding="async"
-              quality={78}
-            />
+          {primaryImage ? (
+            <>
+              <ResponsiveImage
+                src={primaryImage}
+                preset="card"
+                sizes={CARD_SIZES}
+                alt={displayName}
+                className={`w-full h-full object-cover transition-transform duration-(--motion-very-slow) ease-(--motion-ease-smooth) ${hoverImage ? "" : "group-hover:scale-[1.02]"}`}
+                loading="lazy"
+                decoding="async"
+                quality={78}
+              />
+              {/* Fetched on the first rest of the pointer, then faded in and out. */}
+              {hoverImage && hasHoveredOnce && (
+                <ResponsiveImage
+                  src={hoverImage}
+                  preset="card"
+                  sizes={CARD_SIZES}
+                  alt=""
+                  aria-hidden="true"
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-(--motion-very-slow) ease-(--motion-ease-smooth) ${isHovered ? "opacity-100" : "opacity-0"}`}
+                  loading="lazy"
+                  decoding="async"
+                  quality={78}
+                />
+              )}
+            </>
           ) : (
             <ProductPhotoPlaceholder />
           )}
@@ -262,7 +282,7 @@ export function ProductCardV2({
 
           {/* Desktop Quick Add Popover Overlay on Hover */}
           {!isOos && settings?.product_card_quick_add !== false && (
-            <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+            <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-(--motion-fast) ease-(--motion-ease-smooth) pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
               <QuickAddPopover
                 product={product}
                 variants={variants}
@@ -285,7 +305,7 @@ export function ProductCardV2({
           <h3
             // At most two lines. Each line must hold Arabic marks below the baseline: a tight line-height cuts them off.
             dir="auto"
-            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 break-words text-page-start transition-colors duration-200 group-hover:text-primary"
+            className="product-title text-sm font-medium leading-[1.8] line-clamp-2 break-words text-page-start"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
             {displayName}
