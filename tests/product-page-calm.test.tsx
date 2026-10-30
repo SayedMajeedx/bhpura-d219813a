@@ -3,13 +3,11 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ProductPurchaseActions } from "../src/features/product-page/components/ProductPurchaseActions";
 import { ProductTitleAndPrice } from "../src/features/product-page/components/ProductTitleAndPrice";
-import { descriptionAboveOptions } from "../src/features/product-page/lib/product-details";
 import { lowStockLine } from "../src/features/product-page/lib/stock-line";
 import { productDeliveryLine } from "../src/features/product-page/lib/delivery-line";
 
-// The product page says what helps a shopper choose, once and where they decide: the description
-// once (the new look's accordion holds it), "nearly gone" only at the store's own low-stock level,
-// and the delivery time beside the price.
+// The product page says what helps a shopper choose, where they decide: "nearly gone" only at
+// the store's own low-stock level, and the delivery time beside the price.
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/x">{children}</a>,
@@ -37,14 +35,6 @@ const estimates = {
   delivery_estimate_tailored_en: "Made in 10 days",
   delivery_estimate_tailored_ar: "التجهيز خلال 10 أيام",
 };
-
-describe("the description", () => {
-  it("is drawn above the options only on the classic look, which has no accordion", () => {
-    expect(descriptionAboveOptions(2)).toBe(false);
-    expect(descriptionAboveOptions(1)).toBe(true);
-    expect(descriptionAboveOptions(undefined)).toBe(true);
-  });
-});
 
 describe("the low-stock line", () => {
   it("counts the pieces left in the shopper's language, at the store's level or fewer", () => {

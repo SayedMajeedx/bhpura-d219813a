@@ -259,10 +259,8 @@ function StoreHome() {
         </div>
       </section>
 
-      {/* Brand Story Section (Layer 2) */}
-      {settings.storefront_design_version === 2 && settings.brand_story_enabled !== false && (
-        <BrandStorySection />
-      )}
+      {/* Brand Story Section */}
+      {settings.brand_story_enabled !== false && <BrandStorySection />}
 
       {/* Recently Viewed Carousel (Layer 2) */}
       {settings.recently_viewed_enabled !== false && (

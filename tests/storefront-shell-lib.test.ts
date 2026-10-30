@@ -38,7 +38,6 @@ describe("publicSettingsFromPageData", () => {
       storefront_mode: "shop",
       secondary_banner_parallax_enabled: false,
       hero_overlay_strength: 45,
-      storefront_design_version: 1,
       shipping_zones: [],
       pages: [],
       socials: [],

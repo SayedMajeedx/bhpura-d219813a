@@ -55,7 +55,6 @@ export interface BusinessSettingsData {
   whatsapp_number?: string | null;
   brand_palette?: any | null;
   storefront_accent_color?: string | null;
-  storefront_design_version?: number | null;
 }
 
 export interface ReadinessEvaluationInput {
@@ -154,9 +153,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
   );
   const hasPolicies = validPages.length > 0 || Boolean(input.hasReturnPolicy);
 
-  // 6. Brand palette set (extracted from the logo or chosen manually). Only brands on
-  //    Storefront 2.0 get the palette/vertical items so existing v1 brands never regress.
-  const includeDesignChecks = Number(bData?.storefront_design_version ?? 1) >= 2;
+  // 6. Brand palette set (extracted from the logo or chosen manually).
   const paletteMeta = input.brandPalette ?? bData?.brand_palette ?? null;
   const paletteSource: string | null = paletteMeta?.source ?? paletteMeta?.meta?.source ?? null;
   const hasExtractedPalette = Boolean(
@@ -453,9 +450,7 @@ export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
       });
     }
   }
-  const visibleItems = includeDesignChecks
-    ? forStore
-    : forStore.filter((it) => it.id !== "palette" && it.id !== "vertical");
+  const visibleItems = forStore;
   const completedCount = visibleItems.filter((it) => it.isComplete).length;
   const totalCount = visibleItems.length;
   const progressPercent = Math.round((completedCount / totalCount) * 100);

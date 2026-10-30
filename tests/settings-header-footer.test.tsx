@@ -36,7 +36,6 @@ const { SettingsNavContext } = await import("../src/features/settings/GroupNavig
 const { setStoredSettingsLevel } = await import("../src/features/settings/settings-level");
 const { I18nProvider } = await import("../src/lib/i18n");
 
-const v1 = { storefront_design_version: 1, trust_badges: { items: [] } };
 const v2 = { storefront_design_version: 2, trust_badges: { items: [] } };
 
 const show = (node: React.ReactNode, openGroup = vi.fn()) => {
@@ -118,12 +117,13 @@ describe("the Header & footer group", () => {
     expect(form.setBs).toHaveBeenCalledWith({ footer_bg: "#111111", footer_fg: "#ffffff" });
   });
 
-  it("offers the classic footer its colours and store name, and no layout to choose", () => {
-    form.bs = { ...v1 };
+  it("offers the simple footer its colours and store name, beside the layout to choose", () => {
+    form.bs = { footer_layout: "simple" };
     show(<HeaderFooterGroup />);
     expect(screen.getByRole("group", { name: "Footer colours" })).toBeInTheDocument();
     expect(screen.getByText("Show store name in footer")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Footer layout")).toBeNull();
+    // Every store chooses its footer: the layout is offered whatever the store had.
+    expect(screen.getByLabelText("Footer layout")).toBeInTheDocument();
     expect(screen.queryByLabelText("Newsletter title (English)")).toBeNull();
   });
 });

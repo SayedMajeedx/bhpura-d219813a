@@ -21,8 +21,8 @@ export type HomeSectionId =
   | "recently_viewed"
   | "category_pages";
 
-/** The sections a store's home page has; the brand story is drawn by the new look only. */
-export function homePageSections(isV2: boolean): HomeSectionId[] {
+/** The sections a store's home page has, in the order a shopper scrolls them. */
+export function homePageSections(): HomeSectionId[] {
   return [
     "hero",
     "trust_bar",
@@ -31,7 +31,8 @@ export function homePageSections(isV2: boolean): HomeSectionId[] {
     "best",
     "sale",
     "trending",
-    ...(isV2 ? (["brand_story", "recently_viewed"] as const) : (["recently_viewed"] as const)),
+    "brand_story",
+    "recently_viewed",
     "category_pages",
   ];
 }

@@ -88,8 +88,7 @@ export function ProductGallery({
                   playsInline
                   controls
                 />
-              ) : settings?.storefront_design_version === 2 &&
-                settings?.pdp_image_zoom !== false ? (
+              ) : settings?.pdp_image_zoom !== false ? (
                 <ImageZoom
                   src={media[mediaIdx % media.length].url}
                   alt={displayName}

@@ -16,7 +16,6 @@ import { useI18n } from "@/lib/i18n";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { AdvancedOnly } from "@/features/settings/FieldVisibility";
-import { isStorefrontV2 } from "@/lib/storefront-engine";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -156,7 +155,6 @@ function ShopHomeSectionsGroup({ layoutField }: { layoutField: React.ReactNode }
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
   const bs = form.bs;
-  const isV2 = isStorefrontV2(bs);
   const editorial = useEditorialSections();
   const { setActiveGroup } = React.useContext(SettingsNavContext);
   const [open, setOpen] = React.useState<HomeSectionId | null>(null);
@@ -289,7 +287,7 @@ function ShopHomeSectionsGroup({ layoutField }: { layoutField: React.ReactNode }
       {layoutField}
 
       <ol className="space-y-2">
-        {homePageSections(isV2).map((id) => {
+        {homePageSections().map((id) => {
           const meta = SECTION_META[id];
           const title = isAr ? meta.ar : meta.en;
           if (id === "hero") {

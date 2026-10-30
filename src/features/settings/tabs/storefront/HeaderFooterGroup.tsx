@@ -9,7 +9,6 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { SettingsNavContext } from "@/features/settings/GroupNavigator";
 import { AlignCenter, AlignLeft, AlignRight } from "lucide-react";
-import { isStorefrontV2 } from "@/lib/storefront-engine";
 import {
   Select,
   SelectContent,
@@ -28,7 +27,6 @@ export function HeaderFooterGroup() {
   // A Storefront 2.0 brand that keeps footer_layout = "simple" still gets it.
   const footerVariant = resolveFooterVariant(bs);
   const { setActiveGroup } = React.useContext(SettingsNavContext);
-  const isV2 = isStorefrontV2(bs);
   const brandColor = bs.storefront_accent_color || form.brand.primary_color || "#8C6D58";
 
   const headerLogoSize = bs.logo_size ?? 36;
@@ -279,25 +277,23 @@ export function HeaderFooterGroup() {
           </p>
         </div>
 
-        {isV2 && (
-          <div className="max-w-xs space-y-1.5">
-            <Label htmlFor="footer-layout">{isAr ? "شكل التذييل" : "Footer layout"}</Label>
-            <Select
-              // Legacy rows stored the simple footer as "minimal"; normalise so the
-              // control reflects what the storefront actually renders.
-              value={footerVariant}
-              onValueChange={(value) => setBs({ footer_layout: value })}
-            >
-              <SelectTrigger id="footer-layout" className="h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="simple">{isAr ? "بسيط" : "Minimal"}</SelectItem>
-                <SelectItem value="columns">{isAr ? "أعمدة" : "Columns"}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+        <div className="max-w-xs space-y-1.5">
+          <Label htmlFor="footer-layout">{isAr ? "شكل التذييل" : "Footer layout"}</Label>
+          <Select
+            // Legacy rows stored the simple footer as "minimal"; normalise so the
+            // control reflects what the storefront actually renders.
+            value={footerVariant}
+            onValueChange={(value) => setBs({ footer_layout: value })}
+          >
+            <SelectTrigger id="footer-layout" className="h-9 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="simple">{isAr ? "بسيط" : "Minimal"}</SelectItem>
+              <SelectItem value="columns">{isAr ? "أعمدة" : "Columns"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {footerVariant === "simple" && (
           <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">

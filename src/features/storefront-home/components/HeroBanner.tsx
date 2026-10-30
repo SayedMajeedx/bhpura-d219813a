@@ -1,15 +1,12 @@
 import { useIsServicesStore, useStorefront, type HeroContentSlide } from "@/lib/storefront-context";
 import { heroButtonHref, newSlideButton, bookingPageHref } from "@/lib/hero-link";
-import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { HeroV2 } from "@/components/storefront/HeroV2";
-import { HeroContentCarousel } from "@/features/storefront-home/components/HeroContentCarousel";
 
-/** The home page hero: V2 cinematic hero, or the V1 background media with its content slides. */
+/** The home page hero: the store's slides (or its background with its name) in the cinematic hero. */
 export function HeroBanner() {
   const { brand, settings } = useStorefront();
   const servicesStore = useIsServicesStore();
   const linkStore = { slug: brand.slug, servicesStore };
-  const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
   const bgUrl = typeof background === "string" ? background : background?.url;
   const bgType: HeroContentSlide["type"] =
@@ -77,48 +74,5 @@ export function HeroBanner() {
         },
       ];
 
-  if (settings.storefront_design_version === 2) {
-    return <HeroV2 slides={slides} background={background} />;
-  }
-
-  return (
-    <section className="relative w-full overflow-hidden min-h-[220px] py-3 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
-      {background && background.url ? (
-        <div className="absolute inset-0 h-full w-full">
-          {background.type === "video" ? (
-            <OptimizedVideo
-              src={background.url}
-              poster={background.posterUrl}
-              active
-              wrapperClassName="h-full w-full"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <ResponsiveImage
-              src={background.url}
-              preset="hero"
-              sizes="100vw"
-              alt=""
-              className="h-full w-full object-cover"
-              decoding="async"
-              fetchPriority={prioritizeHero ? "high" : "auto"}
-              loading="eager"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/20" />
-        </div>
-      ) : (
-        <div
-          className="absolute inset-0 h-full w-full"
-          style={{
-            background: `linear-gradient(135deg, ${settings.primary_color}22, ${settings.primary_color}66)`,
-          }}
-        />
-      )}
-
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-center sm:justify-start px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
-        <HeroContentCarousel slides={slides} />
-      </div>
-    </section>
-  );
+  return <HeroV2 slides={slides} background={background} />;
 }

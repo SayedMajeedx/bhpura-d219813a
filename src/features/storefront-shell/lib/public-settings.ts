@@ -226,7 +226,6 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
     storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
     trust_badges: normalizedTrustBadges,
-    storefront_design_version: s?.storefront_design_version ?? 1,
     trust_bar_enabled: s?.trust_bar_enabled ?? true,
     trust_bar_position: s?.trust_bar_position ?? "below_hero",
     brand_story_enabled: s?.brand_story_enabled ?? true,

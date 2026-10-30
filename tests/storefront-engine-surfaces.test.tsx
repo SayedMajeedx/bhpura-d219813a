@@ -84,8 +84,6 @@ const { HeroV2 } = await import("../src/components/storefront/HeroV2");
 const { ProductCardV2 } = await import("../src/components/storefront/ProductCardV2");
 const { I18nProvider } = await import("../src/lib/i18n");
 
-const v1 = { storefront_design_version: 1 };
-const v2 = { storefront_design_version: 2 };
 const withI18n = (node: React.ReactNode) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -98,18 +96,15 @@ beforeEach(() => {
   storefront.settings = {};
 });
 
-describe("settings UI honours the scopes", () => {
-  it("hides the Storefront 2.0 group on a classic storefront", () => {
-    form.state.bs = v1;
-    const classic = withI18n(<StorefrontTab />);
-    expect(screen.queryByText("design_v2")).not.toBeInTheDocument();
-    classic.unmount();
-    form.state.bs = v2;
+describe("settings for the one storefront", () => {
+  it("shows every store the product card & page group, and no upgrade to offer", () => {
+    form.state.bs = {};
     withI18n(<StorefrontTab />);
     expect(screen.getByText("design_v2")).toBeInTheDocument();
+    expect(screen.queryByText("upgrade")).not.toBeInTheDocument();
   });
 
-  it("gates the classic footer controls on the resolved footer, not the engine", () => {
+  it("shows the simple footer's controls by the footer chosen", () => {
     const showsName = (bs: Record<string, unknown>) => {
       form.state.bs = { ...bs, trust_badges: { items: [] } };
       const view = withI18n(<HeaderFooterGroup />);
@@ -117,13 +112,11 @@ describe("settings UI honours the scopes", () => {
       view.unmount();
       return shown;
     };
-    expect(showsName(v1)).toBe(true);
-    expect(showsName(v2)).toBe(false);
-    // An explicit simple footer on Storefront 2.0 still reads the classic controls.
-    expect(showsName({ ...v2, footer_layout: "simple" })).toBe(true);
+    expect(showsName({})).toBe(false);
+    expect(showsName({ footer_layout: "simple" })).toBe(true);
   });
 
-  it("hides the classic hero typography and footer colours when their surface is not used", () => {
+  it("no longer offers the classic hero's typography; the footer's colours stay", () => {
     localStorage.setItem("boutq_settings_level", "advanced");
     const shows = (group: React.ReactNode, bs: Record<string, unknown>, text: string) => {
       form.state.bs = bs;
@@ -133,32 +126,24 @@ describe("settings UI honours the scopes", () => {
       return shown;
     };
     try {
-      expect(shows(<HomeHeroGroup />, v1, "Show brand name in hero")).toBe(true);
-      expect(shows(<HomeHeroGroup />, v2, "Show brand name in hero")).toBe(false);
-      // The footer's colours are with the footer, and both footers read them.
+      expect(shows(<HomeHeroGroup />, {}, "Show brand name in hero")).toBe(false);
+      expect(shows(<HomeHeroGroup />, {}, "Advanced Hero Title Styling")).toBe(false);
       const footer = { trust_badges: { items: [] } };
-      expect(shows(<HeaderFooterGroup />, { ...v1, ...footer }, "Footer colours")).toBe(true);
-      expect(shows(<HeaderFooterGroup />, { ...v2, ...footer }, "Footer colours")).toBe(true);
-      expect(shows(<PaletteGroup />, v1, "Footer BG")).toBe(false);
+      expect(shows(<HeaderFooterGroup />, footer, "Footer colours")).toBe(true);
+      expect(shows(<PaletteGroup />, {}, "Footer BG")).toBe(false);
     } finally {
       localStorage.removeItem("boutq_settings_level");
     }
   });
 
-  it("keeps inapplicable settings out of search results", () => {
-    const search = (bs: Record<string, unknown>) => {
-      form.state.bs = bs;
-      const view = withI18n(<SettingsHeader activeTab="general" onTabChange={vi.fn()} />);
-      const box = screen.getAllByRole("textbox")[0];
-      fireEvent.focus(box);
-      fireEvent.change(box, { target: { value: "hero title size" } });
-      const found = Boolean(screen.queryByText("Hero Title Size (px)"));
-      view.unmount();
-      return found;
-    };
-    // hero_title_size is read by the classic hero only.
-    expect(search(v1)).toBe(true);
-    expect(search(v2)).toBe(false);
+  it("keeps retired settings out of search results", () => {
+    form.state.bs = {};
+    withI18n(<SettingsHeader activeTab="general" onTabChange={vi.fn()} />);
+    const box = screen.getAllByRole("textbox")[0];
+    fireEvent.focus(box);
+    fireEvent.change(box, { target: { value: "hero title size" } });
+    // hero_title_size was read by the classic hero only.
+    expect(screen.queryByText("Hero Title Size (px)")).toBeNull();
   });
 });
 

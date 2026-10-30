@@ -1,81 +1,53 @@
 import { describe, expect, it } from "vitest";
 import { SETTINGS_REGISTRY } from "../src/features/settings/registry";
-import {
-  isSettingApplicable,
-  isStorefrontV2,
-  resolveFooterVariant,
-  resolveStorefrontEngine,
-  type SettingsScope,
-} from "../src/lib/storefront-engine";
+import { isSettingApplicable, resolveFooterVariant } from "../src/lib/storefront-engine";
 
-describe("storefront engine resolver", () => {
-  it("treats only version 2 as Storefront 2.0", () => {
-    expect(resolveStorefrontEngine({ storefront_design_version: 2 })).toBe(2);
-    for (const v of [1, 0, null, undefined, 3]) {
-      expect(resolveStorefrontEngine({ storefront_design_version: v as number })).toBe(
-        v === 3 ? 1 : 1,
-      );
-    }
-    expect(isStorefrontV2(null)).toBe(false);
-  });
+// Every store has the one storefront (the classic engine was retired on 2026-10-30). What is still
+// a choice is the footer: the store's own layout, else the columns footer.
 
-  it("mirrors the storefront footer branch exactly", () => {
-    // Defaults follow the engine.
-    expect(resolveFooterVariant({ storefront_design_version: 1 })).toBe("simple");
-    expect(resolveFooterVariant({ storefront_design_version: 2 })).toBe("columns");
-    // An explicit choice wins over the engine in both directions.
-    expect(resolveFooterVariant({ storefront_design_version: 2, footer_layout: "simple" })).toBe(
-      "simple",
-    );
-    expect(resolveFooterVariant({ storefront_design_version: 1, footer_layout: "columns" })).toBe(
-      "columns",
-    );
+describe("the footer a store draws", () => {
+  it("is the store's choice, else the columns footer", () => {
+    expect(resolveFooterVariant(null)).toBe("columns");
+    expect(resolveFooterVariant({})).toBe("columns");
+    expect(resolveFooterVariant({ footer_layout: "columns" })).toBe("columns");
+    expect(resolveFooterVariant({ footer_layout: "simple" })).toBe("simple");
+    // The settings dropdown once stored the simple footer as "minimal".
+    expect(resolveFooterVariant({ footer_layout: "minimal" })).toBe("simple");
   });
 });
 
 describe("setting applicability", () => {
-  const v1 = { storefront_design_version: 1 };
-  const v2 = { storefront_design_version: 2 };
-
-  it("hides each scope from the engine that cannot read it", () => {
-    const cases: Array<[SettingsScope, boolean, boolean]> = [
-      // scope, visible on v1, visible on v2
-      ["v1_only", true, false],
-      ["v2_only", false, true],
-      ["simple_footer", true, false],
-      ["columns_footer", false, true],
-    ];
-    for (const [scope, onV1, onV2] of cases) {
-      expect(isSettingApplicable(scope, v1), `${scope} on v1`).toBe(onV1);
-      expect(isSettingApplicable(scope, v2), `${scope} on v2`).toBe(onV2);
-    }
+  it("shows a footer's settings only to the footer that reads them", () => {
+    const simple = { footer_layout: "simple" };
+    expect(isSettingApplicable("simple_footer", simple)).toBe(true);
+    expect(isSettingApplicable("columns_footer", simple)).toBe(false);
+    expect(isSettingApplicable("simple_footer", {})).toBe(false);
+    expect(isSettingApplicable("columns_footer", {})).toBe(true);
   });
 
   it("keeps unscoped settings visible everywhere", () => {
-    expect(isSettingApplicable(undefined, v1)).toBe(true);
-    expect(isSettingApplicable(undefined, v2)).toBe(true);
-  });
-
-  it("follows an explicit footer override rather than the engine", () => {
-    const v2Simple = { storefront_design_version: 2, footer_layout: "simple" };
-    expect(isSettingApplicable("simple_footer", v2Simple)).toBe(true);
-    expect(isSettingApplicable("columns_footer", v2Simple)).toBe(false);
+    expect(isSettingApplicable(undefined, {})).toBe(true);
+    expect(isSettingApplicable(undefined, { footer_layout: "simple" })).toBe(true);
   });
 });
 
 describe("registry scoping", () => {
   const byKey = new Map(SETTINGS_REGISTRY.map((e) => [e.key, e]));
 
-  it("scopes the classic hero controls that HeroV2 ignores", () => {
+  it("retires the classic hero's controls with the classic storefront, which alone read them", () => {
     for (const key of [
       "hero_title_size",
       "hero_title_align",
       "hero_title_color",
       "show_hero_title",
       "show_hero_about",
+      "storefront_design_version",
     ]) {
-      expect(byKey.get(key)?.scope, key).toBe("v1_only");
+      expect(byKey.get(key)?.owner, key).toBe("system");
+      expect(byKey.get(key)?.tab, key).toBeNull();
     }
+    // The store-wide title still names the hero of a store with no slides.
+    expect(byKey.get("hero_title_ar")?.owner).toBe("settings");
   });
 
   it("scopes the classic footer controls FooterV2 ignores to the simple footer", () => {
@@ -88,27 +60,9 @@ describe("registry scoping", () => {
     }
   });
 
-  it("scopes every Storefront 2.0 control to v2", () => {
-    for (const key of [
-      "brand_story_enabled",
-      "brand_story_image_url",
-      "social_proof_enabled",
-      "recently_viewed_enabled",
-      "motion_enabled",
-      "product_card_hover_image",
-      "product_card_color_dots",
-      "product_card_quick_add",
-      "quick_view_enabled",
-      "new_badge_days",
-      "pdp_image_zoom",
-      "category_filters_enabled",
-      "back_in_stock_enabled",
-      "fabric_care_ar",
-      "fabric_care_en",
-      "hero_overlay_strength",
-      "hero_title_color_v2",
-    ]) {
-      expect(byKey.get(key)?.scope, key).toBe("v2_only");
+  it("shows every storefront control to every store", () => {
+    for (const key of ["brand_story_enabled", "product_card_quick_add", "hero_overlay_strength"]) {
+      expect(byKey.get(key)?.scope, key).toBeUndefined();
     }
   });
 
@@ -130,7 +84,7 @@ describe("registry scoping", () => {
   });
 
   it("only uses scopes the resolver understands", () => {
-    const valid = new Set(["v1_only", "v2_only", "simple_footer", "columns_footer"]);
+    const valid = new Set(["simple_footer", "columns_footer"]);
     for (const entry of SETTINGS_REGISTRY) {
       if (entry.scope) expect(valid.has(entry.scope), `${entry.key}: ${entry.scope}`).toBe(true);
     }
