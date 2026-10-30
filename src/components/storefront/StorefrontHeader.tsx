@@ -71,7 +71,7 @@ function StoreHeader() {
               type="button"
               variant="ghost"
               size="icon"
-              className="h-11 w-11 rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="h-11 w-11 rounded-full bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setSearchOverlayOpen(true)}
               aria-label={t("البحث", "Search")}
@@ -84,7 +84,7 @@ function StoreHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="relative h-11 w-11 rounded-full bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  className="relative h-11 w-11 rounded-full bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
                   style={{ color: "var(--sf-header-fg)" }}
                   aria-label={t("سلة التسوق", "Shopping cart")}
                 >
@@ -152,7 +152,7 @@ function StoreHeader() {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
               aria-label={
@@ -169,7 +169,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -189,7 +189,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -210,7 +210,7 @@ function StoreHeader() {
               type="button"
               variant="ghost"
               size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => {
                 if (
@@ -234,7 +234,7 @@ function StoreHeader() {
               asChild
               variant="ghost"
               size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
               style={{ color: "var(--sf-header-fg)" }}
             >
               <Link
@@ -261,7 +261,7 @@ function StoreHeader() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-white/80"
+                  className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
                   style={{ color: "var(--sf-header-fg)" }}
                   aria-label={t("سلة التسوق", "Shopping cart")}
                 >
@@ -374,7 +374,7 @@ function AnnouncementBar() {
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-md hover:bg-white/15 opacity-80 hover:opacity-100"
+          className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-md hover:bg-current/15 opacity-80 hover:opacity-100"
           aria-label={lang === "ar" ? "إغلاق الإعلان" : "Dismiss announcement"}
           onClick={() => {
             try {

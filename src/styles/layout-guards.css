@@ -38,3 +38,13 @@
     text-align: left;
   }
 }
+
+/* The store's header, side menu and footer tint their buttons and fields from their own text
+   colour (`bg-current/10`), so a white bar and a dark one both show them. A browser without
+   `color-mix` (Safari before 16.2) would draw those tints as solid text colour, hiding the text
+   inside: there they are left clear, as a plain button. */
+@supports not (color: color-mix(in lab, red, red)) {
+  .storefront-shell [class*="bg-current/"] {
+    background-color: transparent;
+  }
+}

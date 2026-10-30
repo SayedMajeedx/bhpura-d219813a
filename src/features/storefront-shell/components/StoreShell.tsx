@@ -97,6 +97,13 @@ export function StoreShell() {
           which is exactly what the consent banner used to do. Keep storefront
           UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
+      {/* The first stop of a keyboard: past the header's links, straight to the page. */}
+      <a
+        href="#store-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg"
+      >
+        {lang === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}
+      </a>
       <div
         ref={headerRef}
         // Its colour runs under the status bar of a store added to the home screen (the page
@@ -117,7 +124,7 @@ export function StoreShell() {
         <StoreHeader />
         <DesktopStoreNavigation />
       </div>
-      <main className="flex-1">
+      <main id="store-main" tabIndex={-1} className="flex-1 focus:outline-none">
         <Outlet />
       </main>
       {/* Checkout keeps the shopper on the form: no footer to wander off through. */}

@@ -106,10 +106,10 @@ export function StorefrontFooter() {
 
           {/* Custom Boutique Trust & Security Reassurance Bar */}
           {activeBadges.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-xs font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-xs font-medium opacity-90 border-y border-current/10 rounded-xl bg-current/5 backdrop-blur-xs max-w-3xl w-full">
               {activeBadges.map((badge, idx) => (
                 <React.Fragment key={badge.id || idx}>
-                  {idx > 0 && <div className="hidden sm:inline text-white/20">•</div>}
+                  {idx > 0 && <div className="hidden sm:inline text-current/20">•</div>}
                   <div className="inline-flex items-center gap-1.5">
                     {renderTrustBadgeIcon(badge.icon, "h-3.5 w-3.5", badge.color)}
                     <span>
@@ -149,7 +149,7 @@ export function StorefrontFooter() {
             ========================================================================= */}
         <div className="block md:hidden space-y-4 text-center">
           {/* Section 1: Logo Header */}
-          <div className="flex flex-col items-center pb-3 border-b border-white/10">
+          <div className="flex flex-col items-center pb-3 border-b border-current/10">
             {settings.logo_url ? (
               <img
                 src={settings.logo_url}
@@ -172,10 +172,10 @@ export function StorefrontFooter() {
           </div>
 
           {/* Section 2: Accordion Link Groups */}
-          <div className="space-y-1.5 border-b border-white/10 pb-3 text-start">
+          <div className="space-y-1.5 border-b border-current/10 pb-3 text-start">
             {/* Group A: Company */}
             {companyPages.length > 0 && (
-              <div className="border-b border-white/10 last:border-0">
+              <div className="border-b border-current/10 last:border-0">
                 <button
                   type="button"
                   onClick={() => setOpenCompany(!openCompany)}
@@ -214,7 +214,7 @@ export function StorefrontFooter() {
 
             {/* Group B: Help */}
             {(helpPages.length > 0 || showSizeGuideFooterLink) && (
-              <div className="border-b border-white/10 last:border-0">
+              <div className="border-b border-current/10 last:border-0">
                 <button
                   type="button"
                   onClick={() => setOpenHelp(!openHelp)}
@@ -270,7 +270,7 @@ export function StorefrontFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.name}
-                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition active:scale-95"
+                  className="h-11 w-11 rounded-full border border-current/15 bg-current/5 flex items-center justify-center hover:bg-current/15 transition active:scale-95"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   <StorefrontSocialIcon platform={s.name} />
@@ -285,7 +285,7 @@ export function StorefrontFooter() {
               {activeBadges.map((badge, idx) => (
                 <div
                   key={badge.id || idx}
-                  className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]"
+                  className="rounded-xl border border-current/10 bg-current/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]"
                 >
                   {renderTrustBadgeIcon(badge.icon, "h-5 w-5", badge.color)}
                   <span className="font-medium text-xs leading-tight">
@@ -297,7 +297,7 @@ export function StorefrontFooter() {
           )}
 
           {/* Section 5: Bottom Bar */}
-          <div className="pt-3 border-t border-white/10 flex flex-col items-center gap-1.5 text-xs opacity-75">
+          <div className="pt-3 border-t border-current/10 flex flex-col items-center gap-1.5 text-xs opacity-75">
             {settings.show_footer_name && (
               <span className="font-semibold" style={{ color: "var(--sf-footer-fg)" }}>
                 {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}

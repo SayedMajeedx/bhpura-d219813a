@@ -152,7 +152,7 @@ export function FooterV2() {
 
   const columnHeading = (title: string) => (
     <h4
-      className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-white/10 pb-2"
+      className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-current/10 pb-2"
       style={FG}
     >
       {title}
@@ -160,7 +160,7 @@ export function FooterV2() {
   );
 
   const accordion = (key: SectionKey, title: string, links: React.ReactNode) => (
-    <div className="border-b border-white/10 pb-2">
+    <div className="border-b border-current/10 pb-2">
       <Button
         type="button"
         variant="ghost"
@@ -237,7 +237,7 @@ export function FooterV2() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className="h-8 w-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition text-xs opacity-80 hover:opacity-100"
+                    className="h-8 w-8 rounded-full border border-current/15 bg-current/5 flex items-center justify-center hover:bg-current/15 transition text-xs opacity-80 hover:opacity-100"
                     style={FG}
                   >
                     <StorefrontSocialIcon platform={s.name} />
@@ -274,7 +274,7 @@ export function FooterV2() {
 
         {/* Mobile: the same groups as accordions */}
         <div className="block lg:hidden space-y-4 text-start">
-          <div className="flex flex-col items-center text-center space-y-2 pb-3 border-b border-white/10">
+          <div className="flex flex-col items-center text-center space-y-2 pb-3 border-b border-current/10">
             {logo("text-base")}
             {truncatedAbout && (
               <p className="text-xs leading-relaxed opacity-75 max-w-sm" style={FG}>
@@ -297,7 +297,7 @@ export function FooterV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.name}
-                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition active:scale-95"
+                  className="h-11 w-11 rounded-full border border-current/15 bg-current/5 flex items-center justify-center hover:bg-current/15 transition active:scale-95"
                   style={FG}
                 >
                   <StorefrontSocialIcon platform={s.name} />
@@ -314,29 +314,29 @@ export function FooterV2() {
         </div>
 
         {/* Bottom bar: payment icons, copyright, privacy choices, powered by */}
-        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-75">
+        <div className="mt-8 pt-6 border-t border-current/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-75">
           {settings.footer_show_payment_methods !== false && (
             <div
               className="flex items-center gap-2 flex-wrap justify-center sm:justify-start"
               aria-label={isAr ? "طرق الدفع المدعومة" : "Accepted payment methods"}
             >
               {settings.benefit_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-bold">
+                <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-bold">
                   BenefitPay
                 </span>
               )}
               {settings.card_enabled && (
                 <>
-                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-medium">
+                  <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-medium">
                     Visa / Mastercard
                   </span>
-                  <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs font-medium">
+                  <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-medium">
                     Apple Pay
                   </span>
                 </>
               )}
               {settings.cod_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-white/15 bg-white/5 text-xs">
+                <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs">
                   {t("الدفع عند الاستلام", "COD")}
                 </span>
               )}

@@ -11,7 +11,6 @@ import {
 } from "@/lib/storefront-context";
 import { isServicesProfile } from "@/lib/store-profile";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
 import { useVariantTranslations } from "@/lib/use-variant-translations";
@@ -503,16 +502,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   }, [isTailoringActive, madeToOrder.left]);
 
   if (isLoading && !product) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
-        <Skeleton className="aspect-[3/4] rounded-xl" />
-        <div className="space-y-3">
-          <Skeleton className="h-8 w-2/3" />
-          <Skeleton className="h-6 w-1/3" />
-          <Skeleton className="h-24" />
-        </div>
-      </div>
-    );
+    // The same shape as a tap's wait, in the store's own photo frame.
+    return <ProductPagePending />;
   }
 
   if (!product) {

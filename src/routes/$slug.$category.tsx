@@ -13,7 +13,7 @@ import {
   storeLayoutData,
 } from "@/features/storefront-shell/lib/layout-data";
 import { ProductGrid } from "@/components/storefront/product-grid";
-import { sortCatalogProducts } from "@/lib/catalog-sort";
+import { BEST_SELLER_SORT_LIMIT, sortCatalogProducts } from "@/lib/catalog-sort";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/components/storefront/StorefrontPageContent";
@@ -298,11 +298,21 @@ function CategoryPage() {
     [categoryProducts, filters, settings.store_vertical],
   );
 
+  // The store's sales rank, read only when a shopper sorts by best sellers.
+  const bestRows = useQuery({
+    ...storefrontQueries.bestSellers(brand, BEST_SELLER_SORT_LIMIT),
+    enabled: sort === "best",
+  }).data;
+  const bestRank = useMemo(
+    () => new Map((bestRows ?? []).map((row, index) => [String(row.product_id), index])),
+    [bestRows],
+  );
+
   const filteredProducts = useMemo(() => {
     const list = filterProducts(categoryProducts, filters);
     if (smartKind === "best" && sort === "new") return [...list];
-    return sortCatalogProducts(list, sort);
-  }, [categoryProducts, filters, sort, smartKind]);
+    return sortCatalogProducts(list, sort, bestRank);
+  }, [categoryProducts, filters, sort, smartKind, bestRank]);
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
@@ -362,7 +372,9 @@ function CategoryPage() {
       className="h-10 max-w-36 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
-      <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
+      <option value="best">
+        {servicesStore ? t("الأكثر حجزاً", "Most booked") : t("الأكثر مبيعاً", "Best sellers")}
+      </option>
       <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
       <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
     </select>
