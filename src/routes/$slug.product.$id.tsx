@@ -744,6 +744,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             priceLabel={priceLabel}
             priceRange={priceRange}
             product={product}
+            reviews={productReviews}
             settings={settings}
             t={t}
             toggleWishlist={toggleWishlist}

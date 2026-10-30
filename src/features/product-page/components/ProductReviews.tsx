@@ -3,6 +3,7 @@ import { BadgeCheck, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ProductReviews as Reviews } from "@/lib/data/reviews";
+import { countOf } from "@/lib/arabic-count";
 import {
   FIRST_REVIEWS,
   averageLabel,
@@ -29,6 +30,41 @@ function Stars({ rating, size = "size-4" }: { rating: number; size?: string }) {
   );
 }
 
+/** Where the reviews start on the product page, for the stars beside the price to point at. */
+export const REVIEWS_ANCHOR = "reviews";
+
+/**
+ * The stars beside the product's price: the average, the stars and how many reviews, a link to
+ * the reviews further down. They once sat only at the foot of the page, where a shopper deciding
+ * at the price never saw them. Nothing for a product without reviews.
+ */
+export function ReviewsSummaryLink({
+  reviews,
+  lang,
+}: {
+  reviews: Reviews | null | undefined;
+  lang: "ar" | "en";
+}) {
+  if (!reviews || !(Number(reviews.count) > 0)) return null;
+  const average = averageLabel(reviews.average);
+  const count = countOf(Number(reviews.count), "review", lang);
+  return (
+    <a
+      href={`#${REVIEWS_ANCHOR}`}
+      className="mb-2 inline-flex min-h-11 items-center gap-2 text-sm sm:mb-3"
+      aria-label={
+        lang === "ar" ? `التقييم ${average} من 5، ${count}` : `Rated ${average} of 5, ${count}`
+      }
+    >
+      <Stars rating={Number(reviews.average)} size="size-3.5" />
+      <span className="font-semibold" dir="ltr">
+        {average}
+      </span>
+      <span className="text-muted-foreground underline-offset-4 hover:underline">({count})</span>
+    </a>
+  );
+}
+
 /**
  * The reviews of a product, under its page: the average and how many, the share of each star,
  * what customers praise most, and the reviews the customers let the store show, each with a first
@@ -44,8 +80,9 @@ export function ProductReviews({ reviews, lang }: { reviews: Reviews; lang: "ar"
 
   return (
     <section
+      id={REVIEWS_ANCHOR}
       aria-labelledby={headingId}
-      className="mt-10 border-t pt-8 sm:mt-14 sm:pt-10"
+      className="mt-10 scroll-mt-6 border-t pt-8 sm:mt-14 sm:pt-10"
       dir={ar ? "rtl" : "ltr"}
     >
       <h2 id={headingId} className="mb-5 font-display text-xl sm:text-2xl">

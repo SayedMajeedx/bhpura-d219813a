@@ -29,7 +29,8 @@ vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: object) => ({ options, useParams: () => ({ token: "t1" }) }),
 }));
 
-const { ProductReviews } = await import("../src/features/product-page/components/ProductReviews");
+const { ProductReviews, ReviewsSummaryLink, REVIEWS_ANCHOR } =
+  await import("../src/features/product-page/components/ProductReviews");
 const rules = await import("../src/features/product-page/lib/product-reviews");
 const { productHead } = await import("../src/features/product-page/lib/product-head");
 const { reviewStoreState } = await import("../src/lib/order-reviews");
@@ -125,6 +126,29 @@ describe("the reviews section", () => {
     expect(screen.getByRole("heading", { name: "آراء العملاء" })).toBeInTheDocument();
     expect(screen.getByText("من 5 تقييمات")).toBeInTheDocument();
     expect(screen.getByText("لا توجد تعليقات معروضة بعد.")).toBeInTheDocument();
+  });
+});
+
+describe("the stars beside the price", () => {
+  it("say the average and how many, and lead to the reviews", () => {
+    const { container } = render(
+      <>
+        <ReviewsSummaryLink reviews={summary} lang="en" />
+        <ProductReviews reviews={summary} lang="en" />
+      </>,
+    );
+    const link = screen.getByRole("link", { name: "Rated 4.6 of 5, 5 reviews" });
+    expect(link).toHaveAttribute("href", `#${REVIEWS_ANCHOR}`);
+    expect(container.querySelector(`#${REVIEWS_ANCHOR}`)).not.toBeNull();
+  });
+
+  it("count in Arabic, and show nothing for a product without reviews", () => {
+    render(<ReviewsSummaryLink reviews={summary} lang="ar" />);
+    expect(screen.getByRole("link", { name: "التقييم 4.6 من 5، 5 تقييمات" })).toBeInTheDocument();
+    const empty = render(<ReviewsSummaryLink reviews={{ ...summary, count: 0 }} lang="en" />);
+    expect(empty.container.innerHTML).toBe("");
+    const none = render(<ReviewsSummaryLink reviews={null} lang="en" />);
+    expect(none.container.innerHTML).toBe("");
   });
 });
 

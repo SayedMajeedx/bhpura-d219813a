@@ -6,6 +6,8 @@ import { shouldShowPrices } from "@/lib/storefront-mode";
 import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { type StorefrontProductDetail as Product } from "@/lib/data/storefront";
 import { ProductOffers } from "@/features/product-page/components/ProductOffers";
+import { ReviewsSummaryLink } from "@/features/product-page/components/ProductReviews";
+import type { ProductReviews as ProductReviewsData } from "@/lib/data/reviews";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredShownPrice } from "@/lib/offer-price";
@@ -29,6 +31,7 @@ export function ProductTitleAndPrice({
   priceLabel,
   priceRange,
   product,
+  reviews,
   settings,
   t,
   toggleWishlist,
@@ -46,6 +49,8 @@ export function ProductTitleAndPrice({
   /** The prices of the sizes still possible (the label shows a range when they differ). */
   priceRange?: { min: number; max: number };
   product: Product;
+  /** The product's reviews, for the stars under its name. */
+  reviews?: ProductReviewsData | null;
   settings: ReturnType<typeof useStorefront>["settings"];
   t: ReturnType<typeof useStorefront>["t"];
   toggleWishlist: ReturnType<typeof useStorefront>["toggleWishlist"];
@@ -100,6 +105,7 @@ export function ProductTitleAndPrice({
           </Button>
         </div>
       </div>
+      <ReviewsSummaryLink reviews={reviews} lang={lang} />
       <div
         className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl"
         style={{ color: "var(--sf-price, var(--sf-heading))" }}
