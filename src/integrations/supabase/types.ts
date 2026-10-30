@@ -10762,6 +10762,10 @@ export type Database = {
         };
         Returns: string;
       };
+      record_storefront_step: {
+        Args: { p_session: string; p_slug: string; p_step: number };
+        Returns: undefined;
+      };
       record_incubator_sale: {
         Args: {
           p_incubator_id: string;
@@ -11547,6 +11551,16 @@ export type Database = {
           p_zone_id: string;
         };
         Returns: number;
+      };
+      storefront_funnel: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          carts: number;
+          checkouts: number;
+          orders: number;
+          product_views: number;
+          visits: number;
+        }[];
       };
       storefront_line_customizations: {
         Args: {
