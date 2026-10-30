@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
+import { listenForCartOpen, triggerShown } from "@/lib/cart-drawer";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useIsServicesStore,
@@ -32,6 +33,18 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
 
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // "Add to cart" opens this drawer when its button is the one on screen (`cart-drawer.ts`).
+  const triggerId = useId();
+  useEffect(
+    () =>
+      listenForCartOpen(() => {
+        const trigger = document.querySelector(`[data-cart-trigger="${CSS.escape(triggerId)}"]`);
+        if (!triggerShown(trigger)) return false;
+        setOpen(true);
+        return true;
+      }),
+    [triggerId],
+  );
   // A line taken out folds away before it leaves the list (transitions.dev's card resize).
   const { isLeaving, leave } = useLeavingRows();
   const takeOut = (lineId: string) => leave(lineId, () => removeFromCart(lineId));
@@ -108,7 +121,9 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{children}</SheetTrigger>
+      <SheetTrigger asChild data-cart-trigger={triggerId}>
+        {children}
+      </SheetTrigger>
       <SheetContent
         side={lang === "ar" ? "left" : "right"}
         dir={lang === "ar" ? "rtl" : "ltr"}

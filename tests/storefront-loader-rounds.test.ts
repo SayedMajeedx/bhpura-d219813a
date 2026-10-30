@@ -14,6 +14,7 @@ const stubs = vi.hoisted(() => ({
   fetchProductDetailByBrandSlug: vi.fn(),
   fetchBestSellerRows: vi.fn(),
   getProductRecentPurchaseCount: vi.fn(),
+  rendersOnServer: vi.fn(() => true),
 }));
 const client = { supabase: {} };
 vi.mock("../src/integrations/supabase/client", () => client);
@@ -27,6 +28,10 @@ vi.mock("@/lib/data/storefront", (io) => storefrontData(io));
 const socialProof = { getProductRecentPurchaseCount: stubs.getProductRecentPurchaseCount };
 vi.mock("../src/lib/storefront-social-proof", () => socialProof);
 vi.mock("@/lib/storefront-social-proof", () => socialProof);
+// Where the page is drawn: the server waits for everything, the browser for the product alone.
+const side = { rendersOnServer: stubs.rendersOnServer };
+vi.mock("../src/features/product-page/lib/render-side", () => side);
+vi.mock("@/features/product-page/lib/render-side", () => side);
 
 type Loader = (args: Record<string, unknown>) => Promise<Record<string, unknown>>;
 const loaderOf = async (path: string): Promise<Loader> => {
@@ -72,6 +77,7 @@ beforeEach(() => {
   stubs.fetchProductDetail.mockResolvedValue(null);
   stubs.fetchBestSellerRows.mockResolvedValue(bestSellerRows);
   stubs.getProductRecentPurchaseCount.mockResolvedValue(5);
+  stubs.rendersOnServer.mockReturnValue(true);
 });
 
 const expectNoDatabaseCalls = () => {
@@ -169,6 +175,19 @@ describe("a product page", () => {
     expect(stubs.fetchProductDetail).toHaveBeenCalledWith("b1", "black-abaya");
 
     await expect(run("missing")).rejects.toMatchObject({ isNotFound: true });
+  });
+
+  it("in the browser, opens on the product without waiting for the rails or the reviews", async () => {
+    stubs.rendersOnServer.mockReturnValue(false);
+    // The best sellers would never answer: the page must not wait for them.
+    stubs.fetchBestSellerRows.mockReturnValue(new Promise(() => undefined));
+    const data = await run();
+    expect(data).toMatchObject({ product: { id: "p1" }, socialProofCount: 5 });
+    expect(data.bestSellerRows).toBeUndefined();
+    expect(data.productReviews).toBeUndefined();
+    expect(data.returnPolicy).toBeUndefined();
+    // The page's own queries read them; the loader does not ask twice.
+    expect(stubs.fetchBestSellerRows).not.toHaveBeenCalled();
   });
 
   it("still ends cleanly when a request fails after the loader has already finished", async () => {

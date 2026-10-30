@@ -21,8 +21,11 @@ export const getRouter = () => {
     scrollRestoration: true,
     defaultPreload: "intent", // Preload route chunks & beforeLoad on hover/touch for instantaneous transitions
     defaultPreloadStaleTime: 1000 * 30,
-    defaultPendingMs: 120, // Render pending component if transition exceeds 120ms to prevent stale content visibility
-    defaultPendingMinMs: 150, // Avoid flicker on fast transitions
+    // A page's loading shape shows only when a navigation takes long enough to be noticed (300ms),
+    // and then stays long enough to be read (250ms): at 120ms a fast tap flashed a skeleton for a
+    // moment before the page, which reads as a stutter.
+    defaultPendingMs: 300,
+    defaultPendingMinMs: 250,
   });
 
   return router;

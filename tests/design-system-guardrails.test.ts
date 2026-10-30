@@ -190,6 +190,15 @@ describe("design system guardrails", () => {
     expect(css).toContain("--os-radius-dock: var(--os-radius-panel)");
   });
 
+  it("clips the page sideways instead of hiding, so a header or a gallery can stick", () => {
+    // A body that hides sideways overflow (while html does too) is a scroll box of its own: the
+    // storefront's sticky header and the product page's gallery scrolled away with the page.
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const body = css.slice(css.indexOf("  body {"), css.indexOf("}", css.indexOf("  body {")));
+    expect(body).toMatch(/overflow-x: clip;/);
+    expect(css).toMatch(/\.storefront-shell \{[^}]*overflow-x: clip;/);
+  });
+
   it("keeps the dark theme on the maroon brand hue", () => {
     const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
     const darkBlock = css.slice(css.indexOf(".dark {"), css.indexOf("@layer base"));

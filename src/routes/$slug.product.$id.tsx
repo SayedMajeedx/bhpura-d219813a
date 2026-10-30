@@ -15,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
 import { useVariantTranslations } from "@/lib/use-variant-translations";
-import { Sparkles } from "lucide-react";
 import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
 import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
@@ -81,7 +80,15 @@ import { productHead } from "@/features/product-page/lib/product-head";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
 import { ProductReviews } from "@/features/product-page/components/ProductReviews";
-import { fetchProductReviews, type ProductReviews as ProductReviewsData } from "@/lib/data/reviews";
+import {
+  fetchProductReviews,
+  reviewsQueries,
+  type ProductReviews as ProductReviewsData,
+} from "@/lib/data/reviews";
+import { rendersOnServer } from "@/features/product-page/lib/render-side";
+import { openCartDrawer } from "@/lib/cart-drawer";
+import { SocialProofBadge } from "@/features/product-page/components/SocialProofBadge";
+import { ProductPagePending } from "@/features/product-page/components/ProductPagePending";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
@@ -104,13 +111,20 @@ export const Route = createFileRoute("/$slug/product/$id")({
     // asked for at once, beside the store layout's own call, instead of after a lookup of the store.
     // The "you may also like" products are in that layout call already (same columns, same order).
     const productRequest = fetchProductDetailByBrandSlug(params.slug, params.id);
-    const bestSellersRequest = fetchBestSellerRows(params.slug, PDP_BEST_SELLER_LIMIT);
     // The "Purchased N times" badge is part of the same round trip, so it is in the page that is
     // sent and nothing moves when it would otherwise arrive later. It never rejects.
     const socialProofRequest = getProductRecentPurchaseCount(params.slug, params.id);
-    const reviewsRequest = fetchProductReviews(params.slug, params.id); // never rejects
-    // The store's return window, for the page's Google data (also never rejects).
-    const returnPolicyRequest = fetchReturnPolicyBySlug(params.slug);
+    // In the browser the page opens on the product; the rest arrives after (`rendersOnServer`).
+    const server = rendersOnServer();
+    const bestSellersRequest = server
+      ? fetchBestSellerRows(params.slug, PDP_BEST_SELLER_LIMIT)
+      : Promise.resolve(undefined);
+    const reviewsRequest = server
+      ? fetchProductReviews(params.slug, params.id) // never rejects
+      : Promise.resolve(undefined);
+    const returnPolicyRequest = server
+      ? fetchReturnPolicyBySlug(params.slug) // never rejects
+      : Promise.resolve(undefined);
     // Whichever way this loader ends, a request nobody awaits must not become an unhandled rejection.
     for (const request of [productRequest, bestSellersRequest]) request.catch(() => undefined);
     const layout = storeLayoutData((await parentMatchPromise).loaderData);
@@ -141,6 +155,8 @@ export const Route = createFileRoute("/$slug/product/$id")({
   },
   head: productHead,
   component: ProductDetail,
+  // A tap from a card shows the page's shape at once while the product is read.
+  pendingComponent: ProductPagePending,
   // Inside the store, as a missing category is: the layout's own screen says the store does not exist.
   notFoundComponent: ProductUnavailable,
 });
@@ -249,6 +265,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       settings?.social_proof_enabled !== false,
     ),
     staleTime: 10 * 60_000,
+  });
+
+  // In the browser the loader leaves the reviews to this query (`rendersOnServer`).
+  const { data: productReviews } = useQuery({
+    ...reviewsQueries.product(brand.slug, product?.id ?? ""),
+    initialData: loaderData?.productReviews,
   });
 
   const { relatedProducts, bestSellingProducts } = useProductRecommendations({
@@ -647,7 +669,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     );
     if (thenBuy) {
       navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
-    } else {
+    } else if (!openCartDrawer()) {
+      // The cart opens on what was added; a page with no drawer says so in a toast.
       toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
     }
     return true;
@@ -707,7 +730,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       : null;
 
   return (
-    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-hidden w-full max-w-full">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-clip w-full max-w-full">
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
         <ProductGallery
           displayName={displayName}
@@ -741,20 +764,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             toggleWishlist={toggleWishlist}
           />
 
-          {/* Social Proof Badge */}
           {settings?.storefront_design_version === 2 &&
             settings?.social_proof_enabled !== false &&
-            socialProofQuery.data && (
-              <div className="mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-500/20">
-                <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span>
-                  {t(
-                    `تم شراؤه ${socialProofQuery.data} مرات خلال الأسبوع الماضي`,
-                    `Purchased ${socialProofQuery.data} times in the last 7 days`,
-                  )}
-                </span>
-              </div>
-            )}
+            socialProofQuery.data && <SocialProofBadge count={socialProofQuery.data} lang={lang} />}
 
           {displayDescription && descriptionAboveOptions(settings?.storefront_design_version) && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
@@ -945,9 +957,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         )}
       </div>
 
-      {loaderData?.productReviews && (
-        <ProductReviews reviews={loaderData.productReviews} lang={lang} />
-      )}
+      {productReviews && <ProductReviews reviews={productReviews} lang={lang} />}
 
       {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (
         <div className="mt-10 space-y-9 border-t pt-8 sm:mt-14 sm:pt-10">

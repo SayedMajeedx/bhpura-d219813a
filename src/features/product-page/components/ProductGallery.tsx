@@ -37,8 +37,10 @@ export function ProductGallery({
   settings: ReturnType<typeof useStorefront>["settings"];
   t: ReturnType<typeof useStorefront>["t"];
 }) {
+  // On a wide screen the photos stay in view under the header while the options, details and
+  // reviews beside them scroll (they scrolled away with the page).
   return (
-    <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0 [overflow-anchor:none]">
+    <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0 [overflow-anchor:none] md:sticky md:top-[calc(var(--sf-header-h,0px)+1.5rem)] md:self-start">
       {/* The frame and its thumbnails share one width, centred in the column. */}
       <div
         className="mx-auto w-full"
