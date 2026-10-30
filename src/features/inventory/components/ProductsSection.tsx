@@ -11,6 +11,11 @@ import { InventoryScopeSwitcher } from "@/components/inventory/InventoryScopeSwi
 import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
 import { InventoryWorkQueue } from "@/components/inventory/InventoryWorkQueue";
 import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard";
+import {
+  InventoryLayoutSwitch,
+  InventoryPhotoGrid,
+} from "@/components/inventory/InventoryPhotoGrid";
+import type { ProductPhotoRatio } from "@/lib/brand-templates/design-presets";
 import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
 import { ProductBomModal } from "@/components/products/ProductBomModal";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
@@ -55,6 +60,7 @@ export function ProductsSection({
   onChanged,
   salesHistory,
   lowStockUnits,
+  photoRatio = "3:4",
   pricesMatter = true,
   canViewCosts = false,
   canEditLowStockLevel = false,
@@ -72,6 +78,8 @@ export function ProductsSection({
   salesHistory: any[];
   /** The store's own low-stock level. */
   lowStockUnits: number;
+  /** The store's card shape, for the photos view (`productCardRatio`). */
+  photoRatio?: ProductPhotoRatio;
   /** False for a catalog that shows no prices: a product with no price is then as meant. */
   pricesMatter?: boolean;
   canViewCosts?: boolean;
@@ -129,6 +137,7 @@ export function ProductsSection({
   });
   const { view, variantsByProduct, salesByVariant, productStock, lowestPrice } = list;
   const filteredDisplayProducts = list.filtered;
+  const photos = view.layout === "photos";
   const paginatedProducts = list.pageProducts;
 
   const {
@@ -306,6 +315,13 @@ export function ProductsSection({
         showsCosts={canViewCosts}
         activeFilterCount={list.activeFilterCount}
         onClearFilters={list.clearFilters}
+        trailing={
+          <InventoryLayoutSwitch
+            lang={isAr ? "ar" : "en"}
+            layout={view.layout}
+            onChange={list.setLayout}
+          />
+        }
       />
 
       <BulkSelectionToolbar
@@ -354,8 +370,30 @@ export function ProductsSection({
         />
       )}
 
-      {/* 4. Mobile Purpose-Built Product Cards */}
-      <div className="space-y-3 block sm:hidden" hidden={filteredDisplayProducts.length === 0}>
+      {/* 4. The products' photos, on every width, when the merchant chose them */}
+      {photos && filteredDisplayProducts.length > 0 && (
+        <InventoryPhotoGrid
+          lang={isAr ? "ar" : "en"}
+          products={paginatedProducts}
+          photoRatio={photoRatio}
+          currency={currency}
+          productStock={productStock}
+          lowestPrice={lowestPrice}
+          weeklySalesOf={list.productWeeklySales}
+          missingCostOf={list.missingCost}
+          lowStockUnits={lowStockUnits}
+          pricesMatter={pricesMatter}
+          selectedProductIds={selectedProductIds}
+          onToggleSelected={toggleSelectedProduct}
+          onEdit={openEditProduct}
+        />
+      )}
+
+      {/* 5. Mobile Purpose-Built Product Cards */}
+      <div
+        className="space-y-3 block sm:hidden"
+        hidden={photos || filteredDisplayProducts.length === 0}
+      >
         {paginatedProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
           const totalStock = productStock(p.id);
@@ -395,8 +433,10 @@ export function ProductsSection({
         })}
       </div>
 
-      {/* 5. Desktop High-Density Work Queue */}
-      <div className={filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"}>
+      {/* 6. Desktop High-Density Work Queue */}
+      <div
+        className={photos || filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"}
+      >
         <InventoryWorkQueue
           lang={isAr ? "ar" : "en"}
           services={isServicesProfile(storeProfile.modules)}

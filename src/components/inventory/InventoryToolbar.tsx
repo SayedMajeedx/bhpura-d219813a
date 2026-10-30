@@ -41,6 +41,8 @@ interface InventoryToolbarProps {
   tracksStock?: boolean;
   /** The reader may see costs: only then can a product be filtered by having no cost. */
   showsCosts?: boolean;
+  /** Drawn at the row's end, after the sort (the rows / photos switch). */
+  trailing?: React.ReactNode;
 }
 
 const SORTS: Array<{ id: string; ar: string; en: string; stock?: boolean }> = [
@@ -71,6 +73,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   onIssueChange,
   tracksStock = true,
   showsCosts = false,
+  trailing,
 }) => {
   const isAr = lang === "ar";
   const shortcutHint = useShortcutHint();
@@ -268,6 +271,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
           </SelectTrigger>
           <SelectContent align="end">{sortItems}</SelectContent>
         </Select>
+        {trailing}
       </div>
 
       {/* Active Filter Chips */}

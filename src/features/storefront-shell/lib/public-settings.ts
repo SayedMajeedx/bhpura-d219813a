@@ -7,6 +7,7 @@ import { normalizeModuleOverrides, normalizeVertical } from "@/lib/store-profile
 import { storedFooterTitles, storedPages } from "@/lib/cms-pages";
 import { categoryBannerTextColor } from "@/lib/banner-size";
 import { shareImageSetting } from "@/lib/seo/share-image";
+import { lowStockLevel } from "@/lib/inventory-health";
 import { storyBackground, storyPoints } from "@/lib/brand-templates/brand-story";
 import type { fetchStorefrontPageData } from "@/lib/data/storefront";
 
@@ -256,6 +257,8 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     pdp_image_zoom: s?.pdp_image_zoom ?? true,
     category_filters_enabled: s?.category_filters_enabled ?? true,
     back_in_stock_enabled: s?.back_in_stock_enabled ?? true,
+    // The store's own low-stock level (lowStockLevel): a size this low says so on its page.
+    low_stock_threshold: lowStockLevel(s?.low_stock_threshold),
     fabric_care_ar: s?.fabric_care_ar ?? null,
     fabric_care_en: s?.fabric_care_en ?? null,
     shipping_returns_ar: s?.shipping_returns_ar ?? null,

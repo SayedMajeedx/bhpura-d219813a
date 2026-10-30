@@ -1,11 +1,17 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, AlertCircle, Sparkles, Truck, MessageCircle, Check } from "lucide-react";
+import {
+  ShoppingBag,
+  AlertCircle,
+  AlertTriangle,
+  Sparkles,
+  MessageCircle,
+  Check,
+} from "lucide-react";
 import { MorphText } from "@/components/motion/MorphText";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { useFlash } from "@/components/motion/use-flash";
 import { isCatalogMode } from "@/lib/storefront-mode";
-import { deliveryEstimateLines, readyEstimate } from "@/lib/delivery-estimate";
 import { NotifyMeForm } from "@/components/storefront/NotifyMeForm";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
@@ -16,11 +22,15 @@ import {
 } from "@/lib/data/storefront";
 
 import type { Dispatch, SetStateAction } from "react";
-import { arNoun } from "@/lib/arabic-count";
+import { lowStockLevel } from "@/lib/inventory-health";
+import { lowStockLine } from "@/features/product-page/lib/stock-line";
 import { offSaleUntil } from "@/lib/product-availability";
 import { offSaleSentence } from "@/lib/opening-hours";
 
-/** Quantity, the Add to cart / Buy now buttons (or the inquiry button in catalog mode), the choice error and the delivery estimate. */
+/**
+ * The low-stock line, quantity, the Add to cart / Buy now buttons (or the inquiry button in
+ * catalog mode) and the choice error. The delivery time is beside the price (`ProductTitleAndPrice`).
+ */
 export function ProductPurchaseActions({
   brand,
   doAdd,
@@ -60,19 +70,25 @@ export function ProductPurchaseActions({
   const offSale = offSaleUntil(product);
   // The button says the piece is in the bag, where the tap was (text morph and icon swap).
   const [added, flashAdded] = useFlash();
-  // A piece the shopper is having made takes the made-to-order estimate; a ready size does not.
-  const tailored = Boolean(product.is_made_to_order) && isTailoringActive;
   // A ready size is capped by its stock; a made-to-order piece by the store's limit, if it has one.
   const quantityCap = isTailoringActive ? (tailoringLeft ?? Number.POSITIVE_INFINITY) : maxStock;
-  const estimate =
-    deliveryEstimateLines({
-      kinds: { ready: !tailored, tailored },
-      settings,
-      lang,
-      readyText: readyEstimate(settings, lang),
-    })[0]?.text ?? null;
+  // Nearly gone, at the store's own level (stock-line.ts); a made-to-order piece has its badge.
+  const lowStock =
+    !isCatalogMode(settings) && variant && !isTailoringActive && !selectedVariantOutOfStock
+      ? lowStockLine(maxStock, lowStockLevel(settings?.low_stock_threshold), lang)
+      : null;
   return (
     <>
+      {lowStock && (
+        <p
+          role="status"
+          className="mb-3 flex items-center gap-1.5 text-sm font-medium text-foreground"
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+          {lowStock}
+        </p>
+      )}
+
       {!isCatalogMode(settings) && (variant || isTailoringActive) && (
         <div className="mb-4 flex items-center">
           <div>
@@ -102,26 +118,15 @@ export function ProductPurchaseActions({
               </Button>
             </div>
           </div>
-          <div className="ms-3 mt-6">
-            {isTailoringActive ? (
+          {isTailoringActive && (
+            <div className="ms-3 mt-6">
               <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium">
                 {vocabulary.made_to_order?.[lang] || t("صنع حسب الطلب", "Made to order")}
                 {tailoringLeft !== null &&
                   ` · ${t(`متبقي ${tailoringLeft}`, `${tailoringLeft} left`)}`}
               </span>
-            ) : maxStock > 0 && maxStock <= 5 ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">
-                <span>🔥</span>
-                <span>
-                  {t(`متبقي ${arNoun(maxStock, "piece")} فقط!`, `Only ${maxStock} left in stock!`)}
-                </span>
-              </span>
-            ) : (
-              <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">
-                {maxStock} {t("متوفر", "available")}
-              </span>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -225,13 +230,6 @@ export function ProductPurchaseActions({
                 : t("إتمام الطلب الآن", "Complete Order Now")
               : t("اشتر الآن", "Buy now")}
           </Button>
-        </div>
-      )}
-
-      {estimate && settings.delivery_estimate_enabled !== false && !isCatalogMode(settings) && (
-        <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
-          <Truck className="h-4 w-4 text-primary shrink-0" />
-          <span className="font-medium text-foreground">{estimate}</span>
         </div>
       )}
     </>

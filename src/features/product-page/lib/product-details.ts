@@ -96,3 +96,12 @@ export function detailsSection({
         : careLabel;
   return { title, lines, care };
 }
+
+/**
+ * Whether the description is drawn above the options. The new look (V2) shows it in its own
+ * section of the accordion, open by default, so above the options it said everything twice and
+ * pushed the colour and size down the page; the classic look has no accordion and keeps it there.
+ */
+export function descriptionAboveOptions(designVersion: unknown): boolean {
+  return Number(designVersion) !== 2;
+}

@@ -190,6 +190,7 @@ describe("the list's view in the address", () => {
       issue: "missing_image",
       sort: "best-selling",
       page: 3,
+      layout: "list",
     });
     expect(inventoryViewToSearch("?action=new&filter=low_stock", view)).toBe(
       "action=new&q=silk&scope=low&category=abayas&issue=missing_image&sort=best-selling&page=3",

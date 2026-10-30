@@ -312,6 +312,8 @@ export type PublicSettings = {
   pdp_image_zoom?: boolean;
   category_filters_enabled?: boolean;
   back_in_stock_enabled?: boolean;
+  /** The store's low-stock level (pieces; 0: no warning), read with `lowStockLevel`. */
+  low_stock_threshold?: number;
   fabric_care_ar?: string | null;
   fabric_care_en?: string | null;
   shipping_returns_ar?: string | null;

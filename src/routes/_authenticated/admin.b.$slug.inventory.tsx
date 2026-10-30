@@ -31,6 +31,7 @@ import { CustomizationsSection } from "@/features/inventory/components/Customiza
 
 import { ProductsSection } from "@/features/inventory/components/ProductsSection";
 import { INVENTORY_VIEW_PARAMS, inventoryViewFromSearch } from "@/features/inventory/lib/list-view";
+import { productCardRatio } from "@/lib/brand-templates/design-presets";
 import { lowStockLevel } from "@/lib/inventory-health";
 import { shouldShowPrices } from "@/lib/storefront-mode";
 import { useProfile } from "@/lib/profile-context";
@@ -178,6 +179,7 @@ function Inventory() {
           initialView={initialView}
           initialAction={searchParams.action}
           lowStockUnits={lowStockLevel(businessName.data?.low_stock_threshold)}
+          photoRatio={productCardRatio(businessName.data)}
           pricesMatter={shouldShowPrices(businessName.data)}
           canViewCosts={canViewFinancials}
           canEditLowStockLevel={hasPermission("manage_settings")}

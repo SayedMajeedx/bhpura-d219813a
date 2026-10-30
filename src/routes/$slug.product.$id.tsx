@@ -88,6 +88,7 @@ import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
 import { soldOnlyByBooking } from "@/lib/bookings/service";
+import { descriptionAboveOptions } from "@/features/product-page/lib/product-details";
 import { useServiceBookingTerms } from "@/features/product-page/hooks/use-service-booking-terms";
 import { ServicePurchasePanel } from "@/features/product-page/components/ServicePurchasePanel";
 import { ServiceMobileBookBar } from "@/features/product-page/components/ServiceMobileBookBar";
@@ -730,6 +731,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             displayPrice={displayPrice}
             isWishlisted={isWishlisted}
             lang={lang}
+            madeForShopper={Boolean(product.is_made_to_order) && isTailoringActive}
             originalPrice={originalPrice}
             priceLabel={priceLabel}
             priceRange={priceRange}
@@ -754,7 +756,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </div>
             )}
 
-          {displayDescription && (
+          {displayDescription && descriptionAboveOptions(settings?.storefront_design_version) && (
             <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">
               {displayDescription}
             </p>
