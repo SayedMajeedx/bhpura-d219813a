@@ -12,6 +12,7 @@ import {
   RECOMMENDATION_SELECT,
 } from "./selects";
 import { productOnSale } from "@/lib/product-price";
+import { searchFilters } from "@/lib/search-terms";
 import type {
   BestSellerRow,
   ProductRow,
@@ -371,21 +372,32 @@ export function sanitizeSearchTerm(term: string): string {
   return term.replace(/[%_,()\\]/g, " ").trim();
 }
 
-/** Full search page: names, descriptions and category. */
+/** The columns the full search page looks in, and the most results it lists. */
+const FULL_SEARCH_COLUMNS = [
+  "name",
+  "name_ar",
+  "name_en",
+  "description",
+  "description_ar",
+  "description_en",
+  "category",
+] as const;
+export const FULL_SEARCH_LIMIT = 120;
+
+/**
+ * Full search page: names, descriptions and category, every word of the search found in one of
+ * them, in any of its Arabic spellings (`searchFilters`).
+ */
 export async function fetchStorefrontSearch(brandId: string, term: string): Promise<ProductRow[]> {
-  const clean = sanitizeSearchTerm(term);
-  if (!clean) return [];
-  const pattern = `%${clean}%`;
-  const { data, error } = await supabase
+  const filters = searchFilters(term, FULL_SEARCH_COLUMNS);
+  if (filters.length === 0) return [];
+  let query = supabase
     .from("products")
     .select(PRODUCT_CARD_SELECT)
     .eq("brand_id", brandId)
-    .eq("is_active", true)
-    .or(
-      ["name", "name_ar", "name_en", "description", "description_ar", "description_en", "category"]
-        .map((column) => `${column}.ilike.${pattern}`)
-        .join(","),
-    );
+    .eq("is_active", true);
+  for (const filter of filters) query = query.or(filter);
+  const { data, error } = await query.limit(FULL_SEARCH_LIMIT);
   if (error) throw error;
   return (data ?? []) as unknown as ProductRow[];
 }
@@ -396,16 +408,17 @@ export async function fetchQuickSearch(
   term: string,
   limit: number,
 ): Promise<QuickSearchResult[]> {
-  const clean = sanitizeSearchTerm(term);
-  if (clean.length < 2) return [];
-  const pattern = `%${clean}%`;
-  const { data, error } = await supabase
+  // Two letters at least, as before: one letter matches nearly everything.
+  if (sanitizeSearchTerm(term).length < 2) return [];
+  const filters = searchFilters(term, ["name", "name_ar", "name_en"]);
+  if (filters.length === 0) return [];
+  let query = supabase
     .from("products")
     .select(QUICK_SEARCH_SELECT)
     .eq("brand_id", brandId)
-    .eq("is_active", true)
-    .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
-    .limit(limit);
+    .eq("is_active", true);
+  for (const filter of filters) query = query.or(filter);
+  const { data, error } = await query.limit(limit);
   if (error) throw error;
   return (data ?? []) as unknown as QuickSearchResult[];
 }
