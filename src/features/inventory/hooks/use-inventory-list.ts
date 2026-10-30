@@ -18,8 +18,8 @@ import {
 import { stockTotals } from "@/features/inventory/lib/stock-totals";
 
 /**
- * The inventory list: what it shows (tab, search, filters, sort, page, kept in the address),
- * each product's figures worked out once, the tabs' counts and the page of products to draw.
+ * The inventory list: what it shows (tab, search, filters, sort, page and layout, kept in the
+ * address), each product's figures worked out once, the tabs' counts and the page to draw.
  */
 export function useInventoryList({
   products,
@@ -178,6 +178,8 @@ export function useInventoryList({
     view,
     change,
     setPage: (next: number) => setView((current) => ({ ...current, page: Math.max(1, next) })),
+    /** Rows or photos; the page and the filters stay as they are. */
+    setLayout: (layout: InventoryView["layout"]) => setView((current) => ({ ...current, layout })),
     pageSize,
     setPageSize: (size: number) => {
       setPageSize(size);

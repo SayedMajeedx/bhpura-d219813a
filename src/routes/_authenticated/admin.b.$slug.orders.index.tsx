@@ -870,11 +870,15 @@ function OrdersList() {
         setCashModalOrder={setCashModalOrder}
       />
       <OrderQuickInspectSheet
-        order={inspectOrder}
+        // The list's live copy: after a step from the sheet, the sheet shows the next one.
+        order={
+          inspectOrder ? (orders.find((o: any) => o.id === inspectOrder.id) ?? inspectOrder) : null
+        }
         slug={slug}
         lang={lang}
         locale={locale}
         onClose={() => setInspectOrder(null)}
+        renderAction={(o) => renderContextualButton(o)}
       />
       {waModalState.isOpen && waModalState.order && waModalState.courier && (
         <CourierWhatsAppModal

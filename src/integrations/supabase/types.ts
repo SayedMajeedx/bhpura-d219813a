@@ -9191,6 +9191,7 @@ export type Database = {
           logo_align: string | null;
           logo_size: number | null;
           logo_url: string | null;
+          low_stock_threshold: number | null;
           menu_bg: string | null;
           menu_fg: string | null;
           menu_show_account: boolean | null;

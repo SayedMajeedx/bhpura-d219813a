@@ -1,3 +1,4 @@
+import type React from "react";
 import { Link } from "@tanstack/react-router";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { Button } from "@/components/ui/button";
@@ -51,18 +52,27 @@ export function OrderQuickInspectSheet({
   lang,
   locale,
   onClose,
+  renderAction,
 }: {
   order: any | null;
   slug: string;
   lang: string;
   locale: string;
   onClose: () => void;
+  /**
+   * The order's next step, the list row's own button (`renderOrderQueueAction`): the sheet
+   * covers the row, so it once offered only "open the full page". The caller passes the list's
+   * live copy of the order, so the button moves on once a step is taken; its dialogs (the
+   * workshop's among them, which the button owns) open over the sheet.
+   */
+  renderAction?: (order: any) => React.ReactNode;
 }) {
   const orderNo = useOrderNumber();
   const { isAdmin } = useProfile();
   if (!order) return null;
   const isAr = lang === "ar";
   const items = order.order_items ?? [];
+  const action = renderAction?.(order) ?? null;
 
   return (
     <Sheet open={Boolean(order)} onOpenChange={(open: boolean) => !open && onClose()}>
@@ -79,23 +89,16 @@ export function OrderQuickInspectSheet({
               {formatDate(order.created_at ?? order.order_date, locale)}
             </span>
           </div>
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: order.id }}
-            className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1.5 pt-1"
-          >
-            {isAr ? "تفاصيل الطلب الكاملة" : "Full Order Page"} <ExternalLink className="h-3 w-3" />
-          </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Customer Card */}
           <div className="rounded-xl border p-4 space-y-2 bg-card">
             <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "معلومات العميل" : "Customer Overview"}
+              {isAr ? "العميل" : "Customer"}
             </h4>
             <div className="text-sm font-semibold">
-              {getOrderCustomerName(order) || (isAr ? "عميل غير مسجل" : "Guest Customer")}
+              {getOrderCustomerName(order) || (isAr ? "عميل غير مسجل" : "Guest")}
             </div>
             <CustomerContactActions
               customer={getOrderCustomerContact(order)}
@@ -106,7 +109,7 @@ export function OrderQuickInspectSheet({
           {/* Line Items Breakdown */}
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground">
-              {isAr ? "المنتجات والأصناف المشمولة" : "Order Line Items Breakdown"}
+              {isAr ? "المنتجات" : "Items"}
             </h4>
             <div className="divide-y border border-border-subtle rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {
@@ -220,12 +223,12 @@ export function OrderQuickInspectSheet({
                 )}
                 <div className="rounded-xl border border-border-subtle p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
                   <h4 className="text-xs font-semibold text-muted-foreground border-b border-border-subtle pb-2">
-                    {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
+                    {isAr ? "الحساب" : "Summary"}
                   </h4>
 
                   <div className="space-y-2 font-mono text-muted-foreground">
                     <div className="flex justify-between items-center">
-                      <span>{isAr ? "مجموع المنتجات:" : "Items Subtotal:"}</span>
+                      <span>{isAr ? "المجموع" : "Subtotal"}</span>
                       <span className="font-bold text-foreground">
                         {formatMoney(subtotal, currency, locale)}
                       </span>
@@ -233,7 +236,7 @@ export function OrderQuickInspectSheet({
 
                     {discount > 0 && (
                       <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                        <span>{isAr ? "الخصم المستقطع:" : "Discount Applied:"}</span>
+                        <span>{isAr ? "الخصم" : "Discount"}</span>
                         <span className="font-bold">
                           -{formatMoney(discount, currency, locale)}
                         </span>
@@ -242,7 +245,7 @@ export function OrderQuickInspectSheet({
 
                     {shipping > 0 && (
                       <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                        <span>{isAr ? "رسوم الشحن والتوصيل:" : "Shipping & Delivery Fee:"}</span>
+                        <span>{isAr ? "التوصيل" : "Delivery"}</span>
                         <span className="font-bold">
                           +{formatMoney(shipping, currency, locale)}
                         </span>
@@ -251,14 +254,14 @@ export function OrderQuickInspectSheet({
 
                     {tax > 0 && (
                       <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                        <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
+                        <span>{isAr ? "ضريبة القيمة المضافة" : "VAT"}</span>
                         <span className="font-bold">+{formatMoney(tax, currency, locale)}</span>
                       </div>
                     )}
 
                     {advancePaid > 0 && (
                       <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
-                        <span>{isAr ? "الدفعة المقدمة المدفوعة:" : "Advance Paid / Deposit:"}</span>
+                        <span>{isAr ? "المدفوع مقدماً" : "Paid in advance"}</span>
                         <span className="font-bold">
                           -{formatMoney(advancePaid, currency, locale)}
                         </span>
@@ -267,16 +270,14 @@ export function OrderQuickInspectSheet({
 
                     {advancePaid > 0 && codRemaining > 0 && (
                       <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
-                        <span>
-                          {isAr ? "المتبقي للتحصيل عند التسليم:" : "Remaining COD Balance:"}
-                        </span>
+                        <span>{isAr ? "المتبقي عند التسليم" : "Due on delivery"}</span>
                         <span>{formatMoney(codRemaining, currency, locale)}</span>
                       </div>
                     )}
                   </div>
 
                   <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
-                    <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
+                    <span>{isAr ? "الإجمالي" : "Total"}</span>
                     <span className="text-base text-primary font-mono font-extrabold">
                       {formatMoney(netTotal, currency, locale)}
                     </span>
@@ -293,13 +294,15 @@ export function OrderQuickInspectSheet({
               <div className="flex items-center gap-2">
                 <Lock className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-sm">
-                  {isAr ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
+                  {isAr ? "بوابة الدفع" : "Payment gateway"}
                 </span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs font-mono">
               <div>
-                <span className="text-muted-foreground block mb-1">Reference ID:</span>
+                <span className="text-muted-foreground block mb-1">
+                  {isAr ? "المرجع" : "Reference"}
+                </span>
                 <div className="flex items-center gap-2">
                   <span className="truncate">{getPaymentGatewayReference(order)}</span>
                   <Button
@@ -309,7 +312,7 @@ export function OrderQuickInspectSheet({
                     className="h-6 w-6"
                     onClick={() => {
                       navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
-                      toast.success(isAr ? "تم النسخ" : "Copied Reference");
+                      toast.success(isAr ? "تم النسخ" : "Copied");
                     }}
                     aria-label={isAr ? "نسخ" : "Copy"}
                   >
@@ -318,12 +321,16 @@ export function OrderQuickInspectSheet({
                 </div>
               </div>
               <div>
-                <span className="text-muted-foreground block mb-1">Gateway Status:</span>
-                <span>{order.gateway_status || "N/A"}</span>
+                <span className="text-muted-foreground block mb-1">
+                  {isAr ? "الحالة" : "Status"}
+                </span>
+                <span>{order.gateway_status || "—"}</span>
               </div>
               {order.gateway_verified_at && (
                 <div className="col-span-2">
-                  <span className="text-muted-foreground block mb-1">Last Verified:</span>
+                  <span className="text-muted-foreground block mb-1">
+                    {isAr ? "آخر تحقق" : "Last verified"}
+                  </span>
                   <span>{new Date(order.gateway_verified_at).toLocaleString(locale)}</span>
                 </div>
               )}
@@ -331,14 +338,18 @@ export function OrderQuickInspectSheet({
           </div>
         ) : null}
 
-        <div className="p-4 border-t bg-muted/20 flex gap-2">
+        <div className="p-4 border-t bg-muted/20 flex flex-wrap items-center gap-2">
+          {action && (
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">{action}</div>
+          )}
           <Button
             asChild
-            className="flex-1 bg-primary text-primary-foreground font-bold h-11 rounded-xl"
+            variant={action ? "outline" : "default"}
+            className={`h-11 rounded-xl font-bold ${action ? "" : "flex-1"}`}
           >
             <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: order.id }}>
               <ExternalLink className="h-4 w-4 me-2" />
-              {isAr ? "فتح صفحة الطلب الكاملة" : "Open Order Record Page"}
+              {isAr ? "صفحة الطلب" : "Order page"}
             </Link>
           </Button>
         </div>

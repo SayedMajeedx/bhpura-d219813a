@@ -3,7 +3,7 @@ import { render, renderHook, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { DeliveryEstimateLines } from "../src/features/checkout/components/DeliveryEstimateLines";
 import { useCheckoutFulfillment } from "../src/features/checkout/hooks/use-checkout-fulfillment";
-import { ProductPurchaseActions } from "../src/features/product-page/components/ProductPurchaseActions";
+import { ProductTitleAndPrice } from "../src/features/product-page/components/ProductTitleAndPrice";
 
 // Where a shopper reads the delivery time: the product page (by what they chose) and checkout (by
 // what is in the cart).
@@ -11,6 +11,15 @@ import { ProductPurchaseActions } from "../src/features/product-page/components/
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/x">{children}</a>,
 }));
+// The price row's neighbours ask the store's offers and rates: none here.
+vi.mock("../src/hooks/use-live-offers", () => ({ useLiveOffers: () => [] }));
+vi.mock("@/hooks/use-live-offers", () => ({ useLiveOffers: () => [] }));
+vi.mock("../src/components/storefront/CurrencySwitcher", () => ({ ApproxPrice: () => null }));
+vi.mock("@/components/storefront/CurrencySwitcher", () => ({ ApproxPrice: () => null }));
+vi.mock("../src/features/product-page/components/ProductOffers", () => ({
+  ProductOffers: () => null,
+}));
+vi.mock("@/features/product-page/components/ProductOffers", () => ({ ProductOffers: () => null }));
 
 const store = {
   delivery_enabled: true,
@@ -30,27 +39,26 @@ const store = {
 type Settings = Parameters<typeof useCheckoutFulfillment>[0]["settings"];
 
 describe("the product page's delivery time", () => {
+  // Said beside the price (ProductTitleAndPrice), by the choice made.
   const page = (
     over: { made?: boolean; tailoring?: boolean; settings?: object; lang?: "en" | "ar" } = {},
   ) =>
     render(
-      <ProductPurchaseActions
+      <ProductTitleAndPrice
         {...({
-          brand: {},
-          doAdd: vi.fn(),
-          errorMsg: null,
-          inquiryUrl: null,
-          isTailoringActive: over.tailoring ?? false,
+          currency: "BHD",
+          discountPercent: 0,
+          displayName: "Abaya",
+          displayPrice: 30,
+          isWishlisted: () => false,
           lang: over.lang ?? "en",
-          maxStock: 3,
+          madeForShopper: Boolean(over.made ?? false) && (over.tailoring ?? false),
+          originalPrice: 0,
+          priceLabel: "BHD 30.000",
           product: { id: "p1", is_made_to_order: over.made ?? false },
-          qty: 1,
-          selectedVariantOutOfStock: false,
-          setQty: vi.fn(),
           settings: { storefront_mode: "shop", ...store, ...over.settings },
           t: (ar: string, en: string) => (over.lang === "ar" ? ar : en),
-          variant: { id: "v1", stock_main: 3 },
-          vocabulary: {},
+          toggleWishlist: vi.fn(),
         } as never)}
       />,
     );

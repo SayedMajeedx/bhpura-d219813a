@@ -10,8 +10,13 @@ import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredShownPrice } from "@/lib/offer-price";
 import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
+import { Truck } from "lucide-react";
+import { productDeliveryLine } from "@/features/product-page/lib/delivery-line";
 
-/** Product name with share and wishlist, the price with any original price and saving, and the store's offers that reach it. */
+/**
+ * Product name with share and wishlist, the price with any original price and saving, the
+ * delivery time beside it (where the shopper decides), and the store's offers that reach it.
+ */
 export function ProductTitleAndPrice({
   currency,
   discountPercent,
@@ -19,6 +24,7 @@ export function ProductTitleAndPrice({
   displayPrice,
   isWishlisted,
   lang,
+  madeForShopper = false,
   originalPrice,
   priceLabel,
   priceRange,
@@ -33,6 +39,8 @@ export function ProductTitleAndPrice({
   displayPrice: number;
   isWishlisted: ReturnType<typeof useStorefront>["isWishlisted"];
   lang: ReturnType<typeof useStorefront>["lang"];
+  /** The shopper is having this piece made: the made-to-order delivery time is said. */
+  madeForShopper?: boolean;
   originalPrice: number;
   priceLabel: string;
   /** The prices of the sizes still possible (the label shows a range when they differ). */
@@ -60,6 +68,7 @@ export function ProductTitleAndPrice({
   const shownWas = offered ? offered.was : originalPrice;
   const shownPrice = offered ? offered.price : displayPrice;
   const shownPercent = offered ? offered.percent : discountPercent;
+  const delivery = productDeliveryLine({ settings, lang, madeForShopper });
   return (
     <>
       <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
@@ -113,8 +122,16 @@ export function ProductTitleAndPrice({
                 {t(`وفر ${shownPercent}%`, `Save ${shownPercent}%`)}
               </span>
             )}
-            <ApproxPrice amount={shownPrice} className="basis-full text-sm" />
           </>
+        )}
+        {delivery && (
+          <span className="ms-auto inline-flex max-w-full items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-xs font-medium text-foreground">
+            <Truck className="h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" />
+            <span className="min-w-0 break-words">{delivery}</span>
+          </span>
+        )}
+        {shouldShowPrices(settings) && (
+          <ApproxPrice amount={shownPrice} className="basis-full text-sm" />
         )}
       </div>
       <ProductOffers product={product} />

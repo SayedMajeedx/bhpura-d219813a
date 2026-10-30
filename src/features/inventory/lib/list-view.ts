@@ -7,7 +7,14 @@ import {
 } from "@/features/inventory/lib/product-list";
 
 /**
- * What the inventory list is showing: the tab, the search, the filters, the sort and the page.
+ * How the list is drawn: rows, or the products' photos as cards (a boutique knows a piece by its
+ * picture before its name).
+ */
+export type InventoryLayout = "list" | "photos";
+
+/**
+ * What the inventory list is showing: the tab, the search, the filters, the sort, the page and
+ * whether it is drawn as rows or photos.
  * It lives in the address, so a reload, the back button or a link sent to a colleague opens the
  * same list ("the low-stock dresses, page 2") instead of the first page of everything.
  */
@@ -18,6 +25,7 @@ export type InventoryView = {
   issue: "all" | AttentionKey;
   sort: InventorySort;
   page: number;
+  layout: InventoryLayout;
 };
 
 export const DEFAULT_INVENTORY_VIEW: InventoryView = {
@@ -27,6 +35,7 @@ export const DEFAULT_INVENTORY_VIEW: InventoryView = {
   issue: "all",
   sort: "newest",
   page: 1,
+  layout: "list",
 };
 
 /** The address parameters the list owns. `filter` is the older name a dashboard link uses. */
@@ -38,6 +47,7 @@ export const INVENTORY_VIEW_PARAMS = [
   "issue",
   "sort",
   "page",
+  "view",
 ] as const;
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
@@ -59,6 +69,7 @@ export function inventoryViewFromSearch(search: Record<string, unknown>): Invent
       ? (sort as InventorySort)
       : "newest",
     page: Number.isInteger(page) && page > 1 ? page : 1,
+    layout: text(search.view) === "photos" ? "photos" : "list",
   };
 }
 
@@ -76,10 +87,11 @@ export function inventoryViewToSearch(currentSearch: string, view: InventoryView
   if (view.issue !== "all") params.set("issue", view.issue);
   if (view.sort !== "newest") params.set("sort", view.sort);
   if (view.page > 1) params.set("page", String(view.page));
+  if (view.layout !== "list") params.set("view", view.layout);
   return params.toString();
 }
 
-/** How many filters narrow the list (the tab and the sort are not filters). */
+/** How many filters narrow the list (the tab, the sort and the layout are not filters). */
 export function activeFilterCount(view: InventoryView): number {
   return (
     (view.category !== "all" ? 1 : 0) +
