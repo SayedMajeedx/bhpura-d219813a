@@ -1,8 +1,8 @@
 import React from "react";
-import { Star, Users, RefreshCw, UserPlus, AlertCircle } from "lucide-react";
+import { Star, Users, RefreshCw, UserPlus, UserMinus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type CustomerSegmentScope = "all" | "vip" | "repeat" | "new" | "churn";
+export type CustomerSegmentScope = "all" | "vip" | "repeat" | "new" | "one_time" | "churn";
 
 interface CustomersScopeSwitcherProps {
   lang: "en" | "ar";
@@ -47,6 +47,13 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
       labelAr: "العملاء الجدد",
       icon: UserPlus,
       badgeStyle: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      id: "one_time",
+      labelEn: "One-time Buyers",
+      labelAr: "اشتروا مرة واحدة",
+      icon: UserMinus,
+      badgeStyle: "text-muted-foreground",
     },
     {
       id: "churn",

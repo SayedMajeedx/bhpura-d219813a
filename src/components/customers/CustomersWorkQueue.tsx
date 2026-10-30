@@ -12,6 +12,7 @@ import {
   Trash2,
   RefreshCw,
   UserPlus,
+  UserMinus,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -182,6 +183,12 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                             <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-300/40">
                               <UserPlus className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" />
                               {isAr ? "جديد" : "New"}
+                            </span>
+                          )}
+                          {stats.badge === "One-time" && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-xs font-bold bg-muted text-muted-foreground border border-border">
+                              <UserMinus className="h-2.5 w-2.5 text-muted-foreground" />
+                              {isAr ? "مرة واحدة" : "One-time"}
                             </span>
                           )}
                           {(stats.badge === "Regular" ||
