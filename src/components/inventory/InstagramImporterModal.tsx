@@ -651,7 +651,7 @@ export function InstagramImporterModal({
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
                               <AlertTriangle className="h-8 w-8 text-destructive mb-2" />
                               <span className="text-xs font-bold text-destructive">
-                                {isAr ? "⚠️ فشل تحميل الصور" : "Image upload failed"}
+                                {isAr ? "فشل تحميل الصور" : "Image upload failed"}
                               </span>
                             </div>
                           )}
@@ -700,7 +700,7 @@ export function InstagramImporterModal({
                             <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center gap-2">
                               <XCircle className="h-7 w-7 text-destructive" />
                               <p className="text-xs font-bold text-destructive">
-                                {isAr ? "⚠️ فشل تحميل الصورة لـ R2" : "Image upload to R2 failed"}
+                                {isAr ? "فشل تحميل الصورة لـ R2" : "Image upload to R2 failed"}
                               </p>
                               <Button
                                 type="button"
@@ -777,7 +777,7 @@ export function InstagramImporterModal({
                               </span>
                               {isPriceLow ? (
                                 <span className="text-xs font-bold text-destructive">
-                                  {isAr ? "⚠️ مطلوب التحقق" : "⚠️ Needs Input"}
+                                  {isAr ? "مطلوب التحقق" : "Needs input"}
                                 </span>
                               ) : (
                                 <Badge
@@ -877,8 +877,8 @@ export function InstagramImporterModal({
                               {!ready
                                 ? selectedCount === 0
                                   ? isAr
-                                    ? "⚠️ حدد صورة واحدة على الأقل"
-                                    : "⚠️ Select at least 1 photo"
+                                    ? "حدد صورة واحدة على الأقل"
+                                    : "Select at least 1 photo"
                                   : isAr
                                     ? "يتطلب إدخال السعر"
                                     : "Requires price"

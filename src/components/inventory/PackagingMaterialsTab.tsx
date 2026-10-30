@@ -32,6 +32,7 @@ import {
   Search,
   RefreshCw,
   Sparkles,
+  Shirt,
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
@@ -416,11 +417,11 @@ export function PackagingMaterialsTab() {
                         >
                           {item.deduction_rule === "per_order"
                             ? isAr
-                              ? "📦 لكل طلب كامل"
-                              : "📦 Per Order"
+                              ? "لكل طلب كامل"
+                              : "Per Order"
                             : isAr
-                              ? "👗 لكل قطعة منتج"
-                              : "👗 Per Product Item"}
+                              ? "لكل قطعة منتج"
+                              : "Per Product Item"}
                         </span>
                       </div>
                       {item.sku && (
@@ -540,7 +541,7 @@ export function PackagingMaterialsTab() {
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <span>📦</span>
+                    <Shirt className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>{isAr ? "لكل منتج / قطعة" : "Per Product Item"}</span>
                   </div>
                   <span className="text-xs text-muted-foreground leading-tight">
@@ -561,7 +562,7 @@ export function PackagingMaterialsTab() {
                   )}
                 >
                   <div className="flex items-center gap-1.5 font-bold text-xs">
-                    <span>📦</span>
+                    <Package className="h-3.5 w-3.5" aria-hidden="true" />
                     <span>{isAr ? "لكل طلب كامل" : "Per Entire Order"}</span>
                   </div>
                   <span className="text-xs text-muted-foreground leading-tight">

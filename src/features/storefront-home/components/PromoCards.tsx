@@ -35,7 +35,7 @@ export function PromoCards() {
                 preset="hero"
                 sizes="(min-width: 640px) 50vw, 100vw"
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-(--motion-very-slow) group-hover:scale-105"
                 fetchPriority={index === firstImageIndex ? "high" : "auto"}
                 loading={index === firstImageIndex ? "eager" : "lazy"}
                 decoding={index === firstImageIndex ? "sync" : "async"}

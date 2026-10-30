@@ -260,7 +260,7 @@ function CustomOrderRouteComponent() {
               }`}
             >
               <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-xs ring-4 ring-primary/10"
                     : isDone
@@ -343,7 +343,7 @@ function CustomOrderRouteComponent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMeasurementMode("standard")}
-                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition ${
                   measurementMode === "standard"
                     ? "bg-card text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -356,7 +356,7 @@ function CustomOrderRouteComponent() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setMeasurementMode("custom")}
-                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition-all ${
+                className={`h-auto rounded-md flex-1 rounded-md py-2 text-xs font-medium transition ${
                   measurementMode === "custom"
                     ? "bg-card text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -379,7 +379,7 @@ function CustomOrderRouteComponent() {
                       variant="ghost"
                       size="sm"
                       onClick={() => setStandardSize(sz)}
-                      className={`h-auto rounded-md rounded-lg border py-2.5 text-xs font-semibold transition-all ${
+                      className={`h-auto rounded-md rounded-lg border py-2.5 text-xs font-semibold transition ${
                         standardSize === sz
                           ? "border-primary bg-primary text-primary-foreground shadow-xs"
                           : "border-border bg-card text-foreground hover:bg-muted"

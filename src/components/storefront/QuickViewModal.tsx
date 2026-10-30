@@ -214,7 +214,7 @@ export function QuickViewModal({
                     variant="ghost"
                     size="sm"
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`h-2.5 rounded-full hover:bg-transparent p-0 transition-all ${
+                    className={`h-2.5 rounded-full hover:bg-transparent p-0 transition-[width,background-color] ${
                       idx === selectedImageIdx
                         ? "w-6 bg-primary"
                         : "w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
@@ -291,7 +291,7 @@ export function QuickViewModal({
                               aria-label={display}
                               title={display}
                               onClick={() => handleSelectOption(axis.field, value)}
-                              className={`relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-transparent border p-0 transition-all ${
+                              className={`relative flex h-8 w-8 items-center justify-center rounded-full hover:bg-transparent border p-0 transition ${
                                 isSelected
                                   ? "border-primary ring-2 ring-primary ring-offset-2"
                                   : "border-border hover:scale-105"
@@ -315,7 +315,7 @@ export function QuickViewModal({
                             role="radio"
                             aria-checked={isSelected}
                             onClick={() => handleSelectOption(axis.field, value)}
-                            className={`h-auto min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
+                            className={`h-auto min-w-10 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
                               isSelected
                                 ? "border-primary bg-primary text-primary-foreground"
                                 : "border-border bg-card text-foreground hover:bg-muted"

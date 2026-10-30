@@ -36,7 +36,7 @@ export function ProductAddonsPicker({
               key={addon.id}
               type="button"
               onClick={() => toggleAddon(addon.id)}
-              className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-start transition-all ${
+              className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-start transition ${
                 isSelected
                   ? "border-primary bg-primary/5 text-primary font-medium ring-1 ring-primary"
                   : "border-border hover:border-muted-foreground/40 bg-background"

@@ -341,7 +341,7 @@ function StorefrontAuth() {
             <Button
               type="button"
               variant="outline"
-              className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition-all shadow-xs"
+              className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition shadow-xs"
               onClick={signInWithGoogle}
               disabled={working || passkeyLoading}
             >
@@ -370,7 +370,7 @@ function StorefrontAuth() {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition-all shadow-xs"
+                className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition shadow-xs"
                 onClick={() => void signInWithPasskey()}
                 disabled={working || passkeyLoading}
               >
@@ -397,13 +397,13 @@ function StorefrontAuth() {
           <Tabs value={tab} onValueChange={(value) => setTab(value as "signin" | "signup")}>
             <TabsList className="grid h-11 w-full grid-cols-2 p-1 bg-muted rounded-xl">
               <TabsTrigger
-                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition-all"
+                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition"
                 value="signin"
               >
                 {t("تسجيل الدخول", "Sign in")}
               </TabsTrigger>
               <TabsTrigger
-                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition-all"
+                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition"
                 value="signup"
               >
                 {t("إنشاء حساب جديد", "Create account")}
@@ -412,7 +412,7 @@ function StorefrontAuth() {
 
             <TabsContent
               value="signin"
-              className="mt-4 space-y-3.5 animate-in fade-in-40 duration-200"
+              className="mt-4 space-y-3.5 animate-in fade-in-40 duration-(--motion-fast)"
             >
               <Field
                 label={t("البريد الإلكتروني", "Email")}
@@ -429,7 +429,7 @@ function StorefrontAuth() {
                 onChange={(password) => setForm({ ...form, password })}
               />
               <Button
-                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm mt-2"
+                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition shadow-sm mt-2"
                 onClick={signIn}
                 disabled={working}
               >
@@ -444,7 +444,7 @@ function StorefrontAuth() {
 
             <TabsContent
               value="signup"
-              className="mt-4 space-y-3.5 animate-in fade-in-40 duration-200"
+              className="mt-4 space-y-3.5 animate-in fade-in-40 duration-(--motion-fast)"
             >
               <Field
                 label={t("الاسم الكامل", "Full name")}
@@ -476,7 +476,7 @@ function StorefrontAuth() {
                 />
               )}
               <Button
-                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm mt-2"
+                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition shadow-sm mt-2"
                 onClick={signUp}
                 disabled={working}
               >
@@ -530,7 +530,7 @@ function Field({
         name={id}
         placeholder={placeholder}
         autoComplete={autocomplete}
-        className="h-11 bg-background border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground placeholder:text-muted-foreground rounded-xl transition-all font-normal"
+        className="h-11 bg-background border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground placeholder:text-muted-foreground rounded-xl transition font-normal"
         type={type}
         value={value}
         disabled={disabled}

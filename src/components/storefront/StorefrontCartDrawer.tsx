@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useId, useState } from "react";
+import { listenForCartOpen, triggerShown } from "@/lib/cart-drawer";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useIsServicesStore,
@@ -18,7 +19,7 @@ import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2, Paperclip } from "lucide-react";
 import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
 import { appliedOfferName } from "@/lib/offers";
 import { bookingOfCart } from "@/lib/bookings/cart";
@@ -32,6 +33,18 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
 
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  // "Add to cart" opens this drawer when its button is the one on screen (`cart-drawer.ts`).
+  const triggerId = useId();
+  useEffect(
+    () =>
+      listenForCartOpen(() => {
+        const trigger = document.querySelector(`[data-cart-trigger="${CSS.escape(triggerId)}"]`);
+        if (!triggerShown(trigger)) return false;
+        setOpen(true);
+        return true;
+      }),
+    [triggerId],
+  );
   // A line taken out folds away before it leaves the list (transitions.dev's card resize).
   const { isLeaving, leave } = useLeavingRows();
   const takeOut = (lineId: string) => leave(lineId, () => removeFromCart(lineId));
@@ -108,7 +121,9 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{children}</SheetTrigger>
+      <SheetTrigger asChild data-cart-trigger={triggerId}>
+        {children}
+      </SheetTrigger>
       <SheetContent
         side={lang === "ar" ? "left" : "right"}
         dir={lang === "ar" ? "rtl" : "ltr"}
@@ -206,7 +221,8 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                                         rel="noreferrer"
                                         className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
                                       >
-                                        📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                        <Paperclip className="h-3 w-3" aria-hidden="true" />
+                                        {lang === "ar" ? "عرض الملف" : "View File"}
                                       </a>
                                     ) : (
                                       <span className="font-semibold text-foreground" dir="auto">
@@ -308,7 +324,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
                         className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                       />
                       <Gift className="h-4 w-4 text-primary" />
-                      <span>{t("هل هذا الطلب إهداء؟ 🎁", "Is this order a gift? 🎁")}</span>
+                      <span>{t("هل هذا الطلب إهداء؟", "Is this order a gift?")}</span>
                     </label>
                     {isGift && (
                       <div className="space-y-2 pt-1 border-t border-border-subtle">

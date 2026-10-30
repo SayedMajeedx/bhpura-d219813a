@@ -59,7 +59,7 @@ export function PickupBranchCard({
                 type="button"
                 variant={active ? "outline" : "ghost"}
                 onClick={() => setBranchId(b.id)}
-                className={`relative text-start flex flex-col items-start justify-center h-auto whitespace-normal p-4 rounded-xl border-2 transition-all hover:shadow-sm ${
+                className={`relative text-start flex flex-col items-start justify-center h-auto whitespace-normal p-4 rounded-xl border-2 transition hover:shadow-sm ${
                   active ? "border-primary bg-primary/10" : "border-border"
                 }`}
                 aria-pressed={active}
@@ -112,7 +112,7 @@ export function PickupBranchCard({
               return (
                 <div
                   key={partner.id}
-                  className={`rounded-xl border-2 transition-all ${active ? "border-primary bg-primary/10" : "border-border"}`}
+                  className={`rounded-xl border-2 transition ${active ? "border-primary bg-primary/10" : "border-border"}`}
                 >
                   <Button
                     type="button"

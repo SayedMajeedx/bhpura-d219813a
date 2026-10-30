@@ -261,7 +261,7 @@ function FirstLoginPage() {
                   {isAr ? "إعداد كلمة المرور لأول دخول" : "First Sign-In Password Setup"}
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground tracking-tight">
-                  {isAr ? `أهلاً بك يا ${displayName} 👋` : `Welcome, ${displayName} 👋`}
+                  {isAr ? `أهلاً بك يا ${displayName}` : `Welcome, ${displayName}`}
                 </h1>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {isAr

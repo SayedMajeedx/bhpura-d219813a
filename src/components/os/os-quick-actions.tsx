@@ -154,7 +154,7 @@ export function OsQuickActions({
         className="w-64 p-1.5 rounded-xl border border-[var(--os-border)] os-glass shadow-xl select-none z-50 animate-in fade-in zoom-in-95 duration-150"
       >
         <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
-          {isAr ? "⚡ إجراءات سريعة فورية" : "⚡ Global Quick Actions"}
+          {isAr ? "إجراءات سريعة" : "Quick actions"}
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="my-1 bg-border/60" />
 

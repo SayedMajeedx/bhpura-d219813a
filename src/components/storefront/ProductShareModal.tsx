@@ -146,7 +146,7 @@ export function ProductShareModal({
               type="button"
               variant="outline"
               onClick={shareToWhatsApp}
-              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-xs font-semibold transition-all group"
+              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 text-xs font-semibold transition group"
             >
               <div className="h-8 w-8 rounded-full bg-emerald-500/10 text-emerald-600 grid place-items-center group-hover:scale-110 transition-transform">
                 <MessageCircle className="h-4 w-4" />
@@ -158,7 +158,7 @@ export function ProductShareModal({
               type="button"
               variant="outline"
               onClick={shareToTelegram}
-              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-sky-500/50 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 text-xs font-semibold transition-all group"
+              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-sky-500/50 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 text-xs font-semibold transition group"
             >
               <div className="h-8 w-8 rounded-full bg-sky-500/10 text-sky-600 grid place-items-center group-hover:scale-110 transition-transform">
                 <Send className="h-4 w-4" />
@@ -170,7 +170,7 @@ export function ProductShareModal({
               type="button"
               variant="outline"
               onClick={shareToX}
-              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold transition-all group"
+              className="flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl border hover:border-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-semibold transition group"
             >
               <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-neutral-800 text-foreground grid place-items-center group-hover:scale-110 transition-transform">
                 <span className="font-bold text-xs">𝕏</span>

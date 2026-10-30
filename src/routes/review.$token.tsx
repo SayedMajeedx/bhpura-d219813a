@@ -120,7 +120,7 @@ function ReviewPage() {
           <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
             <Check className="size-8" />
           </div>
-          <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك 🤍</h1>
+          <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك</h1>
           <p className="text-muted-foreground">رأيك وصلنا، ويساعدنا نتطور.</p>
         </div>
       </PageShell>
@@ -137,7 +137,7 @@ function ReviewPage() {
             <Check className="size-8" />
           </div>
           <div className="space-y-2">
-            <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك 🤍</h1>
+            <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك</h1>
             <p className="text-muted-foreground">
               {offer
                 ? `كهدية منّا، لك ${offer} على طلبك القادم.`

@@ -135,7 +135,7 @@ export function ManageProductAxesDialog({
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base font-black">
-            {isAr ? "🏷️ تخصيص أسماء الخصائص والمحاور" : "🏷️ Customize Variant Attributes & Axes"}
+            {isAr ? "تخصيص أسماء الخصائص والمحاور" : "Customize variant attributes & axes"}
           </DialogTitle>
           <p className="text-xs text-muted-foreground">
             {isAr
@@ -147,7 +147,7 @@ export function ManageProductAxesDialog({
         {/* Quick Presets */}
         <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
           <span className="text-xs font-bold text-muted-foreground block">
-            {isAr ? "⚡ نماذج واقتراحات سريعة بنقرة واحدة:" : "⚡ Quick Presets (1-click add):"}
+            {isAr ? "نماذج واقتراحات سريعة بنقرة واحدة:" : "Quick presets (one-click add):"}
           </span>
           <div className="flex flex-wrap gap-1.5">
             {presets.map((p) => (

@@ -16,6 +16,9 @@ export const reviewsKeys = {
   publicReview: (token: string) => ["public-order-review", token] as const,
   /** A store's reviews for its home page, keyed by its slug (a visitor has no brand id yet). */
   store: (brandSlug: string) => ["store-reviews", brandSlug] as const,
+  /** A product's reviews for its page, keyed by the store's slug and the product. */
+  product: (brandSlug: string, productId: string) =>
+    ["product-reviews", brandSlug, productId] as const,
 };
 
 /** Every review of the brand's orders. */
@@ -182,6 +185,13 @@ export const reviewsQueries = {
       queryKey: reviewsKeys.store(brandSlug),
       queryFn: () => fetchStoreReviews(brandSlug),
       enabled: Boolean(brandSlug),
+      staleTime: 5 * 60_000,
+    }),
+  product: (brandSlug: string, productId: string) =>
+    queryOptions({
+      queryKey: reviewsKeys.product(brandSlug, productId),
+      queryFn: () => fetchProductReviews(brandSlug, productId),
+      enabled: Boolean(brandSlug && productId),
       staleTime: 5 * 60_000,
     }),
   publicReview: (token: string) =>

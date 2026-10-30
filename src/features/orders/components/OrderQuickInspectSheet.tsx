@@ -82,7 +82,7 @@ export function OrderQuickInspectSheet({
       >
         <div className="p-6 pe-16 ps-12 border-b space-y-2">
           <div className="flex items-center justify-between gap-3">
-            <SheetTitle className="text-2xl font-extrabold font-display">
+            <SheetTitle className="text-xl font-semibold tabular-nums">
               {orderNo(order.invoice_number)}
             </SheetTitle>
             <span className="text-xs font-mono font-bold text-muted-foreground">
@@ -151,20 +151,20 @@ export function OrderQuickInspectSheet({
                     className="p-3.5 flex items-start justify-between gap-3 text-xs"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="font-bold text-sm text-foreground leading-snug">
-                        <span className="text-primary font-extrabold me-1.5">{qty}×</span>
+                      <div className="font-medium text-sm text-foreground leading-snug">
+                        <span className="text-muted-foreground font-medium tabular-nums me-1.5">
+                          {qty}×
+                        </span>
                         {itemTitle}
                       </div>
                       {variantTitle && (
-                        <div className="text-xs text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border-subtle">
-                          {variantTitle}
-                        </div>
+                        <div className="text-xs text-muted-foreground mt-0.5">{variantTitle}</div>
                       )}
                       <div className="text-xs text-muted-foreground font-mono mt-1">
                         {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
                       </div>
                     </div>
-                    <div className="font-mono font-extrabold shrink-0 text-sm text-foreground pt-0.5">
+                    <div className="font-semibold tabular-nums shrink-0 text-sm text-foreground pt-0.5">
                       {formatMoney(lineTotal, order.currency || "BHD", locale)}
                     </div>
                   </div>
@@ -226,59 +226,61 @@ export function OrderQuickInspectSheet({
                     {isAr ? "الحساب" : "Summary"}
                   </h4>
 
-                  <div className="space-y-2 font-mono text-muted-foreground">
+                  <div className="space-y-2 tabular-nums text-muted-foreground">
                     <div className="flex justify-between items-center">
                       <span>{isAr ? "المجموع" : "Subtotal"}</span>
-                      <span className="font-bold text-foreground">
+                      <span className="font-semibold text-foreground">
                         {formatMoney(subtotal, currency, locale)}
                       </span>
                     </div>
 
                     {discount > 0 && (
-                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between items-center">
                         <span>{isAr ? "الخصم" : "Discount"}</span>
-                        <span className="font-bold">
+                        <span className="font-semibold text-foreground">
                           -{formatMoney(discount, currency, locale)}
                         </span>
                       </div>
                     )}
 
                     {shipping > 0 && (
-                      <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
+                      <div className="flex justify-between items-center">
                         <span>{isAr ? "التوصيل" : "Delivery"}</span>
-                        <span className="font-bold">
+                        <span className="font-semibold text-foreground">
                           +{formatMoney(shipping, currency, locale)}
                         </span>
                       </div>
                     )}
 
                     {tax > 0 && (
-                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                      <div className="flex justify-between items-center">
                         <span>{isAr ? "ضريبة القيمة المضافة" : "VAT"}</span>
-                        <span className="font-bold">+{formatMoney(tax, currency, locale)}</span>
+                        <span className="font-semibold text-foreground">
+                          +{formatMoney(tax, currency, locale)}
+                        </span>
                       </div>
                     )}
 
                     {advancePaid > 0 && (
-                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border-subtle">
+                      <div className="flex justify-between items-center pt-1 border-t border-border-subtle">
                         <span>{isAr ? "المدفوع مقدماً" : "Paid in advance"}</span>
-                        <span className="font-bold">
+                        <span className="font-semibold text-foreground">
                           -{formatMoney(advancePaid, currency, locale)}
                         </span>
                       </div>
                     )}
 
                     {advancePaid > 0 && codRemaining > 0 && (
-                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                      <div className="flex justify-between items-center font-semibold text-foreground bg-warning-subtle p-1.5 rounded-lg border border-warning/30">
                         <span>{isAr ? "المتبقي عند التسليم" : "Due on delivery"}</span>
                         <span>{formatMoney(codRemaining, currency, locale)}</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border-subtle text-foreground">
+                  <div className="flex justify-between items-center text-sm font-bold pt-2.5 border-t border-border-subtle text-foreground">
                     <span>{isAr ? "الإجمالي" : "Total"}</span>
-                    <span className="text-base text-primary font-mono font-extrabold">
+                    <span className="text-base text-foreground tabular-nums font-bold">
                       {formatMoney(netTotal, currency, locale)}
                     </span>
                   </div>

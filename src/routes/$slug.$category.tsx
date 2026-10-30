@@ -513,7 +513,7 @@ function CategoryPage() {
                 {rows.map((row) => (
                   <div
                     key={`row-level-${row.levelIndex}`}
-                    className={`w-full ${row.levelIndex > 0 ? "border-t border-border pt-2 animate-in fade-in slide-in-from-top-1 duration-200" : "mt-4"}`}
+                    className={`w-full ${row.levelIndex > 0 ? "border-t border-border pt-2 animate-in fade-in slide-in-from-top-1 duration-(--motion-fast)" : "mt-4"}`}
                   >
                     <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
                       <Button
@@ -559,7 +559,7 @@ function CategoryPage() {
                             <span>{label}</span>
                             {hasSubSubs && (
                               <ChevronDown
-                                className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`}
+                                className={`h-3 w-3 transition-transform duration-(--motion-fast) ${active ? "rotate-180" : ""}`}
                               />
                             )}
                           </Button>

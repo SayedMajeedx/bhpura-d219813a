@@ -113,7 +113,7 @@ export function DeliveryAddressCard({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") setSelectedDestination("BH");
                 }}
-                className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
+                className={`p-3.5 sm:p-4 rounded-xl border text-sm transition text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
                   selectedDestination === "BH"
                     ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
                     : "border-border bg-card"
@@ -195,7 +195,7 @@ export function DeliveryAddressCard({
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") setSelectedDestination(z.id);
                     }}
-                    className={`p-3.5 sm:p-4 rounded-xl border text-sm transition-all text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
+                    className={`p-3.5 sm:p-4 rounded-xl border text-sm transition text-start cursor-pointer hover:bg-secondary/10 flex flex-col justify-between ${
                       active
                         ? "border-primary bg-primary/10 ring-1 ring-primary shadow-sm"
                         : "border-border bg-card"

@@ -1,4 +1,5 @@
-import { ArrowLeft, ArrowRight, ExternalLink, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { Button } from "@/components/ui/button";
 import { useGiveawayDetail } from "../hooks/use-giveaway-detail";
 import { CommentsPullCard } from "./CommentsPullCard";
@@ -20,11 +21,7 @@ export function GiveawayDetailView({
   const BackIcon = isAr ? ArrowRight : ArrowLeft;
 
   if (detail.loading) {
-    return (
-      <div className="flex h-48 items-center justify-center" role="status">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <SectionSkeleton rows={3} />;
   }
 
   if (detail.notFound || !giveaway) {

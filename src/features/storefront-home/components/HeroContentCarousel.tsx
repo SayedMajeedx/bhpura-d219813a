@@ -167,7 +167,7 @@ export function HeroContentCarousel({
                         )}
                         {button && (
                           <div className="mt-3" style={{ textAlign: slideTextAlign }}>
-                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-(--motion-fast) group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
                           </div>
@@ -234,7 +234,7 @@ export function HeroContentCarousel({
                         )}
                         {button && (
                           <div className="mt-3" style={{ textAlign: slideTextAlign }}>
-                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-(--motion-fast) group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm">
                               {button}
                             </span>
                           </div>
@@ -272,7 +272,7 @@ export function HeroContentCarousel({
                     <div style={{ textAlign: slideTextAlign }}>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
-                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"
+                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-(--motion-fast) hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"
                       >
                         {button}
                       </StorefrontLink>
@@ -293,7 +293,7 @@ export function HeroContentCarousel({
             type="button"
             onClick={() => goTo(idx - 1)}
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
-            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
+            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-(--motion-medium) hover:scale-110 hover:opacity-70 active:scale-95"
           >
             <ChevronLeft strokeWidth={1} className="h-7 w-7" />
           </button>
@@ -309,7 +309,7 @@ export function HeroContentCarousel({
                 }`}
               >
                 <span
-                  className={`block h-px bg-current transition-all duration-500 ${
+                  className={`block h-px bg-current transition-[width] duration-(--motion-very-slow) ease-(--motion-ease-smooth) ${
                     dot === idx ? "w-8" : "w-3"
                   }`}
                 />
@@ -320,7 +320,7 @@ export function HeroContentCarousel({
             type="button"
             onClick={() => goTo(idx + 1)}
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
-            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
+            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-(--motion-medium) hover:scale-110 hover:opacity-70 active:scale-95"
           >
             <ChevronRight strokeWidth={1} className="h-7 w-7" />
           </button>

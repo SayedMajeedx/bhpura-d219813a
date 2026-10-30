@@ -39,6 +39,7 @@ export const AR_NOUNS = {
   size: noun("مقاس واحد", "مقاسان", "مقاسات", "مقاسًا", "مقاس"),
   color: noun("لون واحد", "لونان", "ألوان", "لونًا", "لون"),
   sale: noun("عملية بيع واحدة", "عمليتا بيع", "عمليات بيع", "عملية بيع", "عملية بيع"),
+  time: noun("مرة واحدة", "مرتان", "مرات", "مرة", "مرة"),
   paidBooking: noun(
     "حجز مدفوع واحد",
     "حجزان مدفوعان",
@@ -103,6 +104,7 @@ const EN_NOUNS: Record<CountedNoun, [string, string]> = {
   size: ["size", "sizes"],
   color: ["colour", "colours"],
   sale: ["sale", "sales"],
+  time: ["time", "times"],
   paidBooking: ["paid booking", "paid bookings"],
   booking: ["booking", "bookings"],
   message: ["message", "messages"],

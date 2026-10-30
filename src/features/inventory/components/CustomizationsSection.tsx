@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Search, Boxes, Check } from "lucide-react";
+import { Plus, Search, Boxes, Check, Globe, Package, Target } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -191,7 +191,8 @@ export function CustomizationsSection({
                   : "bg-background border border-border hover:bg-muted"
               }`}
             >
-              🌐 {isAr ? "جميع المنتجات في المخزون" : "All Products"}
+              <Globe className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+              {isAr ? "جميع المنتجات في المخزون" : "All Products"}
             </button>
             <button
               type="button"
@@ -202,7 +203,8 @@ export function CustomizationsSection({
                   : "bg-background border border-border hover:bg-muted"
               }`}
             >
-              🎯 {isAr ? "منتجات محددة فقط" : "Chosen Products Only"}{" "}
+              <Target className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+              {isAr ? "منتجات محددة فقط" : "Chosen Products Only"}{" "}
               {selectedProductIds.length > 0 && `(${selectedProductIds.length})`}
             </button>
           </div>
@@ -270,7 +272,10 @@ export function CustomizationsSection({
                           />
                         ) : (
                           <div className="h-7 w-7 rounded bg-muted flex items-center justify-center text-xs">
-                            📦
+                            <Package
+                              className="h-3.5 w-3.5 text-muted-foreground"
+                              aria-hidden="true"
+                            />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -316,11 +321,12 @@ export function CustomizationsSection({
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         {isAll ? (
                           <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400 font-medium">
-                            🌐 {isAr ? "متاح لكل المنتجات" : "All products"}
+                            <Globe className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                            {isAr ? "متاح لكل المنتجات" : "All products"}
                           </span>
                         ) : (
                           <span className="inline-flex items-center text-amber-600 dark:text-amber-400 font-medium">
-                            🎯{" "}
+                            <Target className="h-3.5 w-3.5" aria-hidden="true" />
                             {isAr
                               ? `المحدد: ${arNoun(pIds.length, "product")}`
                               : `${pIds.length} chosen products`}
@@ -413,7 +419,8 @@ export function CustomizationsSection({
                 }`}
                 onClick={() => setEditingProductIds([])}
               >
-                🌐 {isAr ? "تطبيق على جميع المنتجات" : "Apply to All Products"}
+                <Globe className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                {isAr ? "تطبيق على جميع المنتجات" : "Apply to All Products"}
               </button>
             </div>
 
@@ -445,7 +452,10 @@ export function CustomizationsSection({
                         />
                       ) : (
                         <div className="h-8 w-8 rounded bg-muted flex items-center justify-center text-xs">
-                          📦
+                          <Package
+                            className="h-3.5 w-3.5 text-muted-foreground"
+                            aria-hidden="true"
+                          />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">

@@ -21,6 +21,7 @@ import { OsWorkspaceTabs } from "@/components/os/os-workspace-tabs";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/theme-context";
+import { useAdminAccent } from "@/hooks/use-admin-accent";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import {
   customFontFaces,
@@ -311,6 +312,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
     enabled: Boolean(activeBrand?.id) && !isPlatformMode,
     staleTime: 5 * 60_000,
   });
+  // Boutq's ink, with the open store's own colour on its main buttons when it can be read.
+  useAdminAccent(activeBrand?.id, !isPlatformMode);
   const adminTypography = normalizeTypography(adminTypographyQuery.data, defaultAdminTypography());
   const adminTypographyLanguage = lang === "ar" ? "ar" : "en";
   const adminTypographyVars = typographyVariables(adminTypography, adminTypographyLanguage);
@@ -462,8 +465,8 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
             <Shield className="h-4 w-4 text-white animate-pulse" />
             <span className="leading-relaxed">
               {lang === "ar"
-                ? "⚠️ وضع المحاكاة: استعراض المتجر بصفة مسؤول خارق. جميع الإجراءات مسجلة."
-                : "⚠️ IMPERSONATION MODE: Viewing store as Superadmin. All actions are audited."}
+                ? "وضع المحاكاة: استعراض المتجر بصفة مسؤول خارق. جميع الإجراءات مسجلة."
+                : "IMPERSONATION MODE: Viewing store as Superadmin. All actions are audited."}
             </span>
           </div>
           <Button

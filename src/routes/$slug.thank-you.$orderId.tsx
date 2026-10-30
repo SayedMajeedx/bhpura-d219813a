@@ -72,7 +72,7 @@ function ThankYou() {
   const isDigital = fulfillment === "digital";
 
   return (
-    <div className="mx-auto max-w-lg p-6 sm:p-8 animate-in fade-in duration-500">
+    <div className="mx-auto max-w-lg p-6 sm:p-8 animate-in fade-in duration-(--motion-very-slow)">
       <Card className="p-6 sm:p-8 text-center relative overflow-hidden">
         {/* Ambient top design flourish */}
         <div
@@ -136,7 +136,7 @@ function ThankYou() {
         <Link
           to="/$slug"
           params={{ slug: brand.slug }}
-          className="inline-flex px-8 py-3 rounded-full text-white font-medium active:scale-95 transition-all shadow-md hover:shadow-lg"
+          className="inline-flex px-8 py-3 rounded-full text-white font-medium active:scale-95 transition shadow-md hover:shadow-lg"
           style={{ backgroundColor: settings.primary_color }}
         >
           {t("متابعة التسوق", "Continue shopping")}

@@ -539,8 +539,8 @@ export function StorefrontProvider({
                 setTimeout(() => {
                   toast.success(
                     (storedLang || "ar") === "en"
-                      ? `Shared cart loaded (${items.length} ${items.length === 1 ? "item" : "items"}) 🛒`
-                      : `تم تحميل سلة المشتريات المشتركة بنجاح (${items.length} ${items.length === 1 ? "منتج" : "منتجات"}) 🛒`,
+                      ? `Shared cart loaded (${items.length} ${items.length === 1 ? "item" : "items"})`
+                      : `تم تحميل سلة المشتريات المشتركة بنجاح (${items.length} ${items.length === 1 ? "منتج" : "منتجات"})`,
                   );
                 }, 400);
               }
@@ -561,8 +561,8 @@ export function StorefrontProvider({
               setTimeout(() => {
                 toast.success(
                   (storedLang || "ar") === "en"
-                    ? `Shared cart loaded (${decoded.length} ${decoded.length === 1 ? "item" : "items"}) 🛒`
-                    : `تم تحميل سلة المشتريات المشتركة بنجاح (${decoded.length} ${decoded.length === 1 ? "منتج" : "منتجات"}) 🛒`,
+                    ? `Shared cart loaded (${decoded.length} ${decoded.length === 1 ? "item" : "items"})`
+                    : `تم تحميل سلة المشتريات المشتركة بنجاح (${decoded.length} ${decoded.length === 1 ? "منتج" : "منتجات"})`,
                 );
               }, 400);
             }

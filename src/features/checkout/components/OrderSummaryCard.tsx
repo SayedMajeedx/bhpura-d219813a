@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Coins, Sparkles, Share2 } from "lucide-react";
+import { Loader2, Coins, Sparkles, Share2, Paperclip } from "lucide-react";
 import { DeliveryEstimateLines } from "@/features/checkout/components/DeliveryEstimateLines";
 import type { AdvanceSplit } from "@/lib/payments/advance-payment";
 import { AdvancePaymentNotice } from "@/features/checkout/components/AdvancePaymentNotice";
@@ -207,7 +207,7 @@ export function OrderSummaryCard({
                   return (
                     <div className="mt-2 rounded-lg bg-secondary/40 border border-border-subtle p-2 space-y-1">
                       <p className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                        <span>✨</span>
+                        <Sparkles className="h-3 w-3" aria-hidden="true" />
                         <span>
                           {lang === "ar" ? "خيارات ومقاسات مخصصة" : "Custom Options & Sizing"}
                         </span>
@@ -226,7 +226,8 @@ export function OrderSummaryCard({
                                 rel="noreferrer"
                                 className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
                               >
-                                📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                                <Paperclip className="h-3 w-3" aria-hidden="true" />
+                                {lang === "ar" ? "عرض الملف" : "View File"}
                               </a>
                             ) : (
                               <span className="font-medium text-foreground dir-ltr text-end">

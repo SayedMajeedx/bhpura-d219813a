@@ -11,6 +11,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* A bare transition (transition, transition-colors...) takes the motion system's time and
+     curve (src/styles/motion.css), not Tailwind's own 150ms ease. */
+  --default-transition-duration: var(--motion-quick);
+  --default-transition-timing-function: var(--motion-ease-smooth);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -91,19 +95,21 @@
 
   --radius: 0.5rem;
   --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.02 25);
+  /* Boutq's ink (#1e202c, the installed admin app's colour), not one store's maroon: the admin is
+     the platform's, and each store's own colour comes in on its main buttons (useAdminAccent). */
+  --foreground: oklch(0.21 0.015 275);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.02 25);
+  --card-foreground: oklch(0.21 0.015 275);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.02 25);
-  --primary: oklch(0.26 0.09 25); /* maroon #330a0a */
+  --popover-foreground: oklch(0.21 0.015 275);
+  --primary: oklch(0.24 0.02 275); /* ink #1e202c */
   --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.97 0.004 20);
-  --secondary-foreground: oklch(0.26 0.09 25);
-  --muted: oklch(0.965 0.003 20);
-  --muted-foreground: oklch(0.32 0.02 25); /* Darkened for strong contrast & legibility */
-  --accent: oklch(0.95 0.015 25);
-  --accent-foreground: oklch(0.26 0.09 25);
+  --secondary: oklch(0.97 0.003 275);
+  --secondary-foreground: oklch(0.24 0.02 275);
+  --muted: oklch(0.965 0.003 275);
+  --muted-foreground: oklch(0.44 0.012 275); /* 7:1 on white */
+  --accent: oklch(0.955 0.005 275);
+  --accent-foreground: oklch(0.24 0.02 275);
   --destructive: oklch(0.55 0.18 25);
   --destructive-foreground: oklch(1 0 0);
   --destructive-subtle: oklch(0.96 0.03 25);
@@ -121,19 +127,19 @@
   --info-foreground: oklch(1 0 0);
   --info-subtle: oklch(0.96 0.025 245);
 
-  --border: oklch(0.88 0.005 20);
+  --border: oklch(0.9 0.004 275);
   /* Two extra weights so hierarchy stops being expressed as border-border/40. */
-  --border-subtle: oklch(0.93 0.004 20);
-  --border-strong: oklch(0.82 0.006 20);
-  --input: oklch(0.88 0.005 20);
-  --ring: oklch(0.26 0.09 25);
-  --sidebar: oklch(0.26 0.09 25);
+  --border-subtle: oklch(0.94 0.003 275);
+  --border-strong: oklch(0.84 0.006 275);
+  --input: oklch(0.9 0.004 275);
+  --ring: oklch(0.24 0.02 275);
+  --sidebar: oklch(0.24 0.02 275);
   --sidebar-foreground: oklch(1 0 0);
   --sidebar-primary: oklch(1 0 0);
-  --sidebar-primary-foreground: oklch(0.26 0.09 25);
-  --sidebar-accent: oklch(0.32 0.09 25);
+  --sidebar-primary-foreground: oklch(0.24 0.02 275);
+  --sidebar-accent: oklch(0.3 0.02 275);
   --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.35 0.08 25);
+  --sidebar-border: oklch(0.34 0.02 275);
   --sidebar-ring: oklch(1 0 0);
 
   /* Boutq OS radii, collapsed onto three roles: control 8px, card 12px,
@@ -146,86 +152,85 @@
   --os-radius-window: var(--os-radius-panel);
   --os-radius-dock: var(--os-radius-panel);
 
-  /* Boutq OS Semantic Light Theme Tokens */
-  --os-canvas: oklch(0.975 0.008 35);
-  --os-canvas-secondary: oklch(0.955 0.012 30);
-  --os-glass: rgba(255, 252, 252, 0.78);
-  --os-glass-strong: rgba(255, 250, 250, 0.92);
+  /* Boutq OS Semantic Light Theme Tokens: neutral surfaces, ink-tinted (not maroon) shadows. */
+  --os-canvas: oklch(0.975 0.003 275);
+  --os-canvas-secondary: oklch(0.955 0.005 275);
+  --os-glass: rgba(252, 252, 253, 0.8);
+  --os-glass-strong: rgba(252, 252, 253, 0.94);
   --os-surface: oklch(1 0 0);
   --os-surface-elevated: oklch(1 0 0);
-  --os-border: rgba(51, 10, 10, 0.12);
+  --os-border: rgba(20, 22, 32, 0.1);
   --os-highlight: rgba(255, 255, 255, 0.92);
-  --os-shadow: 0 14px 36px -4px rgba(51, 10, 10, 0.09), 0 4px 14px -2px rgba(51, 10, 10, 0.05);
+  --os-shadow: 0 14px 36px -4px rgba(20, 22, 32, 0.08), 0 4px 14px -2px rgba(20, 22, 32, 0.04);
   --os-window-shadow:
-    0 32px 64px -12px rgba(51, 10, 10, 0.18), 0 10px 28px -4px rgba(51, 10, 10, 0.08);
-  --os-dock-shadow: 0 20px 48px -8px rgba(51, 10, 10, 0.2), 0 6px 16px -2px rgba(51, 10, 10, 0.1);
-  --os-accent-glow: oklch(0.26 0.09 25 / 18%);
-  --os-text-primary: oklch(0.22 0.02 25);
-  --os-text-secondary: oklch(0.38 0.02 25);
+    0 32px 64px -12px rgba(20, 22, 32, 0.16), 0 10px 28px -4px rgba(20, 22, 32, 0.07);
+  --os-dock-shadow: 0 20px 48px -8px rgba(20, 22, 32, 0.18), 0 6px 16px -2px rgba(20, 22, 32, 0.08);
+  --os-accent-glow: oklch(0.24 0.02 275 / 16%);
+  --os-text-primary: oklch(0.21 0.015 275);
+  --os-text-secondary: oklch(0.44 0.012 275);
 }
 
-/* Dark theme. Every hue here is drawn from the maroon identity (hue 25), not
-   the gold-tan (hue 70) this block used to carry — switching theme should not
-   switch brand. Primary lifts to 0.75 lightness so it reads as the same colour
-   family against a dark ground while clearing contrast on body text. */
+/* Dark theme, on the same ink (hue 275) as the light one, so switching theme does not switch
+   brand. Primary is a near-white ink on the dark ground; a store's own colour replaces it on the
+   main buttons when it reads there (useAdminAccent). */
 .dark {
-  --background: oklch(0.17 0.012 25);
-  --foreground: oklch(0.95 0.008 25);
-  --card: oklch(0.21 0.016 25);
-  --card-foreground: oklch(0.95 0.008 25);
-  --popover: oklch(0.21 0.016 25);
-  --popover-foreground: oklch(0.95 0.008 25);
-  --primary: oklch(0.75 0.08 25);
-  --primary-foreground: oklch(0.17 0.012 25);
-  --secondary: oklch(0.27 0.022 25);
-  --secondary-foreground: oklch(0.95 0.008 25);
-  --muted: oklch(0.27 0.022 25);
-  --muted-foreground: oklch(0.78 0.016 25);
-  --accent: oklch(0.31 0.026 25);
-  --accent-foreground: oklch(0.95 0.008 25);
+  --background: oklch(0.17 0.01 275);
+  --foreground: oklch(0.95 0.005 275);
+  --card: oklch(0.21 0.012 275);
+  --card-foreground: oklch(0.95 0.005 275);
+  --popover: oklch(0.21 0.012 275);
+  --popover-foreground: oklch(0.95 0.005 275);
+  --primary: oklch(0.92 0.01 275);
+  --primary-foreground: oklch(0.2 0.015 275);
+  --secondary: oklch(0.27 0.012 275);
+  --secondary-foreground: oklch(0.95 0.005 275);
+  --muted: oklch(0.27 0.012 275);
+  --muted-foreground: oklch(0.76 0.01 275);
+  --accent: oklch(0.31 0.014 275);
+  --accent-foreground: oklch(0.95 0.005 275);
   --destructive: oklch(0.7 0.16 25);
-  --destructive-foreground: oklch(0.17 0.012 25);
+  --destructive-foreground: oklch(0.17 0.01 275);
   --destructive-subtle: oklch(0.28 0.05 25);
 
   --success: oklch(0.72 0.1 155);
-  --success-foreground: oklch(0.17 0.012 25);
+  --success-foreground: oklch(0.17 0.01 275);
   --success-subtle: oklch(0.28 0.04 155);
   --warning: oklch(0.78 0.11 75);
-  --warning-foreground: oklch(0.17 0.012 25);
+  --warning-foreground: oklch(0.17 0.01 275);
   --warning-subtle: oklch(0.29 0.045 75);
   --info: oklch(0.74 0.07 245);
-  --info-foreground: oklch(0.17 0.012 25);
+  --info-foreground: oklch(0.17 0.01 275);
   --info-subtle: oklch(0.28 0.035 245);
 
   --border: oklch(1 0 0 / 12%);
   --border-subtle: oklch(1 0 0 / 8%);
   --border-strong: oklch(1 0 0 / 20%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.75 0.08 25);
-  --sidebar: oklch(0.21 0.016 25);
-  --sidebar-foreground: oklch(0.95 0.008 25);
-  --sidebar-primary: oklch(0.75 0.08 25);
-  --sidebar-primary-foreground: oklch(0.17 0.012 25);
-  --sidebar-accent: oklch(0.27 0.022 25);
-  --sidebar-accent-foreground: oklch(0.95 0.008 25);
+  --ring: oklch(0.85 0.01 275);
+  --sidebar: oklch(0.21 0.012 275);
+  --sidebar-foreground: oklch(0.95 0.005 275);
+  --sidebar-primary: oklch(0.92 0.01 275);
+  --sidebar-primary-foreground: oklch(0.2 0.015 275);
+  --sidebar-accent: oklch(0.27 0.012 275);
+  --sidebar-accent-foreground: oklch(0.95 0.005 275);
   --sidebar-border: oklch(1 0 0 / 12%);
-  --sidebar-ring: oklch(0.75 0.08 25);
+  --sidebar-ring: oklch(0.85 0.01 275);
 
   /* Boutq OS Semantic Dark Theme Tokens */
-  --os-canvas: oklch(0.15 0.012 25);
-  --os-canvas-secondary: oklch(0.18 0.015 25);
-  --os-glass: rgba(32, 25, 24, 0.75);
-  --os-glass-strong: rgba(38, 30, 29, 0.9);
-  --os-surface: oklch(0.21 0.016 25);
-  --os-surface-elevated: oklch(0.24 0.02 25);
-  --os-border: rgba(255, 255, 255, 0.14);
-  --os-highlight: rgba(255, 255, 255, 0.12);
+  --os-canvas: oklch(0.15 0.01 275);
+  --os-canvas-secondary: oklch(0.18 0.012 275);
+  --os-glass: rgba(24, 26, 34, 0.78);
+  --os-glass-strong: rgba(28, 30, 40, 0.92);
+  --os-surface: oklch(0.21 0.012 275);
+  --os-surface-elevated: oklch(0.24 0.014 275);
+  --os-border: rgba(255, 255, 255, 0.12);
+  --os-highlight: rgba(255, 255, 255, 0.1);
   --os-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.45);
   --os-window-shadow: 0 28px 56px -10px rgba(0, 0, 0, 0.65);
   --os-dock-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.55);
-  --os-accent-glow: oklch(0.75 0.08 25 / 20%);
-  --os-text-primary: oklch(0.95 0.008 25);
-  --os-text-secondary: oklch(0.78 0.016 25);
+  --os-accent-glow: oklch(0.92 0.01 275 / 14%);
+  --os-text-primary: oklch(0.95 0.005 275);
+  --os-text-secondary: oklch(0.76 0.01 275);
 }
 
 @layer base {
@@ -240,7 +245,11 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
+    /* Clip, not hide: with html hiding sideways overflow too, a hiding body becomes a scroll box
+       of its own, and nothing in the page could stick (the store's header and the product
+       page's gallery scrolled away). `hidden` stays for a browser that has no clip. */
     overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100vw;
     width: 100%;
     position: relative;
@@ -448,8 +457,17 @@ html.lang-ar .font-display {
     letter-spacing: var(--type-tracking, 0) !important;
   }
 
+  /* The admin's small text is its body text (4,671 uses of text-xs against 1,113 of text-sm), so
+     it is 13px, as Polaris and Linear set theirs, not 12px; a caption that should stay smaller
+     says text-[0.75rem]. html.admin-ui (set by the admin's ThemeProvider) carries it into
+     dialogs and sheets, which render outside the workspace. */
+  html.admin-ui {
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: calc(1.125 / 0.8125);
+  }
   .admin-typography {
-    --text-xs: calc(0.75rem * var(--type-scale, 1));
+    --text-xs: calc(0.8125rem * var(--type-scale, 1));
+    --text-xs--line-height: calc(1.125 / 0.8125);
     --text-sm: calc(0.875rem * var(--type-scale, 1));
     --text-base: calc(1rem * var(--type-scale, 1));
     --text-lg: calc(1.125rem * var(--type-scale, 1));
@@ -1178,4 +1196,13 @@ html.is-embedded .hero-carousel-text-card a {
     transition: none !important;
     transform: none !important;
   }
+}
+
+/* Figures in the admin are set in its own typeface with digits of one width, as a finance product
+   sets them: font-mono drew every amount, date and order line like code (504 uses). Code, keys
+   and keyboard hints keep the monospace. Unlayered, so it wins over the utility. */
+html.admin-ui .font-mono:not(code):not(pre):not(kbd) {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
 }

@@ -71,10 +71,12 @@ export function StoreShell() {
     }
   }, []);
 
+  // Sideways overflow is clipped by `.storefront-shell` (styles.css), never hidden here: a hiding
+  // shell is a scroll box of its own, and the sticky header and gallery scrolled away with it.
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-hidden"
+      className="storefront-shell min-h-screen flex flex-col w-full max-w-full"
       style={{ ...style, "--sf-header-h": `${headerHeight}px` } as React.CSSProperties}
     >
       {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack

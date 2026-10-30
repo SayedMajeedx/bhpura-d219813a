@@ -185,13 +185,13 @@ export function StorefrontFooter() {
                 >
                   <span>{companyTitle}</span>
                   <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-200 ${
+                    className={`h-4 w-4 transition-transform duration-(--motion-fast) ${
                       openCompany ? "rotate-180" : ""
                     }`}
                   />
                 </button>
                 <div
-                  className={`grid transition-all duration-200 ease-in-out ${
+                  className={`grid transition-[grid-template-rows,opacity] duration-(--motion-fast) ease-(--motion-ease-smooth) ${
                     openCompany ? "grid-rows-[1fr] opacity-100 mb-2" : "grid-rows-[0fr] opacity-0"
                   }`}
                 >
@@ -224,13 +224,13 @@ export function StorefrontFooter() {
                 >
                   <span>{helpTitle}</span>
                   <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-200 ${
+                    className={`h-4 w-4 transition-transform duration-(--motion-fast) ${
                       openHelp ? "rotate-180" : ""
                     }`}
                   />
                 </button>
                 <div
-                  className={`grid transition-all duration-200 ease-in-out ${
+                  className={`grid transition-[grid-template-rows,opacity] duration-(--motion-fast) ease-(--motion-ease-smooth) ${
                     openHelp ? "grid-rows-[1fr] opacity-100 mb-2" : "grid-rows-[0fr] opacity-0"
                   }`}
                 >
@@ -270,7 +270,7 @@ export function StorefrontFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.name}
-                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-all active:scale-95"
+                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition active:scale-95"
                   style={{ color: "var(--sf-footer-fg)" }}
                 >
                   <StorefrontSocialIcon platform={s.name} />

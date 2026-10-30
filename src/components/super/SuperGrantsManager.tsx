@@ -75,7 +75,7 @@ const CATEGORY_MAP: Record<string, { label: string; icon: any }> = {
 
 const READINESS_MAP: Record<string, { label: string; color: string }> = {
   ready_with_photos: {
-    label: "جاهز مع الصور ⚡",
+    label: "جاهز مع الصور",
     color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
   },
   products_only: {
@@ -95,23 +95,23 @@ const CHANNEL_MAP: Record<string, string> = {
 const STATUS_MAP: Record<GrantApplication["status"], { label: string; color: string }> = {
   pending: { label: "معلّق ⏳", color: "bg-muted text-muted-foreground border-border" },
   reviewed: {
-    label: "تمت المراجعة 👁️",
+    label: "تمت المراجعة",
     color: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
   },
   shortlisted: {
-    label: "مرشح بالقائمة ⭐",
+    label: "مرشح بالقائمة",
     color: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
   },
   selected: {
-    label: "فائز بـ 6 شهور 🏆",
+    label: "فائز بـ 6 شهور",
     color: "bg-primary/20 text-primary border-primary/40 font-bold",
   },
   offered_3_months: {
-    label: "عرض 3 شهور 🎁",
+    label: "عرض 3 شهور",
     color: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
   },
   rejected: {
-    label: "مستبعد ✖",
+    label: "مستبعد",
     color: "bg-destructive/15 text-destructive border-destructive/30",
   },
 };
@@ -229,7 +229,7 @@ export function SuperGrantsManager() {
         <Card className="rounded-xl border-emerald-500/20 bg-emerald-500/5 shadow-xs">
           <CardContent className="p-4 space-y-1">
             <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">
-              جاهزون بالصور فوراً ⚡
+              جاهزون بالصور فوراً
             </span>
             <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               {readyCount}
@@ -239,7 +239,7 @@ export function SuperGrantsManager() {
 
         <Card className="rounded-xl border-primary/20 bg-primary/5 shadow-xs">
           <CardContent className="p-4 space-y-1">
-            <span className="text-xs text-primary font-medium">فائزو الـ 6 شهور 🏆</span>
+            <span className="text-xs text-primary font-medium">فائزو الـ 6 شهور</span>
             <div className="text-2xl font-black text-primary">{selectedCount} / 2</div>
           </CardContent>
         </Card>
@@ -247,7 +247,7 @@ export function SuperGrantsManager() {
         <Card className="rounded-xl border-amber-500/20 bg-amber-500/5 shadow-xs">
           <CardContent className="p-4 space-y-1">
             <span className="text-xs text-amber-700 dark:text-amber-300 font-medium">
-              عروض الـ 3 شهور 🎁
+              عروض الـ 3 شهور
             </span>
             <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
               {offered3Count}
@@ -290,7 +290,7 @@ export function SuperGrantsManager() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل الجاهزية</SelectItem>
-              <SelectItem value="ready_with_photos">جاهز مع الصور ⚡</SelectItem>
+              <SelectItem value="ready_with_photos">جاهز مع الصور</SelectItem>
               <SelectItem value="products_only">المنتجات فقط</SelectItem>
               <SelectItem value="idea_stage">فكرة قيد التجهيز</SelectItem>
             </SelectContent>
@@ -426,11 +426,11 @@ export function SuperGrantsManager() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">معلّق ⏳</SelectItem>
-                          <SelectItem value="reviewed">تمت المراجعة 👁️</SelectItem>
-                          <SelectItem value="shortlisted">مرشح بالقائمة ⭐</SelectItem>
-                          <SelectItem value="selected">فائز 6 شهور 🏆</SelectItem>
-                          <SelectItem value="offered_3_months">عرض 3 شهور 🎁</SelectItem>
-                          <SelectItem value="rejected">مستبعد ✖</SelectItem>
+                          <SelectItem value="reviewed">تمت المراجعة</SelectItem>
+                          <SelectItem value="shortlisted">مرشح بالقائمة</SelectItem>
+                          <SelectItem value="selected">فائز 6 شهور</SelectItem>
+                          <SelectItem value="offered_3_months">عرض 3 شهور</SelectItem>
+                          <SelectItem value="rejected">مستبعد</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -728,11 +728,11 @@ export function SuperGrantsManager() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="pending">معلّق ⏳</SelectItem>
-                        <SelectItem value="reviewed">تمت المراجعة 👁️</SelectItem>
-                        <SelectItem value="shortlisted">مرشح بالقائمة ⭐</SelectItem>
-                        <SelectItem value="selected">فائز 6 شهور 🏆</SelectItem>
-                        <SelectItem value="offered_3_months">عرض 3 شهور 🎁</SelectItem>
-                        <SelectItem value="rejected">مستبعد ✖</SelectItem>
+                        <SelectItem value="reviewed">تمت المراجعة</SelectItem>
+                        <SelectItem value="shortlisted">مرشح بالقائمة</SelectItem>
+                        <SelectItem value="selected">فائز 6 شهور</SelectItem>
+                        <SelectItem value="offered_3_months">عرض 3 شهور</SelectItem>
+                        <SelectItem value="rejected">مستبعد</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

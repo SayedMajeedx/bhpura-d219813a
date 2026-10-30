@@ -177,7 +177,7 @@ export function BundleOffer({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedComplementaryId(item.id)}
-                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md border font-medium transition-all shrink-0 ${
+                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md border font-medium transition shrink-0 ${
                   isChosen
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-background text-foreground border-border hover:border-primary/50"

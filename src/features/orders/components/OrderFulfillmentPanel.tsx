@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { appointmentAddress } from "@/features/orders/lib/appointment-address";
 import { requestedTimeLabel } from "@/lib/delivery-schedule";
-import { CalendarClock } from "lucide-react";
+import { CalendarClock, BellRing, Clock, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -216,14 +216,14 @@ export function OrderFulfillmentPanel({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       {notifiedAgo ? (
                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-xs font-bold px-2.5 py-1">
-                          🔔{" "}
+                          <BellRing className="h-3.5 w-3.5" aria-hidden="true" />
                           {lang === "ar"
                             ? `تم الإشعار (${notifiedAgo})`
                             : `Notified ${notifiedAgo}`}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-xs font-bold px-2.5 py-1">
-                          ⏳{" "}
+                          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                           {lang === "ar"
                             ? "لم يتم الإشعار عبر واتساب بعد"
                             : "WhatsApp notification pending"}
@@ -236,7 +236,7 @@ export function OrderFulfillmentPanel({
                         className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 shadow-sm flex items-center gap-1.5"
                         onClick={() => setWaModalOpen(true)}
                       >
-                        📱{" "}
+                        <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
                         {lang === "ar"
                           ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب`
                           : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}

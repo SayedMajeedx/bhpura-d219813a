@@ -65,7 +65,7 @@ export function OrderTimelineTracker({
         {/* Connection bar */}
         <div className="absolute top-[14px] left-[5%] right-[5%] h-[2px] bg-muted -z-0">
           <div
-            className="h-full bg-primary transition-all duration-500"
+            className="h-full bg-primary transition-[width] duration-(--motion-very-slow) ease-(--motion-ease-smooth)"
             style={{
               width: `${(activeIndex / (steps.length - 1)) * 100}%`,
               right: isAr ? 0 : "auto",
@@ -81,7 +81,7 @@ export function OrderTimelineTracker({
           return (
             <div key={step.key} className="flex flex-col items-center flex-1 relative z-10">
               <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition duration-(--motion-medium) ${
                   isCompleted
                     ? "bg-primary text-primary-foreground border-primary shadow-xs scale-105"
                     : "bg-background text-muted-foreground border-muted"

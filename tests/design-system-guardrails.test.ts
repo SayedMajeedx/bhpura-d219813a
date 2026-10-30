@@ -172,6 +172,51 @@ describe("design system guardrails", () => {
     expect(thinFocusRings).toBe(0);
   });
 
+  it("sets the admin's body text at 13px and its figures in its own typeface", () => {
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    expect(css).toMatch(/html\.admin-ui \{[^}]*--text-xs: 0\.8125rem;/);
+    expect(css).toMatch(
+      /\.admin-typography \{[^}]*--text-xs: calc\(0\.8125rem \* var\(--type-scale, 1\)\);/,
+    );
+    expect(css).toMatch(
+      /html\.admin-ui \.font-mono:not\(code\):not\(pre\):not\(kbd\) \{[^}]*font-variant-numeric: tabular-nums;/,
+    );
+  });
+
+  it("times motion with the motion tokens: hand-written durations and transition-all only go down", () => {
+    // One motion system (src/styles/motion.css): a duration says what the motion does
+    // (duration-(--motion-fast)), never a number of its own, and a transition names what it
+    // moves (transition-all animates layout too, and stutters). The storefront moved over on
+    // 2026-10-30; the admin's remain. Lower these as screens move; never raise them.
+    const tsx = (rel: string) => rel.endsWith(".tsx");
+    expect(countMatches(/\bduration-\d+\b/g, tsx)).toBeLessThanOrEqual(157);
+    expect(countMatches(/\btransition-all\b/g, tsx)).toBeLessThanOrEqual(267);
+    const storefront = (rel: string) =>
+      tsx(rel) &&
+      /^(components\/storefront|features\/(product-page|checkout|storefront-home|storefront-shell|services-home|storefront-booking|storefront-account))\//.test(
+        rel,
+      );
+    expect(countMatches(/\btransition-all\b/g, storefront)).toBe(0);
+  });
+
+  it("shows a loading section's shape, not a spinner in an empty box: large spinners only go down", () => {
+    // A section that loads draws SectionSkeleton (src/components/ui/section-skeleton.tsx); a
+    // spinner is for a button at work or an import reporting progress. This was 28 on 2026-10-30.
+    const LARGE_SPINNER =
+      /Loader2 className="(?:h|size)-(?:6|7|8|10|12)[^"]*animate-spin|animate-spin[^"]*(?:h|size)-(?:6|7|8|10|12)\b/g;
+    expect(countMatches(LARGE_SPINNER, (rel) => rel.endsWith(".tsx"))).toBeLessThanOrEqual(28);
+  });
+
+  it("draws colour from the semantic tokens: raw palette colours only go down", () => {
+    // A screen that says text-emerald-600 for a discount and text-indigo-600 for delivery reads as
+    // a template: colour is for status (success, warning, destructive, info), and the rest is ink.
+    // This was 1,973 on 2026-10-30, after the order summaries went monochrome. Lower it as screens
+    // move to the tokens; never raise it.
+    const RAW_PALETTE =
+      /\b(?:bg|text|border|from|to|via|ring|fill|stroke)-(?:emerald|amber|rose|indigo|purple|blue|green|red|orange|sky|violet|teal|yellow|pink|cyan|lime|fuchsia)-\d{2,3}\b/g;
+    expect(countMatches(RAW_PALETTE, (rel) => rel.endsWith(".tsx"))).toBeLessThanOrEqual(1973);
+  });
+
   it("defines semantic status tokens rather than leaving pages to guess", () => {
     const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
     for (const token of ["--success", "--warning", "--info", "--destructive"]) {
@@ -190,13 +235,24 @@ describe("design system guardrails", () => {
     expect(css).toContain("--os-radius-dock: var(--os-radius-panel)");
   });
 
-  it("keeps the dark theme on the maroon brand hue", () => {
+  it("clips the page sideways instead of hiding, so a header or a gallery can stick", () => {
+    // A body that hides sideways overflow (while html does too) is a scroll box of its own: the
+    // storefront's sticky header and the product page's gallery scrolled away with the page.
     const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const body = css.slice(css.indexOf("  body {"), css.indexOf("}", css.indexOf("  body {")));
+    expect(body).toMatch(/overflow-x: clip;/);
+    expect(css).toMatch(/\.storefront-shell \{[^}]*overflow-x: clip;/);
+  });
+
+  it("keeps both themes on Boutq's ink hue, not one store's maroon", () => {
+    // The admin is the platform's: its ink (#1e202c, the installed app's colour) in light and dark,
+    // with each store's own colour on its main buttons (useAdminAccent). It wore one store's maroon.
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const light = css.slice(css.indexOf(":root {", css.indexOf("@theme")), css.indexOf(".dark {"));
     const darkBlock = css.slice(css.indexOf(".dark {"), css.indexOf("@layer base"));
-    // The old palette re-hued primary to a gold-tan (hue 70), which shipped a
-    // different brand in dark mode than in light.
-    expect(darkBlock).not.toMatch(/--primary:\s*oklch\([^)]*\s7\d\)/);
-    expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s25\)/);
+    expect(light).toMatch(/--primary:\s*oklch\([^)]*\s275\)/);
+    expect(darkBlock).toMatch(/--primary:\s*oklch\([^)]*\s275\)/);
+    expect(light).not.toMatch(/rgba\(51, 10, 10/);
   });
 
   it("never cuts a product's name to one line", () => {
@@ -486,5 +542,35 @@ describe("a name's start edge (text-page-start)", () => {
     expect(guards).toMatch(/:dir\(rtl\) > \.text-page-start\s*{\s*text-align: right;/);
     expect(guards).toMatch(/:dir\(ltr\) > \.text-page-start\s*{\s*text-align: left;/);
     expect(guards).not.toMatch(/\[dir="(rtl|ltr)"\] \.text-page-start/);
+  });
+});
+
+describe("icons are icons, not emoji", () => {
+  it("draws no emoji as a screen's icon (Lucide does that); a message or caption may carry them", () => {
+    // 145 emoji stood in for icons across 37 files (💳 beside a card option, 📦 beside a product,
+    // 🎉 on a finished checklist, ⚠️ before a warning): each platform draws them its own way and
+    // they read as a template. Typographic marks (→ ← ✓ ★) are text and stay.
+    const MESSAGES_AND_CAPTIONS = new Set([
+      "../src/components/super/SuperGrantsManager.tsx", // the WhatsApp message a person sends
+      "../src/routes/review.$token.tsx", // the WhatsApp message a shopper sends
+      "../src/features/content-studio/components/CopyPanel.tsx", // a post's caption presets
+    ]);
+    const PICTOGRAPH =
+      /[\u{1F300}-\u{1FAFF}\u{2600}-\u{2604}\u{2606}-\u{26FF}\u{2700}-\u{2712}\u{2714}-\u{27BF}]/u;
+    const sources = import.meta.glob("../src/**/*.tsx", {
+      query: "?raw",
+      import: "default",
+      eager: true,
+    }) as Record<string, string>;
+    const offenders: string[] = [];
+    for (const [file, text] of Object.entries(sources)) {
+      if (MESSAGES_AND_CAPTIONS.has(file)) continue;
+      text.split("\n").forEach((line, index) => {
+        const code = line.trim();
+        if (/^(\/\/|\*|\/\*|\{\/\*)/.test(code)) return;
+        if (PICTOGRAPH.test(code)) offenders.push(`${file}:${index + 1}`);
+      });
+    }
+    expect(offenders).toEqual([]);
   });
 });

@@ -310,7 +310,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                             <SelectContent align="start">
                               {couriers.map((c) => (
                                 <SelectItem key={c.id} value={c.id} className="text-xs">
-                                  🛵 {c.name || c.email}
+                                  {c.name || c.email}
                                 </SelectItem>
                               ))}
                             </SelectContent>

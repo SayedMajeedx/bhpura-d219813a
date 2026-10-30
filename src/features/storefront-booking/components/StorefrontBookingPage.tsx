@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { CalendarCheck, CheckCircle2, Loader2, MessageCircle } from "lucide-react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
+import { CalendarCheck, CheckCircle2, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatPrice } from "@/lib/storefront-context";
@@ -95,11 +96,7 @@ export function StorefrontBookingPage({
   const lang = isAr ? "ar" : "en";
 
   if (flow.loading) {
-    return (
-      <div className="flex h-64 items-center justify-center" role="status">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <SectionSkeleton rows={3} className="mx-auto max-w-3xl px-4" />;
   }
 
   if (!flow.rules) {

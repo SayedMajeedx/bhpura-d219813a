@@ -12,7 +12,11 @@ import { InvoiceGroup } from "./InvoiceGroup";
 function FulfillmentForStore() {
   const brand = useBrand();
   const { profile } = useAdminStoreProfile(brand.id);
-  return profile.modules.shipping ? <FulfillmentGroup /> : <ServiceFulfillmentGroup />;
+  return profile.modules.shipping ? (
+    <FulfillmentGroup madeToOrder={profile.modules.made_to_order} />
+  ) : (
+    <ServiceFulfillmentGroup />
+  );
 }
 
 const GROUPS: GroupDef[] = [

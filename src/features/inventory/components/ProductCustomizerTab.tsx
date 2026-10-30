@@ -36,9 +36,7 @@ export function ProductCustomizerTab({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-subtle pb-4">
           <div>
             <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
-              <span>
-                {isAr ? "⚙️ محرك تصميم وتخصيص المنتج" : "⚙️ Product Customization Engine"}
-              </span>
+              <span>{isAr ? "تصميم وتخصيص المنتج" : "Product customization"}</span>
               <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-bold text-primary uppercase">
                 Unlimited
               </span>
@@ -79,9 +77,7 @@ export function ProductCustomizerTab({
               }}
             >
               <SelectTrigger className="h-8 text-xs w-48 rounded-lg bg-background font-bold">
-                <SelectValue
-                  placeholder={isAr ? "⚡ نموذج مسبق سريع" : "⚡ Quick Preset Customizer"}
-                />
+                <SelectValue placeholder={isAr ? "نموذج مسبق سريع" : "Quick preset"} />
               </SelectTrigger>
               <SelectContent>
                 {customFieldPresets.map((pr) => (
@@ -221,9 +217,7 @@ export function ProductCustomizerTab({
                     <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border-subtle text-xs">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
-                          {isAr
-                            ? "👁️ معاينة فورية لصفحة المنتج"
-                            : "👁️ Real-time Storefront Preview"}
+                          {isAr ? "معاينة فورية لصفحة المنتج" : "Live storefront preview"}
                         </span>
                       </div>
                       <div className="mt-2 space-y-1">

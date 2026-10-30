@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
 
 const SizeGuideStandalonePage = lazy(
   () => import("@/addons/size-guides/components/storefront/SizeGuideStandalonePage"),
@@ -18,13 +18,7 @@ export const Route = createFileRoute("/$slug/size-guide")({
 
 function SizeGuideStandaloneRouteComponent() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
+    <Suspense fallback={<SectionSkeleton rows={2} className="mx-auto max-w-3xl px-4" />}>
       <SizeGuideStandalonePage />
     </Suspense>
   );

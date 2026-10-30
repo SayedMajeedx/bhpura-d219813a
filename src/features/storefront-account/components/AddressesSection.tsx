@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStorefront } from "@/lib/storefront-context";
@@ -50,11 +51,7 @@ export function AddressesSection({
   const [saving, setSaving] = useState(false);
 
   if (loadingCustomer || isLoading) {
-    return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton rows={2} />;
   }
 
   if (!customer) {
@@ -147,7 +144,7 @@ export function AddressesSection({
           {addresses.map((a) => (
             <Card
               key={a.id}
-              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition-all duration-300 ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border-strong hover:border-primary/20"}`}
+              className={`p-5 flex flex-col justify-between gap-4 border shadow-xs rounded-xl bg-card transition duration-(--motion-medium) ${a.is_default ? "border-primary/40 ring-1 ring-primary/10 bg-primary/[0.01]" : "border-border-strong hover:border-primary/20"}`}
             >
               <div>
                 <div className="flex items-center gap-2 mb-3">
@@ -374,7 +371,7 @@ export function AddressesSection({
         <Link
           to="/$slug"
           params={{ slug: brand.slug }}
-          className="hover:underline transition-all font-semibold flex items-center gap-1"
+          className="hover:underline transition font-semibold flex items-center gap-1"
           style={{ color: "var(--sf-link)" }}
         >
           {isAr ? "← العودة لتصفح المتجر" : "← Back to browse store"}

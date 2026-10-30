@@ -116,7 +116,7 @@ export function ProductCard({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-(--motion-quick) hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
       >
         <LikeHeart liked={wished} className="h-4 w-4" />
       </Button>
@@ -126,7 +126,8 @@ export function ProductCard({
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
         viewTransition
-        className="flex flex-1 flex-col transition-transform duration-250 ease-(--motion-ease-smooth) hover:-translate-y-1 sm:hover:-translate-y-1.5"
+        // One thing on a mouse's rest: the photo grows a touch (the card lifted as well).
+        className="flex flex-1 flex-col"
         onClick={(event) => {
           nameTappedPhoto(event.currentTarget, product.id);
           void trackProductEngagement(brand.slug, product.id, "click");
@@ -152,7 +153,7 @@ export function ProductCard({
               sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               // [TECH ADVISOR #1]: Real informational product photos MUST have dynamic/descriptive alt text
               alt={displayName}
-              className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-(--motion-very-slow) ease-(--motion-ease-smooth)"
               loading="lazy"
               decoding="async"
               quality={76}
