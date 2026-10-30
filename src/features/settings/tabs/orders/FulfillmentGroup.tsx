@@ -20,9 +20,11 @@ import { Banknote, CreditCard, Plus, QrCode, Sparkles, Trash2, Truck } from "luc
 import { DeliveryShopperPreview } from "@/features/settings/tabs/orders/DeliveryShopperPreview";
 import { DeliveryScheduleCard } from "@/features/settings/tabs/orders/DeliveryScheduleCard";
 import { OpeningHoursCard } from "@/features/settings/tabs/orders/OpeningHoursCard";
+import { MadeToOrderEstimateField } from "@/features/settings/tabs/orders/MadeToOrderEstimateField";
 import type { DeliveryInfoSettings } from "@/lib/delivery-info";
 
-export function FulfillmentGroup() {
+/** `madeToOrder`: the store makes pieces to order, so its making time sits beside the ready one. */
+export function FulfillmentGroup({ madeToOrder = false }: { madeToOrder?: boolean }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { form, setBs } = useBrandSettingsFormContext();
@@ -253,7 +255,13 @@ export function FulfillmentGroup() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {isAr ? "وقت التوصيل التقديري" : "Estimated Delivery Window"}
+                  {madeToOrder
+                    ? isAr
+                      ? "وقت التوصيل للقطع الجاهزة"
+                      : "Delivery time for ready pieces"
+                    : isAr
+                      ? "وقت التوصيل التقديري"
+                      : "Estimated Delivery Window"}
                 </Label>
                 <Input
                   className="text-xs h-9"
@@ -265,6 +273,8 @@ export function FulfillmentGroup() {
                   }}
                 />
               </div>
+
+              {madeToOrder && <MadeToOrderEstimateField lang={isAr ? "ar" : "en"} />}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
