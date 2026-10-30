@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
@@ -144,12 +145,7 @@ function ReturnDetailPage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="p-16 text-center text-muted-foreground flex items-center justify-center gap-2">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-        <span>{isAr ? "جارِ تحميل تفاصيل المرتجع..." : "Loading return details..."}</span>
-      </div>
-    );
+    return <SectionSkeleton rows={3} />;
   }
 
   if (!returnReq) {

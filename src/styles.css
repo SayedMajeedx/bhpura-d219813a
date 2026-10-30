@@ -11,6 +11,10 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* A bare transition (transition, transition-colors...) takes the motion system's time and
+     curve (src/styles/motion.css), not Tailwind's own 150ms ease. */
+  --default-transition-duration: var(--motion-quick);
+  --default-transition-timing-function: var(--motion-ease-smooth);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

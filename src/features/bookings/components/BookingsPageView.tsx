@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import {
   CalendarDays,
   CalendarPlus,
   CalendarSync,
   Images,
-  Loader2,
   Palette,
   ScrollText,
   Settings2,
@@ -78,11 +78,7 @@ export function BookingsPageView() {
   const [view, setView] = useState<"agenda" | "calendar" | "report">("agenda");
 
   if (page.settingsLoading || profileLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center" role="status">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <SectionSkeleton rows={4} />;
   }
 
   return (

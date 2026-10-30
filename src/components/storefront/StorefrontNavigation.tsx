@@ -92,19 +92,19 @@ function NavCategoryItem({
             variant="ghost"
             size="sm"
             onClick={toggleExpand}
-            className="h-11 w-11 p-0 shrink-0 rounded-lg hover:bg-black/5 text-muted-foreground hover:text-foreground transition-all duration-200"
+            className="h-11 w-11 p-0 shrink-0 rounded-lg hover:bg-black/5 text-muted-foreground hover:text-foreground transition duration-(--motion-fast)"
             aria-expanded={isExpanded}
             aria-label={lang === "ar" ? "توسيع" : "Expand"}
           >
             <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+              className={`h-4 w-4 transition-transform duration-(--motion-fast) ${isExpanded ? "rotate-180" : ""}`}
             />
           </Button>
         )}
       </div>
 
       {childCategories.length > 0 && isExpanded && (
-        <div className="ms-4 ps-3 border-s border-muted-foreground/15 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+        <div className="ms-4 ps-3 border-s border-muted-foreground/15 space-y-1.5 animate-in slide-in-from-top-1 duration-(--motion-fast)">
           <Link
             to="/$slug/$category"
             params={{ slug: brand.slug, category: categorySlug }}
@@ -166,7 +166,7 @@ function MobileStorefrontDropdown() {
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="flex h-11 items-center gap-2 px-3 font-medium rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit shadow-none transition-all duration-200"
+          className="flex h-11 items-center gap-2 px-3 font-medium rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit shadow-none transition duration-(--motion-fast)"
           style={{ color: "var(--sf-header-fg)" }}
         >
           <Grid2X2 className="h-4 w-4" />
@@ -322,7 +322,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
             navigation
               ? "h-11 shrink-0 rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit font-semibold shadow-none"
               : "bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none"
-          } gap-2 transition-all duration-200`}
+          } gap-2 transition duration-(--motion-fast)`}
           style={{ color: "var(--sf-header-fg)" }}
           aria-label={t("القائمة", "Menu")}
         >
@@ -506,7 +506,7 @@ function DesktopSubMenu({
 
         return (
           <div key={sub.id} className="w-full">
-            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-muted/40">
+            <div className="flex items-center justify-between rounded-lg transition hover:bg-muted/40">
               <Link
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: url }}
@@ -532,7 +532,7 @@ function DesktopSubMenu({
               </Link>
               {hasChildren && (
                 <div
-                  className="p-1 me-1 text-muted-foreground transition-all duration-200 shrink-0 cursor-pointer hover:text-foreground hover:bg-muted rounded-md"
+                  className="p-1 me-1 text-muted-foreground transition duration-(--motion-fast) shrink-0 cursor-pointer hover:text-foreground hover:bg-muted rounded-md"
                   onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();
@@ -544,7 +544,7 @@ function DesktopSubMenu({
                   }}
                 >
                   <ChevronDown
-                    className={`h-3 w-3 transition-transform duration-200 ${
+                    className={`h-3 w-3 transition-transform duration-(--motion-fast) ${
                       isExpanded ? "rotate-180" : ""
                     }`}
                   />
@@ -553,7 +553,7 @@ function DesktopSubMenu({
             </div>
 
             {hasChildren && isExpanded && (
-              <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-border animate-in fade-in duration-150">
+              <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-border animate-in fade-in duration-(--motion-quick)">
                 <DesktopSubMenu
                   parentCategoryId={sub.id}
                   categories={categories}
@@ -651,7 +651,7 @@ function DesktopStoreNavigation() {
                 >
                   <span>{name}</span>
                   <svg
-                    className={`h-3.5 w-3.5 opacity-70 transition-transform duration-200 ${
+                    className={`h-3.5 w-3.5 opacity-70 transition-transform duration-(--motion-fast) ${
                       isOpen ? "rotate-180" : ""
                     }`}
                     fill="none"
@@ -669,7 +669,7 @@ function DesktopStoreNavigation() {
                 {/* State-controlled dropdown menu card with unmount-on-exit */}
                 {isOpen && (
                   <div className="absolute top-full left-1/2 z-50 pt-2 min-w-[230px] -translate-x-1/2">
-                    <div className="rounded-2xl border border-border bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
+                    <div className="rounded-2xl border border-border bg-background p-3 shadow-xl transition duration-(--motion-fast) animate-in fade-in-0 slide-in-from-top-1 text-foreground">
                       <DesktopSubMenu
                         parentCategoryId={c.id}
                         categories={data}
@@ -824,7 +824,7 @@ function SearchBar() {
                           to="/$slug/$category"
                           params={{ slug: brand.slug, category: cat.slug }}
                           onClick={() => setModalOpen(false)}
-                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-muted hover:bg-muted/80 transition-all cursor-pointer"
+                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-muted hover:bg-muted/80 transition cursor-pointer"
                         >
                           {catName}
                         </Link>
@@ -905,7 +905,7 @@ function SearchBar() {
                                   height={120}
                                   loading="lazy"
                                   decoding="async"
-                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-(--motion-medium)"
                                 />
                               )}
                             </div>

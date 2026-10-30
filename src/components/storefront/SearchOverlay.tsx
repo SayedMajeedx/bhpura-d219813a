@@ -175,7 +175,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       dir={isAr ? "rtl" : "ltr"}
       // Solid, in the store's own background: at 98% with a full-screen blur the page ghosted
       // through, and the blur is costly on a phone.
-      className="fixed inset-0 z-50 flex flex-col bg-background animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex flex-col bg-background animate-in fade-in duration-(--motion-fast)"
       style={{ backgroundColor: settings?.background_color || undefined }}
     >
       {/* 1. Header Search Bar: the field and one way out (Cancel, or Escape), below the notch. */}
@@ -254,7 +254,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                       variant="ghost"
                       size="sm"
                       onClick={() => handleSelectRecent(term)}
-                      className="h-auto rounded-md inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition-all"
+                      className="h-auto rounded-md inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted active:scale-95 transition"
                     >
                       <Clock className="h-3 w-3 text-muted-foreground" />
                       <span>{term}</span>
@@ -280,7 +280,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                         to="/$slug/$category"
                         params={{ slug: brand.slug, category: cat.slug }}
                         onClick={onClose}
-                        className="rounded-full border border-border bg-muted/60 px-4 py-2 text-xs font-medium text-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
+                        className="rounded-full border border-border bg-muted/60 px-4 py-2 text-xs font-medium text-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition"
                       >
                         {catName}
                       </Link>
@@ -371,7 +371,7 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
                             alt=""
                             width={56}
                             height={56}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-(--motion-medium) group-hover:scale-105"
                           />
                         ) : (
                           <div className="h-full w-full flex items-center justify-center text-muted-foreground">

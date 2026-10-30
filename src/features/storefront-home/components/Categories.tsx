@@ -167,7 +167,7 @@ export function Categories({
         {!navigation && <TabsPill />}
         {navigation && (
           <details className="group relative shrink-0">
-            <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden">
+            <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden">
               <Grid2X2 className="h-5 w-5" />
               <span>{t("القائمة", "Menu")}</span>
               <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
@@ -186,7 +186,7 @@ export function Categories({
                     key={`menu-${item.key}`}
                     to="/$slug/$category"
                     params={{ slug: brand.slug, category: item.key }}
-                    className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"
+                    className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"
                   >
                     <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
                       {item.image ? (
@@ -290,7 +290,7 @@ export function Categories({
       {rows.map((row) => (
         <div
           key={`row-level-${row.levelIndex}`}
-          className="w-full flex justify-center border-t border-border pt-3 animate-in fade-in slide-in-from-top-1 duration-200"
+          className="w-full flex justify-center border-t border-border pt-3 animate-in fade-in slide-in-from-top-1 duration-(--motion-fast)"
         >
           <div className="flex flex-wrap gap-2 justify-center">
             <Button
@@ -332,7 +332,7 @@ export function Categories({
                   <span>{subLabel}</span>
                   {hasSubSubs && (
                     <ChevronDown
-                      className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`}
+                      className={`h-3 w-3 transition-transform duration-(--motion-fast) ${active ? "rotate-180" : ""}`}
                     />
                   )}
                 </Button>

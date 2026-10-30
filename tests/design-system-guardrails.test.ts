@@ -183,6 +183,30 @@ describe("design system guardrails", () => {
     );
   });
 
+  it("times motion with the motion tokens: hand-written durations and transition-all only go down", () => {
+    // One motion system (src/styles/motion.css): a duration says what the motion does
+    // (duration-(--motion-fast)), never a number of its own, and a transition names what it
+    // moves (transition-all animates layout too, and stutters). The storefront moved over on
+    // 2026-10-30; the admin's remain. Lower these as screens move; never raise them.
+    const tsx = (rel: string) => rel.endsWith(".tsx");
+    expect(countMatches(/\bduration-\d+\b/g, tsx)).toBeLessThanOrEqual(157);
+    expect(countMatches(/\btransition-all\b/g, tsx)).toBeLessThanOrEqual(267);
+    const storefront = (rel: string) =>
+      tsx(rel) &&
+      /^(components\/storefront|features\/(product-page|checkout|storefront-home|storefront-shell|services-home|storefront-booking|storefront-account))\//.test(
+        rel,
+      );
+    expect(countMatches(/\btransition-all\b/g, storefront)).toBe(0);
+  });
+
+  it("shows a loading section's shape, not a spinner in an empty box: large spinners only go down", () => {
+    // A section that loads draws SectionSkeleton (src/components/ui/section-skeleton.tsx); a
+    // spinner is for a button at work or an import reporting progress. This was 28 on 2026-10-30.
+    const LARGE_SPINNER =
+      /Loader2 className="(?:h|size)-(?:6|7|8|10|12)[^"]*animate-spin|animate-spin[^"]*(?:h|size)-(?:6|7|8|10|12)\b/g;
+    expect(countMatches(LARGE_SPINNER, (rel) => rel.endsWith(".tsx"))).toBeLessThanOrEqual(28);
+  });
+
   it("draws colour from the semantic tokens: raw palette colours only go down", () => {
     // A screen that says text-emerald-600 for a discount and text-indigo-600 for delivery reads as
     // a template: colour is for status (success, warning, destructive, info), and the rest is ink.

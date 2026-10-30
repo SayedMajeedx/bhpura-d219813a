@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,6 @@ import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  Loader2,
   PackageSearch,
   ChevronDown,
   ChevronUp,
@@ -79,11 +79,7 @@ export function OrdersSection({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton rows={3} />;
   }
 
   if (!orders || orders.length === 0) {
@@ -113,7 +109,7 @@ export function OrdersSection({
         return (
           <Card
             key={o.id}
-            className="p-5 border border-border-strong hover:border-primary/20 shadow-xs hover:shadow-md transition-all duration-300 rounded-xl bg-card"
+            className="p-5 border border-border-strong hover:border-primary/20 shadow-xs hover:shadow-md transition duration-(--motion-medium) rounded-xl bg-card"
           >
             {/* Header info bar */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -221,7 +217,7 @@ export function OrdersSection({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-xs h-8 px-3 font-bold gap-1 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-200 hover:border-emerald-300 transition-all"
+                  className="text-xs h-8 px-3 font-bold gap-1 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 border-emerald-200 hover:border-emerald-300 transition"
                   onClick={() => contactSupport(o)}
                 >
                   <MessageCircle className="h-3.5 w-3.5" />

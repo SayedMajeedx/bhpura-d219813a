@@ -13,7 +13,7 @@ export function SignOutButton() {
     <Button
       variant="outline"
       size="sm"
-      className="w-full text-xs font-semibold gap-1.5 transition-all duration-300 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
+      className="w-full text-xs font-semibold gap-1.5 transition duration-(--motion-medium) hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/20 dark:hover:text-rose-400"
       disabled={busy}
       onClick={async () => {
         setBusy(true);

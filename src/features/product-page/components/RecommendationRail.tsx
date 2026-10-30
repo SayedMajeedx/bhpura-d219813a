@@ -59,7 +59,7 @@ export function RecommendationRail({
                     preset="thumb"
                     sizes="(min-width: 640px) 168px, 140px"
                     alt={name}
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="h-full w-full object-cover transition-transform duration-(--motion-very-slow) group-hover:scale-105"
                     loading="lazy"
                   />
                 ) : (

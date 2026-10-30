@@ -1,7 +1,8 @@
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { Card } from "@/components/ui/card";
 import { OsEmptyState } from "@/components/os/os-empty-state";
-import { Loader2, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 import { orderNumberLabel } from "@/lib/order-number";
 
@@ -21,11 +22,7 @@ export function CustomerReturnsSection({
   const { t, settings } = useStorefront();
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton rows={2} />;
   }
 
   if (!returns || returns.length === 0) {

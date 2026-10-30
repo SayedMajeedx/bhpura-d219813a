@@ -110,7 +110,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("whatsapp")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white/10 ${
             channel === "whatsapp"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-80 hover:opacity-100"
@@ -125,7 +125,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("email")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white/10 ${
             channel === "email"
               ? "bg-white/20 text-white shadow-xs font-semibold"
               : "opacity-80 hover:opacity-100"

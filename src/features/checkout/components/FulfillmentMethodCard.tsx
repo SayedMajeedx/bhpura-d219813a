@@ -46,7 +46,7 @@ export function FulfillmentMethodCard({
               type="button"
               variant={active ? "outline" : "ghost"}
               onClick={() => setFulfillment(opt.id)}
-              className={`text-start flex items-center justify-start gap-3 h-auto whitespace-normal p-4 rounded-lg border transition-all ${
+              className={`text-start flex items-center justify-start gap-3 h-auto whitespace-normal p-4 rounded-lg border transition ${
                 active ? "border-primary bg-primary/10" : ""
               }`}
             >

@@ -142,7 +142,7 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
         e.preventDefault();
         e.stopPropagation();
       }}
-      className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md transition-all duration-200"
+      className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md transition duration-(--motion-fast)"
     >
       {hasMultipleVariants ? (
         <div className="flex flex-col gap-1">
@@ -160,7 +160,7 @@ export function QuickAddPopover({ product, variants = [], onOpenQuickView }: Qui
                   variant="ghost"
                   size="sm"
                   onClick={() => handleSelectVariant(v)}
-                  className={`h-auto rounded-md px-2.5 py-1 text-xs font-semibold rounded-md border transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+                  className={`h-auto rounded-md px-2.5 py-1 text-xs font-semibold rounded-md border transition duration-(--motion-quick) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
                     isAdded
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card hover:bg-primary/10 hover:border-primary border-border text-foreground"

@@ -36,7 +36,7 @@ export function FreeDeliveryNudge() {
       <div className="h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
         <div
           // The fill grows from the reading start on the compositor (scale, not width).
-          className="h-full w-full rounded-full transition-transform duration-400 ease-(--motion-ease-smooth) ltr:origin-left rtl:origin-right"
+          className="h-full w-full rounded-full transition-transform duration-(--motion-slow) ease-(--motion-ease-smooth) ltr:origin-left rtl:origin-right"
           style={{
             transform: `scaleX(${Math.min(Math.max(progress, 0), 100) / 100})`,
             backgroundColor: settings.primary_color,

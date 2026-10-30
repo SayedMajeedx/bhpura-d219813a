@@ -12,7 +12,7 @@ import { ChevronDown } from "lucide-react";
 type SectionKey = "shop" | "company" | "help";
 
 const FG = { color: "var(--sf-footer-fg)" } as const;
-const DESKTOP_LINK = "opacity-75 hover:opacity-100 hover:translate-x-0.5 transition-all w-fit";
+const DESKTOP_LINK = "opacity-75 hover:opacity-100 hover:translate-x-0.5 transition w-fit";
 const MOBILE_LINK = "opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center";
 
 /**
@@ -172,7 +172,7 @@ export function FooterV2() {
       >
         <span>{title}</span>
         <ChevronDown
-          className={`h-4 w-4 transition-transform duration-200 ${
+          className={`h-4 w-4 transition-transform duration-(--motion-fast) ${
             openSections[key] ? "rotate-180" : ""
           }`}
         />
@@ -205,7 +205,7 @@ export function FooterV2() {
     <footer
       role="contentinfo"
       aria-label={isAr ? "تذييل الموقع" : "Website Footer"}
-      className="border-t transition-colors duration-200"
+      className="border-t transition-colors duration-(--motion-fast)"
       style={{
         borderColor: "rgba(255,255,255,0.12)",
         backgroundColor: "var(--sf-footer-bg)",
@@ -237,7 +237,7 @@ export function FooterV2() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={s.name}
-                    className="h-8 w-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-all text-xs opacity-80 hover:opacity-100"
+                    className="h-8 w-8 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition text-xs opacity-80 hover:opacity-100"
                     style={FG}
                   >
                     <StorefrontSocialIcon platform={s.name} />
@@ -297,7 +297,7 @@ export function FooterV2() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={s.name}
-                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition-all active:scale-95"
+                  className="h-11 w-11 rounded-full border border-white/15 bg-white/5 flex items-center justify-center hover:bg-white/15 transition active:scale-95"
                   style={FG}
                 >
                   <StorefrontSocialIcon platform={s.name} />

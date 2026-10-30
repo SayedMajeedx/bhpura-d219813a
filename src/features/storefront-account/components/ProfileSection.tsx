@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStorefront } from "@/lib/storefront-context";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -39,11 +40,7 @@ export function ProfileSection({
   }, [customer, session]);
 
   if (loadingCustomer) {
-    return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton rows={2} />;
   }
 
   const save = async () => {

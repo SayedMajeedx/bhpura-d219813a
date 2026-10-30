@@ -121,7 +121,7 @@ export function CustomerDetailsCard({
             </span>
           </label>
           {isGift && (
-            <div className="space-y-3 pt-2 border-t border-primary/15 animate-in fade-in-50 duration-200">
+            <div className="space-y-3 pt-2 border-t border-primary/15 animate-in fade-in-50 duration-(--motion-fast)">
               <div>
                 <Label htmlFor="gift-recipient" className="text-xs font-medium">
                   {t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}

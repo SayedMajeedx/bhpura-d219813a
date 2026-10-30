@@ -55,7 +55,7 @@ export function ImageZoom({
           preset="product"
           sizes="(min-width: 1024px) 50vw, 100vw"
           alt={alt}
-          className={`w-full h-full object-cover max-w-full transition-opacity duration-200 ${
+          className={`w-full h-full object-cover max-w-full transition-opacity duration-(--motion-fast) ${
             isZooming ? "opacity-0" : "opacity-100"
           }`}
           loading="eager"

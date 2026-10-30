@@ -1,4 +1,5 @@
 import { Navigate } from "@tanstack/react-router";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
@@ -10,7 +11,6 @@ import { loyaltyProgramState, shopperLoyaltyTier } from "@/lib/loyalty-program";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Loader2,
   PackageSearch,
   MapPin,
   User as UserIcon,
@@ -99,11 +99,7 @@ export function AccountPage() {
     (modules.fit_passport ? 1 : 0);
 
   if (membershipLoading) {
-    return (
-      <div className="grid min-h-[45vh] place-items-center">
-        <Loader2 className="h-7 w-7 animate-spin text-primary" />
-      </div>
-    );
+    return <SectionSkeleton rows={3} className="min-h-[45vh]" />;
   }
 
   if (!session || !isStoreMember) {
@@ -251,7 +247,7 @@ export function AccountPage() {
               {modules.bookings && (
                 <TabsTrigger
                   value="bookings"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
                 >
                   <CalendarDays className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("حجوزاتي", "My bookings")}</span>
@@ -259,7 +255,7 @@ export function AccountPage() {
               )}
               <TabsTrigger
                 value="orders"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
               >
                 <PackageSearch className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("طلباتي", "My orders")}</span>
@@ -267,7 +263,7 @@ export function AccountPage() {
               {loyaltyOn && (
                 <TabsTrigger
                   value="loyalty"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
                 >
                   <Coins className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
@@ -276,7 +272,7 @@ export function AccountPage() {
               {showReturns && (
                 <TabsTrigger
                   value="returns"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
                 >
                   <RotateCcw className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
@@ -290,7 +286,7 @@ export function AccountPage() {
               {modules.fit_passport && (
                 <TabsTrigger
                   value="fit"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
                 >
                   <Ruler className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
@@ -298,21 +294,21 @@ export function AccountPage() {
               )}
               <TabsTrigger
                 value="profile"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
               >
                 <UserIcon className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("البيانات", "Profile")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="addresses"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
               >
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("العناوين", "Addresses")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="security"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
               >
                 <Fingerprint className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("الأمان", "Security")}</span>
