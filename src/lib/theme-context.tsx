@@ -69,12 +69,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle("dark", resolvedTheme === "dark");
+    // The admin's type and figures (styles.css, html.admin-ui) reach its dialogs and sheets too.
+    root.classList.add("admin-ui");
     // Native form controls and scrollbars follow this, not the class.
     root.style.colorScheme = resolvedTheme;
     // The status bar follows the admin's theme, not only the OS setting.
     const restoreThemeColor = applyThemeColor(ADMIN_THEME_COLOR[resolvedTheme]);
     return () => {
-      root.classList.remove("dark");
+      root.classList.remove("dark", "admin-ui");
       root.style.colorScheme = "";
       restoreThemeColor();
     };

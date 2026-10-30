@@ -213,7 +213,7 @@ export function OrderFinancialCard({
               {lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}
             </Label>
             {appliedPromo ? (
-              <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-900 text-xs font-medium">
+              <div className="flex items-center justify-between gap-3 rounded-md border border-success/30 bg-success-subtle px-3 py-1.5 text-foreground text-xs font-medium">
                 <div className="flex min-w-0 items-center gap-2">
                   <Tag className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate font-mono font-bold">{appliedPromo.code}</span>
@@ -484,7 +484,7 @@ export function OrderFinancialCard({
                       : "What this order cost to make and pack"}
                   </span>
                 </span>
-                <span className="font-mono text-sm font-extrabold text-primary">
+                <span className="font-mono text-sm font-extrabold text-foreground">
                   {formatMoney(orderTotalCogs, currency, lang)}
                 </span>
               </div>
@@ -507,9 +507,8 @@ export function OrderFinancialCard({
               <div
                 className={cn(
                   "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border-subtle",
-                  totals.remaining > 0
-                    ? "text-amber-700 dark:text-amber-300"
-                    : "text-emerald-600 dark:text-emerald-400",
+                  // Still owed: the profit is not in hand yet, so it is not drawn as won.
+                  totals.remaining > 0 ? "text-foreground" : "text-success",
                 )}
               >
                 <span>{grossProfitLabel(totals.remaining, lang)}</span>

@@ -452,8 +452,17 @@ html.lang-ar .font-display {
     letter-spacing: var(--type-tracking, 0) !important;
   }
 
+  /* The admin's small text is its body text (4,671 uses of text-xs against 1,113 of text-sm), so
+     it is 13px, as Polaris and Linear set theirs, not 12px; a caption that should stay smaller
+     says text-[0.75rem]. html.admin-ui (set by the admin's ThemeProvider) carries it into
+     dialogs and sheets, which render outside the workspace. */
+  html.admin-ui {
+    --text-xs: 0.8125rem;
+    --text-xs--line-height: calc(1.125 / 0.8125);
+  }
   .admin-typography {
-    --text-xs: calc(0.75rem * var(--type-scale, 1));
+    --text-xs: calc(0.8125rem * var(--type-scale, 1));
+    --text-xs--line-height: calc(1.125 / 0.8125);
     --text-sm: calc(0.875rem * var(--type-scale, 1));
     --text-base: calc(1rem * var(--type-scale, 1));
     --text-lg: calc(1.125rem * var(--type-scale, 1));
@@ -1182,4 +1191,13 @@ html.is-embedded .hero-carousel-text-card a {
     transition: none !important;
     transform: none !important;
   }
+}
+
+/* Figures in the admin are set in its own typeface with digits of one width, as a finance product
+   sets them: font-mono drew every amount, date and order line like code (504 uses). Code, keys
+   and keyboard hints keep the monospace. Unlayered, so it wins over the utility. */
+html.admin-ui .font-mono:not(code):not(pre):not(kbd) {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
 }

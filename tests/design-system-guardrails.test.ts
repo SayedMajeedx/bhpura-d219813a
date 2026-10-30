@@ -172,6 +172,27 @@ describe("design system guardrails", () => {
     expect(thinFocusRings).toBe(0);
   });
 
+  it("sets the admin's body text at 13px and its figures in its own typeface", () => {
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    expect(css).toMatch(/html\.admin-ui \{[^}]*--text-xs: 0\.8125rem;/);
+    expect(css).toMatch(
+      /\.admin-typography \{[^}]*--text-xs: calc\(0\.8125rem \* var\(--type-scale, 1\)\);/,
+    );
+    expect(css).toMatch(
+      /html\.admin-ui \.font-mono:not\(code\):not\(pre\):not\(kbd\) \{[^}]*font-variant-numeric: tabular-nums;/,
+    );
+  });
+
+  it("draws colour from the semantic tokens: raw palette colours only go down", () => {
+    // A screen that says text-emerald-600 for a discount and text-indigo-600 for delivery reads as
+    // a template: colour is for status (success, warning, destructive, info), and the rest is ink.
+    // This was 1,973 on 2026-10-30, after the order summaries went monochrome. Lower it as screens
+    // move to the tokens; never raise it.
+    const RAW_PALETTE =
+      /\b(?:bg|text|border|from|to|via|ring|fill|stroke)-(?:emerald|amber|rose|indigo|purple|blue|green|red|orange|sky|violet|teal|yellow|pink|cyan|lime|fuchsia)-\d{2,3}\b/g;
+    expect(countMatches(RAW_PALETTE, (rel) => rel.endsWith(".tsx"))).toBeLessThanOrEqual(1973);
+  });
+
   it("defines semantic status tokens rather than leaving pages to guess", () => {
     const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
     for (const token of ["--success", "--warning", "--info", "--destructive"]) {
