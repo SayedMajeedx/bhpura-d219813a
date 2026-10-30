@@ -48,6 +48,20 @@ export default defineConfig({
       server: {
         entry: "server",
       },
+      router: {
+        // Each route's loader and loading shape go with the route, not into the first chunk every
+        // page loads: by default only components were split, so the storefront's first chunk
+        // carried every admin page's loader and what it imports.
+        codeSplittingOptions: {
+          defaultBehavior: [
+            ["loader"],
+            ["component"],
+            ["pendingComponent"],
+            ["errorComponent"],
+            ["notFoundComponent"],
+          ],
+        },
+      },
     }),
     react(),
     tailwindcss(),
