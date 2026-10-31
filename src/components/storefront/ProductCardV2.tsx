@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { CardFactLine } from "@/components/storefront/CardFactLine";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { productCover } from "@/lib/product-photo";
+import { cardHoverPointer } from "@/lib/card-hover";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -69,7 +70,7 @@ export function ProductCardV2({
     disabled: settings?.motion_enabled === false,
   });
 
-  // Hover image swap state (loaded on first hover/focus)
+  // Hover image swap state (loaded on the mouse's first rest)
   const [isHovered, setIsHovered] = useState(false);
   const [hasHoveredOnce, setHasHoveredOnce] = useState(false);
 
@@ -156,7 +157,10 @@ export function ProductCardV2({
   // animation, so a card below the fold faded in unseen, vanished and faded in again).
   const staggerClass = typeof index === "number" ? `sf-stagger-${(index % 8) + 1}` : "";
 
-  const handlePointerEnter = () => {
+  // A mouse only: a finger's tap also "enters" the card, so on a phone the second photo flashed
+  // in on the same tap that opened the product.
+  const handlePointerEnter = (event: React.PointerEvent) => {
+    if (!cardHoverPointer(event.pointerType)) return;
     setIsHovered(true);
     if (!hasHoveredOnce) {
       setHasHoveredOnce(true);

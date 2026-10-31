@@ -228,7 +228,7 @@ describe("a card on a mouse's rest does one thing", () => {
     const { container } = withI18n(<ProductCardV2 product={product} />);
     expect(photos()).toHaveLength(1);
     const card = container.querySelector("[data-product-id='p2']") as HTMLElement;
-    fireEvent.pointerEnter(card);
+    fireEvent.pointerEnter(card, { pointerType: "mouse" });
     const [front, back] = photos();
     expect(front.getAttribute("src")).toContain("front.jpg");
     expect(back.getAttribute("src")).toContain("back.jpg");
@@ -238,6 +238,16 @@ describe("a card on a mouse's rest does one thing", () => {
     expect(container.innerHTML).not.toMatch(
       /hover:-translate-y|group-hover:shadow|group-hover:text-primary/,
     );
+  });
+
+  it("keeps its first photo under a finger: a tap opens the product, nothing else", () => {
+    storefront.settings = { storefront_design_version: 2 };
+    const { container } = withI18n(<ProductCardV2 product={product} />);
+    const card = container.querySelector("[data-product-id='p2']") as HTMLElement;
+    fireEvent.pointerEnter(card, { pointerType: "touch" });
+    fireEvent.pointerEnter(card, { pointerType: "pen" });
+    expect(photos()).toHaveLength(1);
+    expect(photos()[0].getAttribute("src")).toContain("front.jpg");
   });
 
   it("with one photo, lets it grow a touch instead", () => {
