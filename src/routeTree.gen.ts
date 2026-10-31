@@ -76,6 +76,7 @@ import { Route as AuthenticatedAdminBSlugDashboardRouteImport } from './routes/_
 import { Route as AuthenticatedAdminBSlugDiscountsRouteImport } from './routes/_authenticated/admin.b.$slug.discounts'
 import { Route as AuthenticatedAdminBSlugExpensesRouteImport } from './routes/_authenticated/admin.b.$slug.expenses'
 import { Route as AuthenticatedAdminBSlugExportRouteImport } from './routes/_authenticated/admin.b.$slug.export'
+import { Route as AuthenticatedAdminBSlugGiftCardsRouteImport } from './routes/_authenticated/admin.b.$slug.gift-cards'
 import { Route as AuthenticatedAdminBSlugGiveawaysRouteImport } from './routes/_authenticated/admin.b.$slug.giveaways'
 import { Route as AuthenticatedAdminBSlugImportRouteImport } from './routes/_authenticated/admin.b.$slug.import'
 import { Route as AuthenticatedAdminBSlugIncubatorsRouteImport } from './routes/_authenticated/admin.b.$slug.incubators'
@@ -473,6 +474,12 @@ const AuthenticatedAdminBSlugExportRoute =
     path: '/export',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugGiftCardsRoute =
+  AuthenticatedAdminBSlugGiftCardsRouteImport.update({
+    id: '/gift-cards',
+    path: '/gift-cards',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugGiveawaysRoute =
   AuthenticatedAdminBSlugGiveawaysRouteImport.update({
     id: '/giveaways',
@@ -727,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
   '/admin/b/$slug/export': typeof AuthenticatedAdminBSlugExportRoute
+  '/admin/b/$slug/gift-cards': typeof AuthenticatedAdminBSlugGiftCardsRoute
   '/admin/b/$slug/giveaways': typeof AuthenticatedAdminBSlugGiveawaysRoute
   '/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
@@ -824,6 +832,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
   '/admin/b/$slug/export': typeof AuthenticatedAdminBSlugExportRoute
+  '/admin/b/$slug/gift-cards': typeof AuthenticatedAdminBSlugGiftCardsRoute
   '/admin/b/$slug/giveaways': typeof AuthenticatedAdminBSlugGiveawaysRoute
   '/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
@@ -924,6 +933,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/_authenticated/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
   '/_authenticated/admin/b/$slug/export': typeof AuthenticatedAdminBSlugExportRoute
+  '/_authenticated/admin/b/$slug/gift-cards': typeof AuthenticatedAdminBSlugGiftCardsRoute
   '/_authenticated/admin/b/$slug/giveaways': typeof AuthenticatedAdminBSlugGiveawaysRoute
   '/_authenticated/admin/b/$slug/import': typeof AuthenticatedAdminBSlugImportRoute
   '/_authenticated/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
@@ -1025,6 +1035,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
     | '/admin/b/$slug/export'
+    | '/admin/b/$slug/gift-cards'
     | '/admin/b/$slug/giveaways'
     | '/admin/b/$slug/import'
     | '/admin/b/$slug/incubators'
@@ -1122,6 +1133,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
     | '/admin/b/$slug/export'
+    | '/admin/b/$slug/gift-cards'
     | '/admin/b/$slug/giveaways'
     | '/admin/b/$slug/import'
     | '/admin/b/$slug/incubators'
@@ -1221,6 +1233,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/discounts'
     | '/_authenticated/admin/b/$slug/expenses'
     | '/_authenticated/admin/b/$slug/export'
+    | '/_authenticated/admin/b/$slug/gift-cards'
     | '/_authenticated/admin/b/$slug/giveaways'
     | '/_authenticated/admin/b/$slug/import'
     | '/_authenticated/admin/b/$slug/incubators'
@@ -1752,6 +1765,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugExportRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/gift-cards': {
+      id: '/_authenticated/admin/b/$slug/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/admin/b/$slug/gift-cards'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugGiftCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/giveaways': {
       id: '/_authenticated/admin/b/$slug/giveaways'
       path: '/giveaways'
@@ -2083,6 +2103,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugDiscountsRoute: typeof AuthenticatedAdminBSlugDiscountsRoute
   AuthenticatedAdminBSlugExpensesRoute: typeof AuthenticatedAdminBSlugExpensesRoute
   AuthenticatedAdminBSlugExportRoute: typeof AuthenticatedAdminBSlugExportRoute
+  AuthenticatedAdminBSlugGiftCardsRoute: typeof AuthenticatedAdminBSlugGiftCardsRoute
   AuthenticatedAdminBSlugGiveawaysRoute: typeof AuthenticatedAdminBSlugGiveawaysRoute
   AuthenticatedAdminBSlugImportRoute: typeof AuthenticatedAdminBSlugImportRoute
   AuthenticatedAdminBSlugIncubatorsRoute: typeof AuthenticatedAdminBSlugIncubatorsRoute
@@ -2127,6 +2148,8 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
       AuthenticatedAdminBSlugDiscountsRoute,
     AuthenticatedAdminBSlugExpensesRoute: AuthenticatedAdminBSlugExpensesRoute,
     AuthenticatedAdminBSlugExportRoute: AuthenticatedAdminBSlugExportRoute,
+    AuthenticatedAdminBSlugGiftCardsRoute:
+      AuthenticatedAdminBSlugGiftCardsRoute,
     AuthenticatedAdminBSlugGiveawaysRoute:
       AuthenticatedAdminBSlugGiveawaysRoute,
     AuthenticatedAdminBSlugImportRoute: AuthenticatedAdminBSlugImportRoute,

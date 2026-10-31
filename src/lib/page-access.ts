@@ -47,6 +47,8 @@ export const PAGE_ACCESS: Record<string, PageRule> = {
 
   discounts: { permission: "manage_settings" },
   loyalty: { permission: "manage_settings" },
+  // Issuing, voiding and taking a card as payment are order work (the database asks the same).
+  "gift-cards": { permission: "manage_orders" },
   giveaways: { permission: "manage_settings" },
   communications: { permission: "manage_settings" },
   pages: { permission: "manage_settings" },

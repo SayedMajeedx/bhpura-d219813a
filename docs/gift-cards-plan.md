@@ -1,6 +1,6 @@
 # Gift cards: the plan
 
-Status: **decided, not built** (2026-10-31). The owner's decision: a gift card is a **payment**
+Status: **step one built** (2026-11-01: issuing, the list, voiding, staff taking a card on an order; migration `20261101100000`). Steps two and three are still to come. The owner's decision: a gift card is a **payment**
 (international practice), not a discount. The order keeps its full price; VAT is charged on the
 full price; selling a card is money the store holds until the card is used, not a sale of goods.
 

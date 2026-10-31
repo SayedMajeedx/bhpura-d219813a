@@ -271,6 +271,11 @@
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
     },
+    "issue_gift_card(p_brand_id uuid, p_amount numeric, p_recipient_name text, p_purchaser_name text, p_note text, p_expires_on date, p_source_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
     "link_storefront_customer(p_brand_slug text, p_name text, p_phone text)": {
       "anon": true,
       "authenticated": true,
@@ -380,6 +385,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who see the finances of the order's store: checked inside (can_access_brand, has_permission); never more than is owed; one request id writes once"
+    },
+    "redeem_gift_card_on_order(p_order_id uuid, p_code text, p_amount numeric)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
     "register_customer_push_device(p_brand_slug text, p_token text, p_enabled boolean, p_order_updates boolean, p_marketing boolean, p_platform text, p_device_name text, p_token_provider text)": {
       "anon": false,
@@ -730,6 +740,11 @@
       "anon": true,
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
+    },
+    "void_gift_card(p_card_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
     "void_incubator_payment(p_payment_id uuid, p_reason text)": {
       "anon": false,

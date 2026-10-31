@@ -313,6 +313,17 @@ const ITEMS: ItemDef[] = [
     workspace: "customers",
   },
   {
+    id: "gift-cards",
+    page: "gift-cards",
+    labelEn: "Gift cards",
+    labelAr: "بطاقات الهدايا",
+    descriptionEn: "Cards customers give, what each still holds, and taking one as payment",
+    descriptionAr: "بطاقات يهديها العملاء، وما تبقى في كل منها، والدفع بها",
+    icon: Gift,
+    permission: "manage_orders",
+    workspace: "customers",
+  },
+  {
     id: "reviews",
     page: "reviews",
     labelEn: "Reviews",
@@ -533,7 +544,12 @@ export function getAdminNavItems({
     if (item.id === "supplier-orders" && services) return false;
     if (item.id === "returns" && storeModules?.returns === false) return false;
     if (storefrontMode === "catalog") {
-      if (item.id === "abandoned-carts" || item.id === "loyalty" || item.id === "discounts") {
+      if (
+        item.id === "abandoned-carts" ||
+        item.id === "loyalty" ||
+        item.id === "discounts" ||
+        item.id === "gift-cards"
+      ) {
         return false;
       }
     }
