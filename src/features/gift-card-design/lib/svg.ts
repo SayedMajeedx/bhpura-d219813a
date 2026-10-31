@@ -18,8 +18,6 @@ export function textAnchor(align: Align, dir: "ltr" | "rtl"): "start" | "middle"
   return dir === "rtl" ? "start" : "end";
 }
 
-const ASPECT: Record<Align, string> = { left: "xMinYMid", center: "xMidYMid", right: "xMaxYMid" };
-
 function shapeSvg(shape: Shape, id: string): string {
   if (shape.kind === "rect") {
     return `<rect x="${n(shape.x)}" y="${n(shape.y)}" width="${n(shape.w)}" height="${n(shape.h)}"${
@@ -54,15 +52,22 @@ function shapeSvg(shape: Shape, id: string): string {
       shape.h,
     )}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${id})"/>`;
   }
+  // The trimmed mark: a nested viewport shows only `crop` of the picture, stretched to the exact
+  // rectangle (whose shape is the crop's own), and the store's ink is laid through it.
+  const c = shape.crop;
   return `<mask id="${id}" maskUnits="userSpaceOnUse" x="${n(shape.x)}" y="${n(shape.y)}" width="${n(
     shape.w,
-  )}" height="${n(shape.h)}" style="mask-type:alpha"><image href="${esc(shape.href)}" x="${n(
+  )}" height="${n(shape.h)}" style="mask-type:alpha"><svg x="${n(shape.x)}" y="${n(
+    shape.y,
+  )}" width="${n(shape.w)}" height="${n(shape.h)}" viewBox="${n(c.x)} ${n(c.y)} ${n(c.w)} ${n(
+    c.h,
+  )}" preserveAspectRatio="none"><image href="${esc(
+    shape.href,
+  )}" x="0" y="0" width="1" height="1" preserveAspectRatio="none"/></svg></mask><rect x="${n(
     shape.x,
-  )}" y="${n(shape.y)}" width="${n(shape.w)}" height="${n(shape.h)}" preserveAspectRatio="${
-    ASPECT[shape.align]
-  } meet"/></mask><rect x="${n(shape.x)}" y="${n(shape.y)}" width="${n(shape.w)}" height="${n(
-    shape.h,
-  )}" fill="${shape.tint}" mask="url(#${id})"/>`;
+  )}" y="${n(shape.y)}" width="${n(shape.w)}" height="${n(shape.h)}" fill="${
+    shape.tint
+  }" mask="url(#${id})"/>`;
 }
 
 /**

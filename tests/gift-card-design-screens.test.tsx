@@ -13,9 +13,18 @@ const data = vi.hoisted(() => ({
     signature: null as string | null,
     photo_products: [] as string[],
     photos: [] as string[],
+    logo_scale: 1,
+    fonts: {} as Record<string, { url: string; name: string | null } | null>,
   },
   save: vi.fn(async () => null),
+  upload: vi.fn(
+    async () =>
+      "https://media.boutq.store/brands/b1/font/0f8e2b8c-7a3d-4e55-9a0b-2c4d6e8f1a3b.woff2",
+  ),
 }));
+const r2 = { uploadPublicMedia: data.upload };
+vi.mock("../src/lib/r2-upload", () => r2);
+vi.mock("@/lib/r2-upload", () => r2);
 const designs = {
   cardDesignQueries: {
     store: () => ({ queryKey: ["designs"], queryFn: async () => data.stored }),
@@ -73,7 +82,14 @@ const wrap = (node: React.ReactNode) =>
 
 beforeEach(() => {
   vi.clearAllMocks();
-  data.stored = { off: [], signature: null, photo_products: [], photos: [] };
+  data.stored = {
+    off: [],
+    signature: null,
+    photo_products: [],
+    photos: [],
+    logo_scale: 1,
+    fonts: {},
+  };
 });
 
 function Picker({ onChange }: { onChange: (d: CardDesign) => void }) {
@@ -140,7 +156,44 @@ describe("the store's designs", () => {
         off: ["pattern:black"],
         signature: "type:cream",
         photoProducts: ["p2", "p1"],
+        logoScale: 1,
+        fonts: { ar: null, en: null },
       }),
+    );
+  });
+
+  it("set the logo's size and a font for each language, shown on the cards before saving", async () => {
+    const { container } = wrap(<CardDesignsSection lang="en" />);
+    const slider = await screen.findByRole("slider", { name: "Logo size on the cards" });
+    expect(slider).toHaveAttribute("aria-valuetext", "100%");
+    fireEvent.change(slider, { target: { value: "1.1" } });
+    expect(screen.getByRole("slider", { name: "Logo size on the cards" })).toHaveAttribute(
+      "aria-valuetext",
+      "110%",
+    );
+    expect(screen.getByRole("img", { name: "Back preview" })).toBeInTheDocument();
+    const file = new File(["font"], "Zain-Display.woff2", { type: "font/woff2" });
+    fireEvent.change(screen.getByLabelText("Upload the arabic font"), {
+      target: { files: [file] },
+    });
+    expect(await screen.findByText("Zain Display")).toBeInTheDocument();
+    expect(data.upload).toHaveBeenCalledWith("b1", file, "font");
+    expect(container.textContent).toContain("The cards' own");
+    fireEvent.click(screen.getByRole("button", { name: "Save designs" }));
+    await waitFor(() =>
+      expect(data.save).toHaveBeenCalledWith(
+        "b1",
+        expect.objectContaining({
+          logoScale: 1.1,
+          fonts: {
+            ar: {
+              url: "https://media.boutq.store/brands/b1/font/0f8e2b8c-7a3d-4e55-9a0b-2c4d6e8f1a3b.woff2",
+              name: "Zain Display",
+            },
+            en: null,
+          },
+        }),
+      ),
     );
   });
 });

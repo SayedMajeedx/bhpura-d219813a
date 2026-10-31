@@ -96,6 +96,8 @@ The owner asked for cards that look made by a person, minimal but luxurious, wit
 - **Kept and printed:** the purchase keeps the design; the buyer sees the card on its page and in their account, saves it as pictures, or prints it on A6 paper or on A4 at true size with cut marks. Staff print any card from its details.
 - **The store's choices:** designs turned off, a signature card shown first, and the products whose photos the photo designs use.
 
+- **The store's mark and lettering** (later the same day): the logo's size on every card (half to twice as designed), the logo measured to its own edges so it sits exactly on the card's margins and lines, and a font of the store's own for the cards' large words in Arabic and in English.
+
 No illustrator: no illustrated or watercolour art (the owner's answer); variety comes from type, colour, geometry and the store's photographs.
 
 ## Order of work

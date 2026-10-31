@@ -14,6 +14,7 @@ import {
   ribbonPath,
   starAndCrossPath,
   type Align,
+  type CardFont,
   type Shape,
 } from "./geometry";
 import { kindLine, storeMark, type CardContent } from "./content";
@@ -57,6 +58,8 @@ type Ctx = {
   greeting: { ar: string; en: string };
   line: { ar: string; en: string } | null;
   portrait: boolean;
+  /** The display face, in the store's own card font when it uploaded one. */
+  display: (lang: "ar" | "en", size: number) => CardFont;
 };
 
 function ground(w: number, h: number, fill: string): Shape {
@@ -83,7 +86,7 @@ function greetingBlock(
   const { main, second } = ctx.langs;
   const fitted = fitText(
     ctx.greeting[main],
-    (size) => display(main, size),
+    (size) => ctx.display(main, size),
     opts.maxW,
     opts.max,
     opts.min,
@@ -98,7 +101,7 @@ function greetingBlock(
   const gap = Math.max(fitted.font.size * 0.5, 3.5);
   if (second) {
     const size = Math.max(fitted.font.size * 0.42, 3.6);
-    const font = display(second, size);
+    const font = ctx.display(second, size);
     bottom += gap + size;
     shapes.push(oneLine(ctx.greeting[second], font, opts.x, bottom, opts.align, opts.soft));
   }
@@ -141,11 +144,13 @@ function signature(ctx: Ctx): Shape[] {
       "center",
       pal.ink,
       ctx.measure,
+      "middle",
+      ctx.w - ctx.m * 2,
     ),
   ];
   const fitted = fitText(
     ctx.greeting[langs.main],
-    (size) => display(langs.main, size),
+    (size) => ctx.display(langs.main, size),
     w - m * 2,
     5.6,
     3.8,
@@ -212,11 +217,13 @@ function typeLed(ctx: Ctx): Shape[] {
       markAlign,
       pal.ink,
       ctx.measure,
+      "bottom",
+      ctx.w - ctx.m * 2,
     ),
   );
   if (!langs.second) {
     shapes.push(
-      giftLabel(ctx, alignX(endOf(langs.main), w, m), h - m - 2.4, endOf(langs.main), pal.metal),
+      giftLabel(ctx, alignX(endOf(langs.main), w, m), h - m, endOf(langs.main), pal.metal),
     );
   }
   return shapes;
@@ -257,6 +264,8 @@ function photo(ctx: Ctx): Shape[] {
         "center",
         pal.ink,
         ctx.measure,
+        "bottom",
+        ctx.w - ctx.m * 2,
       ),
     );
     return shapes;
@@ -294,6 +303,8 @@ function photo(ctx: Ctx): Shape[] {
       "center",
       pal.ink,
       ctx.measure,
+      "bottom",
+      ctx.w - ctx.m * 2,
     ),
   );
   return shapes;
@@ -356,6 +367,8 @@ function pattern(ctx: Ctx): Shape[] {
         "center",
         pal.ink,
         ctx.measure,
+        "bottom",
+        ctx.w - ctx.m * 2,
       ),
     );
   } else {
@@ -368,6 +381,8 @@ function pattern(ctx: Ctx): Shape[] {
         align,
         pal.ink,
         ctx.measure,
+        "bottom",
+        ctx.w - ctx.m * 2,
       ),
     );
   }
@@ -399,7 +414,7 @@ function block(ctx: Ctx, tone: string): Shape[] {
     );
     const fitted = fitText(
       ctx.greeting[langs.main],
-      (s) => display(langs.main, s),
+      (s) => ctx.display(langs.main, s),
       w - m * 2,
       13,
       6.5,
@@ -423,7 +438,7 @@ function block(ctx: Ctx, tone: string): Shape[] {
       shapes.push(
         oneLine(
           ctx.greeting[langs.second],
-          display(langs.second, 4.6),
+          ctx.display(langs.second, 4.6),
           alignX(align, w, m),
           y,
           align,
@@ -455,6 +470,8 @@ function block(ctx: Ctx, tone: string): Shape[] {
         align,
         paper.ink,
         ctx.measure,
+        "bottom",
+        ctx.w - ctx.m * 2,
       ),
     );
     return shapes;
@@ -478,7 +495,7 @@ function block(ctx: Ctx, tone: string): Shape[] {
   shapes.push(...ornamentAt(ctx, fAlign, fx0, m + 4, 7, fieldInk));
   const fitted = fitText(
     ctx.greeting[langs.main],
-    (s) => display(langs.main, s),
+    (s) => ctx.display(langs.main, s),
     inner.x1 - inner.x0,
     11,
     6,
@@ -500,7 +517,7 @@ function block(ctx: Ctx, tone: string): Shape[] {
     shapes.push(
       oneLine(
         ctx.greeting[langs.second],
-        display(langs.second, 4.2),
+        ctx.display(langs.second, 4.2),
         fx0,
         h - m - 1,
         fAlign,
@@ -533,6 +550,8 @@ function block(ctx: Ctx, tone: string): Shape[] {
       "center",
       paper.ink,
       ctx.measure,
+      "bottom",
+      ctx.w - ctx.m * 2,
     ),
   );
   return shapes;
@@ -559,6 +578,7 @@ export function cardFront(
     greeting: occasion.greeting,
     line: occasion.line ?? (occasion.id === "gift" ? kindLine(content.kind) : null),
     portrait: design.orientation === "portrait",
+    display: (lang, size) => display(lang, size, content.fonts),
   };
   if (composition === "signature") return signature(ctx);
   if (composition === "type") return typeLed(ctx);

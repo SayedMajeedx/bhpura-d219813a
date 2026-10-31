@@ -95,7 +95,7 @@ describe("what the store chooses", () => {
       ],
     );
     expect(saved.error).toBeNull();
-    expect(saved.rows[0].r).toEqual({
+    expect(saved.rows[0].r).toMatchObject({
       off: ["block:white"],
       signature: null,
       photo_products: [mine],

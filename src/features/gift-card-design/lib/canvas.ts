@@ -1,5 +1,6 @@
-import type { Align, CardFont, Shape } from "./geometry";
-import { CARD_FACES, roughMeasure, type Measure } from "./type";
+import type { CardFont, Shape } from "./geometry";
+import { CARD_FACES, cardFontFamily, roughMeasure, type Measure } from "./type";
+import type { CardFontFiles, LogoInfo } from "./content";
 
 /**
  * The browser's side of a card (never run on the server): measuring text in the card's faces,
@@ -30,11 +31,29 @@ export function pageMeasure(): Measure {
   };
 }
 
-/** Loads the card's faces (a canvas does not wait for web fonts). */
-export async function loadCardFonts(): Promise<void> {
+/** A font address made safe to write inside CSS's url("..."). */
+export const cssUrl = (url: string) => url.replace(/["'()\\\s<>]/g, "");
+
+const registered = new Set<string>();
+
+/**
+ * Loads the card's faces, and the store's own card fonts when it uploaded them (a canvas does not
+ * wait for web fonts). A font that cannot load leaves the cards' own face in its place.
+ */
+export async function loadCardFonts(files?: CardFontFiles | null): Promise<void> {
   const fonts = globalThis.document?.fonts;
   if (!fonts) return;
-  await Promise.all(CARD_FACES.map((face) => fonts.load(face).catch(() => [])));
+  const custom = (["ar", "en"] as const).flatMap((lang) => {
+    const url = files?.[lang];
+    if (!url) return [];
+    const family = cardFontFamily(lang, url);
+    if (!registered.has(family) && typeof FontFace !== "undefined") {
+      registered.add(family);
+      fonts.add(new FontFace(family, `url("${cssUrl(url)}")`, { weight: "100 900" }));
+    }
+    return [`400 40px "${family}"`];
+  });
+  await Promise.all([...CARD_FACES, ...custom].map((face) => fonts.load(face).catch(() => [])));
 }
 
 const images = new Map<string, Promise<HTMLImageElement | null>>();
@@ -56,33 +75,87 @@ export function loadImage(href: string): Promise<HTMLImageElement | null> {
   return found;
 }
 
+/** The rows and columns a picture's mark fills (alpha above a whisper), as fractions of it. */
+export function inkBounds(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): { x: number; y: number; w: number; h: number } | null {
+  let x0 = width;
+  let y0 = height;
+  let x1 = -1;
+  let y1 = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      if (data[(y * width + x) * 4 + 3] > 16) {
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < x0 || y1 < y0) return null;
+  return {
+    x: x0 / width,
+    y: y0 / height,
+    w: (x1 - x0 + 1) / width,
+    h: (y1 - y0 + 1) / height,
+  };
+}
+
+const logos = new Map<string, Promise<LogoInfo | null>>();
+
 /**
- * Whether a logo can be set in one ink: an SVG, or a picture at least 200 pixels wide whose
- * corners are see-through. A logo on a white box would print as a white box on every coloured
- * card, so the store's name is set instead.
+ * The store's logo as a card draws it, or null when it cannot be set in one ink: a picture at
+ * least 200 pixels wide (or an SVG) whose corners are see-through. A logo on a white box would
+ * print as a white box on every coloured card, so the store's name is set instead. Its
+ * see-through margins are measured away, so the mark itself, not its padding, meets the card's
+ * margin and the line it stands on.
  */
-export async function logoUsable(href: string | null | undefined): Promise<boolean> {
-  if (!href) return false;
-  if (/\.svg(\?|$)/i.test(href)) return true;
+export function inspectLogo(href: string | null | undefined): Promise<LogoInfo | null> {
+  if (!href) return Promise.resolve(null);
+  let found = logos.get(href);
+  if (!found) {
+    found = measureLogo(href);
+    logos.set(href, found);
+  }
+  return found;
+}
+
+async function measureLogo(href: string): Promise<LogoInfo | null> {
+  const svg = /\.svg(\?|$)/i.test(href);
   const img = await loadImage(href);
-  if (!img || img.naturalWidth < 200) return false;
+  if (!img) return null;
+  const nw = img.naturalWidth || (svg ? 600 : 0);
+  const nh = img.naturalHeight || (svg ? 600 : 0);
+  if (!svg && nw < 200) return null;
+  const whole = { href, aspect: nw / Math.max(nh, 1), crop: { x: 0, y: 0, w: 1, h: 1 } };
   try {
+    // Read at most 600 pixels across: enough to place a mark to a tenth of a millimetre.
+    const scale = Math.min(1, 600 / Math.max(nw, nh));
+    const w = Math.max(1, Math.round(nw * scale));
+    const h = Math.max(1, Math.round(nh * scale));
     const canvas = document.createElement("canvas");
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+    canvas.width = w;
+    canvas.height = h;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return false;
-    ctx.drawImage(img, 0, 0);
-    const w = img.naturalWidth - 1;
-    const h = img.naturalHeight - 1;
-    return [
-      [0, 0],
-      [w, 0],
-      [0, h],
-      [w, h],
-    ].every(([x, y]) => ctx.getImageData(x, y, 1, 1).data[3] < 24);
+    if (!ctx) return svg ? whole : null;
+    ctx.drawImage(img, 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+    const corner = (x: number, y: number) => data[(y * w + x) * 4 + 3];
+    if (
+      !svg &&
+      [corner(0, 0), corner(w - 1, 0), corner(0, h - 1), corner(w - 1, h - 1)].some((a) => a >= 24)
+    ) {
+      return null;
+    }
+    const crop = inkBounds(data, w, h);
+    if (!crop) return null;
+    return { href, aspect: (crop.w * nw) / Math.max(crop.h * nh, 1), crop };
   } catch {
-    return false;
+    // A picture the page may not read: an SVG is drawn whole, anything else is not trusted.
+    return svg ? whole : null;
   }
 }
 
@@ -90,12 +163,6 @@ export async function logoUsable(href: string | null | undefined): Promise<boole
 export async function photoUsable(href: string): Promise<boolean> {
   const img = await loadImage(href);
   return Boolean(img && Math.min(img.naturalWidth, img.naturalHeight) >= 700);
-}
-
-function alignedX(align: Align, x: number, w: number, drawn: number) {
-  if (align === "left") return x;
-  if (align === "right") return x + w - drawn;
-  return x + (w - drawn) / 2;
 }
 
 async function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, s: number) {
@@ -171,28 +238,37 @@ async function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, s: number)
     );
     return;
   }
-  const scale = Math.min(boxW / img.naturalWidth, boxH / img.naturalHeight);
-  const dw = img.naturalWidth * scale;
-  const dh = img.naturalHeight * scale;
+  // The trimmed mark, exactly in its rectangle, laid in the store's ink.
+  const c = shape.crop;
   const tinted = document.createElement("canvas");
-  tinted.width = Math.max(Math.round(dw), 1);
-  tinted.height = Math.max(Math.round(dh), 1);
+  tinted.width = Math.max(Math.round(boxW), 1);
+  tinted.height = Math.max(Math.round(boxH), 1);
   const t = tinted.getContext("2d");
   if (!t) return;
-  t.drawImage(img, 0, 0, tinted.width, tinted.height);
+  t.drawImage(
+    img,
+    c.x * img.naturalWidth,
+    c.y * img.naturalHeight,
+    c.w * img.naturalWidth,
+    c.h * img.naturalHeight,
+    0,
+    0,
+    tinted.width,
+    tinted.height,
+  );
   t.globalCompositeOperation = "source-in";
   t.fillStyle = shape.tint;
   t.fillRect(0, 0, tinted.width, tinted.height);
-  ctx.drawImage(
-    tinted,
-    alignedX(shape.align, shape.x * s, boxW, dw),
-    shape.y * s + (boxH - dh) / 2,
-  );
+  ctx.drawImage(tinted, shape.x * s, shape.y * s, boxW, boxH);
 }
 
 /** A face as a PNG picture of the trimmed card at 300 dpi. */
-export async function cardPng(shapes: Shape[], size: { w: number; h: number }): Promise<Blob> {
-  await loadCardFonts();
+export async function cardPng(
+  shapes: Shape[],
+  size: { w: number; h: number },
+  fonts?: CardFontFiles | null,
+): Promise<Blob> {
+  await loadCardFonts(fonts);
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(size.w * PRINT_SCALE);
   canvas.height = Math.round(size.h * PRINT_SCALE);
