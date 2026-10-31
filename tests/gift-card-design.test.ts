@@ -53,6 +53,12 @@ const content = (over: Partial<CardContent> = {}): CardContent => ({
 });
 
 const design = (over: Partial<CardDesign> = {}): CardDesign => ({ ...DEFAULT_DESIGN, ...over });
+/** A wide logo whose picture has see-through margins around its mark. */
+const LOGO = {
+  href: "https://media.test/logo.png",
+  aspect: 2.5,
+  crop: { x: 0.2, y: 0.3, w: 0.6, h: 0.4 },
+};
 const texts = (shapes: Shape[]) =>
   shapes.filter((s): s is Extract<Shape, { kind: "text" }> => s.kind === "text");
 
@@ -196,12 +202,7 @@ describe("a card's faces", () => {
   });
 
   it("use the store's logo when it can be set in one ink, else its name", () => {
-    const withLogo = cardFront(
-      design(),
-      content({ logo: "https://media.test/logo.svg" }),
-      COLOURS,
-      roughMeasure,
-    );
+    const withLogo = cardFront(design(), content({ logo: LOGO }), COLOURS, roughMeasure);
     expect(withLogo.some((s) => s.kind === "logo")).toBe(true);
     const named = texts(cardFront(design({ language: "en" }), content(), COLOURS, roughMeasure));
     expect(named.map((t) => t.text)).toContain("PURA LINE");

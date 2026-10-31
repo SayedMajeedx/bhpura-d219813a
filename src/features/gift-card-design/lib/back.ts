@@ -2,7 +2,7 @@ import type { StoreColours } from "@/features/content-studio/lib/studio-styles";
 import { formatMoney } from "@/lib/format";
 import { designParts, palette, type CardDesign } from "./design";
 import { BLEED, cardSize, type Align, type Shape } from "./geometry";
-import { spendLine, storeMark, storeNameIn, type CardContent } from "./content";
+import { placedMark, spendLine, storeNameIn, type CardContent } from "./content";
 import {
   CARD_FONTS,
   alignX,
@@ -125,7 +125,15 @@ function valueBlock(
       /\u00a0|\u202f/g,
       " ",
     );
-    const amountFont = fitText(money, (s) => display(main, s), width, 8, 5, 1, measure).font;
+    const amountFont = fitText(
+      money,
+      (s) => display(main, s, content.fonts),
+      width,
+      8,
+      5,
+      1,
+      measure,
+    ).font;
     shapes.push(oneLine(money, amountFont, x, y, align, ink.ink));
     y -= amountFont.size * 1.15;
     shapes.push(oneLine(pair("value", main, second), label(main, 2.05), x, y, align, ink.soft));
@@ -152,7 +160,15 @@ function personalBlock(
   let y = top;
   if (content.to?.trim()) {
     shapes.push(oneLine(pair("to", main, second), label(main, 2.05), x, y, align, ink.soft));
-    const name = fitText(content.to.trim(), (s) => display(main, s), width, 6.4, 4, 1, measure);
+    const name = fitText(
+      content.to.trim(),
+      (s) => display(main, s, content.fonts),
+      width,
+      6.4,
+      4,
+      1,
+      measure,
+    );
     y += name.font.size * 1.25 + 1;
     shapes.push(oneLine(name.lines[0] ?? "", name.font, x, y, align, ink.ink));
     y += 7.5;
@@ -192,24 +208,32 @@ export function cardBack(
     { kind: "rect", x: -BLEED, y: -BLEED, w: w + BLEED * 2, h: h + BLEED * 2, fill: pal.ground },
   ];
   const start = startOf(main);
+  // The mark hangs from the top margin, and the "gift card" label's capitals hang from the same
+  // line; what is written below starts clear of the mark at whatever size the store chose.
+  const mark = placedMark(
+    content,
+    main,
+    { x: start === "left" ? m : w - m - 26, y: m, w: 26, h: 7 },
+    start,
+    pal.ink,
+    measure,
+    "top",
+    // Beside the "gift card" label: at most half the room between the margins.
+    (w - m * 2) / 2,
+  );
+  const cardLabel = label(main, 2.05);
   shapes.push(
-    ...storeMark(
-      content,
-      main,
-      { x: start === "left" ? m : w - m - 26, y: m - 1, w: 26, h: 7 },
-      start,
-      pal.ink,
-      measure,
-    ),
+    ...mark.shapes,
     oneLine(
       pair("card", main, second),
-      label(main, 2.05),
+      cardLabel,
       alignX(endOf(main), w, m),
-      m + 3.6,
+      m + cardLabel.size * 0.72,
       endOf(main),
       pal.metal,
     ),
   );
+  const below = Math.max(m + 19, mark.rect.y + mark.rect.h + 9);
   if (design.orientation === "portrait") {
     const col = { x0: m, x1: w - m };
     const value = valueBlock(design, content, col, h - m, ink, measure);
@@ -221,7 +245,7 @@ export function cardBack(
       stroke: pal.rule,
       width: 0.25,
     });
-    shapes.push(...personalBlock(design, content, col, m + 19, ruleY - 4, ink, measure));
+    shapes.push(...personalBlock(design, content, col, below, ruleY - 4, ink, measure));
     return shapes;
   }
   const gutter = 10;
@@ -231,11 +255,11 @@ export function cardBack(
   const mid = w / 2;
   shapes.push({
     kind: "path",
-    d: `M${mid} ${m + 14}L${mid} ${h - m}`,
+    d: `M${mid} ${below - 5}L${mid} ${h - m}`,
     stroke: pal.rule,
     width: 0.25,
   });
-  shapes.push(...personalBlock(design, content, startCol, m + 19, h - m, ink, measure));
+  shapes.push(...personalBlock(design, content, startCol, below, h - m, ink, measure));
   shapes.push(...valueBlock(design, content, endCol, h - m, ink, measure).shapes);
   return shapes;
 }

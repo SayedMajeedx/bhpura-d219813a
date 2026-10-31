@@ -51,7 +51,7 @@ export type Shape =
     }
   /** A photo filling its box (cropped to it, centred). */
   | { kind: "image"; href: string; x: number; y: number; w: number; h: number }
-  /** The store's logo inside its box, in one ink. */
+  /** The store's logo in one ink, drawn exactly in its rectangle from the trimmed part `crop`. */
   | {
       kind: "logo";
       href: string;
@@ -60,7 +60,8 @@ export type Shape =
       w: number;
       h: number;
       tint: string;
-      align: Align;
+      /** The part of the picture drawn, as fractions of it (its see-through margins left out). */
+      crop: { x: number; y: number; w: number; h: number };
     };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;

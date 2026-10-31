@@ -8,14 +8,35 @@ import { supabase } from "@/integrations/supabase/client";
  * change settings write it (`set_gift_card_designs`, which cleans what it keeps).
  */
 
+/** A font the store uploaded for its cards in one language. */
+export type CardFontRow = { url: string; name: string | null };
+
 export type CardDesignsRow = {
   off: string[];
   signature: string | null;
   photo_products: string[];
   photos: string[];
+  /** How large the store's mark is drawn on its cards (1 as designed). */
+  logo_scale: number;
+  /** The cards' own fonts by language (migration 20261108100000). */
+  fonts: { ar?: CardFontRow | null; en?: CardFontRow | null };
 };
 
-const EMPTY: CardDesignsRow = { off: [], signature: null, photo_products: [], photos: [] };
+const EMPTY: CardDesignsRow = {
+  off: [],
+  signature: null,
+  photo_products: [],
+  photos: [],
+  logo_scale: 1,
+  fonts: {},
+};
+
+function fontRow(value: unknown): CardFontRow | null {
+  const row = (value && typeof value === "object" ? value : null) as Partial<CardFontRow> | null;
+  return row && typeof row.url === "string" && row.url
+    ? { url: row.url, name: typeof row.name === "string" ? row.name : null }
+    : null;
+}
 
 export async function fetchCardDesigns(brandId: string): Promise<CardDesignsRow> {
   const { data, error } = await supabase.rpc("storefront_gift_card_designs", {
@@ -28,16 +49,36 @@ export async function fetchCardDesigns(brandId: string): Promise<CardDesignsRow>
     signature: typeof row.signature === "string" ? row.signature : null,
     photo_products: Array.isArray(row.photo_products) ? row.photo_products : [],
     photos: Array.isArray(row.photos) ? row.photos : [],
+    logo_scale: typeof row.logo_scale === "number" && row.logo_scale > 0 ? row.logo_scale : 1,
+    fonts: {
+      ar: fontRow((row.fonts as CardDesignsRow["fonts"] | undefined)?.ar),
+      en: fontRow((row.fonts as CardDesignsRow["fonts"] | undefined)?.en),
+    },
   };
 }
 
 export async function saveCardDesigns(
   brandId: string,
-  input: { off: string[]; signature: string | null; photoProducts: string[] },
+  input: {
+    off: string[];
+    signature: string | null;
+    photoProducts: string[];
+    logoScale: number;
+    fonts: { ar: CardFontRow | null; en: CardFontRow | null };
+  },
 ) {
   const { data, error } = await supabase.rpc("set_gift_card_designs", {
     p_brand_id: brandId,
-    p_designs: { off: input.off, signature: input.signature, photo_products: input.photoProducts },
+    p_designs: {
+      off: input.off,
+      signature: input.signature,
+      photo_products: input.photoProducts,
+      logo_scale: input.logoScale,
+      fonts: {
+        ...(input.fonts.ar ? { ar: input.fonts.ar } : {}),
+        ...(input.fonts.en ? { en: input.fonts.en } : {}),
+      },
+    },
   });
   if (error) throw error;
   return data;

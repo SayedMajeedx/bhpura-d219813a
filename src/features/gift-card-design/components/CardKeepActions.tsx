@@ -34,7 +34,7 @@ export function CardKeepActions({
   const [saving, setSaving] = useState(false);
 
   const faces = async () => {
-    await loadCardFonts();
+    await loadCardFonts(kit.fonts);
     const measure = pageMeasure();
     const content = cardContent(kit, design.photo, details, primary);
     return {
@@ -49,8 +49,12 @@ export function CardKeepActions({
     try {
       const { front, back, size } = await faces();
       const files = [
-        new File([await cardPng(front, size)], `${fileName}-front.png`, { type: "image/png" }),
-        new File([await cardPng(back, size)], `${fileName}-back.png`, { type: "image/png" }),
+        new File([await cardPng(front, size, kit.fonts)], `${fileName}-front.png`, {
+          type: "image/png",
+        }),
+        new File([await cardPng(back, size, kit.fonts)], `${fileName}-back.png`, {
+          type: "image/png",
+        }),
       ];
       if (navigator.canShare?.({ files })) {
         await navigator.share({ files }).catch(() => undefined);
@@ -86,7 +90,15 @@ export function CardKeepActions({
     const { front, back, size } = await faces();
     sheet.document.open();
     sheet.document.write(
-      cardPrintHtml({ front, back, size, format, lang, origin: window.location.origin }),
+      cardPrintHtml({
+        front,
+        back,
+        size,
+        format,
+        lang,
+        origin: window.location.origin,
+        fonts: kit.fonts,
+      }),
     );
     sheet.document.close();
   };

@@ -48,8 +48,29 @@ export const isArabic = (text: string) => /\p{Script=Arabic}/u.test(text);
 export const lineDir = (text: string): "ltr" | "rtl" =>
   /^[^\p{L}]*\p{Script=Arabic}/u.test(text) ? "rtl" : "ltr";
 
-/** The greeting's face: extra-light when large, a touch heavier when small, never bold. */
-export function display(lang: "ar" | "en", size: number): CardFont {
+/** The families of the store's own card fonts, by language (null: the cards' own faces). */
+export type CardFamilies = { ar: string | null; en: string | null };
+
+/** A short, stable name for an uploaded font, so a font changed later is never mistaken for it. */
+export function cardFontFamily(lang: "ar" | "en", url: string): string {
+  let hash = 5381;
+  for (const ch of url) hash = ((hash * 33) ^ ch.charCodeAt(0)) >>> 0;
+  return `BoutqCard${lang === "ar" ? "Ar" : "En"}${hash.toString(36)}`;
+}
+
+const isCustom = (family: string) => family.startsWith('"BoutqCard');
+const isArabicFamily = (family: string) => family.startsWith('"BoutqCardAr');
+
+/**
+ * The greeting's face: the store's own font for that language when it uploaded one, else
+ * extra-light when large and a touch heavier when small, never bold.
+ */
+export function display(lang: "ar" | "en", size: number, fonts?: CardFamilies | null): CardFont {
+  const custom = fonts?.[lang];
+  if (custom) {
+    const fallback = lang === "ar" ? CARD_FONTS.displayAr : CARD_FONTS.displayEn;
+    return { family: `"${custom}", ${fallback}`, weight: 400, size };
+  }
   if (lang === "ar") {
     return size >= LIGHT_FROM
       ? { family: CARD_FONTS.displayAr, weight: 200, size }
@@ -71,6 +92,7 @@ export function label(lang: "ar" | "en", size: number): CardFont {
 
 /** The line height a face needs: Arabic display letters reach far above and below. */
 export function leading(font: CardFont): number {
+  if (isCustom(font.family)) return font.size * (isArabicFamily(font.family) ? 1.45 : 1.15);
   if (font.family === CARD_FONTS.displayAr || font.family === CARD_FONTS.displayArSmall) {
     return font.size * 1.42;
   }
