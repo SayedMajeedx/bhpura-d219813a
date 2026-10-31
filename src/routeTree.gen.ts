@@ -26,7 +26,6 @@ import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAuthConfirmedRouteImport } from './routes/$slug.auth-confirmed'
 import { Route as SlugBookRouteImport } from './routes/$slug.book'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
-import { Route as SlugCustomOrderRouteImport } from './routes/$slug.custom-order'
 import { Route as SlugGiftCardsRouteImport } from './routes/$slug.gift-cards'
 import { Route as SlugManifestDotwebmanifestRouteImport } from './routes/$slug.manifest[.webmanifest]'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
@@ -195,11 +194,6 @@ const SlugBookRoute = SlugBookRouteImport.update({
 const SlugCheckoutRoute = SlugCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
-  getParentRoute: () => SlugRouteRoute,
-} as any)
-const SlugCustomOrderRoute = SlugCustomOrderRouteImport.update({
-  id: '/custom-order',
-  path: '/custom-order',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugGiftCardsRoute = SlugGiftCardsRouteImport.update({
@@ -709,7 +703,6 @@ export interface FileRoutesByFullPath {
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
-  '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
@@ -812,7 +805,6 @@ export interface FileRoutesByTo {
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
-  '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
@@ -916,7 +908,6 @@ export interface FileRoutesById {
   '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
-  '/$slug/custom-order': typeof SlugCustomOrderRoute
   '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
@@ -1022,7 +1013,6 @@ export interface FileRouteTypes {
     | '/$slug/auth-confirmed'
     | '/$slug/book'
     | '/$slug/checkout'
-    | '/$slug/custom-order'
     | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
@@ -1125,7 +1115,6 @@ export interface FileRouteTypes {
     | '/$slug/auth-confirmed'
     | '/$slug/book'
     | '/$slug/checkout'
-    | '/$slug/custom-order'
     | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
@@ -1228,7 +1217,6 @@ export interface FileRouteTypes {
     | '/$slug/auth-confirmed'
     | '/$slug/book'
     | '/$slug/checkout'
-    | '/$slug/custom-order'
     | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
@@ -1465,13 +1453,6 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/$slug/checkout'
       preLoaderRoute: typeof SlugCheckoutRouteImport
-      parentRoute: typeof SlugRouteRoute
-    }
-    '/$slug/custom-order': {
-      id: '/$slug/custom-order'
-      path: '/custom-order'
-      fullPath: '/$slug/custom-order'
-      preLoaderRoute: typeof SlugCustomOrderRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/gift-cards': {
@@ -2079,7 +2060,6 @@ interface SlugRouteRouteChildren {
   SlugAuthConfirmedRoute: typeof SlugAuthConfirmedRoute
   SlugBookRoute: typeof SlugBookRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
-  SlugCustomOrderRoute: typeof SlugCustomOrderRoute
   SlugGiftCardsRoute: typeof SlugGiftCardsRoute
   SlugManifestDotwebmanifestRoute: typeof SlugManifestDotwebmanifestRoute
   SlugSearchRoute: typeof SlugSearchRoute
@@ -2101,7 +2081,6 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugAuthConfirmedRoute: SlugAuthConfirmedRoute,
   SlugBookRoute: SlugBookRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
-  SlugCustomOrderRoute: SlugCustomOrderRoute,
   SlugGiftCardsRoute: SlugGiftCardsRoute,
   SlugManifestDotwebmanifestRoute: SlugManifestDotwebmanifestRoute,
   SlugSearchRoute: SlugSearchRoute,
