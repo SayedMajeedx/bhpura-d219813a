@@ -13,6 +13,11 @@ const data = vi.hoisted(() => ({
   issueGiftCard: vi.fn(),
   voidGiftCard: vi.fn(),
   redeemGiftCardOnOrder: vi.fn(),
+  settings: null as unknown,
+  purchases: [] as unknown[],
+  saveGiftCardSettings: vi.fn(async () => null),
+  approveGiftCardPurchase: vi.fn(async () => null),
+  cancelGiftCardPurchase: vi.fn(async () => undefined),
 }));
 vi.mock("../src/lib/data/gift-cards", () => ({
   giftCardQueries: {
@@ -26,7 +31,26 @@ vi.mock("../src/lib/data/gift-cards", () => ({
   issueGiftCard: data.issueGiftCard,
   voidGiftCard: data.voidGiftCard,
   redeemGiftCardOnOrder: data.redeemGiftCardOnOrder,
+  giftCardOnlineQueries: {
+    settings: () => ({ queryKey: ["gift-cards", "settings"], queryFn: async () => data.settings }),
+    purchases: () => ({
+      queryKey: ["gift-cards", "purchases"],
+      queryFn: async () => data.purchases,
+    }),
+  },
+  saveGiftCardSettings: data.saveGiftCardSettings,
+  approveGiftCardPurchase: data.approveGiftCardPurchase,
+  cancelGiftCardPurchase: data.cancelGiftCardPurchase,
+  invalidateGiftCardOnline: vi.fn(async () => undefined),
 }));
+const purchaseFns = {
+  getGiftCardPurchaseReceiptUrl: vi.fn(async () => ({ url: "https://r2.test/r" })),
+};
+vi.mock("../src/lib/gift-card-purchase.functions", () => purchaseFns);
+vi.mock("@/lib/gift-card-purchase.functions", () => purchaseFns);
+const confirm = vi.hoisted(() => ({ confirmDialog: vi.fn(async () => true) }));
+vi.mock("../src/components/ui/confirm-dialog", () => confirm);
+vi.mock("@/components/ui/confirm-dialog", () => confirm);
 vi.mock("@/lib/data/gift-cards", async () => await import("../src/lib/data/gift-cards"));
 vi.mock("../src/lib/data/orders/mutations", () => ({
   invalidateOrders: vi.fn(async () => undefined),
@@ -48,9 +72,11 @@ vi.mock("@/hooks/use-store-currency", () => ({
 const profile = vi.hoisted(() => ({ allowed: true }));
 vi.mock("../src/lib/profile-context", () => ({
   useProfileOptional: () => ({ hasPermission: () => profile.allowed }),
+  useProfile: () => ({ hasPermission: () => profile.allowed }),
 }));
 vi.mock("@/lib/profile-context", () => ({
   useProfileOptional: () => ({ hasPermission: () => profile.allowed }),
+  useProfile: () => ({ hasPermission: () => profile.allowed }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
@@ -196,7 +222,7 @@ describe("the gift cards page", () => {
     expect(
       screen.getByText("Choose how the card was paid for, or that the store gave it."),
     ).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "25" } });
+    fireEvent.change(screen.getByLabelText(/^Amount \(/), { target: { value: "25" } });
     fireEvent.click(screen.getByRole("radio", { name: "Cash" }));
     expect(screen.getByRole("radio", { name: "Cash" })).toHaveAttribute("aria-checked", "true");
     fireEvent.click(screen.getByRole("button", { name: "Issue card" }));
@@ -263,5 +289,56 @@ describe("paying an order with a card", () => {
       />,
     );
     expect(none.container.innerHTML).toBe("");
+  });
+});
+
+describe("selling cards on the store", () => {
+  it("saves the store's offer: on, its amounts as typed and how long a card lasts", async () => {
+    profile.allowed = true;
+    data.settings = null;
+    data.purchases = [];
+    wrap(<GiftCardsPage />);
+    fireEvent.click(await screen.findByRole("switch", { name: "Sell gift cards on the store" }));
+    fireEvent.change(screen.getByLabelText(/Amounts offered/), { target: { value: "50, 25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() =>
+      expect(data.saveGiftCardSettings).toHaveBeenCalledWith("b1", {
+        sellOnline: true,
+        amounts: [25, 50],
+        validMonths: 12,
+      }),
+    );
+  });
+
+  it("lists a transfer to check and approves it, which issues its card", async () => {
+    data.settings = { sell_online: true, amounts: [25], valid_months: 12, updated_at: "x" };
+    data.purchases = [
+      {
+        id: "pu1",
+        brand_id: "b1",
+        amount: 25,
+        currency: "BHD",
+        payment_method: "benefit",
+        status: "pending",
+        buyer_name: "Sara",
+        buyer_phone: "+97339001122",
+        recipient_name: "Noor",
+        receipt_key: "brands/b1/benefit-receipts/x.jpg",
+        created_at: "2026-10-31T10:00:00Z",
+      },
+    ];
+    wrap(<GiftCardsPage />);
+    expect(await screen.findByText(/Transfers to check/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Approve and issue the card" }));
+    await waitFor(() => expect(data.approveGiftCardPurchase).toHaveBeenCalledWith("pu1"));
+  });
+
+  it("shows the offer's settings only to staff who may change settings", async () => {
+    profile.allowed = false;
+    data.purchases = [];
+    wrap(<GiftCardsPage />);
+    await screen.findByText("Selling on the store");
+    expect(screen.queryByRole("switch", { name: "Sell gift cards on the store" })).toBeNull();
+    profile.allowed = true;
   });
 });

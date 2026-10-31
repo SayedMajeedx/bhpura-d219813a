@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { giftCardOnlineQueries } from "@/lib/data/gift-cards/online";
 import React, { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AddonSlot } from "@/components/addons/AddonSlot";
@@ -25,6 +27,8 @@ export function FooterV2() {
   const isAr = lang === "ar";
   // A services store's footer talks about services and bookings, not products.
   const servicesStore = useIsServicesStore();
+  // Shown while the store sells gift cards online (step four).
+  const sellsGiftCards = Boolean(useQuery(giftCardOnlineQueries.offer(brand.slug)).data);
 
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     shop: false,
@@ -146,6 +150,11 @@ export function FooterV2() {
           style={FG}
         >
           {t("تتبّع طلبك", "Track your order")}
+        </Link>
+      )}
+      {sellsGiftCards && (
+        <Link to="/$slug/gift-cards" params={{ slug: brand.slug }} className={linkClass} style={FG}>
+          {t("بطاقات الهدايا", "Gift cards")}
         </Link>
       )}
       <Link to="/$slug/account" params={{ slug: brand.slug }} className={linkClass} style={FG}>

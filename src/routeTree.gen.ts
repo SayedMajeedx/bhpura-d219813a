@@ -27,6 +27,7 @@ import { Route as SlugAuthConfirmedRouteImport } from './routes/$slug.auth-confi
 import { Route as SlugBookRouteImport } from './routes/$slug.book'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
 import { Route as SlugCustomOrderRouteImport } from './routes/$slug.custom-order'
+import { Route as SlugGiftCardsRouteImport } from './routes/$slug.gift-cards'
 import { Route as SlugManifestDotwebmanifestRouteImport } from './routes/$slug.manifest[.webmanifest]'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugSizeGuideRouteImport } from './routes/$slug.size-guide'
@@ -37,6 +38,7 @@ import { Route as BSlugRouteImport } from './routes/b.$slug'
 import { Route as InvoiceIdRouteImport } from './routes/invoice.$id'
 import { Route as PlatformFilenameRouteImport } from './routes/platform.$filename'
 import { Route as ReviewTokenRouteImport } from './routes/review.$token'
+import { Route as SlugGiftCardPurchaseIdRouteImport } from './routes/$slug.gift-card.$purchaseId'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
 import { Route as SlugProductSplatRouteImport } from './routes/$slug.product.$'
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
@@ -60,6 +62,8 @@ import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
 import { Route as ApiAuthInstagramAuthorizeRouteImport } from './routes/api.auth.instagram.authorize'
 import { Route as ApiAuthInstagramCallbackRouteImport } from './routes/api.auth.instagram.callback'
+import { Route as ApiPublicGiftCardsChargeRouteImport } from './routes/api.public.gift-cards.charge'
+import { Route as ApiPublicGiftCardsTapRedirectRouteImport } from './routes/api.public.gift-cards.tap-redirect'
 import { Route as ApiPublicPaymentsCreateTapChargeRouteImport } from './routes/api.public.payments.create-tap-charge'
 import { Route as ApiPublicPaymentsTapRedirectRouteImport } from './routes/api.public.payments.tap-redirect'
 import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
@@ -198,6 +202,11 @@ const SlugCustomOrderRoute = SlugCustomOrderRouteImport.update({
   path: '/custom-order',
   getParentRoute: () => SlugRouteRoute,
 } as any)
+const SlugGiftCardsRoute = SlugGiftCardsRouteImport.update({
+  id: '/gift-cards',
+  path: '/gift-cards',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
 const SlugManifestDotwebmanifestRoute =
   SlugManifestDotwebmanifestRouteImport.update({
     id: '/manifest.webmanifest',
@@ -248,6 +257,11 @@ const ReviewTokenRoute = ReviewTokenRouteImport.update({
   id: '/review/$token',
   path: '/review/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SlugGiftCardPurchaseIdRoute = SlugGiftCardPurchaseIdRouteImport.update({
+  id: '/gift-card/$purchaseId',
+  path: '/gift-card/$purchaseId',
+  getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugPageIdxRoute = SlugPageIdxRouteImport.update({
   id: '/page/$idx',
@@ -377,6 +391,18 @@ const ApiAuthInstagramCallbackRoute =
   ApiAuthInstagramCallbackRouteImport.update({
     id: '/api/auth/instagram/callback',
     path: '/api/auth/instagram/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicGiftCardsChargeRoute =
+  ApiPublicGiftCardsChargeRouteImport.update({
+    id: '/api/public/gift-cards/charge',
+    path: '/api/public/gift-cards/charge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicGiftCardsTapRedirectRoute =
+  ApiPublicGiftCardsTapRedirectRouteImport.update({
+    id: '/api/public/gift-cards/tap-redirect',
+    path: '/api/public/gift-cards/tap-redirect',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicPaymentsCreateTapChargeRoute =
@@ -684,6 +710,7 @@ export interface FileRoutesByFullPath {
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
@@ -695,6 +722,7 @@ export interface FileRoutesByFullPath {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
+  '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -718,6 +746,8 @@ export interface FileRoutesByFullPath {
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
   '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
+  '/api/public/gift-cards/charge': typeof ApiPublicGiftCardsChargeRoute
+  '/api/public/gift-cards/tap-redirect': typeof ApiPublicGiftCardsTapRedirectRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -783,6 +813,7 @@ export interface FileRoutesByTo {
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
@@ -793,6 +824,7 @@ export interface FileRoutesByTo {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug': typeof SlugIndexRoute
+  '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -816,6 +848,8 @@ export interface FileRoutesByTo {
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
   '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
+  '/api/public/gift-cards/charge': typeof ApiPublicGiftCardsChargeRoute
+  '/api/public/gift-cards/tap-redirect': typeof ApiPublicGiftCardsTapRedirectRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -883,6 +917,7 @@ export interface FileRoutesById {
   '/$slug/book': typeof SlugBookRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/custom-order': typeof SlugCustomOrderRoute
+  '/$slug/gift-cards': typeof SlugGiftCardsRoute
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
@@ -894,6 +929,7 @@ export interface FileRoutesById {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
+  '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -917,6 +953,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/auth/instagram/authorize': typeof ApiAuthInstagramAuthorizeRoute
   '/api/auth/instagram/callback': typeof ApiAuthInstagramCallbackRoute
+  '/api/public/gift-cards/charge': typeof ApiPublicGiftCardsChargeRoute
+  '/api/public/gift-cards/tap-redirect': typeof ApiPublicGiftCardsTapRedirectRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
@@ -985,6 +1023,7 @@ export interface FileRouteTypes {
     | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
+    | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
@@ -996,6 +1035,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug/'
+    | '/$slug/gift-card/$purchaseId'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1019,6 +1059,8 @@ export interface FileRouteTypes {
     | '/admin/super/settings'
     | '/api/auth/instagram/authorize'
     | '/api/auth/instagram/callback'
+    | '/api/public/gift-cards/charge'
+    | '/api/public/gift-cards/tap-redirect'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -1084,6 +1126,7 @@ export interface FileRouteTypes {
     | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
+    | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
@@ -1094,6 +1137,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug'
+    | '/$slug/gift-card/$purchaseId'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1117,6 +1161,8 @@ export interface FileRouteTypes {
     | '/admin/super/settings'
     | '/api/auth/instagram/authorize'
     | '/api/auth/instagram/callback'
+    | '/api/public/gift-cards/charge'
+    | '/api/public/gift-cards/tap-redirect'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -1183,6 +1229,7 @@ export interface FileRouteTypes {
     | '/$slug/book'
     | '/$slug/checkout'
     | '/$slug/custom-order'
+    | '/$slug/gift-cards'
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
@@ -1194,6 +1241,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug/'
+    | '/$slug/gift-card/$purchaseId'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1217,6 +1265,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/super/settings'
     | '/api/auth/instagram/authorize'
     | '/api/auth/instagram/callback'
+    | '/api/public/gift-cards/charge'
+    | '/api/public/gift-cards/tap-redirect'
     | '/api/public/payments/create-tap-charge'
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
@@ -1287,6 +1337,8 @@ export interface RootRouteChildren {
   ApiOrdersStatusRoute: typeof ApiOrdersStatusRoute
   ApiAuthInstagramAuthorizeRoute: typeof ApiAuthInstagramAuthorizeRoute
   ApiAuthInstagramCallbackRoute: typeof ApiAuthInstagramCallbackRoute
+  ApiPublicGiftCardsChargeRoute: typeof ApiPublicGiftCardsChargeRoute
+  ApiPublicGiftCardsTapRedirectRoute: typeof ApiPublicGiftCardsTapRedirectRoute
   ApiPublicPaymentsCreateTapChargeRoute: typeof ApiPublicPaymentsCreateTapChargeRoute
   ApiPublicPaymentsTapRedirectRoute: typeof ApiPublicPaymentsTapRedirectRoute
   ApiPublicWebhooksTapRoute: typeof ApiPublicWebhooksTapRoute
@@ -1422,6 +1474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugCustomOrderRouteImport
       parentRoute: typeof SlugRouteRoute
     }
+    '/$slug/gift-cards': {
+      id: '/$slug/gift-cards'
+      path: '/gift-cards'
+      fullPath: '/$slug/gift-cards'
+      preLoaderRoute: typeof SlugGiftCardsRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
     '/$slug/manifest.webmanifest': {
       id: '/$slug/manifest.webmanifest'
       path: '/manifest.webmanifest'
@@ -1491,6 +1550,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/review/$token'
       preLoaderRoute: typeof ReviewTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/$slug/gift-card/$purchaseId': {
+      id: '/$slug/gift-card/$purchaseId'
+      path: '/gift-card/$purchaseId'
+      fullPath: '/$slug/gift-card/$purchaseId'
+      preLoaderRoute: typeof SlugGiftCardPurchaseIdRouteImport
+      parentRoute: typeof SlugRouteRoute
     }
     '/$slug/page/$idx': {
       id: '/$slug/page/$idx'
@@ -1651,6 +1717,20 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/instagram/callback'
       fullPath: '/api/auth/instagram/callback'
       preLoaderRoute: typeof ApiAuthInstagramCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/gift-cards/charge': {
+      id: '/api/public/gift-cards/charge'
+      path: '/api/public/gift-cards/charge'
+      fullPath: '/api/public/gift-cards/charge'
+      preLoaderRoute: typeof ApiPublicGiftCardsChargeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/gift-cards/tap-redirect': {
+      id: '/api/public/gift-cards/tap-redirect'
+      path: '/api/public/gift-cards/tap-redirect'
+      fullPath: '/api/public/gift-cards/tap-redirect'
+      preLoaderRoute: typeof ApiPublicGiftCardsTapRedirectRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/payments/create-tap-charge': {
@@ -2000,12 +2080,14 @@ interface SlugRouteRouteChildren {
   SlugBookRoute: typeof SlugBookRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
   SlugCustomOrderRoute: typeof SlugCustomOrderRoute
+  SlugGiftCardsRoute: typeof SlugGiftCardsRoute
   SlugManifestDotwebmanifestRoute: typeof SlugManifestDotwebmanifestRoute
   SlugSearchRoute: typeof SlugSearchRoute
   SlugSizeGuideRoute: typeof SlugSizeGuideRoute
   SlugTrackOrderRoute: typeof SlugTrackOrderRoute
   SlugWishlistRoute: typeof SlugWishlistRoute
   SlugIndexRoute: typeof SlugIndexRoute
+  SlugGiftCardPurchaseIdRoute: typeof SlugGiftCardPurchaseIdRoute
   SlugPageIdxRoute: typeof SlugPageIdxRoute
   SlugProductSplatRoute: typeof SlugProductSplatRoute
   SlugProductIdRoute: typeof SlugProductIdRoute
@@ -2020,12 +2102,14 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugBookRoute: SlugBookRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
   SlugCustomOrderRoute: SlugCustomOrderRoute,
+  SlugGiftCardsRoute: SlugGiftCardsRoute,
   SlugManifestDotwebmanifestRoute: SlugManifestDotwebmanifestRoute,
   SlugSearchRoute: SlugSearchRoute,
   SlugSizeGuideRoute: SlugSizeGuideRoute,
   SlugTrackOrderRoute: SlugTrackOrderRoute,
   SlugWishlistRoute: SlugWishlistRoute,
   SlugIndexRoute: SlugIndexRoute,
+  SlugGiftCardPurchaseIdRoute: SlugGiftCardPurchaseIdRoute,
   SlugPageIdxRoute: SlugPageIdxRoute,
   SlugProductSplatRoute: SlugProductSplatRoute,
   SlugProductIdRoute: SlugProductIdRoute,
@@ -2257,6 +2341,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOrdersStatusRoute: ApiOrdersStatusRoute,
   ApiAuthInstagramAuthorizeRoute: ApiAuthInstagramAuthorizeRoute,
   ApiAuthInstagramCallbackRoute: ApiAuthInstagramCallbackRoute,
+  ApiPublicGiftCardsChargeRoute: ApiPublicGiftCardsChargeRoute,
+  ApiPublicGiftCardsTapRedirectRoute: ApiPublicGiftCardsTapRedirectRoute,
   ApiPublicPaymentsCreateTapChargeRoute: ApiPublicPaymentsCreateTapChargeRoute,
   ApiPublicPaymentsTapRedirectRoute: ApiPublicPaymentsTapRedirectRoute,
   ApiPublicWebhooksTapRoute: ApiPublicWebhooksTapRoute,

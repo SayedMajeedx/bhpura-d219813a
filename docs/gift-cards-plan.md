@@ -1,6 +1,6 @@
 # Gift cards: the plan
 
-Status: **steps one to three built**. Step one (migration `20261101100000`): issuing, the list, voiding, staff taking a card on an order. Step two (migration `20261102100000`): a shopper's card at checkout, and the card charge and the transfer approval asking only for what a card leaves. Step three (migration `20261103100000`): cards sold in the store, and the reports' lines. Selling cards online is step four, still to come. The owner's decision: a gift card is a **payment**
+Status: **steps one to four built**. Step one (migration `20261101100000`): issuing, the list, voiding, staff taking a card on an order. Step two (migration `20261102100000`): a shopper's card at checkout, and the card charge and the transfer approval asking only for what a card leaves. Step three (migration `20261103100000`): cards sold in the store, and the reports' lines. Step four (migration `20261104100000`): cards bought by shoppers on the storefront. The owner's decision: a gift card is a **payment**
 (international practice), not a discount. The order keeps its full price; VAT is charged on the
 full price; selling a card is money the store holds until the card is used, not a sale of goods.
 
@@ -61,6 +61,19 @@ The owner's decision (2026-10-31): **cards are sold in the store first**. Sellin
 
 Tests: `tests/gift-cards-sold-in-store-migration.test.ts` (real Postgres after steps one and two), `tests/gift-card-report.test.ts`, `tests/monthly-statement-screen.test.tsx`, `tests/month-pack.test.tsx`, `tests/gift-cards-screens.test.tsx`.
 
+## What step four does
+
+A card bought online is **not an order**: an order would carry VAT, stock, points and count as a sale in some twenty places of the reports. It is a purchase of its own (`gift_card_purchases`), so none of that is touched, and step three's reports count the card as money held once it is issued.
+
+- **What a store offers** (`gift_card_settings`, off until turned on): its amounts (1 to 8) and how long a card bought online lasts, set by staff who may change settings in the Gift cards page's "Selling on the store" (`OnlineGiftCardsSection`, rules `lib/online-sales.ts`, `set_gift_card_settings`). A visitor reads it through `storefront_gift_card_offer` (only while the store sells cards online and takes a card or BenefitPay); the footers link the shop page while it does.
+- **Buying** (`/<store>/gift-cards`, `GiftCardShopPage`, rules `src/features/gift-card-shop/lib/gift-card-shop.ts`): an amount offered, who it is for and a note for them, the buyer's name and phone, and a card or a BenefitPay transfer with its receipt (`BenefitTransferDetails`, the checkout's own block). `startGiftCardPurchase` (service role, ten tries an hour per address) writes it through `create_gift_card_purchase`, which checks the offer, the method and the buyer and uses the receipt once.
+- **Paying by card**: `/api/public/gift-cards/charge` starts a Tap charge for the purchase's own amount and currency (by its id, store and token; a started charge resumes), and Tap's redirect (`/api/public/gift-cards/tap-redirect`) and webhook (its `gift_card_purchase_id` branch) both check the charge with Tap (`settleGiftCardCharge` in `src/lib/gift-card-purchase.server.ts`, judged by `judgeGiftCardCharge` in `src/lib/payments/gift-card-charge.ts`: captured, this purchase, this store, its amount and currency) before `settle_gift_card_purchase` issues the card once, as `paid_with` 'online'. A card payment that arrives after its purchase expired (a day) still issues it.
+- **Paying by transfer**: the purchase waits on the Gift cards page under "Transfers to check", with its receipt (`getGiftCardPurchaseReceiptUrl`); approving it (`approve_gift_card_purchase`) issues the card as 'transfer'; declining it (`cancel_gift_card_purchase`) keeps a reason.
+- **The code**: the purchase's own page (`/<store>/gift-card/<id>?t=<token>`, `GiftCardPurchasePage`, kept out of search engines and the subdomain redirect) shows it once paid, with a WhatsApp message the buyer sends to the person it is for (`recipientMessage`); a transfer reads as being checked, a failed card payment can be tried again.
+- **Reports**: the cards' lines split what was sold into cash, card machine, transfer and paid on the store (`sold_online`).
+
+Tests: `tests/gift-cards-sold-online-migration.test.ts` (real Postgres with steps one to three, `tests/helpers/gift-cards-db.ts`), `tests/gift-cards-online-payment.test.ts` (the routes and the webhook), `tests/gift-card-purchase-functions.test.ts`, `tests/gift-card-shop.test.tsx`, `tests/gift-cards-screens.test.tsx`.
+
 ## Order of work
 
 1. The tables, functions and their tests in a real Postgres; the admin page (issue, list,
@@ -68,4 +81,4 @@ Tests: `tests/gift-cards-sold-in-store-migration.test.ts` (real Postgres after s
 2. The checkout's code field and the payment paths above, each with its test, the card charge
    and the transfer approval first.
 3. Selling cards in the store and the reports' lines (built).
-4. Selling cards online: a card-only order with no VAT, kept out of sales in every report, the card issued when it is paid.
+4. Selling cards online, as a purchase of its own rather than an order (built).

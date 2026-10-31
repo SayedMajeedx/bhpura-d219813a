@@ -3511,6 +3511,105 @@ export type Database = {
           },
         ];
       };
+      gift_card_purchases: {
+        Row: {
+          amount: number;
+          brand_id: string;
+          buyer_email: string | null;
+          buyer_name: string;
+          buyer_phone: string;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          cancelled_by: string | null;
+          created_at: string;
+          currency: string;
+          gateway_reference: string | null;
+          gift_card_id: string | null;
+          id: string;
+          message: string | null;
+          paid_at: string | null;
+          payment_method: string;
+          receipt_key: string | null;
+          recipient_name: string | null;
+          settled_by: string | null;
+          status: string;
+          token: string;
+        };
+        Insert: {
+          amount: number;
+          brand_id: string;
+          buyer_email?: string | null;
+          buyer_name: string;
+          buyer_phone: string;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          created_at?: string;
+          currency: string;
+          gateway_reference?: string | null;
+          gift_card_id?: string | null;
+          id?: string;
+          message?: string | null;
+          paid_at?: string | null;
+          payment_method: string;
+          receipt_key?: string | null;
+          recipient_name?: string | null;
+          settled_by?: string | null;
+          status?: string;
+          token?: string;
+        };
+        Update: {
+          amount?: number;
+          brand_id?: string;
+          buyer_email?: string | null;
+          buyer_name?: string;
+          buyer_phone?: string;
+          cancel_reason?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by?: string | null;
+          created_at?: string;
+          currency?: string;
+          gateway_reference?: string | null;
+          gift_card_id?: string | null;
+          id?: string;
+          message?: string | null;
+          paid_at?: string | null;
+          payment_method?: string;
+          receipt_key?: string | null;
+          recipient_name?: string | null;
+          settled_by?: string | null;
+          status?: string;
+          token?: string;
+        };
+        Relationships: [];
+      };
+      gift_card_settings: {
+        Row: {
+          amounts: number[];
+          brand_id: string;
+          sell_online: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          valid_months: number | null;
+        };
+        Insert: {
+          amounts?: number[];
+          brand_id: string;
+          sell_online?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_months?: number | null;
+        };
+        Update: {
+          amounts?: number[];
+          brand_id?: string;
+          sell_online?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+          valid_months?: number | null;
+        };
+        Relationships: [];
+      };
       gift_card_movements: {
         Row: {
           amount: number;
@@ -10554,6 +10653,28 @@ export type Database = {
       };
       gift_card_code_typed: { Args: { p_code: string }; Returns: string };
       gift_card_staff: { Args: { p_brand_id: string }; Returns: boolean };
+      approve_gift_card_purchase: { Args: { p_purchase_id: string }; Returns: Json };
+      cancel_gift_card_purchase: {
+        Args: { p_purchase_id: string; p_reason: string };
+        Returns: Json;
+      };
+      set_gift_card_settings: {
+        Args: {
+          p_amounts: number[];
+          p_brand_id: string;
+          p_sell_online: boolean;
+          p_valid_months?: number;
+        };
+        Returns: {
+          amounts: number[];
+          brand_id: string;
+          sell_online: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          valid_months: number | null;
+        };
+      };
+      storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
       gift_card_take_on_order: {
         Args: {
           p_amount: number;

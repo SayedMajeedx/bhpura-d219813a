@@ -18,6 +18,22 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             return new Response("Malformed webhook body.", { status: 400 });
           }
 
+          // A gift card bought online (step four): checked with Tap and settled on its own path.
+          const giftCardPurchaseId = (metadata as { gift_card_purchase_id?: string })
+            .gift_card_purchase_id;
+          if (giftCardPurchaseId && metadata.brand_id) {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { settleGiftCardCharge } = await import("@/lib/gift-card-purchase.server");
+            const { verdict } = await settleGiftCardCharge(supabaseAdmin, {
+              purchaseId: giftCardPurchaseId,
+              brandId: metadata.brand_id,
+              chargeId,
+            });
+            return verdict === "mismatch"
+              ? new Response("Metadata verification failure.", { status: 400 })
+              : new Response("OK", { status: 200 });
+          }
+
           const orderId = metadata.order_id;
           const brandId = metadata.brand_id;
 
