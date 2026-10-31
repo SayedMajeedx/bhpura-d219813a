@@ -3511,6 +3511,64 @@ export type Database = {
           },
         ];
       };
+      gift_card_movements: {
+        Row: {
+          amount: number;
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          gift_card_id: string;
+          id: string;
+          kind: string;
+          note: string | null;
+          order_id: string | null;
+        };
+        Insert: {
+          amount: number;
+          brand_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          gift_card_id: string;
+          id?: string;
+          kind: string;
+          note?: string | null;
+          order_id?: string | null;
+        };
+        Update: {
+          amount?: number;
+          brand_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          gift_card_id?: string;
+          id?: string;
+          kind?: string;
+          note?: string | null;
+          order_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_movements_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_card_movements_gift_card_id_fkey";
+            columns: ["gift_card_id"];
+            isOneToOne: false;
+            referencedRelation: "gift_cards";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_card_movements_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       gift_card_purchases: {
         Row: {
           amount: number;
@@ -3581,7 +3639,22 @@ export type Database = {
           status?: string;
           token?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_purchases_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_card_purchases_gift_card_id_fkey";
+            columns: ["gift_card_id"];
+            isOneToOne: false;
+            referencedRelation: "gift_cards";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       gift_card_settings: {
         Row: {
@@ -3608,62 +3681,12 @@ export type Database = {
           updated_by?: string | null;
           valid_months?: number | null;
         };
-        Relationships: [];
-      };
-      gift_card_movements: {
-        Row: {
-          amount: number;
-          brand_id: string;
-          created_at: string;
-          created_by: string | null;
-          gift_card_id: string;
-          id: string;
-          kind: string;
-          note: string | null;
-          order_id: string | null;
-        };
-        Insert: {
-          amount: number;
-          brand_id: string;
-          created_at?: string;
-          created_by?: string | null;
-          gift_card_id: string;
-          id?: string;
-          kind: string;
-          note?: string | null;
-          order_id?: string | null;
-        };
-        Update: {
-          amount?: number;
-          brand_id?: string;
-          created_at?: string;
-          created_by?: string | null;
-          gift_card_id?: string;
-          id?: string;
-          kind?: string;
-          note?: string | null;
-          order_id?: string | null;
-        };
         Relationships: [
           {
-            foreignKeyName: "gift_card_movements_brand_id_fkey";
+            foreignKeyName: "gift_card_settings_brand_id_fkey";
             columns: ["brand_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "brands";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "gift_card_movements_gift_card_id_fkey";
-            columns: ["gift_card_id"];
-            isOneToOne: false;
-            referencedRelation: "gift_cards";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "gift_card_movements_order_id_fkey";
-            columns: ["order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
             referencedColumns: ["id"];
           },
         ];
@@ -9851,6 +9874,10 @@ export type Database = {
         Returns: string;
       };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
+      approve_gift_card_purchase: {
+        Args: { p_purchase_id: string };
+        Returns: Json;
+      };
       assert_booking_items_notice: {
         Args: { p_brand_id: string; p_items: Json; p_starts_at: string };
         Returns: undefined;
@@ -9990,6 +10017,10 @@ export type Database = {
       };
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean };
       can_view_brand_costs: { Args: { _brand_id: string }; Returns: boolean };
+      cancel_gift_card_purchase: {
+        Args: { p_purchase_id: string; p_reason: string };
+        Returns: Json;
+      };
       cash_account_type_for_payment: {
         Args: { p_payment_method: string };
         Returns: string;
@@ -10089,6 +10120,16 @@ export type Database = {
           p_title: string;
         };
         Returns: string;
+      };
+      create_gift_card_purchase: {
+        Args: {
+          p_amount: number;
+          p_buyer: Json;
+          p_method: string;
+          p_receipt_id?: string;
+          p_slug: string;
+        };
+        Returns: Json;
       };
       create_staff_booking: {
         Args: {
@@ -10447,6 +10488,7 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: undefined;
       };
+      expire_gift_card_purchases: { Args: never; Returns: number };
       expire_loyalty_points: { Args: never; Returns: number };
       format_currency_amount: {
         Args: { p_amount: number; p_currency: string };
@@ -10652,29 +10694,46 @@ export type Database = {
         Returns: Json;
       };
       gift_card_code_typed: { Args: { p_code: string }; Returns: string };
-      gift_card_staff: { Args: { p_brand_id: string }; Returns: boolean };
-      approve_gift_card_purchase: { Args: { p_purchase_id: string }; Returns: Json };
-      cancel_gift_card_purchase: {
-        Args: { p_purchase_id: string; p_reason: string };
-        Returns: Json;
-      };
-      set_gift_card_settings: {
+      gift_card_issue_internal: {
         Args: {
-          p_amounts: number[];
+          p_amount: number;
           p_brand_id: string;
-          p_sell_online: boolean;
-          p_valid_months?: number;
+          p_by: string;
+          p_expires_on: string;
+          p_note: string;
+          p_paid_with: string;
+          p_purchaser_name: string;
+          p_recipient_name: string;
+          p_source_order_id: string;
         };
         Returns: {
-          amounts: number[];
+          balance: number;
           brand_id: string;
-          sell_online: boolean;
-          updated_at: string;
-          updated_by: string | null;
-          valid_months: number | null;
+          code: string;
+          currency: string;
+          expires_on: string | null;
+          id: string;
+          initial_amount: number;
+          issued_at: string;
+          issued_by: string | null;
+          note: string | null;
+          paid_with: string | null;
+          purchaser_name: string | null;
+          recipient_name: string | null;
+          source_order_id: string | null;
+          status: string;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_cards";
+          isOneToOne: true;
+          isSetofReturn: false;
         };
       };
-      storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
+      gift_card_staff: { Args: { p_brand_id: string }; Returns: boolean };
       gift_card_take_on_order: {
         Args: {
           p_amount: number;
@@ -11828,6 +11887,28 @@ export type Database = {
         Args: { p_brand_id: string; p_template_id: string };
         Returns: undefined;
       };
+      set_gift_card_settings: {
+        Args: {
+          p_amounts: number[];
+          p_brand_id: string;
+          p_sell_online: boolean;
+          p_valid_months?: number;
+        };
+        Returns: {
+          amounts: number[];
+          brand_id: string;
+          sell_online: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          valid_months: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_card_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       set_made_to_order_limit: {
         Args: { p_available: number; p_product_id: string };
         Returns: number;
@@ -11850,6 +11931,10 @@ export type Database = {
       };
       set_web_push_alert_choices: {
         Args: { p_choices: Json; p_endpoint: string };
+        Returns: Json;
+      };
+      settle_gift_card_purchase: {
+        Args: { p_by?: string; p_purchase_id: string; p_reference?: string };
         Returns: Json;
       };
       show_limit: { Args: never; Returns: number };
@@ -11921,6 +12006,7 @@ export type Database = {
           visits: number;
         }[];
       };
+      storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
       storefront_line_customizations: {
         Args: {
           p_brand_id: string;
