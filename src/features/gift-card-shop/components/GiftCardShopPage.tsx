@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CreditCard, Gift, Landmark, Loader2, Mail, MessageCircle } from "lucide-react";
@@ -13,6 +13,11 @@ import { startGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { BenefitTransferDetails } from "@/features/checkout/components/BenefitTransferDetails";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
+import { DEFAULT_DESIGN, type CardDesign } from "@/features/gift-card-design/lib/design";
+import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
+import { useStorefrontCardKit } from "../hooks/use-storefront-card-kit";
 import {
   buyMethods,
   buyProblems,
@@ -75,6 +80,13 @@ function BuyForm({
     method: methods.length === 1 ? methods[0] : "",
     email: session?.user?.email ?? "",
   }));
+  const kit = useStorefrontCardKit();
+  const [design, setDesign] = useState<CardDesign>(() => ({
+    ...DEFAULT_DESIGN,
+    occasion: occasionsInOrder(new Date(), offer.currency)[0].id,
+    language: lang,
+  }));
+  const [from, setFrom] = useState("");
   const [receipt, setReceipt] = useState<File | null>(null);
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -83,6 +95,18 @@ function BuyForm({
   const set = (key: keyof BuyForm) => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
   const validity = validityLine(offer.validMonths, lang);
+  // The card as it will be, before it is bought: its code shows on the back once paid.
+  const previewDetails = useMemo(
+    () => ({
+      amount: form.amount,
+      code: null,
+      to: form.recipient.trim() || null,
+      message: form.message.trim() || null,
+      expiresOn: offer.validMonths ? monthsFromToday(offer.validMonths) : null,
+    }),
+    [form.amount, form.recipient, form.message, offer.validMonths],
+  );
+  const cardDesign = useMemo(() => ({ ...design, from: from.trim() || null }), [design, from]);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -105,6 +129,7 @@ function BuyForm({
             message: form.message.trim() || undefined,
             delivery: form.delivery,
             lang,
+            design: cardDesign,
           },
           receiptId,
           // Signed in: the card is kept in the shopper's account too (the server checks it).
@@ -158,6 +183,25 @@ function BuyForm({
         </p>
       </div>
 
+      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+        <h2 className="text-sm font-semibold">{t("اختر البطاقة", "Choose the card")}</h2>
+        <GiftCardDesigner
+          kit={kit}
+          value={cardDesign}
+          onChange={(next) => setDesign(next)}
+          details={previewDetails}
+          primary={lang}
+          lang={lang}
+        />
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={design.print}
+            onCheckedChange={(checked) => setDesign((d) => ({ ...d, print: checked === true }))}
+          />
+          {t("سأطبعها أيضًا (على ورق A6 أو A4)", "I will print it too (on A6 or A4 paper)")}
+        </label>
+      </section>
+
       <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
         <p id="gift-amount-label" className="text-sm font-semibold">
           {t("القيمة", "Amount")}
@@ -200,6 +244,17 @@ function BuyForm({
             value={form.recipient}
             onChange={set("recipient")}
             maxLength={120}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="gift-from">
+            {t("من (كما يُكتب على البطاقة، اختياري)", "From (as written on the card, optional)")}
+          </Label>
+          <Input
+            id="gift-from"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            maxLength={80}
           />
         </div>
         <div className="space-y-1.5">
@@ -449,4 +504,11 @@ function DeliveryChoice({
       centred
     />
   );
+}
+
+/** The day a card bought today ends, `months` on (the database counts the same way). */
+function monthsFromToday(months: number): string {
+  const day = new Date();
+  day.setMonth(day.getMonth() + months);
+  return day.toISOString().slice(0, 10);
 }

@@ -6,6 +6,7 @@ import { storeAddress } from "@/lib/platform-host";
 import { useBrand } from "@/lib/brand-context";
 import type { GiftCard } from "@/lib/data/gift-cards";
 import { giftCardMessage } from "../lib/gift-cards";
+import { PrintCardButton } from "./PrintCardDialog";
 
 /** A card's code to copy, and the message a person sends with it on WhatsApp. */
 export function GiftCardShare({ card, lang }: { card: GiftCard; lang: "ar" | "en" }) {
@@ -76,6 +77,7 @@ export function GiftCardShare({ card, lang }: { card: GiftCard; lang: "ar" | "en
           {isAr ? "إرسال البطاقة على واتساب" : "Send the card on WhatsApp"}
         </a>
       </Button>
+      <PrintCardButton card={card} lang={lang} />
     </div>
   );
 }

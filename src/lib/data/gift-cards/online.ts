@@ -86,6 +86,8 @@ export type MyGiftCard = {
   balance: number | null;
   expires_on: string | null;
   card_status: string | null;
+  /** The design the buyer chose (null before cards had designs). */
+  design?: unknown;
 };
 
 export async function fetchMyGiftCards(brandId: string): Promise<MyGiftCard[]> {

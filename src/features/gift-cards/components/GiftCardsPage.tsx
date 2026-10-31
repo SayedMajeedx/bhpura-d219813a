@@ -9,6 +9,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useBrand } from "@/lib/brand-context";
+import { useProfile } from "@/lib/profile-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { countOf } from "@/lib/arabic-count";
@@ -19,6 +20,7 @@ import { CARD_STATE_WORDS, cardState, cardsHeld, searchCards } from "../lib/gift
 import { IssueGiftCardDialog } from "./IssueGiftCardDialog";
 import { GiftCardDetailsSheet } from "./GiftCardDetailsSheet";
 import { OnlineGiftCardsSection } from "./OnlineGiftCardsSection";
+import { CardDesignsSection } from "./CardDesignsSection";
 
 /**
  * A store's gift cards: what it holds for them (money owed to shoppers in goods), every card with
@@ -29,6 +31,8 @@ export function GiftCardsPage() {
   const lang = rawLang === "ar" ? "ar" : "en";
   const isAr = lang === "ar";
   const brand = useBrand();
+  const { hasPermission } = useProfile();
+  const mayChooseDesigns = hasPermission("manage_settings");
   const currency = useStoreCurrency(brand.id);
   const cardsQ = useQuery(giftCardQueries.list(brand.id));
   const [issuing, setIssuing] = useState(false);
@@ -89,6 +93,7 @@ export function GiftCardsPage() {
       </dl>
 
       <OnlineGiftCardsSection lang={lang} />
+      {mayChooseDesigns && <CardDesignsSection lang={lang} />}
 
       <div className="relative">
         <Search

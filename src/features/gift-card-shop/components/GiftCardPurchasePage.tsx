@@ -7,6 +7,10 @@ import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { storeAddress } from "@/lib/platform-host";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { deliveryLine, purchaseState, recipientMessage } from "../lib/gift-card-shop";
+import { GiftCardPreview } from "@/features/gift-card-design/components/GiftCardPreview";
+import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
+import { readDesign } from "@/features/gift-card-design/lib/design";
+import { useStorefrontCardKit } from "../hooks/use-storefront-card-kit";
 
 /**
  * A gift card purchase's own page, opened with its token: the card and its code once it is paid
@@ -32,6 +36,7 @@ export function GiftCardPurchasePage({
   });
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const kit = useStorefrontCardKit();
   const view = query.data;
 
   if (query.isLoading) {
@@ -50,6 +55,14 @@ export function GiftCardPurchasePage({
 
   const money = formatPrice(view.amount, view.currency, lang);
   const state = purchaseState(view, paymentFailed);
+  const design = readDesign(view.design, lang);
+  const details = {
+    amount: view.amount,
+    code: view.code,
+    to: view.recipientName,
+    message: view.message,
+    expiresOn: view.expiresOn,
+  };
   const expiry = view.expiresOn
     ? new Date(`${view.expiresOn}T12:00:00`).toLocaleDateString(
         lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
@@ -111,18 +124,24 @@ export function GiftCardPurchasePage({
               : t("أرسلها لمن تحب، أو احتفظ بها.", "Send it to someone, or keep it.")}
           </p>
         </div>
-        <div className="space-y-3 rounded-2xl bg-primary p-6 text-primary-foreground">
-          <p className="text-sm opacity-80">{storeName}</p>
-          <p className="font-display text-3xl tabular-nums">{money}</p>
+        <GiftCardPreview kit={kit} design={design} details={details} primary={lang} lang={lang} />
+        <div className="space-y-1 text-center">
           <p className="font-mono text-lg font-bold tracking-wider" dir="ltr">
             {view.code}
           </p>
-          {expiry && (
-            <p className="text-xs opacity-80">
-              {t(`صالحة حتى ${expiry}`, `Valid until ${expiry}`)}
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            {money}
+            {expiry ? ` · ${t(`صالحة حتى ${expiry}`, `Valid until ${expiry}`)}` : ""}
+          </p>
         </div>
+        <CardKeepActions
+          kit={kit}
+          design={design}
+          details={details}
+          primary={lang}
+          lang={lang}
+          fileName={`${storeName || "gift"}-card`.replace(/\s+/g, "-").toLowerCase()}
+        />
         <div className="grid gap-2 sm:grid-cols-2">
           <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={copy}>
             {copied ? (
@@ -155,6 +174,15 @@ export function GiftCardPurchasePage({
     <div className="mx-auto w-full max-w-lg space-y-4 px-4 py-12 text-center">
       {state === "checking_transfer" ? (
         <>
+          <GiftCardPreview
+            kit={kit}
+            design={design}
+            details={details}
+            primary={lang}
+            lang={lang}
+            showBack={false}
+            className="pb-2"
+          />
           <Clock className="mx-auto size-8 text-muted-foreground" aria-hidden="true" />
           <h1 className="font-display text-2xl">{t("وصلنا طلبك", "We have your request")}</h1>
           <p className="text-sm text-muted-foreground">
