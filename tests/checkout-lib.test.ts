@@ -202,6 +202,15 @@ describe("placeStorefrontOrderArgs", () => {
     );
   });
 
+  it("sends the language the shopper ordered in, for the order's emails", () => {
+    expect(placeStorefrontOrderArgs(argsInput({ lang: "ar" })).p_customer).toMatchObject({
+      lang: "ar",
+    });
+    expect(placeStorefrontOrderArgs(argsInput({ lang: "en" })).p_customer).toMatchObject({
+      lang: "en",
+    });
+  });
+
   it("sends a Bahrain delivery", () => {
     const args = placeStorefrontOrderArgs(argsInput());
     expect(args).toMatchObject({
