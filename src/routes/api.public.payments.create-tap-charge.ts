@@ -84,6 +84,8 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
               id,
               brand_id,
               total,
+              gift_card_paid,
+              advance_paid,
               currency,
               subtotal,
               shipping,
@@ -149,11 +151,16 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           // A booking with a deposit charges only the deposit (see charge-plan).
           const plan = await orderChargePlan(supabaseAdmin, order, brandId);
 
-          if (alreadySettled(paymentStatus, plan)) {
-            return new Response(JSON.stringify({ error: "Order is already paid." }), {
-              status: 409,
-              headers: { "Content-Type": "application/json" },
-            });
+          // Paid already, or a gift card paid all the charge would have asked for: the checkout
+          // reads the code and goes to the thank-you page instead of the gateway.
+          if (alreadySettled(paymentStatus, plan, order.advance_paid)) {
+            return new Response(
+              JSON.stringify({ error: "Order is already paid.", code: "ORDER_ALREADY_PAID" }),
+              {
+                status: 409,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
           }
 
           if (["cancelled", "canceled", "refunded", "deleted"].includes(orderStatus)) {

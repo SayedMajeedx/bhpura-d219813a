@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { chargePlan, type ChargePlan } from "@/lib/payments/charge-plan";
+import { chargePlan, withGiftCards, type ChargePlan } from "@/lib/payments/charge-plan";
 
 /**
  * The card charge for an order (server only, with the service-role client).
@@ -11,9 +11,19 @@ import { chargePlan, type ChargePlan } from "@/lib/payments/charge-plan";
  * function records a BenefitPay approval and refuses cash on delivery, so the card, the
  * transfer and the refusal always agree. Without an advance, a booking's own deposit
  * applies if its booking has one, otherwise the whole total. An order pays for at most
- * one booking. A failed lookup throws rather than guess an amount.
+ * one booking. What gift cards paid on the order (`gift_card_paid`) is taken off the charge
+ * (`withGiftCards`), so a caller passes it with the order. A failed lookup throws rather than
+ * guess an amount.
  */
 export async function orderChargePlan(
+  admin: SupabaseClient<Database>,
+  order: { id: string; total: number | string | null; gift_card_paid?: number | string | null },
+  brandId: string,
+): Promise<ChargePlan> {
+  return withGiftCards(await upfrontPlan(admin, order, brandId), order.gift_card_paid);
+}
+
+async function upfrontPlan(
   admin: SupabaseClient<Database>,
   order: { id: string; total: number | string | null },
   brandId: string,

@@ -76,7 +76,7 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
           const { data: order, error: orderError } = await supabaseAdmin
             .from("orders")
             .select(
-              "id, total, currency, payment_gateway_reference, fulfillment_method, digital_delivery_channel",
+              "id, total, gift_card_paid, currency, payment_gateway_reference, fulfillment_method, digital_delivery_channel",
             )
             .eq("id", orderId)
             .eq("brand_id", brandId)

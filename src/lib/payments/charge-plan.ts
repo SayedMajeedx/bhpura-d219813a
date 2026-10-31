@@ -6,7 +6,13 @@
  * charged, the amount verified and what the order records always agree.
  */
 
-export type ChargePlan = { kind: "full" | "deposit"; amount: number };
+export type ChargePlan = {
+  kind: "full" | "deposit";
+  /** What the gateway charges: what the order asks up front, less what gift cards paid. */
+  amount: number;
+  /** What gift cards already paid on the order (orders.gift_card_paid); absent when none. */
+  giftPaid?: number;
+};
 
 /** Amounts are compared to the fils (3 decimals). */
 const TOLERANCE = 0.001;
@@ -16,6 +22,26 @@ export function chargePlan(orderTotal: number, depositAmount?: number | null): C
   const deposit = Number(depositAmount ?? 0);
   if (deposit > 0 && deposit < total - TOLERANCE) return { kind: "deposit", amount: deposit };
   return { kind: "full", amount: total };
+}
+
+/**
+ * The plan once gift cards paid part of the order (a card is a payment: the order keeps its
+ * price, the gateway charges what is left of what it asks up front). Without a card's part the
+ * plan is unchanged.
+ */
+export function withGiftCards(
+  plan: ChargePlan,
+  giftPaid: number | string | null | undefined,
+): ChargePlan {
+  const gift = Number(giftPaid ?? 0);
+  if (!Number.isFinite(gift) || gift <= TOLERANCE) return plan;
+  const left = Math.max(0, Math.round((plan.amount - gift) * 1000) / 1000);
+  return { kind: plan.kind, amount: left, giftPaid: gift };
+}
+
+/** What the order asks up front in all, whoever pays it (the gift cards' part included). */
+export function upfrontOf(plan: ChargePlan): number {
+  return plan.amount + (plan.giftPaid ?? 0);
 }
 
 /** Whether the gateway charged what the plan asked for. */
@@ -28,9 +54,17 @@ export function chargeMatches(charged: unknown, plan: ChargePlan): boolean {
 export function alreadySettled(
   paymentStatus: string | null | undefined,
   plan: ChargePlan,
+  /** What was collected so far (orders.advance_paid); read once a gift card paid part. */
+  collected?: number | string | null,
 ): boolean {
   const status = String(paymentStatus ?? "").toLowerCase();
   if (["paid", "captured", "success"].includes(status)) return true;
+  // A gift card leaves an order part paid before the gateway charged anything, so the state
+  // alone cannot say the charge happened: what was collected says it.
+  if (plan.giftPaid) {
+    if (plan.amount <= TOLERANCE) return true;
+    return plan.kind === "deposit" && Number(collected ?? 0) >= upfrontOf(plan) - TOLERANCE;
+  }
   return plan.kind === "deposit" && ["partially_paid", "partial"].includes(status);
 }
 
@@ -58,7 +92,7 @@ export function fulfillmentPaymentBlock(input: {
   if (!partial) return "unpaid";
   const collected = Number(input.paid ?? 0);
   const upfrontCollected =
-    input.upfront?.kind === "deposit" && collected >= input.upfront.amount - TOLERANCE;
+    input.upfront?.kind === "deposit" && collected >= upfrontOf(input.upfront) - TOLERANCE;
   return upfrontCollected ? null : "partially_paid";
 }
 
@@ -67,7 +101,8 @@ export function paidOrderUpdate(plan: ChargePlan, gatewayReference: string) {
   return plan.kind === "deposit"
     ? {
         payment_status: "partially_paid",
-        advance_paid: plan.amount,
+        // What the gift cards paid stays counted: the charge adds to it.
+        advance_paid: Math.round(upfrontOf(plan) * 1000) / 1000,
         status: "confirmed",
         payment_gateway_reference: gatewayReference,
       }

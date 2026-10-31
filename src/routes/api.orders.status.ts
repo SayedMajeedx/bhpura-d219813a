@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/orders/status")({
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select(
-              "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to, total, advance_paid",
+              "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to, total, advance_paid, gift_card_paid",
             )
             .eq("id", id)
             .maybeSingle();
