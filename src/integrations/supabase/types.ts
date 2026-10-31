@@ -10792,6 +10792,10 @@ export type Database = {
         Returns: Json;
       };
       gift_card_code_typed: { Args: { p_code: string }; Returns: string };
+      gift_card_design_clean: {
+        Args: { p_brand_id: string; p_design: Json };
+        Returns: Json;
+      };
       gift_card_issue_internal: {
         Args: {
           p_amount: number;
@@ -10831,7 +10835,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      gift_card_product_photo: {
+        Args: { p_image_url: string; p_media: Json };
+        Returns: string;
+      };
       gift_card_staff: { Args: { p_brand_id: string }; Returns: boolean };
+      gift_card_store_photos: {
+        Args: { p_brand_id: string };
+        Returns: string[];
+      };
       gift_card_take_on_order: {
         Args: {
           p_amount: number;
@@ -12003,6 +12015,7 @@ export type Database = {
         Returns: {
           amounts: number[];
           brand_id: string;
+          card_designs: Json;
           sell_online: boolean;
           updated_at: string;
           updated_by: string | null;
@@ -12112,7 +12125,10 @@ export type Database = {
           visits: number;
         }[];
       };
-      storefront_gift_card_designs: { Args: { p_brand_id: string }; Returns: Json };
+      storefront_gift_card_designs: {
+        Args: { p_brand_id: string };
+        Returns: Json;
+      };
       storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
       storefront_line_customizations: {
         Args: {
