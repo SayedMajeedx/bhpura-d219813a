@@ -1,0 +1,245 @@
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Gift cards, step one, on the admin's screens: the rules that read a card, the page that lists
+// and issues them, and taking one as payment on an order (the database's own rules are run in a
+// real Postgres by tests/gift-cards-migration.test.ts).
+
+const data = vi.hoisted(() => ({
+  cards: [] as unknown[],
+  moves: [] as unknown[],
+  issueGiftCard: vi.fn(),
+  voidGiftCard: vi.fn(),
+  redeemGiftCardOnOrder: vi.fn(),
+}));
+vi.mock("../src/lib/data/gift-cards", () => ({
+  giftCardQueries: {
+    list: () => ({ queryKey: ["gift-cards", "list"], queryFn: async () => data.cards }),
+    moves: (_b: string, id: string) => ({
+      queryKey: ["gift-cards", "moves", id],
+      queryFn: async () => data.moves,
+    }),
+  },
+  invalidateGiftCards: vi.fn(async () => undefined),
+  issueGiftCard: data.issueGiftCard,
+  voidGiftCard: data.voidGiftCard,
+  redeemGiftCardOnOrder: data.redeemGiftCardOnOrder,
+}));
+vi.mock("@/lib/data/gift-cards", async () => await import("../src/lib/data/gift-cards"));
+vi.mock("../src/lib/data/orders/mutations", () => ({
+  invalidateOrders: vi.fn(async () => undefined),
+}));
+vi.mock("@/lib/data/orders/mutations", () => ({ invalidateOrders: vi.fn(async () => undefined) }));
+const brand = { id: "b1", slug: "pura", name_en: "Pura Line", name_ar: "بيورا لاين" };
+vi.mock("../src/lib/brand-context", () => ({ useBrand: () => brand }));
+vi.mock("@/lib/brand-context", () => ({ useBrand: () => brand }));
+vi.mock("../src/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));
+vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: "en" }) }));
+vi.mock("../src/hooks/use-store-currency", () => ({
+  useStoreCurrency: () => "BHD",
+  useMoneyLabel: () => "BHD",
+}));
+vi.mock("@/hooks/use-store-currency", () => ({
+  useStoreCurrency: () => "BHD",
+  useMoneyLabel: () => "BHD",
+}));
+const profile = vi.hoisted(() => ({ allowed: true }));
+vi.mock("../src/lib/profile-context", () => ({
+  useProfileOptional: () => ({ hasPermission: () => profile.allowed }),
+}));
+vi.mock("@/lib/profile-context", () => ({
+  useProfileOptional: () => ({ hasPermission: () => profile.allowed }),
+}));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+const rules = await import("../src/features/gift-cards/lib/gift-cards");
+const { GiftCardsPage } = await import("../src/features/gift-cards/components/GiftCardsPage");
+const { OrderGiftCardPayment } =
+  await import("../src/features/gift-cards/components/OrderGiftCardPayment");
+
+const card = (overrides: Record<string, unknown> = {}) => ({
+  id: "c1",
+  brand_id: "b1",
+  code: "ABCD-EFGH-JKMN",
+  currency: "BHD",
+  initial_amount: 50,
+  balance: 30,
+  expires_on: null,
+  status: "active",
+  recipient_name: "Sara",
+  purchaser_name: "Mona",
+  note: null,
+  source_order_id: null,
+  issued_by: null,
+  issued_at: "2026-10-01T10:00:00Z",
+  voided_by: null,
+  voided_at: null,
+  void_reason: null,
+  ...overrides,
+});
+
+const wrap = (node: React.ReactNode) =>
+  render(<QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>);
+
+describe("a card's rules", () => {
+  it("read a card as active, used up, expired or voided", () => {
+    expect(rules.cardState(card(), "2026-10-31")).toBe("active");
+    expect(rules.cardState(card({ balance: 0 }), "2026-10-31")).toBe("used");
+    expect(rules.cardState(card({ expires_on: "2026-10-30" }), "2026-10-31")).toBe("expired");
+    expect(rules.cardState(card({ status: "voided" }), "2026-10-31")).toBe("voided");
+  });
+
+  it("sum what the store holds on usable cards, apart from expired ones", () => {
+    const held = rules.cardsHeld(
+      [
+        card(),
+        card({ id: "c2", balance: 12.5 }),
+        card({ id: "c3", expires_on: "2026-01-01", balance: 7 }),
+      ] as never,
+      "2026-10-31",
+    );
+    expect(held).toEqual({ held: 42.5, active: 2, expired: 7 });
+  });
+
+  it("find a card by its code typed any way, or by a name", () => {
+    const list = [
+      card(),
+      card({ id: "c2", code: "ZZZZ-YYYY-XXXX", recipient_name: "Ali" }),
+    ] as never;
+    expect(rules.searchCards(list, "abcdefgh").map((c) => c.id)).toEqual(["c1"]);
+    expect(rules.searchCards(list, "ali").map((c) => c.id)).toEqual(["c2"]);
+  });
+
+  it("say what an order would take, and that a card or transfer order must be paid in full", () => {
+    expect(
+      rules.orderGiftCardOffer({ total: 80, advance_paid: 30, payment_method: "cod" }),
+    ).toEqual({
+      owed: 50,
+      mustCoverAll: false,
+    });
+    expect(
+      rules.orderGiftCardOffer({ total: 80, advance_paid: 0, payment_method: "card" }),
+    ).toEqual({
+      owed: 80,
+      mustCoverAll: true,
+    });
+    expect(rules.orderGiftCardOffer({ total: 80, advance_paid: 80 })).toBeNull();
+    expect(rules.orderGiftCardOffer({ total: 80, status: "cancelled" })).toBeNull();
+  });
+
+  it("word the database's refusals, and write the card's message for a person to send", () => {
+    expect(rules.giftCardError(new Error("GIFT_CARD_EXPIRED"), "en")).toBe(
+      "This gift card has expired.",
+    );
+    expect(rules.giftCardError(new Error("boom"), "ar")).toBe("تعذّر إتمام العملية.");
+    const message = rules.giftCardMessage(
+      card() as never,
+      {
+        amount: "BHD 30.000",
+        storeName: "Pura Line",
+        storeLink: "https://pura.boutq.store/pura",
+        expiry: null,
+      },
+      "ar",
+    );
+    expect(message).toContain("مرحبًا Sara،");
+    expect(message).toContain("رمز البطاقة: ABCD-EFGH-JKMN");
+    expect(message).not.toContain("صالحة حتى");
+  });
+});
+
+describe("the gift cards page", () => {
+  beforeEach(() => {
+    data.cards = [
+      card(),
+      card({ id: "c2", code: "ZZZZ-YYYY-XXXX", balance: 0, recipient_name: null }),
+    ];
+    data.moves = [
+      { id: "m1", kind: "issued", amount: 50, created_at: "2026-10-01T10:00:00Z", note: null },
+    ];
+  });
+
+  it("shows what is held and every card, and opens one with its moves", async () => {
+    wrap(<GiftCardsPage />);
+    expect(await screen.findByText("ABCD-EFGH-JKMN")).toBeInTheDocument();
+    expect(screen.getByText("Held on active cards")).toBeInTheDocument();
+    expect(screen.getByText(/Used up/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("ABCD-EFGH-JKMN"));
+    expect(await screen.findByText("Issued")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Void card" })).toBeDisabled();
+  });
+
+  it("issues a card and shows its code to send", async () => {
+    data.issueGiftCard.mockResolvedValueOnce(
+      card({ id: "new", code: "NEWC-ARDC-ODE2", balance: 25 }),
+    );
+    wrap(<GiftCardsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Issue a card" }));
+    fireEvent.click(screen.getByRole("button", { name: "Issue card" }));
+    expect(await screen.findByText("Write an amount above zero.")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("button", { name: "Issue card" }));
+    expect(await screen.findByText("NEWC-ARDC-ODE2")).toBeInTheDocument();
+    expect(data.issueGiftCard).toHaveBeenCalledWith("b1", expect.objectContaining({ amount: 25 }));
+    expect(
+      screen.getByRole("link", { name: /Send the card on WhatsApp/ }).getAttribute("href"),
+    ).toContain("wa.me");
+  });
+});
+
+describe("paying an order with a card", () => {
+  it("takes the card and the order shows what it paid", async () => {
+    profile.allowed = true;
+    data.redeemGiftCardOnOrder.mockResolvedValueOnce({ amount: 30, balance: 0, owed: 50 });
+    const setOrder = vi.fn();
+    const order = {
+      id: "o1",
+      brand_id: "b1",
+      total: 80,
+      advance_paid: 0,
+      payment_method: "cod",
+      gift_card_paid: 0,
+    };
+    wrap(<OrderGiftCardPayment order={order} setOrder={setOrder} currency="BHD" lang="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Pay with a gift card" }));
+    fireEvent.change(screen.getByLabelText("Card code"), { target: { value: "abcd efgh jkmn" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pay with the card" }));
+    await waitFor(() =>
+      expect(data.redeemGiftCardOnOrder).toHaveBeenCalledWith("o1", "abcd efgh jkmn", null),
+    );
+    const patch = setOrder.mock.calls[0][0] as (o: typeof order) => typeof order;
+    expect(patch(order)).toMatchObject({
+      advance_paid: 30,
+      gift_card_paid: 30,
+      payment_status: "partially_paid",
+    });
+  });
+
+  it("asks a card order's card to pay everything, and offers nothing to staff without order rights", () => {
+    profile.allowed = true;
+    const view = wrap(
+      <OrderGiftCardPayment
+        order={{ id: "o2", total: 40, advance_paid: 0, payment_method: "card" }}
+        setOrder={vi.fn()}
+        currency="BHD"
+        lang="en"
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Pay with a gift card" }));
+    expect(screen.getByText(/the gift card pays all that is owed/)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Amount/)).toBeNull();
+    view.unmount();
+    profile.allowed = false;
+    const none = wrap(
+      <OrderGiftCardPayment
+        order={{ id: "o3", total: 40, advance_paid: 0 }}
+        setOrder={vi.fn()}
+        currency="BHD"
+        lang="en"
+      />,
+    );
+    expect(none.container.innerHTML).toBe("");
+  });
+});

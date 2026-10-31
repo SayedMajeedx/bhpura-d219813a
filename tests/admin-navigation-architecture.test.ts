@@ -71,6 +71,7 @@ describe("the menu's workspaces", () => {
         "discounts",
         "campaigns",
         "loyalty",
+        "gift-cards",
         "reviews",
         "signups",
         "content-studio",
@@ -168,6 +169,7 @@ describe("what a store does not use", () => {
     expect(catalogIds).not.toContain("abandoned-carts");
     expect(catalogIds).not.toContain("loyalty");
     expect(catalogIds).not.toContain("discounts");
+    expect(catalogIds).not.toContain("gift-cards");
     for (const id of ["orders", "returns", "inventory", "settings", "dashboard"]) {
       expect(catalogIds).toContain(id);
     }

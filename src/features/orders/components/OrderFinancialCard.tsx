@@ -20,6 +20,7 @@ import { taxToggle } from "@/features/orders/lib/tax-toggle";
 import { useExpectedAdvance } from "@/features/orders/hooks/use-expected-advance";
 import { receiptOnTop } from "@/features/orders/lib/transfer-approval";
 import { AdvanceRequirementNotice } from "@/features/orders/components/AdvanceRequirementNotice";
+import { OrderGiftCardPayment } from "@/features/gift-cards/components/OrderGiftCardPayment";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 
@@ -195,6 +196,13 @@ export function OrderFinancialCard({
           </div>
         )}
       </div>
+
+      <OrderGiftCardPayment
+        order={order}
+        setOrder={setOrder}
+        currency={currency}
+        lang={lang === "ar" ? "ar" : "en"}
+      />
 
       {expected && (
         <AdvanceRequirementNotice
