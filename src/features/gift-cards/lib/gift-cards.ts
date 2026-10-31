@@ -101,8 +101,16 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
     en: "The card is in another currency than the order.",
   },
   GIFT_CARD_MUST_COVER_ONLINE: {
-    ar: "طلب البطاقة أو التحويل يُدفع بالكامل ببطاقة الهدية حاليًا: رصيدها لا يكفي لما تبقى.",
-    en: "For now a card or transfer order must be paid in full by the gift card, and its balance does not cover what is owed.",
+    ar: "طلب الدفع بالبطاقة يُدفع هنا بالكامل ببطاقة الهدية: رصيدها لا يكفي لما تبقى.",
+    en: "A card-payment order is paid in full by the gift card here, and its balance does not cover what is owed.",
+  },
+  ORDER_ALREADY_PAYING: {
+    ar: "بدأ دفع هذا الطلب: لا تُضاف إليه بطاقة هدية الآن.",
+    en: "This order's payment has begun, so a gift card cannot be added to it now.",
+  },
+  GIFT_CARD_TRIES: {
+    ar: "محاولات كثيرة: أعد المحاولة بعد قليل.",
+    en: "Too many tries: try again in a while.",
   },
   GIFT_CARD_AMOUNT_INVALID: { ar: "المبلغ غير صحيح.", en: "The amount is not valid." },
   GIFT_CARD_EXPIRY_PAST: {
@@ -179,8 +187,8 @@ const RELEASED = new Set([
 
 /**
  * Whether staff can take a gift card on an order, and what it would have to cover: what is still
- * owed, and on a card or transfer order all of it (the database's own rule until the checkout's
- * step). Null when the order takes no payment.
+ * owed, and on a card-payment order all of it (the database's own rule: a shopper's card charge
+ * asks for what a gift card leaves only at checkout). Null when the order takes no payment.
  */
 export function orderGiftCardOffer(order: {
   status?: string | null;
@@ -194,5 +202,5 @@ export function orderGiftCardOffer(order: {
   const owed = round3(Number(order.total ?? 0) - Number(order.advance_paid ?? 0));
   if (owed <= 0) return null;
   const method = String(order.payment_method ?? "").toLowerCase();
-  return { owed, mustCoverAll: method === "card" || method === "benefit" };
+  return { owed, mustCoverAll: method === "card" || method === "tap" };
 }

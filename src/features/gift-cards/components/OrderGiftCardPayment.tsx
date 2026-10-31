@@ -24,7 +24,7 @@ type PayableOrder = {
 
 /**
  * On an order's money card: what gift cards paid, and taking one as payment (staff who handle
- * orders). On a card or transfer order a card pays all that is owed, as the database asks.
+ * orders). On a card-payment order a gift card pays all that is owed, as the database asks.
  */
 export function OrderGiftCardPayment<T extends PayableOrder>({
   order,
@@ -163,8 +163,8 @@ function GiftCardRedeemForm<T extends PayableOrder>({
       {offer.mustCoverAll ? (
         <p className="text-xs text-muted-foreground">
           {isAr
-            ? `طلب بطاقة أو تحويل: تدفع البطاقة كل المتبقي (${money(offer.owed)}).`
-            : `A card or transfer order: the gift card pays all that is owed (${money(offer.owed)}).`}
+            ? `طلب دفع بالبطاقة: تدفع بطاقة الهدية كل المتبقي (${money(offer.owed)}).`
+            : `A card-payment order: the gift card pays all that is owed (${money(offer.owed)}).`}
         </p>
       ) : (
         <div className="space-y-1">

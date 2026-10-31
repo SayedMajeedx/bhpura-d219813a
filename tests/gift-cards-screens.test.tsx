@@ -112,7 +112,7 @@ describe("a card's rules", () => {
     expect(rules.searchCards(list, "ali").map((c) => c.id)).toEqual(["c2"]);
   });
 
-  it("say what an order would take, and that a card or transfer order must be paid in full", () => {
+  it("say what an order would take, and that a card-payment order must be paid in full", () => {
     expect(
       rules.orderGiftCardOffer({ total: 80, advance_paid: 30, payment_method: "cod" }),
     ).toEqual({
@@ -125,6 +125,9 @@ describe("a card's rules", () => {
       owed: 80,
       mustCoverAll: true,
     });
+    expect(
+      rules.orderGiftCardOffer({ total: 80, advance_paid: 0, payment_method: "benefit" }),
+    ).toEqual({ owed: 80, mustCoverAll: false });
     expect(rules.orderGiftCardOffer({ total: 80, advance_paid: 80 })).toBeNull();
     expect(rules.orderGiftCardOffer({ total: 80, status: "cancelled" })).toBeNull();
   });

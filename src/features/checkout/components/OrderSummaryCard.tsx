@@ -17,7 +17,7 @@ import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import { type Dispatch, type SetStateAction, useEffect } from "react";
+import { type Dispatch, type ReactNode, type SetStateAction, useEffect } from "react";
 import { useShake } from "@/components/motion/use-replay";
 import { SoftText } from "@/components/motion/SoftText";
 import type { Storefront } from "@/features/checkout/types";
@@ -83,6 +83,9 @@ export function OrderSummaryCard({
   intakeNote = null,
   t,
   termsPage = null,
+  giftCardBox = null,
+  giftCardLines = null,
+  receiptRequired = true,
 }: {
   acceptedTerms: boolean;
   appliedPromo: ReturnType<typeof usePromoCode>["appliedPromo"];
@@ -142,6 +145,12 @@ export function OrderSummaryCard({
   t: Storefront["t"];
   /** The store's terms page (`termsPageSlug`), or null when it has none. */
   termsPage?: string | null;
+  /** The gift card field (`GiftCardBox`), under the promo code. */
+  giftCardBox?: ReactNode;
+  /** What a gift card pays and leaves (`GiftCardLines`), under the total. */
+  giftCardLines?: ReactNode;
+  /** False when a gift card pays all a transfer would have asked for. */
+  receiptRequired?: boolean;
 }) {
   // A refused code shakes its field (transitions.dev's error state shake).
   const [promoRow, shakePromo] = useShake<HTMLDivElement>();
@@ -392,6 +401,8 @@ export function OrderSummaryCard({
         )}
       </div>
 
+      {giftCardBox}
+
       {/* Loyalty Points Redemption Widget */}
       {loyaltyProgram?.is_enabled && (loyaltyAccount?.active_points ?? 0) > 0 && (
         <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
@@ -477,6 +488,7 @@ export function OrderSummaryCard({
           )}
         </p>
       )}
+      {giftCardLines}
       <AdvancePaymentNotice
         split={advance}
         currency={currency}
@@ -542,7 +554,7 @@ export function OrderSummaryCard({
           availableMethods.length === 0 ||
           fulfillmentOptions.length === 0 ||
           !acceptedTerms ||
-          (method === "benefit" && !benefitReceipt)
+          (method === "benefit" && receiptRequired && !benefitReceipt)
         }
         onClick={submit}
       >

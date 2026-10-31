@@ -52,6 +52,9 @@ import { PaymentMethodCard } from "@/features/checkout/components/PaymentMethodC
 import { OrderSummaryCard } from "@/features/checkout/components/OrderSummaryCard";
 import { MobileCartPeek } from "@/features/checkout/components/MobileCartPeek";
 import { MobileCheckoutBar } from "@/features/checkout/components/MobileCheckoutBar";
+import { GiftCardBox, GiftCardLines } from "@/features/checkout/components/GiftCardBox";
+import { useCheckoutGiftCard } from "@/features/checkout/hooks/use-checkout-gift-card";
+import { advanceAfterGiftCard, giftCardPay } from "@/features/checkout/lib/gift-card-pay";
 import { AccountExistsDialog } from "@/features/checkout/components/AccountExistsDialog";
 import { AppointmentDetailsCard } from "@/features/checkout/components/AppointmentDetailsCard";
 import {
@@ -384,6 +387,10 @@ function Checkout() {
     if (advance.applies && method === "cod") setMethod(availableMethods[0]?.id ?? "");
   }, [advance.applies, method, availableMethods, setMethod]);
 
+  // A gift card is a payment: the total stays, the card pays toward what is asked now first.
+  const giftCard = useCheckoutGiftCard(brand, currency);
+  const giftPay = giftCardPay(giftCard.card, grandTotal, advance, method);
+
   useEffect(() => {
     if (!cart.length) return;
     trackStorefrontEvent(
@@ -446,6 +453,8 @@ function Checkout() {
     paymentErrorState,
     payInFull,
     requestedTime: deliveryTime.requested,
+    giftCardCode: giftPay ? giftCard.card?.code : null,
+    giftCardCoversNow: Boolean(giftPay?.coversNow),
   });
 
   if (cart.length === 0) {
@@ -648,8 +657,27 @@ function Checkout() {
           estimatedPointsToEarn={estimatedPointsToEarn}
           fulfillment={fulfillment}
           fulfillmentOptions={fulfillmentOptions}
-          advance={advance}
+          advance={advanceAfterGiftCard(advance, giftPay)}
           grandTotal={grandTotal}
+          giftCardBox={
+            giftCard.offered || giftCard.card ? (
+              <GiftCardBox giftCard={giftCard} currency={currency} lang={lang} t={t} />
+            ) : null
+          }
+          giftCardLines={
+            giftPay && giftCard.card ? (
+              <GiftCardLines
+                pay={giftPay}
+                code={giftCard.card.code}
+                method={method}
+                appointment={Boolean(appointment)}
+                currency={currency}
+                lang={lang}
+                t={t}
+              />
+            ) : null
+          }
+          receiptRequired={!giftPay?.coversNow}
           handleApplyPoints={handleApplyPoints}
           handleRemovePoints={handleRemovePoints}
           lang={lang}
@@ -696,6 +724,8 @@ function Checkout() {
         submit={submit}
         submitting={submitting}
         closedToOrders={closedToOrders}
+        receiptRequired={!giftPay?.coversNow}
+        leftToPay={giftPay ? giftPay.left : null}
         t={t}
       />
 

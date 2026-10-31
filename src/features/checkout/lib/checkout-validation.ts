@@ -24,6 +24,7 @@ export function checkoutFormError({
   digitalChannel,
   digitalContact,
   appointment = false,
+  receiptRequired = true,
   t,
 }: {
   form: CheckoutForm;
@@ -40,6 +41,8 @@ export function checkoutFormError({
   digitalContact: string;
   /** A booking's checkout: its place came with the booking, so no address is asked. */
   appointment?: boolean;
+  /** False when a gift card pays all the transfer would have asked for. */
+  receiptRequired?: boolean;
   t: Storefront["t"];
 }): string | null {
   if (!form.name.trim() || (fulfillment !== "digital" && !form.phone.trim())) {
@@ -78,7 +81,7 @@ export function checkoutFormError({
   if (!method) {
     return t("اختر طريقة دفع", "Choose a payment method");
   }
-  if (method === "benefit" && !benefitReceipt) {
+  if (method === "benefit" && receiptRequired && !benefitReceipt) {
     return t(
       "يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب",
       "Please attach the transfer receipt to confirm your order",

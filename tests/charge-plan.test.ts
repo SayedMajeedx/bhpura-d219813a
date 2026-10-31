@@ -6,6 +6,8 @@ import {
   depositOf,
   fulfillmentPaymentBlock,
   paidOrderUpdate,
+  upfrontOf,
+  withGiftCards,
 } from "../src/lib/payments/charge-plan";
 
 describe("what a card payment charges", () => {
@@ -114,5 +116,63 @@ describe("what stops an order from being packed or shipped", () => {
     expect(
       fulfillmentPaymentBlock({ ...base, paymentStatus: "partially_paid", adminOverride: true }),
     ).toBeNull();
+  });
+});
+
+describe("a card charge after a gift card paid part", () => {
+  it("charges what is left of what the order asks up front", () => {
+    expect(withGiftCards(chargePlan(80, null), 30)).toEqual({
+      kind: "full",
+      amount: 50,
+      giftPaid: 30,
+    });
+    expect(withGiftCards(chargePlan(80, 40), 30)).toEqual({
+      kind: "deposit",
+      amount: 10,
+      giftPaid: 30,
+    });
+    expect(withGiftCards(chargePlan(80, 40), 50)).toEqual({
+      kind: "deposit",
+      amount: 0,
+      giftPaid: 50,
+    });
+    expect(withGiftCards(chargePlan(80, null), 0)).toEqual({ kind: "full", amount: 80 });
+    expect(withGiftCards(chargePlan(80, null), null)).toEqual({ kind: "full", amount: 80 });
+    expect(upfrontOf(withGiftCards(chargePlan(80, 40), 30))).toBe(40);
+  });
+
+  it("knows the charge happened by what was collected, not by the part-paid state the card left", () => {
+    const deposit = withGiftCards(chargePlan(80, 40), 30);
+    expect(alreadySettled("partially_paid", deposit, 30)).toBe(false);
+    expect(alreadySettled("partially_paid", deposit, 40)).toBe(true);
+    const full = withGiftCards(chargePlan(80, null), 30);
+    expect(alreadySettled("partially_paid", full, 30)).toBe(false);
+    expect(alreadySettled("paid", full, 80)).toBe(true);
+    // The card covered what was asked: nothing to charge.
+    expect(alreadySettled("partially_paid", withGiftCards(chargePlan(80, 40), 45), 45)).toBe(true);
+  });
+
+  it("records the charge on top of the card's part", () => {
+    expect(paidOrderUpdate(withGiftCards(chargePlan(80, 40), 30), "chg_1")).toMatchObject({
+      payment_status: "partially_paid",
+      advance_paid: 40,
+    });
+    expect(paidOrderUpdate(withGiftCards(chargePlan(80, null), 30), "chg_1")).toMatchObject({
+      payment_status: "paid",
+    });
+  });
+
+  it("lets an order be packed only once the whole advance is in, the card's part counted", () => {
+    const upfront = withGiftCards(chargePlan(80, 40), 30);
+    const block = (paid: number) =>
+      fulfillmentPaymentBlock({
+        paymentStatus: "partially_paid",
+        isCod: false,
+        adminOverride: false,
+        paid,
+        upfront,
+      });
+    expect(block(30)).toBe("partially_paid");
+    expect(block(40)).toBeNull();
   });
 });

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
+import { allowTry, clientIp } from "@/lib/request-tries";
 import { z } from "zod";
 import {
   phoneMatches,
@@ -133,35 +133,7 @@ export const getOrderReceipt = createServerFn({ method: "GET" })
   });
 
 /* Order tracking: a few tries an hour from one address, so neither a number nor a phone can be
-   guessed by trying them all. */
-const WINDOW_MS = 60 * 60 * 1000;
-const TRIES_PER_IP = 10;
-const tries = new Map<string, number[]>();
-
-function allowTry(key: string, now: number): boolean {
-  const recent = (tries.get(key) ?? []).filter((at) => now - at < WINDOW_MS);
-  if (recent.length >= TRIES_PER_IP) {
-    tries.set(key, recent);
-    return false;
-  }
-  recent.push(now);
-  tries.set(key, recent);
-  if (tries.size > 10_000) tries.clear();
-  return true;
-}
-
-function clientIp(): string {
-  try {
-    const request = getRequest();
-    return (
-      request?.headers.get("cf-connecting-ip") ||
-      request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "unknown"
-    );
-  } catch {
-    return "unknown";
-  }
-}
+   guessed by trying them all (`allowTry`). */
 
 export type TrackResult =
   { found: true; receipt: OrderReceipt } | { found: false; limited: boolean };

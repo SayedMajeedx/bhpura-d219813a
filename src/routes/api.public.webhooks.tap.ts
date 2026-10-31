@@ -88,7 +88,9 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           // 3. TARGET ORDER LOOKUP & IDEMPOTENCY CHECK
           const { data: targetOrder, error: targetOrderError } = await supabaseAdmin
             .from("orders")
-            .select("id, total, currency, payment_status, payment_gateway_reference")
+            .select(
+              "id, total, gift_card_paid, advance_paid, currency, payment_status, payment_gateway_reference",
+            )
             .eq("id", orderId)
             .eq("brand_id", brandId)
             .maybeSingle();
@@ -105,7 +107,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           // A booking with a deposit was charged only its deposit (charge-plan).
           const plan = await orderChargePlan(supabaseAdmin, targetOrder, brandId);
 
-          if (alreadySettled(targetOrder.payment_status, plan)) {
+          if (alreadySettled(targetOrder.payment_status, plan, targetOrder.advance_paid)) {
             console.log(
               "[Tap Webhook Idempotency]: Order",
               orderId,

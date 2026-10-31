@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
+import { redeemGiftCardAtCheckout } from "@/lib/gift-card-checkout.functions";
 import { markCartRecoveredOnOrder } from "@/lib/abandoned-carts.functions";
 import type { ShippingZone } from "@/lib/shipping";
 import type {
@@ -60,6 +61,8 @@ export function usePlaceOrder({
   paymentErrorState,
   payInFull = false,
   requestedTime = null,
+  giftCardCode = null,
+  giftCardCoversNow = false,
 }: {
   brand: Pick<Storefront["brand"], "id" | "slug">;
   session: Storefront["session"];
@@ -102,6 +105,10 @@ export function usePlaceOrder({
    * `missing` says what is still to pick before the order can be placed.
    */
   requestedTime?: { date: string | null; slot: string | null; missing: string | null } | null;
+  /** A gift card the shopper applied (`useCheckoutGiftCard`): it pays once the order is placed. */
+  giftCardCode?: string | null;
+  /** The card pays all that would be asked now: no transfer receipt is asked for. */
+  giftCardCoversNow?: boolean;
 }) {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -121,6 +128,7 @@ export function usePlaceOrder({
       digitalChannel,
       digitalContact,
       appointment: Boolean(bookingOfCart(cart)),
+      receiptRequired: !giftCardCoversNow,
       t,
     });
     if (formError) {
@@ -136,6 +144,7 @@ export function usePlaceOrder({
     try {
       let orderId = paymentErrorState?.orderId;
       let confirmationToken = null;
+      let giftCoveredAll = false;
 
       if (method === "card" && paymentErrorState?.orderId) {
         orderId = paymentErrorState.orderId;
@@ -205,10 +214,39 @@ export function usePlaceOrder({
           }
         }
 
+        // 2. Gift card: after the points (which lower the total), before any other payment. The
+        // database takes at most its balance and what is owed; the card charge and the transfer
+        // approval then ask only for what it leaves. If it cannot, the shopper is told: the
+        // order then costs what it shows without the card.
+        if (giftCardCode && orderId && confirmationToken) {
+          const notTaken = () =>
+            toast.warning(
+              t(
+                "تعذّر استخدام بطاقة الهدية، والطلب يُدفع بدونها.",
+                "The gift card could not be used: the order is paid without it.",
+              ),
+            );
+          try {
+            const taken = await redeemGiftCardAtCheckout({
+              data: {
+                orderId: String(orderId),
+                brandId: brand.id,
+                confirmationToken: String(confirmationToken),
+                code: giftCardCode,
+              },
+            });
+            if (!taken.applied) notTaken();
+            else giftCoveredAll = taken.owed <= 0;
+          } catch (giftErr) {
+            console.warn("Gift card redemption error:", giftErr);
+            notTaken();
+          }
+        }
+
         // The order's points are the database's: it gives them when the order is completed or
         // paid, whoever placed it, and takes them back if it is undone (migration 20261014110000).
 
-        // 2. Mark cart recovered
+        // 3. Mark cart recovered
         if (orderId) {
           try {
             await markCartRecoveredOnOrder({
@@ -241,8 +279,8 @@ export function usePlaceOrder({
         },
         String(orderId ?? ""),
       );
-      // If they chose to pay via Card, redirect to payment gateway
-      if (method === "card") {
+      // If they chose to pay via Card, redirect to payment gateway (unless a gift card paid it all)
+      if (method === "card" && !giftCoveredAll) {
         const toastId = toast.loading(
           t("جاري تحويلك لبوابة الدفع...", "Redirecting you to the payment gateway..."),
         );
@@ -258,14 +296,19 @@ export function usePlaceOrder({
           });
 
           if (!chargeRes.ok) {
-            const errData = await chargeRes.json<{ error?: string }>();
-            throw new Error(errData.error || "Failed to initiate card payment.");
+            const errData = await chargeRes.json<{ error?: string; code?: string }>();
+            // A gift card paid all the charge would have asked for (the advance or the deposit):
+            // nothing goes to the gateway, and the order is placed.
+            if (!(chargeRes.status === 409 && errData.code === "ORDER_ALREADY_PAID")) {
+              throw new Error(errData.error || "Failed to initiate card payment.");
+            }
+            toast.dismiss(toastId);
+          } else {
+            const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
+            toast.dismiss(toastId);
+            window.location.href = redirectUrl;
+            return;
           }
-
-          const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
-          toast.dismiss(toastId);
-          window.location.href = redirectUrl;
-          return;
         } catch (paymentErr: any) {
           toast.dismiss(toastId);
           throw new Error(paymentErr.message || "Failed to initiate payment gateway.");
