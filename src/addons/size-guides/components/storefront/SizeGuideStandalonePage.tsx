@@ -100,7 +100,7 @@ export function SizeGuideStandalonePage() {
           </h2>
         </div>
 
-        <SizeGuidePanel guide={currentGuide} />
+        <SizeGuidePanel guide={currentGuide} lang={lang} />
       </div>
     </main>
   );

@@ -1551,7 +1551,7 @@ export function SizeGuidesStudioPage() {
                 </div>
 
                 <div className="rounded-xl border border-border bg-card p-4 sm:p-6 shadow-xs">
-                  <SizeGuidePanel guide={previewGuide} />
+                  <SizeGuidePanel guide={previewGuide} lang={lang} />
                 </div>
               </div>
             </TabsContent>

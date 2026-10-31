@@ -78,6 +78,8 @@ export function placeStorefrontOrderArgs({
         ? { requested_date: requestedTime.date, requested_slot: requestedTime.slot ?? null }
         : {}),
       ...(fulfillment === "pickup" && partnerId ? { pickup_partner_id: partnerId } : {}),
+      // The language the shopper ordered in: the order's emails speak it (migration 20261109100000).
+      lang,
       name: form.name,
       phone: form.phone,
       email: customerEmail,

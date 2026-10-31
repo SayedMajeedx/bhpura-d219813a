@@ -529,22 +529,6 @@ export function HeroV2View({
                           {button}
                         </a>
                       )}
-                      {(brand as any)?.modules?.made_to_order && (
-                        <a
-                          href={`/${brand.slug}/custom-order`}
-                          className={`inline-flex ${
-                            dense
-                              ? "min-h-10 px-3.5 py-2 text-xs sm:text-sm"
-                              : "min-h-11 px-4 py-2.5 sm:px-5 sm:py-3 text-xs sm:text-sm"
-                          } ${
-                            item.look.tone === "dark"
-                              ? "bg-background/70 hover:bg-background/85 border-border text-foreground"
-                              : "bg-white/20 hover:bg-white/30 border-white/30 text-white"
-                          } items-center justify-center rounded-xl backdrop-blur-md border font-semibold transition-[transform,background-color,border-color] duration-(--motion-fast) hover:scale-[1.03] active:scale-[0.98]`}
-                        >
-                          {isAr ? "طلب مخصص" : "Bespoke Order"}
-                        </a>
-                      )}
                     </div>
                   </div>
                 </div>

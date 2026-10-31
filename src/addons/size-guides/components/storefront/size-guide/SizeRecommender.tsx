@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,12 +14,17 @@ import {
 
 interface SizeRecommenderProps {
   guide: SizeGuide;
+  lang: "ar" | "en";
   currentUnit: SizeGuideUnit;
   onRecommendSize?: (size: string) => void;
 }
 
-export function SizeRecommender({ guide, currentUnit, onRecommendSize }: SizeRecommenderProps) {
-  const { lang } = useI18n();
+export function SizeRecommender({
+  guide,
+  lang,
+  currentUnit,
+  onRecommendSize,
+}: SizeRecommenderProps) {
   const isAr = lang === "ar";
   const isAbaya = isAbayaSizeGuide(guide);
 

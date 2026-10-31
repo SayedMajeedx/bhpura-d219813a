@@ -126,16 +126,6 @@ export function FooterV2() {
           </Link>
         </>
       )}
-      {!servicesStore && (brand as any)?.modules?.made_to_order && (
-        <Link
-          to={"/$slug/custom-order" as any}
-          params={{ slug: brand.slug } as any}
-          className={linkClass}
-          style={FG}
-        >
-          {t("طلب مخصص", "Custom Order")}
-        </Link>
-      )}
     </>
   );
 
