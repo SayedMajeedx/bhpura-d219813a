@@ -10612,9 +10612,9 @@ export type Database = {
           p_brand_id: string;
           p_expires_on?: string;
           p_note?: string;
+          p_paid_with?: string;
           p_purchaser_name?: string;
           p_recipient_name?: string;
-          p_paid_with?: string;
           p_source_order_id?: string;
         };
         Returns: {
@@ -11411,6 +11411,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpc_reporting_gift_cards: {
+        Args: { p_brand_slug?: string; p_periods: Json };
+        Returns: Json;
+      };
       rpc_reporting_incubator_sales: {
         Args: {
           p_brand_slug?: string;
@@ -11419,10 +11423,6 @@ export type Database = {
           p_start_date: string;
           p_tz?: string;
         };
-        Returns: Json;
-      };
-      rpc_reporting_gift_cards: {
-        Args: { p_brand_slug?: string; p_periods: Json };
         Returns: Json;
       };
       rpc_reporting_margins: {
