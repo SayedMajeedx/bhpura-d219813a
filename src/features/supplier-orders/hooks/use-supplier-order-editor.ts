@@ -33,17 +33,20 @@ export function useSupplierOrderEditor({
   catalog,
   lang,
   onSaved,
+  startWith,
 }: {
   brandId: string;
   order: SupplierOrder | null;
   catalog: SupplierCatalog;
   lang: "ar" | "en";
   onSaved: (orderId: string) => void;
+  /** A new order's first lines (the sizes chosen to order again). */
+  startWith?: SupplierOrderForm | null;
 }) {
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const [form, setForm] = useState<SupplierOrderForm>(() =>
-    order ? formFromOrder(order) : emptyForm(),
+    order ? formFromOrder(order) : (startWith ?? emptyForm()),
   );
   const [paidNow, setPaidNow] = useState("");
   const [shownProblems, setShownProblems] = useState<FormProblem[]>([]);

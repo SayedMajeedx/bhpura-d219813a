@@ -11,6 +11,7 @@ import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNaviga
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
 import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
+import { CheckoutHeader } from "@/features/storefront-shell/components/CheckoutHeader";
 import { shellTheme } from "@/features/storefront-shell/lib/shell-theme";
 import { isEmbeddedWindow } from "@/features/storefront-shell/lib/embedded";
 
@@ -97,6 +98,13 @@ export function StoreShell() {
           which is exactly what the consent banner used to do. Keep storefront
           UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
+      {/* The first stop of a keyboard: past the header's links, straight to the page. */}
+      <a
+        href="#store-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-foreground focus:shadow-lg"
+      >
+        {lang === "ar" ? "انتقل إلى المحتوى" : "Skip to content"}
+      </a>
       <div
         ref={headerRef}
         // Its colour runs under the status bar of a store added to the home screen (the page
@@ -112,12 +120,19 @@ export function StoreShell() {
           transform: headerHidden ? "translate3d(0, -100%, 0)" : "translateZ(0)",
         }}
       >
-        <AnnouncementBar />
+        {/* Checkout keeps the logo and a way back; whether the store takes orders now stays. */}
+        {!isCheckout && <AnnouncementBar />}
         <StoreStatusBanner />
-        <StoreHeader />
-        <DesktopStoreNavigation />
+        {isCheckout ? (
+          <CheckoutHeader />
+        ) : (
+          <>
+            <StoreHeader />
+            <DesktopStoreNavigation />
+          </>
+        )}
       </div>
-      <main className="flex-1">
+      <main id="store-main" tabIndex={-1} className="flex-1 focus:outline-none">
         <Outlet />
       </main>
       {/* Checkout keeps the shopper on the form: no footer to wander off through. */}

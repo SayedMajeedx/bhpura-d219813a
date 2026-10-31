@@ -8273,6 +8273,38 @@ export type Database = {
           },
         ];
       };
+      storefront_sessions: {
+        Row: {
+          brand_id: string;
+          first_seen: string;
+          last_seen: string;
+          reached: number;
+          session_id: string;
+        };
+        Insert: {
+          brand_id: string;
+          first_seen?: string;
+          last_seen?: string;
+          reached?: number;
+          session_id: string;
+        };
+        Update: {
+          brand_id?: string;
+          first_seen?: string;
+          last_seen?: string;
+          reached?: number;
+          session_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "storefront_sessions_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       subcategories: {
         Row: {
           category_id: string | null;
@@ -9921,6 +9953,7 @@ export type Database = {
         Args: { p_brand_id: string; p_id: string };
         Returns: boolean;
       };
+      delete_old_storefront_sessions: { Args: never; Returns: number };
       delivery_time_problem: {
         Args: {
           p_date: string;
@@ -10790,6 +10823,10 @@ export type Database = {
         Args: { p_brand_slug: string; p_event?: string; p_product_id: string };
         Returns: undefined;
       };
+      record_storefront_step: {
+        Args: { p_session: string; p_slug: string; p_step: number };
+        Returns: undefined;
+      };
       record_supplier_payment: {
         Args: {
           p_amount: number;
@@ -11547,6 +11584,16 @@ export type Database = {
           p_zone_id: string;
         };
         Returns: number;
+      };
+      storefront_funnel: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          carts: number;
+          checkouts: number;
+          orders: number;
+          product_views: number;
+          visits: number;
+        }[];
       };
       storefront_line_customizations: {
         Args: {

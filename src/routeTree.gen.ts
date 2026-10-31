@@ -30,6 +30,7 @@ import { Route as SlugCustomOrderRouteImport } from './routes/$slug.custom-order
 import { Route as SlugManifestDotwebmanifestRouteImport } from './routes/$slug.manifest[.webmanifest]'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugSizeGuideRouteImport } from './routes/$slug.size-guide'
+import { Route as SlugTrackOrderRouteImport } from './routes/$slug.track-order'
 import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
@@ -210,6 +211,11 @@ const SlugSearchRoute = SlugSearchRouteImport.update({
 const SlugSizeGuideRoute = SlugSizeGuideRouteImport.update({
   id: '/size-guide',
   path: '/size-guide',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugTrackOrderRoute = SlugTrackOrderRouteImport.update({
+  id: '/track-order',
+  path: '/track-order',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugWishlistRoute = SlugWishlistRouteImport.update({
@@ -674,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
+  '/$slug/track-order': typeof SlugTrackOrderRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/b/$slug': typeof BSlugRoute
@@ -771,6 +778,7 @@ export interface FileRoutesByTo {
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
+  '/$slug/track-order': typeof SlugTrackOrderRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/b/$slug': typeof BSlugRoute
   '/invoice/$id': typeof InvoiceIdRoute
@@ -869,6 +877,7 @@ export interface FileRoutesById {
   '/$slug/manifest.webmanifest': typeof SlugManifestDotwebmanifestRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/size-guide': typeof SlugSizeGuideRoute
+  '/$slug/track-order': typeof SlugTrackOrderRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/b/$slug': typeof BSlugRoute
@@ -969,6 +978,7 @@ export interface FileRouteTypes {
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
+    | '/$slug/track-order'
     | '/$slug/wishlist'
     | '/admin'
     | '/b/$slug'
@@ -1066,6 +1076,7 @@ export interface FileRouteTypes {
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
+    | '/$slug/track-order'
     | '/$slug/wishlist'
     | '/b/$slug'
     | '/invoice/$id'
@@ -1163,6 +1174,7 @@ export interface FileRouteTypes {
     | '/$slug/manifest.webmanifest'
     | '/$slug/search'
     | '/$slug/size-guide'
+    | '/$slug/track-order'
     | '/$slug/wishlist'
     | '/_authenticated/admin'
     | '/b/$slug'
@@ -1416,6 +1428,13 @@ declare module '@tanstack/react-router' {
       path: '/size-guide'
       fullPath: '/$slug/size-guide'
       preLoaderRoute: typeof SlugSizeGuideRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/track-order': {
+      id: '/$slug/track-order'
+      path: '/track-order'
+      fullPath: '/$slug/track-order'
+      preLoaderRoute: typeof SlugTrackOrderRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/wishlist': {
@@ -1964,6 +1983,7 @@ interface SlugRouteRouteChildren {
   SlugManifestDotwebmanifestRoute: typeof SlugManifestDotwebmanifestRoute
   SlugSearchRoute: typeof SlugSearchRoute
   SlugSizeGuideRoute: typeof SlugSizeGuideRoute
+  SlugTrackOrderRoute: typeof SlugTrackOrderRoute
   SlugWishlistRoute: typeof SlugWishlistRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugPageIdxRoute: typeof SlugPageIdxRoute
@@ -1983,6 +2003,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugManifestDotwebmanifestRoute: SlugManifestDotwebmanifestRoute,
   SlugSearchRoute: SlugSearchRoute,
   SlugSizeGuideRoute: SlugSizeGuideRoute,
+  SlugTrackOrderRoute: SlugTrackOrderRoute,
   SlugWishlistRoute: SlugWishlistRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugPageIdxRoute: SlugPageIdxRoute,

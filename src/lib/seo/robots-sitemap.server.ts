@@ -38,6 +38,7 @@ export function handleRobotsRequest(request: Request): Response {
     "Disallow: /*/auth",
     "Disallow: /*/auth-confirmed",
     "Disallow: /*/thank-you/",
+    "Disallow: /*/track-order",
     "Disallow: /*/wishlist",
     "Allow: /",
     "",

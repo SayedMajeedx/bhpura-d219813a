@@ -104,15 +104,15 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
       </p>
 
       {/* Channel Selector Pills */}
-      <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/10 border border-white/10 w-fit">
+      <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/10 border border-current/10 w-fit">
         <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => setChannel("whatsapp")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-current/10 ${
             channel === "whatsapp"
-              ? "bg-white/20 text-white shadow-xs font-semibold"
+              ? "bg-current/20 text-white shadow-xs font-semibold"
               : "opacity-80 hover:opacity-100"
           }`}
           style={{ color: "var(--sf-footer-fg)" }}
@@ -125,9 +125,9 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           variant="ghost"
           size="sm"
           onClick={() => setChannel("email")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-white/10 ${
+          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-current/10 ${
             channel === "email"
-              ? "bg-white/20 text-white shadow-xs font-semibold"
+              ? "bg-current/20 text-white shadow-xs font-semibold"
               : "opacity-80 hover:opacity-100"
           }`}
           style={{ color: "var(--sf-footer-fg)" }}
@@ -150,7 +150,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           onChange={(e) => setContact(e.target.value)}
           dir="ltr"
           required
-          className="h-11 text-xs bg-white/10 border-white/15 text-white placeholder:text-white/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+          className="h-11 text-xs bg-current/10 border-current/15 text-white placeholder:text-current/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
         />
         <Button
           type="submit"
@@ -159,7 +159,7 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
           className="h-11 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
         >
           {submitting ? (
-            <span className="h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            <span className="h-3.5 w-3.5 rounded-full border-2 border-current/40 border-t-white animate-spin" />
           ) : (
             <>
               <Send className="h-3.5 w-3.5" />

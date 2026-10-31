@@ -1,3 +1,4 @@
+import { formFromReorder, readReorderParam } from "../lib/reorder";
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -60,7 +61,14 @@ import { SupplierMessageDialog } from "./SupplierMessageDialog";
 type Confirming = "cancel" | "delete" | null;
 
 /** One supplier order (`orderId` "new": a new one): read, received, paid, changed. */
-export function SupplierOrderPage({ orderId }: { orderId: string }) {
+export function SupplierOrderPage({
+  orderId,
+  reorder,
+}: {
+  orderId: string;
+  /** A new order's sizes and pieces, from the "To reorder" tab (`reorderParam`). */
+  reorder?: string;
+}) {
   const { lang: rawLang } = useI18n();
   const lang = rawLang === "ar" ? "ar" : "en";
   const isAr = lang === "ar";
@@ -217,6 +225,7 @@ export function SupplierOrderPage({ orderId }: { orderId: string }) {
           key={order?.id ?? "new"}
           brandId={brand.id}
           order={order}
+          startWith={isNew && reorder ? formFromReorder(readReorderParam(reorder), catalog) : null}
           catalog={catalog}
           currency={currency}
           moneyLabel={moneyLabel}

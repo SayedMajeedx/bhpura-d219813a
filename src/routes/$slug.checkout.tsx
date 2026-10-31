@@ -15,11 +15,9 @@ import {
   canPayInFull,
   methodsUnderAdvance,
 } from "@/lib/payments/advance-payment";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
 import { OsEmptyState } from "@/components/os/os-empty-state";
-import { User } from "lucide-react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { calculateShippingFee } from "@/lib/shipping";
@@ -478,8 +476,27 @@ function Checkout() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_360px] gap-6">
-      <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
+        {/* The page says what it is, and a shopper with an account can bring their details in
+            one tap, in a line under it rather than a card above the form. */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h1 className="font-display text-2xl sm:text-3xl">
+            {appointment ? t("تأكيد الحجز", "Confirm your booking") : t("إتمام الطلب", "Checkout")}
+          </h1>
+          {!session && !appointment && (
+            <p className="text-sm text-muted-foreground">
+              {t("لديك حساب؟", "Have an account?")}{" "}
+              <Link
+                to="/$slug/auth"
+                params={{ slug: brand.slug }}
+                search={{ redirect: mounted ? window.location.pathname : "" }}
+                className="font-semibold text-foreground underline underline-offset-4"
+              >
+                {t("سجّل الدخول لملء بياناتك", "Sign in to fill in your details")}
+              </Link>
+            </p>
+          )}
+        </div>
         <BookingHoldBanner />
         {/* On a phone the summary falls to the foot of the form: what is being bought shows first. */}
         {!appointment && (
@@ -493,28 +510,6 @@ function Checkout() {
         )}
         {paymentErrorState && (
           <PaymentFailedCard setMethod={setMethod} submit={submit} submitting={submitting} t={t} />
-        )}
-        {!session && !appointment && (
-          <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
-            <div className="flex min-w-0 items-center gap-3">
-              <User className="h-5 w-5 shrink-0" />
-              <p className="text-sm min-w-0 break-words">
-                {t(
-                  "لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.",
-                  "Have an account? Sign in to prefill your details.",
-                )}
-              </p>
-            </div>
-            <Button asChild size="sm" variant="outline" className="shrink-0">
-              <Link
-                to="/$slug/auth"
-                params={{ slug: brand.slug }}
-                search={{ redirect: mounted ? window.location.pathname : "" }}
-              >
-                {t("سجّل الدخول", "Sign in")}
-              </Link>
-            </Button>
-          </Card>
         )}
 
         {appointment && (

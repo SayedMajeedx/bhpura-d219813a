@@ -14,7 +14,7 @@ export function CurrencySwitcher() {
   return (
     <select
       aria-label={lang === "ar" ? "عرض الأسعار بعملة" : "Show prices in"}
-      className="h-11 max-w-full rounded-md border-0 bg-transparent px-1 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-white/80"
+      className="h-11 max-w-full rounded-md border-0 bg-transparent px-1 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-current/80"
       style={{ color: "var(--sf-header-fg)" }}
       value={active ?? currency}
       onChange={(event) => choose(event.target.value)}

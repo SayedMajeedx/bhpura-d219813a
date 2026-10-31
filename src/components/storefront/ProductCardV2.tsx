@@ -296,11 +296,6 @@ export function ProductCardV2({
             prices line up however many lines its names take, with no empty line kept under a
             short name. */}
         <div className="mt-2.5 flex flex-1 flex-col gap-1 text-start">
-          {/* Color Dots */}
-          {settings?.product_card_color_dots !== false && (
-            <ColorDots variants={variants} product={product} maxVisible={4} />
-          )}
-
           {/* Product Title */}
           <h3
             // At most two lines. Each line must hold Arabic marks below the baseline: a tight line-height cuts them off.
@@ -350,6 +345,13 @@ export function ProductCardV2({
             )}
           </div>
           {lengths && <p className="mt-0.5 text-xs text-muted-foreground">{lengths}</p>}
+          {/* The colours come last (name, then price, then swatches), in a row of one height
+              on every card, so a row's prices still line up when some cards have none. */}
+          {settings?.product_card_color_dots !== false && (
+            <div className="flex h-4 items-center">
+              <ColorDots variants={variants} product={product} maxVisible={4} />
+            </div>
+          )}
         </div>
       </Link>
 

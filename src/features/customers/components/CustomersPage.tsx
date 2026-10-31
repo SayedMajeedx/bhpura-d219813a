@@ -1,5 +1,16 @@
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  customerGroup,
+  groupCounts,
+  sortCustomers,
+  valueSummary,
+  type CustomerSort,
+} from "@/features/customers/lib/customer-value";
+import {
+  CustomerSortField,
+  CustomerValueStrip,
+} from "@/features/customers/components/CustomerValueStrip";
 import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { Dialog } from "@/components/ui/dialog";
@@ -117,25 +128,20 @@ export function CustomersPage({ slug }: { slug: string }) {
 
   const [segmentScope, setSegmentScope] = useState<CustomerSegmentScope>("all");
 
-  const segmentCounts = useMemo(() => {
-    const counts = { all: (data ?? []).length, vip: 0, repeat: 0, new: 0, churn: 0 };
-    (data ?? []).forEach((c) => {
-      const stats = customerCrmStats.get(c.id);
-      if (stats?.badge === "VIP") counts.vip++;
-      else if (stats?.badge === "Churn Risk") counts.churn++;
-      else if (stats?.badge === "New Buyer") counts.new++;
-      else if (
-        stats?.badge === "Regular" ||
-        (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk")
-      )
-        counts.repeat++;
-    });
-    return counts;
-  }, [data, customerCrmStats]);
+  const segmentCounts = useMemo(
+    () =>
+      groupCounts(
+        (data ?? []).map((c) => c.id),
+        customerCrmStats,
+      ),
+    [data, customerCrmStats],
+  );
+  const [sort, setSort] = useState<CustomerSort>("recent");
+  const summary = useMemo(() => valueSummary(customerCrmStats), [customerCrmStats]);
 
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = deferredSearch.trim().toLowerCase();
-  const filteredCustomers = (data ?? []).filter((customer) => {
+  const matchingCustomers = (data ?? []).filter((customer) => {
     const defaultAddress = defaultByCustomer.get(customer.id);
     const customerRegion = defaultAddress?.region || customer.region || customer.city || "";
     const stats = customerCrmStats.get(customer.id);
@@ -150,19 +156,12 @@ export function CustomersPage({ slug }: { slug: string }) {
 
     const matchesRegion = regionFilter === "all" || customerRegion === regionFilter;
 
-    let matchesScope = true;
-    if (segmentScope === "vip") matchesScope = stats?.badge === "VIP";
-    else if (segmentScope === "churn") matchesScope = stats?.badge === "Churn Risk";
-    else if (segmentScope === "new") matchesScope = stats?.badge === "New Buyer";
-    else if (segmentScope === "repeat")
-      matchesScope = Boolean(
-        stats?.badge === "Regular" ||
-        (stats && stats.totalOrders > 1 && stats.badge !== "VIP" && stats.badge !== "Churn Risk"),
-      );
+    const matchesScope = segmentScope === "all" || customerGroup(stats) === segmentScope;
 
     return matchesSearch && matchesRegion && matchesScope;
   });
 
+  const filteredCustomers = sortCustomers(matchingCustomers, sort, customerCrmStats);
   const filteredCustomerIds = filteredCustomers.map((customer) => customer.id);
   const customerTotalPages = Math.max(1, Math.ceil(filteredCustomers.length / rowsPerPage));
   const safeCustomerPage = Math.min(page, customerTotalPages);
@@ -173,7 +172,7 @@ export function CustomersPage({ slug }: { slug: string }) {
   const paginatedCustomerIds = paginatedCustomers.map((customer) => customer.id);
   useEffect(() => {
     setPage(1);
-  }, [search, regionFilter, segmentScope, rowsPerPage]);
+  }, [search, regionFilter, segmentScope, rowsPerPage, sort]);
   useEffect(() => {
     if (page > customerTotalPages) setPage(customerTotalPages);
   }, [page, customerTotalPages]);
@@ -233,6 +232,10 @@ export function CustomersPage({ slug }: { slug: string }) {
         }
       />
 
+      {/* What the customers are worth: the average buyer, how many come back, and how much of
+          the spend the top tenth makes. */}
+      <CustomerValueStrip summary={summary} currency={currency} isAr={isAr} />
+
       {/* 2. CRM Segment Scope Switcher */}
       <CustomersScopeSwitcher
         lang={isAr ? "ar" : "en"}
@@ -257,6 +260,7 @@ export function CustomersPage({ slug }: { slug: string }) {
           setSegmentScope("all");
         }}
       />
+      <CustomerSortField sort={sort} onSortChange={setSort} isAr={isAr} />
 
       <BulkSelectionToolbar
         lang={isAr ? "ar" : "en"}

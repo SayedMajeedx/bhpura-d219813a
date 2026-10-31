@@ -4,7 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useStorefront } from "@/lib/storefront-context";
-import { setStorefrontAnalyticsConfig, trackStorefrontEvent } from "@/lib/storefront-analytics";
+import {
+  setFunnelRecording,
+  setStorefrontAnalyticsConfig,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics";
 
 type Choice = { decided: boolean; analytics: boolean; marketing: boolean };
 const empty: Choice = { decided: false, analytics: false, marketing: false };
@@ -170,6 +174,13 @@ export function StorefrontAnalytics() {
     settings.meta_pixel_enabled,
     settings.meta_pixel_id,
   ]);
+
+  // The store's own visit count: kept unless the store asks for consent and it was not given.
+  const funnelAllowed = !settings.analytics_consent_required || Boolean(choice.analytics);
+  useEffect(() => {
+    setFunnelRecording({ slug: brand.slug, allowed: funnelAllowed });
+    return () => setFunnelRecording(null);
+  }, [brand.slug, funnelAllowed]);
 
   useEffect(() => {
     if (effective.decided)

@@ -70,4 +70,18 @@ describe("storefront quality upgrades", () => {
     // The input is not reordered in place.
     expect(ids(rows)).toEqual(["sold-out-new", "old", "new"]);
   });
+
+  it("sorts by best sellers by the store's sales rank, the unranked after them, newest first", () => {
+    const ids = (list: ProductRow[]) => list.map((p) => p.id);
+    const a = product("a", { created_at: "2026-01-01T00:00:00Z" } as Partial<ProductRow>);
+    const b = product("b", { created_at: "2026-03-01T00:00:00Z" } as Partial<ProductRow>);
+    const c = product("c", { created_at: "2026-02-01T00:00:00Z" } as Partial<ProductRow>);
+    const rank = new Map([
+      ["c", 0],
+      ["a", 1],
+    ]);
+    expect(ids(sortCatalogProducts([a, b, c], "best", rank))).toEqual(["c", "a", "b"]);
+    // Before the rank arrives, the listing reads newest first.
+    expect(ids(sortCatalogProducts([a, b, c], "best"))).toEqual(["b", "c", "a"]);
+  });
 });

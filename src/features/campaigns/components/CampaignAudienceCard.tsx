@@ -20,6 +20,7 @@ import { displayPhone } from "@/lib/invoice-display";
 /** A customer's segment in the reader's language (the segment ids are English keys). */
 function badgeLabel(badge: string, isAr: boolean): string {
   if (!isAr) return badge === "Churn Risk" ? "At risk" : badge === "New Buyer" ? "New" : badge;
+  if (badge === "One-time") return "مرة واحدة";
   if (badge === "VIP") return "مميز";
   if (badge === "Churn Risk") return "معرض للتسرب";
   if (badge === "New Buyer") return "جديد";

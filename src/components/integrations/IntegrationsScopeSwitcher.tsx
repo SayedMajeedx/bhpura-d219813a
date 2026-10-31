@@ -4,7 +4,6 @@ import {
   Mail,
   MoreHorizontal,
   Plug,
-  Truck,
   KeyRound,
   Webhook,
   Activity,
@@ -27,7 +26,6 @@ export type IntegrationsCategoryScope =
   | "api_logs"
   | "dev_docs"
   | "payments"
-  | "shipping"
   | "email_ai"
   | "pixels";
 
@@ -36,8 +34,6 @@ interface IntegrationsScopeSwitcherProps {
   activeScope: IntegrationsCategoryScope;
   onScopeChange: (scope: IntegrationsCategoryScope) => void;
   integrationCount: number;
-  /** The store ships goods; without it the couriers tab has nothing to connect. */
-  shipping?: boolean;
 }
 
 export function IntegrationsScopeSwitcher({
@@ -45,7 +41,6 @@ export function IntegrationsScopeSwitcher({
   activeScope,
   onScopeChange,
   integrationCount,
-  shipping = true,
 }: IntegrationsScopeSwitcherProps) {
   const isAr = lang === "ar";
   const allScopes = [
@@ -62,7 +57,6 @@ export function IntegrationsScopeSwitcher({
     { id: "webhooks", icon: Webhook, ar: "خطافات الويب", en: "Webhooks" },
     { id: "api_logs", icon: Activity, ar: "سجل الطلبات", en: "API Logs" },
     { id: "dev_docs", icon: BookOpen, ar: "توثيق المطورين", en: "Developer Docs" },
-    { id: "shipping", icon: Truck, ar: "شركات الشحن", en: "Logistics & Shipping" },
     { id: "email_ai", icon: Mail, ar: "البريد والذكاء الاصطناعي", en: "Email & AI Services" },
     { id: "pixels", icon: BarChart3, ar: "التتبع والتحليلات", en: "Tracking Pixels" },
   ] satisfies Array<{
@@ -73,10 +67,8 @@ export function IntegrationsScopeSwitcher({
     badge?: number;
   }>;
 
-  // The couriers tab goes for a store that does not ship (unless it is the one open).
-  const scopes = allScopes.filter(
-    (scope) => shipping || scope.id !== "shipping" || activeScope === "shipping",
-  );
+  // No courier is connected through the platform yet, so there is no shipping tab.
+  const scopes = allScopes;
   const primary = scopes.slice(0, 2);
   const secondary = scopes.slice(2);
   const activeSecondary = secondary.find((scope) => scope.id === activeScope);

@@ -126,7 +126,10 @@ const mocks: Record<string, unknown> = {
   // A store that does not make to order: no pieces-to-make tab, so no orders are read.
   "store-profile": { useAdminStoreProfile: () => ({ profile: { addons: [], modules: {} } }) },
   "data/orders": {
-    ordersQueries: { list: () => ({ queryKey: ["orders"], queryFn: async () => [] }) },
+    ordersQueries: {
+      list: () => ({ queryKey: ["orders"], queryFn: async () => [] }),
+      variantSales: () => ({ queryKey: ["variant-sales"], queryFn: async () => [] }),
+    },
   },
   "profile-context": {
     useProfile: () => ({

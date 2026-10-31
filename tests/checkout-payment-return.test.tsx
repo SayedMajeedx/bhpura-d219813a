@@ -19,7 +19,11 @@ const storefront = vi.hoisted(() => ({
   clearCart: vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (options: object) => ({ options, useSearch: () => search.current }),
+  createFileRoute: () => (options: object) => ({
+    options,
+    useSearch: () => search.current,
+    useParams: () => ({ slug: "pura", orderId: "order-1" }),
+  }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 const storefrontContext = { useStorefront: () => storefront };
@@ -37,6 +41,14 @@ const bookingsData = {
 };
 vi.mock("../src/lib/data/bookings", () => bookingsData);
 vi.mock("@/lib/data/bookings", () => bookingsData);
+// The order's receipt is the server's (tests/order-receipt.test.tsx); here the page waits on none.
+const receiptQueries = {
+  orderReceiptQueries: {
+    receipt: () => ({ queryKey: ["thank-you-test", "receipt"], queryFn: async () => null }),
+  },
+};
+vi.mock("../src/features/order-receipt/lib/queries", () => receiptQueries);
+vi.mock("@/features/order-receipt/lib/queries", () => receiptQueries);
 
 const { PaymentFailedCard } = await import("../src/features/checkout/components/PaymentFailedCard");
 const { PaymentMethodCard } = await import("../src/features/checkout/components/PaymentMethodCard");

@@ -62,14 +62,14 @@ function NavCategoryItem({
 
   return (
     <div className="space-y-1.5 w-full">
-      <div className="flex items-center gap-1 rounded-[var(--radius)] border border-white/15 bg-white/10 transition-colors hover:bg-white/20 active:bg-white/30 pe-1.5 rtl:pe-0 rtl:ps-1.5">
+      <div className="flex items-center gap-1 rounded-[var(--radius)] border border-current/15 bg-current/10 transition-colors hover:bg-current/20 active:bg-current/30 pe-1.5 rtl:pe-0 rtl:ps-1.5">
         <Link
           to="/$slug/$category"
           params={{ slug: brand.slug, category: categorySlug }}
           onClick={close}
           className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2 min-w-0"
         >
-          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/15">
+          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-current/15">
             {category.menu_icon_url ? (
               <img
                 src={cloudflareImageUrl(category.menu_icon_url, 80)}
@@ -166,7 +166,7 @@ function MobileStorefrontDropdown() {
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          className="flex h-11 items-center gap-2 px-3 font-medium rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit shadow-none transition duration-(--motion-fast)"
+          className="flex h-11 items-center gap-2 px-3 font-medium rounded-[var(--radius)] border border-current/20 bg-current/10 hover:bg-current/20 active:bg-current/30 text-inherit shadow-none transition duration-(--motion-fast)"
           style={{ color: "var(--sf-header-fg)" }}
         >
           <Grid2X2 className="h-4 w-4" />
@@ -176,9 +176,9 @@ function MobileStorefrontDropdown() {
       </SheetTrigger>
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
-        className={`w-[min(88vw,23rem)] border-e border-s border-white/20 p-0 flex flex-col h-full ${
+        className={`w-[min(88vw,23rem)] border-e border-s border-current/20 p-0 flex flex-col h-full ${
           isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
-        } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-white/10 [&>button]:opacity-80 [&>button]:hover:opacity-100`}
+        } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-current/10 [&>button]:opacity-80 [&>button]:hover:opacity-100`}
         style={{
           backgroundColor: drawerBg,
           color: menuText,
@@ -274,7 +274,7 @@ function MobileStorefrontDropdown() {
               setLang(lang === "ar" ? "en" : "ar");
               close();
             }}
-            className="h-8 px-3 text-xs font-bold gap-1.5 border-white/20 bg-white/5 hover:bg-white/10"
+            className="h-8 px-3 text-xs font-bold gap-1.5 border-current/20 bg-current/5 hover:bg-current/10"
           >
             <span>{lang === "ar" ? "English" : "العربية"}</span>
           </Button>
@@ -320,8 +320,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
           size={navigation ? "default" : "sm"}
           className={`${
             navigation
-              ? "h-11 shrink-0 rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit font-semibold shadow-none"
-              : "bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none"
+              ? "h-11 shrink-0 rounded-[var(--radius)] border border-current/20 bg-current/10 hover:bg-current/20 active:bg-current/30 text-inherit font-semibold shadow-none"
+              : "bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none"
           } gap-2 transition duration-(--motion-fast)`}
           style={{ color: "var(--sf-header-fg)" }}
           aria-label={t("القائمة", "Menu")}
@@ -335,9 +335,9 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-e border-s border-white/20 p-0 shadow-2xl ${
+        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-e border-s border-current/20 p-0 shadow-2xl ${
           isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
-        } [&>button]:top-5 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-white/10 [&>button]:opacity-80 [&>button]:hover:opacity-100 ${
+        } [&>button]:top-5 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-current/10 [&>button]:opacity-80 [&>button]:hover:opacity-100 ${
           lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"
         }`}
         style={{ backgroundColor: drawerBg, color: menuFg, zIndex: 60 }}
@@ -354,7 +354,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
               />
               <div className="relative flex min-w-0 items-center gap-4">
                 {settings.logo_url && (
-                  <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1">
+                  <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-current/5 p-1">
                     <img
                       src={cloudflareImageUrl(settings.logo_url, 320)}
                       alt={displayName}
@@ -386,7 +386,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                   to="/$slug"
                   params={{ slug: brand.slug }}
                   onClick={close}
-                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-current/10 active:bg-current/20"
                   style={{ color: menuFg }}
                 >
                   <Home className="h-5 w-5 shrink-0" />
@@ -400,7 +400,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       to="/$slug/account"
                       params={{ slug: brand.slug }}
                       onClick={close}
-                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-current/10 active:bg-current/20"
                       style={{ color: menuFg }}
                     >
                       <User className="h-5 w-5 shrink-0" />
@@ -412,7 +412,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       to="/$slug/account"
                       params={{ slug: brand.slug }}
                       onClick={close}
-                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-current/10 active:bg-current/20"
                       style={{ color: menuFg }}
                     >
                       <PackageSearch className="h-5 w-5 shrink-0" />
@@ -429,7 +429,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       redirect: mounted ? window.location.pathname + window.location.search : "",
                     }}
                     onClick={close}
-                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-current/10 active:bg-current/20"
                     style={{ color: menuFg }}
                   >
                     <LogIn className="h-5 w-5 shrink-0" />
@@ -446,7 +446,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: page.slug }}
                   onClick={close}
-                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-current/10 active:bg-current/20"
                   style={{ color: menuFg }}
                 >
                   <FileText className="h-5 w-5 shrink-0" />
@@ -618,7 +618,7 @@ function DesktopStoreNavigation() {
   const mainCategories = data.filter((c: any) => !c.parent_id);
 
   return (
-    <nav className="hidden border-t border-white/10 md:block overflow-visible">
+    <nav className="hidden border-t border-current/10 md:block overflow-visible">
       <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 flex-wrap px-6 py-2 overflow-visible">
         <Link
           to="/$slug"

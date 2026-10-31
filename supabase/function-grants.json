@@ -371,6 +371,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "record_storefront_step(p_slug text, p_session uuid, p_step integer)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront visit steps: checks the store, the step and a daily bound inside; keeps no personal data"
+    },
     "record_supplier_payment(p_po_id uuid, p_amount numeric, p_paid_on date, p_request_id uuid, p_note text)": {
       "anon": false,
       "authenticated": true,
@@ -635,6 +640,11 @@
       "anon": true,
       "authenticated": true,
       "reason": "Public read for showing prices in a shopper's own currency: an active store's own currency, the currencies it chose to offer and their public exchange rates; nothing for a store that offers none, and nothing about orders or customers"
+    },
+    "storefront_funnel(p_brand_id uuid, p_from timestamp with time zone, p_to timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
     },
     "storefront_my_bookings(p_brand_id uuid)": {
       "anon": false,

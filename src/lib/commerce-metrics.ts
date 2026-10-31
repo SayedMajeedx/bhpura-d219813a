@@ -17,7 +17,7 @@ export type CustomerCrmStats = {
   pendingAmount: number;
   hasPendingOrCod: boolean;
   lastOrderDate: string | null;
-  badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
+  badge: "VIP" | "Churn Risk" | "New Buyer" | "One-time" | "Regular" | null;
 };
 
 const normalized = (value: unknown) =>
@@ -183,10 +183,15 @@ export function buildCustomerCrmStats(
     const lastOrderDate = latest?.created_at ?? null;
     const lastOrderMs = lastOrderDate ? Date.parse(lastOrderDate) : 0;
     let badge: CustomerCrmStats["badge"] = null;
-    if (lifetimeSpend >= vipThreshold || (totalOrders >= 3 && lifetimeSpend >= 100)) badge = "VIP";
+    // A VIP spent the store's VIP amount, or ordered three times and spent two fifths of it
+    // (the second rule once read "100" in any currency: 100 riyals or 100 dinars alike).
+    if (lifetimeSpend >= vipThreshold || (totalOrders >= 3 && lifetimeSpend >= vipThreshold * 0.4))
+      badge = "VIP";
     else if (totalOrders > 1 && lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs)
       badge = "Churn Risk";
-    else if (totalOrders === 1) badge = "New Buyer";
+    // One order: new while it is recent, then a one-time buyer (they once stayed "new" for good).
+    else if (totalOrders === 1)
+      badge = lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs ? "One-time" : "New Buyer";
     else if (totalOrders > 1) badge = "Regular";
 
     result.set(customerId, {

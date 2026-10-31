@@ -8,6 +8,8 @@ import { AppointmentSummary } from "@/features/storefront-booking/components/App
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { bookingsQueries } from "@/lib/data/bookings";
+import { orderReceiptQueries } from "@/features/order-receipt/lib/queries";
+import { OrderReceiptCard } from "@/features/order-receipt/components/OrderReceiptCard";
 
 /**
  * How the order is fulfilled comes from the URL: checkout sets it from the
@@ -63,6 +65,10 @@ function ThankYou() {
     ...bookingsQueries.publicRules(brand.id),
     enabled: Boolean(appointment),
   }).data;
+
+  // What was ordered, its number and its invoice, read by the server while the order is fresh.
+  const { orderId } = Route.useParams();
+  const receipt = useQuery(orderReceiptQueries.receipt(brand.slug, orderId)).data;
 
   useEffect(() => {
     clearCart();
@@ -131,6 +137,12 @@ function ThankYou() {
             {isPickup ? t("موعد الاستلام: ", "Collect on ") : t("موعد التوصيل: ", "Deliver on ")}
             {requestedTimeLabel(search.for, search.slot, lang === "ar" ? "ar" : "en")}
           </p>
+        )}
+
+        {receipt && (
+          <div className="mb-6">
+            <OrderReceiptCard receipt={receipt} lang={lang} slug={brand.slug} trackLink />
+          </div>
         )}
 
         <Link

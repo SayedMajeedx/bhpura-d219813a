@@ -71,6 +71,9 @@ const {
   fetchCategoryProducts,
   fetchProductDetail,
   fetchProductsByIds,
+  fetchQuickSearch,
+  fetchStorefrontSearch,
+  FULL_SEARCH_LIMIT,
   sanitizeSearchTerm,
   storefrontKeys,
   storefrontQueries,
@@ -240,6 +243,33 @@ describe("fetchCategoryProducts", () => {
   it("filters a category collection by its values", async () => {
     await fetchCategoryProducts(brand, { kind: "categories", values: ["abayas", "Abayas"] });
     expect(filterValue(requests[0], "in", "category")).toEqual(["abayas", "Abayas"]);
+  });
+});
+
+describe("the searches", () => {
+  it("look for every word on its own, in any of its Arabic spellings, and say how many they want", async () => {
+    requests.length = 0;
+    await fetchStorefrontSearch("b1", "عبايه سوداء");
+    const ors = requests[0].filters.filter(([kind]) => kind === "or").map(([, value]) => value);
+    expect(ors).toHaveLength(2);
+    expect(ors[0]).toContain("name_ar.ilike.%عب_ي_%");
+    expect(ors[1]).toContain("description_en.ilike.%سود_ء%");
+    expect(requests[0].filters).toContainEqual(["limit", FULL_SEARCH_LIMIT]);
+
+    requests.length = 0;
+    await fetchQuickSearch("b1", "Black abaya", 6);
+    const quick = requests[0].filters.filter(([kind]) => kind === "or").map(([, value]) => value);
+    expect(quick).toEqual([
+      "name.ilike.%black%,name_ar.ilike.%black%,name_en.ilike.%black%",
+      "name.ilike.%abaya%,name_ar.ilike.%abaya%,name_en.ilike.%abaya%",
+    ]);
+  });
+
+  it("ask nothing for a search with nothing to look for", async () => {
+    requests.length = 0;
+    expect(await fetchStorefrontSearch("b1", " ,() ")).toEqual([]);
+    expect(await fetchQuickSearch("b1", "a", 6)).toEqual([]);
+    expect(requests).toHaveLength(0);
   });
 });
 

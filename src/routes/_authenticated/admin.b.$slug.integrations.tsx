@@ -32,7 +32,6 @@ import {
   RefreshCw,
   Sparkles,
   CreditCard,
-  Truck,
   MessageCircle,
   History,
   RotateCw,
@@ -41,7 +40,6 @@ import {
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useProfile } from "@/lib/profile-context";
 import { IntegrationsCommandHeader } from "@/components/integrations/IntegrationsCommandHeader";
 import {
@@ -63,6 +61,12 @@ import {
 } from "@/lib/data/integrations";
 import { getAccessToken } from "@/lib/auth/session";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  EMAIL_AI_PROVIDERS,
+  PAYMENT_PROVIDERS,
+  PROVIDER_PRESETS,
+  shownIntegration,
+} from "@/lib/integration-providers";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -90,26 +94,11 @@ type Row = {
   last_rotated_at: string | null;
 };
 
-const PROVIDER_PRESETS = [
-  { value: "aramex", label: "Aramex" },
-  { value: "posta_plus", label: "Posta Plus" },
-  { value: "stripe", label: "Stripe" },
-  { value: "tap", label: "Tap Payments" },
-  { value: "benefit", label: "Benefit Pay" },
-  { value: "gemini", label: "Gemini AI translation & copywriting" },
-  { value: "resend_customer_email", label: "Resend Customer Email" },
-  { value: "sendpulse_admin", label: "SendPulse Admin Notifications" },
-  { value: "custom", label: "Custom" },
-];
-
 const getProviderIcon = (provider: string) => {
   if (provider === "gemini") return <Sparkles className="h-5 w-5 text-purple-500" />;
   if (provider === "resend_customer_email" || provider === "sendpulse_admin")
     return <Mail className="h-5 w-5 text-primary" />;
-  if (provider === "stripe" || provider === "tap" || provider === "benefit")
-    return <CreditCard className="h-5 w-5 text-indigo-500" />;
-  if (provider === "aramex" || provider === "posta_plus")
-    return <Truck className="h-5 w-5 text-amber-500" />;
+  if (PAYMENT_PROVIDERS.has(provider)) return <CreditCard className="h-5 w-5 text-indigo-500" />;
   return <Plug className="h-5 w-5 text-muted-foreground" />;
 };
 
@@ -119,7 +108,6 @@ function IntegrationsPage() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
-  const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const qc = useQueryClient();
   const { isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
   const canRotateKeys = isSuperAdmin || isAdmin || isBrandAdmin;
@@ -143,22 +131,14 @@ function IntegrationsPage() {
   };
 
   const rawIntegrationsData = q.data;
-  const integrationsList = useMemo(() => rawIntegrationsData ?? [], [rawIntegrationsData]);
+  const integrationsList = useMemo(
+    () => (rawIntegrationsData ?? []).filter(shownIntegration),
+    [rawIntegrationsData],
+  );
   const filteredIntegrations = useMemo(() => {
     return integrationsList.filter((row) => {
-      if (categoryScope === "payments") {
-        return row.provider === "stripe" || row.provider === "tap" || row.provider === "benefit";
-      }
-      if (categoryScope === "shipping") {
-        return row.provider === "aramex" || row.provider === "posta_plus";
-      }
-      if (categoryScope === "email_ai") {
-        return (
-          row.provider === "resend_customer_email" ||
-          row.provider === "sendpulse_admin" ||
-          row.provider === "gemini"
-        );
-      }
+      if (categoryScope === "payments") return PAYMENT_PROVIDERS.has(row.provider);
+      if (categoryScope === "email_ai") return EMAIL_AI_PROVIDERS.has(row.provider);
       return true;
     });
   }, [integrationsList, categoryScope]);
@@ -205,7 +185,6 @@ function IntegrationsPage() {
   return (
     <div className="space-y-3.5">
       <IntegrationsCommandHeader
-        shipping={storeProfile.modules.shipping}
         lang={isAr ? "ar" : "en"}
         integrationCount={integrationsList.length}
         onNewIntegration={() => {
@@ -215,7 +194,6 @@ function IntegrationsPage() {
       />
 
       <IntegrationsScopeSwitcher
-        shipping={storeProfile.modules.shipping}
         lang={isAr ? "ar" : "en"}
         activeScope={categoryScope}
         onScopeChange={(scope) => setCategoryScope(scope)}
@@ -655,7 +633,7 @@ function IntegrationDialog({
   const isAr = lang === "ar";
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    provider: row?.provider ?? "aramex",
+    provider: row?.provider ?? "tap",
     provider_custom:
       row && !PROVIDER_PRESETS.find((p) => p.value === row.provider) ? row.provider : "",
     base_url: row?.base_url ?? "",
@@ -666,7 +644,7 @@ function IntegrationDialog({
   });
   useEffect(() => {
     setForm({
-      provider: row?.provider ?? "aramex",
+      provider: row?.provider ?? "tap",
       provider_custom:
         row && !PROVIDER_PRESETS.find((provider) => provider.value === row.provider)
           ? row.provider
