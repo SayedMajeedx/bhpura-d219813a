@@ -62,6 +62,21 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => stubs.navigate,
   Link: ({ children }: { children: React.ReactNode }) => <a href="/pura">{children}</a>,
 }));
+const designs = vi.hoisted(() => ({
+  cardDesignQueries: {
+    store: () => ({
+      queryKey: ["designs"],
+      queryFn: async () => ({
+        off: ["signature:brand"],
+        signature: "type:cream",
+        photo_products: [],
+        photos: [],
+      }),
+    }),
+  },
+}));
+vi.mock("../src/lib/data/gift-cards/designs", () => designs);
+vi.mock("@/lib/data/gift-cards/designs", () => designs);
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: {} }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
@@ -205,6 +220,10 @@ describe("the shop page", () => {
     expect(stubs.start.mock.calls[0][0].data.buyer).toEqual(
       expect.objectContaining({ delivery: "email", email: "sara@mail.com", lang: "en" }),
     );
+    // The card's design goes with it: the store's signature card is offered first.
+    expect(stubs.start.mock.calls[0][0].data.buyer.design).toEqual(
+      expect.objectContaining({ design: "type:cream", orientation: "portrait", language: "en" }),
+    );
     expect(
       JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body)),
     ).toEqual({
@@ -268,7 +287,11 @@ describe("the purchase's page", () => {
       expiresOn: "2027-10-31",
     };
     wrap(<GiftCardPurchasePage purchaseId="p1" token={"t".repeat(64)} paymentFailed={false} />);
-    expect(await screen.findByText("ABCD-EFGH-JKMN")).toBeInTheDocument();
+    // The code is on the card's back and set out under it.
+    expect((await screen.findAllByText("ABCD-EFGH-JKMN")).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByRole("img", { name: "Front of the card" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Turn the card over/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Print on A4 to cut out/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Send on WhatsApp/ }).getAttribute("href")).toContain(
       encodeURIComponent("ABCD-EFGH-JKMN"),
     );

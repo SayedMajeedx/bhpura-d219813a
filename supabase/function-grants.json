@@ -641,6 +641,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "set_gift_card_designs(p_brand_id uuid, p_designs jsonb)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) and cleans what is saved"
+    },
     "set_gift_card_settings(p_brand_id uuid, p_sell_online boolean, p_amounts numeric[], p_valid_months integer)": {
       "anon": false,
       "authenticated": true,
@@ -680,6 +685,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
+    },
+    "storefront_gift_card_designs(p_brand_id uuid)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "What a gift card is drawn with for an active store: designs turned off, its signature card and its products' public photos"
     },
     "storefront_gift_card_offer(p_slug text)": {
       "anon": true,

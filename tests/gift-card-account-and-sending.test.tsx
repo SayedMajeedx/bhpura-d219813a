@@ -1,5 +1,6 @@
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render as rtlRender, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { codeSentWords, codesToSend } from "../src/features/gift-cards/lib/online-sales";
 
@@ -18,6 +19,21 @@ vi.mock("@/lib/storefront-context", () => storefront);
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/pura/gift-cards">{children}</a>,
 }));
+
+const designs = {
+  cardDesignQueries: {
+    store: () => ({
+      queryKey: ["designs"],
+      queryFn: async () => ({ off: [], signature: null, photo_products: [], photos: [] }),
+    }),
+  },
+};
+vi.mock("../src/lib/data/gift-cards/designs", () => designs);
+vi.mock("@/lib/data/gift-cards/designs", () => designs);
+vi.mock("../src/integrations/supabase/client", () => ({ supabase: {} }));
+vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
+const render = (node: React.ReactNode) =>
+  rtlRender(<QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>);
 
 const { GiftCardsSection } =
   await import("../src/features/storefront-account/components/GiftCardsSection");
@@ -43,6 +59,8 @@ describe("the shopper's gift cards", () => {
     render(<GiftCardsSection cards={[mine()]} isLoading={false} />);
     expect(screen.queryByText("ABCD-EFGH-JKMN")).toBeNull();
     expect(screen.getByText("Ready")).toBeInTheDocument();
+    // The card is drawn in the design it was bought in.
+    expect(screen.getByRole("img", { name: "The gift card" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Show the code" }));
     expect(screen.getByText("ABCD-EFGH-JKMN")).toBeInTheDocument();
     expect(screen.getByText(/BHD 30\.000 left/)).toBeInTheDocument();

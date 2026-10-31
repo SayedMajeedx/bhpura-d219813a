@@ -128,3 +128,4 @@ export async function redeemGiftCardOnOrder(
 }
 
 export * from "./online";
+export * from "./designs";

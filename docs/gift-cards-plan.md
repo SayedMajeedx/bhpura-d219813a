@@ -86,6 +86,18 @@ The owner bought a card as a guest and found three gaps: a buyer who left the pa
 
 Tests: `tests/gift-card-purchase-notices-migration.test.ts` (real Postgres), `tests/gift-card-notices.test.ts`, `tests/gift-card-account-and-sending.test.tsx`, and the step four tests above.
 
+## Card designs (2026-10-31)
+
+The owner asked for cards that look made by a person, minimal but luxurious, with the variety Apple, Airbnb and Sephora give theirs, at A6. The store curates and the buyer picks.
+
+- **Occasions** in the Gulf's own wording (a gift, birthday, thank you, congratulations, anniversary, just because, Ramadan, both Eids, graduation, wedding, new baby, appreciation, National Day, Mother's Day, get well, new home); what is in season leads.
+- **Five compositions on four tones**, all from the store's colours and logo: signature (the store's mark alone), type (the greeting large), photo (the store's own product photo), pattern (the star-and-cross pattern and a pointed arch) and colour block; on the store's colour, black, nude or white. Gold is a flat ink, never a gradient; every mark is drawn with ruler and compass.
+- **Portrait or landscape; Arabic, English or both.** The back holds who it is for and from, the note, the value, the code in a ruled box, its end date and how to use it.
+- **Kept and printed:** the purchase keeps the design; the buyer sees the card on its page and in their account, saves it as pictures, or prints it on A6 paper or on A4 at true size with cut marks. Staff print any card from its details.
+- **The store's choices:** designs turned off, a signature card shown first, and the products whose photos the photo designs use.
+
+No illustrator: no illustrated or watercolour art (the owner's answer); variety comes from type, colour, geometry and the store's photographs.
+
 ## Order of work
 
 1. The tables, functions and their tests in a real Postgres; the admin page (issue, list,

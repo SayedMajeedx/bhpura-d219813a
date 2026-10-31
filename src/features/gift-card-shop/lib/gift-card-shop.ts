@@ -100,6 +100,10 @@ const FAILURES: Record<string, { ar: string; en: string }> = {
     ar: "اكتب رقم هاتفك لنرسل لك الرمز على واتساب.",
     en: "Write your phone number to get the code on WhatsApp.",
   },
+  GIFT_CARD_DESIGN_INVALID: {
+    ar: "تعذّر حفظ تصميم البطاقة. اختر تصميمًا آخر.",
+    en: "The card's design could not be kept. Choose another design.",
+  },
   GIFT_CARD_EMAIL_REQUIRED: {
     ar: "اكتب بريدك لنرسل لك الرمز عليه.",
     en: "Write your email to get the code there.",

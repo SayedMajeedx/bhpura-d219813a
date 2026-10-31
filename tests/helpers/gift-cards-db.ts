@@ -6,6 +6,7 @@ import stepThree from "../../supabase/migrations/20261103100000_gift_cards_sold_
 import stepFour from "../../supabase/migrations/20261104100000_gift_cards_sold_online.sql?raw";
 import notices from "../../supabase/migrations/20261105100000_gift_card_purchase_notices.sql?raw";
 import noticeParts from "../../supabase/migrations/20261106100000_gift_card_notice_parts.sql?raw";
+import designs from "../../supabase/migrations/20261107100000_gift_card_designs.sql?raw";
 
 /**
  * A real Postgres (PGlite) with the gift cards' four migrations and the live payment state
@@ -86,13 +87,19 @@ export const GIFT_CARD_SCHEMA = `
   ALTER TABLE public.brands ADD COLUMN name_en text;
   ALTER TABLE public.business_settings ADD COLUMN business_name text, ADD COLUMN email_sender_name text;
   CREATE TABLE public.bookings (order_id uuid, deposit_amount numeric, late_payment_slot_taken_at timestamptz);
+  -- A store's products, with the columns a card's photo reads.
+  CREATE TABLE public.products (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL, image_url text,
+    media jsonb NOT NULL DEFAULT '[]'::jsonb, is_active boolean NOT NULL DEFAULT true,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
 `;
 
 export async function giftCardDb(): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(GIFT_CARD_SCHEMA);
   await db.exec(paymentAmounts);
-  for (const step of [stepOne, stepTwo, stepThree, stepFour, notices, noticeParts]) {
+  for (const step of [stepOne, stepTwo, stepThree, stepFour, notices, noticeParts, designs]) {
     await db.exec(step);
   }
   return db;

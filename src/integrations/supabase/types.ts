@@ -3648,6 +3648,7 @@ export type Database = {
           created_at: string;
           currency: string;
           delivery_channel: string;
+          design: Json | null;
           gateway_reference: string | null;
           gift_card_id: string | null;
           id: string;
@@ -3676,6 +3677,7 @@ export type Database = {
           created_at?: string;
           currency: string;
           delivery_channel?: string;
+          design?: Json | null;
           gateway_reference?: string | null;
           gift_card_id?: string | null;
           id?: string;
@@ -3704,6 +3706,7 @@ export type Database = {
           created_at?: string;
           currency?: string;
           delivery_channel?: string;
+          design?: Json | null;
           gateway_reference?: string | null;
           gift_card_id?: string | null;
           id?: string;
@@ -3738,6 +3741,7 @@ export type Database = {
         Row: {
           amounts: number[];
           brand_id: string;
+          card_designs: Json;
           sell_online: boolean;
           updated_at: string;
           updated_by: string | null;
@@ -3746,6 +3750,7 @@ export type Database = {
         Insert: {
           amounts?: number[];
           brand_id: string;
+          card_designs?: Json;
           sell_online?: boolean;
           updated_at?: string;
           updated_by?: string | null;
@@ -3754,6 +3759,7 @@ export type Database = {
         Update: {
           amounts?: number[];
           brand_id?: string;
+          card_designs?: Json;
           sell_online?: boolean;
           updated_at?: string;
           updated_by?: string | null;
@@ -11983,6 +11989,10 @@ export type Database = {
         Args: { p_brand_id: string; p_template_id: string };
         Returns: undefined;
       };
+      set_gift_card_designs: {
+        Args: { p_brand_id: string; p_designs: Json };
+        Returns: Json;
+      };
       set_gift_card_settings: {
         Args: {
           p_amounts: number[];
@@ -12102,6 +12112,7 @@ export type Database = {
           visits: number;
         }[];
       };
+      storefront_gift_card_designs: { Args: { p_brand_id: string }; Returns: Json };
       storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
       storefront_line_customizations: {
         Args: {
@@ -12122,6 +12133,7 @@ export type Database = {
           created_at: string;
           currency: string;
           delivery_channel: string;
+          design: Json;
           expires_on: string;
           id: string;
           payment_method: string;

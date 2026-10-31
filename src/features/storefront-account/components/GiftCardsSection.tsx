@@ -4,6 +4,11 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import type { MyGiftCard } from "@/lib/data/gift-cards/online";
+import { GiftCardFace } from "@/features/gift-card-design/components/GiftCardFace";
+import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
+import { readDesign } from "@/features/gift-card-design/lib/design";
+import type { CardKit } from "@/features/gift-card-design/hooks/use-card-kit";
+import { useStorefrontCardKit } from "@/features/gift-card-shop/hooks/use-storefront-card-kit";
 
 /**
  * A signed-in shopper's gift cards in this store (the owner's review of 2026-10-31): each card
@@ -18,6 +23,7 @@ export function GiftCardsSection({
   isLoading: boolean;
 }) {
   const { brand, lang, t } = useStorefront();
+  const kit = useStorefrontCardKit();
   if (isLoading) {
     return (
       <p className="py-6 text-center text-sm text-muted-foreground">
@@ -45,7 +51,7 @@ export function GiftCardsSection({
   return (
     <ul className="space-y-3">
       {cards.map((card) => (
-        <GiftCardRow key={card.id} card={card} lang={lang} t={t} />
+        <GiftCardRow key={card.id} card={card} lang={lang} t={t} kit={kit} />
       ))}
     </ul>
   );
@@ -69,7 +75,9 @@ function GiftCardRow({
   card,
   lang,
   t,
+  kit,
 }: {
+  kit: CardKit;
   card: MyGiftCard;
   lang: "ar" | "en";
   t: (ar: string, en: string) => string;
@@ -77,6 +85,14 @@ function GiftCardRow({
   const [shown, setShown] = useState(false);
   const [copied, setCopied] = useState(false);
   const money = (n: number) => formatPrice(n, card.currency, lang);
+  const design = readDesign(card.design, lang);
+  const details = {
+    amount: Number(card.amount),
+    code: card.code,
+    to: card.recipient_name,
+    message: null,
+    expiresOn: card.expires_on,
+  };
   const day = (value: string) =>
     new Date(value.length === 10 ? `${value}T12:00:00` : value).toLocaleDateString(
       lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
@@ -93,8 +109,16 @@ function GiftCardRow({
   };
   return (
     <li className="space-y-2 rounded-xl border border-border p-4">
-      <div className="flex items-start justify-between gap-3">
-        <span className="min-w-0">
+      <div className="flex items-start gap-3">
+        <GiftCardFace
+          kit={kit}
+          design={design}
+          details={details}
+          primary={lang}
+          label={t("بطاقة الهدية", "The gift card")}
+          className={design.orientation === "landscape" ? "w-24 shrink-0" : "w-16 shrink-0"}
+        />
+        <span className="min-w-0 flex-1">
           <span className="block font-semibold tabular-nums">{money(Number(card.amount))}</span>
           <span className="block text-xs text-muted-foreground">
             {day(card.created_at)}
@@ -151,6 +175,15 @@ function GiftCardRow({
               ? ` · ${t(`صالحة حتى ${day(card.expires_on)}`, `valid until ${day(card.expires_on)}`)}`
               : ""}
           </p>
+          {shown && (
+            <CardKeepActions
+              kit={kit}
+              design={design}
+              details={details}
+              primary={lang}
+              lang={lang}
+            />
+          )}
         </div>
       )}
     </li>
