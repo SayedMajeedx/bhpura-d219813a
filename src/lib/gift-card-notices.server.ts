@@ -23,6 +23,7 @@ type Admin = {
 type QueryChain = {
   eq: (column: string, value: unknown) => QueryChain;
   in: (column: string, values: unknown[]) => QueryChain;
+  limit: (count: number) => QueryChain;
   then: Promise<{ data: unknown; error: { message: string; code?: string } | null }>["then"];
 };
 
@@ -76,13 +77,15 @@ async function storeRecipients(admin: Admin, brandId: string) {
       .select("email, name")
       .eq("brand_id", brandId)
       .eq("status", "active")
-      .in("role", ["admin", "brand_admin"]),
+      .in("role", ["admin", "brand_admin"])
+      .limit(200),
     admin
       .from("brand_notification_recipients")
       .select("email, name")
       .eq("brand_id", brandId)
       .eq("active", true)
-      .eq("receive_order_placed", true),
+      .eq("receive_order_placed", true)
+      .limit(200),
   ]);
   if (profiles.error) throw new Error(`Store admins: ${profiles.error.message}`);
   const people = [

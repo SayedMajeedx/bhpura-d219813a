@@ -137,6 +137,7 @@ describe("sending from the outbox", () => {
         select: () => chain,
         eq: () => chain,
         in: () => chain,
+        limit: () => chain,
         then: (resolve: (v: unknown) => unknown) =>
           resolve({ data: rows[table] ?? [], error: null }),
       };

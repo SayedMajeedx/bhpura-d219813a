@@ -159,7 +159,7 @@ export function customerNotice(e: NoticeEvent): (Email & { to: string }) | null 
     const lines = ar
       ? [
           esc(hello),
-          esc(`لم يعتمد ${e.store_name} طلب بطاقة الهدية بقيمة ${amount}.`),
+          esc(`لم يُعتمد طلبك لبطاقة الهدية بقيمة ${amount} من ${e.store_name}.`),
           ...(reason ? [esc(`السبب: ${reason}`)] : []),
           esc("تواصل مع المتجر إن كنت دفعت."),
         ]

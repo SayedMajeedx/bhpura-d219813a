@@ -372,6 +372,40 @@ function BuyForm({
   );
 }
 
+/** One choice of a row of choices (a payment method, how the code arrives). */
+function Choice({
+  icon: Icon,
+  label,
+  chosen,
+  onChoose,
+  centred = false,
+}: {
+  icon: typeof CreditCard;
+  label: string;
+  chosen: boolean;
+  onChoose: () => void;
+  centred?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={chosen}
+      onClick={onChoose}
+      className={cn(
+        "flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
+        centred && "justify-center",
+        chosen
+          ? "border-primary bg-primary/10"
+          : "border-border bg-background hover:border-primary",
+      )}
+    >
+      <Icon className="size-4 shrink-0" aria-hidden="true" />
+      {label}
+    </button>
+  );
+}
+
 function MethodChoice({
   method,
   chosen,
@@ -383,23 +417,15 @@ function MethodChoice({
   onChoose: () => void;
   t: (ar: string, en: string) => string;
 }) {
-  const Icon = method === "card" ? CreditCard : Landmark;
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={chosen}
-      onClick={onChoose}
-      className={cn(
-        "flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
-        chosen
-          ? "border-primary bg-primary/10"
-          : "border-border bg-background hover:border-primary",
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {method === "card" ? t("بطاقة", "Card") : t("بنفت باي (تحويل)", "BenefitPay (transfer)")}
-    </button>
+    <Choice
+      icon={method === "card" ? CreditCard : Landmark}
+      label={
+        method === "card" ? t("بطاقة", "Card") : t("بنفت باي (تحويل)", "BenefitPay (transfer)")
+      }
+      chosen={chosen}
+      onChoose={onChoose}
+    />
   );
 }
 
@@ -414,22 +440,13 @@ function DeliveryChoice({
   onChoose: () => void;
   t: (ar: string, en: string) => string;
 }) {
-  const Icon = delivery === "whatsapp" ? MessageCircle : Mail;
   return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={chosen}
-      onClick={onChoose}
-      className={cn(
-        "flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
-        chosen
-          ? "border-primary bg-primary/10"
-          : "border-border bg-background hover:border-primary",
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {delivery === "whatsapp" ? t("واتساب", "WhatsApp") : t("البريد", "Email")}
-    </button>
+    <Choice
+      icon={delivery === "whatsapp" ? MessageCircle : Mail}
+      label={delivery === "whatsapp" ? t("واتساب", "WhatsApp") : t("البريد", "Email")}
+      chosen={chosen}
+      onChoose={onChoose}
+      centred
+    />
   );
 }
