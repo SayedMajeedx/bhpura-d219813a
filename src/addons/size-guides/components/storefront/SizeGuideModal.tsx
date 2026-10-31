@@ -119,6 +119,7 @@ export function SizeGuideModal({
         <div className="pt-3">
           <SizeGuidePanel
             guide={activeGuide}
+            lang={isAr ? "ar" : "en"}
             selectedSize={selectedSize}
             onSelectSize={onSelectSize ? handleSelectSize : undefined}
             initialUnit={initialUnit}

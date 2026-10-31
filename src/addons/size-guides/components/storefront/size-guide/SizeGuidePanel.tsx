@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { type SizeGuide, type SizeGuideUnit, formatCell } from "../../../lib/size-guide";
 import { SizeRecommender } from "./SizeRecommender";
@@ -7,6 +6,12 @@ import { Ruler, HelpCircle, Video } from "lucide-react";
 
 export interface SizeGuidePanelProps {
   guide: SizeGuide;
+  /**
+   * The reader's language: the shopper's on the storefront, the preview's in the studio. It is
+   * passed, not read from the admin's language, which a shopper's page does not follow (the
+   * English size guide once came out in Arabic).
+   */
+  lang: "ar" | "en";
   selectedSize?: string | null;
   onSelectSize?: (size: string) => void;
   initialUnit?: SizeGuideUnit;
@@ -15,12 +20,12 @@ export interface SizeGuidePanelProps {
 
 export function SizeGuidePanel({
   guide,
+  lang,
   selectedSize,
   onSelectSize,
   initialUnit,
   showRecommender = true,
 }: SizeGuidePanelProps) {
-  const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const [currentUnit, setCurrentUnit] = useState<SizeGuideUnit>(() => {
@@ -154,7 +159,12 @@ export function SizeGuidePanel({
 
       {/* Recommender Widget */}
       {guide.recommender_enabled && showRecommender && (
-        <SizeRecommender guide={guide} currentUnit={currentUnit} onRecommendSize={onSelectSize} />
+        <SizeRecommender
+          guide={guide}
+          lang={lang}
+          currentUnit={currentUnit}
+          onRecommendSize={onSelectSize}
+        />
       )}
 
       {/* How to Measure & Diagram Section */}
