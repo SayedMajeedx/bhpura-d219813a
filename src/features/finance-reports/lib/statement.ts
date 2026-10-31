@@ -86,6 +86,8 @@ export type StatementLine = {
   reference?: boolean;
   /** A data-quality line: worth a look when not zero. */
   warning?: boolean;
+  /** Its own section after the reference lines: gift cards (`giftCardStatementLines`). */
+  section?: "gift_cards";
 };
 
 type Row = Partial<ComposedOverviewRow> | undefined;

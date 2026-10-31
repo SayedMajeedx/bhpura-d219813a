@@ -62,7 +62,37 @@ export function searchCards(cards: readonly GiftCard[], term: string): GiftCard[
   });
 }
 
+/**
+ * How a card came to be (step three, the owner's decision: cards are sold in the store first).
+ * A card sold is money the store holds, paid in cash, on the card machine or by transfer; a card
+ * given (a present, a goodwill credit) brought nothing in. Neither is a sale: the sale is counted
+ * when the card is spent.
+ */
+export type CardOrigin = "cash" | "card" | "transfer" | "given";
+
+export const CARD_ORIGINS: CardOrigin[] = ["cash", "card", "transfer", "given"];
+
+export const ORIGIN_WORDS: Record<CardOrigin, { ar: string; en: string }> = {
+  cash: { ar: "نقدًا", en: "Cash" },
+  card: { ar: "جهاز البطاقات", en: "Card machine" },
+  transfer: { ar: "تحويل", en: "Transfer" },
+  given: { ar: "هدية من المتجر", en: "Given by the store" },
+};
+
+/** What the database keeps: how it was paid, or nothing for a card given. */
+export function paidWithOf(origin: CardOrigin | ""): "cash" | "card" | "transfer" | null {
+  return origin === "" || origin === "given" ? null : origin;
+}
+
+/** How a card came to be, read back from what the database kept. */
+export function cardOrigin(card: { paid_with?: string | null }): CardOrigin {
+  const paid = card.paid_with;
+  return paid === "cash" || paid === "card" || paid === "transfer" ? paid : "given";
+}
+
 export type IssueForm = {
+  /** Sold (and how it was paid) or given: asked every time, never assumed. */
+  origin: CardOrigin | "";
   amount: string;
   recipientName: string;
   purchaserName: string;
@@ -71,6 +101,7 @@ export type IssueForm = {
 };
 
 export const emptyIssueForm = (): IssueForm => ({
+  origin: "",
   amount: "",
   recipientName: "",
   purchaserName: "",
@@ -78,10 +109,11 @@ export const emptyIssueForm = (): IssueForm => ({
   expiresOn: "",
 });
 
-export type IssueProblem = "amount" | "expiry";
+export type IssueProblem = "origin" | "amount" | "expiry";
 
 export function issueProblems(form: IssueForm, today: string): IssueProblem[] {
   const problems: IssueProblem[] = [];
+  if (!form.origin) problems.push("origin");
   const amount = Number(form.amount);
   if (!form.amount.trim() || !Number.isFinite(amount) || amount <= 0 || amount > 100_000) {
     problems.push("amount");
@@ -113,6 +145,10 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
     en: "Too many tries: try again in a while.",
   },
   GIFT_CARD_AMOUNT_INVALID: { ar: "المبلغ غير صحيح.", en: "The amount is not valid." },
+  GIFT_CARD_PAID_WITH_INVALID: {
+    ar: "اختر كيف دُفعت البطاقة.",
+    en: "Choose how the card was paid for.",
+  },
   GIFT_CARD_EXPIRY_PAST: {
     ar: "تاريخ الانتهاء مضى.",
     en: "The expiry date has passed.",

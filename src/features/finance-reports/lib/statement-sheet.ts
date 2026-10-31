@@ -1,3 +1,4 @@
+import { GIFT_CARD_SECTION } from "./gift-card-report";
 import { monthLabel, type StatementLine, type StatementMonth } from "./statement";
 import { COUNT_FORMAT, PERCENT_FORMAT, moneyFormat, type XCell, type XSheet } from "./workbook";
 
@@ -62,11 +63,17 @@ export function statementSheet(input: {
 
   const body: XCell[][] = [];
   let inReference = false;
+  let inGiftCards = false;
   for (const line of lines) {
     if (line.reference && !inReference) {
       inReference = true;
       body.push([]);
       body.push([{ value: w(STATEMENT_WORDS.reference), bold: true }]);
+    }
+    if (line.section === "gift_cards" && !inGiftCards) {
+      inGiftCards = true;
+      body.push([]);
+      body.push([{ value: w(GIFT_CARD_SECTION), bold: true }]);
     }
     const strong = line.kind === "subtotal" || line.kind === "total";
     body.push([

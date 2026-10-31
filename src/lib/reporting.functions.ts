@@ -177,6 +177,23 @@ export async function fetchReportingPeriods(
 }
 
 /**
+ * Gift cards for several periods (`rpc_reporting_gift_cards`, at most 36): sold, given, spent,
+ * written off and held at each period's end, from the cards' own ledger, and what active cards
+ * hold now. Read by `readGiftCardReport`.
+ */
+export async function fetchReportingGiftCards(
+  ranges: DateRange[],
+  brandSlug?: string,
+): Promise<unknown> {
+  const { data, error } = await supabase.rpc("rpc_reporting_gift_cards", {
+    p_periods: ranges.map((r) => ({ from: r.from.toISOString(), to: r.to.toISOString() })),
+    p_brand_slug: brandSlug || undefined,
+  });
+  if (error) throw error;
+  return data ?? null;
+}
+
+/**
  * Margin by product for a period (`rpc_reporting_margins`): units, gross sales, discounts,
  * returns and cost of goods per product and currency, adding up to the statement's figures.
  */

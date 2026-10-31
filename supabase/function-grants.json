@@ -271,7 +271,7 @@
       "authenticated": true,
       "reason": "Public storefront read: no private data in the answer"
     },
-    "issue_gift_card(p_brand_id uuid, p_amount numeric, p_recipient_name text, p_purchaser_name text, p_note text, p_expires_on date, p_source_order_id uuid)": {
+    "issue_gift_card(p_brand_id uuid, p_amount numeric, p_recipient_name text, p_purchaser_name text, p_note text, p_expires_on date, p_source_order_id uuid, p_paid_with text)": {
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
@@ -535,6 +535,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Staff reports: refused unless the caller has view_financials for the brand (reporting_brand_id)"
+    },
+    "rpc_reporting_gift_cards(p_periods jsonb, p_brand_slug text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Reports: checked inside by reporting_brand_id (signed in, active, view_financials, the caller's store)"
     },
     "rpc_reporting_incubator_sales(p_start_date timestamp with time zone, p_end_date timestamp with time zone, p_tz text, p_interval text, p_brand_slug text)": {
       "anon": false,

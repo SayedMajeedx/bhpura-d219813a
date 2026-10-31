@@ -112,6 +112,16 @@ describe("a card's rules", () => {
     expect(rules.searchCards(list, "ali").map((c) => c.id)).toEqual(["c2"]);
   });
 
+  it("ask how a card came to be, and read it back", () => {
+    const form = { ...rules.emptyIssueForm(), amount: "10" };
+    expect(rules.issueProblems(form, "2026-10-31")).toEqual(["origin"]);
+    expect(rules.issueProblems({ ...form, origin: "given" }, "2026-10-31")).toEqual([]);
+    expect(rules.paidWithOf("given")).toBeNull();
+    expect(rules.paidWithOf("transfer")).toBe("transfer");
+    expect(rules.cardOrigin({ paid_with: "card" })).toBe("card");
+    expect(rules.cardOrigin({ paid_with: null })).toBe("given");
+  });
+
   it("say what an order would take, and that a card-payment order must be paid in full", () => {
     expect(
       rules.orderGiftCardOffer({ total: 80, advance_paid: 30, payment_method: "cod" }),
@@ -182,10 +192,19 @@ describe("the gift cards page", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Issue a card" }));
     fireEvent.click(screen.getByRole("button", { name: "Issue card" }));
     expect(await screen.findByText("Write an amount above zero.")).toBeInTheDocument();
+    // Sold or given is asked every time, never assumed.
+    expect(
+      screen.getByText("Choose how the card was paid for, or that the store gave it."),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Cash" }));
+    expect(screen.getByRole("radio", { name: "Cash" })).toHaveAttribute("aria-checked", "true");
     fireEvent.click(screen.getByRole("button", { name: "Issue card" }));
     expect(await screen.findByText("NEWC-ARDC-ODE2")).toBeInTheDocument();
-    expect(data.issueGiftCard).toHaveBeenCalledWith("b1", expect.objectContaining({ amount: 25 }));
+    expect(data.issueGiftCard).toHaveBeenCalledWith(
+      "b1",
+      expect.objectContaining({ amount: 25, paidWith: "cash" }),
+    );
     expect(
       screen.getByRole("link", { name: /Send the card on WhatsApp/ }).getAttribute("href"),
     ).toContain("wa.me");

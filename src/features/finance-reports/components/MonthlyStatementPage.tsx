@@ -27,6 +27,11 @@ import {
   type StatementPreset,
 } from "../lib/statement";
 import { STATEMENT_WORDS, statementSheet } from "../lib/statement-sheet";
+import {
+  GIFT_CARD_SECTION,
+  giftCardStatementLines,
+  readGiftCardReport,
+} from "../lib/gift-card-report";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
 import { MonthPackDialog } from "./MonthPackDialog";
 
@@ -72,10 +77,23 @@ export function MonthlyStatementPage({ slug }: { slug: string }) {
   );
   const currency = currencies.includes(chosenCurrency) ? chosenCurrency : currencies[0];
   const digits = moneyFractionDigits(currency);
-  const lines = useMemo(
-    () => statementLines(columnsIn(current, currency), prior ? columnsIn(prior, currency) : null),
-    [current, prior, currency],
-  );
+  // Gift cards are money held, not sales (step three): their own lines, in the store's currency.
+  const giftCards = useQuery({ ...reportingQueries.giftCards(slug, ranges), retry: 1 });
+  const lines = useMemo(() => {
+    const money = statementLines(
+      columnsIn(current, currency),
+      prior ? columnsIn(prior, currency) : null,
+    );
+    if (currency !== storeCurrency || !giftCards.data) return money;
+    const cards = readGiftCardReport(giftCards.data).periods;
+    return [
+      ...money,
+      ...giftCardStatementLines(
+        cards.slice(0, months.length),
+        compare ? cards.slice(months.length) : null,
+      ),
+    ];
+  }, [current, prior, currency, storeCurrency, giftCards.data, months, compare]);
   const storeName = (isAr ? brand.name_ar : null) || brand.name_en;
 
   const download = async () => {
@@ -245,6 +263,9 @@ export function MonthlyStatementPage({ slug }: { slug: string }) {
                       lang={lang}
                       compare={compare}
                       startsReference={Boolean(line.reference && !lines[index - 1]?.reference)}
+                      startsGiftCards={Boolean(
+                        line.section === "gift_cards" && !lines[index - 1]?.section,
+                      )}
                       span={months.length + (compare ? 4 : 2)}
                     />
                   ))
@@ -266,6 +287,7 @@ function StatementRow({
   lang,
   compare,
   startsReference,
+  startsGiftCards = false,
   span,
 }: {
   line: StatementLine;
@@ -273,6 +295,7 @@ function StatementRow({
   lang: "ar" | "en";
   compare: boolean;
   startsReference: boolean;
+  startsGiftCards?: boolean;
   span: number;
 }) {
   const strong = line.kind === "subtotal" || line.kind === "total";
@@ -285,6 +308,13 @@ function StatementRow({
         <tr>
           <td colSpan={span} className="px-3 pb-1 pt-4 text-xs font-bold text-muted-foreground">
             {STATEMENT_WORDS.reference[lang]}
+          </td>
+        </tr>
+      )}
+      {startsGiftCards && (
+        <tr>
+          <td colSpan={span} className="px-3 pb-1 pt-4 text-xs font-bold text-muted-foreground">
+            {GIFT_CARD_SECTION[lang]}
           </td>
         </tr>
       )}

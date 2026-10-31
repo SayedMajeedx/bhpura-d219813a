@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const stubs = vi.hoisted(() => ({
   periods: vi.fn(),
+  giftCards: vi.fn(async () => null as unknown),
   download: vi.fn(),
   asked: [] as Array<Array<{ from: Date; to: Date }>>,
 }));
@@ -38,6 +39,10 @@ const mocks: Record<string, unknown> = {
           queryFn: async () => stubs.periods(ranges),
         };
       },
+      giftCards: (_slug: string, ranges: Array<{ from: Date; to: Date }>) => ({
+        queryKey: ["gift-cards", ranges.length],
+        queryFn: async () => stubs.giftCards(ranges),
+      }),
     },
   },
   "brand-context": {
@@ -117,6 +122,33 @@ describe("the monthly statement", () => {
     fireEvent.click(screen.getByRole("switch", { name: "Same months last year" }));
     await waitFor(() => expect(stubs.asked.at(-1)).toHaveLength(12));
     expect(screen.queryByRole("columnheader", { name: "Change" })).toBeNull();
+  });
+
+  it("adds the gift cards as money held: sold and spent summed, held as at the last month", async () => {
+    stubs.giftCards.mockImplementation(async (ranges: unknown) => ({
+      periods: (ranges as unknown[]).map((_, i) => ({
+        sold: 10,
+        spent: 4,
+        held_at_end: i < 12 ? 6 * (i + 1) : 2,
+      })),
+      now: { held: 72 },
+    }));
+    wrap();
+    expect(await screen.findByText("Gift cards (money held, not sales)")).toBeInTheDocument();
+    const cells = (name: string) =>
+      within(screen.getByRole("rowheader", { name }).closest("tr")!)
+        .getAllByRole("cell")
+        .map((c) => c.textContent);
+    expect(cells("Sold (money received)").slice(12, 14)).toEqual(["120.000", "120.000"]);
+    expect(cells("Spent on orders (counted in sales)")[12]).toBe("48.000");
+    // A balance: its total is the last month's, beside the last month a year earlier.
+    expect(cells("Held on cards at the month's end").slice(11, 14)).toEqual([
+      "72.000",
+      "72.000",
+      "2.000",
+    ]);
+    expect(screen.queryByRole("rowheader", { name: "Given by the store" })).toBeNull();
+    stubs.giftCards.mockImplementation(async () => null);
   });
 
   it("downloads the same statement to Excel, named for the store and its months", async () => {

@@ -13,7 +13,7 @@ export type GiftCard = Tables<"gift_cards">;
 export type GiftCardMove = Tables<"gift_card_movements">;
 
 export const GIFT_CARD_SELECT =
-  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason";
+  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason, paid_with";
 export const GIFT_CARD_MOVE_SELECT =
   "id, gift_card_id, brand_id, kind, amount, order_id, created_by, created_at, note";
 
@@ -77,6 +77,8 @@ export type IssueGiftCard = {
   note?: string;
   expiresOn?: string | null;
   sourceOrderId?: string | null;
+  /** How a card sold in the store was paid (migration 20261103100000); none for a card given. */
+  paidWith?: "cash" | "card" | "transfer" | null;
 };
 
 export async function issueGiftCard(brandId: string, input: IssueGiftCard): Promise<GiftCard> {
@@ -88,6 +90,7 @@ export async function issueGiftCard(brandId: string, input: IssueGiftCard): Prom
     p_note: input.note || undefined,
     p_expires_on: input.expiresOn || undefined,
     p_source_order_id: input.sourceOrderId || undefined,
+    p_paid_with: input.paidWith || undefined,
   });
   if (error) throw error;
   return data as GiftCard;

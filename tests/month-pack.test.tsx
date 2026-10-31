@@ -8,9 +8,11 @@ import migration from "../supabase/migrations/20261021180000_reporting_month_pac
 import { composeOverviewRows } from "../src/lib/reporting-compose";
 import { monthPackSheets, readMonthPack } from "../src/features/finance-reports/lib/month-pack";
 import { monthsEnding, yearEarlier } from "../src/features/finance-reports/lib/statement";
+import { readGiftCardReport } from "../src/features/finance-reports/lib/gift-card-report";
 
 // The accountant's month pack: the month's detail in a real Postgres (migration
-// 20261021180000), the workbook's ten sheets, and the dialog that builds and downloads it.
+// 20261021180000), the workbook's eleven sheets (the gift cards' since step three), and the dialog
+// that builds and downloads it.
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const stubs = vi.hoisted(() => ({ download: vi.fn(), asked: [] as string[] }));
@@ -25,8 +27,10 @@ const mocks: Record<string, unknown> = {
       margins: () => ask("margins", []),
       receivables: () => ask("receivables", { customers: [], partners: [] }),
       monthPack: () => ask("monthPack", {}),
+      giftCards: () => ask("giftCards", { periods: [], now: {} }),
     },
   },
+  currency: { useStoreCurrency: () => "BHD" },
   "brand-context": {
     useBrand: () => ({ id: "b1", slug: "pura", name_en: "Pura Line", name_ar: null }),
   },
@@ -34,6 +38,8 @@ const mocks: Record<string, unknown> = {
 vi.mock("../src/lib/data/reporting", () => mocks["data/reporting"]);
 vi.mock("@/lib/data/reporting", () => mocks["data/reporting"]);
 vi.mock("../src/lib/brand-context", () => mocks["brand-context"]);
+vi.mock("../src/hooks/use-store-currency", () => mocks.currency);
+vi.mock("@/hooks/use-store-currency", () => mocks.currency);
 vi.mock("@/lib/brand-context", () => mocks["brand-context"]);
 vi.mock("../src/features/finance-reports/lib/workbook", async (original) => ({
   ...(await original<object>()),
@@ -244,11 +250,28 @@ describe("the workbook", () => {
     storeName: "Pura Line",
     timeZone: "Asia/Bahrain",
     today: "2026-11-05",
+    giftCards: readGiftCardReport({
+      periods: [
+        {
+          sold: 90,
+          sold_count: 2,
+          sold_cash: 50,
+          sold_card: 40,
+          given: 30,
+          spent: 35,
+          held_at_end: 85,
+        },
+        { sold: 50, sold_count: 1, sold_cash: 50, held_at_end: 30 },
+        {},
+      ],
+      now: { held: 80, held_cards: 3, held_expired: 5 },
+    }),
+    storeCurrency: "BHD",
   });
   const sheet = (name: string) => sheets.find((s) => s.name === name)!;
   const values = (name: string) => sheet(name).rows.map((r) => r.map((c) => (c ? c.value : null)));
 
-  it("has ten sheets, each opening with whose it is, the month and its currency", () => {
+  it("has eleven sheets, each opening with whose it is, the month and its currency", () => {
     expect(sheets.map((s) => s.name)).toEqual([
       "Read me",
       "Statement",
@@ -260,11 +283,33 @@ describe("the workbook", () => {
       "Suppliers",
       "Customer balances",
       "Stock at cost",
+      "Gift cards",
     ]);
     expect(values("Sales")[0][0]).toBe("Pura Line · Sales · Oct 2026");
     expect(values("Read me").flat()).toContain(
       "As they stood on the day this was prepared (2026-11-05), not at the month's end.",
     );
+  });
+
+  it("says the cards as money held: sold by how they were paid, spent, held, and today's balance", () => {
+    const rows = values("Gift cards");
+    expect(rows[3]).toEqual(["BHD", "Oct 2026", "Sep 2026", "Oct 2025"]);
+    const line = (label: string) => rows.find((r) => r[0] === label);
+    expect(line("Sold (money received)")).toEqual(["Sold (money received)", 90, 50, 0]);
+    expect(line("of which cash")).toEqual(["of which cash", 50, 50, 0]);
+    expect(line("of which card machine")).toEqual(["of which card machine", 40, 0, 0]);
+    expect(line("Spent on orders (counted in sales)")?.[1]).toBe(35);
+    expect(line("Held on cards at the month's end")).toEqual([
+      "Held on cards at the month's end",
+      85,
+      30,
+      0,
+    ]);
+    expect(line("Held on cards in use")).toEqual(["Held on cards in use", 80]);
+    expect(line("Balance on cards past their end date")).toEqual([
+      "Balance on cards past their end date",
+      5,
+    ]);
   });
 
   it("sets the month beside the month before and the same month a year earlier", () => {
@@ -324,9 +369,15 @@ describe("the month pack button", () => {
     expect(select.selectedIndex).toBe(1);
     fireEvent.click(within(dialog).getByRole("button", { name: "Download" }));
     await waitFor(() => expect(stubs.download).toHaveBeenCalledTimes(1));
-    expect(stubs.asked.sort()).toEqual(["margins", "monthPack", "periods", "receivables"]);
+    expect(stubs.asked.sort()).toEqual([
+      "giftCards",
+      "margins",
+      "monthPack",
+      "periods",
+      "receivables",
+    ]);
     const [sheets, fileName] = stubs.download.mock.calls[0];
-    expect(sheets).toHaveLength(10);
+    expect(sheets).toHaveLength(11);
     expect(fileName).toMatch(/^pura-month-pack-\d{4}-\d{2}\.xlsx$/);
   });
 });

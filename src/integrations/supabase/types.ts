@@ -3581,6 +3581,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
           source_order_id: string | null;
@@ -3600,6 +3601,7 @@ export type Database = {
           issued_at?: string;
           issued_by?: string | null;
           note?: string | null;
+          paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
           source_order_id?: string | null;
@@ -3619,6 +3621,7 @@ export type Database = {
           issued_at?: string;
           issued_by?: string | null;
           note?: string | null;
+          paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
           source_order_id?: string | null;
@@ -10611,6 +10614,7 @@ export type Database = {
           p_note?: string;
           p_purchaser_name?: string;
           p_recipient_name?: string;
+          p_paid_with?: string;
           p_source_order_id?: string;
         };
         Returns: {
@@ -10624,6 +10628,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
           source_order_id: string | null;
@@ -11416,6 +11421,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpc_reporting_gift_cards: {
+        Args: { p_brand_slug?: string; p_periods: Json };
+        Returns: Json;
+      };
       rpc_reporting_margins: {
         Args: {
           p_brand_slug?: string;
@@ -11946,6 +11955,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
           source_order_id: string | null;
