@@ -18,6 +18,7 @@ const data = vi.hoisted(() => ({
   saveGiftCardSettings: vi.fn(async () => null),
   approveGiftCardPurchase: vi.fn(async () => null),
   cancelGiftCardPurchase: vi.fn(async () => undefined),
+  markGiftCardPurchaseSent: vi.fn(async () => undefined),
 }));
 vi.mock("../src/lib/data/gift-cards", () => ({
   giftCardQueries: {
@@ -41,6 +42,7 @@ vi.mock("../src/lib/data/gift-cards", () => ({
   saveGiftCardSettings: data.saveGiftCardSettings,
   approveGiftCardPurchase: data.approveGiftCardPurchase,
   cancelGiftCardPurchase: data.cancelGiftCardPurchase,
+  markGiftCardPurchaseSent: data.markGiftCardPurchaseSent,
   invalidateGiftCardOnline: vi.fn(async () => undefined),
 }));
 const purchaseFns = {
@@ -331,6 +333,59 @@ describe("selling cards on the store", () => {
     expect(await screen.findByText(/Transfers to check/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Approve and issue the card" }));
     await waitFor(() => expect(data.approveGiftCardPurchase).toHaveBeenCalledWith("pu1"));
+  });
+
+  it("says how the buyer asked for the code, and sends a WhatsApp one in their language", async () => {
+    data.settings = { sell_online: true, amounts: [25], valid_months: 12, updated_at: "x" };
+    const paid = {
+      brand_id: "b1",
+      amount: 50,
+      currency: "BHD",
+      payment_method: "card",
+      status: "paid",
+      recipient_name: "Noor",
+      message: "Eid Mubarak",
+      receipt_key: null,
+      created_at: "2026-10-31T10:00:00Z",
+      paid_at: "2026-10-31T10:01:00Z",
+      code_sent_at: null,
+    };
+    data.purchases = [
+      {
+        ...paid,
+        id: "pu2",
+        buyer_name: "Sara",
+        buyer_phone: "+97339001122",
+        buyer_email: null,
+        delivery_channel: "whatsapp",
+        lang: "ar",
+        gift_cards: { code: "WXYZ-2345-6789", expires_on: null },
+      },
+      {
+        ...paid,
+        id: "pu3",
+        buyer_name: "Mona",
+        buyer_phone: null,
+        buyer_email: "mona@mail.com",
+        delivery_channel: "email",
+        lang: "en",
+        gift_cards: { code: "QRST-2345-6789", expires_on: null },
+      },
+    ];
+    wrap(<GiftCardsPage />);
+    expect(await screen.findByText(/Codes to send on WhatsApp/)).toBeInTheDocument();
+    expect(screen.getByText("Code on WhatsApp to +97339001122")).toBeInTheDocument();
+    expect(screen.getByText("Code by email to mona@mail.com")).toBeInTheDocument();
+    expect(screen.getByText(/Code emailed automatically/)).toBeInTheDocument();
+    // Only the WhatsApp buyer's code waits for a person; the emailed one has no button.
+    const send = screen.getByRole("link", { name: /Send the code on WhatsApp/ });
+    expect(screen.getAllByRole("link", { name: /Send the code/ })).toHaveLength(1);
+    const href = send.getAttribute("href") ?? "";
+    expect(href.startsWith("https://wa.me/97339001122?text=")).toBe(true);
+    expect(decodeURIComponent(href)).toContain("WXYZ-2345-6789");
+    expect(decodeURIComponent(href)).toContain("بطاقة هدية");
+    fireEvent.click(send);
+    await waitFor(() => expect(data.markGiftCardPurchaseSent).toHaveBeenCalledWith("pu2"));
   });
 
   it("shows the offer's settings only to staff who may change settings", async () => {

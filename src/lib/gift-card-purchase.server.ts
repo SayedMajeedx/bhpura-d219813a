@@ -132,6 +132,9 @@ export async function settleGiftCardCharge(
       p_reference: input.chargeId,
     });
     if (error) throw new Error(`PURCHASE_SETTLE_FAILED: ${error.message}`);
+    // The card is issued: its emails now (the buyer's code, the store's sale).
+    const { sendGiftCardNoticesNow } = await import("@/lib/gift-card-notices.server");
+    await sendGiftCardNoticesNow();
   }
   return { verdict, purchase };
 }

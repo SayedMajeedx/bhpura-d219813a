@@ -4,6 +4,7 @@ import stepOne from "../../supabase/migrations/20261101100000_gift_cards.sql?raw
 import stepTwo from "../../supabase/migrations/20261102100000_gift_cards_checkout.sql?raw";
 import stepThree from "../../supabase/migrations/20261103100000_gift_cards_sold_in_store.sql?raw";
 import stepFour from "../../supabase/migrations/20261104100000_gift_cards_sold_online.sql?raw";
+import notices from "../../supabase/migrations/20261105100000_gift_card_purchase_notices.sql?raw";
 
 /**
  * A real Postgres (PGlite) with the gift cards' four migrations and the live payment state
@@ -69,6 +70,20 @@ export const GIFT_CARD_SCHEMA = `
     uploaded_at timestamptz, consumed_at timestamptz,
     expires_at timestamptz NOT NULL DEFAULT (now() + interval '30 minutes')
   );
+  -- The push queue and installed admins' choices, as their migrations made them.
+  CREATE TABLE public.push_notification_events (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL,
+    event_type text NOT NULL CHECK (event_type IN ('order_new','order_updated','review_due','review_completed','low_stock','system_failure','booking_new')),
+    entity_type text NOT NULL, entity_id uuid, dedupe_key text NOT NULL, title text NOT NULL,
+    body text NOT NULL, target_url text, payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+    UNIQUE (brand_id, dedupe_key)
+  );
+  CREATE TABLE public.web_push_subscriptions (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), endpoint text, user_id uuid,
+    preferences jsonb NOT NULL DEFAULT '{}'::jsonb, updated_at timestamptz
+  );
+  ALTER TABLE public.brands ADD COLUMN name_en text;
+  ALTER TABLE public.business_settings ADD COLUMN business_name text, ADD COLUMN email_sender_name text;
   CREATE TABLE public.bookings (order_id uuid, deposit_amount numeric, late_payment_slot_taken_at timestamptz);
 `;
 
@@ -76,7 +91,7 @@ export async function giftCardDb(): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(GIFT_CARD_SCHEMA);
   await db.exec(paymentAmounts);
-  for (const step of [stepOne, stepTwo, stepThree, stepFour]) await db.exec(step);
+  for (const step of [stepOne, stepTwo, stepThree, stepFour, notices]) await db.exec(step);
   return db;
 }
 

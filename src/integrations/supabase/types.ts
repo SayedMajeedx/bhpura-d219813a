@@ -3569,21 +3569,80 @@ export type Database = {
           },
         ];
       };
+      gift_card_purchase_events: {
+        Row: {
+          attempts: number;
+          brand_id: string;
+          claimed_at: string | null;
+          created_at: string;
+          event: string;
+          id: string;
+          last_error: string | null;
+          processed_at: string | null;
+          purchase_id: string;
+          status: string;
+        };
+        Insert: {
+          attempts?: number;
+          brand_id: string;
+          claimed_at?: string | null;
+          created_at?: string;
+          event: string;
+          id?: string;
+          last_error?: string | null;
+          processed_at?: string | null;
+          purchase_id: string;
+          status?: string;
+        };
+        Update: {
+          attempts?: number;
+          brand_id?: string;
+          claimed_at?: string | null;
+          created_at?: string;
+          event?: string;
+          id?: string;
+          last_error?: string | null;
+          processed_at?: string | null;
+          purchase_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_card_purchase_events_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_card_purchase_events_purchase_id_fkey";
+            columns: ["purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "gift_card_purchases";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       gift_card_purchases: {
         Row: {
           amount: number;
           brand_id: string;
           buyer_email: string | null;
           buyer_name: string;
-          buyer_phone: string;
+          buyer_phone: string | null;
+          buyer_user_id: string | null;
           cancel_reason: string | null;
           cancelled_at: string | null;
           cancelled_by: string | null;
+          code_sent_at: string | null;
+          code_sent_by: string | null;
           created_at: string;
           currency: string;
+          delivery_channel: string;
           gateway_reference: string | null;
           gift_card_id: string | null;
           id: string;
+          lang: string;
           message: string | null;
           paid_at: string | null;
           payment_method: string;
@@ -3598,15 +3657,20 @@ export type Database = {
           brand_id: string;
           buyer_email?: string | null;
           buyer_name: string;
-          buyer_phone: string;
+          buyer_phone?: string | null;
+          buyer_user_id?: string | null;
           cancel_reason?: string | null;
           cancelled_at?: string | null;
           cancelled_by?: string | null;
+          code_sent_at?: string | null;
+          code_sent_by?: string | null;
           created_at?: string;
           currency: string;
+          delivery_channel?: string;
           gateway_reference?: string | null;
           gift_card_id?: string | null;
           id?: string;
+          lang?: string;
           message?: string | null;
           paid_at?: string | null;
           payment_method: string;
@@ -3621,15 +3685,20 @@ export type Database = {
           brand_id?: string;
           buyer_email?: string | null;
           buyer_name?: string;
-          buyer_phone?: string;
+          buyer_phone?: string | null;
+          buyer_user_id?: string | null;
           cancel_reason?: string | null;
           cancelled_at?: string | null;
           cancelled_by?: string | null;
+          code_sent_at?: string | null;
+          code_sent_by?: string | null;
           created_at?: string;
           currency?: string;
+          delivery_channel?: string;
           gateway_reference?: string | null;
           gift_card_id?: string | null;
           id?: string;
+          lang?: string;
           message?: string | null;
           paid_at?: string | null;
           payment_method?: string;
@@ -10034,6 +10103,10 @@ export type Database = {
         Args: { p_brand_id: string; p_email: string; p_phone: string };
         Returns: boolean;
       };
+      claim_gift_card_purchase_events: {
+        Args: { p_limit?: number };
+        Returns: Json;
+      };
       claim_order_email_event: {
         Args: { p_event_id: string };
         Returns: {
@@ -10128,6 +10201,7 @@ export type Database = {
           p_method: string;
           p_receipt_id?: string;
           p_slug: string;
+          p_user_id?: string;
         };
         Returns: Json;
       };
@@ -10490,6 +10564,10 @@ export type Database = {
       };
       expire_gift_card_purchases: { Args: never; Returns: number };
       expire_loyalty_points: { Args: never; Returns: number };
+      finish_gift_card_purchase_event: {
+        Args: { p_error?: string; p_event_id: string };
+        Returns: undefined;
+      };
       format_currency_amount: {
         Args: { p_amount: number; p_currency: string };
         Returns: string;
@@ -10935,6 +11013,10 @@ export type Database = {
       loyalty_revoke_order_points: {
         Args: { p_idempotency_key: string; p_order_id: string };
         Returns: number;
+      };
+      mark_gift_card_purchase_sent: {
+        Args: { p_purchase_id: string };
+        Returns: Json;
       };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
@@ -12016,6 +12098,23 @@ export type Database = {
         Returns: Json;
       };
       storefront_my_bookings: { Args: { p_brand_id: string }; Returns: Json };
+      storefront_my_gift_cards: {
+        Args: { p_brand_id: string };
+        Returns: {
+          amount: number;
+          balance: number;
+          card_status: string;
+          code: string;
+          created_at: string;
+          currency: string;
+          delivery_channel: string;
+          expires_on: string;
+          id: string;
+          payment_method: string;
+          recipient_name: string;
+          status: string;
+        }[];
+      };
       storefront_offers_preview: {
         Args: {
           p_brand_slug: string;

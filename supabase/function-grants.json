@@ -311,6 +311,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "mark_gift_card_purchase_sent(p_purchase_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
     "order_inventory_transition(p_order_id uuid)": {
       "anon": true,
       "authenticated": true,
@@ -685,6 +690,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "A signed-in shopper's own bookings with a store, for the account page: only bookings whose customer (or whose order's customer) is the caller's account; returns the reference, state, times, place, services and the invoice with what is paid, never the hold token, notes or a cancel reason"
+    },
+    "storefront_my_gift_cards(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "A signed-in shopper's own gift card purchases (buyer_user_id = auth.uid()); nothing of anyone else's"
     },
     "storefront_offers_preview(p_brand_slug text, p_items jsonb, p_promo_code text, p_fulfillment text, p_country text)": {
       "anon": true,

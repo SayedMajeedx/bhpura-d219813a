@@ -19,6 +19,9 @@ const adminClient = {
 };
 vi.mock("../src/integrations/supabase/client.server", () => adminClient);
 vi.mock("@/integrations/supabase/client.server", () => adminClient);
+const notices = vi.hoisted(() => ({ sendGiftCardNoticesNow: vi.fn(async () => undefined) }));
+vi.mock("../src/lib/gift-card-notices.server", () => notices);
+vi.mock("@/lib/gift-card-notices.server", () => notices);
 
 const fns = (await import("../src/lib/gift-card-purchase.functions")) as unknown as {
   startGiftCardPurchase: ServerFn;
@@ -36,7 +39,14 @@ function server(
 ) {
   const fake = fakeSupabase({ rows: rows as never });
   const rpc = vi.fn(async () => ({ data: reply, error: error ? { message: error } : null }));
-  state.admin = { ...fake.supabase, rpc };
+  const auth = {
+    getUser: vi.fn(async (token: string) =>
+      token === "good-token"
+        ? { data: { user: { id: "u1" } }, error: null }
+        : { data: { user: null }, error: { message: "bad" } },
+    ),
+  };
+  state.admin = { ...fake.supabase, rpc, auth };
   return { fake, rpc };
 }
 
@@ -44,11 +54,18 @@ const start = {
   slug: "pura",
   amount: 50,
   method: "card",
-  buyer: { name: "Sara", phone: "39001122", recipient: "Noor" },
+  buyer: {
+    name: "Sara",
+    phone: "39001122",
+    recipient: "Noor",
+    delivery: "whatsapp",
+    lang: "en",
+  },
 };
 
 beforeEach(() => {
   state.ip = `10.1.0.${++ip}`;
+  notices.sendGiftCardNoticesNow.mockClear();
 });
 
 describe("starting a purchase", () => {
@@ -66,7 +83,36 @@ describe("starting a purchase", () => {
       p_method: "card",
       p_buyer: start.buyer,
       p_receipt_id: null,
+      p_user_id: null,
     });
+    // A card payment is told once it is paid; nothing is sent while it starts.
+    expect(notices.sendGiftCardNoticesNow).not.toHaveBeenCalled();
+  });
+
+  it("links a signed-in shopper's purchase to their account, never an id they send", async () => {
+    const { rpc } = server({}, { id: PURCHASE, token: TOKEN, brand_id: "b1" });
+    await fns.startGiftCardPurchase({ data: { ...start, accessToken: "good-token" } });
+    expect(rpc).toHaveBeenCalledWith(
+      "create_gift_card_purchase",
+      expect.objectContaining({ p_user_id: "u1" }),
+    );
+    await fns.startGiftCardPurchase({ data: { ...start, accessToken: "forged" } });
+    expect(rpc).toHaveBeenLastCalledWith(
+      "create_gift_card_purchase",
+      expect.objectContaining({ p_user_id: null }),
+    );
+  });
+
+  it("tells the buyer and the store at once about a transfer, and asks how the code goes", async () => {
+    server({}, { id: PURCHASE, token: TOKEN, brand_id: "b1" });
+    await fns.startGiftCardPurchase({
+      data: { ...start, method: "benefit", receiptId: "00000000-0000-4000-8000-0000000000d1" },
+    });
+    expect(notices.sendGiftCardNoticesNow).toHaveBeenCalledTimes(1);
+    const { delivery: _delivery, ...noDelivery } = start.buyer;
+    await expect(
+      fns.startGiftCardPurchase({ data: { ...start, buyer: noDelivery } }),
+    ).rejects.toThrow();
   });
 
   it("passes the database's refusal on, and stops an address after ten tries an hour", async () => {

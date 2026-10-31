@@ -3,13 +3,14 @@
  * order a merchant thinks of them: what a customer just did first, then the store's own matters.
  * The keys are the push queue's event kinds (`push_notification_events`), and
  * `order_new_staff` is a new order a member of staff typed in themselves (migration
- * 20261028110000, read by the sender's `alertChoice`). New orders and booking requests are on by
- * default; the rest wait to be chosen.
+ * 20261028110000, read by the sender's `alertChoice`). New orders, booking requests and gift card
+ * purchases (migration 20261105100000) are on by default; the rest wait to be chosen.
  */
 
 export type AlertKind =
   | "order_new"
   | "booking_new"
+  | "gift_card_new"
   | "order_new_staff"
   | "order_updated"
   | "review_completed"
@@ -39,6 +40,15 @@ export const ALERT_KINDS: readonly AlertKindDef[] = [
     hint: { ar: "حجز ينتظر ردّك", en: "A booking waiting for your answer" },
     defaultOn: true,
     module: "bookings",
+  },
+  {
+    key: "gift_card_new",
+    label: { ar: "شراء بطاقة هدية", en: "Gift card purchase" },
+    hint: {
+      ar: "تحويل ينتظر التحقق، أو بطاقة دُفعت على المتجر",
+      en: "A transfer to check, or a card paid on the store",
+    },
+    defaultOn: true,
   },
   {
     key: "order_new_staff",

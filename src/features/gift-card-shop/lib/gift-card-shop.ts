@@ -9,9 +9,13 @@ import { countOf } from "@/lib/arabic-count";
 
 export type BuyMethod = "card" | "benefit";
 
+/** How the code reaches the buyer: WhatsApp needs their phone, email their email. */
+export type BuyDelivery = "whatsapp" | "email";
+
 export type BuyForm = {
   amount: number | null;
   method: BuyMethod | "";
+  delivery: BuyDelivery | "";
   name: string;
   phone: string;
   email: string;
@@ -24,6 +28,7 @@ export type BuyForm = {
 export const emptyBuyForm = (): BuyForm => ({
   amount: null,
   method: "",
+  delivery: "",
   name: "",
   phone: "",
   email: "",
@@ -40,14 +45,24 @@ export function buyMethods(offer: Pick<GiftCardOffer, "card" | "benefit">): BuyM
   ];
 }
 
-export type BuyProblem = "amount" | "method" | "name" | "phone" | "receipt";
+export type BuyProblem = "amount" | "method" | "delivery" | "name" | "phone" | "email" | "receipt";
+
+const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export function buyProblems(form: BuyForm, offer: GiftCardOffer): BuyProblem[] {
   const problems: BuyProblem[] = [];
   if (form.amount === null || !offer.amounts.includes(form.amount)) problems.push("amount");
   if (!form.method || !buyMethods(offer).includes(form.method)) problems.push("method");
+  if (!form.delivery) problems.push("delivery");
   if (!form.name.trim()) problems.push("name");
-  if (form.phone.replace(/\D/g, "").length < 6) problems.push("phone");
+  const phoneGiven = form.phone.trim() !== "";
+  if ((form.delivery === "whatsapp" || phoneGiven) && form.phone.replace(/\D/g, "").length < 6) {
+    problems.push("phone");
+  }
+  const emailGiven = form.email.trim() !== "";
+  if ((form.delivery === "email" || emailGiven) && !EMAIL.test(form.email.trim())) {
+    problems.push("email");
+  }
   if (form.method === "benefit" && !form.hasReceipt) problems.push("receipt");
   return problems;
 }
@@ -78,8 +93,20 @@ const FAILURES: Record<string, { ar: string; en: string }> = {
     en: "The transfer receipt could not be used. Attach it again.",
   },
   GIFT_CARD_BUYER_INVALID: {
-    ar: "اكتب اسمك ورقم هاتفك.",
-    en: "Write your name and phone number.",
+    ar: "اكتب اسمك.",
+    en: "Write your name.",
+  },
+  GIFT_CARD_PHONE_REQUIRED: {
+    ar: "اكتب رقم هاتفك لنرسل لك الرمز على واتساب.",
+    en: "Write your phone number to get the code on WhatsApp.",
+  },
+  GIFT_CARD_EMAIL_REQUIRED: {
+    ar: "اكتب بريدك لنرسل لك الرمز عليه.",
+    en: "Write your email to get the code there.",
+  },
+  GIFT_CARD_EMAIL_INVALID: {
+    ar: "البريد غير صحيح.",
+    en: "That email address is not valid.",
   },
   GIFT_CARD_TRIES: {
     ar: "محاولات كثيرة. حاول مرة أخرى بعد قليل.",
@@ -149,4 +176,29 @@ export function recipientMessage(
     ...(input.expiry ? [`Valid until ${input.expiry}.`] : []),
     `Use it when you order at ${input.storeLink}`,
   ].join("\n");
+}
+
+/** Where the code goes, said on the purchase's page. */
+export function deliveryLine(
+  view: { delivery: BuyDelivery; deliveryTo: string | null; status: string; method: BuyMethod },
+  lang: "ar" | "en",
+): string {
+  const to = view.deliveryTo ?? "";
+  const paid = view.status === "paid";
+  if (view.delivery === "email") {
+    return lang === "ar"
+      ? paid
+        ? `أرسلنا الرمز إلى ${to}.`
+        : `نرسل الرمز إلى ${to} حين يكتمل الدفع.`
+      : paid
+        ? `We emailed the code to ${to}.`
+        : `We will email the code to ${to} once the payment is complete.`;
+  }
+  return lang === "ar"
+    ? paid
+      ? `يرسل لك المتجر الرمز على واتساب إلى ${to}.`
+      : `يرسل لك المتجر الرمز على واتساب إلى ${to} حين يكتمل الدفع.`
+    : paid
+      ? `The store will send you the code on WhatsApp at ${to}.`
+      : `The store will send you the code on WhatsApp at ${to} once the payment is complete.`;
 }

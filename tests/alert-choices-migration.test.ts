@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import webPush from "../supabase/migrations/20261028100000_web_push_alerts.sql?raw";
 import migration from "../supabase/migrations/20261028110000_alert_choices.sql?raw";
+import giftCardNotices from "../supabase/migrations/20261105100000_gift_card_purchase_notices.sql?raw";
 import { ALERT_KINDS, alertKindsFor, alertOn } from "../src/lib/alert-choices";
 
 // Choosing the alerts a device takes (migration 20261028110000) in a real Postgres, with the live
@@ -180,8 +181,11 @@ describe("the choices on screen", () => {
     expect(alertOn({}, kind("booking_new"))).toBe(true);
     expect(alertOn({}, kind("order_new_staff"))).toBe(false);
     expect(alertOn({ order_new: false }, kind("order_new"))).toBe(false);
-    // Every kind on screen is one the database knows, with the same default.
-    const defaults = migration.match(/SET DEFAULT '(\{[^']+\})'/)![1];
+    // Every kind on screen is one the database knows, with the same default (the latest
+    // migration that set it: gift card purchases joined in 20261105100000).
+    expect(alertOn({}, kind("gift_card_new"))).toBe(true);
+    const defaults = giftCardNotices.match(/SET DEFAULT '(\{[^']+\})'/)![1];
+    expect(migration).toMatch(/SET DEFAULT '\{/);
     expect(JSON.parse(defaults)).toEqual(
       Object.fromEntries(ALERT_KINDS.map((k) => [k.key, k.defaultOn])),
     );

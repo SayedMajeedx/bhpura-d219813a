@@ -22,6 +22,7 @@ import {
   Coins,
   Ruler,
   CalendarDays,
+  Gift,
 } from "lucide-react";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { CustomerReturnRequestModal } from "@/components/storefront/CustomerReturnRequestModal";
@@ -36,6 +37,8 @@ import { CustomerReturnsSection } from "@/features/storefront-account/components
 import { ProfileSection } from "@/features/storefront-account/components/ProfileSection";
 import { AddressesSection } from "@/features/storefront-account/components/AddressesSection";
 import { BookingsSection } from "@/features/storefront-account/components/BookingsSection";
+import { GiftCardsSection } from "@/features/storefront-account/components/GiftCardsSection";
+import { giftCardOnlineQueries } from "@/lib/data/gift-cards/online";
 
 export function AccountPage() {
   const { brand, session, isStoreMember, membershipLoading, t, lang, currency } = useStorefront();
@@ -84,6 +87,11 @@ export function AccountPage() {
 
   // The store's own programme: the Rewards tab and the tier only while it is on, and the tier
   // the database gave the shopper (the page once made up "Gold VIP" from 350 spent).
+  // The cards bought while signed in, with their codes once paid; the tab shows when there are some.
+  const { data: giftCards, isLoading: loadingGiftCards } = useQuery(
+    giftCardOnlineQueries.mine(brand.id, session?.user?.id),
+  );
+  const showGiftCards = (giftCards?.length ?? 0) > 0;
   const { data: loyaltyProgram } = useQuery(loyaltyQueries.program(brand.id));
   const { data: loyaltyTiers = [] } = useQuery(loyaltyQueries.tiers(brand.id));
   const { data: loyaltyAccount } = useQuery(loyaltyQueries.account(brand.id, customer?.id ?? ""));
@@ -96,6 +104,7 @@ export function AccountPage() {
     (modules.bookings ? 1 : 0) +
     (showReturns ? 1 : 0) +
     (loyaltyOn ? 1 : 0) +
+    (showGiftCards ? 1 : 0) +
     (modules.fit_passport ? 1 : 0);
 
   if (membershipLoading) {
@@ -235,13 +244,15 @@ export function AccountPage() {
               className={cn(
                 "grid w-full h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1",
                 "grid-cols-2",
-                tabCount >= 8
-                  ? "sm:grid-cols-8"
-                  : tabCount === 7
-                    ? "sm:grid-cols-7"
-                    : tabCount === 6
-                      ? "sm:grid-cols-6"
-                      : "sm:grid-cols-5",
+                tabCount >= 9
+                  ? "sm:grid-cols-9"
+                  : tabCount === 8
+                    ? "sm:grid-cols-8"
+                    : tabCount === 7
+                      ? "sm:grid-cols-7"
+                      : tabCount === 6
+                        ? "sm:grid-cols-6"
+                        : "sm:grid-cols-5",
               )}
             >
               {modules.bookings && (
@@ -267,6 +278,15 @@ export function AccountPage() {
                 >
                   <Coins className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
+                </TabsTrigger>
+              )}
+              {showGiftCards && (
+                <TabsTrigger
+                  value="gift-cards"
+                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
+                >
+                  <Gift className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{t("بطاقات الهدايا", "Gift cards")}</span>
                 </TabsTrigger>
               )}
               {showReturns && (
@@ -331,6 +351,12 @@ export function AccountPage() {
                 onRequestReturn={(order) => setReturnModalOrder(order)}
               />
             </TabsContent>
+
+            {showGiftCards && (
+              <TabsContent value="gift-cards" className="mt-0 focus-visible:outline-none">
+                <GiftCardsSection cards={giftCards} isLoading={loadingGiftCards} />
+              </TabsContent>
+            )}
 
             {loyaltyOn && (
               <TabsContent value="loyalty" className="mt-0 focus-visible:outline-none">
