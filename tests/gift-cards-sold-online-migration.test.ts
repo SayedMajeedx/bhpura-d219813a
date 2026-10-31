@@ -129,12 +129,12 @@ describe("a shopper's purchase", () => {
     expect((await purchase(25, "card", used)).error).toMatch(/UNEXPECTED_BENEFIT_RECEIPT/);
   });
 
-  it("needs a name and a phone", async () => {
+  it("needs a phone for a code sent by WhatsApp", async () => {
     const reply = await as(
       "service_role",
       "SELECT public.create_gift_card_purchase('pura', 25, 'card', '{\"name\": \"Sara\"}'::jsonb)",
     );
-    expect(reply.error).toMatch(/GIFT_CARD_BUYER_INVALID/);
+    expect(reply.error).toMatch(/GIFT_CARD_PHONE_REQUIRED/);
   });
 });
 

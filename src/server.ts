@@ -132,6 +132,18 @@ async function runScheduledTasks(
     everyMinute,
   );
 
+  // A gift card purchase's emails: to the buyer who chose email, and to the store.
+  await runObservedTask(
+    env,
+    "gift_card_notices",
+    correlationId,
+    async () => {
+      const { processGiftCardNotices } = await import("./lib/gift-card-notices.server");
+      return { cron, ...(await processGiftCardNotices()) };
+    },
+    everyMinute,
+  );
+
   await runObservedTask(
     env,
     "whatsapp_retry",

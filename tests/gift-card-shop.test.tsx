@@ -93,16 +93,35 @@ describe("the rules", () => {
       ...emptyBuyForm(),
       amount: 25,
       method: "benefit" as const,
+      delivery: "whatsapp" as const,
       name: "Sara",
       phone: "39001122",
     };
     expect(buyProblems(form, OFFER)).toEqual(["receipt"]);
+    expect(buyProblems({ ...form, delivery: "" }, OFFER)).toEqual(["delivery", "receipt"]);
     expect(buyProblems({ ...form, hasReceipt: true }, OFFER)).toEqual([]);
     expect(buyProblems({ ...form, amount: 30, hasReceipt: true }, OFFER)).toEqual(["amount"]);
     expect(
       buyProblems({ ...form, method: "card", phone: "12" }, { ...OFFER, card: false }),
     ).toEqual(["method", "phone"]);
     expect(buyMethods({ card: false, benefit: true })).toEqual(["benefit"]);
+  });
+
+  it("ask for a phone when the code goes on WhatsApp and an email when it goes by email", () => {
+    const form = {
+      ...emptyBuyForm(),
+      amount: 25,
+      method: "card" as const,
+      name: "Sara",
+    };
+    expect(buyProblems({ ...form, delivery: "whatsapp" }, OFFER)).toEqual(["phone"]);
+    expect(buyProblems({ ...form, delivery: "email" }, OFFER)).toEqual(["email"]);
+    expect(buyProblems({ ...form, delivery: "email", email: "sara@" }, OFFER)).toEqual(["email"]);
+    expect(buyProblems({ ...form, delivery: "email", email: "sara@mail.com" }, OFFER)).toEqual([]);
+    // The other way stays optional, but a value typed in must be right.
+    expect(
+      buyProblems({ ...form, delivery: "email", email: "sara@mail.com", phone: "12" }, OFFER),
+    ).toEqual(["phone"]);
   });
 
   it("say how long a card lasts, what went wrong, and where a purchase stands", () => {
@@ -171,13 +190,21 @@ describe("the shop page", () => {
     wrap(<GiftCardShopPage />);
     fireEvent.click(await screen.findByRole("radio", { name: "BHD 50.000" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
-    fireEvent.change(screen.getByLabelText("Phone number"), { target: { value: "39001122" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Email" }));
     fireEvent.click(screen.getByRole("radio", { name: "Card" }));
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    // By email, the email is asked for and the phone is not.
+    expect(await screen.findByText(/valid email/i)).toBeInTheDocument();
+    expect(stubs.start).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "sara@mail.com" } });
     fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(stubs.start).toHaveBeenCalledWith({
       data: expect.objectContaining({ slug: "pura", amount: 50, method: "card", receiptId: null }),
     });
+    expect(stubs.start.mock.calls[0][0].data.buyer).toEqual(
+      expect.objectContaining({ delivery: "email", email: "sara@mail.com", lang: "en" }),
+    );
     expect(
       JSON.parse(String((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body)),
     ).toEqual({
@@ -192,7 +219,10 @@ describe("the shop page", () => {
     const { container } = wrap(<GiftCardShopPage />);
     fireEvent.click(await screen.findByRole("radio", { name: "BHD 25.000" }));
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
-    fireEvent.change(screen.getByLabelText("Phone number"), { target: { value: "39001122" } });
+    fireEvent.click(screen.getByRole("radio", { name: "WhatsApp" }));
+    fireEvent.change(screen.getByLabelText("Phone number (WhatsApp)"), {
+      target: { value: "39001122" },
+    });
     fireEvent.click(screen.getByRole("radio", { name: "BenefitPay (transfer)" }));
     fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
     expect(await screen.findByText("Attach the transfer receipt.")).toBeInTheDocument();

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { CreditCard, Gift, Landmark, Loader2 } from "lucide-react";
+import { CreditCard, Gift, Landmark, Loader2, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import {
   emptyBuyForm,
   purchaseFailure,
   validityLine,
+  type BuyDelivery,
   type BuyForm,
   type BuyMethod,
 } from "../lib/gift-card-shop";
@@ -66,12 +67,13 @@ function BuyForm({
   lang: "ar" | "en";
   t: (ar: string, en: string) => string;
 }) {
-  const { brand, settings } = useStorefront();
+  const { brand, settings, session } = useStorefront();
   const navigate = useNavigate();
   const methods = buyMethods(offer);
   const [form, setForm] = useState<BuyForm>(() => ({
     ...emptyBuyForm(),
     method: methods.length === 1 ? methods[0] : "",
+    email: session?.user?.email ?? "",
   }));
   const [receipt, setReceipt] = useState<File | null>(null);
   const [shown, setShown] = useState(false);
@@ -85,7 +87,7 @@ function BuyForm({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setShown(true);
-    if (problems.length > 0 || form.amount === null || !form.method) return;
+    if (problems.length > 0 || form.amount === null || !form.method || !form.delivery) return;
     setBusy(true);
     try {
       const receiptId =
@@ -97,12 +99,16 @@ function BuyForm({
           method: form.method,
           buyer: {
             name: form.name.trim(),
-            phone: form.phone.trim(),
+            phone: form.phone.trim() || undefined,
             email: form.email.trim() || undefined,
             recipient: form.recipient.trim() || undefined,
             message: form.message.trim() || undefined,
+            delivery: form.delivery,
+            lang,
           },
           receiptId,
+          // Signed in: the card is kept in the shopper's account too (the server checks it).
+          ...(session?.access_token ? { accessToken: session.access_token } : {}),
         },
       });
       if (!started.ok) {
@@ -212,20 +218,52 @@ function BuyForm({
 
       <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold">{t("بياناتك", "Your details")}</h2>
+        <div className="space-y-1.5">
+          <Label htmlFor="gift-buyer-name">{t("الاسم", "Name")}</Label>
+          <Input
+            id="gift-buyer-name"
+            value={form.name}
+            onChange={set("name")}
+            autoComplete="name"
+            maxLength={120}
+            aria-invalid={problem("name")}
+          />
+          {problem("name") && (
+            <p className="text-xs text-destructive">{t("اكتب اسمك.", "Write your name.")}</p>
+          )}
+        </div>
+        <div className="space-y-1.5">
+          <p id="gift-delivery-label" className="text-sm font-medium">
+            {t("أرسلوا لي رمز البطاقة على", "Send me the card's code by")}
+          </p>
+          <div
+            role="radiogroup"
+            aria-labelledby="gift-delivery-label"
+            className="grid grid-cols-2 gap-2"
+          >
+            {(["whatsapp", "email"] as BuyDelivery[]).map((delivery) => (
+              <DeliveryChoice
+                key={delivery}
+                delivery={delivery}
+                chosen={form.delivery === delivery}
+                onChoose={() => setForm((current) => ({ ...current, delivery }))}
+                t={t}
+              />
+            ))}
+          </div>
+          {problem("delivery") && (
+            <p className="text-xs text-destructive">
+              {t("اختر كيف يصلك الرمز.", "Choose how the code reaches you.")}
+            </p>
+          )}
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="gift-buyer-name">{t("الاسم", "Name")}</Label>
-            <Input
-              id="gift-buyer-name"
-              value={form.name}
-              onChange={set("name")}
-              autoComplete="name"
-              maxLength={120}
-              aria-invalid={problem("name")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="gift-buyer-phone">{t("رقم الهاتف", "Phone number")}</Label>
+            <Label htmlFor="gift-buyer-phone">
+              {form.delivery === "whatsapp"
+                ? t("رقم الهاتف (واتساب)", "Phone number (WhatsApp)")
+                : t("رقم الهاتف (اختياري)", "Phone number (optional)")}
+            </Label>
             <Input
               id="gift-buyer-phone"
               value={form.phone}
@@ -236,23 +274,41 @@ function BuyForm({
               maxLength={32}
               aria-invalid={problem("phone")}
             />
+            {problem("phone") && (
+              <p className="text-xs text-destructive">
+                {t("اكتب رقم هاتف صحيحًا.", "Write a valid phone number.")}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="gift-buyer-email">
+              {form.delivery === "email"
+                ? t("البريد الإلكتروني", "Email")
+                : t("البريد (اختياري)", "Email (optional)")}
+            </Label>
+            <Input
+              id="gift-buyer-email"
+              type="email"
+              value={form.email}
+              onChange={set("email")}
+              autoComplete="email"
+              dir="ltr"
+              maxLength={200}
+              aria-invalid={problem("email")}
+            />
+            {problem("email") && (
+              <p className="text-xs text-destructive">
+                {t("اكتب بريدًا صحيحًا.", "Write a valid email address.")}
+              </p>
+            )}
           </div>
         </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="gift-buyer-email">{t("البريد (اختياري)", "Email (optional)")}</Label>
-          <Input
-            id="gift-buyer-email"
-            type="email"
-            value={form.email}
-            onChange={set("email")}
-            autoComplete="email"
-            dir="ltr"
-            maxLength={200}
-          />
-        </div>
-        {(problem("name") || problem("phone")) && (
-          <p className="text-xs text-destructive">
-            {t("اكتب اسمك ورقم هاتفك.", "Write your name and phone number.")}
+        {session && (
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "ستجد البطاقة ورمزها في حسابك أيضًا.",
+              "You will also find the card and its code in your account.",
+            )}
           </p>
         )}
       </section>
@@ -307,7 +363,10 @@ function BuyForm({
               "يصلك رمز البطاقة بعد أن يتحقق المتجر من التحويل.",
               "You get the card's code once the store checks the transfer.",
             )
-          : t("يظهر رمز البطاقة فور إتمام الدفع.", "The card's code shows as soon as you pay.")}
+          : t(
+              "يظهر رمز البطاقة فور إتمام الدفع، ويصلك كما اخترت.",
+              "The card's code shows as soon as you pay, and reaches you as you chose.",
+            )}
       </p>
     </form>
   );
@@ -340,6 +399,37 @@ function MethodChoice({
     >
       <Icon className="size-4 shrink-0" aria-hidden="true" />
       {method === "card" ? t("بطاقة", "Card") : t("بنفت باي (تحويل)", "BenefitPay (transfer)")}
+    </button>
+  );
+}
+
+function DeliveryChoice({
+  delivery,
+  chosen,
+  onChoose,
+  t,
+}: {
+  delivery: BuyDelivery;
+  chosen: boolean;
+  onChoose: () => void;
+  t: (ar: string, en: string) => string;
+}) {
+  const Icon = delivery === "whatsapp" ? MessageCircle : Mail;
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={chosen}
+      onClick={onChoose}
+      className={cn(
+        "flex min-h-12 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
+        chosen
+          ? "border-primary bg-primary/10"
+          : "border-border bg-background hover:border-primary",
+      )}
+    >
+      <Icon className="size-4 shrink-0" aria-hidden="true" />
+      {delivery === "whatsapp" ? t("واتساب", "WhatsApp") : t("البريد", "Email")}
     </button>
   );
 }

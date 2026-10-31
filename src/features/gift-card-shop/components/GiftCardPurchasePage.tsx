@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { storeAddress } from "@/lib/platform-host";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
-import { purchaseState, recipientMessage } from "../lib/gift-card-shop";
+import { deliveryLine, purchaseState, recipientMessage } from "../lib/gift-card-shop";
 
 /**
  * A gift card purchase's own page, opened with its token: the card and its code once it is paid
@@ -144,10 +144,8 @@ export function GiftCardPurchasePage({
           </Button>
         </div>
         <p className="text-center text-xs text-muted-foreground">
-          {t(
-            "احفظ هذه الصفحة: الرمز يُكتب عند الدفع في المتجر.",
-            "Keep this page: the code is typed at the store's checkout.",
-          )}
+          {deliveryLine(view, lang)}{" "}
+          {t("الرمز يُكتب عند الدفع في المتجر.", "The code is typed at the store's checkout.")}
         </p>
       </div>
     );
@@ -165,6 +163,8 @@ export function GiftCardPurchasePage({
               `The store is checking your ${money} transfer; the card's code then shows here.`,
             )}
           </p>
+          <p className="text-sm text-muted-foreground">{deliveryLine(view, lang)}</p>
+          <KeepLink t={t} />
         </>
       ) : state === "over" ? (
         <>
@@ -205,5 +205,25 @@ function Shell({ children }: { children: ReactNode }) {
     <div className="mx-auto max-w-lg px-4 py-16 text-center text-sm text-muted-foreground">
       {children}
     </div>
+  );
+}
+
+/** The page's own link, to come back to it: the code shows here once the payment is in. */
+function KeepLink({ t }: { t: (ar: string, en: string) => string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // The address bar still holds the link.
+    }
+  };
+  return (
+    <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={copy}>
+      {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+      {copied ? t("نُسخ الرابط", "Link copied") : t("نسخ رابط هذه الصفحة", "Copy this page's link")}
+    </Button>
   );
 }

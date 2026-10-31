@@ -181,6 +181,10 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
     ar: "هذا الشراء لم يعد بانتظار التحقق.",
     en: "This purchase is no longer waiting to be checked.",
   },
+  PURCHASE_NOT_PAID: {
+    ar: "لم يُدفع هذا الشراء بعد.",
+    en: "This purchase is not paid yet.",
+  },
   PURCHASE_NOT_FOUND: { ar: "لم يُعثر على الشراء.", en: "The purchase was not found." },
   FORBIDDEN: {
     ar: "لا تملك صلاحية إدارة الطلبات.",

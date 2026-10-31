@@ -3575,7 +3575,12 @@ export type Database = {
           brand_id: string;
           buyer_email: string | null;
           buyer_name: string;
-          buyer_phone: string;
+          buyer_phone: string | null;
+          buyer_user_id: string | null;
+          code_sent_at: string | null;
+          code_sent_by: string | null;
+          delivery_channel: string;
+          lang: string;
           cancel_reason: string | null;
           cancelled_at: string | null;
           cancelled_by: string | null;
@@ -3598,7 +3603,12 @@ export type Database = {
           brand_id: string;
           buyer_email?: string | null;
           buyer_name: string;
-          buyer_phone: string;
+          buyer_phone?: string | null;
+          buyer_user_id?: string | null;
+          code_sent_at?: string | null;
+          code_sent_by?: string | null;
+          delivery_channel?: string;
+          lang?: string;
           cancel_reason?: string | null;
           cancelled_at?: string | null;
           cancelled_by?: string | null;
@@ -3621,7 +3631,12 @@ export type Database = {
           brand_id?: string;
           buyer_email?: string | null;
           buyer_name?: string;
-          buyer_phone?: string;
+          buyer_phone?: string | null;
+          buyer_user_id?: string | null;
+          code_sent_at?: string | null;
+          code_sent_by?: string | null;
+          delivery_channel?: string;
+          lang?: string;
           cancel_reason?: string | null;
           cancelled_at?: string | null;
           cancelled_by?: string | null;
@@ -9874,6 +9889,24 @@ export type Database = {
         Returns: string;
       };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
+      mark_gift_card_purchase_sent: { Args: { p_purchase_id: string }; Returns: Json };
+      storefront_my_gift_cards: {
+        Args: { p_brand_id: string };
+        Returns: {
+          amount: number;
+          balance: number | null;
+          card_status: string | null;
+          code: string | null;
+          created_at: string;
+          currency: string;
+          delivery_channel: string;
+          expires_on: string | null;
+          id: string;
+          payment_method: string;
+          recipient_name: string | null;
+          status: string;
+        }[];
+      };
       approve_gift_card_purchase: {
         Args: { p_purchase_id: string };
         Returns: Json;

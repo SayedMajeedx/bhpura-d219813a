@@ -25,13 +25,26 @@ const START = z.object({
   method: z.enum(["card", "benefit"]),
   buyer: z.object({
     name: z.string().trim().min(1).max(120),
-    phone: z.string().trim().min(6).max(32),
+    phone: z.string().trim().max(32).optional(),
     email: z.string().trim().max(200).optional(),
     recipient: z.string().trim().max(120).optional(),
     message: z.string().trim().max(300).optional(),
+    /** How the code reaches the buyer: WhatsApp needs the phone, email the email. */
+    delivery: z.enum(["whatsapp", "email"]),
+    lang: z.enum(["ar", "en"]),
   }),
   receiptId: z.string().uuid().nullable().optional(),
+  /** The shopper's session when signed in: the purchase is then theirs in their account. */
+  accessToken: z.string().max(4000).optional(),
 });
+
+/** The signed-in shopper, from their own session (checked here, never taken from the browser). */
+async function sessionUser(token: string | undefined): Promise<string | null> {
+  if (!token) return null;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.auth.getUser(token);
+  return data?.user?.id ?? null;
+}
 
 export type StartedPurchase =
   { ok: true; id: string; token: string; brandId: string } | { ok: false; reason: string };
@@ -51,11 +64,17 @@ export const startGiftCardPurchase = createServerFn({ method: "POST" })
         p_method: data.method,
         p_buyer: data.buyer,
         p_receipt_id: data.receiptId ?? null,
+        p_user_id: await sessionUser(data.accessToken),
       },
     );
     if (error) return { ok: false, reason: error.message };
     const made = (reply ?? {}) as { id?: string; token?: string; brand_id?: string };
     if (!made.id || !made.token || !made.brand_id) return { ok: false, reason: "PURCHASE_FAILED" };
+    // A transfer is told at once: the buyer that it was received, the store that it waits.
+    if (data.method === "benefit") {
+      const { sendGiftCardNoticesNow } = await import("@/lib/gift-card-notices.server");
+      await sendGiftCardNoticesNow();
+    }
     return { ok: true, id: made.id, token: made.token, brandId: made.brand_id };
   });
 
@@ -67,6 +86,9 @@ export type PurchaseView = {
   recipientName: string | null;
   message: string | null;
   brandId: string;
+  delivery: "whatsapp" | "email";
+  /** Where the code goes: the buyer's email or phone. */
+  deliveryTo: string | null;
   /** Only once paid. */
   code: string | null;
   expiresOn: string | null;
@@ -81,7 +103,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin
       .from("gift_card_purchases")
       .select(
-        "status, payment_method, amount, currency, recipient_name, message, brand_id, gift_cards(code, expires_on)",
+        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, gift_cards(code, expires_on)",
       )
       .eq("id", data.purchaseId)
       .eq("token", data.token)
@@ -95,6 +117,9 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       recipient_name: string | null;
       message: string | null;
       brand_id: string;
+      delivery_channel: "whatsapp" | "email";
+      buyer_email: string | null;
+      buyer_phone: string | null;
       gift_cards: { code: string; expires_on: string | null } | null;
     };
     const paid = purchase.status === "paid";
@@ -106,6 +131,9 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       recipientName: purchase.recipient_name,
       message: purchase.message,
       brandId: purchase.brand_id,
+      delivery: purchase.delivery_channel ?? "whatsapp",
+      deliveryTo:
+        purchase.delivery_channel === "email" ? purchase.buyer_email : purchase.buyer_phone,
       code: paid ? (purchase.gift_cards?.code ?? null) : null,
       expiresOn: paid ? (purchase.gift_cards?.expires_on ?? null) : null,
     };

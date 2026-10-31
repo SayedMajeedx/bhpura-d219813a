@@ -74,6 +74,18 @@ A card bought online is **not an order**: an order would carry VAT, stock, point
 
 Tests: `tests/gift-cards-sold-online-migration.test.ts` (real Postgres with steps one to three, `tests/helpers/gift-cards-db.ts`), `tests/gift-cards-online-payment.test.ts` (the routes and the webhook), `tests/gift-card-purchase-functions.test.ts`, `tests/gift-card-shop.test.tsx`, `tests/gift-cards-screens.test.tsx`.
 
+## The refinement after step four (2026-10-31)
+
+The owner bought a card as a guest and found three gaps: a buyer who left the page after a transfer had nothing to come back to, the store was told nothing, and a purchase's details were thin. Migration `20261105100000`:
+
+- **How the code reaches the buyer is their choice**: WhatsApp (a phone is required) or email (an email is required), held by the table and `create_gift_card_purchase`, with the page's language kept for the messages. The purchase's page says where the code goes and offers its own link to keep.
+- **A signed-in shopper keeps their cards**: the purchase carries their account (`buyer_user_id`, from the session token the server checks), and their account's Gift cards tab lists them with the code shown on a tap and what is left (`storefront_my_gift_cards`, their own cards only).
+- **Both sides are told**: each purchase writes its events (placed, paid, cancelled) to an outbox the Worker sends every minute and at once after a purchase is written or paid. The buyer who chose email gets "received" for a transfer, the code once paid, and "declined" with the reason; the store's admins and new-order recipients get "transfer to check" and "sold on the store", with every detail and a link to the page. A store whose mailbox is not set up skips that email.
+- **The installed admin alerts** on a transfer to check and a card paid on the store (`gift_card_new`, on by default; each device can turn it off).
+- **WhatsApp codes are sent by a person** (there is no WhatsApp connection): the Gift cards page lists the paid purchases whose buyer chose WhatsApp under "Codes to send", each opening the buyer's chat with the message in their language; pressing it records that it was sent. Every purchase row shows the buyer, phone, email, how the code goes, who it is for, the note, when and where it stands.
+
+Tests: `tests/gift-card-purchase-notices-migration.test.ts` (real Postgres), `tests/gift-card-notices.test.ts`, `tests/gift-card-account-and-sending.test.tsx`, and the step four tests above.
+
 ## Order of work
 
 1. The tables, functions and their tests in a real Postgres; the admin page (issue, list,
@@ -81,4 +93,5 @@ Tests: `tests/gift-cards-sold-online-migration.test.ts` (real Postgres with step
 2. The checkout's code field and the payment paths above, each with its test, the card charge
    and the transfer approval first.
 3. Selling cards in the store and the reports' lines (built).
-4. Selling cards online, as a purchase of its own rather than an order (built).
+4. Selling cards online, as a purchase of its own rather than an order (built), then its
+   refinement: the delivery choice, the account's cards, the emails and alerts (built).
