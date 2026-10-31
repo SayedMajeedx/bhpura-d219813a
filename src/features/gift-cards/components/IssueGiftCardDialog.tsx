@@ -16,10 +16,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { issueGiftCard, invalidateGiftCards, type GiftCard } from "@/lib/data/gift-cards";
 import { localToday } from "@/features/supplier-orders/lib/order-state";
-import { emptyIssueForm, giftCardError, issueProblems, type IssueForm } from "../lib/gift-cards";
+import {
+  CARD_ORIGINS,
+  ORIGIN_WORDS,
+  emptyIssueForm,
+  giftCardError,
+  issueProblems,
+  paidWithOf,
+  type IssueForm,
+} from "../lib/gift-cards";
 import { GiftCardShare } from "./GiftCardShare";
 
-/** Issuing a card: its amount, who it is for and from, a note and an optional end date. */
+/**
+ * Issuing a card: sold (and how it was paid) or given, its amount, who it is for and from, a note
+ * and an optional end date.
+ */
 export function IssueGiftCardDialog({
   brandId,
   lang,
@@ -62,6 +73,7 @@ export function IssueGiftCardDialog({
         purchaserName: form.purchaserName.trim(),
         note: form.note.trim(),
         expiresOn: form.expiresOn || null,
+        paidWith: paidWithOf(form.origin),
       });
       await invalidateGiftCards(qc, brandId);
       setIssued(card);
@@ -100,6 +112,43 @@ export function IssueGiftCardDialog({
           <GiftCardShare card={issued} lang={lang} />
         ) : (
           <div className="grid gap-3">
+            <div className="space-y-1.5">
+              <p id="gift-origin-label" className="text-sm font-medium">
+                {isAr ? "كيف دُفعت؟" : "How was it paid?"}
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby="gift-origin-label"
+                className="grid grid-cols-2 gap-2"
+              >
+                {CARD_ORIGINS.map((origin) => (
+                  <Button
+                    key={origin}
+                    type="button"
+                    role="radio"
+                    aria-checked={form.origin === origin}
+                    variant={form.origin === origin ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm((current) => ({ ...current, origin }))}
+                  >
+                    {ORIGIN_WORDS[origin][lang]}
+                  </Button>
+                ))}
+              </div>
+              {shown && problems.includes("origin") ? (
+                <p className="text-xs text-destructive">
+                  {isAr
+                    ? "اختر كيف دُفعت البطاقة، أو أنها هدية من المتجر."
+                    : "Choose how the card was paid for, or that the store gave it."}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "ثمن البطاقة مال يحتفظ به المتجر، لا مبيعات: تُحسب المبيعات حين تُستخدم."
+                    : "What a card is sold for is money held, not a sale: the sale counts when it is spent."}
+                </p>
+              )}
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="gift-amount">
                 {isAr ? "القيمة" : "Amount"} ({moneyLabel})

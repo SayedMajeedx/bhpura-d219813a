@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   fetchCatalogInquiriesReporting,
   fetchReportingCustomers,
+  fetchReportingGiftCards,
   fetchReportingOverview,
   fetchReportingMargins,
   fetchReportingMonthPack,
@@ -68,6 +69,12 @@ export const reportingKeys = {
   customers: (slug: string, range: DateRange, timezone: string, includeHistorical: boolean) =>
     [...reportingKeys.all(slug), "customers", ...iso(range), timezone, includeHistorical] as const,
   /** Several periods at once (the monthly statement): each period's start, in order. */
+  giftCards: (slug: string, ranges: DateRange[]) =>
+    [
+      ...reportingKeys.all(slug),
+      "gift-cards",
+      ranges.map((r) => iso(r).join("/")).join(","),
+    ] as const,
   periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>
     [
       ...reportingKeys.overviews(slug),
@@ -147,6 +154,13 @@ export const reportingQueries = {
         : [...reportingKeys.all(slug), "margins", "pending"],
       queryFn: () => fetchReportingMargins(range!, includeHistorical, slug),
       enabled: Boolean(slug && range),
+    }),
+  /** Gift cards for each period, from the cards' ledger (`rpc_reporting_gift_cards`). */
+  giftCards: (slug: string, ranges: DateRange[]) =>
+    queryOptions({
+      queryKey: reportingKeys.giftCards(slug, ranges),
+      queryFn: () => fetchReportingGiftCards(ranges, slug),
+      enabled: Boolean(slug) && ranges.length > 0,
     }),
   /** The overview's figures for each period, in one request (`rpc_reporting_periods`). */
   periods: (slug: string, ranges: DateRange[], timezone: string, includeHistorical: boolean) =>

@@ -19,7 +19,14 @@ import {
   type GiftCard,
 } from "@/lib/data/gift-cards";
 import { localToday } from "@/features/supplier-orders/lib/order-state";
-import { CARD_STATE_WORDS, MOVE_WORDS, cardState, giftCardError } from "../lib/gift-cards";
+import {
+  CARD_STATE_WORDS,
+  MOVE_WORDS,
+  ORIGIN_WORDS,
+  cardOrigin,
+  cardState,
+  giftCardError,
+} from "../lib/gift-cards";
 import { GiftCardShare } from "./GiftCardShare";
 
 /** One card: what it holds, its code and message, its moves, and voiding it with a reason. */
@@ -74,6 +81,7 @@ export function GiftCardDetailsSheet({
           </SheetTitle>
           <SheetDescription>
             {CARD_STATE_WORDS[state][lang]}
+            {` · ${originLine(cardOrigin(card), lang)}`}
             {card.recipient_name ? ` · ${isAr ? "لـ" : "for"} ${card.recipient_name}` : ""}
           </SheetDescription>
         </SheetHeader>
@@ -145,4 +153,10 @@ export function GiftCardDetailsSheet({
       </SheetContent>
     </Sheet>
   );
+}
+
+/** "Sold · Cash", or "Given by the store". */
+function originLine(origin: ReturnType<typeof cardOrigin>, lang: "ar" | "en"): string {
+  if (origin === "given") return ORIGIN_WORDS.given[lang];
+  return `${lang === "ar" ? "بيعت" : "Sold"} (${ORIGIN_WORDS[origin][lang]})`;
 }

@@ -1,4 +1,6 @@
+import { moneyFractionDigits } from "@/lib/format";
 import type { ComposedOverviewRow } from "@/lib/reporting-compose";
+import { giftCardSheet, type GiftCardReport } from "./gift-card-report";
 import { productMargins, marginsSheet, type MarginRow } from "./margins";
 import {
   balancesSheet,
@@ -58,6 +60,7 @@ export const PACK_SHEETS = {
   suppliers: { en: "Suppliers", ar: "الموردون" },
   balances: { en: "Customer balances", ar: "أرصدة العملاء" },
   stock: { en: "Stock at cost", ar: "المخزون بالتكلفة" },
+  giftCards: { en: "Gift cards", ar: "بطاقات الهدايا" },
 } satisfies Record<string, Words>;
 
 const num = (value: unknown) => Number(value ?? 0) || 0;
@@ -85,6 +88,9 @@ export type MonthPackInput = {
   timeZone: string;
   /** `YYYY-MM-DD`: the day the pack was made (balances and stock are as of then). */
   today: string;
+  /** The cards for the three months (`readGiftCardReport`), in the store's own currency. */
+  giftCards: GiftCardReport;
+  storeCurrency: string;
 };
 
 export function monthPackSheets(input: MonthPackInput): XSheet[] {
@@ -545,5 +551,16 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
     suppliersSheet,
     balances,
     stockSheet,
+    // Money held on cards, not sales, in the store's own currency.
+    giftCardSheet({
+      report: input.giftCards,
+      labels: [label, monthLabel(previous, lang), monthLabel(lastYear, lang)],
+      currency: input.storeCurrency,
+      digits: moneyFractionDigits(input.storeCurrency),
+      lang,
+      storeName,
+      timeZone,
+      today,
+    }),
   ];
 }

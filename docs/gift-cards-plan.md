@@ -1,6 +1,6 @@
 # Gift cards: the plan
 
-Status: **steps one and two built**. Step one (migration `20261101100000`): issuing, the list, voiding, staff taking a card on an order. Step two (migration `20261102100000`): a shopper's card at checkout, and the card charge and the transfer approval asking only for what a card leaves. Step three is still to come. The owner's decision: a gift card is a **payment**
+Status: **steps one to three built**. Step one (migration `20261101100000`): issuing, the list, voiding, staff taking a card on an order. Step two (migration `20261102100000`): a shopper's card at checkout, and the card charge and the transfer approval asking only for what a card leaves. Step three (migration `20261103100000`): cards sold in the store, and the reports' lines. Selling cards online is step four, still to come. The owner's decision: a gift card is a **payment**
 (international practice), not a discount. The order keeps its full price; VAT is charged on the
 full price; selling a card is money the store holds until the card is used, not a sale of goods.
 
@@ -52,10 +52,20 @@ code, amount)`: locks the card, takes at most its balance and what the order sti
 
 Tests: `tests/gift-cards-checkout-migration.test.ts` (real Postgres with step one and the payment state trigger), `tests/charge-plan.test.ts`, `tests/gift-cards-checkout-functions.test.ts`, `tests/place-order-gift-card.test.tsx`.
 
+## What step three does
+
+The owner's decision (2026-10-31): **cards are sold in the store first**. Selling one online through the checkout would charge VAT on it and count it as a sale; both are wrong for money held, and keeping them out means the order builder's tax and about ten report functions change (step four).
+
+- **Selling** (`IssueGiftCardDialog`): issuing asks every time how the card came to be: sold in cash, on the card machine or by transfer, or given by the store (`CardOrigin`, `paidWithOf`, `cardOrigin` in `src/features/gift-cards/lib/gift-cards.ts`); `issue_gift_card` keeps it in `gift_cards.paid_with` (null for a card given). The card's sheet says it. No order, no VAT, nothing in the sales figures.
+- **Reports** (`rpc_reporting_gift_cards`, finance staff through `reporting_brand_id`): per period from the cards' ledger, what was sold (and by how it was paid) and given, what was spent net of what released orders gave back, what was written off, and what the cards held at the period's end (the sum of every move before it: the liability that day); and, today, what cards in use hold, in how many cards, and what sits on cards past their end date. The monthly statement adds a section "Gift cards (money held, not sales)" in the store's currency (`giftCardStatementLines` in `src/features/finance-reports/lib/gift-card-report.ts`; a balance's total is the last month's), in its Excel copy too, and the month pack a "Gift cards" sheet (`giftCardSheet`). A sale paid by card is already in the statement's sales, when the card is spent.
+
+Tests: `tests/gift-cards-sold-in-store-migration.test.ts` (real Postgres after steps one and two), `tests/gift-card-report.test.ts`, `tests/monthly-statement-screen.test.tsx`, `tests/month-pack.test.tsx`, `tests/gift-cards-screens.test.tsx`.
+
 ## Order of work
 
 1. The tables, functions and their tests in a real Postgres; the admin page (issue, list,
    balance, void, the ledger); staff redeem on an order. Nothing in the checkout yet.
 2. The checkout's code field and the payment paths above, each with its test, the card charge
    and the transfer approval first.
-3. Selling cards online and the reports' lines.
+3. Selling cards in the store and the reports' lines (built).
+4. Selling cards online: a card-only order with no VAT, kept out of sales in every report, the card issued when it is paid.

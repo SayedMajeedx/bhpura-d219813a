@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { useBrand } from "@/lib/brand-context";
 import { moneyFractionDigits } from "@/lib/format";
 import { reportingQueries } from "@/lib/data/reporting";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { readGiftCardReport } from "../lib/gift-card-report";
 import { marginRows } from "../lib/margins";
 import { PACK_SHEETS, monthPackSheets, readMonthPack } from "../lib/month-pack";
 import { localDay, readReceivables } from "../lib/receivables";
@@ -38,6 +40,7 @@ export function MonthPackDialog({
   const uid = useId();
   const qc = useQueryClient();
   const brand = useBrand();
+  const storeCurrency = useStoreCurrency(brand.id);
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const months = useMemo(() => {
@@ -58,18 +61,13 @@ export function MonthPackDialog({
     const today = localDay(new Date());
     setBusy(true);
     try {
-      const [periods, margins, receivables, detail] = await Promise.all([
-        qc.fetchQuery(
-          reportingQueries.periods(
-            slug,
-            [month, previous, lastYear].map((m) => ({ from: m.from, to: m.to })),
-            timeZone,
-            false,
-          ),
-        ),
+      const three = [month, previous, lastYear].map((m) => ({ from: m.from, to: m.to }));
+      const [periods, margins, receivables, detail, cards] = await Promise.all([
+        qc.fetchQuery(reportingQueries.periods(slug, three, timeZone, false)),
         qc.fetchQuery(reportingQueries.margins(slug, range, false)),
         qc.fetchQuery(reportingQueries.receivables(slug, today, timeZone)),
         qc.fetchQuery(reportingQueries.monthPack(slug, range, timeZone)),
+        qc.fetchQuery(reportingQueries.giftCards(slug, three)),
       ]);
       const sheets = monthPackSheets({
         month,
@@ -85,6 +83,8 @@ export function MonthPackDialog({
         storeName: (isAr ? brand.name_ar : null) || brand.name_en,
         timeZone,
         today,
+        giftCards: readGiftCardReport(cards),
+        storeCurrency,
       });
       await downloadWorkbook(sheets, workbookFileName(slug, "month-pack", month.key));
       setOpen(false);
