@@ -10545,8 +10545,21 @@ export type Database = {
           product_id: string;
         }[];
       };
+      gift_card_balance_for_checkout: {
+        Args: { p_code: string; p_slug: string };
+        Returns: Json;
+      };
       gift_card_code_typed: { Args: { p_code: string }; Returns: string };
       gift_card_staff: { Args: { p_brand_id: string }; Returns: boolean };
+      gift_card_take_on_order: {
+        Args: {
+          p_amount: number;
+          p_by: string;
+          p_code: string;
+          p_order_id: string;
+        };
+        Returns: Json;
+      };
       has_permission: { Args: { p_permission: string }; Returns: boolean };
       has_storefront_membership: {
         Args: { p_brand_slug: string };
@@ -11011,6 +11024,10 @@ export type Database = {
           p_request_id: string;
         };
         Returns: string;
+      };
+      redeem_gift_card_at_checkout: {
+        Args: { p_code: string; p_order_id: string };
+        Returns: Json;
       };
       redeem_gift_card_on_order: {
         Args: { p_amount?: number; p_code: string; p_order_id: string };
