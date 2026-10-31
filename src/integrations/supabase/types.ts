@@ -3575,36 +3575,45 @@ export type Database = {
           brand_id: string;
           claimed_at: string | null;
           created_at: string;
+          customer_done: boolean;
           event: string;
           id: string;
           last_error: string | null;
+          next_attempt_at: string | null;
           processed_at: string | null;
           purchase_id: string;
           status: string;
+          store_done: boolean;
         };
         Insert: {
           attempts?: number;
           brand_id: string;
           claimed_at?: string | null;
           created_at?: string;
+          customer_done?: boolean;
           event: string;
           id?: string;
           last_error?: string | null;
+          next_attempt_at?: string | null;
           processed_at?: string | null;
           purchase_id: string;
           status?: string;
+          store_done?: boolean;
         };
         Update: {
           attempts?: number;
           brand_id?: string;
           claimed_at?: string | null;
           created_at?: string;
+          customer_done?: boolean;
           event?: string;
           id?: string;
           last_error?: string | null;
+          next_attempt_at?: string | null;
           processed_at?: string | null;
           purchase_id?: string;
           status?: string;
+          store_done?: boolean;
         };
         Relationships: [
           {
@@ -10565,7 +10574,12 @@ export type Database = {
       expire_gift_card_purchases: { Args: never; Returns: number };
       expire_loyalty_points: { Args: never; Returns: number };
       finish_gift_card_purchase_event: {
-        Args: { p_error?: string; p_event_id: string };
+        Args: {
+          p_customer_done?: boolean;
+          p_error?: string;
+          p_event_id: string;
+          p_store_done?: boolean;
+        };
         Returns: undefined;
       };
       format_currency_amount: {
