@@ -1,7 +1,20 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildPagesPayload, type EditablePage } from "../src/components/pages/pages-payload";
+
+const giftCardOffer = vi.hoisted(() => ({
+  giftCardOnlineQueries: {
+    offer: () => ({ queryKey: ["gift-card-offer"], queryFn: async () => null }),
+  },
+}));
+vi.mock("../src/lib/data/gift-cards/online", () => giftCardOffer);
+vi.mock("@/lib/data/gift-cards/online", () => giftCardOffer);
+// The footers read the store's gift card offer through React Query.
+const queryWrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+);
 
 const state = vi.hoisted(() => ({
   lang: "en" as "ar" | "en",
@@ -66,7 +79,7 @@ beforeEach(() => {
 
 describe("the columns footer and the Pages & Policies screen", () => {
   it("shows each page under the group and heading the store chose", () => {
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByText("The House").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Support").length).toBeGreaterThan(0);
     expect(screen.getAllByText("About us")[0].closest("a")?.getAttribute("href")).toBe(
@@ -79,13 +92,13 @@ describe("the columns footer and the Pages & Policies screen", () => {
     state.settings.pages = [
       { slug: "returns", title_en: "Returns", title_ar: null, group: "help" },
     ];
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.queryByText("The House")).toBeNull();
     expect(screen.getAllByText("Support").length).toBeGreaterThan(0);
   });
 
   it("links the store's social profiles", () => {
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByLabelText("TikTok")[0].getAttribute("href")).toBe(
       "https://tiktok.com/@a",
     );

@@ -18,6 +18,7 @@ import { localToday } from "@/features/supplier-orders/lib/order-state";
 import { CARD_STATE_WORDS, cardState, cardsHeld, searchCards } from "../lib/gift-cards";
 import { IssueGiftCardDialog } from "./IssueGiftCardDialog";
 import { GiftCardDetailsSheet } from "./GiftCardDetailsSheet";
+import { OnlineGiftCardsSection } from "./OnlineGiftCardsSection";
 
 /**
  * A store's gift cards: what it holds for them (money owed to shoppers in goods), every card with
@@ -86,6 +87,8 @@ export function GiftCardsPage() {
           </dd>
         </div>
       </dl>
+
+      <OnlineGiftCardsSection lang={lang} />
 
       <div className="relative">
         <Search

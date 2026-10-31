@@ -1,7 +1,20 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveFooterVariant } from "../src/lib/storefront-engine";
+
+const giftCardOffer = vi.hoisted(() => ({
+  giftCardOnlineQueries: {
+    offer: () => ({ queryKey: ["gift-card-offer"], queryFn: async () => null }),
+  },
+}));
+vi.mock("../src/lib/data/gift-cards/online", () => giftCardOffer);
+vi.mock("@/lib/data/gift-cards/online", () => giftCardOffer);
+// The footers read the store's gift card offer through React Query.
+const queryWrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+);
 
 /**
  * Regressions found by driving the real storefront and admin in a browser.
@@ -181,12 +194,12 @@ describe("footer layout value mismatch", () => {
 
   it("routes the storefront footer through the shared resolver", () => {
     storefront.settings = { storefront_design_version: 2, footer_layout: "minimal" };
-    const simple = render(<StorefrontFooter />);
+    const simple = render(<StorefrontFooter />, { wrapper: queryWrapper });
     expect(screen.queryByTestId("footer-columns")).not.toBeInTheDocument();
     simple.unmount();
 
     storefront.settings = { storefront_design_version: 2, footer_layout: "columns" };
-    render(<StorefrontFooter />);
+    render(<StorefrontFooter />, { wrapper: queryWrapper });
     expect(screen.getByTestId("footer-columns")).toBeInTheDocument();
   });
 });

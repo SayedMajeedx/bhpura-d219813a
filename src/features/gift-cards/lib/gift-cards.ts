@@ -68,31 +68,37 @@ export function searchCards(cards: readonly GiftCard[], term: string): GiftCard[
  * given (a present, a goodwill credit) brought nothing in. Neither is a sale: the sale is counted
  * when the card is spent.
  */
-export type CardOrigin = "cash" | "card" | "transfer" | "given";
+export type CardOrigin = "cash" | "card" | "transfer" | "online" | "given";
 
-export const CARD_ORIGINS: CardOrigin[] = ["cash", "card", "transfer", "given"];
+/** What staff choose from when they issue a card ("online" is the storefront's own). */
+export const CARD_ORIGINS: Exclude<CardOrigin, "online">[] = ["cash", "card", "transfer", "given"];
 
 export const ORIGIN_WORDS: Record<CardOrigin, { ar: string; en: string }> = {
   cash: { ar: "نقدًا", en: "Cash" },
   card: { ar: "جهاز البطاقات", en: "Card machine" },
+  online: { ar: "دفع على المتجر", en: "Paid on the store" },
   transfer: { ar: "تحويل", en: "Transfer" },
   given: { ar: "هدية من المتجر", en: "Given by the store" },
 };
 
 /** What the database keeps: how it was paid, or nothing for a card given. */
-export function paidWithOf(origin: CardOrigin | ""): "cash" | "card" | "transfer" | null {
+export function paidWithOf(
+  origin: Exclude<CardOrigin, "online"> | "",
+): "cash" | "card" | "transfer" | null {
   return origin === "" || origin === "given" ? null : origin;
 }
 
 /** How a card came to be, read back from what the database kept. */
 export function cardOrigin(card: { paid_with?: string | null }): CardOrigin {
   const paid = card.paid_with;
-  return paid === "cash" || paid === "card" || paid === "transfer" ? paid : "given";
+  return paid === "cash" || paid === "card" || paid === "transfer" || paid === "online"
+    ? paid
+    : "given";
 }
 
 export type IssueForm = {
   /** Sold (and how it was paid) or given: asked every time, never assumed. */
-  origin: CardOrigin | "";
+  origin: Exclude<CardOrigin, "online"> | "";
   amount: string;
   recipientName: string;
   purchaserName: string;
@@ -163,6 +169,19 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
   },
   ORDER_NOTHING_OWED: { ar: "لا شيء متبقٍ على هذا الطلب.", en: "Nothing is owed on this order." },
   ORDER_NOT_FOUND: { ar: "لم يُعثر على الطلب.", en: "The order was not found." },
+  GIFT_CARD_AMOUNTS_INVALID: {
+    ar: "حتى 8 قيم أكبر من صفر.",
+    en: "Up to 8 amounts above zero.",
+  },
+  GIFT_CARD_AMOUNTS_REQUIRED: {
+    ar: "اكتب قيمة واحدة على الأقل للبيع على المتجر.",
+    en: "Write at least one amount to sell on the store.",
+  },
+  PURCHASE_NOT_PENDING: {
+    ar: "هذا الشراء لم يعد بانتظار التحقق.",
+    en: "This purchase is no longer waiting to be checked.",
+  },
+  PURCHASE_NOT_FOUND: { ar: "لم يُعثر على الشراء.", en: "The purchase was not found." },
   FORBIDDEN: {
     ar: "لا تملك صلاحية إدارة الطلبات.",
     en: "You do not have permission to manage orders.",

@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { giftCardOnlineQueries } from "@/lib/data/gift-cards/online";
 import { Link } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { AddonSlot } from "@/components/addons/AddonSlot";
@@ -17,6 +19,8 @@ export function StorefrontFooter() {
   // Hooks must run unconditionally; the v2 footer branch is decided after them.
   const storeModules = useStoreModules();
   const servicesStore = isServicesProfile(storeModules);
+  // Shown while the store sells gift cards online (step four).
+  const sellsGiftCards = Boolean(useQuery(giftCardOnlineQueries.offer(brand.slug)).data);
   const showSizeGuideFooterLink = Boolean(storeModules?.size_guide);
   const isAr = lang === "ar";
   const [openCompany, setOpenCompany] = useState(false);
@@ -245,6 +249,16 @@ export function StorefrontFooter() {
                         style={{ color: "var(--sf-footer-fg)" }}
                       >
                         {t("تتبّع طلبك", "Track your order")}
+                      </Link>
+                    )}
+                    {sellsGiftCards && (
+                      <Link
+                        to="/$slug/gift-cards"
+                        params={{ slug: brand.slug }}
+                        className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"
+                        style={{ color: "var(--sf-footer-fg)" }}
+                      >
+                        {t("بطاقات الهدايا", "Gift cards")}
                       </Link>
                     )}
                     {helpPages.map((p) => (

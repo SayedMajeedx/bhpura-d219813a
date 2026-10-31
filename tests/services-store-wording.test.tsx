@@ -1,7 +1,20 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isServicesProfile, resolveStoreModules } from "../src/lib/store-profile";
+
+const giftCardOffer = vi.hoisted(() => ({
+  giftCardOnlineQueries: {
+    offer: () => ({ queryKey: ["gift-card-offer"], queryFn: async () => null }),
+  },
+}));
+vi.mock("../src/lib/data/gift-cards/online", () => giftCardOffer);
+vi.mock("@/lib/data/gift-cards/online", () => giftCardOffer);
+// The footers read the store's gift card offer through React Query.
+const queryWrapper = ({ children }: { children: React.ReactNode }) => (
+  <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+);
 
 // A services store's pages talk about services and bookings: no stock switch, no
 // gift box, no "Shop / New Arrivals / Sale" footer, and the right Arabic form.
@@ -66,7 +79,7 @@ describe("which stores are services stores", () => {
 
 describe("a services store's footer", () => {
   it("is about services and booking, with Arabic that suits everyone", () => {
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByText("خدماتنا").length).toBeGreaterThan(0);
     expect(screen.getByText("تواصل معنا")).toBeInTheDocument();
     expect(screen.queryByText("تواصلي معنا")).toBeNull();
@@ -79,7 +92,7 @@ describe("a services store's footer", () => {
 
   it("stays a shop's footer for a shop", () => {
     state.services = false;
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByText("تسوّق").length).toBeGreaterThan(0);
     expect(screen.getAllByText("كل المنتجات").length).toBeGreaterThan(0);
     expect(screen.getAllByText("وصل حديثاً").length).toBeGreaterThan(0);
@@ -88,7 +101,7 @@ describe("a services store's footer", () => {
 
   it("opens the mobile Services section with the booking link", () => {
     state.lang = "en";
-    render(<FooterV2 />);
+    render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByText("Our services").length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByRole("button", { name: "Our services" })[0]);
     expect(screen.getAllByText("Book a date").length).toBeGreaterThan(0);

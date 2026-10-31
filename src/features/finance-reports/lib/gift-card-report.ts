@@ -19,6 +19,8 @@ export type GiftCardPeriod = {
   soldCash: number;
   soldCard: number;
   soldTransfer: number;
+  /** Bought by a shopper on the store and paid by card there (step four). */
+  soldOnline: number;
   given: number;
   spent: number;
   writtenOff: number;
@@ -44,6 +46,7 @@ export function readGiftCardReport(raw: unknown): GiftCardReport {
       soldCash: num(p.sold_cash),
       soldCard: num(p.sold_card),
       soldTransfer: num(p.sold_transfer),
+      soldOnline: num(p.sold_online),
       given: num(p.given),
       spent: num(p.spent),
       writtenOff: num(p.written_off),
@@ -156,6 +159,7 @@ const PAID_WITH = [
   { key: "soldCash", en: "of which cash", ar: "منها نقدًا" },
   { key: "soldCard", en: "of which card machine", ar: "منها بجهاز البطاقات" },
   { key: "soldTransfer", en: "of which transfer", ar: "منها تحويل" },
+  { key: "soldOnline", en: "of which paid on the store", ar: "منها دفع على المتجر" },
 ] as const;
 
 /**
@@ -235,6 +239,7 @@ function emptyPeriod(): GiftCardPeriod {
     soldCash: 0,
     soldCard: 0,
     soldTransfer: 0,
+    soldOnline: 0,
     given: 0,
     spent: 0,
     writtenOff: 0,

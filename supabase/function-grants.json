@@ -26,6 +26,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "approve_gift_card_purchase(p_purchase_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
     "assign_order_courier(p_order_id uuid, p_courier_id uuid)": {
       "anon": false,
       "authenticated": true,
@@ -50,6 +55,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: says only whether the caller may see this store's costs (can_access_brand and the view_financials permission); the cost tables' policies and the cost-column guards ask it"
+    },
+    "cancel_gift_card_purchase(p_purchase_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
     "check_registered_customer_exists(p_brand_id uuid, p_email text, p_phone text)": {
       "anon": true,
@@ -626,6 +636,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "set_gift_card_settings(p_brand_id uuid, p_sell_online boolean, p_amounts numeric[], p_valid_months integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings)"
+    },
     "set_made_to_order_limit(p_product_id uuid, p_available integer)": {
       "anon": false,
       "authenticated": true,
@@ -660,6 +675,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
+    },
+    "storefront_gift_card_offer(p_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront: a store's own gift card offer (amounts, currency, which payment methods), only while it sells cards online; no shopper's data"
     },
     "storefront_my_bookings(p_brand_id uuid)": {
       "anon": false,
