@@ -117,7 +117,10 @@ const { processGiftCardNotices } = await import("../src/lib/gift-card-notices.se
 
 describe("sending from the outbox", () => {
   type Call = [string, Record<string, unknown>];
-  function server(events: NoticeEvent[], mailboxes: Record<string, unknown> = {}) {
+  function server(
+    events: Array<NoticeEvent & { customer_done?: boolean; store_done?: boolean }>,
+    mailboxes: Record<string, unknown> = {},
+  ) {
     const calls: Call[] = [];
     const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
       calls.push([name, args]);
@@ -180,7 +183,7 @@ describe("sending from the outbox", () => {
     ]);
     expect(calls).toContainEqual([
       "finish_gift_card_purchase_event",
-      { p_event_id: "ev1", p_error: null },
+      { p_event_id: "ev1", p_error: null, p_customer_done: true, p_store_done: true },
     ]);
   });
 
@@ -200,6 +203,35 @@ describe("sending from the outbox", () => {
     );
     expect(await processGiftCardNotices()).toMatchObject({ failed: 1, sent: 1 });
     const finish = calls.find(([name]) => name === "finish_gift_card_purchase_event")!;
-    expect(String(finish[1].p_error)).toMatch(/Resend 500/);
+    expect(finish[1]).toMatchObject({ p_customer_done: false, p_store_done: true });
+    expect(String(finish[1].p_error)).toMatch(/buyer: Resend 500/);
+  });
+
+  it("never sends the buyer's email again when only the store's failed", async () => {
+    // The owner's report of 2026-10-31: "request received" arrived four times, a minute apart.
+    const failingStore = vi.fn(async (url: string) =>
+      String(url).includes("oauth")
+        ? new Response("bad credentials", { status: 401 })
+        : new Response("{}", { status: 200 }),
+    );
+    let calls = server([event()], MAILBOXES);
+    vi.stubGlobal("fetch", failingStore);
+    const first = await processGiftCardNotices();
+    expect(first).toMatchObject({ sent: 1, failed: 1 });
+    expect(first.lastError).toMatch(/store: SendPulse sign-in 401/);
+    expect(calls.find(([name]) => name === "finish_gift_card_purchase_event")![1]).toMatchObject({
+      p_customer_done: true,
+      p_store_done: false,
+    });
+
+    // The retry: the outbox says the buyer's email went, so only the store's is tried.
+    calls = server([{ ...event(), customer_done: true }], MAILBOXES);
+    failingStore.mockClear();
+    await processGiftCardNotices();
+    expect(failingStore.mock.calls.some(([url]) => String(url).includes("resend"))).toBe(false);
+    expect(calls.find(([name]) => name === "finish_gift_card_purchase_event")![1]).toMatchObject({
+      p_customer_done: true,
+      p_store_done: false,
+    });
   });
 });

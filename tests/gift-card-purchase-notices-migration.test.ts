@@ -177,13 +177,11 @@ describe("what the store and the buyer are told", () => {
       buyer_email: "a@b.co",
       recipient_name: "Noor",
       code: null,
+      customer_done: false,
+      store_done: false,
     });
     expect(String(first.token)).toHaveLength(64);
     expect(await claim()).toEqual([]);
-    await as("service_role", "SELECT public.finish_gift_card_purchase_event($1, 'Resend 500')", [
-      first.event_id,
-    ]);
-    expect((await claim()).map((e) => e.event_id)).toEqual([first.event_id]);
     await as("service_role", "SELECT public.finish_gift_card_purchase_event($1)", [first.event_id]);
     expect(await claim()).toEqual([]);
     for (const role of ["anon", "authenticated"] as const) {
@@ -191,6 +189,86 @@ describe("what the store and the buyer are told", () => {
         /permission denied/,
       );
     }
+  });
+
+  it("never sends an email twice: a retry carries only the part that failed, and waits longer each time", async () => {
+    // The owner's report of 2026-10-31: the store's email kept failing and the buyer's
+    // "request received" went out again every minute with each retry.
+    await db.exec("DELETE FROM public.gift_card_purchase_events");
+    await bought({ delivery: "email", email: "a@b.co" });
+    const claim = async () =>
+      (await as("service_role", "SELECT public.claim_gift_card_purchase_events(10) AS r")).rows[0]
+        .r as Array<Record<string, unknown>>;
+    const due = () =>
+      db.exec(
+        "UPDATE public.gift_card_purchase_events SET next_attempt_at = now() - interval '1 second'",
+      );
+    const row = async () =>
+      (
+        await db.query<Record<string, unknown>>(
+          "SELECT status, customer_done, store_done, attempts, last_error, next_attempt_at > now() + interval '4 minutes' AS later FROM public.gift_card_purchase_events",
+        )
+      ).rows[0];
+
+    const [first] = await claim();
+    await as(
+      "service_role",
+      "SELECT public.finish_gift_card_purchase_event($1, 'store: SendPulse 401', true, false)",
+      [first.event_id],
+    );
+    expect(await row()).toMatchObject({
+      status: "failed",
+      customer_done: true,
+      store_done: false,
+      last_error: "store: SendPulse 401",
+      later: true,
+    });
+    // Not a minute later: the retry waits.
+    expect(await claim()).toEqual([]);
+    await due();
+    const [retry] = await claim();
+    expect(retry).toMatchObject({ customer_done: true, store_done: false });
+    // A part done stays done, even when a later call says nothing of it.
+    await as(
+      "service_role",
+      "SELECT public.finish_gift_card_purchase_event($1, 'store: down', false, false)",
+      [retry.event_id],
+    );
+    expect(await row()).toMatchObject({ customer_done: true, attempts: 2 });
+    await due();
+    const [third] = await claim();
+    await as(
+      "service_role",
+      "SELECT public.finish_gift_card_purchase_event($1, NULL, false, true)",
+      [third.event_id],
+    );
+    expect(await row()).toMatchObject({
+      status: "processed",
+      customer_done: true,
+      store_done: true,
+    });
+    await due();
+    expect(await claim()).toEqual([]);
+  });
+
+  it("stops after five tries", async () => {
+    await db.exec("DELETE FROM public.gift_card_purchase_events");
+    await bought({ delivery: "email", email: "a@b.co" });
+    for (let i = 0; i < 5; i++) {
+      const [event] = (
+        await as("service_role", "SELECT public.claim_gift_card_purchase_events(10) AS r")
+      ).rows[0].r as Array<Record<string, unknown>>;
+      await as("service_role", "SELECT public.finish_gift_card_purchase_event($1, 'down')", [
+        event.event_id,
+      ]);
+      await db.exec(
+        "UPDATE public.gift_card_purchase_events SET next_attempt_at = now() - interval '1 second'",
+      );
+    }
+    expect(
+      (await as("service_role", "SELECT public.claim_gift_card_purchase_events(10) AS r")).rows[0]
+        .r,
+    ).toEqual([]);
   });
 });
 

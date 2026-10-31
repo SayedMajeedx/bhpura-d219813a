@@ -6,8 +6,10 @@ import { adminNotice, customerNotice, type Email, type NoticeEvent } from "@/lib
  * buyer is not kept waiting. Each event is claimed once (`claim_gift_card_purchase_events`); the
  * buyer's email goes through the store's own customer mailbox (Resend, as an order's), the
  * store's through its admin mailbox (SendPulse) to its active admins and the notification
- * recipients who take new orders. A store with a mailbox not set up skips that email; a failed
- * send is tried again (at most five times).
+ * recipients who take new orders. A store with a mailbox not set up skips that email. Each email
+ * is recorded on its own (migration 20261106100000): when one fails, the event is tried again later
+ * for that one alone, so an email that went is never sent twice (the buyer once received the same
+ * "request received" four times while the store's email kept failing).
  */
 
 type Rpc = (
@@ -141,7 +143,36 @@ async function sendStore(admin: Admin, e: NoticeEvent, mail: Email) {
   return "sent" as const;
 }
 
-export type NoticeRun = { claimed: number; sent: number; skipped: number; failed: number };
+export type NoticeRun = {
+  claimed: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  /** The first failure's reason, for the health log. */
+  lastError?: string;
+};
+
+/** An event as the outbox gives it, with which of its emails already went. */
+type ClaimedEvent = NoticeEvent & { customer_done?: boolean; store_done?: boolean };
+
+type Part = { done: boolean; error: string | null; outcome: "sent" | "skipped" | "none" };
+
+async function sendPart(
+  already: boolean | undefined,
+  mail: unknown,
+  send: () => Promise<"sent" | "skipped">,
+): Promise<Part> {
+  if (already || !mail) return { done: true, error: null, outcome: "none" };
+  try {
+    return { done: true, error: null, outcome: await send() };
+  } catch (error) {
+    return {
+      done: false,
+      error: error instanceof Error ? error.message : String(error),
+      outcome: "none",
+    };
+  }
+}
 
 export async function processGiftCardNotices(limit = 20): Promise<NoticeRun> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -150,26 +181,33 @@ export async function processGiftCardNotices(limit = 20): Promise<NoticeRun> {
     p_limit: limit,
   });
   if (error) throw new Error(`Gift card notices: ${error.message}`);
-  const events = (Array.isArray(data) ? data : []) as NoticeEvent[];
+  const events = (Array.isArray(data) ? data : []) as ClaimedEvent[];
   const run: NoticeRun = { claimed: events.length, sent: 0, skipped: 0, failed: 0 };
 
   for (const event of events) {
-    const problems: string[] = [];
-    const tasks: Array<Promise<"sent" | "skipped">> = [];
     const toBuyer = customerNotice(event);
     const toStore = adminNotice(event);
-    if (toBuyer) tasks.push(sendCustomer(admin, event, toBuyer));
-    if (toStore) tasks.push(sendStore(admin, event, toStore));
-    for (const outcome of await Promise.allSettled(tasks)) {
-      if (outcome.status === "rejected") {
-        problems.push(String((outcome.reason as Error)?.message ?? outcome.reason));
+    const [buyer, store] = await Promise.all([
+      sendPart(event.customer_done, toBuyer, () => sendCustomer(admin, event, toBuyer!)),
+      sendPart(event.store_done, toStore, () => sendStore(admin, event, toStore!)),
+    ]);
+    const problems: string[] = [];
+    for (const [who, part] of [
+      ["buyer", buyer],
+      ["store", store],
+    ] as const) {
+      if (part.error) {
+        problems.push(`${who}: ${part.error}`);
         run.failed += 1;
-      } else if (outcome.value === "sent") run.sent += 1;
-      else run.skipped += 1;
+      } else if (part.outcome === "sent") run.sent += 1;
+      else if (part.outcome === "skipped") run.skipped += 1;
     }
+    if (problems.length && !run.lastError) run.lastError = problems.join("; ").slice(0, 300);
     await (admin.rpc as Rpc)("finish_gift_card_purchase_event", {
       p_event_id: event.event_id,
       p_error: problems.length ? problems.join("; ") : null,
+      p_customer_done: buyer.done,
+      p_store_done: store.done,
     });
   }
   return run;
