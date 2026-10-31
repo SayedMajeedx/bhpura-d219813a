@@ -40,19 +40,16 @@ export function GiftCardDesigner({
 }) {
   const isAr = lang === "ar";
   const occasions = useMemo(() => occasionsInOrder(today, kit.currency), [today, kit.currency]);
-  const options = designsFor({
-    occasion: value.occasion,
-    kind: kit.kind,
-    store: kit.store,
-    hasPhoto: kit.photos.length > 0,
-  });
-  const optionsKey = options.join("|");
+  const hasPhoto = kit.photos.length > 0;
+  const options = useMemo(
+    () => designsFor({ occasion: value.occasion, kind: kit.kind, store: kit.store, hasPhoto }),
+    [value.occasion, kit.kind, kit.store, hasPhoto],
+  );
 
   // A design the store turned off, or a photo design with no photo, gives way to the first offered.
   useEffect(() => {
     if (!options.includes(value.design)) onChange({ ...value, design: options[0] });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs when what is offered changes
-  }, [optionsKey, value.design]);
+  }, [options, value, onChange]);
 
   const choose = (patch: Partial<CardDesign>) => onChange({ ...value, ...patch });
   const pickOccasion = (occasion: CardDesign["occasion"]) => {
