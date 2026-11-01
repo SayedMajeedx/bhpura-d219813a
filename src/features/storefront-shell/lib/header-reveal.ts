@@ -38,3 +38,19 @@ export function headerMove({
   if (delta < -HEADER_SCROLL_STEP) return "reveal";
   return "keep";
 }
+
+/**
+ * Whether focus arriving in the header keeps it on screen: only focus the person moved there with
+ * the keyboard (`:focus-visible`), so tabbing through its links never loses them. Focus a script
+ * puts there (a dialog closing gives its trigger focus back) never pins it: closing the cart drawer
+ * once brought the header back and held it over the page the shopper was reading.
+ */
+export function focusHoldsHeader(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  try {
+    return target.matches(":focus-visible");
+  } catch {
+    // A browser that cannot answer keeps the old rule: focus in the header holds it.
+    return true;
+  }
+}
