@@ -45,6 +45,7 @@ export function VariantMobileCard({
   product,
   onDuplicate,
   onOpenHistory,
+  canDelete = true,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -64,6 +65,8 @@ export function VariantMobileCard({
   product?: Product;
   onDuplicate?: (v: Variant) => void;
   onOpenHistory?: (v: Variant) => void;
+  /** False for a product's last variant, which it keeps (`leavesAVariant`). */
+  canDelete?: boolean;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(saleInputValue(v));
@@ -192,11 +195,13 @@ export function VariantMobileCard({
               <Copy className="h-4 w-4" />
             </Button>
           )}
-          <InventoryDeleteAction
-            message={t("inventory.deleteVariantConfirm")}
-            onConfirm={() => del(v.id)}
-            mobile
-          />
+          {canDelete && (
+            <InventoryDeleteAction
+              message={t("inventory.deleteVariantConfirm")}
+              onConfirm={() => del(v.id)}
+              mobile
+            />
+          )}
         </div>
       </div>
 

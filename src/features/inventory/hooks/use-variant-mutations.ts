@@ -18,6 +18,11 @@ import {
   type VariantDraft,
 } from "@/features/inventory/lib/variant-draft";
 import { getCurrentUser } from "@/lib/auth/session";
+import {
+  keepOneVariantMessage,
+  leavesAVariant,
+  variantDeleteError,
+} from "@/features/inventory/lib/variant-delete";
 import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
 
 /**
@@ -205,10 +210,14 @@ export function useVariantMutations({
   };
 
   const del = async (id: string) => {
+    if (!leavesAVariant(product, variants.length)) {
+      toast.error(keepOneVariantMessage(isAr));
+      return;
+    }
     try {
       await deleteVariants(brandId, [id]);
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error));
+      toast.error(variantDeleteError(error, isAr));
       return;
     }
     onChanged();

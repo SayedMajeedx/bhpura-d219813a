@@ -50,6 +50,7 @@ export function VariantDesktopRow({
   onDuplicate,
   onOpenHistory,
   viewMode = "quick",
+  canDelete = true,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -73,6 +74,8 @@ export function VariantDesktopRow({
   onDuplicate?: (v: Variant) => void;
   onOpenHistory?: (v: Variant) => void;
   viewMode?: VariantViewMode;
+  /** False for a product's last variant, which it keeps (`leavesAVariant`). */
+  canDelete?: boolean;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const money = useMoneyLabel(isAr ? "ar" : "en");
@@ -486,10 +489,12 @@ export function VariantDesktopRow({
               <Copy className="h-4 w-4" />
             </button>
           )}
-          <InventoryDeleteAction
-            message={t("inventory.deleteVariantConfirm")}
-            onConfirm={() => del(v.id)}
-          />
+          {canDelete && (
+            <InventoryDeleteAction
+              message={t("inventory.deleteVariantConfirm")}
+              onConfirm={() => del(v.id)}
+            />
+          )}
         </div>
       </td>
     </tr>

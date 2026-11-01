@@ -30,6 +30,7 @@ import { VariantMobileCard } from "@/features/inventory/components/VariantMobile
 import { ManageProductAxesDialog } from "@/features/inventory/components/ManageProductAxesDialog";
 import { VariantDesktopRow } from "@/features/inventory/components/VariantDesktopRow";
 import { BulkVariantDialog } from "@/features/inventory/components/BulkVariantDialog";
+import { leavesAVariant } from "@/features/inventory/lib/variant-delete";
 
 export function VariantList({
   productId,
@@ -118,7 +119,9 @@ export function VariantList({
     bulkAddStock,
     bulkApplyMarkup,
     bulkDelete,
-  } = useVariantBulkActions(variants, onChanged, isAr, Number(product?.base_price ?? 0));
+  } = useVariantBulkActions(variants, onChanged, isAr, Number(product?.base_price ?? 0), product);
+  // A product keeps its last variant: the row offers no delete.
+  const canDelete = leavesAVariant(product, variants.length);
 
   return (
     <div className="mt-4 border-t border-border pt-4">
@@ -181,6 +184,7 @@ export function VariantList({
             product={product}
             onDuplicate={startAdding}
             onOpenHistory={setHistoryVariant}
+            canDelete={canDelete}
           />
         ))}
 
@@ -251,6 +255,7 @@ export function VariantList({
                   onDuplicate={startAdding}
                   onOpenHistory={setHistoryVariant}
                   viewMode={viewMode}
+                  canDelete={canDelete}
                 />
               ))}
 

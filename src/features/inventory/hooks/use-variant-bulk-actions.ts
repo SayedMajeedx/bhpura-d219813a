@@ -8,20 +8,27 @@ import {
   updateVariant,
   updateVariants,
 } from "@/lib/data/catalog";
-import type { Variant } from "@/features/inventory/types";
+import type { Product, Variant } from "@/features/inventory/types";
 import { markupPrice, variantColumnPatch } from "@/features/inventory/lib/variant-draft";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  keepOneVariantMessage,
+  leavesAVariant,
+  variantDeleteError,
+} from "@/features/inventory/lib/variant-delete";
 
 /**
  * Row selection in the variants table and the actions applied to the selection.
  * `regularPrice` is the product's base price: a new price below it keeps it as
- * the struck-through original price, as an inline edit does.
+ * the struck-through original price, as an inline edit does. Deleting never takes a product's
+ * last variant (`leavesAVariant`).
  */
 export function useVariantBulkActions(
   variants: Variant[],
   onChanged: () => void,
   isAr: boolean,
   regularPrice: number,
+  product?: Pick<Product, "item_kind">,
 ) {
   const brandId = useBrand().id;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -126,6 +133,10 @@ export function useVariantBulkActions(
   };
 
   const bulkDelete = async () => {
+    if (!leavesAVariant(product, variants.length, selectedIds.size)) {
+      toast.error(keepOneVariantMessage(isAr));
+      return;
+    }
     const ok = await confirmDialog({
       title: isAr ? "حذف الخيارات المحددة؟" : "Delete the selected variants?",
       destructive: true,
@@ -134,7 +145,7 @@ export function useVariantBulkActions(
     try {
       await deleteVariants(brandId, Array.from(selectedIds));
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error));
+      toast.error(variantDeleteError(error, isAr));
       return;
     }
     toast.success(isAr ? "تم حذف المتغيرات بنجاح" : "Variants deleted successfully");
