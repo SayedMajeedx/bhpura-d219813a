@@ -9,6 +9,7 @@ import { isCatalogMode } from "@/lib/storefront-mode";
 import { AnnouncementBar, StoreHeader } from "@/components/storefront/StorefrontHeader";
 import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNavigation";
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
+import { NavigationProgress } from "@/features/storefront-shell/components/NavigationProgress";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
 import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
 import { CheckoutHeader } from "@/features/storefront-shell/components/CheckoutHeader";
@@ -98,6 +99,8 @@ export function StoreShell() {
           which is exactly what the consent banner used to do. Keep storefront
           UI inside the shell. */}
       {typographyFaces && <style>{typographyFaces}</style>}
+      {/* A tapped page on its way shows at the top of the screen, wherever the page is scrolled. */}
+      <NavigationProgress />
       {/* The first stop of a keyboard: past the header's links, straight to the page. */}
       <a
         href="#store-main"

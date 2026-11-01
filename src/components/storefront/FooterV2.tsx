@@ -90,6 +90,7 @@ export function FooterV2() {
             {t("كل الخدمات", "All services")}
           </Link>
           <Link
+            preload="viewport"
             to="/$slug/book"
             params={{ slug: brand.slug }}
             className={`${linkClass} font-medium`}
@@ -134,6 +135,7 @@ export function FooterV2() {
       {/* Tracking needs no account: an order's number and phone open it. */}
       {!servicesStore && (
         <Link
+          preload="viewport"
           to="/$slug/track-order"
           params={{ slug: brand.slug }}
           className={linkClass}
@@ -143,11 +145,23 @@ export function FooterV2() {
         </Link>
       )}
       {sellsGiftCards && (
-        <Link to="/$slug/gift-cards" params={{ slug: brand.slug }} className={linkClass} style={FG}>
+        <Link
+          preload="viewport"
+          to="/$slug/gift-cards"
+          params={{ slug: brand.slug }}
+          className={linkClass}
+          style={FG}
+        >
           {t("بطاقات الهدايا", "Gift cards")}
         </Link>
       )}
-      <Link to="/$slug/account" params={{ slug: brand.slug }} className={linkClass} style={FG}>
+      <Link
+        preload="viewport"
+        to="/$slug/account"
+        params={{ slug: brand.slug }}
+        className={linkClass}
+        style={FG}
+      >
         {servicesStore ? t("حجوزاتي وحسابي", "My bookings & account") : t("حسابي", "My account")}
       </Link>
       {pageLinks(helpPages, linkClass)}
