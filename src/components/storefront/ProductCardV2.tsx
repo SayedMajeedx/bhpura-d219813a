@@ -283,17 +283,6 @@ export function ProductCardV2({
               </span>
             </div>
           )}
-
-          {/* Desktop Quick Add Popover Overlay on Hover */}
-          {!isOos && settings?.product_card_quick_add !== false && (
-            <div className="absolute bottom-2 inset-x-2 z-20 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-(--motion-fast) ease-(--motion-ease-smooth) pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
-              <QuickAddPopover
-                product={product}
-                variants={variants}
-                onOpenQuickView={handleTriggerQuickView}
-              />
-            </div>
-          )}
         </div>
 
         {/* Product Details Info: the price sits at the card's foot (`mt-auto`), so a row's
@@ -358,6 +347,19 @@ export function ProductCardV2({
           )}
         </div>
       </Link>
+
+      {/* Quick add, shown over the photo on hover (a mouse): outside the card's link, so its
+          buttons are buttons of their own and never a click on the link. The box takes the
+          photo's own shape to sit at its foot. */}
+      {!isOos && settings?.product_card_quick_add !== false && (
+        <div
+          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} pointer-events-none absolute inset-x-0 top-0 z-20`}
+        >
+          <div className="absolute bottom-2 inset-x-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-(--motion-fast) ease-(--motion-ease-smooth) pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+            <QuickAddPopover product={product} variants={variants} />
+          </div>
+        </div>
+      )}
 
       {/* Quick View Modal */}
       {showQuickView && (

@@ -86,6 +86,7 @@ import {
 } from "@/lib/data/reviews";
 import { rendersOnServer } from "@/features/product-page/lib/render-side";
 import { openCartDrawer } from "@/lib/cart-drawer";
+import { isMeasurementField } from "@/features/product-page/lib/quick-add";
 import { SocialProofBadge } from "@/features/product-page/components/SocialProofBadge";
 import { ProductPagePending } from "@/features/product-page/components/ProductPagePending";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
@@ -170,8 +171,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       }
     | undefined;
   const params = Route.useParams() as any;
-  // A link may name a size (`?variant=`, the shopping feed's links do): the page opens on it.
-  const linkedVariantId = (Route.useSearch() as { variant?: string }).variant ?? null;
+  // A link may name a size (`?variant=`, the shopping feed's links do): the page opens on it; a
+  // card's "tailor to your measurements" opens it on tailoring (`?mode=custom`).
+  const linkSearch = Route.useSearch() as { variant?: string; mode?: string };
+  const linkedVariantId = linkSearch.variant ?? null;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } =
     useStorefront();
@@ -191,7 +194,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
   const [selectedOptionFour, setSelectedOptionFour] = useState<string | null>(null);
   const [selectedOptionFive, setSelectedOptionFive] = useState<string | null>(null);
-  const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
+  const [sizeMode, setSizeMode] = useState<"ready" | "custom">(
+    linkSearch.mode === "custom" ? "custom" : "ready",
+  );
   const [measurementsApplied, setMeasurementsApplied] = useState(false);
   const [tailoringNotes, setTailoringNotes] = useState("");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
@@ -404,12 +409,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         : [],
     [product, madeToOrder.closed],
   );
-  const isMeasurementField = (key: string) =>
-    key.startsWith("fit_") ||
-    key === "custom_measurements" ||
-    key.includes("measurement") ||
-    key.startsWith("sizing_") ||
-    key.includes("passport");
 
   const hasMeasurementFields = customFields.some((f) => isMeasurementField(f.key));
   const visibleCustomFields = hasMeasurementFields
