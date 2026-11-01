@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
 import { readAll } from "@/lib/data/read-all";
+import { realSize } from "@/lib/default-variant";
 
 const ProductImportSchema = z.object({
   brandId: z.string().uuid(),
@@ -294,7 +295,8 @@ export const importProductCatalog = createServerFn({ method: "POST" })
               user_id: userId,
               brand_id: data.brandId,
               product_id: createdProduct.id,
-              size: v.size,
+              // A file's قياسي (an older export's) names no size: it is the default variant.
+              size: realSize(v.size),
               size_unit: v.size_unit,
               color: v.color,
               fabric: v.fabric,
@@ -318,15 +320,16 @@ export const importProductCatalog = createServerFn({ method: "POST" })
               continue;
             }
           } else {
-            // Fallback single default variant
+            // A row with no sizes is sold as its default variant: no option, and only what the
+            // file said. It once invented a price of 15 and 50 pieces, which the ledger then held.
             const { error: varErr } = await context.supabase.from("product_variants").insert({
               user_id: userId,
               brand_id: data.brandId,
               product_id: createdProduct.id,
               sku: `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
               cost_price: 0,
-              selling_price: 15.0,
-              stock_main: 50,
+              selling_price: 0,
+              stock_main: 0,
               stock_incubator: 0,
             });
             if (varErr) {

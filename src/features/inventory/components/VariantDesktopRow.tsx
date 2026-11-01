@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Pencil, TrendingUp, Wand as Wand2, Sparkles, Barcode, Copy, History } from "lucide-react";
 import { toast } from "sonner";
 import { formatSizeWithUnit, splitCompositeVariantSize } from "@/lib/format";
+import { defaultVariantLabel, isDefaultVariant, realSize } from "@/lib/default-variant";
 import { PrintLabelButton } from "@/components/barcode-label";
 
 import type { Product, Variant, VariantViewMode } from "@/features/inventory/types";
@@ -203,21 +204,17 @@ export function VariantDesktopRow({
               <div className="flex items-center gap-1.5 flex-wrap flex-1 min-w-0 group/v">
                 {(() => {
                   const split = splitCompositeVariantSize(v.size, v.size_unit);
-                  const hasAttributes = Boolean(
-                    v.size || v.color || v.fabric || v.option_four || v.option_five,
-                  );
-
-                  if (!hasAttributes) {
+                  if (isDefaultVariant(v)) {
                     return (
                       <span className="text-muted-foreground text-xs italic">
-                        {isAr ? "متغير قياسي" : "Standard Variant"}
+                        {defaultVariantLabel(isAr ? "ar" : "en")}
                       </span>
                     );
                   }
 
                   return (
                     <>
-                      {v.size && (
+                      {realSize(v.size) && (
                         <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2 py-0.5 border border-primary/20 rounded-md">
                           {split.isComposite
                             ? `${split.size} ${isAr ? (split.unit === "g" ? "غرام" : split.unit) : split.unit}`

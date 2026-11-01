@@ -1,5 +1,6 @@
 import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
 import { productAvailability, type AvailabilityProduct } from "@/lib/product-availability";
+import { sizeWorthNaming } from "@/lib/default-variant";
 
 /**
  * Pure rules for the sign-ups page: the waiting list (who asked to be told when a product is
@@ -57,13 +58,9 @@ export type WaitingGroup = {
 const units = (variant: WaitedVariant) =>
   Math.max(0, Number(variant.stock_main) || 0) + Math.max(0, Number(variant.stock_incubator) || 0);
 
-/** A placeholder size a single-option product carries: not something a shopper chose. */
-const isPlaceholder = (value: string | null | undefined) =>
-  !value || ["standard", "قياسي", "one size"].includes(value.trim().toLowerCase());
-
 export function optionLabel(variant: WaitedVariant | null | undefined): string {
   if (!variant) return "";
-  return [variant.size, variant.color].filter((value) => !isPlaceholder(value)).join(" · ");
+  return [sizeWorthNaming(variant.size), variant.color?.trim()].filter(Boolean).join(" · ");
 }
 
 /**

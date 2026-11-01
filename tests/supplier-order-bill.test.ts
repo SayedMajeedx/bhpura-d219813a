@@ -148,13 +148,13 @@ describe("a new product from the order", () => {
       is_made_to_order: false,
       item_kind: "product",
     });
-    const sizes = newProductSizes(form, true);
+    const sizes = newProductSizes(form);
     expect(sizes.map((s) => [s.size, s.selling_price, s.stock_main, s.cost_price])).toEqual([
       ["52", 45.5, 0, 0],
       ["54", 45.5, 0, 0],
     ]);
-    // No size chosen: one size, the placeholder every one-size product has.
-    expect(newProductSizes({ ...form, sizes: [] }, true).map((s) => s.size)).toEqual(["قياسي"]);
+    // No size chosen: the default variant every product with no options has, with no size.
+    expect(newProductSizes({ ...form, sizes: [] }).map((s) => s.size)).toEqual([null]);
   });
 });
 

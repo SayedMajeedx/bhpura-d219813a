@@ -24,6 +24,7 @@ import {
   matchesExportStockFilter,
 } from "@/features/import-export/lib/export-stock-status";
 import { arNounOblique } from "@/lib/arabic-count";
+import { realSize } from "@/lib/default-variant";
 
 // =============================================================
 // Component 1: Product Export Section
@@ -137,7 +138,7 @@ export function ProductExportSection({
             sku: v.sku || `SKU-${v.id?.slice(0, 6)}`,
             barcode: v.barcode || "—",
             name: isAr ? p.name_ar || p.name : p.name_en || p.name,
-            variant_details: [v.size, v.color].filter(Boolean).join(" / ") || "Standard",
+            variant_details: [realSize(v.size), v.color].filter(Boolean).join(" / ") || "—",
             category: p.category || "—",
             total_stock: totalStock,
             cost_price: unitCost,
@@ -155,7 +156,7 @@ export function ProductExportSection({
             category: p.category || "General",
             sku: v.sku || "",
             barcode: v.barcode || "",
-            size: v.size || "",
+            size: realSize(v.size) ?? "",
             color: v.color || "",
             fabric: v.fabric || "",
             selling_price: Number(v.selling_price) || 0,

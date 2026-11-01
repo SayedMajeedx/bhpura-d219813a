@@ -1,5 +1,5 @@
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultVariant } from "@/lib/default-variant";
 
 type NoteProduct = { is_made_to_order?: boolean | null } | null | undefined;
 type NoteVariant = {
@@ -13,14 +13,14 @@ type NoteVariant = {
 };
 
 /**
- * The "Standard" variant of a made-to-order product that has no ready piece: it only exists so
+ * The default variant of a made-to-order product that has no ready piece: it only exists so
  * the product has a price and can be ordered. Counting stock on it means nothing (a shopper is
  * never offered it as a ready size), so its row shows this note instead of stock steppers.
  */
 export function isMadeToOrderOnlyVariant(product: NoteProduct, variant: NoteVariant): boolean {
   return (
     Boolean(product?.is_made_to_order) &&
-    isPlaceholderVariant(variant) &&
+    isDefaultVariant(variant) &&
     Number(variant.stock_main ?? 0) + Number(variant.stock_incubator ?? 0) <= 0
   );
 }

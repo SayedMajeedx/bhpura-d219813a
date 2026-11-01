@@ -1,5 +1,5 @@
 import { formatDate } from "@/lib/format";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
@@ -102,7 +102,7 @@ export function jobSheetPieces(
       if (filled(variant?.color) && axes.color.visible) {
         chosen.push({ label: axes.color.label, value: filled(variant?.color) });
       }
-      if (filled(variant?.size) && axes.size.visible && !isPlaceholderVariant(variant)) {
+      if (filled(variant?.size) && axes.size.visible && !isDefaultSize(variant?.size)) {
         chosen.push({ label: axes.size.label, value: filled(variant?.size) });
       }
       if (filled(variant?.fabric) && axes.fabric.visible) {

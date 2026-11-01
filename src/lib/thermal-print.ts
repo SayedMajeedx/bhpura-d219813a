@@ -1,5 +1,5 @@
 import { formatDate, formatMoney } from "@/lib/format";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
@@ -85,7 +85,6 @@ export function printThermalReceipt(a: ThermalArgs) {
   const itemsHtml = a.items
     .map((it) => {
       const unit = Number(it.unit_price) + Number(it.customization_total);
-      const isPlaceholder = isPlaceholderVariant(it.selected_variant);
       const axes = resolveAllVariantAxes({
         product: it.product,
         addonDefaults,
@@ -100,7 +99,7 @@ export function printThermalReceipt(a: ThermalArgs) {
           axes.color.visible &&
           `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
-          !isPlaceholder &&
+          !isDefaultSize(it.selected_variant.size) &&
           axes.size.visible &&
           `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&
@@ -285,7 +284,6 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
 
   const itemsRows = a.items
     .map((it, idx) => {
-      const isPlaceholder = isPlaceholderVariant(it.selected_variant);
       const axes = resolveAllVariantAxes({
         product: it.product,
         addonDefaults,
@@ -300,7 +298,7 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
           axes.color.visible &&
           `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
         it.selected_variant?.size &&
-          !isPlaceholder &&
+          !isDefaultSize(it.selected_variant.size) &&
           axes.size.visible &&
           `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
         it.selected_variant?.fabric &&

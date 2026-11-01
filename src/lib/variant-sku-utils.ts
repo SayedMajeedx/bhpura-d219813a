@@ -390,33 +390,13 @@ export function expandSizeRange(raw: string): string[] {
   return splitVariantValues(raw);
 }
 
-export const PLACEHOLDER_SIZE_VALUES = ["قياسي", "Standard"] as const;
-
-export function isPlaceholderVariant(
-  v?: {
-    size?: string | null;
-    color?: string | null;
-    fabric?: string | null;
-    option_four?: string | null;
-    option_five?: string | null;
-  } | null,
-): boolean {
-  if (!v || !v.size) return false;
-  const isPlaceholderSize = (PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(v.size.trim());
-  if (!isPlaceholderSize) return false;
-  const hasColor = Boolean(v.color && v.color.trim());
-  const hasFabric = Boolean(v.fabric && v.fabric.trim());
-  const hasOptionFour = Boolean(v.option_four && v.option_four.trim());
-  const hasOptionFive = Boolean(v.option_five && v.option_five.trim());
-  return !hasColor && !hasFabric && !hasOptionFour && !hasOptionFive;
-}
-
 import {
   formatSizeWithUnit,
   splitCompositeVariantSize,
   type SplitCompositeSizeResult,
 } from "@/lib/format";
 import { translateOptionValue } from "@/lib/variant-i18n";
+import { realSize } from "@/lib/default-variant";
 
 export { splitCompositeVariantSize, type SplitCompositeSizeResult };
 
@@ -433,8 +413,9 @@ export function displayVariantParts(
 ): string[] {
   if (!v) return [];
   const parts: string[] = [];
-  if (v.size && !(PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(v.size.trim())) {
-    const split = splitCompositeVariantSize(v.size.trim(), v.size_unit);
+  const size = realSize(v.size);
+  if (size) {
+    const split = splitCompositeVariantSize(size, v.size_unit);
     if (split.isComposite) {
       const sizeStr =
         lang === "ar"
@@ -449,7 +430,7 @@ export function displayVariantParts(
         parts.push(translateOptionValue(split.option, lang));
       }
     } else {
-      parts.push(formatSizeWithUnit(v.size.trim(), v.size_unit, lang));
+      parts.push(formatSizeWithUnit(size, v.size_unit, lang));
     }
   }
   if (v.color && v.color.trim()) parts.push(translateOptionValue(v.color.trim(), lang));

@@ -1,5 +1,5 @@
 import { formatAxisValue, type ResolvedVariantAxis, type VariantLike } from "@/lib/variant-axes";
-import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { REVIEW_HIGHLIGHT_LABELS } from "@/lib/order-reviews";
 import { formatAmount } from "@/features/content-studio/lib/batch";
 
@@ -112,7 +112,7 @@ const units = (variant: StockedVariant) =>
 /**
  * The options a shopper can buy now, as the store labels them: its sizes
  * first (what shoppers wait for), else its first option. Only values with a
- * piece in stock; the "Standard" placeholder is never one. Null when the
+ * piece in stock; the default variant's size is never one. Null when the
  * product has no options to name.
  */
 export function inStockOptions(
@@ -123,7 +123,7 @@ export function inStockOptions(
   const axis = axes.find((candidate) => candidate.field === "size") ?? axes[0];
   if (!axis) return null;
   const options = axis.values.filter((value) => {
-    if ((PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(value)) return false;
+    if (isDefaultSize(value)) return false;
     const key = value.trim().toLowerCase();
     return variants.some(
       (variant) => (variant[axis.field] ?? "").trim().toLowerCase() === key && units(variant) > 0,

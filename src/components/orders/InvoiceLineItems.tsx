@@ -1,5 +1,5 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 
@@ -69,9 +69,7 @@ function ItemDetails({
   const fabric = pick("fabric");
   const options = [
     color && axes.color.visible ? [axes.color.label, color] : null,
-    size && !isPlaceholderVariant(it.selected_variant || it.product_variants) && axes.size.visible
-      ? [axes.size.label, size]
-      : null,
+    size && !isDefaultSize(size) && axes.size.visible ? [axes.size.label, size] : null,
     fabric && axes.fabric.visible ? [axes.fabric.label, fabric] : null,
   ].filter(Boolean) as Array<[string, string]>;
   const muted = { color: textColor, opacity: 0.75 };
