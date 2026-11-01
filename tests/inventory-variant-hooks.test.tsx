@@ -11,12 +11,18 @@ const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const catalog = vi.hoisted(() => ({
   adjustVariantStock: vi.fn(async () => undefined),
   createVariants: vi.fn(async () => undefined),
-  deleteVariants: vi.fn(async () => undefined),
+  removeVariants: vi.fn(async (): Promise<{ deleted: number; archived: number }> => ({
+    deleted: 1,
+    archived: 0,
+  })),
   updateProduct: vi.fn(async () => undefined),
   updateVariant: vi.fn(async () => undefined),
   updateVariants: vi.fn(async () => undefined),
 }));
 vi.mock("sonner", () => ({ toast }));
+const confirm = { confirmDialog: async () => true };
+vi.mock("../src/components/ui/confirm-dialog", () => confirm);
+vi.mock("@/components/ui/confirm-dialog", () => confirm);
 vi.mock("../src/lib/data/catalog", () => catalog);
 vi.mock("@/lib/data/catalog", () => catalog);
 const brandContext = { useBrand: () => ({ id: "b1", slug: "pura" }) };
@@ -234,5 +240,58 @@ describe("editing a variant's stock", () => {
     >) {
       expect(patch).not.toHaveProperty("stock_incubator");
     }
+  });
+});
+
+describe("removing variants", () => {
+  const axis = { label: "", visible: true, isCustom: false };
+  const axes = { size: axis, color: axis, fabric: axis, four: axis, five: axis };
+  const product = { id: "p1", item_kind: "product" } as never;
+  const mutations = (list = variants) =>
+    renderHook(() =>
+      useVariantMutations({
+        productId: "p1",
+        product,
+        variants: list,
+        axes,
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    ).result.current;
+
+  it("says when a size with a history was archived rather than deleted", async () => {
+    catalog.removeVariants.mockResolvedValueOnce({ deleted: 0, archived: 1 });
+    const { del } = mutations();
+    await act(() => del("v2"));
+    expect(catalog.removeVariants).toHaveBeenCalledWith(["v2"]);
+    expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/^1 variant archived/));
+  });
+
+  it("never asks to remove a product's last size", async () => {
+    const { del } = mutations([variants[0]]);
+    await act(() => del("v1"));
+    expect(catalog.removeVariants).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/keeps at least one variant/));
+  });
+
+  it("words the database's refusal of a size that still has pieces", async () => {
+    catalog.removeVariants.mockRejectedValueOnce({ message: "VARIANT_HAS_STOCK" });
+    const { del } = mutations();
+    await act(() => del("v2"));
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/still has pieces in stock/));
+  });
+
+  it("refuses a bulk removal of every size, and reports one that leaves a size", async () => {
+    const all = renderHook(() => useVariantBulkActions(variants, vi.fn(), false, 15, product));
+    act(() => all.result.current.toggleSelectAll());
+    await act(() => all.result.current.bulkDelete());
+    expect(catalog.removeVariants).not.toHaveBeenCalled();
+
+    catalog.removeVariants.mockResolvedValueOnce({ deleted: 1, archived: 0 });
+    const one = renderHook(() => useVariantBulkActions(variants, vi.fn(), false, 15, product));
+    act(() => one.result.current.toggleSelect("v2"));
+    await act(() => one.result.current.bulkDelete());
+    expect(catalog.removeVariants).toHaveBeenCalledWith(["v2"]);
+    expect(toast.success).toHaveBeenCalledWith("1 variant deleted.");
   });
 });

@@ -126,19 +126,31 @@ describe("variant writes", () => {
     ]);
   });
 
-  it("scope updates and deletes by brand", async () => {
+  it("scope updates by brand", async () => {
     await catalog.updateVariant("b1", "v1", { selling_price: 5 });
     await catalog.updateVariants("b1", ["v1", "v2"], { selling_price: 7 });
-    await catalog.deleteVariants("b1", ["v3"]);
     expect(filters(requests[0], "eq")).toEqual([
       ["id", "v1"],
       ["brand_id", "b1"],
     ]);
-    for (const request of requests.slice(1)) {
-      expect(request.table).toBe("product_variants");
-      expect(filters(request, "eq")).toEqual([["brand_id", "b1"]]);
-    }
-    expect(filters(requests[2], "in")).toEqual([["id", ["v3"]]]);
+    expect(requests[1].table).toBe("product_variants");
+    expect(filters(requests[1], "eq")).toEqual([["brand_id", "b1"]]);
+  });
+
+  it("remove sizes through the database, which archives one with a history", async () => {
+    respond = () => ({ data: { deleted: 1, archived: 2 }, error: null });
+    expect(await catalog.removeVariants(["v3", "v4", "v5"])).toEqual({ deleted: 1, archived: 2 });
+    expect(requests).toEqual([
+      expect.objectContaining({
+        table: "remove_product_variants",
+        op: "rpc",
+        payload: { p_variant_ids: ["v3", "v4", "v5"] },
+      }),
+    ]);
+    respond = () => ({ data: null, error: { message: "VARIANT_HAS_STOCK" } });
+    await expect(catalog.removeVariants(["v6"])).rejects.toMatchObject({
+      message: "VARIANT_HAS_STOCK",
+    });
   });
 
   it("make a product's variants follow its regular price, keeping sale prices", async () => {

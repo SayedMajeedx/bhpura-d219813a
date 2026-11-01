@@ -366,6 +366,7 @@ export async function handlePublicApiV1Request(
       let query = db
         .from("products")
         .select("*, product_variants(*)", { count: "exact" })
+        .is("product_variants.archived_at", null)
         .eq("brand_id", authContext.brandId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
@@ -482,6 +483,7 @@ export async function handlePublicApiV1Request(
         const { data: product, error } = await db
           .from("products")
           .select("*, product_variants(*)")
+          .is("product_variants.archived_at", null)
           .eq("id", productId)
           .eq("brand_id", authContext.brandId)
           .single();

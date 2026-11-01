@@ -37,6 +37,7 @@ function builder(table: string) {
       return chain;
     },
     eq: record("eq"),
+    is: record("is"),
     order: record("order"),
     range: record("range"),
     maybeSingle: () => chain,

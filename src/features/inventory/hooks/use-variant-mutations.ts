@@ -4,7 +4,7 @@ import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   adjustVariantStock,
   createVariants,
-  deleteVariants,
+  removeVariants,
   updateProduct,
   updateVariant,
 } from "@/lib/data/catalog";
@@ -21,12 +21,13 @@ import { getCurrentUser } from "@/lib/auth/session";
 import {
   keepOneVariantMessage,
   leavesAVariant,
+  removedMessage,
   variantDeleteError,
 } from "@/features/inventory/lib/variant-delete";
 import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
 
 /**
- * Add, edit and delete one product's variants. Stock edits go through the
+ * Add, edit and remove one product's variants (a size with a history is archived). Stock edits go through the
  * stock ledger RPC; the first variant added activates the product.
  */
 export function useVariantMutations({
@@ -215,7 +216,9 @@ export function useVariantMutations({
       return;
     }
     try {
-      await deleteVariants(brandId, [id]);
+      const removed = await removeVariants([id]);
+      // A size with a history is archived, not deleted: say so, it is not gone from the records.
+      if (removed.archived > 0) toast.success(removedMessage(removed, isAr));
     } catch (error) {
       toast.error(variantDeleteError(error, isAr));
       return;

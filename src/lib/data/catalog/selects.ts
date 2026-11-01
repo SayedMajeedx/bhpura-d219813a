@@ -73,6 +73,7 @@ export const ADMIN_PRODUCT_COLUMNS = [
 ] as const;
 
 export const ADMIN_VARIANT_COLUMNS = [
+  "archived_at",
   "barcode",
   "brand_id",
   "color",

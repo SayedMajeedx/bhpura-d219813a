@@ -30,6 +30,7 @@ function builder(table: string) {
     },
     eq: record("eq"),
     in: record("in"),
+    is: record("is"),
     not: record("not"),
     gt: record("gt"),
     gte: record("gte"),

@@ -34,6 +34,7 @@ function builder(table: string) {
     },
     eq: (...args: unknown[]) => (request.filters.push(["eq", ...args]), chain),
     in: (...args: unknown[]) => (request.filters.push(["in", ...args]), chain),
+    is: (...args: unknown[]) => (request.filters.push(["is", ...args]), chain),
     or: (...args: unknown[]) => (request.filters.push(["or", ...args]), chain),
     gte: (...args: unknown[]) => (request.filters.push(["gte", ...args]), chain),
     order: (...args: unknown[]) => (request.filters.push(["order", ...args]), chain),
@@ -156,6 +157,9 @@ describe("fetchProductDetail", () => {
     await expect(fetchProductDetail("brand-1", "p1")).resolves.toEqual({ id: "p1" });
     expect(filterValue(requests[0], "eq", "brand_id")).toBe("brand-1");
     expect(filterValue(requests[0], "eq", "is_active")).toBe(true);
+    // An archived size (removed, kept for its history) is never offered, staff previewing too.
+    expect(filterValue(requests[0], "is", "product_variants.archived_at")).toBeNull();
+    expect(requests[0].filters).toContainEqual(["is", "product_variants.archived_at", null]);
   });
 
   it("falls back to the base columns when the full request fails", async () => {

@@ -16,8 +16,10 @@ import { newVariantDraft } from "../src/features/inventory/lib/variant-draft";
 import {
   keepOneVariantMessage,
   leavesAVariant,
+  removedMessage,
   variantDeleteError,
 } from "../src/features/inventory/lib/variant-delete";
+import { variantsInUse } from "../src/lib/variant-archive";
 import type { StorefrontVariant } from "../src/lib/data/storefront";
 import type { Product, Variant } from "../src/features/inventory/types";
 
@@ -216,5 +218,32 @@ describe("deleting a variant", () => {
       keepOneVariantMessage(false),
     );
     expect(variantDeleteError(new Error("network down"), true)).toBe("network down");
+  });
+});
+
+describe("an archived size", () => {
+  it("is left out of what is offered, in the list's order", () => {
+    const list = [
+      { id: "a", archived_at: null },
+      { id: "b", archived_at: "2026-11-01T10:00:00Z" },
+      { id: "c" },
+    ];
+    expect(variantsInUse(list).map((v) => v.id)).toEqual(["a", "c"]);
+  });
+
+  it("is reported apart from a deleted one, the count last in Arabic", () => {
+    expect(removedMessage({ deleted: 2, archived: 0 }, false)).toBe("2 variants deleted.");
+    expect(removedMessage({ deleted: 2, archived: 0 }, true)).toBe("تم حذف متغيرين.");
+    expect(removedMessage({ deleted: 0, archived: 1 }, false)).toMatch(/^1 variant archived/);
+    expect(removedMessage({ deleted: 1, archived: 3 }, true)).toBe(
+      "تم حذف متغير واحد. ما له سجل من المبيعات أو المخزون أُرشف: أُخفي من المتجر والمخزون وبقي سجله (3 متغيرات).",
+    );
+  });
+
+  it("names the database's refusals", () => {
+    expect(variantDeleteError({ message: "VARIANT_HAS_STOCK" }, true)).toMatch(/قطع في المخزون/);
+    expect(variantDeleteError({ message: "NOT_AUTHORIZED" }, false)).toMatch(
+      /inventory permission/,
+    );
   });
 });
