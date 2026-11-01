@@ -33,6 +33,13 @@ vi.mock("@tanstack/react-router", () => ({
   Outlet: () => null,
   useRouter: () => ({}),
   useLocation: () => ({ pathname: "/pura" }),
+  // The shell's page-loading bar reads the router's state: nothing is loading here.
+  useRouterState: ({ select }: { select: (state: object) => unknown }) =>
+    select({
+      isLoading: false,
+      location: { pathname: "/pura" },
+      resolvedLocation: { pathname: "/pura" },
+    }),
 }));
 vi.mock("@tanstack/react-query", () => ({ useQueryClient: () => ({}) }));
 const stubs = {
