@@ -55,6 +55,7 @@ export async function countActiveWithoutPhoto(brandId: string) {
     .select("id, image_url, media, product_variants(image_url)")
     .eq("brand_id", brandId)
     .eq("is_active", true)
+    .is("product_variants.archived_at", null)
     .order("id")
     .limit(500);
   if (error) return 0;
@@ -87,6 +88,7 @@ export async function searchProducts(brandId: string, text: string) {
     .from("products")
     .select("id, name_en, name_ar, base_price, image_url, product_variants(selling_price)")
     .eq("brand_id", brandId)
+    .is("product_variants.archived_at", null)
     .or(`name_en.ilike.${term},name_ar.ilike.${term}`)
     .limit(6);
   return data ?? [];

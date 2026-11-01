@@ -45,6 +45,7 @@ const mocks: Record<string, unknown> = {
     catalogQueries: {
       products: () => options("products", () => [...stubs.products]),
       variants: () => options("variants", () => [...stubs.variants]),
+      variantsWithArchived: () => options("variants", () => [...stubs.variants]),
     },
     countAdminProducts: vi.fn(async () => 3),
     createProduct: stubs.createProduct,

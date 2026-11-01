@@ -38,6 +38,7 @@ function builder(table: string) {
     update: write("update"),
     eq: record("eq"),
     in: record("in"),
+    is: record("is"),
     gt: record("gt"),
     order: record("order"),
     range: record("range"),
