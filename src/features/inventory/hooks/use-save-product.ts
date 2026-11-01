@@ -154,7 +154,9 @@ export function useSaveProduct({
       try {
         if (form.is_active) {
           const count = await countProductVariants(brand.id, product.id);
-          // An active product with no variant gets a default one.
+          // An active product with no variant cannot be bought, so it gets its default one (blank).
+          // The database keeps a product's last variant (PRODUCT_NEEDS_A_VARIANT), so this only
+          // repairs a product left with none before that rule.
           if (!count) await newDefaultVariant(product.id);
         }
         await updateProduct(brand.id, product.id, columns);

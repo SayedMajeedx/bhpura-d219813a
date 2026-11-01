@@ -39,7 +39,7 @@ const variant = (overrides: Partial<Variant>) =>
     ...overrides,
   }) as unknown as Variant;
 
-const renderCard = (v: Variant, isAr: boolean) =>
+const renderCard = (v: Variant, isAr: boolean, canDelete = true) =>
   render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -62,6 +62,7 @@ const renderCard = (v: Variant, isAr: boolean) =>
           isSelected={false}
           onToggleSelect={vi.fn()}
           product={product}
+          canDelete={canDelete}
         />
       </I18nProvider>
     </QueryClientProvider>,
@@ -87,5 +88,15 @@ describe("a product's default variant in the inventory", () => {
     renderCard(variant({ size: "قياسي", color: "Black" }), false);
     expect(screen.queryByText("قياسي")).not.toBeInTheDocument();
     expect(screen.queryByText("No options")).not.toBeInTheDocument();
+  });
+});
+
+describe("a product's last variant in the inventory", () => {
+  it("offers no delete, while another variant still does", () => {
+    const { unmount } = renderCard(variant({}), false, false);
+    expect(screen.queryByRole("button", { name: /^(Delete|حذف)$/ })).not.toBeInTheDocument();
+    unmount();
+    renderCard(variant({ size: "54" }), false);
+    expect(screen.getByRole("button", { name: /^(Delete|حذف)$/ })).toBeInTheDocument();
   });
 });

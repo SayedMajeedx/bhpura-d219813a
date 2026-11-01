@@ -13,6 +13,11 @@ import { cartLines } from "../src/features/outreach/lib/outreach";
 import { pieceName } from "../src/features/incubators/lib/partner-stock";
 import { transferRows } from "../src/features/incubators/lib/batch-transfer";
 import { newVariantDraft } from "../src/features/inventory/lib/variant-draft";
+import {
+  keepOneVariantMessage,
+  leavesAVariant,
+  variantDeleteError,
+} from "../src/features/inventory/lib/variant-delete";
 import type { StorefrontVariant } from "../src/lib/data/storefront";
 import type { Product, Variant } from "../src/features/inventory/types";
 
@@ -190,5 +195,26 @@ describe("a new variant row in the editor", () => {
     expect(newVariantDraft(product, [variant("قياسي"), variant("54")]).size).toBe("54");
     expect(newVariantDraft(product, [variant("قياسي")]).size).toBe("");
     expect(newVariantDraft(product, [], variant("Standard")).size).toBe("");
+  });
+});
+
+describe("deleting a variant", () => {
+  it("never takes a product's last one", () => {
+    const abaya = { item_kind: "product" };
+    expect(leavesAVariant(abaya, 1)).toBe(false);
+    expect(leavesAVariant(abaya, 3, 3)).toBe(false);
+    expect(leavesAVariant(abaya, 3, 2)).toBe(true);
+    expect(leavesAVariant(abaya, 2)).toBe(true);
+    // A service's lengths are one set its editor saves whole.
+    expect(leavesAVariant({ item_kind: "service" }, 1)).toBe(true);
+  });
+
+  it("says why in the reader's language, for the database's refusal too", () => {
+    expect(keepOneVariantMessage(false)).toMatch(/keeps at least one variant/);
+    expect(keepOneVariantMessage(true)).toMatch(/خيار واحد على الأقل/);
+    expect(variantDeleteError({ message: "PRODUCT_NEEDS_A_VARIANT" }, false)).toBe(
+      keepOneVariantMessage(false),
+    );
+    expect(variantDeleteError(new Error("network down"), true)).toBe("network down");
   });
 });
