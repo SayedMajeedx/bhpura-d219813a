@@ -59,6 +59,13 @@ vi.mock("@tanstack/react-router", () => ({
   useRouter: () => ({}),
   useNavigate: () => vi.fn(),
   useLocation: () => ({ pathname: "/pura", searchStr: "" }),
+  // The shell's page-loading bar reads the router's state: nothing is loading here.
+  useRouterState: ({ select }: { select: (state: object) => unknown }) =>
+    select({
+      isLoading: false,
+      location: { pathname: "/pura" },
+      resolvedLocation: { pathname: "/pura" },
+    }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
 }));
 vi.mock("@tanstack/react-query", async (importOriginal) => ({

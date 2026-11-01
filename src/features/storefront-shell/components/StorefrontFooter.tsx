@@ -243,6 +243,7 @@ export function StorefrontFooter() {
                   <div className="overflow-hidden space-y-1 px-1">
                     {!servicesStore && (
                       <Link
+                        preload="viewport"
                         to="/$slug/track-order"
                         params={{ slug: brand.slug }}
                         className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"
@@ -253,6 +254,7 @@ export function StorefrontFooter() {
                     )}
                     {sellsGiftCards && (
                       <Link
+                        preload="viewport"
                         to="/$slug/gift-cards"
                         params={{ slug: brand.slug }}
                         className="flex min-h-[44px] items-center text-xs opacity-85 hover:opacity-100 py-1"

@@ -21,8 +21,21 @@ const state = vi.hoisted(() => ({
   settings: {} as Record<string, unknown>,
 }));
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to, params }: { children: React.ReactNode; to: string; params?: object }) => (
-    <a href={to.replace("$category", String((params as { category?: string })?.category ?? ""))}>
+  Link: ({
+    children,
+    to,
+    params,
+    preload,
+  }: {
+    children: React.ReactNode;
+    to: string;
+    params?: object;
+    preload?: string;
+  }) => (
+    <a
+      href={to.replace("$category", String((params as { category?: string })?.category ?? ""))}
+      data-preload={preload}
+    >
       {children}
     </a>
   ),
@@ -95,6 +108,19 @@ describe("the columns footer and the Pages & Policies screen", () => {
     render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.queryByText("The House")).toBeNull();
     expect(screen.getAllByText("Support").length).toBeGreaterThan(0);
+  });
+
+  it("loads its own pages' code as their links come into view, so a first tap opens at once", () => {
+    render(<FooterV2 />, { wrapper: queryWrapper });
+    for (const name of ["Track your order", "My account"]) {
+      for (const link of screen.getAllByRole("link", { name })) {
+        expect(link).toHaveAttribute("data-preload", "viewport");
+      }
+    }
+    // A store's own pages are categories: seen in the footer, they would fetch their products.
+    for (const link of screen.getAllByRole("link", { name: "Returns" })) {
+      expect(link).not.toHaveAttribute("data-preload");
+    }
   });
 
   it("links the store's social profiles", () => {
