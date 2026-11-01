@@ -2,6 +2,7 @@ import { normalizePhoneForWhatsApp } from "@/lib/whatsapp-phone";
 import { countsAsSold } from "@/lib/data/orders/sold-orders";
 import { isOpenCart } from "@/lib/abandoned-cart-recovery";
 import { madeToOrderLimit } from "@/lib/product-availability";
+import { sizeWorthNaming } from "@/lib/default-variant";
 import {
   waitingGroups,
   type WaitedProduct,
@@ -177,10 +178,6 @@ export function guessLang(
   return fallback;
 }
 
-/** A placeholder size of a single-option product: not something a client chose. */
-const isPlaceholder = (value: string | null | undefined) =>
-  !value || ["standard", "قياسي", "one size", "مقاس واحد"].includes(value.trim().toLowerCase());
-
 const time = (value: string | null | undefined) => (value ? Date.parse(value) : NaN);
 
 export function cartLines(items: unknown): OutreachCartLine[] {
@@ -189,7 +186,7 @@ export function cartLines(items: unknown): OutreachCartLine[] {
     .map((raw) => {
       const item = (raw ?? {}) as Record<string, unknown>;
       const name = String(item.title ?? item.name ?? "").trim();
-      const size = typeof item.size === "string" && !isPlaceholder(item.size) ? item.size : null;
+      const size = typeof item.size === "string" ? sizeWorthNaming(item.size) : null;
       const quantity = Math.max(1, Number(item.quantity ?? item.qty ?? 1) || 1);
       return { name, size, quantity };
     })
@@ -367,8 +364,8 @@ export function outreachToday(input: OutreachInput): {
     for (const order of orders) {
       for (const item of order.items) {
         if (item.product_id) bought.add(item.product_id);
-        const size = item.size?.trim();
-        if (size && !isPlaceholder(size)) sizeCounts.set(size, (sizeCounts.get(size) ?? 0) + 1);
+        const size = sizeWorthNaming(item.size);
+        if (size) sizeCounts.set(size, (sizeCounts.get(size) ?? 0) + 1);
       }
     }
     const sizes = [...sizeCounts.entries()].sort((a, b) => b[1] - a[1]).map(([size]) => size);

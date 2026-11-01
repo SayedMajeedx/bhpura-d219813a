@@ -2,7 +2,6 @@ import { parseMadeToOrderLimit } from "@/features/inventory/lib/made-to-order-li
 import { cleanFacts } from "@/lib/product-facts";
 import { partProblems, rowsFrom } from "@/features/inventory/lib/cost-parts";
 import { matchCustomFieldToMeasurement } from "@/lib/addons/addon-presets";
-import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
 import type { CustomField, MediaItem, Product } from "@/features/inventory/types";
 import {
   serviceBookingColumns,
@@ -234,22 +233,24 @@ export function productColumnsFrom(form: ProductForm) {
 }
 
 /**
- * The standard variant created for a product with none, so it can be sold
- * right away: placeholder size, the form's price, cost, fabric and opening stock.
+ * The default variant created for a product with none, so it can be sold right away: no option
+ * value at all (`isDefaultVariant`), the form's price, cost and opening stock. It once took the
+ * word قياسي (Standard, on an English admin) as its size and the product's fabric, so it read as
+ * a size on the storefront and its fabric made it look like a real option.
  *
  * It has no picture of its own: a variant with none shows the product's. It used to be given
  * the product's first picture, a second pointer to the same file that nothing kept up to date,
  * so replacing that picture left the variant (and the storefront card, which prefers a
  * variant's picture) on a deleted file.
  */
-export function defaultVariantValues(form: ProductForm, isAr: boolean) {
+export function defaultVariantValues(form: ProductForm) {
   const initialQty = Math.max(0, parseInt(form.initial_stock || "0", 10) || 0);
   const baseP = form.base_price ? Number(form.base_price) : 0;
   const costP = form.cost_price ? Number(form.cost_price) : 0;
   return {
-    size: isAr ? PLACEHOLDER_SIZE_VALUES[0] : PLACEHOLDER_SIZE_VALUES[1],
+    size: null,
     color: null,
-    fabric: (form.fabric_type || "").trim() || null,
+    fabric: null,
     cost_price: costP,
     selling_price: baseP,
     stock_main: initialQty,

@@ -13,7 +13,7 @@ import {
   type AxisDefaults,
   type VariantLike,
 } from "@/lib/variant-axes";
-import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 
 /**
  * The store's shopping feed: one item per size of every product a shopper can see, in the
@@ -185,13 +185,11 @@ export function feedItems(
     const grouped = sizes.length > 1;
 
     const items = sizes.map((variant) => {
-      // Each option the size has, as the store names it; the "Standard" placeholder is none.
+      // Each option the size has, as the store names it; the default variant's size is none.
       const options = axes.flatMap((axis) => {
         const raw = variant[axis.field]?.trim();
         if (!raw) return [];
-        if (axis.field === "size" && (PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(raw)) {
-          return [];
-        }
+        if (axis.field === "size" && isDefaultSize(raw)) return [];
         return [{ axis, value: formatAxisValue(axis, raw, lang, sizes) }];
       });
       const size = options.find((option) => option.axis.field === "size")?.value ?? null;

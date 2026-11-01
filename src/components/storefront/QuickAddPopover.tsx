@@ -105,7 +105,7 @@ export function QuickAddPopover({ product, variants, plan }: QuickAddPopoverProp
           <span className="text-xs font-medium text-muted-foreground text-center">{sizeWord}</span>
           <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto py-0.5">
             {plan.choices.map((variant) => {
-              const label = choiceLabel(variant, lang) ?? t("قياسي", "Standard");
+              const label = choiceLabel(variant, lang) ?? t("متغيّر", "Variant");
               const added = addedId === variant.id;
               return (
                 <Button

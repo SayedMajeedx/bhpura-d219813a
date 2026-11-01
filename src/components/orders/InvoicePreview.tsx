@@ -13,7 +13,7 @@ import {
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
@@ -766,7 +766,6 @@ export default function InvoicePreview({
                       )}
                       {it.selected_variant &&
                         (() => {
-                          const isPlaceholder = isPlaceholderVariant(it.selected_variant);
                           const axes = resolveAllVariantAxes({
                             product: (it as any).products || (it as any).product,
                             addonDefaults,
@@ -777,7 +776,7 @@ export default function InvoicePreview({
                               axes.color.visible &&
                               `${axes.color.label}: ${it.selected_variant.color}`,
                             it.selected_variant.size &&
-                              !isPlaceholder &&
+                              !isDefaultSize(it.selected_variant.size) &&
                               axes.size.visible &&
                               `${axes.size.label}: ${it.selected_variant.size}`,
                             it.selected_variant.fabric &&

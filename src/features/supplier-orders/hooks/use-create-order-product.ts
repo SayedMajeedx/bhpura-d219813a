@@ -52,7 +52,7 @@ export function useCreateOrderProduct(brandId: string, isAr: boolean) {
       try {
         await createVariants(
           brandId,
-          newProductSizes(form, isAr).map((size) => ({
+          newProductSizes(form).map((size) => ({
             user_id: user.id,
             brand_id: brandId,
             product_id: productId,

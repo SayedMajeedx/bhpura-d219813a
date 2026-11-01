@@ -8,7 +8,7 @@ import {
 } from "@/lib/product-availability";
 import type { VariantField } from "@/lib/variant-axes";
 import { translateOptionValue } from "@/lib/variant-i18n";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultVariant, realSize } from "@/lib/default-variant";
 import { offeredSizes, tailoringState } from "./variant-options";
 
 /**
@@ -79,10 +79,10 @@ function sortChoices<V extends QuickAddVariant>(choices: V[]): V[] {
     .map(({ variant }) => variant);
 }
 
-/** The pieces one tap can add: in stock, the placeholder size only when it is all there is. */
+/** The pieces one tap can add: in stock, the default variant only when it is all there is. */
 function readyChoices<V extends QuickAddVariant>(variants: readonly V[]): V[] {
   const stocked = variants.filter(inStock);
-  const real = stocked.filter((v) => !isPlaceholderVariant(v));
+  const real = stocked.filter((v) => !isDefaultVariant(v));
   return sortChoices(real.length > 0 ? real : stocked);
 }
 
@@ -130,13 +130,11 @@ export function quickAddPlan<V extends QuickAddVariant>(
 
 /**
  * A choice in the shopper's words: its size with its unit, and the other options it differs by
- * ("54 · بني"); null for the placeholder size, which names nothing.
+ * ("54 · بني"); null for the default variant, which names nothing.
  */
 export function choiceLabel(variant: QuickAddVariant, lang: "ar" | "en"): string | null {
-  const size =
-    variant.size && !isPlaceholderVariant(variant)
-      ? formatSizeWithUnit(variant.size, variant.size_unit, lang) || variant.size
-      : null;
+  const real = realSize(variant.size);
+  const size = real ? formatSizeWithUnit(real, variant.size_unit, lang) || real : null;
   const others = [variant.color, variant.fabric, variant.option_four, variant.option_five]
     .map((part) => (typeof part === "string" ? part.trim() : ""))
     .filter(Boolean)

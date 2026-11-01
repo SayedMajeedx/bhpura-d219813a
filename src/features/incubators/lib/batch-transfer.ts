@@ -1,3 +1,5 @@
+import { defaultVariantLabel, realSize } from "@/lib/default-variant";
+
 /**
  * Which sizes a transfer to a partner moves, and how many. Pure, so the batch transfer's
  * choices can be checked without the screen.
@@ -130,7 +132,7 @@ export function transferRows(
   const byId = new Map(products.map((product) => [product.id, product]));
   return variants.map((v) => {
     const prod = byId.get(v.product_id);
-    const parts = [v.size, v.color].filter(Boolean);
+    const parts = [realSize(v.size), v.color?.trim()].filter(Boolean);
     const stockMain = Number(v.stock_main || 0);
     const stockIncubator = Number(v.stock_incubator || 0);
     const allocatedInc = (v.incubator_inventory ?? []).reduce(
@@ -145,8 +147,8 @@ export function transferRows(
       productId: v.product_id,
       productName: (isAr ? prod?.name_ar || prod?.name : prod?.name) || prod?.name || "",
       category: prod?.category || "",
-      variantLabel: parts.length > 0 ? parts.join(" / ") : isAr ? "النسخة القياسية" : "Standard",
-      size: v.size || "",
+      variantLabel: parts.length > 0 ? parts.join(" / ") : defaultVariantLabel(isAr ? "ar" : "en"),
+      size: realSize(v.size) ?? "",
       color: v.color || "",
       sku: v.sku || v.id.slice(0, 8),
       barcode: v.barcode || "",

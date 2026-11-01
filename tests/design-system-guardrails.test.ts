@@ -337,6 +337,23 @@ describe("design system guardrails", () => {
     expect(offenders.map((file) => file.rel)).toEqual([]);
   });
 
+  it("reads the default variant through one rule, never the word قياسي by hand", () => {
+    // A product with no options is sold as a variant with no option value; the editor once wrote
+    // قياسي or Standard into its size. Some twenty screens each recognised it their own way, so the
+    // product page offered قياسي as a size and the courier and partner pages printed it.
+    const exempt = new Set([
+      "lib/default-variant.ts",
+      // The option words' translations, for orders that still carry the word in their snapshot.
+      "lib/variant-i18n.ts",
+      // Salla and Zid's own file format, which fills an empty size with it.
+      "features/import-export/components/ProductExportSection.tsx",
+    ]);
+    const byHand =
+      /["']قياسي["']|isPlaceholderVariant|PLACEHOLDER_SIZE_VALUES|toLowerCase\(\)\s*[!=]==\s*["']standard["']/;
+    const offenders = FILES.filter((file) => !exempt.has(file.rel) && byHand.test(file.source));
+    expect(offenders.map((file) => file.rel)).toEqual([]);
+  });
+
   it("writes an order's number in the store's own format", () => {
     // A store may write its numbers "PL-01042" (order_number_prefix, order_number_digits); a "#"
     // glued to an invoice number by hand writes "#1042" in every store (order-number.ts).

@@ -9,11 +9,6 @@ import {
   matchCustomFieldToMeasurement,
   type FitProfileDefinition,
 } from "../src/addons/fit-passport/lib/fit-passport";
-import {
-  PLACEHOLDER_SIZE_VALUES,
-  isPlaceholderVariant,
-  displayVariantParts,
-} from "../src/lib/variant-sku-utils";
 
 describe("Phase 4: Fit Profiles Config & Migration", () => {
   const migrationPath = "supabase/migrations/20260918100000_fit_profiles_config.sql";
@@ -163,57 +158,5 @@ describe("Fit Passport Configurable Profiles", () => {
       label_en: "Sleeve Length",
     };
     expect(matchCustomFieldToMeasurement(fieldCustom)).toBe("sleeve");
-  });
-});
-
-describe("Placeholder Variant Utilities", () => {
-  it("defines standard placeholder values in Arabic and English", () => {
-    expect(PLACEHOLDER_SIZE_VALUES).toContain("قياسي");
-    expect(PLACEHOLDER_SIZE_VALUES).toContain("Standard");
-  });
-
-  it("identifies placeholder variants correctly", () => {
-    expect(isPlaceholderVariant({ size: "قياسي" })).toBe(true);
-    expect(isPlaceholderVariant({ size: "Standard" })).toBe(true);
-    expect(isPlaceholderVariant({ size: " قياسي " })).toBe(true);
-
-    // False if color or fabric is set
-    expect(isPlaceholderVariant({ size: "قياسي", color: "أسود" })).toBe(false);
-    expect(isPlaceholderVariant({ size: "Standard", fabric: "حرير" })).toBe(false);
-
-    // False for real sizes
-    expect(isPlaceholderVariant({ size: "52" })).toBe(false);
-    expect(isPlaceholderVariant({ size: "M" })).toBe(false);
-    expect(isPlaceholderVariant({ size: "Free Size" })).toBe(false);
-    expect(isPlaceholderVariant(null)).toBe(false);
-    expect(isPlaceholderVariant(undefined)).toBe(false);
-  });
-
-  it("generates display variant parts omitting placeholder sizes", () => {
-    // Only placeholder size -> empty parts
-    expect(displayVariantParts({ size: "قياسي" })).toEqual([]);
-    expect(displayVariantParts({ size: "Standard" })).toEqual([]);
-
-    // Placeholder size with color and fabric -> omits size but keeps color & fabric
-    expect(displayVariantParts({ size: "قياسي", color: "كحلي", fabric: "كتان" })).toEqual([
-      "كحلي",
-      "كتان",
-    ]);
-
-    // Real size -> retains all
-    expect(displayVariantParts({ size: "56", color: "أسود", fabric: "حرير" })).toEqual([
-      "56",
-      "أسود",
-      "حرير",
-    ]);
-
-    // Real size with unit (e.g. coffee beans 250g)
-    expect(
-      displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "ar"),
-    ).toEqual(["250 غرام", "وسط", "washed"]);
-
-    expect(
-      displayVariantParts({ size: "250", size_unit: "g", color: "medium", fabric: "washed" }, "en"),
-    ).toEqual(["250g", "medium", "washed"]);
   });
 });

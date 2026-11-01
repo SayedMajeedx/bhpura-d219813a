@@ -10,7 +10,7 @@ import {
   type StorefrontProductDetail as Product,
   type StorefrontVariant as Variant,
 } from "@/lib/data/storefront";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultVariant, realSize } from "@/lib/default-variant";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import { resolveColorHex } from "@/lib/color-names";
@@ -487,7 +487,7 @@ export function ProductOptionPickers({
         hasVariants &&
         (!showSizeModeToggle || sizeMode === "ready") &&
         !isTailoringActive &&
-        !variants.every(isPlaceholderVariant) && (
+        !variants.every(isDefaultVariant) && (
           <div>
             <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
             <div className="flex flex-wrap gap-2">
@@ -496,7 +496,7 @@ export function ProductOptionPickers({
                 const active = v.id === variantId;
                 const label =
                   [
-                    formatSizeWithUnit(v.size, v.size_unit, lang),
+                    formatSizeWithUnit(realSize(v.size), v.size_unit, lang),
                     translateOptionValue(v.color, lang),
                     translateOptionValue(v.fabric, lang),
                     translateOptionValue(v.option_four, lang),

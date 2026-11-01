@@ -1,3 +1,5 @@
+import { realSize } from "@/lib/default-variant";
+
 /**
  * Pieces held at partners: what an order has taken from them, and whether the totals agree.
  *
@@ -50,16 +52,16 @@ export function holdIsOpen(hold: PartnerHold): boolean {
   return !["completed", "delivered", "picked_up", "cancelled", "canceled"].includes(fulfillment);
 }
 
-/** A piece in words: its product, then the options that tell it apart (never "Standard"). */
+/** A piece in words: its product, then the options that tell it apart (the default size is none). */
 export function pieceName(variant: PartnerHold["product_variants"], lang: Lang): string {
   const product = variant?.products;
   const name =
     (lang === "ar" ? product?.name_ar || product?.name : product?.name || product?.name_ar) ||
     variant?.sku ||
     (lang === "ar" ? "قطعة" : "Piece");
-  const options = [variant?.size, variant?.color]
-    .map((option) => String(option ?? "").trim())
-    .filter((option) => option && option.toLowerCase() !== "standard");
+  const options = [realSize(variant?.size), variant?.color?.trim()].filter(
+    (option): option is string => Boolean(option),
+  );
   return options.length > 0 ? `${name} · ${options.join(" / ")}` : name;
 }
 

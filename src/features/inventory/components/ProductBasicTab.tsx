@@ -273,8 +273,8 @@ export function ProductBasicTab({
           />
           <p className="mt-1.5 text-xs text-muted-foreground">
             {isAr
-              ? "الكمية الجاهزة للبيع فوراً. سيتم إنشاء مقاس افتراضي تلقائياً لتتمكن من بيع المنتج مباشرة."
-              : "Ready-to-sell quantity. A default standard variant is created automatically so you can start selling immediately."}
+              ? "الكمية الجاهزة للبيع فوراً. يُباع المنتج بدون خيارات حتى تضيف له مقاسات أو ألواناً."
+              : "Ready-to-sell quantity. The product is sold with no options until you add sizes or colours."}
           </p>
         </div>
       )}
@@ -363,8 +363,8 @@ export function ProductBasicTab({
         <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span className="leading-relaxed">
             {isAr
-              ? "هل لديك مقاسات أو ألوان متعددة؟ سيتم نشر هذا المنتج بمقاس قياسي تلقائياً، ويمكنك إضافة وتخصيص تفاصيل المقاسات والألوان في أي وقت بعد الحفظ."
-              : "Have multiple sizes or colors? This product will be published with a standard size automatically; you can add and customize variants anytime after saving."}
+              ? "هل لديك مقاسات أو ألوان متعددة؟ يُنشر المنتج بدون خيارات، ويمكنك إضافة المقاسات والألوان في أي وقت بعد الحفظ."
+              : "Have several sizes or colours? The product is published with no options; you can add sizes and colours anytime after saving."}
           </span>
         </div>
       )}

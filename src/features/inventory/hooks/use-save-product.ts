@@ -135,7 +135,7 @@ export function useSaveProduct({
           user_id: user.id,
           brand_id: brand.id,
           product_id: productId,
-          ...defaultVariantValues(form, isAr),
+          ...defaultVariantValues(form),
         },
       ]).catch((error: unknown) => {
         defaultVariantError = error;

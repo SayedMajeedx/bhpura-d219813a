@@ -2,7 +2,7 @@ import type { useStorefront } from "@/lib/storefront-context";
 import { formatPrice } from "@/lib/storefront-context";
 import type { useVocabulary } from "@/hooks/use-vocabulary";
 import { formatCustomField } from "@/lib/addons/custom-fields";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { realSize } from "@/lib/default-variant";
 import type {
   fetchCustomizationOptions,
   StorefrontProductDetail as Product,
@@ -261,13 +261,12 @@ export function productCartLine({
   const effectiveSize =
     showSizeModeToggle && sizeMode === "custom"
       ? vocabulary.custom_sizing?.[lang] || t("قياسات خاصة / حسب الطلب", "Custom Sizing")
-      : targetVariant?.size && !isPlaceholderVariant(targetVariant)
-        ? targetVariant.size
-        : isTailoringActive
+      : (realSize(targetVariant?.size) ??
+        (isTailoringActive
           ? vocabulary.custom_sizing?.[lang] ||
             vocabulary.custom_order?.[lang] ||
             t("حسب الطلب", "Made to order")
-          : targetVariant?.size || null;
+          : null));
 
   return {
     cart_line_id: "",

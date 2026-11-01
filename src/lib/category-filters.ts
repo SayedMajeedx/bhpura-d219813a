@@ -3,7 +3,7 @@ import { formatDuration } from "@/lib/bookings/format";
 import { formatSizeWithUnit } from "@/lib/format";
 import type { CatalogSort } from "@/lib/catalog-sort";
 import { resolveColorHex } from "@/lib/color-names";
-import { PLACEHOLDER_SIZE_VALUES } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import { OCCASION_CHOICES } from "@/lib/product-occasion";
 import { factValues, filterableFacts } from "@/lib/product-facts";
 
@@ -42,8 +42,6 @@ const SORTS: readonly CatalogSort[] = ["new", "old", "price-low", "price-high", 
 
 const norm = (value: string | null | undefined) => (value ?? "").trim();
 const sameColor = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
-const isPlaceholderSize = (size: string) =>
-  (PLACEHOLDER_SIZE_VALUES as readonly string[]).includes(size);
 
 const numberParam = (value: string | null) => {
   if (value === null || value.trim() === "") return null;
@@ -237,7 +235,7 @@ export type CatalogFacets = {
 /**
  * What a shopper can pick, from the products of the page they are on. Each option counts the
  * products that would show if it were picked given every OTHER filter, so one that would leave
- * nothing reads 0. A "Standard" placeholder is not a size and is never offered.
+ * nothing reads 0. The default variant's size names nothing and is never offered.
  */
 export function catalogFacets(
   products: readonly ProductRow[],
@@ -253,7 +251,7 @@ export function catalogFacets(
     if (occasion) occasionValues.add(occasion);
     for (const variant of product.product_variants ?? []) {
       const size = norm(variant.size);
-      if (size && !isPlaceholderSize(size) && !sizeValues.has(size)) {
+      if (!isDefaultSize(size) && !sizeValues.has(size)) {
         const minutes = Number(variant.duration_minutes ?? 0);
         sizeValues.set(size, {
           unit: variant.size_unit ?? null,

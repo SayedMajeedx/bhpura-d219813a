@@ -8,7 +8,7 @@ import {
   productFormFrom,
   validateProductForm,
 } from "../src/features/inventory/lib/product-form";
-import { PLACEHOLDER_SIZE_VALUES } from "../src/lib/variant-sku-utils";
+import { isDefaultVariant } from "../src/lib/default-variant";
 import type { CustomField, Product } from "../src/features/inventory/types";
 
 const product = (overrides: Partial<Product> = {}): Product =>
@@ -114,10 +114,12 @@ describe("saving", () => {
     expect(productColumnsFrom({ ...form, size_guide_hidden: true }).size_guide_id).toBeNull();
   });
 
-  it("builds the default variant with placeholder size and opening stock", () => {
-    expect(defaultVariantValues(form, true)).toMatchObject({
-      size: PLACEHOLDER_SIZE_VALUES[0],
-      fabric: "Silk",
+  it("builds the default variant with no option and the opening stock", () => {
+    // No word in its size and not the product's fabric: either made it read as an option.
+    expect(defaultVariantValues(form)).toMatchObject({
+      size: null,
+      color: null,
+      fabric: null,
       selling_price: 30,
       cost_price: 0,
       stock_main: 4,
@@ -126,10 +128,11 @@ describe("saving", () => {
       // product's picture is a second pointer to a file that can be replaced.
       image_url: null,
     });
-    expect(defaultVariantValues({ ...form, initial_stock: "-3" }, false)).toMatchObject({
-      size: PLACEHOLDER_SIZE_VALUES[1],
+    expect(defaultVariantValues({ ...form, initial_stock: "-3" })).toMatchObject({
+      size: null,
       stock_main: 0,
     });
+    expect(isDefaultVariant(defaultVariantValues(form))).toBe(true);
   });
 });
 

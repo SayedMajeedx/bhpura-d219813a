@@ -2,7 +2,7 @@ import type { StorefrontVariant as Variant } from "@/lib/data/storefront";
 import type { BrandAddonRow } from "@/lib/addons/addon-types";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis } from "@/lib/variant-axes";
-import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
+import { isDefaultSize } from "@/lib/default-variant";
 import {
   productAvailability,
   readyUnitsOf,
@@ -50,13 +50,12 @@ export function uniqueOptionValues(
   return Array.from(new Set(values));
 }
 
-/** Sizes to offer; placeholder sizes are hidden unless every variant is a placeholder. */
+/**
+ * Sizes to offer. A size that names nothing (the default variant's) is never one: it was once
+ * offered as قياسي beside a product's real sizes when the merchant added them after the default.
+ */
 export function offeredSizes(variants: Variant[]): string[] {
-  const allPlaceholder = variants.length > 0 && variants.every(isPlaceholderVariant);
-  const sizes = variants
-    .filter((v) => !allPlaceholder || !isPlaceholderVariant(v))
-    .map((v) => v.size)
-    .filter(Boolean) as string[];
+  const sizes = variants.filter((v) => !isDefaultSize(v.size)).map((v) => v.size as string);
   return Array.from(new Set(sizes));
 }
 

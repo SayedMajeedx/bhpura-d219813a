@@ -1,4 +1,5 @@
 import { splitCompositeVariantSize } from "@/lib/format";
+import { realSize } from "@/lib/default-variant";
 import { SIZE_UNITS } from "@/features/inventory/lib/size-units";
 import type { Product, Variant } from "@/features/inventory/types";
 
@@ -58,7 +59,7 @@ export function newVariantDraft(
   if (cloneFrom) {
     return {
       ...empty,
-      size: cloneFrom.size ?? "",
+      size: realSize(cloneFrom.size) ?? "",
       size_unit: cloneFrom.size_unit ?? "",
       color: "",
       fabric: cloneFrom.fabric ?? "",
@@ -73,7 +74,8 @@ export function newVariantDraft(
       stock_incubator: String(cloneFrom.stock_incubator ?? 0),
     };
   }
-  const existingSize = variants.find((v) => v.size)?.size ?? "";
+  // A size the product already sells, never the default variant's (it names none).
+  const existingSize = variants.map((v) => realSize(v.size)).find(Boolean) ?? "";
   const existingUnit = variants.find((v) => v.size_unit)?.size_unit ?? (SIZE_UNITS[0] || "");
   const existingPrice =
     variants.length > 0 && variants[0].selling_price ? String(variants[0].selling_price) : "";
