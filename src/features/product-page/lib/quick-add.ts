@@ -6,6 +6,7 @@ import {
   readyUnitsOf,
   type AvailabilityProduct,
 } from "@/lib/product-availability";
+import type { VariantField } from "@/lib/variant-axes";
 import { translateOptionValue } from "@/lib/variant-i18n";
 import { isPlaceholderVariant } from "@/lib/variant-sku-utils";
 import { offeredSizes, tailoringState } from "./variant-options";
@@ -32,12 +33,16 @@ export type QuickAddPlan<V extends QuickAddVariant = QuickAddVariant> =
   | { kind: "add"; choices: V[]; tailored: false | undefined; tailorToo: boolean }
   | { kind: "page"; reason: "tailor" | "details" | "book" };
 
-export type QuickAddVariant = Pick<
-  Variant,
-  "id" | "size" | "size_unit" | "color" | "fabric" | "stock_main" | "stock_incubator"
-> & {
+export type QuickAddVariant = {
+  id: string;
+  size?: string | null;
+  size_unit?: string | null;
+  color?: string | null;
+  fabric?: string | null;
   option_four?: string | null;
   option_five?: string | null;
+  stock_main?: number | null;
+  stock_incubator?: number | null;
 };
 
 export type QuickAddProduct = AvailabilityProduct & {
@@ -138,4 +143,63 @@ export function choiceLabel(variant: QuickAddVariant, lang: "ar" | "en"): string
     .map((part) => translateOptionValue(part, lang) || part);
   const parts = [size, ...others].filter(Boolean) as string[];
   return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+/** The options a shopper has picked so far in a quick add (a size, a colour, …). */
+export type Picked = Partial<Record<VariantField, string>>;
+
+const sameValue = (a: string | null | undefined, b: string | null | undefined) =>
+  (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
+
+/** Whether a piece carries every option picked so far. */
+export function fitsPicks(variant: QuickAddVariant, picked: Picked): boolean {
+  return (Object.entries(picked) as [VariantField, string][]).every(([field, value]) =>
+    sameValue(variant[field], value),
+  );
+}
+
+/**
+ * The picks after choosing `value` for `field`: the other picks a piece still has with it are
+ * kept, the rest dropped (choosing a colour that has no 55 lets go of 55).
+ */
+export function pickOption(
+  choices: readonly QuickAddVariant[],
+  picked: Picked,
+  field: VariantField,
+  value: string,
+): Picked {
+  const next: Picked = { [field]: value };
+  for (const [other, chosen] of Object.entries(picked) as [VariantField, string][]) {
+    if (other === field) continue;
+    if (choices.some((variant) => fitsPicks(variant, { ...next, [other]: chosen }))) {
+      next[other] = chosen;
+    }
+  }
+  return next;
+}
+
+/** Whether some piece has `value` for `field` with the shopper's other picks (else it is dimmed). */
+export function valueFits(
+  choices: readonly QuickAddVariant[],
+  picked: Picked,
+  field: VariantField,
+  value: string,
+): boolean {
+  const others: Picked = { ...picked };
+  delete others[field];
+  return choices.some((variant) => fitsPicks(variant, { ...others, [field]: value }));
+}
+
+/**
+ * The piece the shopper has named: an only piece at once, else once every option offered with more
+ * than one value is picked (`openFields`). Nothing is chosen for the shopper.
+ */
+export function chosenChoice<V extends QuickAddVariant>(
+  choices: readonly V[],
+  openFields: readonly VariantField[],
+  picked: Picked,
+): V | null {
+  if (choices.length === 1) return choices[0];
+  if (openFields.some((field) => !picked[field])) return null;
+  return choices.find((variant) => fitsPicks(variant, picked)) ?? null;
 }

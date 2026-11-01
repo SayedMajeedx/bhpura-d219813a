@@ -1,71 +1,51 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { Check, Scissors, ShoppingBag, CalendarDays, SlidersHorizontal } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { Check, Scissors, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useStoreModules, useStorefront } from "@/lib/storefront-context";
-import { buildCartItem } from "@/lib/cart/add-to-cart";
-import { openCartDrawer } from "@/lib/cart-drawer";
+import { useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode } from "@/lib/storefront-mode";
-import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useVariantAxes } from "@/lib/variant-axes";
 import {
   choiceLabel,
-  quickAddPlan,
+  type QuickAddPlan,
   type QuickAddVariant,
 } from "@/features/product-page/lib/quick-add";
+import { useQuickAddActions } from "@/components/storefront/quick-add/use-quick-add";
+import {
+  PageIcon,
+  pageWords,
+  useCustomWord,
+  useLowStockLine,
+} from "@/components/storefront/quick-add/QuickAddParts";
 
 interface QuickAddPopoverProps {
   product: any;
   variants?: any[];
+  /** The card's `quickAddPlan`, read once by the card for this popover and its phone button. */
+  plan: QuickAddPlan;
 }
 
 /**
- * A card's quick add, as `quickAddPlan` reads the product: the size chips (or one button naming
- * the only size) put that piece in the bag and open it, a made-to-order piece's ready size goes in
- * as ready, and what only the product page can take (measurements, details, a booking's day) is
- * one button to that page, opened on tailoring when it is for tailoring.
+ * A card's quick add on a laptop, as `quickAddPlan` reads the product: the size chips (or one
+ * button naming the only size) put that piece in the bag and open it, a made-to-order piece's ready
+ * size goes in as ready, and what only another page can take (measurements, details, a booking's
+ * day) is one button to that page. A phone has its own button and sheet (`QuickAddSheet`).
  */
-export function QuickAddPopover({ product, variants = [] }: QuickAddPopoverProps) {
-  const { brand, addToCart, t, lang, settings } = useStorefront();
-  const modules = useStoreModules();
-  // The store's own word for making to measure, as on the product page's toggle.
-  const { vocabulary } = useVocabulary();
-  const customWord = vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom sizing");
-  const navigate = useNavigate();
+export function QuickAddPopover({ product, variants, plan }: QuickAddPopoverProps) {
+  const { t, lang, settings } = useStorefront();
   const axes = useVariantAxes(product, variants);
+  const actions = useQuickAddActions(product, plan);
+  const customWord = useCustomWord();
+  const lowStock = useLowStockLine();
   const [addedId, setAddedId] = useState<string | null>(null);
-  const plan = useMemo(
-    () =>
-      quickAddPlan(product, variants as QuickAddVariant[], {
-        madeToOrderModule: Boolean(modules.made_to_order),
-      }),
-    [product, variants, modules.made_to_order],
-  );
 
   // A catalog store has no bag: the card's own link to the product page remains.
   if (isCatalogMode(settings) || plan.kind === "none") return null;
 
-  const openPage = (tailor: boolean) =>
-    navigate({
-      to: "/$slug/product/$id",
-      params: { slug: brand.slug, id: product.id },
-      search: tailor ? { mode: "custom" } : {},
-    });
-
   const add = (variant: QuickAddVariant) => {
-    addToCart(
-      buildCartItem({
-        product,
-        variant,
-        qty: 1,
-        ...(plan.kind === "add" && plan.tailored !== undefined ? { tailored: plan.tailored } : {}),
-      }),
-    );
+    actions.add(variant);
     setAddedId(variant.id);
     setTimeout(() => setAddedId(null), 1400);
-    // The bag opens on what was added, as the product page's button does.
-    if (!openCartDrawer()) toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
+    actions.openBag();
   };
 
   const sizeWord = axes.find((axis) => axis.field === "size")?.label || t("المقاس", "Size");
@@ -73,6 +53,18 @@ export function QuickAddPopover({ product, variants = [] }: QuickAddPopoverProps
     label
       ? t(`إضافة ${label} إلى السلة`, `Add ${label} to bag`)
       : t("إضافة إلى السلة", "Add to bag");
+  // The pieces nearly gone, at the store's own low-stock level ("54: باقي قطعة واحدة فقط").
+  const lowLines =
+    plan.kind === "add"
+      ? plan.choices
+          .map((variant) => {
+            const line = lowStock(variant);
+            const label = choiceLabel(variant, lang);
+            return line ? (plan.choices.length > 1 && label ? `${label}: ${line}` : line) : null;
+          })
+          .filter(Boolean)
+          .slice(0, 2)
+      : [];
 
   return (
     <div className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md">
@@ -81,23 +73,11 @@ export function QuickAddPopover({ product, variants = [] }: QuickAddPopoverProps
           type="button"
           size="sm"
           variant="default"
-          onClick={() => openPage(plan.reason === "tailor")}
+          onClick={() => actions.openPage(plan.reason)}
           className="w-full h-8 text-xs font-semibold gap-1.5"
         >
-          {plan.reason === "tailor" ? (
-            <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
-          ) : plan.reason === "book" ? (
-            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
-          ) : (
-            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-          )}
-          <span>
-            {plan.reason === "tailor"
-              ? customWord
-              : plan.reason === "book"
-                ? t("احجز", "Book")
-                : t("اختر التفاصيل", "Choose details")}
-          </span>
+          <PageIcon reason={plan.reason} className="h-3.5 w-3.5" />
+          <span>{pageWords(plan.reason, customWord, t)}</span>
         </Button>
       ) : plan.choices.length === 1 ? (
         <Button
@@ -148,12 +128,17 @@ export function QuickAddPopover({ product, variants = [] }: QuickAddPopoverProps
           </div>
         </div>
       )}
+      {lowLines.map((line) => (
+        <p key={line} className="text-center text-xs font-medium text-foreground" dir="auto">
+          {line}
+        </p>
+      ))}
       {plan.kind === "add" && plan.tailorToo && (
         <Button
           type="button"
           variant="link"
           size="sm"
-          onClick={() => openPage(true)}
+          onClick={() => actions.openPage("tailor")}
           className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground gap-1"
         >
           <Scissors className="h-3 w-3" aria-hidden="true" />
