@@ -35,26 +35,8 @@ export interface BuildCartItemOptions {
   customFields?: CartItem["custom_fields"];
   selectedColor?: string | null;
   selectedSize?: string | null;
-}
-
-/**
- * Checks whether a product can be added via 1-click Quick Add without custom tailoring or file uploads.
- */
-export function canQuickAddToCart(
-  product: AddToCartProductInput & { product_variants?: any[] | null },
-): boolean {
-  if (product.is_made_to_order) {
-    return false;
-  }
-  if (Array.isArray(product.custom_fields) && product.custom_fields.length > 0) {
-    // If any custom field exists, user needs PDP to fill details/notes/files
-    return false;
-  }
-  if (Array.isArray(product.product_variants) && product.product_variants.length > 1) {
-    // Multiple variants require choosing size/color first
-    return false;
-  }
-  return true;
+  /** A made-to-order piece sold in a ready size: false keeps the line ready-made (it takes stock). */
+  tailored?: boolean;
 }
 
 /**
@@ -71,6 +53,7 @@ export function buildCartItem(
   let customFields: CartItem["custom_fields"];
   let selectedColor: string | null | undefined;
   let selectedSize: string | null | undefined;
+  let tailored: boolean | undefined;
 
   if ("product" in optionsOrProduct) {
     product = optionsOrProduct.product;
@@ -79,6 +62,7 @@ export function buildCartItem(
     customFields = optionsOrProduct.customFields;
     selectedColor = optionsOrProduct.selectedColor;
     selectedSize = optionsOrProduct.selectedSize;
+    tailored = optionsOrProduct.tailored;
   } else {
     product = optionsOrProduct;
     variant = maybeVariant;
@@ -123,5 +107,6 @@ export function buildCartItem(
     qty: Math.max(1, qty),
     max_stock,
     custom_fields: customFields || [],
+    ...(tailored === undefined ? {} : { tailored }),
   };
 }

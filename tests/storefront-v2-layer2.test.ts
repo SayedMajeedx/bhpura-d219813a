@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { resolveColorHex, extractUniqueVariantColors } from "../src/lib/color-names";
-import { canQuickAddToCart, buildCartItem } from "../src/lib/cart/add-to-cart";
+import { buildCartItem } from "../src/lib/cart/add-to-cart";
 import {
   recordRecentlyViewed,
   getRecentlyViewedIds,
@@ -46,54 +46,6 @@ describe("Storefront V2 Layer 2 - Color Resolution & Swatches", () => {
 });
 
 describe("Storefront V2 Layer 2 - Safe Quick Add to Cart", () => {
-  it("canQuickAddToCart returns true for simple in-stock products without custom fields", () => {
-    const simpleProduct = {
-      id: "p1",
-      name: "Classic Linen Abaya",
-      custom_fields: null,
-      product_variants: [
-        {
-          id: "v1",
-          stock_main: 3,
-          selling_price: 45,
-        },
-      ],
-    };
-
-    expect(canQuickAddToCart(simpleProduct)).toBe(true);
-  });
-
-  it("canQuickAddToCart returns false for products requiring custom tailoring fields", () => {
-    const bespokeProduct = {
-      id: "p2",
-      name: "Bespoke Evening Gown",
-      custom_fields: [{ key: "length", label_ar: "الطول", required: true }],
-      product_variants: [
-        {
-          id: "v1",
-          stock_main: 3,
-          selling_price: 80,
-        },
-      ],
-    };
-
-    expect(canQuickAddToCart(bespokeProduct)).toBe(false);
-  });
-
-  it("canQuickAddToCart returns false when product has multiple variants", () => {
-    const multiVariantProduct = {
-      id: "p3",
-      name: "Casual Dress",
-      custom_fields: null,
-      product_variants: [
-        { id: "v1", size: "S", stock_main: 2, selling_price: 30 },
-        { id: "v2", size: "M", stock_main: 4, selling_price: 30 },
-      ],
-    };
-
-    expect(canQuickAddToCart(multiVariantProduct)).toBe(false);
-  });
-
   it("buildCartItem constructs complete cart payload with variant details", () => {
     const product = {
       id: "prod-99",

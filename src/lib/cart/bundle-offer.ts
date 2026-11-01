@@ -2,7 +2,7 @@
  * The product page's bundle ("Complete your order"): the piece on the page
  * and a second one, added together in one tap. One tap may add only what the
  * shopper chose and what can be bought, the rule the cards' quick add follows
- * (canQuickAddToCart). The bundle once added the main piece in whatever
+ * (quickAddPlan). The bundle once added the main piece in whatever
  * variant the page held (out of stock, or a size never picked) and the second
  * piece in its first variant (another size), whatever the shopper wore.
  */

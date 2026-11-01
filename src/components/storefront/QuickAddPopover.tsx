@@ -1,196 +1,163 @@
-import React, { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Button } from "@/components/ui/button";
-import { useStorefront } from "@/lib/storefront-context";
-import { buildCartItem, canQuickAddToCart } from "@/lib/cart/add-to-cart";
-import { isCatalogMode } from "@/lib/storefront-mode";
-import { formatSizeWithUnit } from "@/lib/format";
-import { translateOptionValue } from "@/lib/variant-i18n";
+import { Check, Scissors, ShoppingBag, CalendarDays, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
-import { ShoppingBag, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useStoreModules, useStorefront } from "@/lib/storefront-context";
+import { buildCartItem } from "@/lib/cart/add-to-cart";
+import { openCartDrawer } from "@/lib/cart-drawer";
+import { isCatalogMode } from "@/lib/storefront-mode";
+import { useVocabulary } from "@/hooks/use-vocabulary";
+import { useVariantAxes } from "@/lib/variant-axes";
+import {
+  choiceLabel,
+  quickAddPlan,
+  type QuickAddVariant,
+} from "@/features/product-page/lib/quick-add";
 
 interface QuickAddPopoverProps {
   product: any;
   variants?: any[];
-  onOpenQuickView?: () => void;
 }
 
-export function QuickAddPopover({ product, variants = [], onOpenQuickView }: QuickAddPopoverProps) {
+/**
+ * A card's quick add, as `quickAddPlan` reads the product: the size chips (or one button naming
+ * the only size) put that piece in the bag and open it, a made-to-order piece's ready size goes in
+ * as ready, and what only the product page can take (measurements, details, a booking's day) is
+ * one button to that page, opened on tailoring when it is for tailoring.
+ */
+export function QuickAddPopover({ product, variants = [] }: QuickAddPopoverProps) {
   const { brand, addToCart, t, lang, settings } = useStorefront();
+  const modules = useStoreModules();
+  // The store's own word for making to measure, as on the product page's toggle.
+  const { vocabulary } = useVocabulary();
+  const customWord = vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom sizing");
   const navigate = useNavigate();
-  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
-  const [justAdded, setJustAdded] = useState(false);
-  const isAr = lang === "ar";
-
-  const storeVertical = (
-    settings?.store_vertical ||
-    (brand as any)?.store_vertical ||
-    "general"
-  ).toLowerCase();
-
-  const isFood = ["food", "sweets", "cafe", "coffee", "bakery", "restaurant"].includes(
-    storeVertical,
+  const axes = useVariantAxes(product, variants);
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const plan = useMemo(
+    () =>
+      quickAddPlan(product, variants as QuickAddVariant[], {
+        madeToOrderModule: Boolean(modules.made_to_order),
+      }),
+    [product, variants, modules.made_to_order],
   );
-  const isPerfume = ["perfumes", "fragrance", "beauty", "cosmetics"].includes(storeVertical);
-  const isElectronics = ["electronics"].includes(storeVertical);
 
-  const customSizeLabel =
-    (isAr ? product.variant_label_size_ar : product.variant_label_size_en) ||
-    (isAr ? product.variant_label_size_en : product.variant_label_size_ar);
+  // A catalog store has no bag: the card's own link to the product page remains.
+  if (isCatalogMode(settings) || plan.kind === "none") return null;
 
-  const promptText = customSizeLabel
-    ? isAr
-      ? `اختر ${customSizeLabel} للإضافة السريعة`
-      : `Select ${customSizeLabel} for quick add`
-    : isFood
-      ? t("اختر الوزن أو الحجم للإضافة السريعة", "Select weight or size for quick add")
-      : isPerfume
-        ? t("اختر الحجم أو السعة للإضافة السريعة", "Select volume or size for quick add")
-        : isElectronics
-          ? t("اختر الطراز أو السعة للإضافة السريعة", "Select model or capacity for quick add")
-          : t("اختر الخيار للإضافة السريعة", "Select option for quick add");
-
-  // If product requires bespoke tailoring or custom fields, direct to PDP
-  const canQuick = canQuickAddToCart(product);
-
-  const availableVariants = variants.filter((v) => {
-    const stock = Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0);
-    return stock > 0;
-  });
-
-  const handleSelectVariant = (v: any) => {
-    if (!canQuick) {
-      navigate({
-        to: "/$slug/product/$id",
-        params: { slug: brand.slug, id: product.id },
-      });
-      return;
-    }
-
-    setSelectedVariantId(v.id);
-    const cartItem = buildCartItem({
-      product,
-      variant: v,
-      qty: 1,
+  const openPage = (tailor: boolean) =>
+    navigate({
+      to: "/$slug/product/$id",
+      params: { slug: brand.slug, id: product.id },
+      search: tailor ? { mode: "custom" } : {},
     });
-    addToCart(cartItem);
-    setJustAdded(true);
-    toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
 
-    setTimeout(() => {
-      setJustAdded(false);
-      setSelectedVariantId(null);
-    }, 1200);
+  const add = (variant: QuickAddVariant) => {
+    addToCart(
+      buildCartItem({
+        product,
+        variant,
+        qty: 1,
+        ...(plan.kind === "add" && plan.tailored !== undefined ? { tailored: plan.tailored } : {}),
+      }),
+    );
+    setAddedId(variant.id);
+    setTimeout(() => setAddedId(null), 1400);
+    // The bag opens on what was added, as the product page's button does.
+    if (!openCartDrawer()) toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
   };
 
-  const handleDirectAdd = () => {
-    if (!canQuick || availableVariants.length > 1) {
-      if (onOpenQuickView) {
-        onOpenQuickView();
-      } else {
-        navigate({
-          to: "/$slug/product/$id",
-          params: { slug: brand.slug, id: product.id },
-        });
-      }
-      return;
-    }
-
-    const singleVariant = availableVariants[0] || null;
-    const cartItem = buildCartItem({
-      product,
-      variant: singleVariant,
-      qty: 1,
-    });
-    addToCart(cartItem);
-    setJustAdded(true);
-    toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
-
-    setTimeout(() => {
-      setJustAdded(false);
-    }, 1200);
-  };
-
-  const formatVariantLabel = (v: any) => {
-    const formattedSize = v.size ? formatSizeWithUnit(v.size, v.size_unit, lang) : "";
-    // The attribute shown next to the size (colour, fabric, …) is stored in the
-    // merchant's own language, so it has to go through the option lexicon too —
-    // otherwise an English storefront shows "53 (بني)".
-    const extraParts = [v.color, v.fabric, v.option_four, v.option_five, v.name]
-      .filter(Boolean)
-      .filter((part) => part !== v.size)
-      .map((part) => translateOptionValue(String(part), lang) || String(part));
-    const extra = extraParts.length > 0 ? extraParts[0] : "";
-
-    if (formattedSize && extra) {
-      return `${formattedSize} (${extra})`;
-    }
-    if (formattedSize) return formattedSize;
-    if (extra) return extra;
-    return v.name || (isAr ? "خيار" : "Option");
-  };
-
-  const hasMultipleVariants = availableVariants.length > 1;
-
-  // Catalog / inquiry-only storefronts have no cart, so a grid quick-add would
-  // dead-end. The card's own link to the product page remains.
-  if (isCatalogMode(settings)) return null;
+  const sizeWord = axes.find((axis) => axis.field === "size")?.label || t("المقاس", "Size");
+  const addWords = (label: string | null) =>
+    label
+      ? t(`إضافة ${label} إلى السلة`, `Add ${label} to bag`)
+      : t("إضافة إلى السلة", "Add to bag");
 
   return (
-    <div
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-      className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md transition duration-(--motion-fast)"
-    >
-      {hasMultipleVariants ? (
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground text-center">
-            {promptText}
+    <div className="hidden lg:flex flex-col gap-1.5 w-full bg-background/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-md">
+      {plan.kind === "page" ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          onClick={() => openPage(plan.reason === "tailor")}
+          className="w-full h-8 text-xs font-semibold gap-1.5"
+        >
+          {plan.reason === "tailor" ? (
+            <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : plan.reason === "book" ? (
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          <span>
+            {plan.reason === "tailor"
+              ? customWord
+              : plan.reason === "book"
+                ? t("احجز", "Book")
+                : t("اختر التفاصيل", "Choose details")}
           </span>
+        </Button>
+      ) : plan.choices.length === 1 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="default"
+          onClick={() => add(plan.choices[0])}
+          aria-label={addWords(choiceLabel(plan.choices[0], lang))}
+          className="w-full h-8 text-xs font-semibold gap-1.5"
+        >
+          {addedId ? (
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          <span>{addedId ? t("تمت الإضافة", "Added") : t("أضف للسلة", "Add to bag")}</span>
+          {choiceLabel(plan.choices[0], lang) && (
+            <span className="rounded bg-primary-foreground/15 px-1.5 py-0.5" dir="auto">
+              {choiceLabel(plan.choices[0], lang)}
+            </span>
+          )}
+        </Button>
+      ) : (
+        <div className="flex flex-col gap-1" role="group" aria-label={sizeWord}>
+          <span className="text-xs font-medium text-muted-foreground text-center">{sizeWord}</span>
           <div className="flex flex-wrap items-center justify-center gap-1 max-h-24 overflow-y-auto py-0.5">
-            {availableVariants.map((v) => {
-              const label = formatVariantLabel(v);
-              const isAdded = justAdded && selectedVariantId === v.id;
+            {plan.choices.map((variant) => {
+              const label = choiceLabel(variant, lang) ?? t("قياسي", "Standard");
+              const added = addedId === variant.id;
               return (
                 <Button
-                  key={v.id}
+                  key={variant.id}
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleSelectVariant(v)}
-                  className={`h-auto rounded-md px-2.5 py-1 text-xs font-semibold rounded-md border transition duration-(--motion-quick) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
-                    isAdded
+                  onClick={() => add(variant)}
+                  aria-label={addWords(label)}
+                  className={`h-auto rounded-md px-2.5 py-1 text-xs font-semibold border ${
+                    added
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card hover:bg-primary/10 hover:border-primary border-border text-foreground"
                   }`}
                 >
-                  {isAdded ? <Check className="h-3 w-3 inline" /> : label}
+                  {added ? <Check className="h-3 w-3" aria-hidden="true" /> : label}
                 </Button>
               );
             })}
           </div>
         </div>
-      ) : (
+      )}
+      {plan.kind === "add" && plan.tailorToo && (
         <Button
           type="button"
+          variant="link"
           size="sm"
-          variant="default"
-          onClick={handleDirectAdd}
-          className="w-full h-8 text-xs font-semibold gap-1.5"
+          onClick={() => openPage(true)}
+          className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground gap-1"
         >
-          {justAdded ? (
-            <>
-              <Check className="h-3.5 w-3.5 text-primary-foreground" />
-              <span>{t("تمت الإضافة", "Added")}</span>
-            </>
-          ) : (
-            <>
-              <ShoppingBag className="h-3.5 w-3.5" />
-              <span>{t("إضافة سريعة", "Quick Add")}</span>
-            </>
-          )}
+          <Scissors className="h-3 w-3" aria-hidden="true" />
+          {t(`أو ${customWord}`, `Or ${customWord.toLowerCase()}`)}
         </Button>
       )}
     </div>
