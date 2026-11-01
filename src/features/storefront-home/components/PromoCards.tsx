@@ -3,7 +3,10 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { StorefrontLink } from "@/features/storefront-home/components/StorefrontLink";
 import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
 
-/** The home page promo cards (image, title and link), the first image loaded eagerly. */
+/**
+ * The home page promo cards (image, title and link), the first image loaded eagerly. A card with a
+ * title or a line under it is shaded behind them; a card that is only its picture is drawn as it is.
+ */
 export function PromoCards() {
   const { settings, lang } = useStorefront();
   const cards = promoCardsToShow(settings.home_promo_cards);
@@ -41,7 +44,15 @@ export function PromoCards() {
                 decoding={index === firstImageIndex ? "sync" : "async"}
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
+            {/* The shade is there for the card's own words, from the side they start on. A card
+                whose picture carries its words (a designed banner) has no title and keeps its
+                colours: the shade once dimmed the left of every card, words or none. */}
+            {(title || subtitle) && (
+              <div
+                data-testid="promo-card-shade"
+                className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent rtl:bg-gradient-to-l"
+              />
+            )}
             <div className="relative flex h-full flex-col justify-end p-6 text-white">
               {title && <h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>}
               {subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}

@@ -17,6 +17,16 @@ const storefrontModule = async (importOriginal: () => Promise<object>) => ({
 });
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
+// A card is a link to where the store points it; the router is not needed to read the card.
+const linkModule = vi.hoisted(() => () => ({
+  StorefrontLink: ({ children, href, ...rest }: { children: React.ReactNode; href: string }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
+}));
+vi.mock("../src/features/storefront-home/components/StorefrontLink", linkModule);
+vi.mock("@/features/storefront-home/components/StorefrontLink", linkModule);
 
 const { promoAreaShows, promoCardsToShow } =
   await import("../src/features/storefront-home/lib/home-products");
@@ -38,6 +48,21 @@ describe("the promo cards", () => {
     expect(
       promoCardsToShow([{ image_url: "a.jpg" }, { title_ar: " " }, { title_en: "Eid" }, null]),
     ).toHaveLength(2);
+  });
+
+  it("draw a designed banner as it is, and shade only a card's own words", () => {
+    // Pura's two banners carry their words in the picture: the shade dimmed their left side.
+    storefront.settings = {
+      home_promo_cards: [
+        { image_url: "https://media.boutq.store/gift-cards.jpg", href: "/pura/gift-cards" },
+        { image_url: "https://media.boutq.store/eid.jpg", title_en: "Eid edit" },
+      ],
+    };
+    const { getAllByTestId, getByText } = render(<PromoCards />);
+    expect(getAllByTestId("promo-card-shade")).toHaveLength(1);
+    expect(getByText("Eid edit").closest("a")).toContainElement(
+      getAllByTestId("promo-card-shade")[0],
+    );
   });
 
   it("draw nothing when none shows", () => {
