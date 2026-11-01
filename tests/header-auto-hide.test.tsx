@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   HEADER_REVEAL_MS,
   HEADER_SCROLL_STEP,
+  focusHoldsHeader,
   headerMove,
 } from "../src/features/storefront-shell/lib/header-reveal";
 import { useAutoHideHeader } from "../src/features/storefront-shell/hooks/use-auto-hide-header";
@@ -72,14 +73,47 @@ describe("the header on the page", () => {
     expect(hidden()).toBe(false);
   });
 
-  it("stays while it is being used: a link in it has focus", () => {
+  it("stays while it is being used: the keyboard brought focus to a link in it", () => {
     render(<Header />);
     scrollTo(800);
     scrollTo(700);
-    fireEvent.focusIn(screen.getByRole("link", { name: "Abayas" }));
+    // A browser draws the focus ring (:focus-visible) for focus the keyboard moved; jsdom never does.
+    const link = screen.getByRole("link", { name: "Abayas" });
+    vi.spyOn(link, "matches").mockImplementation((selector) => selector === ":focus-visible");
+    fireEvent.focusIn(link);
     act(() => vi.advanceTimersByTime(HEADER_REVEAL_MS * 2));
     expect(hidden()).toBe(false);
     scrollTo(900);
     expect(hidden()).toBe(false);
+  });
+
+  it("is not pinned by focus a script puts in it, such as a closing dialog's trigger", () => {
+    render(<Header />);
+    scrollTo(800);
+    expect(hidden()).toBe(true);
+    const link = screen.getByRole("link", { name: "Abayas" });
+    // A browser draws no focus ring for focus it was given by a script after a click.
+    vi.spyOn(link, "matches").mockImplementation((selector) => selector !== ":focus-visible");
+    fireEvent.focusIn(link);
+    expect(hidden()).toBe(true);
+  });
+});
+
+describe("what focus pins the header", () => {
+  it("is focus the keyboard moved there", () => {
+    const link = document.createElement("a");
+    link.matches = (selector: string) => selector === ":focus-visible";
+    expect(focusHoldsHeader(link)).toBe(true);
+    link.matches = () => false;
+    expect(focusHoldsHeader(link)).toBe(false);
+    expect(focusHoldsHeader(null)).toBe(false);
+  });
+
+  it("keeps the old rule where a browser cannot answer", () => {
+    const link = document.createElement("a");
+    link.matches = () => {
+      throw new SyntaxError("unknown pseudo-class");
+    };
+    expect(focusHoldsHeader(link)).toBe(true);
   });
 });

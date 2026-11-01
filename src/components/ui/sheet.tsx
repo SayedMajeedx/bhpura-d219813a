@@ -7,6 +7,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useReturnFocus } from "@/lib/return-focus";
 
 const Sheet = SheetPrimitive.Root;
 
@@ -65,22 +66,44 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, hideDefaultClose = false, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      {!hideDefaultClose && (
-        <SheetPrimitive.Close
-          aria-label={closeLabel()}
-          className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+>(
+  (
+    {
+      side = "right",
+      className,
+      children,
+      hideDefaultClose = false,
+      onOpenAutoFocus,
+      onCloseAutoFocus,
+      ...props
+    },
+    ref,
+  ) => {
+    // Closing goes back to what opened it, in place: never a jump to a trigger off screen.
+    const focusReturn = useReturnFocus(onOpenAutoFocus, onCloseAutoFocus);
+    return (
+      <SheetPortal>
+        <SheetOverlay />
+        <SheetPrimitive.Content
+          ref={ref}
+          className={cn(sheetVariants({ side }), className)}
+          {...props}
+          {...focusReturn}
         >
-          <X className="h-5 w-5" strokeWidth={2} />
-        </SheetPrimitive.Close>
-      )}
-      {children}
-    </SheetPrimitive.Content>
-  </SheetPortal>
-));
+          {!hideDefaultClose && (
+            <SheetPrimitive.Close
+              aria-label={closeLabel()}
+              className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+            >
+              <X className="h-5 w-5" strokeWidth={2} />
+            </SheetPrimitive.Close>
+          )}
+          {children}
+        </SheetPrimitive.Content>
+      </SheetPortal>
+    );
+  },
+);
 SheetContent.displayName = SheetPrimitive.Content.displayName;
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

@@ -1,11 +1,15 @@
 import { useEffect, useState, type RefObject } from "react";
-import { HEADER_REVEAL_MS, headerMove } from "@/features/storefront-shell/lib/header-reveal";
+import {
+  HEADER_REVEAL_MS,
+  focusHoldsHeader,
+  headerMove,
+} from "@/features/storefront-shell/lib/header-reveal";
 
 /**
  * Whether the store's header is out of view (`headerMove`): it leaves on a scroll down, comes back
  * on a scroll up for `HEADER_REVEAL_MS`, and stays at the top of the page. While the pointer is on
- * it or a control in it has focus it stays, so a menu being used is never taken away; leaving it
- * starts the moment again.
+ * it or the keyboard has brought focus into it (`focusHoldsHeader`) it stays, so a menu being used
+ * is never taken away; leaving it starts the moment again.
  */
 export function useAutoHideHeader(headerRef: RefObject<HTMLElement | null>): boolean {
   const [hidden, setHidden] = useState(false);
@@ -58,6 +62,9 @@ export function useAutoHideHeader(headerRef: RefObject<HTMLElement | null>): boo
       held = false;
       if (window.scrollY > zone()) leaveLater();
     };
+    const onFocusIn = (event: FocusEvent) => {
+      if (focusHoldsHeader(event.target)) hold();
+    };
     const onFocusOut = (event: FocusEvent) => {
       if (!header.contains(event.relatedTarget as Node | null)) release();
     };
@@ -65,13 +72,13 @@ export function useAutoHideHeader(headerRef: RefObject<HTMLElement | null>): boo
     window.addEventListener("scroll", onScroll, { passive: true });
     header.addEventListener("pointerenter", hold);
     header.addEventListener("pointerleave", release);
-    header.addEventListener("focusin", hold);
+    header.addEventListener("focusin", onFocusIn);
     header.addEventListener("focusout", onFocusOut);
     return () => {
       window.removeEventListener("scroll", onScroll);
       header.removeEventListener("pointerenter", hold);
       header.removeEventListener("pointerleave", release);
-      header.removeEventListener("focusin", hold);
+      header.removeEventListener("focusin", onFocusIn);
       header.removeEventListener("focusout", onFocusOut);
       if (frame) cancelAnimationFrame(frame);
       stopTimer();
