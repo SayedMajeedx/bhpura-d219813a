@@ -13,9 +13,19 @@ import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
 import { PRODUCT_PHOTO_CLASS, productCardRatio } from "@/lib/brand-templates/design-presets";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
 import { trackProductEngagement } from "@/lib/storefront-tracking";
-import { Eye } from "lucide-react";
+import { Eye, ShoppingBag } from "lucide-react";
 import { LikeHeart } from "@/components/motion/LikeHeart";
 import { QuickViewModal } from "@/components/storefront/QuickViewModal";
+import { QuickAddSheet } from "@/components/storefront/quick-add/QuickAddSheet";
+import {
+  PageIcon,
+  pageWords,
+  useCustomWord,
+} from "@/components/storefront/quick-add/QuickAddParts";
+import {
+  useQuickAddActions,
+  useQuickAddPlan,
+} from "@/components/storefront/quick-add/use-quick-add";
 import { useReveal } from "@/lib/motion/use-reveal";
 import { nameTappedPhoto } from "@/lib/motion/view-transition";
 import { serviceLengthsText } from "@/lib/bookings/service-lengths";
@@ -76,6 +86,13 @@ export function ProductCardV2({
 
   // Variants & Pricing
   const variants: any[] = Array.isArray(product.product_variants) ? product.product_variants : [];
+
+  // Quick add (one rule with the product page, `quickAddPlan`): a popover on a laptop's hover, a
+  // bag button and a sheet from the foot of the screen on a phone or a tablet.
+  const quickAddPlan = useQuickAddPlan(product, variants);
+  const quickAdd = useQuickAddActions(product, quickAddPlan);
+  const customWord = useCustomWord();
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   // Extract media items
   const mediaList: Array<{ type: string; url: string }> = Array.isArray(product.media)
@@ -351,15 +368,44 @@ export function ProductCardV2({
       {/* Quick add, shown over the photo on hover (a mouse): outside the card's link, so its
           buttons are buttons of their own and never a click on the link. The box takes the
           photo's own shape to sit at its foot. */}
-      {!isOos && settings?.product_card_quick_add !== false && (
-        <div
-          className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} pointer-events-none absolute inset-x-0 top-0 z-20`}
-        >
-          <div className="absolute bottom-2 inset-x-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-(--motion-fast) ease-(--motion-ease-smooth) pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
-            <QuickAddPopover product={product} variants={variants} />
+      {!isOos &&
+        settings?.product_card_quick_add !== false &&
+        !isCatalogMode(settings) &&
+        quickAddPlan.kind !== "none" && (
+          <div
+            className={`${PRODUCT_PHOTO_CLASS[productCardRatio(settings)]} pointer-events-none absolute inset-x-0 top-0 z-20`}
+          >
+            <div className="absolute bottom-2 inset-x-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-(--motion-fast) ease-(--motion-ease-smooth) pointer-events-none group-hover:pointer-events-auto group-focus-within:pointer-events-auto">
+              <QuickAddPopover product={product} variants={variants} plan={quickAddPlan} />
+            </div>
+            {/* A phone or a tablet has no hover: one bag button opens the sheet with the same
+                choices, or goes straight to the page the product needs (to be made to measure,
+                details, a booking's day). */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-touch"
+              onClick={() =>
+                quickAddPlan.kind === "page"
+                  ? quickAdd.openPage(quickAddPlan.reason)
+                  : setQuickAddOpen(true)
+              }
+              aria-label={
+                quickAddPlan.kind === "page"
+                  ? `${pageWords(quickAddPlan.reason, customWord, t)}: ${displayName}`
+                  : t(`إضافة ${displayName} إلى السلة`, `Add ${displayName} to bag`)
+              }
+              className="pointer-events-auto absolute bottom-2.5 end-2.5 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs active:scale-95 lg:hidden"
+            >
+              {quickAddPlan.kind === "page" ? (
+                <PageIcon reason={quickAddPlan.reason} className="h-4 w-4" />
+              ) : (
+                <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+              )}
+            </Button>
           </div>
-        </div>
-      )}
+        )}
+      {quickAddOpen && <QuickAddSheet product={product} onOpenChange={setQuickAddOpen} />}
 
       {/* Quick View Modal */}
       {showQuickView && (

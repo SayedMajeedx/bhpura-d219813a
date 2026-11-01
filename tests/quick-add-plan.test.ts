@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  chosenChoice,
+  pickOption,
+  valueFits,
   choiceLabel,
   isMeasurementField,
   quickAddPlan,
@@ -153,5 +156,36 @@ describe("isMeasurementField", () => {
     expect(isMeasurementField("custom_measurements")).toBe(true);
     expect(isMeasurementField("fit_passport")).toBe(true);
     expect(isMeasurementField("engraving")).toBe(false);
+  });
+});
+
+describe("picking among the pieces", () => {
+  const pieces = [
+    v("b55", "55", 1, { color: "Black" }),
+    v("p54", "54", 1, { color: "Purple" }),
+    v("p56", "56", 1, { color: "Purple" }),
+  ];
+
+  it("names a piece only once every option with more than one value is picked", () => {
+    expect(chosenChoice(pieces, ["size", "color"], {})).toBeNull();
+    expect(chosenChoice(pieces, ["size", "color"], { color: "Purple" })).toBeNull();
+    expect(chosenChoice(pieces, ["size", "color"], { color: "purple", size: "56" })?.id).toBe(
+      "p56",
+    );
+    expect(chosenChoice([pieces[0]], ["size"], {})?.id).toBe("b55");
+  });
+
+  it("lets go of a pick no piece has with the new one", () => {
+    expect(pickOption(pieces, { size: "55" }, "color", "Purple")).toEqual({ color: "Purple" });
+    expect(pickOption(pieces, { size: "54" }, "color", "Purple")).toEqual({
+      color: "Purple",
+      size: "54",
+    });
+  });
+
+  it("dims a value no piece has with the other picks", () => {
+    expect(valueFits(pieces, { color: "Purple" }, "size", "55")).toBe(false);
+    expect(valueFits(pieces, { color: "Purple" }, "size", "54")).toBe(true);
+    expect(valueFits(pieces, { color: "Purple" }, "color", "Black")).toBe(true);
   });
 });
