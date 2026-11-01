@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  benefitAccountNumber,
   heroConfigFrom,
   publicSettingsFromPageData,
 } from "../src/features/storefront-shell/lib/public-settings";
@@ -127,6 +128,23 @@ describe("publicSettingsFromPageData", () => {
     expect(s.homepage_editorial_sections.trending.banner_image_url).toBe("https://cdn/trend.jpg");
     expect(s.storefront_typography.body.ar.family).toBe("Almarai");
     expect(s.storefront_typography.display.ar.family).toBe("Almarai");
+  });
+
+  it("reads the BenefitPay account as the page data really sends it: a list of plain strings", () => {
+    // get_storefront_page_data aggregates a one-column function, so each entry is the value itself.
+    const s = publicSettingsFromPageData(
+      brand,
+      pageData({}, { benefitSettings: ["BH85NBOB00000000001001"] }),
+    );
+    expect(s.benefit_account_number).toBe("BH85NBOB00000000001001");
+  });
+
+  it("has no BenefitPay account to copy when none is written", () => {
+    expect(benefitAccountNumber([])).toBeNull();
+    expect(benefitAccountNumber(null)).toBeNull();
+    expect(benefitAccountNumber(["  "])).toBeNull();
+    expect(benefitAccountNumber([{ benefit_account_number: null }])).toBeNull();
+    expect(benefitAccountNumber([" 36000000 "])).toBe("36000000");
   });
 
   it("takes Benefit and tracking settings from their own rows", () => {

@@ -14,6 +14,24 @@ import type { fetchStorefrontPageData } from "@/lib/data/storefront";
 type PageData = NonNullable<Awaited<ReturnType<typeof fetchStorefrontPageData>>>;
 
 /**
+ * The store's BenefitPay account (an IBAN or a phone number), which checkout and the gift card page
+ * offer to copy. The page-data function sends it as a list of plain strings (`["BH85…"]`): its
+ * source, `get_public_benefit_settings`, returns one column, and Postgres hands `to_jsonb(bs.*)` of
+ * a one-column function the value itself, not a row. Only the row shape
+ * (`[{ benefit_account_number }]`) was read, so the number never reached a shopper. Both are read.
+ */
+export function benefitAccountNumber(rows: unknown): string | null {
+  const first: unknown = Array.isArray(rows) ? rows[0] : null;
+  const value =
+    typeof first === "string"
+      ? first
+      : first && typeof first === "object"
+        ? (first as { benefit_account_number?: unknown }).benefit_account_number
+        : null;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+/**
  * The storefront's public settings from the page data: every setting with
  * its default, pages and socials cleaned up, the editorial sections (with the
  * legacy trending banner), typography (legacy font columns win when set),
@@ -104,7 +122,7 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     card_enabled: s?.card_enabled ?? false,
     benefit_enabled: s?.benefit_enabled ?? false,
     benefit_qr_url: s?.benefit_qr_url ?? null,
-    benefit_account_number: (benefitSettings as any[])?.[0]?.benefit_account_number ?? null,
+    benefit_account_number: benefitAccountNumber(benefitSettings),
     footer_note: s?.footer_note ?? null,
     delivery_enabled: s?.delivery_enabled ?? true,
     pickup_enabled: s?.pickup_enabled ?? true,
