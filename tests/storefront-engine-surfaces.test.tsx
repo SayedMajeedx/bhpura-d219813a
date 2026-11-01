@@ -50,6 +50,7 @@ vi.mock("@/features/settings/use-brand-settings-form", (io) => settingsFormModul
 const storefrontModule = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   useStorefront: () => storefront,
+  useStoreModules: () => ({}),
 });
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));

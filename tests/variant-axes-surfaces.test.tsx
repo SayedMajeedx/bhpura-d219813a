@@ -23,11 +23,13 @@ vi.mock("../src/lib/storefront-context", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useStorefront: storefront,
   useIsServicesStore: () => false,
+  useStoreModules: () => ({}),
 }));
 vi.mock("@/lib/storefront-context", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   useStorefront: storefront,
   useIsServicesStore: () => false,
+  useStoreModules: () => ({}),
 }));
 vi.mock("../src/components/addons/AddonsProvider", async (importOriginal) => ({
   ...(await importOriginal<object>()),

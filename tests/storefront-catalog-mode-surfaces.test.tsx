@@ -44,6 +44,7 @@ const storefrontModule = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   useStorefront: () => storefront,
   useIsServicesStore: () => false,
+  useStoreModules: () => ({}),
 });
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
