@@ -36,6 +36,16 @@ const storefrontMock = vi.hoisted(() => () => ({
     t: (ar: string, en: string) => (state.lang === "ar" ? ar : en),
   }),
 }));
+// The shop's footer links the store's own new-arrivals category.
+const categoriesMock = vi.hoisted(() => () => ({
+  useStorefrontCategories: () => ({
+    data: [
+      { slug: "new-arrivals", name_en: "New Arrivals", name_ar: "وصل حديثاً", parent_id: null },
+    ],
+  }),
+}));
+vi.mock("../src/lib/use-storefront-categories", categoriesMock);
+vi.mock("@/lib/use-storefront-categories", categoriesMock);
 vi.mock("../src/lib/storefront-context", storefrontMock);
 vi.mock("@/lib/storefront-context", storefrontMock);
 vi.mock("../src/components/storefront/NewsletterForm", () => ({ NewsletterForm: () => <div /> }));

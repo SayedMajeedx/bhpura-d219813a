@@ -9,6 +9,8 @@ import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { StorefrontSocialIcon } from "@/features/storefront-shell/components/StorefrontSocialIcon";
 import { footerGroupTitles, footerPageGroups } from "@/features/storefront-shell/lib/footer-pages";
+import { footerCollections } from "@/features/storefront-shell/lib/footer-collections";
+import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { ChevronDown } from "lucide-react";
 
 type SectionKey = "shop" | "company" | "help";
@@ -29,6 +31,9 @@ export function FooterV2() {
   const servicesStore = useIsServicesStore();
   // Shown while the store sells gift cards online (step four).
   const sellsGiftCards = Boolean(useQuery(giftCardOnlineQueries.offer(brand.slug)).data);
+  // New arrivals and sale only while the store shows those categories, as the header does.
+  const { data: categories = [] } = useStorefrontCategories();
+  const collections = footerCollections(categories, isAr);
 
   const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
     shop: false,
@@ -109,22 +114,17 @@ export function FooterV2() {
           >
             {t("كل المنتجات", "All Products")}
           </Link>
-          <Link
-            to="/$slug/$category"
-            params={{ slug: brand.slug, category: "new" }}
-            className={linkClass}
-            style={FG}
-          >
-            {t("وصل حديثاً", "New Arrivals")}
-          </Link>
-          <Link
-            to="/$slug/$category"
-            params={{ slug: brand.slug, category: "sale" }}
-            className={`${linkClass} font-semibold`}
-            style={FG}
-          >
-            {t("تنزيلات", "Sale")}
-          </Link>
+          {collections.map((c) => (
+            <Link
+              key={c.slug}
+              to="/$slug/$category"
+              params={{ slug: brand.slug, category: c.slug }}
+              className={c.sale ? `${linkClass} font-semibold` : linkClass}
+              style={FG}
+            >
+              {c.name}
+            </Link>
+          ))}
         </>
       )}
     </>
