@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { piecesHint, piecesQuestion } from "@/features/inventory/lib/first-sizes";
 
 /**
@@ -31,22 +31,19 @@ export function FirstSizePiecesPicker({
         {options.map((label, index) => {
           const on = index === chosen;
           return (
-            <button
+            <Button
               key={`${label}-${index}`}
               type="button"
               role="radio"
               aria-checked={on}
+              variant={on ? "default" : "outline"}
+              size="sm"
               onClick={() => onChoose(index)}
-              className={cn(
-                "inline-flex min-h-9 items-center gap-1 rounded-full border px-3 text-sm pointer-coarse:min-h-11",
-                on
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:bg-muted",
-              )}
+              className="min-h-9 gap-1 rounded-full px-3 pointer-coarse:min-h-11"
             >
               {on && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
               <span dir="auto">{label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>

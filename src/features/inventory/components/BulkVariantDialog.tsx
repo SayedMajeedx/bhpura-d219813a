@@ -38,7 +38,8 @@ import { useBulkBatchControls } from "@/features/inventory/hooks/use-bulk-batch-
 import {
   buildBulkVariantRows,
   parsedPlanMessage,
-  bulkRowPricing,
+  bulkRowColumns,
+  bulkRowLabel,
   hasInvalidBulkRows,
 } from "@/features/inventory/lib/bulk-variants";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
@@ -51,10 +52,6 @@ import {
   leftoverMessage,
 } from "@/features/inventory/lib/first-sizes";
 import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
-
-/** A generated row in words: its size and colour. */
-const rowLabel = (row: BulkVariantRow) =>
-  [row.size, row.color].filter((part) => part && part.trim()).join(" · ") || row.sku;
 
 export function BulkVariantDialog({
   productId,
@@ -245,17 +242,8 @@ export function BulkVariantDialog({
     try {
       const user = await getCurrentUser();
       if (!user) throw new Error("AUTH_REQUIRED");
-      const columns = (row: BulkVariantRow) => ({
-        size: row.size || null,
-        size_unit: row.size_unit || null,
-        color: row.color || null,
-        fabric: row.fabric || null,
-        option_four: null,
-        option_five: null,
-        sku: row.sku.trim(),
-        barcode: row.barcode.trim(),
-        ...bulkRowPricing(row.sale_price, Number(product?.base_price ?? 0)),
-      });
+      const columns = (row: BulkVariantRow) =>
+        bulkRowColumns(row, Number(product?.base_price ?? 0));
       const newRows = rows.filter((_, index) => index !== becomeAt);
       if (newRows.length > 0) {
         await createVariants(
@@ -275,7 +263,7 @@ export function BulkVariantDialog({
       if (first.kind === "become" && becomeAt >= 0) {
         // The pieces it has are this size: it keeps them, their history and its orders.
         await updateVariant(brand.id, first.defaultId, becomePatch(columns(rows[becomeAt])));
-        toast.success(becameMessage(first.pieces, rowLabel(rows[becomeAt]), isAr));
+        toast.success(becameMessage(first.pieces, bulkRowLabel(rows[becomeAt]), isAr));
       }
       if (first.kind === "replace") {
         // The new sizes are in first, so the product always keeps one.
@@ -583,7 +571,7 @@ export function BulkVariantDialog({
         {first.kind === "become" && rows.length > 0 && (
           <FirstSizePiecesPicker
             pieces={first.pieces}
-            options={rows.map(rowLabel)}
+            options={rows.map(bulkRowLabel)}
             chosen={becomeAt}
             onChoose={setPiecesRow}
             isAr={isAr}

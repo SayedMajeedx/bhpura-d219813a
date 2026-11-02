@@ -159,3 +159,23 @@ export function parsedPlanMessage(sizeCount: number, colorCount: number, isAr: b
   if (colorCount > 0) return `Extracted ${colorCount} colors`;
   return "Data extracted successfully";
 }
+
+/** A generated row in words: its size and colour (its code when it has neither). */
+export function bulkRowLabel(row: BulkVariantRow): string {
+  return [row.size, row.color].filter((part) => part && part.trim()).join(" · ") || row.sku;
+}
+
+/** A row's options, codes and prices as the variant's columns (its stock and cost apart). */
+export function bulkRowColumns(row: BulkVariantRow, basePrice: number) {
+  return {
+    size: row.size || null,
+    size_unit: row.size_unit || null,
+    color: row.color || null,
+    fabric: row.fabric || null,
+    option_four: null,
+    option_five: null,
+    sku: row.sku.trim(),
+    barcode: row.barcode.trim(),
+    ...bulkRowPricing(row.sale_price, basePrice),
+  };
+}
