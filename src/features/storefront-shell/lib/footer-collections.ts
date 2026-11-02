@@ -16,12 +16,6 @@ export type FooterCollection = {
   sale: boolean;
 };
 
-/**
- * The newest pieces and the sale in the footer's Shop column: the store's own categories of those
- * kinds, as the header menu shows them. A category the store paused is not in the list the
- * storefront reads (`is_active`), so its link leaves the footer with it: the footer once wrote
- * "New arrivals" and "Sale" for every store, and Pura's paused sale stayed in its footer.
- */
 /** The slug says it (`smartKindOf`), else the store's own names, as the header marks its sale. */
 function kindOf(c: CategoryRow): "new" | "offers" | null {
   const kind = smartKindOf(c.slug);
@@ -33,6 +27,12 @@ function kindOf(c: CategoryRow): "new" | "offers" | null {
   return null;
 }
 
+/**
+ * The newest pieces and the sale in the footer's Shop column: the store's own categories of those
+ * kinds, as the header menu shows them. A category the store paused is not in the list the
+ * storefront reads (`is_active`), so its link leaves the footer with it: the footer once wrote
+ * "New arrivals" and "Sale" for every store, and Pura's paused sale stayed in its footer.
+ */
 export function footerCollections(
   categories: readonly CategoryRow[],
   isAr: boolean,
