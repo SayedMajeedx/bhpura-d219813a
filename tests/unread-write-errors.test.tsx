@@ -74,9 +74,15 @@ const product = { id: "p1", name: "Abaya", base_price: 20, is_active: true } as 
 const refused = { message: "permission denied for table product_variants" };
 
 describe("saving a product whose default variant is refused", () => {
-  const save = async (existing: Product | null) => {
+  const save = async (existing: Product | null, sizes: string[] = []) => {
     const onSaved = vi.fn();
-    const form = { ...productFormFrom(existing ?? undefined), name_en: "Abaya", is_active: true };
+    const form = {
+      ...productFormFrom(existing ?? undefined),
+      name_en: "Abaya",
+      is_active: true,
+      sizes,
+      size_stock: { "54": "2" },
+    };
     const { result } = renderHook(() =>
       useSaveProduct({
         product: existing,
@@ -101,10 +107,22 @@ describe("saving a product whose default variant is refused", () => {
     expect(catalog.createVariants).toHaveBeenCalledTimes(1);
     expect(onSaved).toHaveBeenCalledTimes(1);
     expect(toast.error).toHaveBeenCalledWith(
-      expect.stringContaining("its default variant could not be created"),
+      expect.stringContaining("its sizes could not be created"),
       expect.anything(),
     );
     expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("makes a new product in the sizes chosen before its first save, never a default beside them", async () => {
+    await save(null, ["52", "54"]);
+    expect(catalog.createVariants).toHaveBeenCalledTimes(1);
+    const rows = (
+      catalog.createVariants.mock.calls[0] as unknown as [string, Array<Record<string, unknown>>]
+    )[1];
+    expect(rows.map((row) => [row.size, row.stock_main])).toEqual([
+      ["52", 0],
+      ["54", 2],
+    ]);
   });
 
   it("confirms an update whose default variant was created", async () => {

@@ -295,3 +295,62 @@ describe("removing variants", () => {
     expect(toast.success).toHaveBeenCalledWith("1 variant deleted.");
   });
 });
+
+describe("adding a size to a product sold so far with no options", () => {
+  const axis = { label: "", visible: true, isCustom: false };
+  const axes = { size: axis, color: axis, fabric: axis, four: axis, five: axis };
+  const product = { id: "p1", item_kind: "product", base_price: 20 } as never;
+  const mutations = (list: Variant[]) =>
+    renderHook(() =>
+      useVariantMutations({
+        productId: "p1",
+        product,
+        variants: list,
+        axes,
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    ).result.current;
+  const row = (stock: string) => ({ ...emptyVariantDraft(), size: "52", stock_main: stock });
+  const blank = variant({ id: "d", size: null, stock_main: 3 });
+
+  it("turns the default holding pieces into the size, keeping them", async () => {
+    const { add } = mutations([blank]);
+    await act(() => add(row("3"), vi.fn()));
+    expect(catalog.createVariants).not.toHaveBeenCalled();
+    expect(catalog.updateVariant).toHaveBeenCalledWith(
+      "b1",
+      "d",
+      expect.objectContaining({ size: "52" }),
+    );
+    expect(catalog.updateVariant.mock.calls[0][2]).not.toHaveProperty("stock_main");
+    expect(catalog.adjustVariantStock).not.toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith("Your 3 pieces in stock are now 52.");
+  });
+
+  it("records a changed count through the stock ledger", async () => {
+    const { add } = mutations([blank]);
+    await act(() => add(row("5"), vi.fn()));
+    expect(catalog.adjustVariantStock).toHaveBeenCalledWith(
+      expect.objectContaining({ variantId: "d", mode: "set", value: 5 }),
+    );
+  });
+
+  it("adds the size first, then removes a default with no pieces", async () => {
+    const { add } = mutations([variant({ id: "d", size: null, stock_main: 0 })]);
+    await act(() => add(row("0"), vi.fn()));
+    expect(catalog.createVariants).toHaveBeenCalledTimes(1);
+    expect(catalog.removeVariants).toHaveBeenCalledWith(["d"]);
+    expect(catalog.createVariants.mock.invocationCallOrder[0]).toBeLessThan(
+      catalog.removeVariants.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("only adds to a product that already has sizes", async () => {
+    const { add } = mutations([variant({ id: "a", size: "54" })]);
+    await act(() => add(row("0"), vi.fn()));
+    expect(catalog.createVariants).toHaveBeenCalledTimes(1);
+    expect(catalog.removeVariants).not.toHaveBeenCalled();
+    expect(catalog.updateVariant).not.toHaveBeenCalled();
+  });
+});

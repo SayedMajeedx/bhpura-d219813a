@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Check, EyeOff, Plus } from "lucide-react";
+import { EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,12 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { SizeChoicesField } from "@/components/inventory/SizeChoicesField";
 import {
   emptyNewProduct,
   newProductProblems,
   usualSizes,
-  withSize,
   type NewProductForm,
 } from "../lib/new-product";
 import { useCreateOrderProduct } from "../hooks/use-create-order-product";
@@ -49,11 +48,9 @@ export function NewProductDialog({
   const isAr = lang === "ar";
   const uid = useId();
   const [form, setForm] = useState<NewProductForm>(emptyNewProduct);
-  const [typedSize, setTypedSize] = useState("");
   const [tried, setTried] = useState(false);
   const { create, saving } = useCreateOrderProduct(brandId, isAr);
   const offered = useMemo(() => usualSizes(catalogVariants), [catalogVariants]);
-  const choices = [...offered, ...form.sizes.filter((s) => !offered.includes(s))];
   const problems = tried ? newProductProblems(form) : [];
 
   const reset = () => {
@@ -61,19 +58,8 @@ export function NewProductDialog({
       ...emptyNewProduct(),
       [isAr ? "nameAr" : "nameEn"]: startName.trim(),
     });
-    setTypedSize("");
     setTried(false);
   };
-  const toggle = (size: string) =>
-    setForm((f) => ({
-      ...f,
-      sizes: f.sizes.includes(size) ? f.sizes.filter((s) => s !== size) : [...f.sizes, size],
-    }));
-  const addTyped = () => {
-    setForm((f) => ({ ...f, sizes: withSize(f.sizes, typedSize) }));
-    setTypedSize("");
-  };
-
   const save = async () => {
     setTried(true);
     if (newProductProblems(form).length > 0) return;
@@ -136,68 +122,22 @@ export function NewProductDialog({
           </p>
         )}
 
-        <fieldset className="space-y-1.5">
-          <legend className="text-sm font-medium">{isAr ? "المقاسات" : "Sizes"}</legend>
-          {choices.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {choices.map((size) => {
-                const on = form.sizes.includes(size);
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => toggle(size)}
-                    className={cn(
-                      "inline-flex min-h-9 items-center gap-1 rounded-full border px-3 text-sm pointer-coarse:min-h-11",
-                      on
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border hover:bg-muted",
-                    )}
-                  >
-                    {on && <Check className="h-3.5 w-3.5" aria-hidden="true" />}
-                    <span dir="auto">{size}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="flex min-w-0 gap-2">
-            <Input
-              aria-label={isAr ? "مقاس آخر" : "Another size"}
-              value={typedSize}
-              maxLength={40}
-              placeholder={isAr ? "مقاس آخر" : "Another size"}
-              onChange={(e) => setTypedSize(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addTyped();
-                }
-              }}
-              className="min-w-0 flex-1"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addTyped}
-              disabled={!typedSize.trim()}
-              className="shrink-0 gap-1"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {form.sizes.length === 0
+        <SizeChoicesField
+          legend={isAr ? "المقاسات" : "Sizes"}
+          offered={offered}
+          sizes={form.sizes}
+          onSizes={(sizes) => setForm((f) => ({ ...f, sizes }))}
+          hint={
+            form.sizes.length === 0
               ? isAr
                 ? "بلا مقاس: يكون مقاساً واحداً."
                 : "No size chosen: it comes in one size."
               : isAr
                 ? `المقاسات المختارة: ${form.sizes.length}`
-                : `${form.sizes.length} ${form.sizes.length === 1 ? "size" : "sizes"} chosen`}
-          </p>
-        </fieldset>
+                : `${form.sizes.length} ${form.sizes.length === 1 ? "size" : "sizes"} chosen`
+          }
+          isAr={isAr}
+        />
 
         <div className="space-y-1">
           <Label htmlFor={`${uid}-price`}>

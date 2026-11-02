@@ -25,6 +25,14 @@ import {
   variantDeleteError,
 } from "@/features/inventory/lib/variant-delete";
 import type { StockChangeRequest } from "@/features/inventory/lib/stock-change";
+import {
+  becameMessage,
+  becomePatch,
+  firstSizes,
+  leftoverMessage,
+} from "@/features/inventory/lib/first-sizes";
+import { displayVariantParts } from "@/lib/variant-sku-utils";
+import { defaultVariantLabel } from "@/lib/default-variant";
 
 /**
  * Add, edit and remove one product's variants (a size with a history is archived). Stock edits go through the
@@ -77,17 +85,44 @@ export function useVariantMutations({
       },
       product,
     );
+    // A product sold so far with no options: its default never stays beside the new size.
+    const first = firstSizes(variants);
     try {
-      await createVariants(brandId, [
-        {
-          user_id: user.id,
-          brand_id: brandId,
-          product_id: productId,
-          ...values,
-        },
-      ]);
+      if (first.kind === "become") {
+        // Its pieces are this size: it keeps them, its history and its orders.
+        await updateVariant(brandId, first.defaultId, becomePatch(values));
+        const now = Number(variants[0].stock_main ?? 0);
+        if (Number(values.stock_main) !== now) {
+          await adjustVariantStock({
+            variantId: first.defaultId,
+            location: "main",
+            mode: "set",
+            value: Math.max(0, Number(values.stock_main) || 0),
+            note: "Admin variant table: the product's first size",
+          });
+        }
+      } else {
+        await createVariants(brandId, [
+          {
+            user_id: user.id,
+            brand_id: brandId,
+            product_id: productId,
+            ...values,
+          },
+        ]);
+      }
     } catch (error) {
       return toast.error(getFriendlyErrorMessage(error));
+    }
+    if (first.kind === "replace") {
+      // The new size is in first, so the product always keeps one.
+      await removeVariants([first.defaultId]).catch(() => toast.error(leftoverMessage(isAr)));
+    }
+    if (first.kind === "become") {
+      const name =
+        displayVariantParts(values, isAr ? "ar" : "en").join(" · ") ||
+        defaultVariantLabel(isAr ? "ar" : "en");
+      toast.success(becameMessage(first.pieces, name, isAr));
     }
     prefetchOptionTranslations([finalColor, row.fabric, row.option_four, row.option_five], isAr);
 

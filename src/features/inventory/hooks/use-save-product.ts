@@ -20,6 +20,7 @@ import type { Product } from "@/features/inventory/types";
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import {
   defaultVariantValues,
+  newProductVariants,
   productColumnsFrom,
   validateProductForm,
   type ProductForm,
@@ -210,7 +211,19 @@ export function useSaveProduct({
           );
         });
       } else {
-        await newDefaultVariant(createdProductId);
+        // Its sizes, chosen before this first save, or its default variant (no options).
+        const productId = createdProductId;
+        await createVariants(
+          brand.id,
+          newProductVariants(form).map((values) => ({
+            user_id: user.id,
+            brand_id: brand.id,
+            product_id: productId,
+            ...values,
+          })),
+        ).catch((error: unknown) => {
+          defaultVariantError = error;
+        });
         prefetchOptionTranslations([form.fabric_type], isAr);
         // A new made-to-order product's first limit: set by the database setter, like any later change.
         const firstLimit = parseMadeToOrderLimit(form.made_to_order_limit);
@@ -244,8 +257,8 @@ export function useSaveProduct({
     if (defaultVariantError) {
       toast.error(
         isAr
-          ? "تم حفظ المنتج، لكن تعذر إنشاء المتغير الافتراضي، فلا يمكن شراؤه بعد. أضف متغيراً من تبويب المتغيرات."
-          : "The product was saved, but its default variant could not be created, so it cannot be bought yet. Add a variant in the Variants tab.",
+          ? "تم حفظ المنتج، لكن تعذر إنشاء مقاساته، فلا يمكن شراؤه بعد. أضفها من جدول الخيارات."
+          : "The product was saved, but its sizes could not be created, so it cannot be bought yet. Add them in its variants table.",
         { description: getFriendlyErrorMessage(defaultVariantError) },
       );
     } else if (product) {
