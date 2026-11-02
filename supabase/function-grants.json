@@ -436,6 +436,11 @@
       "authenticated": true,
       "reason": "Signed-in staff who handle orders and see the finances of the store: checked inside (can_access_brand, has_permission; manage_inventory to keep a piece for sale); only for a piece of a cancelled order"
     },
+    "remove_product_variants(p_variant_ids uuid[])": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: each size is checked with can_access_brand and manage_inventory; a size with history is archived, never deleted, at most 500 at once"
+    },
     "remove_web_push_subscription(p_endpoint text)": {
       "anon": false,
       "authenticated": true,

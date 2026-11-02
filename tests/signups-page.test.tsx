@@ -47,6 +47,7 @@ const catalog = {
   catalogQueries: {
     products: () => options("products", () => stubs.products),
     variants: () => options("variants", () => stubs.variants),
+    variantsWithArchived: () => options("variants", () => stubs.variants),
   },
 };
 vi.mock("../src/lib/data/catalog", () => catalog);

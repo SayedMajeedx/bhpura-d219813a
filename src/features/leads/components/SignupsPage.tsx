@@ -59,7 +59,8 @@ export function SignupsPage() {
   const requestsQ = useQuery(leadsQueries.backInStock(brandId));
   const subscribersQ = useQuery(leadsQueries.newsletter(brandId));
   const productsQ = useQuery(catalogQueries.products(brandId));
-  const variantsQ = useQuery(catalogQueries.variants(brandId));
+  // Archived sizes too: a request names the size it was for (one with no piece is not back).
+  const variantsQ = useQuery(catalogQueries.variantsWithArchived(brandId));
   const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
 
   const groups = useMemo(

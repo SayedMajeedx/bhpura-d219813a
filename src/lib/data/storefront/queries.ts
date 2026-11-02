@@ -158,6 +158,7 @@ export async function fetchStorefrontProducts(brandId: string): Promise<ProductR
     supabase
       .from("products")
       .select(PRODUCT_CARD_SELECT, { count: "exact" })
+      .is("product_variants.archived_at", null)
       .eq("brand_id", brandId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -176,6 +177,7 @@ export async function fetchProductsByIds(
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_CARD_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("brand_id", brandId)
     .eq("is_active", true)
     .in("id", [...ids]);
@@ -192,6 +194,7 @@ async function fetchProductById(
   const { data, error } = await supabase
     .from("products")
     .select(PRODUCT_DETAIL_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("id", productId)
     .eq("brand_id", brandId)
     .eq("is_active", true)
@@ -202,6 +205,7 @@ async function fetchProductById(
   const { data: fallback } = await supabase
     .from("products")
     .select(PRODUCT_DETAIL_BASE_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("id", productId)
     .eq("brand_id", brandId)
     .eq("is_active", true)
@@ -262,6 +266,7 @@ export async function fetchProductDetail(
   const { data } = await supabase
     .from("products")
     .select(PRODUCT_DETAIL_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("brand_id", brandId)
     .eq("is_active", true)
     .or(`name_en.ilike.${nameGuess},name.ilike.${nameGuess}`)
@@ -276,6 +281,7 @@ export async function fetchRecommendationCatalog(
     supabase
       .from("products")
       .select(RECOMMENDATION_SELECT, { count: "exact" })
+      .is("product_variants.archived_at", null)
       .eq("brand_id", brandId)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
@@ -338,6 +344,7 @@ export async function fetchCategoryProducts(
     let query = supabase
       .from("products")
       .select(PRODUCT_CARD_SELECT, counted ? { count: "exact" } : undefined)
+      .is("product_variants.archived_at", null)
       .eq("brand_id", brand.id)
       .eq("is_active", true);
     if (scope.kind === "categories") query = query.in("category", scope.values);
@@ -394,6 +401,7 @@ export async function fetchStorefrontSearch(brandId: string, term: string): Prom
   let query = supabase
     .from("products")
     .select(PRODUCT_CARD_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("brand_id", brandId)
     .eq("is_active", true);
   for (const filter of filters) query = query.or(filter);
@@ -415,6 +423,7 @@ export async function fetchQuickSearch(
   let query = supabase
     .from("products")
     .select(QUICK_SEARCH_SELECT)
+    .is("product_variants.archived_at", null)
     .eq("brand_id", brandId)
     .eq("is_active", true);
   for (const filter of filters) query = query.or(filter);

@@ -4,7 +4,7 @@ import { useBrand } from "@/lib/brand-context";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   adjustVariantStock,
-  deleteVariants,
+  removeVariants,
   updateVariant,
   updateVariants,
 } from "@/lib/data/catalog";
@@ -14,6 +14,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   keepOneVariantMessage,
   leavesAVariant,
+  removedMessage,
   variantDeleteError,
 } from "@/features/inventory/lib/variant-delete";
 
@@ -143,12 +144,11 @@ export function useVariantBulkActions(
     });
     if (!ok) return;
     try {
-      await deleteVariants(brandId, Array.from(selectedIds));
+      toast.success(removedMessage(await removeVariants(Array.from(selectedIds)), isAr));
     } catch (error) {
       toast.error(variantDeleteError(error, isAr));
       return;
     }
-    toast.success(isAr ? "تم حذف المتغيرات بنجاح" : "Variants deleted successfully");
     setSelectedIds(new Set());
     onChanged();
   };

@@ -222,7 +222,8 @@ export async function fetchBatchTransferVariants(brandId: string, productIds: re
         "id, product_id, sku, barcode, size, color, stock_main, stock_incubator, selling_price, incubator_inventory(quantity, incubator_id)",
         { count: "exact" },
       )
-      .eq("brand_id", brandId);
+      .eq("brand_id", brandId)
+      .is("archived_at", null);
     return (byIds ? base.in("product_id", [...productIds]) : base).order("id").range(from, to);
   });
   const wanted = new Set(productIds);

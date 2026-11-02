@@ -60,6 +60,8 @@ export async function handleProductFeedRequest(
         .from("product_variants")
         .select(VARIANT_COLUMNS, { count: "exact" })
         .eq("brand_id", brand.id)
+        // An archived size (removed, kept for its history) is not sold.
+        .is("archived_at", null)
         .order("id")
         .range(from, to),
     ),

@@ -106,6 +106,7 @@ const mocks: Record<string, unknown> = {
     catalogQueries: {
       products: () => options("products", () => products),
       variants: () => options("variants", () => variants),
+      variantsWithArchived: () => options("variants", () => variants),
     },
   },
   "data/accounting": {

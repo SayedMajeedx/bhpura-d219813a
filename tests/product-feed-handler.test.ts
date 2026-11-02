@@ -18,8 +18,15 @@ function builder(table: string) {
     filters.push([table, column, value]);
     return chain;
   };
+  // `is` matches a missing column as null, as the database reads an unset one.
+  const nulls: Array<[string, unknown]> = [];
+  chain.is = (column: string, value: unknown) => (nulls.push([column, value]), chain);
   const matching = () =>
-    (rows[table] ?? []).filter((row) => own.every(([column, value]) => row[column] === value));
+    (rows[table] ?? []).filter(
+      (row) =>
+        own.every(([column, value]) => row[column] === value) &&
+        nulls.every(([column, value]) => (row[column] ?? null) === value),
+    );
   chain.maybeSingle = async () => ({ data: matching()[0] ?? null, error: null });
   chain.then = (resolve: (value: unknown) => void) => {
     const data = matching();
@@ -53,6 +60,16 @@ beforeEach(() => {
   ];
   rows.product_variants = [
     { id: "v1", product_id: "p1", brand_id: "b1", size: "52", selling_price: 22, stock_main: 1 },
+    // An archived size (removed, kept for its history): never in the feed.
+    {
+      id: "v9",
+      product_id: "p1",
+      brand_id: "b1",
+      size: "60",
+      selling_price: 19,
+      stock_main: 0,
+      archived_at: "2026-11-01T10:00:00Z",
+    },
   ];
 });
 
@@ -70,6 +87,7 @@ describe("the shopping feed's address", () => {
     // Whatever address asked, the links are the store's main one (here its own domain).
     expect(body).toContain("<link>https://shop.pura.bh/pura/product/p1</link>");
     expect(body).toContain("<g:price>22.000 BHD</g:price>");
+    expect(body).not.toContain("19.000");
     // The catalog is read for this store only.
     expect(filters).toContainEqual(["product_variants", "brand_id", "b1"]);
   });

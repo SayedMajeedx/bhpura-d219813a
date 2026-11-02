@@ -282,6 +282,7 @@ export async function fetchExchangeVariants(brandId: string) {
         { count: "exact" },
       )
       .eq("brand_id", brandId)
+      .is("archived_at", null)
       .order("created_at", { ascending: false })
       .order("id")
       .range(from, to),

@@ -169,14 +169,20 @@ export async function setServiceLengths(
   if (error) throw error;
 }
 
-/** Deletes variants of the brand. */
-export async function deleteVariants(brandId: string, variantIds: string[]) {
-  const { error } = await supabase
-    .from("product_variants")
-    .delete()
-    .eq("brand_id", brandId)
-    .in("id", variantIds);
+/**
+ * Removes sizes from the inventory (`remove_product_variants`): a size with no history is deleted,
+ * one with a history (sold, stock moved, on a supplier order) is archived, hidden and kept for its
+ * records. A size that still holds pieces, or the last size in use of a product, is refused.
+ */
+export async function removeVariants(
+  variantIds: string[],
+): Promise<{ deleted: number; archived: number }> {
+  const { data, error } = await supabase.rpc("remove_product_variants", {
+    p_variant_ids: variantIds,
+  });
   if (error) throw error;
+  const result = (data ?? {}) as { deleted?: number; archived?: number };
+  return { deleted: Number(result.deleted ?? 0), archived: Number(result.archived ?? 0) };
 }
 
 /**

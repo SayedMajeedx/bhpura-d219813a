@@ -5818,6 +5818,7 @@ export type Database = {
           inventory_revision: number;
           inventory_state: string;
           invoice_number: number;
+          language: string | null;
           loyalty_discount: number;
           loyalty_points_redeemed: number;
           notes: string | null;
@@ -5903,6 +5904,7 @@ export type Database = {
           inventory_revision?: number;
           inventory_state?: string;
           invoice_number: number;
+          language?: string | null;
           loyalty_discount?: number;
           loyalty_points_redeemed?: number;
           notes?: string | null;
@@ -5988,6 +5990,7 @@ export type Database = {
           inventory_revision?: number;
           inventory_state?: string;
           invoice_number?: number;
+          language?: string | null;
           loyalty_discount?: number;
           loyalty_points_redeemed?: number;
           notes?: string | null;
@@ -6478,6 +6481,7 @@ export type Database = {
       };
       product_variants: {
         Row: {
+          archived_at: string | null;
           barcode: string | null;
           brand_id: string;
           color: string | null;
@@ -6502,6 +6506,7 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          archived_at?: string | null;
           barcode?: string | null;
           brand_id: string;
           color?: string | null;
@@ -6526,6 +6531,7 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          archived_at?: string | null;
           barcode?: string | null;
           brand_id?: string;
           color?: string | null;
@@ -11064,6 +11070,7 @@ export type Database = {
       };
       order_advance_due: { Args: { p_order_id: string }; Returns: number };
       order_counts_as_sold: { Args: { p_status: string }; Returns: boolean };
+      order_email_language: { Args: { p_order_id: string }; Returns: string };
       order_incubator_sync: {
         Args: {
           p_brand_id: string;
@@ -11377,6 +11384,10 @@ export type Database = {
         Returns: string;
       };
       release_due_loyalty_points: { Args: never; Returns: number };
+      remove_product_variants: {
+        Args: { p_variant_ids: string[] };
+        Returns: Json;
+      };
       remove_web_push_subscription: {
         Args: { p_endpoint: string };
         Returns: undefined;
@@ -12036,6 +12047,10 @@ export type Database = {
         Args: { p_paused: boolean; p_product_id: string };
         Returns: boolean;
       };
+      set_order_language: {
+        Args: { p_lang: string; p_order_id: string };
+        Returns: undefined;
+      };
       set_order_requested_time: {
         Args: { p_date: string; p_order_id: string; p_slot: string };
         Returns: undefined;
@@ -12290,6 +12305,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      variant_has_history: { Args: { p_variant_id: string }; Returns: boolean };
       void_gift_card: {
         Args: { p_card_id: string; p_reason: string };
         Returns: {

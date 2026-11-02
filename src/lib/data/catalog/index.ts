@@ -11,6 +11,7 @@ import {
 } from "./costs";
 import { ADMIN_PRODUCT_SELECT, ADMIN_VARIANT_SELECT } from "./selects";
 import { readAll } from "../read-all";
+import { variantsInUse } from "@/lib/variant-archive";
 
 export * from "./keys";
 export * from "./mutations";
@@ -147,13 +148,14 @@ export async function countAdminProducts(brandId: string): Promise<number> {
   return count || 0;
 }
 
-/** How many variants one product has. */
+/** How many variants in use (not archived) one product has. */
 export async function countProductVariants(brandId: string, productId: string): Promise<number> {
   const { count, error } = await supabase
     .from("product_variants")
     .select("id", { count: "exact", head: true })
     .eq("product_id", productId)
-    .eq("brand_id", brandId);
+    .eq("brand_id", brandId)
+    .is("archived_at", null);
   if (error) throw error;
   return count ?? 0;
 }
@@ -179,6 +181,7 @@ export async function fetchBarcodeLabelData(brandId: string) {
         .select("product_id, barcode, size, color, selling_price", { count: "exact" })
         .eq("brand_id", brandId)
         .not("barcode", "is", null)
+        .is("archived_at", null)
         .order("created_at")
         .order("id")
         .range(from, to),
@@ -246,6 +249,9 @@ export type CustomizationOption = Awaited<ReturnType<typeof fetchCustomizations>
 /** Admin screens edit the catalog while others read it; 30s keeps lists fresh without refetch storms. */
 const CATALOG_CACHE = { staleTime: 30_000 } as const;
 
+/** One function, so a screen's list is filtered again only when the data changes. */
+const sizesInUse = (rows: AdminVariant[]): AdminVariant[] => variantsInUse(rows);
+
 export const catalogQueries = {
   products: (brandId: string) =>
     queryOptions({
@@ -254,7 +260,17 @@ export const catalogQueries = {
       enabled: Boolean(brandId),
       ...CATALOG_CACHE,
     }),
+  /** The brand's sizes in use: an archived one (removed, kept for its history) is left out. */
   variants: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogKeys.variants(brandId),
+      queryFn: () => fetchAdminVariants(brandId),
+      select: sizesInUse,
+      enabled: Boolean(brandId),
+      ...CATALOG_CACHE,
+    }),
+  /** Every size, archived ones too, from the same read: to name a past line (a supplier order's). */
+  variantsWithArchived: (brandId: string) =>
     queryOptions({
       queryKey: catalogKeys.variants(brandId),
       queryFn: () => fetchAdminVariants(brandId),

@@ -12,7 +12,7 @@ const stubs = vi.hoisted(() => ({
 // A query that can be chained and awaited, answering from `tables` by the table asked for.
 function query(table: string) {
   const chain: Record<string, unknown> = {};
-  for (const method of ["select", "eq", "in", "order", "range", "returns", "not", "gt"]) {
+  for (const method of ["select", "eq", "in", "is", "order", "range", "returns", "not", "gt"]) {
     chain[method] = (...args: unknown[]) => {
       if (method === "select") stubs.selects.push([table, String(args[0])]);
       return chain;
