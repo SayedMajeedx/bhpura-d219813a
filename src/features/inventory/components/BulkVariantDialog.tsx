@@ -15,7 +15,7 @@ import { Wand as Wand2, Boxes, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { createVariants, updateProduct } from "@/lib/data/catalog";
+import { createVariants, removeVariants, updateProduct, updateVariant } from "@/lib/data/catalog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
@@ -44,6 +44,17 @@ import {
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import { getCurrentUser } from "@/lib/auth/session";
 import { arNounOblique } from "@/lib/arabic-count";
+import {
+  becameMessage,
+  becomePatch,
+  firstSizes,
+  leftoverMessage,
+} from "@/features/inventory/lib/first-sizes";
+import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
+
+/** A generated row in words: its size and colour. */
+const rowLabel = (row: BulkVariantRow) =>
+  [row.size, row.color].filter((part) => part && part.trim()).join(" · ") || row.sku;
 
 export function BulkVariantDialog({
   productId,
@@ -126,6 +137,11 @@ export function BulkVariantDialog({
   const [rows, setRows] = useState<BulkVariantRow[]>([]);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
+  // A product sold so far with no options: its default becomes one of these sizes, or goes.
+  const first = firstSizes(variants);
+  const [piecesRow, setPiecesRow] = useState(0);
+  const becomeAt =
+    first.kind === "become" && rows.length > 0 ? Math.min(piecesRow, rows.length - 1) : -1;
 
   const batch = useBulkBatchControls(setRows, Number(product?.base_price ?? 0), isAr);
 
@@ -229,25 +245,43 @@ export function BulkVariantDialog({
     try {
       const user = await getCurrentUser();
       if (!user) throw new Error("AUTH_REQUIRED");
-      await createVariants(
-        brand.id,
-        rows.map((row) => ({
-          user_id: user.id,
-          brand_id: brand.id,
-          product_id: productId,
-          size: row.size || null,
-          size_unit: row.size_unit || null,
-          color: row.color || null,
-          fabric: row.fabric || null,
-          sku: row.sku.trim(),
-          barcode: row.barcode.trim(),
-          cost_price: Number(product?.cost_price ?? 0),
-          ...bulkRowPricing(row.sale_price, Number(product?.base_price ?? 0)),
-          stock_main: row.stock_main,
-          stock_incubator: row.stock_incubator,
-          stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
-        })),
-      );
+      const columns = (row: BulkVariantRow) => ({
+        size: row.size || null,
+        size_unit: row.size_unit || null,
+        color: row.color || null,
+        fabric: row.fabric || null,
+        option_four: null,
+        option_five: null,
+        sku: row.sku.trim(),
+        barcode: row.barcode.trim(),
+        ...bulkRowPricing(row.sale_price, Number(product?.base_price ?? 0)),
+      });
+      const newRows = rows.filter((_, index) => index !== becomeAt);
+      if (newRows.length > 0) {
+        await createVariants(
+          brand.id,
+          newRows.map((row) => ({
+            user_id: user.id,
+            brand_id: brand.id,
+            product_id: productId,
+            ...columns(row),
+            cost_price: Number(product?.cost_price ?? 0),
+            stock_main: row.stock_main,
+            stock_incubator: row.stock_incubator,
+            stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
+          })),
+        );
+      }
+      if (first.kind === "become" && becomeAt >= 0) {
+        // The pieces it has are this size: it keeps them, their history and its orders.
+        await updateVariant(brand.id, first.defaultId, becomePatch(columns(rows[becomeAt])));
+        toast.success(becameMessage(first.pieces, rowLabel(rows[becomeAt]), isAr));
+      }
+      if (first.kind === "replace") {
+        // The new sizes are in first, so the product always keeps one.
+        await removeVariants([first.defaultId]).catch(() => toast.error(leftoverMessage(isAr)));
+      }
+      setPiecesRow(0);
       const batchTerms = rows.flatMap((r) => [r.color, r.fabric]);
       prefetchOptionTranslations(batchTerms, isAr);
       let activationFailed = false;
@@ -542,6 +576,16 @@ export function BulkVariantDialog({
             axisLabels={{ size: sizeAxis.label, color: colorAxis.label, fabric: fabricAxis.label }}
             basePricePlaceholder={String(product?.base_price ?? 0)}
             canViewFinancials={canViewFinancials}
+            isAr={isAr}
+          />
+        )}
+
+        {first.kind === "become" && rows.length > 0 && (
+          <FirstSizePiecesPicker
+            pieces={first.pieces}
+            options={rows.map(rowLabel)}
+            chosen={becomeAt}
+            onChoose={setPiecesRow}
             isAr={isAr}
           />
         )}

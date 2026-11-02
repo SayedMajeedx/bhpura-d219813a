@@ -28,6 +28,7 @@ import { ProductAdvancedDetails } from "@/features/inventory/components/ProductA
 import { SaleModeSection } from "@/features/inventory/components/SaleModeSection";
 import { currencyLabel } from "@/lib/currency-label";
 import { ProductCostField } from "@/features/inventory/components/ProductCostField";
+import { NewProductSizesField } from "@/features/inventory/components/NewProductSizesField";
 import { assignableCategories } from "@/lib/smart-categories";
 /** First step of the product editor: names, descriptions, category, price, cost and stock. */
 export function ProductBasicTab({
@@ -252,6 +253,16 @@ export function ProductBasicTab({
         <ProductOffSaleField brandId={brandId} product={product} isAr={isAr} />
       )}
       {!product && !isService && (
+        <NewProductSizesField
+          brandId={brandId}
+          addonAxisDefaults={addonAxisDefaults}
+          form={form}
+          setForm={setForm}
+          isAr={isAr}
+        />
+      )}
+      {/* With sizes chosen, each size takes its own pieces above. */}
+      {!product && !isService && form.sizes.length === 0 && (
         <div>
           <Label className="text-xs font-bold text-muted-foreground">
             {form.is_made_to_order
@@ -359,15 +370,6 @@ export function ProductBasicTab({
           />
         </div>
       </div>
-      {!product && !isService && (
-        <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <span className="leading-relaxed">
-            {isAr
-              ? "هل لديك مقاسات أو ألوان متعددة؟ يُنشر المنتج بدون خيارات، ويمكنك إضافة المقاسات والألوان في أي وقت بعد الحفظ."
-              : "Have several sizes or colours? The product is published with no options; you can add sizes and colours anytime after saving."}
-          </span>
-        </div>
-      )}
       {isService && (
         <ServiceDetailsFields
           location={form.service_location}

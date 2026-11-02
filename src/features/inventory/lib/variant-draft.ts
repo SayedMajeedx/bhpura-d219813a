@@ -1,5 +1,6 @@
 import { splitCompositeVariantSize } from "@/lib/format";
 import { realSize } from "@/lib/default-variant";
+import { firstSizes } from "@/features/inventory/lib/first-sizes";
 import { SIZE_UNITS } from "@/features/inventory/lib/size-units";
 import type { Product, Variant } from "@/features/inventory/types";
 
@@ -79,6 +80,8 @@ export function newVariantDraft(
   const existingUnit = variants.find((v) => v.size_unit)?.size_unit ?? (SIZE_UNITS[0] || "");
   const existingPrice =
     variants.length > 0 && variants[0].selling_price ? String(variants[0].selling_price) : "";
+  // A product sold so far with no options becomes this size with the pieces it has.
+  const first = firstSizes(variants);
   return {
     ...empty,
     size: existingSize,
@@ -86,6 +89,7 @@ export function newVariantDraft(
     cost_price: String(product?.cost_price ?? 0),
     selling_price: existingPrice,
     original_price: String(product?.base_price ?? 0),
+    ...(first.kind === "become" ? { stock_main: String(variants[0].stock_main ?? 0) } : {}),
   };
 }
 

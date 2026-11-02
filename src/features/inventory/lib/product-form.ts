@@ -49,6 +49,11 @@ export function productFormFrom(product: Product | null, defaults: { service?: b
     image_url: product?.image_url ?? "",
     is_active: product ? product.is_active : true,
     initial_stock: "0",
+    // A new product's sizes, chosen before its first save, each with its opening stock as typed.
+    // None chosen: it is sold as its default variant (no options). A saved product's sizes are
+    // its variants, edited in its table.
+    sizes: [] as string[],
+    size_stock: {} as Record<string, string>,
     featured_trending: product?.featured_trending ?? false,
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
@@ -260,4 +265,21 @@ export function defaultVariantValues(form: ProductForm) {
     barcode: null,
     image_url: null,
   };
+}
+
+const piecesTyped = (typed: string | undefined) => Math.max(0, parseInt(typed || "0", 10) || 0);
+
+/**
+ * The variants a new product is created with: one per size chosen before its first save, each
+ * at the form's price and cost with its own opening stock, or, with none chosen, its default
+ * variant. It once always got the default first, and the sizes added after it left that line
+ * beside them.
+ */
+export function newProductVariants(form: ProductForm) {
+  const base = defaultVariantValues(form);
+  if (form.item_kind === "service" || form.sizes.length === 0) return [base];
+  return form.sizes.map((size) => {
+    const qty = piecesTyped(form.size_stock[size]);
+    return { ...base, size, stock_main: qty, stock: qty };
+  });
 }
