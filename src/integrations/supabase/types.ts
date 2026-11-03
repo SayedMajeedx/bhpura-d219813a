@@ -6931,6 +6931,7 @@ export type Database = {
           line_total: number;
           order_item_id: string | null;
           po_id: string;
+          price_pending: boolean;
           product_id: string | null;
           purpose: string;
           quantity: number;
@@ -6947,6 +6948,7 @@ export type Database = {
           line_total?: number;
           order_item_id?: string | null;
           po_id: string;
+          price_pending?: boolean;
           product_id?: string | null;
           purpose?: string;
           quantity?: number;
@@ -6963,6 +6965,7 @@ export type Database = {
           line_total?: number;
           order_item_id?: string | null;
           po_id?: string;
+          price_pending?: boolean;
           product_id?: string | null;
           purpose?: string;
           quantity?: number;
@@ -11117,6 +11120,7 @@ export type Database = {
         Args: { p_desired_state: string; p_order_id: string };
         Returns: undefined;
       };
+      order_workshop_pieces: { Args: { p_order_id: string }; Returns: Json };
       place_booking_order: {
         Args: {
           p_benefit_receipt_id?: string;
@@ -12390,6 +12394,7 @@ export type Database = {
           p256dh: string;
         }[];
       };
+      workshop_suppliers: { Args: { p_brand: string }; Returns: Json };
     };
     Enums: {
       [_ in never]: never;
