@@ -11,7 +11,9 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import {
   jobSheetHtml,
   jobSheetPieces,
+  sheetPieces,
   type JobSheetProduct,
+  type SheetLang,
 } from "@/features/orders/lib/job-sheet";
 import type { StoreVocabulary } from "@/lib/store-vocabulary";
 import { workStartedMessage } from "@/features/orders/lib/stage-messages";
@@ -164,28 +166,54 @@ export function createOrderDocumentActions({
     storeVertical: storeProfile.vertical,
   });
 
-  const printJobSheet = () => {
+  // The sheet is printed in the language chosen at print time (the tailor's, or the screen's),
+  // never only the screen's: a tailor reading English gets an English sheet from an Arabic admin.
+  const printJobSheet = (sheetLang: SheetLang) => {
     const settings = (settingsQ.data ?? {}) as { business_name?: string | null };
     const w = window.open("", "_blank", "width=800,height=900");
     if (!w) {
       toast.error(t("orders.popupBlocked"));
       return;
     }
+    const products = (productsQ.data ?? []) as JobSheetProduct[];
+    const read = sheetPieces(items, products, {
+      lang: sheetLang,
+      brandAddons: storeProfile.addons,
+      storeVertical: storeProfile.vertical,
+    });
+    const workshopIn = (l: "ar" | "en") =>
+      vocabulary.workshop?.[l] || (l === "ar" ? "الورشة" : "Workshop");
+    const common = {
+      brand: (settings.business_name ?? "").trim() || (sheetLang === "en" ? "Store" : "المتجر"),
+      orderNumber: order.invoice_number ?? order.id.slice(0, 8),
+      numberFormat: (settingsQ.data ?? null) as OrderNumberFormat | null,
+      orderDate: order.order_date,
+      customerName: getOrderCustomerName(order) || null,
+      orderNote: order.notes ?? null,
+    };
     w.document.open();
     w.document.write(
-      jobSheetHtml({
-        brand: (settings.business_name ?? "").trim() || (lang === "ar" ? "المتجر" : "Store"),
-        workshop: vocabulary.workshop?.[lang] || (lang === "ar" ? "الورشة" : "Workshop"),
-        orderNumber: order.invoice_number ?? order.id.slice(0, 8),
-        numberFormat: (settingsQ.data ?? null) as OrderNumberFormat | null,
-        orderDate: order.order_date,
-        customerName: getOrderCustomerName(order) || null,
-        orderNote: order.notes ?? null,
-        pieces: workshopPieces,
-        lang,
-      }),
+      read.lang === "both"
+        ? jobSheetHtml({
+            ...common,
+            lang: "both",
+            workshop: { ar: workshopIn("ar"), en: workshopIn("en") },
+            pieces: read.pieces,
+          })
+        : jobSheetHtml({
+            ...common,
+            lang: read.lang,
+            workshop: workshopIn(read.lang),
+            pieces: read.pieces,
+          }),
     );
     w.document.close();
+    void logActivity({
+      action: "job_sheet_printed",
+      order_id: order.id,
+      en: `Printed the job sheet (${sheetLang === "both" ? "Arabic and English" : sheetLang === "ar" ? "Arabic" : "English"})`,
+      ar: `طبع أمر التشغيل (${sheetLang === "both" ? "بالعربية والإنجليزية" : sheetLang === "ar" ? "بالعربية" : "بالإنجليزية"})`,
+    });
   };
 
   // Telling the customer work has started: a WhatsApp message a person sends, never the system.

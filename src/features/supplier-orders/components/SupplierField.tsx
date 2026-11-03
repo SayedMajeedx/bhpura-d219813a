@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { accountingQueries, createVendor, invalidateVendors } from "@/lib/data/accounting";
 import { cn } from "@/lib/utils";
+import { SheetLanguageChoice } from "@/features/orders/components/SheetLanguageChoice";
+import type { SheetLang } from "@/features/orders/lib/job-sheet";
 
 /** Who the order is from: one of the store's suppliers, or a new one added on the spot. */
 export function SupplierField({
@@ -37,6 +39,8 @@ export function SupplierField({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  // The language their job sheets and messages open on.
+  const [language, setLanguage] = useState<SheetLang>(lang);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -46,12 +50,14 @@ export function SupplierField({
       const vendorId = await createVendor(brandId, {
         name: name.trim().slice(0, 120),
         phone: phone.trim() || null,
+        preferred_language: language,
       });
       await invalidateVendors(qc, brandId);
       onChange(vendorId);
       setAdding(false);
       setName("");
       setPhone("");
+      setLanguage(lang);
     } catch {
       toast.error(
         isAr ? "تعذرت إضافة المورد، حاول مرة أخرى." : "Could not add the supplier. Try again.",
@@ -126,6 +132,12 @@ export function SupplierField({
                 onChange={(e) => setPhone(e.target.value)}
               />
             </div>
+            <SheetLanguageChoice
+              value={language}
+              onChange={setLanguage}
+              lang={lang}
+              label={isAr ? "لغة أوامر التشغيل والرسائل" : "Language for job sheets and messages"}
+            />
           </div>
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => setAdding(false)}>

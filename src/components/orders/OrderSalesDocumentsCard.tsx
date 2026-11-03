@@ -30,6 +30,9 @@ import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { MorphText } from "@/components/motion/MorphText";
+import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
+import { useJobSheetLanguage } from "@/features/orders/hooks/use-job-sheet-language";
+import type { SheetLang } from "@/features/orders/lib/job-sheet";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -43,7 +46,8 @@ interface OrderSalesDocumentsCardProps {
   onPrintInvoice?: () => void;
   /** What goes with a piece to the workshop; each part is absent when it does not apply. */
   workshop?: {
-    printJobSheet?: () => void;
+    /** Prints the job sheet in the language chosen at print time. */
+    printJobSheet?: (sheetLang: SheetLang) => void;
     tellCustomerWorkStarted?: () => void;
     atWorkshop?: boolean;
   };
@@ -83,6 +87,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const { vocabulary } = useVocabulary();
   const workshop = vocabulary.workshop?.[lang] || (isAr ? "الورشة" : "Workshop");
   const onPrintJobSheet = workshopActions?.printJobSheet;
+  const [printingSheet, setPrintingSheet] = React.useState(false);
+  const itemIds = React.useMemo(
+    () => (items ?? []).map((item: { id?: string }) => item.id ?? "").filter(Boolean),
+    [items],
+  );
+  // The tailor's own language when a supplier holding the piece chose one, else the screen's.
+  const sheetLang = useJobSheetLanguage(brandId, itemIds, lang);
   // Offered while the piece is with the workshop, in case the moment after sending it was missed.
   const onTellCustomer = workshopActions?.atWorkshop
     ? workshopActions.tellCustomerWorkStarted
@@ -257,13 +268,20 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             <Button
               variant="outline"
               size="sm"
-              onClick={onPrintJobSheet}
+              onClick={() => setPrintingSheet(true)}
               className="h-9 gap-1.5 text-xs"
             >
               <Printer className="h-3.5 w-3.5" />
               {isAr ? "طباعة أمر التشغيل" : "Print job sheet"}
             </Button>
           </div>
+          <JobSheetPrintDialog
+            open={printingSheet}
+            onOpenChange={setPrintingSheet}
+            defaultLang={sheetLang}
+            onPrint={onPrintJobSheet}
+            lang={lang}
+          />
         </div>
       )}
 

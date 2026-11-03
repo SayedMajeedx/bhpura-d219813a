@@ -91,7 +91,8 @@ describe("the accounting tabs' reads", () => {
     await accounting.fetchVendorOptions("b1");
     expect(requests.map((r) => r.table)).toEqual(["cash_flow_accounts", "vendors", "vendors"]);
     for (const request of requests) expect(eqs(request)).toEqual([["brand_id", "b1"]]);
-    expect(requests[2].select).toBe("id, name");
+    // The picker also reads the language a supplier's job sheets and messages open on.
+    expect(requests[2].select).toBe("id, name, preferred_language");
 
     respond = () => ({ data: null, error: denied });
     await expect(accounting.fetchVendors("b1")).rejects.toBe(denied);
@@ -108,6 +109,24 @@ describe("the accounting tabs' writes", () => {
 
     respond = () => ({ error: denied });
     await expect(accounting.createVendor("b1", { name: "x" })).rejects.toBe(denied);
+  });
+
+  it("set a supplier's language within the brand, and fail on a write that matched nothing", async () => {
+    respond = () => ({ data: [{ id: "v1" }], error: null });
+    await accounting.setVendorLanguage("b1", "v1", "both");
+    expect(requests.at(-1)).toMatchObject({
+      table: "vendors",
+      op: "update",
+      payload: { preferred_language: "both" },
+      filters: [
+        ["eq", "brand_id", "b1"],
+        ["eq", "id", "v1"],
+      ],
+    });
+    respond = () => ({ data: [], error: null });
+    await expect(accounting.setVendorLanguage("b1", "v-other", null)).rejects.toThrow(
+      "VENDOR_NOT_FOUND",
+    );
   });
 
   it("refresh both vendor lists after a new vendor, and nothing else", async () => {

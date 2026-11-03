@@ -324,7 +324,7 @@ export async function fetchCustomerPieceDetails(brandId: string, orderItemIds: r
   const { data, error } = await supabase
     .from("order_items")
     .select(
-      "id, product_id, variant_id, description, quantity, location, selected_variant, custom_field_values, customizations",
+      "id, product_id, variant_id, description, name_ar, name_en, quantity, location, selected_variant, custom_field_values, customizations",
     )
     .eq("brand_id", brandId)
     .in("id", [...orderItemIds])
