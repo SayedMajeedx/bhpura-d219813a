@@ -7,7 +7,12 @@ const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const data = vi.hoisted(() => ({
   deleteCustomers: vi.fn(async () => undefined),
   invalidateCustomers: vi.fn(async () => undefined),
-  deleteProducts: vi.fn(async () => undefined),
+  removeProducts: vi.fn(
+    async (ids: string[]): Promise<{ deleted: string[]; archived: string[] }> => ({
+      deleted: ids,
+      archived: [],
+    }),
+  ),
   updateProducts: vi.fn(async () => undefined),
   updateProduct: vi.fn(async () => undefined),
   deletePublicMediaUrl: vi.fn(async () => undefined),
@@ -18,7 +23,7 @@ const customers = {
   invalidateCustomers: data.invalidateCustomers,
 };
 const catalog = {
-  deleteProducts: data.deleteProducts,
+  removeProducts: data.removeProducts,
   updateProducts: data.updateProducts,
   updateProduct: data.updateProduct,
 };
@@ -178,7 +183,7 @@ describe("customers and inventory bulk selection", () => {
     expect(result.current.bulkDeleting).toBe(false);
   });
 
-  it("brand-scopes bulk product deletion and cleans up each image once", async () => {
+  it("removes the selected products and cleans up each deleted one's image once", async () => {
     const onChanged = vi.fn();
     const products = [
       { id: "p1", image_url: "https://cdn/a.jpg", media: [{ url: "https://cdn/a.jpg" }] },
@@ -197,10 +202,44 @@ describe("customers and inventory bulk selection", () => {
     act(() => result.current.toggleSelectedProduct("p1"));
     act(() => result.current.toggleSelectedProduct("p2"));
     await act(() => result.current.deleteSelectedProducts());
-    expect(data.deleteProducts).toHaveBeenCalledWith("b1", ["p1", "p2"]);
+    expect(data.removeProducts).toHaveBeenCalledWith(["p1", "p2"]);
     await waitFor(() => expect(data.deletePublicMediaUrl).toHaveBeenCalledTimes(2));
     expect(data.deletePublicMediaUrl).toHaveBeenCalledWith("b1", "https://cdn/a.jpg");
     expect(data.deletePublicMediaUrl).toHaveBeenCalledWith("b1", "https://cdn/b.jpg");
     expect(onChanged).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the pictures of a product archived for its history, and says so", async () => {
+    data.removeProducts.mockResolvedValueOnce({ deleted: [], archived: ["p1"] });
+    const products = [{ id: "p1", image_url: "https://cdn/a.jpg", media: [] }];
+    const { result } = renderHook(() =>
+      useProductBulkActions({
+        brandId: "b1",
+        products: products as never[],
+        presets: [],
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    );
+    act(() => result.current.toggleSelectedProduct("p1"));
+    await act(() => result.current.deleteSelectedProducts());
+    expect(data.deletePublicMediaUrl).not.toHaveBeenCalled();
+    expect(toast.success).toHaveBeenCalledWith(expect.stringMatching(/^1 product archived/));
+  });
+
+  it("says why a product could not be removed", async () => {
+    data.removeProducts.mockRejectedValueOnce({ message: "PRODUCT_HAS_STOCK" });
+    const { result } = renderHook(() =>
+      useProductBulkActions({
+        brandId: "b1",
+        products: [{ id: "p1", media: [] }] as never[],
+        presets: [],
+        isAr: false,
+        onChanged: vi.fn(),
+      }),
+    );
+    act(() => result.current.toggleSelectedProduct("p1"));
+    await act(() => result.current.deleteSelectedProducts());
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/still has pieces in stock/));
   });
 });

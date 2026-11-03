@@ -1,7 +1,6 @@
 import { toast } from "sonner";
 import { printLabels } from "@/components/barcode-label";
 import { useBrand } from "@/lib/brand-context";
-import { useT } from "@/lib/i18n";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
@@ -9,7 +8,7 @@ import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
   createProduct,
   createVariants,
-  deleteProducts,
+  removeProducts,
   fetchBarcodeLabelData,
 } from "@/lib/data/catalog";
 import type { Product, Variant } from "@/features/inventory/types";
@@ -19,6 +18,10 @@ import {
   duplicateVariantValues,
 } from "@/features/inventory/lib/product-list";
 import { arNoun } from "@/lib/arabic-count";
+import {
+  productDeleteError,
+  removedProductsMessage,
+} from "@/features/inventory/lib/product-delete";
 
 /**
  * Per-product actions in the inventory list: delete (with its media),
@@ -42,27 +45,34 @@ export function useProductActions({
   isAr: boolean;
   onChanged: () => void;
 }) {
-  const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
   const { entitlements } = useEntitlements({ brandId });
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
+    let removed: { deleted: string[]; archived: string[] };
     try {
-      await deleteProducts(brandId, [id]);
+      removed = await removeProducts([id]);
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error));
+      toast.error(productDeleteError(error, isAr));
       return;
     }
+    toast.success(
+      removedProductsMessage(
+        { deleted: removed.deleted.length, archived: removed.archived.length },
+        isAr,
+      ),
+    );
+    onChanged();
+    // An archived product keeps its pictures: it can be restored.
+    if (!removed.deleted.includes(id)) return;
     const urls = new Set(
       [product?.image_url, ...(product?.media ?? []).map((item) => item.url)].filter(
         (url): url is string => Boolean(url),
       ),
     );
     for (const url of urls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
-    toast.success(t("common.delete"));
-    onChanged();
   };
 
   const handleDuplicateProduct = async (productToDuplicate: Product) => {

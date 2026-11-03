@@ -6574,6 +6574,7 @@ export type Database = {
       };
       products: {
         Row: {
+          archived_at: string | null;
           auto_deactivated_out_of_stock: boolean | null;
           base_price: number | null;
           booking_buffer_minutes: number;
@@ -6637,6 +6638,7 @@ export type Database = {
           vendor_id: string | null;
         };
         Insert: {
+          archived_at?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;
@@ -6700,6 +6702,7 @@ export type Database = {
           vendor_id?: string | null;
         };
         Update: {
+          archived_at?: string | null;
           auto_deactivated_out_of_stock?: boolean | null;
           base_price?: number | null;
           booking_buffer_minutes?: number;
@@ -11207,6 +11210,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      product_has_history: { Args: { p_product_id: string }; Returns: boolean };
       prune_system_health_events: {
         Args: { p_retention_days?: number };
         Returns: number;
@@ -11388,6 +11392,7 @@ export type Database = {
         Args: { p_variant_ids: string[] };
         Returns: Json;
       };
+      remove_products: { Args: { p_product_ids: string[] }; Returns: Json };
       remove_web_push_subscription: {
         Args: { p_endpoint: string };
         Returns: undefined;
@@ -11474,6 +11479,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      restore_product: { Args: { p_product_id: string }; Returns: undefined };
       return_stock_from_incubator: {
         Args: {
           p_incubator_id: string;

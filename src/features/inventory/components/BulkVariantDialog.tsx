@@ -52,6 +52,7 @@ import {
   leftoverMessage,
 } from "@/features/inventory/lib/first-sizes";
 import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export function BulkVariantDialog({
   productId,
@@ -305,7 +306,7 @@ export function BulkVariantDialog({
       setColorsText("");
       onChanged();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : isAr ? "فشل الحفظ" : "Save failed");
+      toast.error(getFriendlyErrorMessage(error) || (isAr ? "فشل الحفظ" : "Save failed"));
     } finally {
       setSaving(false);
     }

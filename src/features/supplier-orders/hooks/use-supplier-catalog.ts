@@ -13,8 +13,9 @@ import {
 
 /** The store's products and sizes for a supplier's order (the inventory's own cached reads). */
 export function useSupplierCatalog(brandId: string, lang: "ar" | "en") {
-  const productsQ = useQuery(catalogQueries.products(brandId));
-  // Archived sizes too: a past order's line still names its size. Only sizes in use are offered.
+  // Archived products and sizes too: a past order's line still names them. Only those in use
+  // are offered.
+  const productsQ = useQuery(catalogQueries.productsWithArchived(brandId));
   const variantsQ = useQuery(catalogQueries.variantsWithArchived(brandId));
 
   // Built again only when the data changes (a query's own object is new on every render, and
@@ -22,10 +23,11 @@ export function useSupplierCatalog(brandId: string, lang: "ar" | "en") {
   const productsData = productsQ.data;
   const variantsData = variantsQ.data;
   const lookups = useMemo(() => {
-    const products = (productsData ?? []) as unknown as CatalogProduct[];
+    const everyProduct = (productsData ?? []) as unknown as CatalogProduct[];
+    const products = variantsInUse(productsData ?? []) as unknown as CatalogProduct[];
     const everySize = (variantsData ?? []) as unknown as CatalogVariant[];
     const variants = variantsInUse(variantsData ?? []) as unknown as CatalogVariant[];
-    const productById = new Map(products.map((p) => [p.id, p]));
+    const productById = new Map(everyProduct.map((p) => [p.id, p]));
     const variantById = new Map(everySize.map((v) => [v.id, v]));
     return {
       products,

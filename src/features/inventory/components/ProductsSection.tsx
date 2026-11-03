@@ -37,6 +37,7 @@ import type { AttentionKey } from "@/features/inventory/lib/attention";
 import { useInventoryList } from "@/features/inventory/hooks/use-inventory-list";
 import { StockOverviewStrip } from "@/features/inventory/components/StockOverviewStrip";
 import { MissingCostsLine } from "@/features/inventory/components/MissingCostsLine";
+import { ArchivedProductsLine } from "@/features/inventory/components/ArchivedProductsLine";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
 import { useProductBulkActions } from "@/features/inventory/hooks/use-product-bulk-actions";
@@ -289,6 +290,8 @@ export function ProductsSection({
           onSaved={onChanged}
         />
       )}
+
+      <ArchivedProductsLine brandId={brandId} isAr={isAr} onRestored={onChanged} />
 
       {/* 2. Operational Scope Switcher */}
       <InventoryScopeSwitcher

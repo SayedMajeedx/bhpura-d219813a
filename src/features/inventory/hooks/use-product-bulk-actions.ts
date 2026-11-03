@@ -1,10 +1,15 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteProducts, updateProduct, updateProducts } from "@/lib/data/catalog";
+import { removeProducts, updateProduct, updateProducts } from "@/lib/data/catalog";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
 import type { Product } from "@/features/inventory/types";
 import { addPresetToProduct, type PresetLike } from "@/features/inventory/lib/bulk-preset";
 import { arNounOblique } from "@/lib/arabic-count";
+import {
+  productDeleteError,
+  removedProductsMessage,
+} from "@/features/inventory/lib/product-delete";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** Products written at once when a preset is added (each product keeps its own fields). */
 const PRESET_BATCH = 6;
@@ -52,12 +57,14 @@ export function useProductBulkActions({
   const deleteSelectedProducts = async () => {
     const ids = [...selectedProductIds];
     if (ids.length === 0) return;
-    const selectedProducts = products.filter((product) => selectedProductIds.has(product.id));
     setBulkDeleting(true);
     try {
-      await deleteProducts(brandId, ids);
+      const removed = await removeProducts(ids);
+      // An archived product keeps its pictures: it can be restored.
+      const deleted = new Set(removed.deleted);
       const mediaUrls = new Set(
-        selectedProducts
+        products
+          .filter((product) => deleted.has(product.id))
           .flatMap((product) => [
             product.image_url,
             ...(product.media ?? []).map((item) => item.url),
@@ -66,19 +73,16 @@ export function useProductBulkActions({
       );
       for (const url of mediaUrls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
       toast.success(
-        isAr ? `تم حذف ${arNounOblique(ids.length, "product")}` : `${ids.length} products deleted`,
+        removedProductsMessage(
+          { deleted: removed.deleted.length, archived: removed.archived.length },
+          isAr,
+        ),
       );
       setSelectedProductIds(new Set());
       setBulkDeleteOpen(false);
       onChanged();
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : isAr
-            ? "تعذر حذف المنتجات"
-            : "Could not delete products",
-      );
+      toast.error(productDeleteError(error, isAr));
     } finally {
       setBulkDeleting(false);
     }
@@ -106,11 +110,8 @@ export function useProductBulkActions({
       onChanged();
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : isAr
-            ? "تعذر تحديث قسم المنتجات"
-            : "Could not update products category",
+        getFriendlyErrorMessage(error) ||
+          (isAr ? "تعذر تحديث قسم المنتجات" : "Could not update products category"),
       );
     } finally {
       setBulkCategoryApplying(false);
@@ -137,11 +138,8 @@ export function useProductBulkActions({
       onChanged();
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : isAr
-            ? "تعذر تغيير حالة المنتجات"
-            : "Could not change the products' visibility",
+        getFriendlyErrorMessage(error) ||
+          (isAr ? "تعذر تغيير حالة المنتجات" : "Could not change the products' visibility"),
       );
     } finally {
       setBulkVisibilityApplying(false);

@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/dialog";
 import type { InventoryCategory } from "@/features/inventory/lib/product-list";
 import { assignableCategories } from "@/lib/smart-categories";
-import { arNounOblique } from "@/lib/arabic-count";
+import { arNounOblique, countOf } from "@/lib/arabic-count";
+import { removeProductsWarning } from "@/features/inventory/lib/product-delete";
 
 /** Confirms deleting the selected products with their variants and stock. */
 export function BulkDeleteProductsDialog({
@@ -42,13 +43,11 @@ export function BulkDeleteProductsDialog({
       <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            {isAr ? `حذف ${count} منتج؟` : `Delete ${count} products?`}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
             {isAr
-              ? "سيتم حذف المنتجات المحددة ومتغيراتها ومخزونها نهائياً. لا يمكن التراجع عن هذا الإجراء."
-              : "The selected products, their variants, and inventory will be permanently deleted. This cannot be undone."}
-          </AlertDialogDescription>
+              ? `حذف ${arNounOblique(count, "product")}؟`
+              : `Delete ${countOf(count, "product", "en")}?`}
+          </AlertDialogTitle>
+          <AlertDialogDescription>{removeProductsWarning(count, isAr)}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={deleting}>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>

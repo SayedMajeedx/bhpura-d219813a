@@ -29,6 +29,7 @@ import { slotTaken } from "@/features/bookings/lib/booking-actions";
 import { bookingInvoiceOf, invoiceLink } from "@/features/bookings/lib/booking-invoice";
 import { bookingMovedMessage, customerChatLink } from "@/features/bookings/lib/booking-messages";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 const SELECT_CLASS =
   "h-9 w-full max-w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -75,7 +76,7 @@ export function BookingMoveDialog({
       await page.moveBooking({ booking, day, start, allowOverbook: canAnyway && anyway });
       setMoved(true);
     } catch (error) {
-      setRefusal(error instanceof Error ? error.message : String(error));
+      setRefusal(getFriendlyErrorMessage(error));
     }
   };
 
