@@ -22,6 +22,9 @@ import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { localToday, ordersSummary } from "@/features/supplier-orders/lib/order-state";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { arNoun } from "@/lib/arabic-count";
+import { SheetLanguageChoice } from "@/features/orders/components/SheetLanguageChoice";
+import { VendorLanguageSelect } from "@/features/supplier-orders/components/VendorLanguageSelect";
+import type { SheetLang } from "@/features/orders/lib/job-sheet";
 
 export function VendorsPurchaseOrdersTab() {
   const { lang } = useI18n();
@@ -37,6 +40,8 @@ export function VendorsPurchaseOrdersTab() {
   const [vendorContact, setVendorContact] = useState("");
   const [vendorPhone, setVendorPhone] = useState("");
   const [vendorEmail, setVendorEmail] = useState("");
+  // The language their job sheets and messages open on.
+  const [vendorLanguage, setVendorLanguageChoice] = useState<SheetLang>(lang);
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -59,6 +64,7 @@ export function VendorsPurchaseOrdersTab() {
         contact_person: vendorContact,
         phone: vendorPhone,
         email: vendorEmail,
+        preferred_language: vendorLanguage,
       });
 
       toast.success(isAr ? "تم إضافة المورد بنجاح" : "Vendor added");
@@ -68,6 +74,7 @@ export function VendorsPurchaseOrdersTab() {
       setVendorContact("");
       setVendorPhone("");
       setVendorEmail("");
+      setVendorLanguageChoice(lang);
     } catch (err: any) {
       console.error("Vendor add error:", err);
       toast.error(
@@ -147,6 +154,12 @@ export function VendorsPurchaseOrdersTab() {
                   {v.email}
                 </p>
               )}
+              <VendorLanguageSelect
+                brandId={brandId}
+                vendorId={v.id}
+                value={v.preferred_language}
+                lang={lang}
+              />
             </Card>
           ))}
         </div>
@@ -201,6 +214,12 @@ export function VendorsPurchaseOrdersTab() {
                 />
               </div>
             </div>
+            <SheetLanguageChoice
+              value={vendorLanguage}
+              onChange={setVendorLanguageChoice}
+              lang={lang}
+              label={isAr ? "لغة أوامر التشغيل والرسائل" : "Language for job sheets and messages"}
+            />
           </div>
 
           <DialogFooter className="gap-2">

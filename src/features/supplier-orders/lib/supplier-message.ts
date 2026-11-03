@@ -1,4 +1,4 @@
-import type { JobSheetPiece, JobSheetRow } from "@/features/orders/lib/job-sheet";
+import type { JobSheetPiece, JobSheetRow, SheetLang } from "@/features/orders/lib/job-sheet";
 import { isPieceLine, type SupplierOrderLine } from "./order-state";
 import { roundCost } from "./landed-cost";
 
@@ -95,6 +95,14 @@ export function supplierMessage({
   foot.push(isAr ? "شكراً لك." : "Thank you.");
 
   return [head.join("\n"), body.join("\n\n"), foot.join("\n")].join("\n\n");
+}
+
+/**
+ * The message in the language the supplier reads: Arabic, English, or both (the Arabic message,
+ * a line, then the English one), each written whole in its own language by `write`.
+ */
+export function messageInLanguage(lang: SheetLang, write: (lang: "ar" | "en") => string): string {
+  return lang === "both" ? [write("ar"), "— — —", write("en")].join("\n\n") : write(lang);
 }
 
 /**

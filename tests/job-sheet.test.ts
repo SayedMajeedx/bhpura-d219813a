@@ -3,6 +3,8 @@ import {
   isWorkshopLine,
   jobSheetHtml,
   jobSheetPieces,
+  sheetLanguageFor,
+  sheetPieces,
   type JobSheetLine,
   type JobSheetProduct,
 } from "../src/features/orders/lib/job-sheet";
@@ -203,5 +205,100 @@ describe("the printed page", () => {
 
   it("leaves out the order note when there is none", () => {
     expect(page("en", { orderNote: "  " })).not.toContain("Order note");
+  });
+});
+
+describe("the sheet in the tailor's language (Arabic, English or both)", () => {
+  const NAMED: JobSheetProduct = {
+    id: "p-named",
+    item_kind: "product",
+    name: "Blush Floral Abaya",
+    name_ar: "عباية بلَش المزهّرة",
+    name_en: "Blush Floral Abaya",
+  };
+  const line: JobSheetLine = {
+    ...tailored,
+    product_id: "p-named",
+    selected_variant: { size: "54", color: "Black", fabric: null },
+    custom_field_values: [
+      { key: "length", label_ar: "الطول", label_en: "Length", value: "56 in" },
+      { key: "tailoring_notes", label_ar: "ملاحظات", label_en: "Notes", value: "أكمام أقصر" },
+    ],
+  };
+  const read = (lang: "ar" | "en") => jobSheetPieces([line], [NAMED], { lang })[0];
+
+  it("names the piece in the sheet's language, from its product", () => {
+    expect(read("ar").title).toBe("عباية بلَش المزهّرة");
+    expect(read("en").title).toBe("Blush Floral Abaya");
+  });
+
+  it("keeps a name a person wrote by hand", () => {
+    const written = { ...line, description: "Abaya - code SS7" };
+    expect(jobSheetPieces([written], [NAMED], { lang: "ar" })[0].title).toBe("Abaya - code SS7");
+  });
+
+  it("writes an option's value in the store's words for that language", () => {
+    expect(read("ar").options.map((o) => o.value)).toContain("أسود");
+    expect(read("en").options.map((o) => o.value)).toContain("Black");
+  });
+
+  it("labels measurements in each language and leaves what the customer typed as written", () => {
+    expect(read("ar").details).toEqual([{ label: "الطول", value: "56 إنش" }]);
+    expect(read("en").details).toEqual([{ label: "Length", value: "56 in" }]);
+    expect(read("ar").notes).toEqual(["أكمام أقصر"]);
+    expect(read("en").notes).toEqual(["أكمام أقصر"]);
+  });
+
+  it("reads the same pieces in both languages, paired by line", () => {
+    const both = sheetPieces([ready, line, tailored], [NAMED, ABAYA], { lang: "both" });
+    expect(both.lang).toBe("both");
+    if (both.lang !== "both") return;
+    expect(both.pieces.ar.map((p) => p.title)).toEqual([
+      "عباية بلَش المزهّرة",
+      "Blush Floral Abaya",
+    ]);
+    expect(both.pieces.en.map((p) => p.title)).toEqual([
+      "Blush Floral Abaya",
+      "Blush Floral Abaya",
+    ]);
+    expect(sheetPieces([line], [NAMED], { lang: "en" })).toEqual({
+      lang: "en",
+      pieces: [read("en")],
+    });
+  });
+
+  it("draws each piece in two columns, English on the left and Arabic on the right", () => {
+    const both = sheetPieces([line], [NAMED], { lang: "both" });
+    if (both.lang !== "both") throw new Error("expected both");
+    const html = jobSheetHtml({
+      brand: "Pura",
+      workshop: { ar: "الخيّاط", en: "Tailor" },
+      orderNumber: 1042,
+      orderDate: "2026-11-03",
+      customerName: "Fatima",
+      pieces: both.pieces,
+      lang: "both",
+    });
+    // English first on the left-to-right page, the Arabic isolated in its own direction.
+    expect(html).toContain("Job sheet · \u2068أمر تشغيل\u2069 #1042");
+    expect(html).toContain("For: Tailor · \u2068إلى: الخيّاط\u2069");
+    expect(html).toContain("المقاسات والتفاصيل");
+    expect(html).toContain("Measurements &amp; details");
+    const english = html.indexOf('<div class="col" dir="ltr" lang="en">');
+    const arabic = html.indexOf('<div class="col" dir="rtl" lang="ar">');
+    expect(english).toBeGreaterThan(-1);
+    expect(arabic).toBeGreaterThan(english);
+    // What the customer typed and the quantity are written once.
+    expect(html.match(/أكمام أقصر/g)).toHaveLength(1);
+    expect(html.match(/class="qty"/g)).toHaveLength(1);
+    expect(html).toContain("Piece 1 of 1 · \u2068القطعة 1 من 1\u2069");
+    expect(html).not.toMatch(/BHD|د\.ب|price|phone|address/i);
+  });
+
+  it("opens on the supplier's language when they chose one, else the screen's", () => {
+    expect(sheetLanguageFor({ vendorLang: "both", screenLang: "ar" })).toBe("both");
+    expect(sheetLanguageFor({ vendorLang: "en", screenLang: "ar" })).toBe("en");
+    expect(sheetLanguageFor({ vendorLang: null, screenLang: "ar" })).toBe("ar");
+    expect(sheetLanguageFor({ vendorLang: "ur", screenLang: "en" })).toBe("en");
   });
 });

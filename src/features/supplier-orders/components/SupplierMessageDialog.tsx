@@ -16,9 +16,16 @@ import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
-import { jobSheetPieces, type JobSheetProduct } from "@/features/orders/lib/job-sheet";
+import {
+  jobSheetPieces,
+  sheetLanguageFor,
+  type JobSheetProduct,
+  type SheetLang,
+} from "@/features/orders/lib/job-sheet";
+import { SheetLanguageChoice } from "@/features/orders/components/SheetLanguageChoice";
+import { accountingQueries } from "@/lib/data/accounting";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
-import { messagePieces, supplierMessage } from "../lib/supplier-message";
+import { messageInLanguage, messagePieces, supplierMessage } from "../lib/supplier-message";
 import type { SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 
@@ -50,6 +57,14 @@ export function SupplierMessageDialog({
   const isAr = lang === "ar";
   const uid = useId();
   const [withPrices, setWithPrices] = useState(true);
+  // Written in the supplier's own language when they chose one, else the screen's.
+  const vendorsQ = useQuery({ ...accountingQueries.vendorOptions(brandId), enabled: open });
+  const vendorLang = (vendorsQ.data ?? []).find(
+    (v) => v.id === order.vendor_id,
+  )?.preferred_language;
+  const defaultLang = sheetLanguageFor({ vendorLang, screenLang: lang });
+  const [chosenLang, setChosenLang] = useState<SheetLang | null>(null);
+  const messageLang = chosenLang ?? defaultLang;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const customerIds = useMemo(
     () => order.items.map((l) => l.order_item_id).filter(Boolean) as string[],
@@ -61,35 +76,42 @@ export function SupplierMessageDialog({
   });
 
   const message = useMemo(() => {
-    const sheets = new Map(
-      (detailsQ.data ?? []).map((item) => {
-        const [piece] = jobSheetPieces(
-          [{ ...item, location: "custom" } as Parameters<typeof jobSheetPieces>[0][number]],
-          catalog.products as unknown as JobSheetProduct[],
-          { lang, brandAddons: storeProfile.addons, storeVertical: storeProfile.vertical },
-        );
-        return [item.id, piece ?? null] as const;
-      }),
-    );
-    return supplierMessage({
-      vendorName: order.vendor_name,
-      storeName,
-      poNumber: order.po_number,
-      expectedAt: order.expected_at,
-      pieces: messagePieces(
-        order.items,
-        {
-          productName: (id) => catalog.productName(id),
-          sizeName: (id) => catalog.sizeName(id),
-          customerPiece: (id) => sheets.get(id) ?? null,
-        },
-        lang,
-      ),
-      includePrices: withPrices,
-      money: (amount) => formatMoney(amount, currency, lang),
-      lang,
-    });
-  }, [detailsQ.data, catalog, order, storeName, withPrices, currency, lang, storeProfile]);
+    const write = (inLang: "ar" | "en") => {
+      const sheets = new Map(
+        (detailsQ.data ?? []).map((item) => {
+          const [piece] = jobSheetPieces(
+            [{ ...item, location: "custom" } as Parameters<typeof jobSheetPieces>[0][number]],
+            catalog.products as unknown as JobSheetProduct[],
+            {
+              lang: inLang,
+              brandAddons: storeProfile.addons,
+              storeVertical: storeProfile.vertical,
+            },
+          );
+          return [item.id, piece ?? null] as const;
+        }),
+      );
+      return supplierMessage({
+        vendorName: order.vendor_name,
+        storeName,
+        poNumber: order.po_number,
+        expectedAt: order.expected_at,
+        pieces: messagePieces(
+          order.items,
+          {
+            productName: (id) => catalog.productName(id),
+            sizeName: (id) => catalog.sizeName(id),
+            customerPiece: (id) => sheets.get(id) ?? null,
+          },
+          inLang,
+        ),
+        includePrices: withPrices,
+        money: (amount) => formatMoney(amount, currency, inLang),
+        lang: inLang,
+      });
+    };
+    return messageInLanguage(messageLang, write);
+  }, [detailsQ.data, catalog, order, storeName, withPrices, currency, messageLang, storeProfile]);
 
   const chat = whatsappChatUrl(order.vendor_phone);
   const copy = async () => {
@@ -124,6 +146,13 @@ export function SupplierMessageDialog({
         >
           {message}
         </pre>
+
+        <SheetLanguageChoice
+          value={messageLang}
+          onChange={setChosenLang}
+          lang={lang}
+          label={isAr ? "لغة الرسالة" : "Message language"}
+        />
 
         <div className="flex items-center gap-2">
           <Checkbox

@@ -61,11 +61,14 @@ export async function fetchVendors(brandId: string) {
   return data ?? [];
 }
 
-/** The brand's vendors for a picker (id and name), by name. */
+/**
+ * The brand's vendors for a picker (id, name and the language their job sheets and messages
+ * default to), by name.
+ */
 export async function fetchVendorOptions(brandId: string) {
   const { data, error } = await supabase
     .from("vendors")
-    .select("id, name")
+    .select("id, name, preferred_language")
     .eq("brand_id", brandId)
     .order("name", { ascending: true });
   if (error) throw error;
@@ -153,6 +156,23 @@ export async function createVendor(
     .single();
   if (error) throw error;
   return data.id;
+}
+
+/** The language a supplier's job sheets and messages default to; null: the screen's. */
+export async function setVendorLanguage(
+  brandId: string,
+  vendorId: string,
+  language: "ar" | "en" | "both" | null,
+): Promise<void> {
+  const { data, error } = await supabase
+    .from("vendors")
+    .update({ preferred_language: language })
+    .eq("brand_id", brandId)
+    .eq("id", vendorId)
+    .select("id");
+  if (error) throw error;
+  // A write that matched no row (another store's supplier, or one deleted meanwhile) is a failure.
+  if (!data?.length) throw new Error("VENDOR_NOT_FOUND");
 }
 
 export type CashAccountType = "cash_box" | "bank_account";

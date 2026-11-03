@@ -9021,6 +9021,7 @@ export type Database = {
           id: string;
           name: string;
           phone: string | null;
+          preferred_language: string | null;
           tax_number: string | null;
         };
         Insert: {
@@ -9031,6 +9032,7 @@ export type Database = {
           id?: string;
           name: string;
           phone?: string | null;
+          preferred_language?: string | null;
           tax_number?: string | null;
         };
         Update: {
@@ -9041,6 +9043,7 @@ export type Database = {
           id?: string;
           name?: string;
           phone?: string | null;
+          preferred_language?: string | null;
           tax_number?: string | null;
         };
         Relationships: [

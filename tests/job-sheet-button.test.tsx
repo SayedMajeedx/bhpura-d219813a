@@ -74,12 +74,19 @@ describe("the job sheet in the order's documents", () => {
     expect(screen.queryByRole("button", { name: /job sheet/i })).toBeNull();
   });
 
-  it("prints when the order has a piece to make", () => {
+  it("prints when the order has a piece to make, in the language chosen", () => {
     const print = vi.fn();
     show({ onPrintJobSheet: print });
     expect(screen.getByText("Job sheet (Atelier)")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Print job sheet" }));
+    // It asks the language first, on the screen's when no supplier chose one.
+    expect(screen.getByRole("radio", { name: "English" }).getAttribute("aria-checked")).toBe(
+      "true",
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "العربية" }));
+    fireEvent.click(screen.getByRole("button", { name: "Print" }));
     expect(print).toHaveBeenCalledTimes(1);
+    expect(print).toHaveBeenCalledWith("ar");
   });
 
   it("speaks Arabic with the store's word for the workshop", () => {
