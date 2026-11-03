@@ -90,6 +90,10 @@ const variants = [
   ...v,
 }));
 
+const profile = () => ({
+  isAdmin: false,
+  hasPermission: (p: string) => stubs.permissions.includes(p),
+});
 const mocks: Record<string, unknown> = {
   "data/supplier-orders": {
     supplierOrderQueries: {
@@ -142,10 +146,8 @@ const mocks: Record<string, unknown> = {
     },
   },
   "profile-context": {
-    useProfile: () => ({
-      isAdmin: false,
-      hasPermission: (p: string) => stubs.permissions.includes(p),
-    }),
+    useProfile: () => profile(),
+    useProfileOptional: () => profile(),
   },
 };
 vi.mock("../src/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);

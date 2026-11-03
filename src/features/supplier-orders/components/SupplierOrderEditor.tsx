@@ -147,6 +147,7 @@ export function SupplierOrderEditor({
           form.products.map((product) => (
             <ProductLinesCard
               key={product.key}
+              brandId={brandId}
               product={product}
               catalog={catalog}
               problems={problems}

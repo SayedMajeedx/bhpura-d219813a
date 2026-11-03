@@ -73,7 +73,10 @@ const mocks: Record<string, unknown> = {
   "data/orders": {
     ordersQueries: { list: () => ({ queryKey: ["orders"], queryFn: async () => [] }) },
   },
-  "profile-context": { useProfile: () => ({ isAdmin: true, hasPermission: () => true }) },
+  "profile-context": {
+    useProfile: () => ({ isAdmin: true, hasPermission: () => true }),
+    useProfileOptional: () => ({ isAdmin: true, hasPermission: () => true }),
+  },
   session: { getCurrentUser: async () => ({ id: "u1" }) },
   entitlements: { useEntitlements: () => ({ entitlements: { limits: { "products.limit": -1 } } }) },
 };

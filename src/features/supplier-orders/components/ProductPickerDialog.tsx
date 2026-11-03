@@ -8,9 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { productLabel, searchProducts } from "../lib/catalog";
+import { productLabel, searchProducts, sizesLine } from "../lib/catalog";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
-import { arNoun } from "@/lib/arabic-count";
 
 /** Most products listed at once: a search narrows a long catalog. */
 const SHOWN = 60;
@@ -98,7 +97,7 @@ export function ProductPickerDialog({
             id={searchId}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={isAr ? "اسم المنتج أو رمز SKU" : "Product name or SKU"}
+            placeholder={isAr ? "اسم المنتج أو المقاس أو SKU" : "Product, size or SKU"}
             className="ps-9"
             autoFocus
           />
@@ -140,14 +139,8 @@ export function ProductPickerDialog({
                       >
                         {productLabel(product, lang)}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {isAr
-                          ? sizes.length === 1
-                            ? "مقاس واحد"
-                            : `${arNoun(sizes.length, "size")}`
-                          : sizes.length === 1
-                            ? "1 size"
-                            : `${sizes.length} sizes`}
+                      <span dir="auto" className="block break-words text-xs text-muted-foreground">
+                        {sizesLine(sizes, lang)}
                       </span>
                     </span>
                   </button>
