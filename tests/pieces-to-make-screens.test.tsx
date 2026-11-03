@@ -79,6 +79,22 @@ const mocks: Record<string, unknown> = {
     sendOrderToSupplier: stubs.sendOrderToSupplier,
     invalidateSupplierOrders: vi.fn(async () => undefined),
   },
+  "data/supplier-orders/workshop": {
+    workshopQueries: {
+      suppliers: () =>
+        options("workshop-suppliers", () => [
+          { id: "tailor", name: "Umm Ali", phone: "39950016", language: null, openOrders: [] },
+        ]),
+      orderPieces: (_brand: string, orderId: string) =>
+        options(`workshop-pieces-${orderId}`, () => [
+          { orderItemId: "l-1", poId: "po-new", poNumber: "PO-0009", expectedAt: null },
+        ]),
+    },
+  },
+  "profile-context": {
+    useProfileOptional: () => ({ canViewFinancials: true, hasPermission: () => true }),
+  },
+  activity: { logActivity: vi.fn(async () => undefined) },
   "data/catalog": {
     catalogKeys: { products: () => ["products"], variants: () => ["variants"] },
     catalogQueries: {
@@ -112,6 +128,12 @@ vi.mock("../src/lib/data/orders", () => mocks["data/orders"]);
 vi.mock("@/lib/data/orders", () => mocks["data/orders"]);
 vi.mock("../src/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
 vi.mock("@/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
+vi.mock("../src/lib/data/supplier-orders/workshop", () => mocks["data/supplier-orders/workshop"]);
+vi.mock("@/lib/data/supplier-orders/workshop", () => mocks["data/supplier-orders/workshop"]);
+vi.mock("../src/lib/profile-context", () => mocks["profile-context"]);
+vi.mock("@/lib/profile-context", () => mocks["profile-context"]);
+vi.mock("../src/lib/activity-log", () => mocks.activity);
+vi.mock("@/lib/activity-log", () => mocks.activity);
 vi.mock("../src/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("@/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("../src/lib/data/accounting", () => mocks["data/accounting"]);
@@ -162,9 +184,9 @@ describe("the pieces to make", () => {
     fireEvent.click(screen.getByRole("button", { name: /Send to/ }));
 
     const dialog = await screen.findByRole("dialog");
-    // Each order's pieces under its number; no "mark as sent" from the list.
+    // Each order's pieces under its number; no "our own workshop" from the list.
     expect(within(dialog).getByText("Customer piece · order #1001")).toBeInTheDocument();
-    expect(within(dialog).queryByText("Mark as sent, with no supplier")).toBeNull();
+    expect(within(dialog).queryByRole("radio", { name: "Our own workshop" })).toBeNull();
     await within(dialog).findByRole("option", { name: "Umm Ali" });
     fireEvent.change(within(dialog).getByLabelText("Supplier"), { target: { value: "tailor" } });
     await waitFor(() =>
@@ -193,7 +215,14 @@ describe("the pieces to make", () => {
         },
       ],
     ]);
-    expect(stubs.toast.success).toHaveBeenCalled();
+    // The same window then says where the batch is and prints all its sheets in one go.
+    expect((await within(dialog).findAllByText("With Umm Ali on PO-0009")).length).toBeGreaterThan(
+      0,
+    );
+    expect(within(dialog).getByRole("button", { name: "Print job sheet" })).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Open supplier order PO-0009" }),
+    ).toBeInTheDocument();
   });
 });
 

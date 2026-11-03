@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Ban,
   MessageCircle,
+  Printer,
   MoreHorizontal,
   PackageCheck,
   Pencil,
@@ -59,6 +60,10 @@ import { SupplierOrderView } from "./SupplierOrderView";
 import { ReceiveDialog } from "./ReceiveDialog";
 import { PaymentDialog } from "./PaymentDialog";
 import { SupplierMessageDialog } from "./SupplierMessageDialog";
+import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
+import { sheetLanguageFor } from "@/features/orders/lib/job-sheet";
+import { accountingQueries } from "@/lib/data/accounting";
+import { usePrintSupplierSheets } from "../hooks/use-print-supplier-sheets";
 import { UndoReceivingDialog } from "./UndoReceivingDialog";
 import { undoableReceipts } from "../lib/undo-receiving";
 
@@ -95,6 +100,7 @@ export function SupplierOrderPage({
   const [receiving, setReceiving] = useState(false);
   const [paying, setPaying] = useState(false);
   const [messaging, setMessaging] = useState(false);
+  const [printingSheets, setPrintingSheets] = useState(false);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [busy, setBusy] = useState(false);
   const [undoing, setUndoing] = useState<SupplierReceipt[] | null>(null);
@@ -108,6 +114,21 @@ export function SupplierOrderPage({
     [order, receiptsQ.data],
   );
   const today = localToday();
+  const storeName =
+    (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || brand.slug;
+  // The customers' pieces on it print as their job sheets, in the supplier's language.
+  const printSheets = usePrintSupplierSheets({
+    brandId: brand.id,
+    catalog,
+    brandName: storeName,
+    lang,
+  });
+  const vendorsQ = useQuery(accountingQueries.vendorOptions(brand.id));
+  const sheetLang = sheetLanguageFor({
+    vendorLang: (vendorsQ.data ?? []).find((v) => v.id === order?.vendor_id)?.preferred_language,
+    screenLang: lang,
+  });
+  const hasCustomerPieces = Boolean(order?.items.some((l) => l.order_item_id));
   const loadState = combinedLoadState(isNew ? catalog.queries : [orderQ, ...catalog.queries]);
   const Back = isAr ? ArrowRight : ArrowLeft;
   const showEditor = isNew || editing;
@@ -200,6 +221,19 @@ export function SupplierOrderPage({
                 >
                   <MessageCircle className="h-4 w-4 text-success" aria-hidden="true" />
                   <span className="hidden sm:inline">{isAr ? "رسالة للمورد" : "Message"}</span>
+                </Button>
+              )}
+              {hasCustomerPieces && order.status !== "cancelled" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPrintingSheets(true)}
+                  className="h-9 gap-1.5"
+                  aria-label={isAr ? "اطبع أوامر التشغيل" : "Print job sheets"}
+                >
+                  <Printer className="h-4 w-4" aria-hidden="true" />
+                  <span className="hidden sm:inline">{isAr ? "أوامر التشغيل" : "Job sheets"}</span>
                 </Button>
               )}
               <OrderMenu
@@ -329,6 +363,14 @@ export function SupplierOrderPage({
             currency={currency}
             lang={lang}
           />
+          <JobSheetPrintDialog
+            open={printingSheets}
+            onOpenChange={setPrintingSheets}
+            defaultLang={sheetLang}
+            lang={lang}
+            title={isAr ? "اطبع أوامر التشغيل" : "Print job sheets"}
+            onPrint={(chosen) => void printSheets(order, chosen)}
+          />
           {messaging && (
             <SupplierMessageDialog
               open={messaging}
@@ -336,10 +378,7 @@ export function SupplierOrderPage({
               brandId={brand.id}
               order={order}
               catalog={catalog}
-              storeName={
-                (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ||
-                brand.slug
-              }
+              storeName={storeName}
               currency={currency}
               lang={lang}
             />

@@ -31,8 +31,9 @@ import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { MorphText } from "@/components/motion/MorphText";
 import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
-import { useJobSheetLanguage } from "@/features/orders/hooks/use-job-sheet-language";
-import type { SheetLang } from "@/features/orders/lib/job-sheet";
+import { useOrderWorkshop } from "@/features/orders/hooks/use-job-sheet-language";
+import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
+import { whereSentence } from "@/features/supplier-orders/lib/after-send";
 
 interface OrderSalesDocumentsCardProps {
   order: any;
@@ -46,8 +47,8 @@ interface OrderSalesDocumentsCardProps {
   onPrintInvoice?: () => void;
   /** What goes with a piece to the workshop; each part is absent when it does not apply. */
   workshop?: {
-    /** Prints the job sheet in the language chosen at print time. */
-    printJobSheet?: (sheetLang: SheetLang) => void;
+    /** Prints the job sheet in the language chosen at print time, saying who has the piece. */
+    printJobSheet?: (sheetLang: SheetLang, where?: SheetWhere | null) => void;
     tellCustomerWorkStarted?: () => void;
     atWorkshop?: boolean;
   };
@@ -88,12 +89,11 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
   const workshop = vocabulary.workshop?.[lang] || (isAr ? "الورشة" : "Workshop");
   const onPrintJobSheet = workshopActions?.printJobSheet;
   const [printingSheet, setPrintingSheet] = React.useState(false);
-  const itemIds = React.useMemo(
-    () => (items ?? []).map((item: { id?: string }) => item.id ?? "").filter(Boolean),
-    [items],
-  );
-  // The tailor's own language when a supplier holding the piece chose one, else the screen's.
-  const sheetLang = useJobSheetLanguage(brandId, itemIds, lang);
+  // Who has the piece (a supplier's order or our workshop), and the sheet in the tailor's own
+  // language when the supplier holding it chose one, else the screen's.
+  const { sheetLang, where } = useOrderWorkshop(brandId, order?.id ?? "", lang, {
+    atWorkshop: Boolean(workshopActions?.atWorkshop),
+  });
   // Offered while the piece is with the workshop, in case the moment after sending it was missed.
   const onTellCustomer = workshopActions?.atWorkshop
     ? workshopActions.tellCustomerWorkStarted
@@ -246,11 +246,17 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
               <div className="text-sm font-bold text-foreground">
                 {isAr ? `أمر التشغيل (${workshop})` : `Job sheet (${workshop})`}
               </div>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {isAr
-                  ? "ورقة تُطبع وتُرسل مع القطعة: المقاسات، الخيارات وملاحظات العميل، بدون أسعار أو بيانات اتصال"
-                  : "A page to print and send with the piece: measurements, options and the customer's notes, with no prices or contact details"}
-              </p>
+              {where ? (
+                <p className="mt-0.5 text-xs font-semibold text-foreground">
+                  {whereSentence(where, lang)}
+                </p>
+              ) : (
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "ورقة تُطبع وتُرسل مع القطعة: المقاسات، الخيارات وملاحظات العميل، بدون أسعار أو بيانات اتصال"
+                    : "A page to print and send with the piece: measurements, options and the customer's notes, with no prices or contact details"}
+                </p>
+              )}
             </div>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -279,7 +285,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
             open={printingSheet}
             onOpenChange={setPrintingSheet}
             defaultLang={sheetLang}
-            onPrint={onPrintJobSheet}
+            onPrint={(chosen) => onPrintJobSheet(chosen, where)}
             lang={lang}
           />
         </div>

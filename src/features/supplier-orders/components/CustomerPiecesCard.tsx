@@ -7,8 +7,9 @@ import { useBrand } from "@/lib/brand-context";
 import { useProfileOptional } from "@/lib/profile-context";
 import { customerOrderName } from "../lib/customer-pieces";
 import { awaitsChoice, purposeLabel } from "../lib/after-sending";
-import type { SupplierOrderLine } from "../lib/order-state";
+import { piecesLabel, type SupplierOrderLine } from "../lib/order-state";
 import { CancelledPieceDialog } from "./CancelledPieceDialog";
+import { PiecePriceField } from "./PiecePriceField";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
 /**
@@ -41,10 +42,18 @@ export function CustomerPiecesCard({
     Boolean(profile?.isAdmin || profile?.hasPermission(permission));
   const canDecide = open && may("manage_orders") && may("view_financials");
   const [deciding, setDeciding] = useState<SupplierOrderLine | null>(null);
+  const missing = open ? lines.filter((line) => line.price_pending).length : 0;
 
   return (
     <Card className="p-3 sm:p-4">
       <h3 className="mb-2 font-bold">{isAr ? "قطع الزبائن" : "Customer pieces"}</h3>
+      {missing > 0 && (
+        <p className="mb-2 text-xs text-warning">
+          {isAr
+            ? `مجموع الطلبية ناقص: لم يُضف سعر ${piecesLabel(missing, lang)}.`
+            : `The order's total is incomplete: ${piecesLabel(missing, lang)} still to price.`}
+        </p>
+      )}
       <ul className="divide-y divide-border-subtle text-sm">
         {lines.map((line) => {
           const work = purposeLabel(line.purpose, isAr);
@@ -90,8 +99,17 @@ export function CustomerPiecesCard({
                   </span>
                   <span className="text-muted-foreground"> / {line.quantity}</span>
                 </span>
-                <span className="shrink-0 tabular-nums">{cost(line)}</span>
+                {!line.price_pending && <span className="shrink-0 tabular-nums">{cost(line)}</span>}
               </div>
+              {line.price_pending && (
+                <PiecePriceField
+                  brandId={brandId}
+                  itemId={line.id}
+                  description={line.description}
+                  canPrice={may("view_financials")}
+                  lang={lang}
+                />
+              )}
               {cancelled && (
                 <div className="flex flex-wrap items-center gap-2 rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />

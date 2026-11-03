@@ -28,6 +28,7 @@ import {
   ReceiveFromTailorButton,
   SendToTailorButton,
 } from "@/features/supplier-orders/components/TailorButtons";
+import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
 
 export type OrderPrimaryActionContext = {
   approveBenefitPayment: () => Promise<void>;
@@ -41,8 +42,14 @@ export type OrderPrimaryActionContext = {
   qc: QueryClient;
   storeProfile: ReturnType<typeof useAdminStoreProfile>["profile"];
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
-  /** After the piece goes to the workshop, staff can tell the customer on WhatsApp. */
-  workshop?: { tellCustomerWorkStarted?: () => void };
+  /**
+   * What goes with a piece to the workshop: its job sheet (in the language chosen, saying who has
+   * it) and telling the customer on WhatsApp, both offered once the piece is sent.
+   */
+  workshop?: {
+    tellCustomerWorkStarted?: () => void;
+    printJobSheet?: (sheetLang: SheetLang, where?: SheetWhere | null) => void;
+  };
 };
 
 /**
@@ -102,12 +109,14 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
   };
 
   if (storeProfile.modules.made_to_order && workflow.nextAction === "send_to_tailor") {
-    // After the stage moves (on a supplier's order or as a stage alone): tell, log, refresh.
-    const afterSend = async () => {
+    // After the stage moves (on a supplier's order or as a stage alone): log, refresh. The send's
+    // own panel offers the job sheet and telling the customer; a stage moved alone (staff who do
+    // not handle orders) offers telling the customer in its note.
+    const afterSend = async (offerTell = false) => {
       toast.success(
         vocabulary.sent_to_workshop_success[lang] ||
           (lang === "ar" ? "تم تحويل الطلب للورشة وتحديث الحالة" : "Sent to workshop"),
-        workshop?.tellCustomerWorkStarted
+        offerTell && workshop?.tellCustomerWorkStarted
           ? {
               duration: 12000,
               action: {
@@ -127,14 +136,14 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
       invalidateOrders(qc, brandId);
       invalidateActivityLogs(qc);
     };
-    const plainSend = async () => {
+    const plainSend = async (offerTell = false) => {
       try {
         await updateOrder(brandId, order.id, {
           status: "sent_to_tailor",
           fulfillment_status: "SENT_TO_TAILOR",
           updated_at: new Date().toISOString(),
         });
-        await afterSend();
+        await afterSend(offerTell);
       } catch (err: unknown) {
         toast.error(
           getFriendlyErrorMessage(err) ||
@@ -150,7 +159,9 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         lang={lang === "ar" ? "ar" : "en"}
         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         onPlainSend={plainSend}
-        onSent={afterSend}
+        onSent={() => afterSend()}
+        onPrintSheet={workshop?.printJobSheet}
+        onTellCustomer={workshop?.tellCustomerWorkStarted}
         title={workshopActionLabels(vocabulary, lang).send}
       >
         <Scissors className="h-4 w-4 me-1.5" />

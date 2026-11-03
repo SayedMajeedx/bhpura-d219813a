@@ -14,6 +14,7 @@ import {
   sheetPieces,
   type JobSheetProduct,
   type SheetLang,
+  type SheetWhere,
 } from "@/features/orders/lib/job-sheet";
 import type { StoreVocabulary } from "@/lib/store-vocabulary";
 import { workStartedMessage } from "@/features/orders/lib/stage-messages";
@@ -168,7 +169,7 @@ export function createOrderDocumentActions({
 
   // The sheet is printed in the language chosen at print time (the tailor's, or the screen's),
   // never only the screen's: a tailor reading English gets an English sheet from an Arabic admin.
-  const printJobSheet = (sheetLang: SheetLang) => {
+  const printJobSheet = (sheetLang: SheetLang, where?: SheetWhere | null) => {
     const settings = (settingsQ.data ?? {}) as { business_name?: string | null };
     const w = window.open("", "_blank", "width=800,height=900");
     if (!w) {
@@ -190,6 +191,8 @@ export function createOrderDocumentActions({
       orderDate: order.order_date,
       customerName: getOrderCustomerName(order) || null,
       orderNote: order.notes ?? null,
+      // Who has the piece (the supplier and their order, or our workshop), when it is known.
+      where: where ?? null,
     };
     w.document.open();
     w.document.write(

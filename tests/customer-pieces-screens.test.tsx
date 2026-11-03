@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const stubs = vi.hoisted(() => ({
   canViewFinancials: true,
   pieces: [] as unknown[],
+  workshopPieces: [] as unknown[],
   sendOrderToSupplier: vi.fn(async () => "po-4"),
   receiveSupplierOrder: vi.fn(async () => ({ status: "received", repeated: false })),
   toast: { success: vi.fn(), error: vi.fn() },
@@ -41,6 +42,26 @@ const mocks: Record<string, unknown> = {
     receiveSupplierOrder: stubs.receiveSupplierOrder,
     invalidateSupplierOrders: vi.fn(async () => undefined),
     invalidateAfterReceipt: vi.fn(async () => undefined),
+  },
+  // Who has the pieces and the suppliers, as every member of order staff reads them.
+  "data/supplier-orders/workshop": {
+    workshopQueries: {
+      suppliers: () =>
+        options("workshop-suppliers", () => [
+          {
+            id: "tailor",
+            name: "Umm Ali",
+            phone: "+97333334444",
+            language: "en",
+            openOrders: [{ id: "po-open", poNumber: "PO-0003", expectedAt: "2026-10-25" }],
+          },
+        ]),
+      orderPieces: (_brand: string, orderId: string) =>
+        options(`workshop-pieces-${orderId}`, () => stubs.workshopPieces),
+    },
+  },
+  "store-profile": {
+    useAdminStoreProfile: () => ({ profile: { addons: [], vertical: "fashion", modules: {} } }),
   },
   "data/catalog": {
     catalogKeys: { products: () => ["products"], variants: () => ["variants"] },
@@ -74,6 +95,10 @@ const mocks: Record<string, unknown> = {
 };
 vi.mock("../src/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
 vi.mock("@/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
+vi.mock("../src/lib/data/supplier-orders/workshop", () => mocks["data/supplier-orders/workshop"]);
+vi.mock("@/lib/data/supplier-orders/workshop", () => mocks["data/supplier-orders/workshop"]);
+vi.mock("../src/hooks/use-store-profile", () => mocks["store-profile"]);
+vi.mock("@/hooks/use-store-profile", () => mocks["store-profile"]);
 vi.mock("../src/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("@/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("../src/lib/data/accounting", () => mocks["data/accounting"]);
@@ -85,6 +110,9 @@ vi.mock("@/lib/brand-context", () => mocks["brand-context"]);
 vi.mock("../src/lib/profile-context", () => mocks["profile-context"]);
 vi.mock("@/lib/profile-context", () => mocks["profile-context"]);
 vi.mock("sonner", () => ({ toast: stubs.toast }));
+const activity = vi.hoisted(() => ({ logActivity: vi.fn(async () => undefined) }));
+vi.mock("../src/lib/activity-log", () => activity);
+vi.mock("@/lib/activity-log", () => activity);
 
 const { SendToTailorButton, ReceiveFromTailorButton } =
   await import("../src/features/supplier-orders/components/TailorButtons");
@@ -121,6 +149,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   stubs.canViewFinancials = true;
   stubs.pieces = [];
+  stubs.workshopPieces = [];
 });
 
 describe("sending a customer's pieces to the tailor", () => {
@@ -152,6 +181,11 @@ describe("sending a customer's pieces to the tailor", () => {
     fireEvent.change(within(dialog).getByLabelText("On which order"), {
       target: { value: "po-open" },
     });
+    // The tailor is never told the customer's name.
+    expect(dialog).toHaveTextContent("The supplier gets no customer name or number");
+    stubs.workshopPieces = [
+      { orderItemId: "oi-1", poId: "po-4", poNumber: "PO-0004", expectedAt: "2026-11-12" },
+    ];
     fireEvent.click(within(dialog).getByRole("button", { name: /^Send/ }));
     await waitFor(() => expect(stubs.sendOrderToSupplier).toHaveBeenCalled());
     expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith("o-9", {
@@ -162,12 +196,18 @@ describe("sending a customer's pieces to the tailor", () => {
     });
     expect(onSent).toHaveBeenCalled();
     expect(onPlainSend).not.toHaveBeenCalled();
-    // The tailor is never told the customer's name.
-    expect(dialog).toHaveTextContent("The supplier gets no customer name or number");
+    // One step: the same window says where the piece is and offers what follows.
+    expect(
+      (await within(dialog).findAllByText("With Umm Ali on PO-0004, due 12/11/2026")).length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(dialog).getByRole("button", { name: "Message Umm Ali on WhatsApp" }),
+    ).toBeTruthy();
   });
 
-  it("can still only move the stage, and does only that for staff who cannot see costs", async () => {
+  it("can send to the store's own workshop instead, with its job sheet", async () => {
     const onPlainSend = vi.fn();
+    const print = vi.fn();
     wrap(
       <SendToTailorButton
         brandId="b1"
@@ -176,17 +216,29 @@ describe("sending a customer's pieces to the tailor", () => {
         lang="en"
         onSent={vi.fn()}
         onPlainSend={onPlainSend}
+        onPrintSheet={print}
         title="Send to Tailor"
       >
         Send to Tailor
       </SendToTailorButton>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Send to Tailor" }));
-    fireEvent.click(await screen.findByRole("button", { name: "Mark as sent, with no supplier" }));
+    fireEvent.click(await screen.findByRole("radio", { name: "Our own workshop" }));
+    fireEvent.click(screen.getByRole("button", { name: "Move to our workshop" }));
     await waitFor(() => expect(onPlainSend).toHaveBeenCalledTimes(1));
+    expect(stubs.sendOrderToSupplier).not.toHaveBeenCalled();
+    expect(await screen.findByText("In our workshop")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Print job sheet" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Print" }));
+    expect(print).toHaveBeenCalledWith("en", {
+      supplier: null,
+      poNumber: null,
+      expectedAt: null,
+    });
+  });
 
+  it("lets staff who cannot see costs send too, with no price, for finance staff to add", async () => {
     stubs.canViewFinancials = false;
-    const plain = vi.fn();
     wrap(
       <SendToTailorButton
         brandId="b1"
@@ -194,15 +246,30 @@ describe("sending a customer's pieces to the tailor", () => {
         lines={lines}
         lang="en"
         onSent={vi.fn()}
-        onPlainSend={plain}
+        onPlainSend={vi.fn()}
         title="Send"
       >
         Send
       </SendToTailorButton>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    expect(plain).toHaveBeenCalledTimes(1);
-    expect(stubs.sendOrderToSupplier).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole("dialog");
+    // The suppliers come from the reader every member of order staff may use; none is added here.
+    await within(dialog).findByRole("option", { name: "Umm Ali" });
+    expect(within(dialog).queryByRole("button", { name: "New" })).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText("Supplier"), { target: { value: "tailor" } });
+    expect(await within(dialog).findByRole("option", { name: /PO-0003/ })).toBeTruthy();
+    expect(within(dialog).queryByLabelText("Cost of Black abaya · 52")).toBeNull();
+    expect(dialog).toHaveTextContent("The price is added by someone who manages the money.");
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Send/ }));
+    await waitFor(() =>
+      expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith("o-9", {
+        vendorId: "tailor",
+        poId: null,
+        expectedAt: null,
+        lines: [{ order_item_id: "oi-1", unit_cost: 0 }],
+      }),
+    );
   });
 });
 

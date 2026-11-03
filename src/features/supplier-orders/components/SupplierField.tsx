@@ -17,25 +17,32 @@ import { cn } from "@/lib/utils";
 import { SheetLanguageChoice } from "@/features/orders/components/SheetLanguageChoice";
 import type { SheetLang } from "@/features/orders/lib/job-sheet";
 
-/** Who the order is from: one of the store's suppliers, or a new one added on the spot. */
+/**
+ * Who the order is from: one of the store's suppliers, or a new one added on the spot. Staff who
+ * cannot read the suppliers (they are the finance staff's) are given the list (`options`, from
+ * `workshop_suppliers`) and add none.
+ */
 export function SupplierField({
   brandId,
   value,
   onChange,
   invalid,
   lang,
+  options,
 }: {
   brandId: string;
   value: string;
   onChange: (vendorId: string) => void;
   invalid: boolean;
   lang: "ar" | "en";
+  /** The suppliers to choose from, when this member of staff cannot read them. */
+  options?: ReadonlyArray<{ id: string; name: string }>;
 }) {
   const isAr = lang === "ar";
   const id = useId();
   const qc = useQueryClient();
-  const vendorsQ = useQuery(accountingQueries.vendorOptions(brandId));
-  const vendors = vendorsQ.data ?? [];
+  const vendorsQ = useQuery({ ...accountingQueries.vendorOptions(brandId), enabled: !options });
+  const vendors = options ?? vendorsQ.data ?? [];
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -88,15 +95,17 @@ export function SupplierField({
             </option>
           ))}
         </select>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setAdding(true)}
-          className="h-10 shrink-0 gap-1 pointer-coarse:h-11"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          {isAr ? "جديد" : "New"}
-        </Button>
+        {!options && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setAdding(true)}
+            className="h-10 shrink-0 gap-1 pointer-coarse:h-11"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {isAr ? "جديد" : "New"}
+          </Button>
+        )}
       </div>
       {invalid && (
         <p className="text-xs text-destructive">

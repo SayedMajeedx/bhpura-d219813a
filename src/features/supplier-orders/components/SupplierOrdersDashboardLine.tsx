@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Scissors } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
-import { localToday } from "../lib/order-state";
+import { localToday, piecesLabel } from "../lib/order-state";
 import { supplierDashboardLine } from "../lib/payments";
 
 /**
@@ -41,6 +41,13 @@ export function SupplierOrdersDashboardLine({
   if (line.owed > 0) {
     const owed = formatMoney(line.owed, currency, lang);
     parts.push(isAr ? `عليك ${owed} للموردين` : `you owe suppliers ${owed}`);
+  }
+  if (line.prices > 0) {
+    parts.push(
+      isAr
+        ? `سعر ${piecesLabel(line.prices, lang)} لم يُضف بعد`
+        : `${piecesLabel(line.prices, lang)} still to price`,
+    );
   }
   const text = parts.join(" · ");
 

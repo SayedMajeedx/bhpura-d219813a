@@ -185,4 +185,4 @@ export function sheetPieces(
     : { lang: options.lang, pieces: read(options.lang) };
 }
 
-export { jobSheetHtml, type JobSheetArgs } from "./job-sheet-html";
+export { jobSheetHtml, jobSheetsHtml, type JobSheetArgs, type SheetWhere } from "./job-sheet-html";
