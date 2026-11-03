@@ -141,8 +141,12 @@ function onePiece(piece: JobSheetPiece, index: number, of: number, words: Words,
   </section>`;
 }
 
-/** "المقاسات · Measurements": a heading in both languages, Arabic first. */
-const both = (ar: string, en: string) => (ar === en ? ar : `${ar} · ${en}`);
+/**
+ * A heading in both languages on the left-to-right page: the English, then the Arabic isolated
+ * in its own direction ("Measurements · المقاسات"). Mixed on one line without the isolate, the
+ * browser reorders the words ("Tailor · الخيّاط :For · إلى").
+ */
+const both = (ar: string, en: string) => (ar === en ? ar : `${en} · \u2068${ar}\u2069`);
 
 /** One piece in both languages: English on the left, Arabic on the right. */
 function twoColumnPiece(
@@ -237,7 +241,10 @@ export function jobSheetHtml(a: JobSheetArgs): string {
   // A heading's words: the sheet's language, or both.
   const say = (pick: (words: Words) => string) =>
     twoLanguages ? both(pick(WORDS.ar), pick(WORDS.en)) : pick(WORDS[a.lang]);
-  const workshopName = a.lang === "both" ? both(a.workshop.ar, a.workshop.en) : a.workshop;
+  const forLine =
+    a.lang === "both"
+      ? both(`${WORDS.ar.to}: ${a.workshop.ar}`, `${WORDS.en.to}: ${a.workshop.en}`)
+      : `${WORDS[a.lang].to}: ${a.workshop}`;
   // Dates in Western digits; written once in a sheet in both languages.
   const date = formatDate(a.orderDate, a.lang === "ar" ? "ar-BH-u-nu-latn" : "en-US");
 
@@ -278,7 +285,7 @@ export function jobSheetHtml(a: JobSheetArgs): string {
     <div class="brand">${e(a.brand)}</div>
     <div style="text-align:end;">
       <div class="doc">${e(say((w) => w.title))} ${number}</div>
-      <div class="to">${e(say((w) => w.to))}: ${e(workshopName)}</div>
+      <div class="to">${e(forLine)}</div>
     </div>
   </div>
 

@@ -279,8 +279,9 @@ describe("the sheet in the tailor's language (Arabic, English or both)", () => {
       pieces: both.pieces,
       lang: "both",
     });
-    expect(html).toContain("أمر تشغيل · Job sheet #1042");
-    expect(html).toContain("إلى · For: الخيّاط · Tailor");
+    // English first on the left-to-right page, the Arabic isolated in its own direction.
+    expect(html).toContain("Job sheet · \u2068أمر تشغيل\u2069 #1042");
+    expect(html).toContain("For: Tailor · \u2068إلى: الخيّاط\u2069");
     expect(html).toContain("المقاسات والتفاصيل");
     expect(html).toContain("Measurements &amp; details");
     const english = html.indexOf('<div class="col" dir="ltr" lang="en">');
@@ -290,7 +291,7 @@ describe("the sheet in the tailor's language (Arabic, English or both)", () => {
     // What the customer typed and the quantity are written once.
     expect(html.match(/أكمام أقصر/g)).toHaveLength(1);
     expect(html.match(/class="qty"/g)).toHaveLength(1);
-    expect(html).toContain("القطعة 1 من 1 · Piece 1 of 1");
+    expect(html).toContain("Piece 1 of 1 · \u2068القطعة 1 من 1\u2069");
     expect(html).not.toMatch(/BHD|د\.ب|price|phone|address/i);
   });
 
