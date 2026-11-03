@@ -51,6 +51,12 @@ const PURCHASE_RECEIPT_LABEL = {
   en: "Received from supplier",
   badgeClass: "bg-success-subtle text-success border-success/30",
 };
+// A receipt taken back (`undo_purchase_order_receipts`): its pieces leave the stock.
+const PURCHASE_UNDO_LABEL = {
+  ar: "إلغاء استلام من مورد",
+  en: "Receiving undone",
+  badgeClass: "bg-warning-subtle text-warning border-warning/30",
+};
 
 const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string }> = {
   order_reservation: {
@@ -398,10 +404,12 @@ export function InventoryHistorySheet({
               </TableHeader>
               <TableBody>
                 {movements.map((m) => {
-                  // Pieces that arrived from a supplier's order are an adjustment in the
-                  // ledger; they read as what they are.
+                  // Pieces that arrived from a supplier's order, or left again when the receipt
+                  // was undone, are an adjustment in the ledger; they read as what they are.
                   const meta = (m.reference_type === "purchase_order"
-                    ? PURCHASE_RECEIPT_LABEL
+                    ? m.delta < 0
+                      ? PURCHASE_UNDO_LABEL
+                      : PURCHASE_RECEIPT_LABEL
                     : REASON_LABELS[m.reason]) || {
                     ar: m.reason,
                     en: m.reason,

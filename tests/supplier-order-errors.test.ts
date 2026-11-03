@@ -3,6 +3,7 @@ import orders from "../supabase/migrations/20261019100000_supplier_orders_receiv
 import payments from "../supabase/migrations/20261019110000_supplier_payments.sql?raw";
 import customerPieces from "../supabase/migrations/20261020100000_customer_pieces_to_supplier.sql?raw";
 import afterSending from "../supabase/migrations/20261021100000_customer_pieces_cancel_fix_alteration.sql?raw";
+import undoReceiving from "../supabase/migrations/20261113100000_undo_supplier_receiving.sql?raw";
 import { WORDS, supplierOrderError } from "../src/features/supplier-orders/lib/errors";
 
 // A refusal from the database reaches the merchant in words, never as "Could not save": an order
@@ -21,6 +22,7 @@ describe("the supplier orders' refusals", () => {
         ...raised(payments),
         ...raised(customerPieces),
         ...raised(afterSending),
+        ...raised(undoReceiving),
       ]),
     ];
     expect(codes.length).toBeGreaterThan(15);

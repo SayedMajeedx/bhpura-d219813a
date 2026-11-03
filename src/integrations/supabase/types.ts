@@ -7085,6 +7085,11 @@ export type Database = {
           received_by: string | null;
           request_id: string;
           stock_before: number;
+          undo_mode: string | null;
+          undo_request_id: string | null;
+          undo_taken_out: number | null;
+          undone_at: string | null;
+          undone_by: string | null;
           unit_cost: number;
           variant_id: string | null;
         };
@@ -7101,6 +7106,11 @@ export type Database = {
           received_by?: string | null;
           request_id: string;
           stock_before: number;
+          undo_mode?: string | null;
+          undo_request_id?: string | null;
+          undo_taken_out?: number | null;
+          undone_at?: string | null;
+          undone_by?: string | null;
           unit_cost: number;
           variant_id?: string | null;
         };
@@ -7117,6 +7127,11 @@ export type Database = {
           received_by?: string | null;
           request_id?: string;
           stock_before?: number;
+          undo_mode?: string | null;
+          undo_request_id?: string | null;
+          undo_taken_out?: number | null;
+          undone_at?: string | null;
+          undone_by?: string | null;
           unit_cost?: number;
           variant_id?: string | null;
         };
@@ -12258,6 +12273,15 @@ export type Database = {
       transfer_stock_to_incubator_batch: {
         Args: { p_incubator_id: string; p_items: Json; p_notes?: string };
         Returns: number;
+      };
+      undo_purchase_order_receipts: {
+        Args: {
+          p_mode: string;
+          p_po_id: string;
+          p_receipt_ids: string[];
+          p_request_id: string;
+        };
+        Returns: Json;
       };
       update_incubator_inventory_item: {
         Args: {

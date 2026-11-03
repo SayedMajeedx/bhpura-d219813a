@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, MessageCircle, Package } from "lucide-react";
+import { CalendarClock, MessageCircle, Package, Undo2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatMoney } from "@/lib/format";
-import { supplierOrderQueries } from "@/lib/data/supplier-orders";
+import { supplierOrderQueries, type SupplierReceipt } from "@/lib/data/supplier-orders";
 import { landedUnitCosts } from "../lib/landed-cost";
 import {
   isLate,
@@ -18,6 +19,7 @@ import { SupplierOrderStatusBadge } from "./SupplierOrderStatusBadge";
 import { PaymentsCard } from "./PaymentsCard";
 import { CustomerPiecesCard } from "./CustomerPiecesCard";
 import { lateOrderMessage } from "../lib/payments";
+import { undoableReceipts } from "../lib/undo-receiving";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 
 /** One order as it stands: its pieces and what arrived, its costs, its money and its arrivals. */
@@ -28,6 +30,7 @@ export function SupplierOrderView({
   currency,
   today,
   storeName,
+  onUndo,
   lang,
 }: {
   brandId: string;
@@ -37,6 +40,8 @@ export function SupplierOrderView({
   today: string;
   /** The store's name, as a message to its supplier signs it. */
   storeName: string;
+  /** Asks to take receipts back; absent for someone who may not. */
+  onUndo?: (receipts: SupplierReceipt[]) => void;
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
@@ -45,7 +50,6 @@ export function SupplierOrderView({
   const late = isLate(order, today);
   const receiptsQ = useQuery({
     ...supplierOrderQueries.receipts(brandId, order.id),
-    enabled: pieces.received > 0,
   });
   const landed = useMemo(
     () =>
@@ -71,6 +75,10 @@ export function SupplierOrderView({
   const extras = order.items.filter((line) => !isPieceLine(line));
   const customerLines = order.items.filter((line) => line.order_item_id);
   const money = (n: number) => formatMoney(n, currency, lang);
+  const undoable = useMemo(
+    () => new Set(undoableReceipts(receiptsQ.data ?? [], order.items).map((r) => r.id)),
+    [receiptsQ.data, order.items],
+  );
 
   return (
     <div className="space-y-3">
@@ -238,7 +246,7 @@ export function SupplierOrderView({
 
       <PaymentsCard brandId={brandId} order={order} currency={currency} lang={lang} />
 
-      {pieces.received > 0 && (receiptsQ.data?.length ?? 0) > 0 && (
+      {(receiptsQ.data?.length ?? 0) > 0 && (
         <Card className="space-y-1 p-3 sm:p-4">
           <h2 className="text-sm font-bold">{isAr ? "سجل الاستلام" : "What arrived"}</h2>
           <ul className="divide-y divide-border-subtle text-sm">
@@ -246,26 +254,50 @@ export function SupplierOrderView({
               const variant = receipt.variant_id
                 ? catalog.variantById.get(receipt.variant_id)
                 : undefined;
+              const name = `${catalog.productName(variant?.product_id)} · ${catalog.sizeName(receipt.variant_id)}`;
+              const undone = Boolean(receipt.undone_at);
               return (
                 <li
                   key={receipt.id}
-                  className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1.5"
+                  className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1.5"
                 >
-                  <span className="min-w-0">
-                    <span dir="auto" className="break-words font-semibold">
-                      {catalog.productName(variant?.product_id)} ·{" "}
-                      {catalog.sizeName(receipt.variant_id)}
+                  <span
+                    className={undone ? "min-w-0 flex-1 text-muted-foreground" : "min-w-0 flex-1"}
+                  >
+                    <span
+                      dir="auto"
+                      className={undone ? "break-words line-through" : "break-words font-semibold"}
+                    >
+                      {name}
                     </span>
                     <span className="block text-xs text-muted-foreground">
                       {formatDate(receipt.received_at, locale)}
                       {receipt.note ? ` · ${receipt.note}` : ""}
+                      {undone && receipt.undone_at
+                        ? ` · ${isAr ? "أُلغي " : "Undone "}${formatDate(receipt.undone_at, locale)}`
+                        : ""}
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
                     {`+${piecesLabel(receipt.quantity, lang)} · `}
                     {isAr ? "التكلفة " : "cost "}
-                    <strong className="text-foreground">{money(receipt.cost_after)}</strong>
+                    <strong className={undone ? "" : "text-foreground"}>
+                      {money(receipt.cost_after)}
+                    </strong>
                   </span>
+                  {onUndo && undoable.has(receipt.id) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onUndo([receipt])}
+                      className="h-8 shrink-0 gap-1 px-2 text-xs"
+                      aria-label={isAr ? `إلغاء استلام ${name}` : `Undo receiving ${name}`}
+                    >
+                      <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      {isAr ? "إلغاء" : "Undo"}
+                    </Button>
+                  )}
                 </li>
               );
             })}
