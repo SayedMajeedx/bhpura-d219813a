@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { SUPABASE_CLI } from "./supabase-cli.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -55,7 +56,7 @@ function readLive() {
   let output;
   try {
     output = execSync(
-      `npx supabase db query --linked -o json "${LIVE_COLUMNS_QUERY.replace(/\s+/g, " ").trim()}"`,
+      `${SUPABASE_CLI} db query --linked -o json "${LIVE_COLUMNS_QUERY.replace(/\s+/g, " ").trim()}"`,
       { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] },
     );
   } catch (err) {

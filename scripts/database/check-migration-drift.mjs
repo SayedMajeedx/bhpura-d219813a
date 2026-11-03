@@ -1,13 +1,14 @@
 import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { SUPABASE_CLI } from "./supabase-cli.mjs";
 
 export function checkMigrationDrift() {
   console.log("Checking Supabase migration drift between local and linked database...");
 
   let output;
   try {
-    output = execSync("npx supabase migration list", {
+    output = execSync(`${SUPABASE_CLI} migration list --linked`, {
       encoding: "utf8",
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -24,7 +25,7 @@ export function checkMigrationDrift() {
       );
       return;
     }
-    console.error("Failed to run npx supabase migration list:", stderr || err.message);
+    console.error("Failed to run supabase migration list:", stderr || err.message);
     process.exit(1);
   }
 
