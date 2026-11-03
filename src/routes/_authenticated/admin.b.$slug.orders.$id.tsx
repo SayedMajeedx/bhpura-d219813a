@@ -803,25 +803,15 @@ function OrderEditor() {
           </div>
         </fieldset>
 
-        {/* The order's alterations and fixes, and the order an alteration's own order altered */}
+        {/* The order's alterations and fixes (outside the editor's fieldset) */}
         {!isCreationMode && order && (
-          <div className="no-print mb-6">
-            <OrderAlterationsCard
-              brandId={brand.id}
-              slug={slug}
-              order={order}
-              items={items.map((it) => ({
-                ...it,
-                product: (productsQ.data ?? []).find((p) => p.id === it.product_id),
-              }))}
-              products={productsQ.data ?? []}
-              offersAlterations={Boolean(settingsQ.data?.offers_alterations)}
-              unsaved={isDirty}
-              storeName={(settingsQ.data?.business_name ?? "").trim() || brand.name_en || ""}
-              currency={currency}
-              lang={lang === "ar" ? "ar" : "en"}
-            />
-          </div>
+          <OrderAlterationsCard
+            {...{ slug, order, items, currency, settings: settingsQ.data, unsaved: isDirty }}
+            brandId={brand.id}
+            products={productsQ.data ?? []}
+            storeName={brand.name_en || ""}
+            lang={lang === "ar" ? "ar" : "en"}
+          />
         )}
 
         {/* Unified Sales Documents Chain */}

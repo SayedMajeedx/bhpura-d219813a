@@ -64,11 +64,11 @@ export function OrderAlterationsCard({
   brandId,
   slug,
   order,
-  items,
+  items: rawItems,
   products,
-  offersAlterations,
+  settings,
   unsaved = false,
-  storeName,
+  storeName: brandName,
   currency,
   lang,
 }: {
@@ -76,8 +76,9 @@ export function OrderAlterationsCard({
   slug: string;
   order: OrderLike;
   items: readonly Item[];
-  products: readonly JobSheetProduct[];
-  offersAlterations: boolean;
+  products: readonly (JobSheetProduct & { id: string })[];
+  /** The store's settings: whether it does alterations, and its name. */
+  settings?: { offers_alterations?: boolean | null; business_name?: string | null } | null;
   /**
    * The order has changes not saved yet: an alteration adds a line to the order on the server,
    * which a later save of these edits would undo, so it waits for the save.
@@ -88,6 +89,12 @@ export function OrderAlterationsCard({
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
+  const offersAlterations = Boolean(settings?.offers_alterations);
+  const storeName = (settings?.business_name ?? "").trim() || brandName;
+  const items = useMemo(
+    () => rawItems.map((it) => ({ ...it, product: products.find((p) => p.id === it.product_id) })),
+    [rawItems, products],
+  );
   const qc = useQueryClient();
   const profile = useProfileOptional();
   const canSend = Boolean(profile?.isAdmin || profile?.hasPermission("manage_orders"));
@@ -224,6 +231,7 @@ export function OrderAlterationsCard({
   const offered = pieces.some((p) => p.alteration || p.fix);
   const relatedTo = order.relation === "alteration" ? order.related_order_id : null;
   if (alterations.length === 0 && !offered && !relatedTo) return null;
+  // Not printed with the order's page.
   const orderLink = (id: string) => (
     <Link
       to="/admin/b/$slug/orders/$id"
@@ -235,7 +243,7 @@ export function OrderAlterationsCard({
   );
 
   return (
-    <Card className="rounded-xl border border-border-strong bg-card p-4 shadow-sm sm:p-6">
+    <Card className="no-print mb-6 rounded-xl border border-border-strong bg-card p-4 shadow-sm sm:p-6">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <h3 className="flex items-center gap-2 font-display text-lg font-bold text-foreground">
           <Scissors className="h-5 w-5 text-primary" aria-hidden="true" />

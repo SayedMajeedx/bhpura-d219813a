@@ -124,7 +124,7 @@ const wrap = (props: Partial<React.ComponentProps<typeof OrderAlterationsCard>> 
         order={order}
         items={items}
         products={[]}
-        offersAlterations
+        settings={{ offers_alterations: true, business_name: "Pura" }}
         storeName="Pura"
         currency="BHD"
         lang="en"
