@@ -25,6 +25,8 @@ export function AfterSendPanel({
   onTellCustomer,
   onOpenOrder,
   onClose,
+  printLabel,
+  tellLabel,
 }: {
   lang: "ar" | "en";
   where: SheetWhere;
@@ -39,6 +41,10 @@ export function AfterSendPanel({
   onTellCustomer?: () => void;
   onOpenOrder?: () => void;
   onClose: () => void;
+  /** The print button's words, for another sheet (an alteration's). */
+  printLabel?: string;
+  /** The customer button's words, for another message (a piece received for alteration). */
+  tellLabel?: string;
 }) {
   const isAr = lang === "ar";
   const [printing, setPrinting] = useState(false);
@@ -90,7 +96,7 @@ export function AfterSendPanel({
         {actions.includes("print") && (
           <Button type="button" onClick={() => setPrinting(true)} className="justify-start gap-2">
             <Printer className="h-4 w-4" aria-hidden="true" />
-            {isAr ? "اطبع أمر التشغيل" : "Print job sheet"}
+            {printLabel ?? (isAr ? "اطبع أمر التشغيل" : "Print job sheet")}
           </Button>
         )}
         {actions.includes("message") && (
@@ -112,7 +118,7 @@ export function AfterSendPanel({
             className="justify-start gap-2"
           >
             <UserRound className="h-4 w-4" aria-hidden="true" />
-            {isAr ? "أبلغ العميل ببدء العمل" : "Tell the customer work has started"}
+            {tellLabel ?? (isAr ? "أبلغ العميل ببدء العمل" : "Tell the customer work has started")}
           </Button>
         )}
         {actions.includes("open") && (

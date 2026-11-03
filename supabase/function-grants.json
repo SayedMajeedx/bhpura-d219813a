@@ -111,6 +111,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "create_order_alteration(p_source_item_id uuid, p_kind text, p_changes jsonb, p_note text, p_made_by text, p_vendor_id uuid, p_po_id uuid, p_expected_at date, p_supplier_cost numeric, p_customer_charge numeric, p_request_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders: checked inside (can_access_brand, has_permission manage_orders); the piece's order must be the store's and not cancelled; the supplier's cost is taken only from staff with view_financials (anyone else's goes at no price, to add); one request id writes once"
+    },
     "create_staff_booking(p_brand_id uuid, p_day date, p_start time without time zone, p_duration_minutes integer, p_customer jsonb, p_items jsonb, p_location jsonb, p_notes text, p_status text, p_source text, p_allow_overbook boolean)": {
       "anon": false,
       "authenticated": true,
@@ -690,6 +695,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (a session and can_access_brand on the brand of the product)"
+    },
+    "set_order_alteration_status(p_id uuid, p_status text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders: checked inside (can_access_brand, has_permission manage_orders); only the alteration's own moves (back for the store's own workshop, handed over, cancelled before the piece is back)"
     },
     "set_order_review_hidden(p_review_id uuid, p_hidden boolean)": {
       "anon": false,

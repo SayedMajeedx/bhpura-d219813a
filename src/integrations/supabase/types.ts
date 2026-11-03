@@ -2135,6 +2135,7 @@ export type Database = {
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
           next_invoice_number: number;
+          offers_alterations: boolean;
           offers_combine: string;
           opening_hours: Json;
           order_number_digits: number | null;
@@ -2351,6 +2352,7 @@ export type Database = {
           newsletter_title_ar?: string | null;
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
+          offers_alterations?: boolean;
           offers_combine?: string;
           opening_hours?: Json;
           order_number_digits?: number | null;
@@ -2567,6 +2569,7 @@ export type Database = {
           newsletter_title_ar?: string | null;
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
+          offers_alterations?: boolean;
           offers_combine?: string;
           opening_hours?: Json;
           order_number_digits?: number | null;
@@ -5316,6 +5319,118 @@ export type Database = {
           },
         ];
       };
+      order_alterations: {
+        Row: {
+          back_at: string | null;
+          brand_id: string;
+          cancelled_at: string | null;
+          changes: Json;
+          charge_item_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_charge: number;
+          due_at: string | null;
+          handed_over_at: string | null;
+          id: string;
+          kind: string;
+          made_by: string;
+          note: string | null;
+          order_id: string;
+          purchase_order_item_id: string | null;
+          request_id: string | null;
+          source_item_id: string;
+          source_order_id: string;
+          status: string;
+        };
+        Insert: {
+          back_at?: string | null;
+          brand_id: string;
+          cancelled_at?: string | null;
+          changes?: Json;
+          charge_item_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_charge?: number;
+          due_at?: string | null;
+          handed_over_at?: string | null;
+          id?: string;
+          kind: string;
+          made_by: string;
+          note?: string | null;
+          order_id: string;
+          purchase_order_item_id?: string | null;
+          request_id?: string | null;
+          source_item_id: string;
+          source_order_id: string;
+          status?: string;
+        };
+        Update: {
+          back_at?: string | null;
+          brand_id?: string;
+          cancelled_at?: string | null;
+          changes?: Json;
+          charge_item_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_charge?: number;
+          due_at?: string | null;
+          handed_over_at?: string | null;
+          id?: string;
+          kind?: string;
+          made_by?: string;
+          note?: string | null;
+          order_id?: string;
+          purchase_order_item_id?: string | null;
+          request_id?: string | null;
+          source_item_id?: string;
+          source_order_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_alterations_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_alterations_charge_item_id_fkey";
+            columns: ["charge_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_alterations_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_alterations_purchase_order_item_id_fkey";
+            columns: ["purchase_order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "purchase_order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_alterations_source_item_id_fkey";
+            columns: ["source_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_alterations_source_order_id_fkey";
+            columns: ["source_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       order_email_events: {
         Row: {
           attempts: number;
@@ -5834,6 +5949,8 @@ export type Database = {
           promo_code_id: string | null;
           public_invoice_token: string;
           reconciliation_status: string | null;
+          related_order_id: string | null;
+          relation: string | null;
           request_hash: string | null;
           requested_date: string | null;
           requested_slot: string | null;
@@ -5920,6 +6037,8 @@ export type Database = {
           promo_code_id?: string | null;
           public_invoice_token?: string;
           reconciliation_status?: string | null;
+          related_order_id?: string | null;
+          relation?: string | null;
           request_hash?: string | null;
           requested_date?: string | null;
           requested_slot?: string | null;
@@ -6006,6 +6125,8 @@ export type Database = {
           promo_code_id?: string | null;
           public_invoice_token?: string;
           reconciliation_status?: string | null;
+          related_order_id?: string | null;
+          relation?: string | null;
           request_hash?: string | null;
           requested_date?: string | null;
           requested_slot?: string | null;
@@ -6022,6 +6143,13 @@ export type Database = {
           whatsapp_transactional_opt_in_at?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "orders_related_order_id_fkey";
+            columns: ["related_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "orders_assigned_by_fkey";
             columns: ["assigned_by"];
@@ -10250,6 +10378,22 @@ export type Database = {
         };
         Returns: Json;
       };
+      create_order_alteration: {
+        Args: {
+          p_changes: Json;
+          p_customer_charge: number;
+          p_expected_at: string;
+          p_kind: string;
+          p_made_by: string;
+          p_note: string;
+          p_po_id: string;
+          p_request_id: string;
+          p_source_item_id: string;
+          p_supplier_cost: number;
+          p_vendor_id: string;
+        };
+        Returns: Json;
+      };
       create_staff_booking: {
         Args: {
           p_allow_overbook?: boolean;
@@ -11093,6 +11237,14 @@ export type Database = {
         Returns: number;
       };
       order_advance_due: { Args: { p_order_id: string }; Returns: number };
+      order_alteration_target: {
+        Args: { p_fulfillment: string; p_status: string };
+        Returns: string;
+      };
+      order_alteration_work_note: {
+        Args: { p_changes: Json; p_note: string };
+        Returns: string;
+      };
       order_counts_as_sold: { Args: { p_status: string }; Returns: boolean };
       order_email_language: { Args: { p_order_id: string }; Returns: string };
       order_incubator_sync: {
@@ -12078,6 +12230,10 @@ export type Database = {
       set_made_to_order_paused: {
         Args: { p_paused: boolean; p_product_id: string };
         Returns: boolean;
+      };
+      set_order_alteration_status: {
+        Args: { p_id: string; p_status: string };
+        Returns: string;
       };
       set_order_language: {
         Args: { p_lang: string; p_order_id: string };

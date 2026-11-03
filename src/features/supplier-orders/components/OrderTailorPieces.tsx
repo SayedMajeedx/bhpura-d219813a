@@ -1,52 +1,42 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, RotateCcw, Scissors } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, Scissors } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useProfileOptional } from "@/lib/profile-context";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { piecesBySupplierOrder } from "../lib/customer-pieces";
-import { orderPieceStates, purposeLabel, readyToAlter } from "../lib/after-sending";
+import { orderPieceStates, purposeLabel } from "../lib/after-sending";
 import { piecesLabel } from "../lib/order-state";
-import { SendBackDialog } from "./SendBackDialog";
 
 type OrderLine = { id: string; description: string; quantity: number };
 
 /**
  * On a customer's order: which supplier has its pieces, on which supplier order, what they cost
- * and how many have come back; a piece that came back can go back to a supplier, to be fixed
- * (free) or altered, and a store that makes to order can send any other piece, a ready-made
- * one too, for an alteration. Staff who may see costs only; nothing when there is nothing to
- * show or offer.
+ * and how many have come back. Staff who may see costs only; nothing when nothing was sent. A
+ * piece goes for an alteration or a fix from the order's Alterations block
+ * (`OrderAlterationsCard`), the one way in.
  */
 export function OrderTailorPieces({
   brandId,
   slug,
-  orderId,
   lines,
   cancelled,
-  offerAlteration = false,
   currency,
   lang,
 }: {
   brandId: string;
   slug: string;
-  orderId: string;
   /** The order's saved lines. */
   lines: readonly OrderLine[];
   /** The order was cancelled: its pieces with suppliers wait for the store's choice there. */
   cancelled: boolean;
-  /** The store alters pieces (it makes to order): offered for the pieces never sent. */
-  offerAlteration?: boolean;
   currency: string;
   lang: "ar" | "en";
 }) {
   const isAr = lang === "ar";
   const profile = useProfileOptional();
   const canViewFinancials = Boolean(profile?.canViewFinancials);
-  const canSend =
-    canViewFinancials && Boolean(profile?.isAdmin || profile?.hasPermission("manage_orders"));
   const lineIds = useMemo(() => lines.map((l) => l.id), [lines]);
   const piecesQ = useQuery({
     ...supplierOrderQueries.orderPieces(brandId, lineIds),
@@ -54,14 +44,8 @@ export function OrderTailorPieces({
   });
   const groups = useMemo(() => piecesBySupplierOrder(piecesQ.data ?? []), [piecesQ.data]);
   const states = useMemo(() => orderPieceStates(lines, piecesQ.data ?? []), [lines, piecesQ.data]);
-  const [sendingBack, setSendingBack] = useState<(typeof states)[number] | null>(null);
-  const [altering, setAltering] = useState(false);
-  const ready = useMemo(
-    () => (offerAlteration && canSend && !cancelled ? readyToAlter(lines, piecesQ.data ?? []) : []),
-    [offerAlteration, canSend, cancelled, lines, piecesQ.data],
-  );
   if (!canViewFinancials || piecesQ.isLoading) return null;
-  if (groups.length === 0 && ready.length === 0) return null;
+  if (groups.length === 0) return null;
 
   return (
     <div className="mb-4 space-y-2">
@@ -128,65 +112,10 @@ export function OrderTailorPieces({
                       : ""
                     : ` · ${isAr ? "رجعت" : "back"}`}
                 </span>
-                {!state.out && canSend && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-8 gap-1.5"
-                    onClick={() => setSendingBack(state)}
-                    aria-label={
-                      isAr
-                        ? `أرجع ${state.line.description} للمورد`
-                        : `Send ${state.line.description} back to the supplier`
-                    }
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                    {isAr ? "تصليح أو تعديل" : "Fix or alter"}
-                  </Button>
-                )}
               </li>
             );
           })}
         </ul>
-      )}
-
-      {ready.length > 0 && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-9 gap-1.5"
-          onClick={() => setAltering(true)}
-        >
-          <Scissors className="h-3.5 w-3.5" aria-hidden="true" />
-          {isAr ? "أرسل قطعة للتعديل" : "Send a piece for alteration"}
-        </Button>
-      )}
-
-      {altering && (
-        <SendBackDialog
-          open={altering}
-          onOpenChange={setAltering}
-          brandId={brandId}
-          orderId={orderId}
-          lines={ready}
-          allowFix={false}
-          defaultVendorId=""
-          lang={lang}
-        />
-      )}
-
-      {sendingBack && (
-        <SendBackDialog
-          open={Boolean(sendingBack)}
-          onOpenChange={(next) => !next && setSendingBack(null)}
-          brandId={brandId}
-          orderId={orderId}
-          lines={[sendingBack.line]}
-          defaultVendorId={sendingBack.lastVendorId}
-          lang={lang}
-        />
       )}
     </div>
   );

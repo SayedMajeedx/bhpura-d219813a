@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import soldMigration from "../supabase/migrations/20261021140000_reports_count_what_is_sold.sql?raw";
 import migration from "../supabase/migrations/20261021160000_reporting_margins.sql?raw";
+import alterationsMigration from "../supabase/migrations/20261117100000_order_alterations.sql?raw";
 import {
   marginRows,
   productMargins,
@@ -177,5 +178,40 @@ describe("margin by category", () => {
     );
     const total = marginTotals(lines);
     expect(total.netSales).toBeCloseTo(164, 6);
+  });
+});
+
+describe("an alteration's charge (migration 20261117100000)", () => {
+  let altered: ReturnType<typeof marginRows>;
+
+  beforeAll(async () => {
+    const other = new PGlite();
+    await other.exec(SCHEMA);
+    await other.exec("CREATE TABLE order_alterations (id text PRIMARY KEY, charge_item_id text)");
+    await other.exec(functionOf(soldMigration, "order_counts_as_sold"));
+    await other.exec(functionOf(soldMigration, "reporting_counts_order"));
+    await other.exec(functionOf(alterationsMigration, "rpc_reporting_margins"));
+    await other.exec(DATA);
+    // A dress taken up for 5, which cost the tailor 3: a line with no product, charged on its own.
+    await other.exec(`
+      INSERT INTO orders (id, brand_id, status, fulfillment_status, subtotal, discount, total)
+        VALUES ('o6', '${BRAND}', 'completed', 'DELIVERED', 5, 0, 5);
+      INSERT INTO order_items VALUES ('o6-x', 'o6', '${BRAND}', NULL, 1, 3, 5, 0);
+      INSERT INTO order_alterations VALUES ('a1', 'o6-x');
+    `);
+    const { rows: result } = await other.query<{ r: unknown }>(
+      "SELECT public.rpc_reporting_margins('2026-10-01T00:00:00+03:00', '2026-10-31T23:59:59.999+03:00', false, 'pura') AS r",
+    );
+    altered = marginRows(result[0].r);
+  });
+
+  it("is its own row, apart from the lines not linked to a product, and adds up as before", () => {
+    const lines = productMargins(altered, "BHD", "en");
+    const named = (name: string) => lines.find((l) => l.name === name);
+    expect(named("Alterations")).toMatchObject({ netSales: 5, cost: 3, grossProfit: 2 });
+    expect(named("Not linked to a product")).toMatchObject({ netSales: 10, cost: 4 });
+    expect(marginTotals(lines).netSales).toBeCloseTo(169, 6);
+    expect(productMargins(altered, "BHD", "ar").some((l) => l.name === "التعديلات")).toBe(true);
+    expect(categoryMargins(altered, "BHD", "en").map((l) => l.name)).toContain("Alterations");
   });
 });

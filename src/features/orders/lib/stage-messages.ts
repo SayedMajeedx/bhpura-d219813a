@@ -41,3 +41,46 @@ export function workStartedMessage({
       ];
   return lines.filter(Boolean).join("\n");
 }
+
+/**
+ * A piece was received for an alteration or a fix: what is done to it, and when it is ready
+ * (the alteration's due day, if one was set). The price, when there is one, is on the order.
+ */
+export function alterationReceivedMessage({
+  isAr,
+  brandName,
+  customerName,
+  piece,
+  kind,
+  readyOn,
+}: {
+  isAr: boolean;
+  brandName: string;
+  customerName?: string | null;
+  piece: string;
+  kind: "alteration" | "fix";
+  /** The day it is ready, already written for the reader ("20/11/2026"). */
+  readyOn?: string | null;
+}): string {
+  const name = (customerName ?? "").trim();
+  const hello = name ? (isAr ? `مرحباً ${name}،` : `Hello ${name},`) : isAr ? "مرحباً،" : "Hello,";
+  const what = piece.trim();
+  const lines = isAr
+    ? [
+        hello,
+        kind === "fix"
+          ? `استلمنا ${what} لإصلاحها في ${brandName}، بدون أي تكلفة عليك.`
+          : `استلمنا ${what} لتعديلها في ${brandName}.`,
+        readyOn ? `ستكون جاهزة بتاريخ ${readyOn}.` : "",
+        "سنتواصل معك فور جاهزيتها. شكراً لك.",
+      ]
+    : [
+        hello,
+        kind === "fix"
+          ? `We have received your ${what} at ${brandName} to be fixed, at no charge to you.`
+          : `We have received your ${what} at ${brandName} for its alteration.`,
+        readyOn ? `It will be ready on ${readyOn}.` : "",
+        "We will contact you as soon as it is ready. Thank you.",
+      ];
+  return lines.filter(Boolean).join("\n");
+}

@@ -1,6 +1,7 @@
 import { formatDate } from "@/lib/format";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 import type { JobSheetPiece, JobSheetRow, Lang } from "./job-sheet";
+import { changeLine, type AlterationChange, type AlterationKind } from "./alterations";
 
 /**
  * The job sheet's printable page, in Arabic, in English, or in both side by side (the owner's
@@ -24,6 +25,15 @@ type Common = {
    * workshop (`supplier` null). Absent: the sheet says nothing of it, as before.
    */
   where?: SheetWhere | null;
+  /**
+   * An alteration's sheet (migration `20261117100000`): its heading says "Alteration" or "Fix",
+   * and what changes is written first, "from → to", above the piece as it was made.
+   */
+  alteration?: {
+    kind: AlterationKind;
+    changes: readonly AlterationChange[];
+    note?: string | null;
+  } | null;
 };
 
 export type SheetWhere = {
@@ -70,6 +80,9 @@ const WORDS = {
     supplierOrder: "طلبية المورد",
     inHouse: "في ورشتنا",
     sheetFor: "ورقة الطلب",
+    alteration: "أمر تعديل",
+    fix: "أمر تصليح",
+    changes: "المطلوب",
   },
   en: {
     title: "Job sheet",
@@ -92,6 +105,9 @@ const WORDS = {
     supplierOrder: "Supplier order",
     inHouse: "In our workshop",
     sheetFor: "Sheet for",
+    alteration: "Alteration sheet",
+    fix: "Fix sheet",
+    changes: "What to do",
   },
 } as const;
 
@@ -305,11 +321,26 @@ function sheetBody(a: JobSheetArgs) {
     ? `<div class="sheet-foot">${e(say((w) => w.sheetFor))} ${number} · <span dir="ltr">${e(where.poNumber)}</span></div>`
     : "";
 
+  // An alteration's sheet: its own heading, and what to do before the piece as it was made.
+  const altered = a.alteration;
+  const heading = altered
+    ? say((w) => (altered.kind === "fix" ? w.fix : w.alteration))
+    : say((w) => w.title);
+  const changeOf = (change: AlterationChange) =>
+    a.lang === "both"
+      ? `<li><span dir="ltr">${e(changeLine(change, "en"))}</span> · <span dir="rtl">${e(changeLine(change, "ar"))}</span></li>`
+      : `<li dir="auto">${e(changeLine(change, a.lang))}</li>`;
+  const toDo = altered
+    ? `<div class="to-do"><h3>${e(say((w) => w.changes))}</h3>${
+        altered.changes.length ? `<ul>${altered.changes.map(changeOf).join("")}</ul>` : ""
+      }${filled(altered.note) ? `<p class="note" dir="auto">${e(filled(altered.note))}</p>` : ""}</div>`
+    : "";
+
   const body = `
   <div class="header">
     <div class="brand">${e(a.brand)}</div>
     <div style="text-align:end;">
-      <div class="doc">${e(say((w) => w.title))} ${number}</div>
+      <div class="doc">${e(heading)} ${number}</div>
       <div class="to">${e(forLine)}</div>
     </div>
   </div>
@@ -323,6 +354,7 @@ function sheetBody(a: JobSheetArgs) {
   </div>
 
   ${orderNote}
+  ${toDo}
   ${pieces}
 
   <div class="sign">
@@ -333,7 +365,7 @@ function sheetBody(a: JobSheetArgs) {
   ${footer}`;
 
   return {
-    title: `${say((w) => w.title)} ${orderNumberLabel(a.orderNumber, a.numberFormat)}`,
+    title: `${heading} ${orderNumberLabel(a.orderNumber, a.numberFormat)}`,
     dir: a.lang === "ar" ? "rtl" : "ltr",
     lang: a.lang === "both" ? "ar" : a.lang,
     body,
@@ -341,6 +373,9 @@ function sheetBody(a: JobSheetArgs) {
 }
 
 const SHEETS_STYLE = `
+    .to-do { border: 2px solid currentColor; border-radius: 8px; padding: 8px 12px; margin: 0 0 12px; }
+    .to-do h3 { margin-top: 0; }
+    .to-do ul { margin: 0; padding-inline-start: 18px; font-size: 14px; font-weight: 600; }
     .where { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: -4px 0 12px; font-size: 13px; }
     .sheet-foot { margin-top: 14px; font-size: 10px; color: dimgray; text-align: center; }
     .sheet + .sheet { break-before: page; page-break-before: always; }`;

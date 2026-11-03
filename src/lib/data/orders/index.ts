@@ -7,3 +7,4 @@ export * from "./selects";
 export * from "./sold-orders";
 export * from "./types";
 export * from "./arrivals";
+export * from "./alterations";

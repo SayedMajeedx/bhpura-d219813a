@@ -6,10 +6,11 @@
 
 /**
  * The orders queue (office and courier). An order placed for a booking carries
- * it (its start decides when the appointment can be completed). Type: `OrderListRow`.
+ * it (its start decides when the appointment can be completed), and an order whose piece is out
+ * for an alteration says so (`alterations`). Type: `OrderListRow`.
  */
 export const ORDER_LIST_SELECT =
-  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location)";
+  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location), alterations:order_alterations!order_alterations_source_order_id_fkey(status)";
 
 /** The order editor, with the delivery address the order points at. Type: `OrderDetail`. */
 export const ORDER_DETAIL_SELECT =

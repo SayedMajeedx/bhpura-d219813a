@@ -38,6 +38,7 @@ import type { OrderListRow } from "@/lib/data/orders";
 import { useOrderNumber } from "@/hooks/use-order-number";
 import { orderDeletable } from "@/lib/order-deletion";
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
+import { OrderAlterationBadge } from "@/features/orders/components/OrderAlterationBadge";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -207,6 +208,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       {formatDate(order.created_at, lang)}
                     </div>
                     <OrderWaitingBadge order={order} lang={isAr ? "ar" : "en"} className="mt-1" />
+                    <OrderAlterationBadge
+                      order={order}
+                      lang={isAr ? "ar" : "en"}
+                      className="mt-1"
+                    />
                   </td>
 
                   {/* Customer / PII Snapshot */}

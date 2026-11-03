@@ -66,6 +66,7 @@ import { renderOrderPrimaryAction } from "@/features/orders/components/order-pri
 import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCard";
 import { OrderBookingCard } from "@/features/orders/components/OrderBookingCard";
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
+import { OrderAlterationsCard } from "@/features/orders/components/OrderAlterationsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
 import { PendingTransferReview } from "@/features/orders/components/PendingTransferReview";
 import { assignOrderCourier } from "@/lib/data/orders";
@@ -801,6 +802,27 @@ function OrderEditor() {
             </div>
           </div>
         </fieldset>
+
+        {/* The order's alterations and fixes, and the order an alteration's own order altered */}
+        {!isCreationMode && order && (
+          <div className="no-print mb-6">
+            <OrderAlterationsCard
+              brandId={brand.id}
+              slug={slug}
+              order={order}
+              items={items.map((it) => ({
+                ...it,
+                product: (productsQ.data ?? []).find((p) => p.id === it.product_id),
+              }))}
+              products={productsQ.data ?? []}
+              offersAlterations={Boolean(settingsQ.data?.offers_alterations)}
+              unsaved={isDirty}
+              storeName={(settingsQ.data?.business_name ?? "").trim() || brand.name_en || ""}
+              currency={currency}
+              lang={lang === "ar" ? "ar" : "en"}
+            />
+          </div>
+        )}
 
         {/* Unified Sales Documents Chain */}
         {!isCreationMode && order && (

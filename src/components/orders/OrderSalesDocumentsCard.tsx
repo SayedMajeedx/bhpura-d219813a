@@ -220,16 +220,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         </div>
       </div>
 
-      {/* Which supplier has the order's pieces, on which supplier order, and a piece for an
-          alteration (a store that makes to order; staff who see costs). */}
+      {/* Which supplier has the order's pieces, on which supplier order (staff who see costs). */}
       {(onPrintJobSheet || storeProfile?.modules?.made_to_order) && (
         <OrderTailorPieces
           brandId={brandId}
           slug={slug}
-          orderId={order.id}
           lines={tailorPieceLines(items)}
           cancelled={orderReleased(order.status, order.payment_status)}
-          offerAlteration={Boolean(storeProfile?.modules?.made_to_order)}
           currency={currency}
           lang={lang}
         />
