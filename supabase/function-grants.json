@@ -456,6 +456,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: can_access_brand and manage_inventory; brings an archived product back, still hidden"
     },
+    "restore_product_variant(p_variant_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who manage the inventory: checked inside (can_access_brand, has_permission)"
+    },
     "remove_web_push_subscription(p_endpoint text)": {
       "anon": false,
       "authenticated": true,

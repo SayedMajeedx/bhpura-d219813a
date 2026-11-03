@@ -11495,6 +11495,10 @@ export type Database = {
         };
       };
       restore_product: { Args: { p_product_id: string }; Returns: undefined };
+      restore_product_variant: {
+        Args: { p_variant_id: string };
+        Returns: undefined;
+      };
       return_stock_from_incubator: {
         Args: {
           p_incubator_id: string;

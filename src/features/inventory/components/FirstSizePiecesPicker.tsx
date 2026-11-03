@@ -12,6 +12,7 @@ export function FirstSizePiecesPicker({
   options,
   chosen,
   onChoose,
+  question,
   isAr,
 }: {
   pieces: number;
@@ -19,13 +20,16 @@ export function FirstSizePiecesPicker({
   options: readonly string[];
   chosen: number;
   onChoose: (index: number) => void;
+  /** The question, when it is not about pieces in stock (a supplier's order names the default). */
+  question?: string;
   isAr: boolean;
 }) {
+  const asked = question ?? piecesQuestion(pieces, isAr);
   return (
     <fieldset className="min-w-0 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
-      <legend className="sr-only">{piecesQuestion(pieces, isAr)}</legend>
+      <legend className="sr-only">{asked}</legend>
       <p className="text-sm font-medium" aria-hidden="true">
-        {piecesQuestion(pieces, isAr)}
+        {asked}
       </p>
       <div className="flex flex-wrap gap-1.5" role="radiogroup">
         {options.map((label, index) => {

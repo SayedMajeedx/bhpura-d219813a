@@ -96,11 +96,19 @@ export async function deleteProducts(brandId: string, productIds: string[]) {
 
 // ── Variants ────────────────────────────────────────────────────────────────
 
-/** Adds one or more variants to the brand's catalog. */
-export async function createVariants(brandId: string, rows: NewVariant[]) {
-  const { error } = await supabase
+/** Adds one or more variants to the brand's catalog; answers their ids, in the order given. */
+export async function createVariants(brandId: string, rows: NewVariant[]): Promise<string[]> {
+  const { data, error } = await supabase
     .from("product_variants")
-    .insert(rows.map((row) => ({ ...row, brand_id: brandId })));
+    .insert(rows.map((row) => ({ ...row, brand_id: brandId })))
+    .select("id");
+  if (error) throw error;
+  return (data ?? []).map((row) => row.id);
+}
+
+/** Brings an archived size back in use, with its history (and its product, still hidden). */
+export async function restoreVariant(variantId: string) {
+  const { error } = await supabase.rpc("restore_product_variant", { p_variant_id: variantId });
   if (error) throw error;
 }
 

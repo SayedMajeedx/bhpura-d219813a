@@ -1,5 +1,5 @@
-import { useId } from "react";
-import { Lock, Package, Trash2, UserRound } from "lucide-react";
+import { useId, useState } from "react";
+import { Lock, Package, Plus, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,12 @@ import { customerOrderName } from "../lib/customer-pieces";
 import { piecesLabel } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { useProfileOptional } from "@/lib/profile-context";
+import { AddSizesDialog } from "./AddSizesDialog";
 
 /** One product of a supplier's order: its cost per piece and how many of each size. */
 export function ProductLinesCard({
+  brandId,
   product,
   catalog,
   problems,
@@ -23,6 +26,7 @@ export function ProductLinesCard({
   onChange,
   onRemove,
 }: {
+  brandId: string;
   product: FormProduct;
   catalog: SupplierCatalog;
   problems: readonly FormProblem[];
@@ -45,6 +49,21 @@ export function ProductLinesCard({
   const emptyProblem = problems.some((p) => p.field === "product" && p.key === product.key);
   const unit = Number(product.unitCost) || 0;
   const name = catalog.productName(product.productId);
+  const profile = useProfileOptional();
+  // Adding a size to the product is an inventory change, as in the inventory.
+  const canAddSizes = Boolean(profile?.isAdmin || profile?.hasPermission("manage_inventory"));
+  const [adding, setAdding] = useState(false);
+  const onThisOrder = (variantId: string) =>
+    Number(product.sizes[variantId]?.quantity) > 0 || (product.sizes[variantId]?.received ?? 0) > 0;
+  // The sizes asked for start at one piece each, as a new product's do, unless already ordered.
+  const addSizes = (variantIds: string[]) => {
+    const sizes = { ...product.sizes };
+    for (const id of variantIds) {
+      const was = sizes[id];
+      if (!(Number(was?.quantity) > 0)) sizes[id] = { ...(was ?? { received: 0 }), quantity: "1" };
+    }
+    onChange({ ...product, sizes });
+  };
 
   const setQuantity = (variantId: string, quantity: string) =>
     onChange({
@@ -235,7 +254,44 @@ export function ProductLinesCard({
             );
           })}
         </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setAdding(true)}
+          disabled={!canAddSizes}
+          title={
+            canAddSizes
+              ? undefined
+              : isAr
+                ? "إضافة مقاس تحتاج صلاحية إدارة المخزون"
+                : "Adding a size needs the permission to manage stock"
+          }
+          className="gap-1.5"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "إضافة مقاس أو لون" : "Add a size or colour"}
+        </Button>
+        {!canAddSizes && (
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "إضافة مقاس جديد تحتاج صلاحية إدارة المخزون."
+              : "Adding a new size needs the permission to manage stock."}
+          </p>
+        )}
       </fieldset>
+      {adding && (
+        <AddSizesDialog
+          open={adding}
+          onOpenChange={setAdding}
+          brandId={brandId}
+          productId={product.productId}
+          onThisOrder={onThisOrder}
+          catalog={catalog}
+          lang={lang}
+          onAdded={addSizes}
+        />
+      )}
     </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { displayVariantParts } from "@/lib/variant-sku-utils";
+import { defaultVariantLabel } from "@/lib/default-variant";
 
 /**
  * The store's products and sizes as a supplier's order names them: what can be ordered from a
@@ -19,6 +20,11 @@ export type CatalogProduct = {
   item_kind?: string | null;
   is_package?: boolean | null;
   tracks_inventory?: boolean | null;
+  /** The store's own words for the product's size and colour options, when it named them. */
+  variant_label_size_ar?: string | null;
+  variant_label_size_en?: string | null;
+  variant_label_color_ar?: string | null;
+  variant_label_color_en?: string | null;
 };
 
 export type CatalogVariant = {
@@ -34,6 +40,10 @@ export type CatalogVariant = {
   stock_main: number | null;
   stock_incubator: number | null;
   cost_price?: number | null;
+  selling_price?: number | null;
+  original_price?: number | null;
+  /** When the size was archived (removed with a history); null while in use. */
+  archived_at?: string | null;
   created_at?: string | null;
 };
 
@@ -46,12 +56,12 @@ export function productLabel(product: CatalogProduct | null | undefined, lang: "
   return name?.trim() || (lang === "ar" ? "منتج بلا اسم" : "Unnamed product");
 }
 
-/** A size's name: its options ("M / Black"), else its SKU, else "One size". */
+/** A size's name: its options ("M / Black"), else its SKU, else "No options" as staff read it. */
 export function sizeLabel(variant: CatalogVariant | null | undefined, lang: "ar" | "en") {
   if (!variant) return lang === "ar" ? "مقاس محذوف" : "Deleted size";
   const parts = displayVariantParts(variant, lang);
   if (parts.length) return parts.join(" / ");
-  return variant.sku?.trim() || (lang === "ar" ? "مقاس واحد" : "One size");
+  return variant.sku?.trim() || defaultVariantLabel(lang);
 }
 
 /** A piece kept in stock: not a service, a package or a product that keeps no stock. */
@@ -90,7 +100,7 @@ export function shelfOf(variants: readonly CatalogVariant[]) {
 
 const fold = (text: string) => text.toLocaleLowerCase().normalize("NFKD").replace(/\p{M}/gu, "");
 
-/** The products a search finds, by a name in either language or a size's SKU. */
+/** The products a search finds, by a name in either language, or a size's SKU or name. */
 export function searchProducts(
   products: readonly CatalogProduct[],
   sizes: ReadonlyMap<string, CatalogVariant[]>,
@@ -102,6 +112,20 @@ export function searchProducts(
   return stock.filter((product) => {
     const names = [product.name, product.name_ar, product.name_en].filter(Boolean) as string[];
     if (names.some((name) => fold(name).includes(wanted))) return true;
-    return (sizes.get(product.id) ?? []).some((v) => v.sku && fold(v.sku).includes(wanted));
+    return (sizes.get(product.id) ?? []).some((v) =>
+      [v.sku, v.size, v.color].some((text) => text && fold(text).includes(wanted)),
+    );
   });
+}
+
+/**
+ * What the picker says under a product's name: its sizes in the store's words ("S · M · L", the
+ * first few and how many more), so the merchant sees what is missing before picking it.
+ */
+export function sizesLine(sizes: readonly CatalogVariant[], lang: "ar" | "en", shown = 6): string {
+  const names = sizes.map((v) => sizeLabel(v, lang));
+  const more = names.length - shown;
+  const line = names.slice(0, shown).join(" · ");
+  if (more <= 0) return line;
+  return lang === "ar" ? `${line} و${more} غيرها` : `${line} +${more} more`;
 }

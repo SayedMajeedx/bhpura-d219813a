@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import keepOne from "../supabase/migrations/20261110100000_product_keeps_a_variant.sql?raw";
 import archiveSizes from "../supabase/migrations/20261111100000_archive_variants_with_history.sql?raw";
 import migration from "../supabase/migrations/20261112100000_archive_products_with_history.sql?raw";
+import restoreSize from "../supabase/migrations/20261114100000_restore_product_variant.sql?raw";
 
 // A product with history is archived, never deleted (migration 20261112100000), in a real
 // Postgres (PGlite): `remove_products` deletes a product with no history and archives one with a
@@ -111,6 +112,7 @@ beforeAll(async () => {
   await db.exec("SET check_function_bodies = off");
   await db.exec(archiveSizes);
   await db.exec(migration);
+  await db.exec(restoreSize);
 });
 
 beforeEach(async () => {
@@ -239,5 +241,51 @@ describe("an archived product", () => {
     expect(await can("public.product_delete_keeps_history()")).toBe(false);
     expect(await can("public.products_archive_rules()")).toBe(false);
     expect(await can("public.variant_with_pieces_is_in_use()")).toBe(false);
+  });
+});
+
+describe("bringing an archived size back (migration 20261114100000)", () => {
+  const archived = async (table: "products" | "product_variants", id: string) =>
+    (
+      await db.query<{ archived: boolean }>(
+        `SELECT archived_at IS NOT NULL AS archived FROM public.${table} WHERE id = $1`,
+        [id],
+      )
+    ).rows[0].archived;
+  const restore = (id: string) =>
+    asStaff(() => db.query("SELECT public.restore_product_variant($1)", [id]));
+  const removeSizes = (ids: string[]) =>
+    asStaff(() => db.query("SELECT public.remove_product_variants($1::uuid[])", [ids]));
+
+  it("puts a size that sold back in use, with its history", async () => {
+    const id = await product();
+    await addVariant(id, "52");
+    const old = await addVariant(id, "54");
+    await sell(old, id);
+    await removeSizes([old]);
+    expect(await archived("product_variants", old)).toBe(true);
+    await restore(old);
+    expect(await archived("product_variants", old)).toBe(false);
+    const line = await db.query("SELECT 1 FROM public.order_items WHERE variant_id = $1", [old]);
+    expect(line.rows).toHaveLength(1);
+  });
+
+  it("brings its archived product back too, still hidden from the store", async () => {
+    const id = await product();
+    const v = await addVariant(id, "52");
+    await sell(v, id);
+    await remove([id]);
+    await db.query("UPDATE public.product_variants SET archived_at = now() WHERE id = $1", [v]);
+    await restore(v);
+    expect(await archived("products", id)).toBe(false);
+    expect(await state(id)).toEqual({ archived: false, is_active: false });
+  });
+
+  it("is for staff who manage the stock", async () => {
+    const id = await product();
+    const v = await addVariant(id, "52");
+    await db.query("UPDATE public.app_settings SET inventory = false");
+    await expect(restore(v)).rejects.toThrow("NOT_AUTHORIZED");
+    await expect(restore(uuid())).rejects.toThrow("VARIANT_NOT_FOUND");
   });
 });

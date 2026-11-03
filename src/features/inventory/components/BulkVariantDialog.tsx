@@ -15,7 +15,8 @@ import { Wand as Wand2, Boxes, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { createVariants, removeVariants, updateProduct, updateVariant } from "@/lib/data/catalog";
+import { updateProduct } from "@/lib/data/catalog";
+import { addSizesToProduct } from "@/features/inventory/lib/add-sizes";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 
@@ -45,12 +46,7 @@ import {
 import { prefetchOptionTranslations } from "@/features/inventory/lib/option-translations";
 import { getCurrentUser } from "@/lib/auth/session";
 import { arNounOblique } from "@/lib/arabic-count";
-import {
-  becameMessage,
-  becomePatch,
-  firstSizes,
-  leftoverMessage,
-} from "@/features/inventory/lib/first-sizes";
+import { becameMessage, firstSizes, leftoverMessage } from "@/features/inventory/lib/first-sizes";
 import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 
@@ -245,31 +241,26 @@ export function BulkVariantDialog({
       if (!user) throw new Error("AUTH_REQUIRED");
       const columns = (row: BulkVariantRow) =>
         bulkRowColumns(row, Number(product?.base_price ?? 0));
-      const newRows = rows.filter((_, index) => index !== becomeAt);
-      if (newRows.length > 0) {
-        await createVariants(
-          brand.id,
-          newRows.map((row) => ({
-            user_id: user.id,
-            brand_id: brand.id,
-            product_id: productId,
-            ...columns(row),
-            cost_price: Number(product?.cost_price ?? 0),
-            stock_main: row.stock_main,
-            stock_incubator: row.stock_incubator,
-            stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
-          })),
-        );
-      }
+      const { leftover } = await addSizesToProduct({
+        brandId: brand.id,
+        first,
+        becomeAt,
+        sizes: rows.map((row) => ({
+          user_id: user.id,
+          brand_id: brand.id,
+          product_id: productId,
+          ...columns(row),
+          cost_price: Number(product?.cost_price ?? 0),
+          stock_main: row.stock_main,
+          stock_incubator: row.stock_incubator,
+          stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
+        })),
+      });
+      // The pieces it had are this size: it keeps them, their history and its orders.
       if (first.kind === "become" && becomeAt >= 0) {
-        // The pieces it has are this size: it keeps them, their history and its orders.
-        await updateVariant(brand.id, first.defaultId, becomePatch(columns(rows[becomeAt])));
         toast.success(becameMessage(first.pieces, bulkRowLabel(rows[becomeAt]), isAr));
       }
-      if (first.kind === "replace") {
-        // The new sizes are in first, so the product always keeps one.
-        await removeVariants([first.defaultId]).catch(() => toast.error(leftoverMessage(isAr)));
-      }
+      if (leftover) toast.error(leftoverMessage(isAr));
       setPiecesRow(0);
       const batchTerms = rows.flatMap((r) => [r.color, r.fabric]);
       prefetchOptionTranslations(batchTerms, isAr);

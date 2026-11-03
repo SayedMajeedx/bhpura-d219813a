@@ -33,6 +33,8 @@ export function useSupplierCatalog(brandId: string, lang: "ar" | "en") {
       products,
       variants,
       sizes: sizesByProduct(variants),
+      /** Each product's archived sizes: one ordered again comes back rather than being made twice. */
+      archivedSizes: sizesByProduct(everySize.filter((v) => v.archived_at)),
       productById,
       variantById,
       shelf: shelfOf(variants),

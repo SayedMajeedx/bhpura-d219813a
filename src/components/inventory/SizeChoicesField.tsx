@@ -19,6 +19,7 @@ export function SizeChoicesField({
   onStock,
   stockLabel,
   hint,
+  another,
   isAr,
 }: {
   /** The store's own word for its size axis. */
@@ -34,10 +35,13 @@ export function SizeChoicesField({
   stockLabel?: string;
   /** Under the chips: what choosing no size means. */
   hint: string;
+  /** The typed field's name ("Another size" unless told: "Another colour"). */
+  another?: string;
   isAr: boolean;
 }) {
   const uid = useId();
   const [typed, setTyped] = useState("");
+  const anotherLabel = another ?? (isAr ? "مقاس آخر" : "Another size");
   const choices = [...offered, ...sizes.filter((size) => !offered.includes(size))];
   const addTyped = () => {
     onSizes(withSize(sizes, typed));
@@ -73,10 +77,10 @@ export function SizeChoicesField({
       )}
       <div className="flex min-w-0 gap-2">
         <Input
-          aria-label={isAr ? "مقاس آخر" : "Another size"}
+          aria-label={anotherLabel}
           value={typed}
           maxLength={40}
-          placeholder={isAr ? "مقاس آخر" : "Another size"}
+          placeholder={anotherLabel}
           onChange={(e) => setTyped(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
