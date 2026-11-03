@@ -16,7 +16,7 @@ import {
 import { exportReportData } from "@/lib/reporting.functions";
 import { sanitizeReportRows } from "@/lib/report-export";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/export")({
   component: ReportsExport,
@@ -105,7 +105,7 @@ function ReportsExport() {
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : lang === "ar" ? "فشل التصدير" : "Export failed";
+        getFriendlyErrorMessage(error) || (lang === "ar" ? "فشل التصدير" : "Export failed");
       toast.error(message, { id: toastId });
     } finally {
       setIsExporting(false);

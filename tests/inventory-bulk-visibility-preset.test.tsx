@@ -9,7 +9,7 @@ import type { CustomField } from "../src/features/inventory/types";
 
 const toast = vi.hoisted(() => ({ error: vi.fn(), success: vi.fn() }));
 const data = vi.hoisted(() => ({
-  deleteProducts: vi.fn(async () => undefined),
+  removeProducts: vi.fn(async () => ({ deleted: [], archived: [] })),
   updateProducts: vi.fn(async () => undefined),
   updateProduct: vi.fn(async (..._args: unknown[]) => undefined),
 }));

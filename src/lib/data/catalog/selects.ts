@@ -12,6 +12,7 @@ export const PRODUCT_COST_COLUMNS = ["cost_price", "direct_packaging_cost", "ven
 export const VARIANT_COST_COLUMNS = ["cost_price"] as const;
 
 export const ADMIN_PRODUCT_COLUMNS = [
+  "archived_at",
   "auto_deactivated_out_of_stock",
   "base_price",
   "booking_buffer_minutes",

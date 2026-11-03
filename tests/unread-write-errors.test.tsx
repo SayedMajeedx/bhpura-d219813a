@@ -14,7 +14,7 @@ const catalog = vi.hoisted(() => ({
   countProductVariants: vi.fn(async () => 0),
   createProduct: vi.fn(async () => "p-new"),
   createVariants: vi.fn(async () => undefined),
-  deleteProducts: vi.fn(async () => undefined),
+  removeProducts: vi.fn(async () => ({ deleted: [], archived: [] })),
   fetchBarcodeLabelData: vi.fn(async () => []),
   syncVariantsWithProduct: vi.fn(async () => undefined),
   updateProduct: vi.fn(async () => undefined),

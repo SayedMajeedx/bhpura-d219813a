@@ -137,14 +137,16 @@ export async function fetchPackagingMaterials(brandId: string): Promise<Packagin
 }
 
 /**
- * How many products the brand has (the plan's product limit). A failed count
+ * How many products in use the brand has (the plan's product limit; an archived one is not counted). A failed count
  * reads as zero, so it never blocks creating a product.
  */
 export async function countAdminProducts(brandId: string): Promise<number> {
   const { count } = await supabase
     .from("products")
     .select("id", { count: "exact", head: true })
-    .eq("brand_id", brandId);
+    .eq("brand_id", brandId)
+    // An archived product does not take a place in the plan's limit.
+    .is("archived_at", null);
   return count || 0;
 }
 
@@ -251,9 +253,20 @@ const CATALOG_CACHE = { staleTime: 30_000 } as const;
 
 /** One function, so a screen's list is filtered again only when the data changes. */
 const sizesInUse = (rows: AdminVariant[]): AdminVariant[] => variantsInUse(rows);
+const productsInUseOnly = (rows: AdminProduct[]): AdminProduct[] => variantsInUse(rows);
 
 export const catalogQueries = {
+  /** The brand's products in use: an archived one (removed, kept for its history) is left out. */
   products: (brandId: string) =>
+    queryOptions({
+      queryKey: catalogKeys.products(brandId),
+      queryFn: () => fetchAdminProducts(brandId),
+      select: productsInUseOnly,
+      enabled: Boolean(brandId),
+      ...CATALOG_CACHE,
+    }),
+  /** Every product, archived ones too, from the same read: to name a past line, or to restore one. */
+  productsWithArchived: (brandId: string) =>
     queryOptions({
       queryKey: catalogKeys.products(brandId),
       queryFn: () => fetchAdminProducts(brandId),

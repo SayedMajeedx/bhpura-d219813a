@@ -12,6 +12,7 @@ import {
   transferApprovedMessage,
   transferRefusedMessage,
 } from "@/features/orders/lib/transfer-approval";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** Approving or rejecting a BenefitPay transfer receipt the customer uploaded. */
 export function useBenefitReview({
@@ -75,11 +76,8 @@ export function useBenefitReview({
       setRejectReason("");
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : lang === "ar"
-            ? "تعذر رفض الإيصال"
-            : "Unable to reject receipt",
+        getFriendlyErrorMessage(error) ||
+          (lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt"),
       );
     } finally {
       setRejectingBenefit(false);

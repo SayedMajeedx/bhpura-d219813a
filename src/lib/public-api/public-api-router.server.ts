@@ -368,6 +368,8 @@ export async function handlePublicApiV1Request(
         .select("*, product_variants(*)", { count: "exact" })
         .is("product_variants.archived_at", null)
         .eq("brand_id", authContext.brandId)
+        // An archived product (removed, kept for its history) is not listed.
+        .is("archived_at", null)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 

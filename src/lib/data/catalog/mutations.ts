@@ -59,7 +59,32 @@ export async function updateProducts(brandId: string, productIds: string[], patc
   if (error) throw error;
 }
 
-/** Deletes products of the brand (their variants go with them). */
+/**
+ * Removes products from the inventory (`remove_products`): a product with no history is deleted,
+ * one with a history (sold, stock moved, on a supplier order, booked, returned) is archived,
+ * hidden and kept for its records. A product that still holds pieces is refused. It answers
+ * which were deleted, so only their pictures are removed.
+ */
+export async function removeProducts(
+  productIds: string[],
+): Promise<{ deleted: string[]; archived: string[] }> {
+  const { data, error } = await supabase.rpc("remove_products", { p_product_ids: productIds });
+  if (error) throw error;
+  const result = (data ?? {}) as { deleted?: string[]; archived?: string[] };
+  return { deleted: result.deleted ?? [], archived: result.archived ?? [] };
+}
+
+/** Brings an archived product back into the inventory, still hidden from the store. */
+export async function restoreProduct(productId: string) {
+  const { error } = await supabase.rpc("restore_product", { p_product_id: productId });
+  if (error) throw error;
+}
+
+/**
+ * Deletes products of the brand directly (their variants go with them). Only for a product just
+ * made, with no history (a supplier order's new product whose sizes failed); the database refuses
+ * one with a history (`PRODUCT_HAS_HISTORY`). Everything else goes through `removeProducts`.
+ */
 export async function deleteProducts(brandId: string, productIds: string[]) {
   const { error } = await supabase
     .from("products")

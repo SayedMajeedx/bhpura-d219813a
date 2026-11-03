@@ -436,10 +436,25 @@
       "authenticated": true,
       "reason": "Signed-in staff who handle orders and see the finances of the store: checked inside (can_access_brand, has_permission; manage_inventory to keep a piece for sale); only for a piece of a cancelled order"
     },
+    "product_has_history(p_product_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Read by the product delete guard as the person deleting: answers only for a store the caller can access (can_access_brand), false otherwise"
+    },
     "remove_product_variants(p_variant_ids uuid[])": {
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: each size is checked with can_access_brand and manage_inventory; a size with history is archived, never deleted, at most 500 at once"
+    },
+    "remove_products(p_product_ids uuid[])": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: each product is checked with can_access_brand and manage_inventory; a product with history is archived, never deleted, at most 500 at once"
+    },
+    "restore_product(p_product_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: can_access_brand and manage_inventory; brings an archived product back, still hidden"
     },
     "remove_web_push_subscription(p_endpoint text)": {
       "anon": false,

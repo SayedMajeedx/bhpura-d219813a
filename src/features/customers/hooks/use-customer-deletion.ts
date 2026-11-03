@@ -67,11 +67,8 @@ export function useCustomerDeletion({ brandId, isAr }: { brandId: string; isAr: 
       await invalidateCustomers(qc, brandId);
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : isAr
-            ? "تعذر حذف العملاء"
-            : "Could not delete customers",
+        getFriendlyErrorMessage(error) ||
+          (isAr ? "تعذر حذف العملاء" : "Could not delete customers"),
       );
     } finally {
       setBulkDeleting(false);
