@@ -26,9 +26,26 @@ export const WORDS: Array<[code: string, ar: string, en: string]> = [
   ],
   [
     "PURCHASE_ORDER_ALREADY_RECEIVED",
-    "وصلت قطع من هذه الطلبية، فلا يمكن إلغاؤها أو حذفها. خفّض الكميات إلى ما وصل بدلاً من ذلك.",
-    "Pieces of this order have arrived, so it cannot be cancelled or deleted. Lower its quantities to what came instead.",
+    "وصلت قطع من هذه الطلبية، فلا تُلغى ولا تُحذف. ألغِ الاستلام أولاً من سجل الاستلام.",
+    "Pieces of this order have arrived, so it cannot be cancelled or deleted. Undo the receiving first, from what arrived.",
   ],
+  [
+    "RECEIPT_PIECES_GONE",
+    "بعض هذه القطع لم تعد في مخزون المتجر (بيعت أو جُردت أو نُقلت). اختر ما يحدث بها.",
+    "Some of these pieces are no longer in the store's stock (sold, counted out or moved). Choose what happens to them.",
+  ],
+  [
+    "RECEIPT_IS_A_CUSTOMER_PIECE",
+    "قطعة الزبون لا يُلغى استلامها: مرحلة طلبه وتكلفته تغيرت معها.",
+    "A customer's piece is not undone: their order's stage and cost moved with it.",
+  ],
+  [
+    "RECEIPT_NOT_FOUND",
+    "أُلغي هذا الاستلام من قبل أو لم يعد موجوداً. حدّث الصفحة.",
+    "This receipt was already undone or no longer exists. Refresh the page.",
+  ],
+  ["NOTHING_TO_UNDO", "لا يوجد استلام لإلغائه.", "There is no receiving to undo."],
+  ["INVALID_UNDO_MODE", "تعذر الحفظ، حدّث الصفحة.", "Could not save. Refresh the page."],
   [
     "CROSS_BRAND_PURCHASE_ORDER",
     "هذا المورد أو المنتج لا يتبع هذا المتجر.",

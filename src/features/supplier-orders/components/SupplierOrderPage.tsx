@@ -1,5 +1,5 @@
 import { formFromReorder, readReorderParam } from "../lib/reorder";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -13,6 +13,7 @@ import {
   Scissors,
   Send,
   Trash2,
+  Undo2,
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ import {
   invalidateSupplierOrders,
   setSupplierOrderStatus,
   supplierOrderQueries,
+  type SupplierReceipt,
 } from "@/lib/data/supplier-orders";
 import { isOpen, localToday, paymentOf, piecesOf } from "../lib/order-state";
 import { supplierOrderError } from "../lib/errors";
@@ -57,8 +59,12 @@ import { SupplierOrderView } from "./SupplierOrderView";
 import { ReceiveDialog } from "./ReceiveDialog";
 import { PaymentDialog } from "./PaymentDialog";
 import { SupplierMessageDialog } from "./SupplierMessageDialog";
+import { UndoReceivingDialog } from "./UndoReceivingDialog";
+import { undoableReceipts } from "../lib/undo-receiving";
 
-type Confirming = "cancel" | "delete" | null;
+// "received": cancel or delete was asked for an order with pieces received; the dialog says to
+// undo the receiving first.
+type Confirming = "cancel" | "delete" | "received" | null;
 
 /** One supplier order (`orderId` "new": a new one): read, received, paid, changed. */
 export function SupplierOrderPage({
@@ -91,7 +97,16 @@ export function SupplierOrderPage({
   const [messaging, setMessaging] = useState(false);
   const [confirming, setConfirming] = useState<Confirming>(null);
   const [busy, setBusy] = useState(false);
+  const [undoing, setUndoing] = useState<SupplierReceipt[] | null>(null);
   const order = orderQ.data ?? null;
+  const receiptsQ = useQuery({
+    ...supplierOrderQueries.receipts(brand.id, orderId),
+    enabled: !isNew && Boolean(brand.id),
+  });
+  const undoable = useMemo(
+    () => (order ? undoableReceipts(receiptsQ.data ?? [], order.items) : []),
+    [order, receiptsQ.data],
+  );
   const today = localToday();
   const loadState = combinedLoadState(isNew ? catalog.queries : [orderQ, ...catalog.queries]);
   const Back = isAr ? ArrowRight : ArrowLeft;
@@ -191,12 +206,14 @@ export function SupplierOrderPage({
                 isAr={isAr}
                 canEdit={Boolean(editable)}
                 canPlace={order.status === "draft"}
-                canCancel={Boolean(nothingArrived) && order.status !== "cancelled"}
-                canDelete={Boolean(nothingArrived)}
+                canCancel={order.status !== "cancelled"}
+                canDelete
+                canUndo={canReceive && undoable.length > 0}
                 onEdit={() => setEditing(true)}
                 onPlace={place}
-                onCancel={() => setConfirming("cancel")}
-                onDelete={() => setConfirming("delete")}
+                onCancel={() => setConfirming(nothingArrived ? "cancel" : "received")}
+                onDelete={() => setConfirming(nothingArrived ? "delete" : "received")}
+                onUndo={() => setUndoing(undoable)}
               />
             </div>
           ) : undefined
@@ -253,6 +270,7 @@ export function SupplierOrderPage({
             storeName={
               (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || brand.slug
             }
+            onUndo={canReceive ? setUndoing : undefined}
             lang={lang}
           />
 
@@ -326,6 +344,15 @@ export function SupplierOrderPage({
               lang={lang}
             />
           )}
+          <UndoReceivingDialog
+            open={undoing !== null}
+            onOpenChange={(next) => !next && setUndoing(null)}
+            brandId={brand.id}
+            orderId={order.id}
+            receipts={undoing ?? []}
+            catalog={catalog}
+            lang={lang}
+          />
           <PaymentDialog
             open={paying}
             onOpenChange={setPaying}
@@ -344,35 +371,59 @@ export function SupplierOrderPage({
         <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {heldByPayments
+              {confirming === "received"
                 ? isAr
-                  ? "لا تُحذف طلبية عليها دفعات"
-                  : "An order with payments is not deleted"
-                : confirming === "delete"
+                  ? "وصلت قطع من هذه الطلبية"
+                  : "Pieces of this order arrived"
+                : heldByPayments
                   ? isAr
-                    ? "حذف الطلبية؟"
-                    : "Delete this order?"
-                  : isAr
-                    ? "إلغاء الطلبية؟"
-                    : "Cancel this order?"}
+                    ? "لا تُحذف طلبية عليها دفعات"
+                    : "An order with payments is not deleted"
+                  : confirming === "delete"
+                    ? isAr
+                      ? "حذف الطلبية؟"
+                      : "Delete this order?"
+                    : isAr
+                      ? "إلغاء الطلبية؟"
+                      : "Cancel this order?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {heldByPayments && pay
-                ? isAr
-                  ? `دفعت ${formatMoney(pay.paid, currency, lang)} على هذه الطلبية، وحذفها يمحو سجل الدفعة. ${cancelInstead ? "ألغِ الطلبية لتبقى في السجل ملغاة، أو " : ""}ألغِ الدفعة أولاً من قائمة الدفعات ثم احذفها.`
-                  : `You paid ${formatMoney(pay.paid, currency, lang)} on this order, and deleting it would erase that payment's record. ${cancelInstead ? "Cancel the order to keep it on record, or take" : "Take"} the payment back first in the payments list, then delete it.`
-                : confirming === "delete"
+              {confirming === "received"
+                ? canReceive && undoable.length > 0
                   ? isAr
-                    ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
-                    : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
+                    ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. ألغِ الاستلام أولاً، ثم ألغِ الطلبية أو احذفها."
+                    : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Undo the receiving first, then cancel or delete the order."
                   : isAr
-                    ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
-                    : "The order stays on record as cancelled, and nothing is awaited from it."}
+                    ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. يلغي الاستلام من يدير المخزون."
+                    : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Someone who manages the stock can undo the receiving."
+                : heldByPayments && pay
+                  ? isAr
+                    ? `دفعت ${formatMoney(pay.paid, currency, lang)} على هذه الطلبية، وحذفها يمحو سجل الدفعة. ${cancelInstead ? "ألغِ الطلبية لتبقى في السجل ملغاة، أو " : ""}ألغِ الدفعة أولاً من قائمة الدفعات ثم احذفها.`
+                    : `You paid ${formatMoney(pay.paid, currency, lang)} on this order, and deleting it would erase that payment's record. ${cancelInstead ? "Cancel the order to keep it on record, or take" : "Take"} the payment back first in the payments list, then delete it.`
+                  : confirming === "delete"
+                    ? isAr
+                      ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
+                      : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
+                    : isAr
+                      ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
+                      : "The order stays on record as cancelled, and nothing is awaited from it."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{isAr ? "تراجع" : "Keep it"}</AlertDialogCancel>
-            {(!heldByPayments || cancelInstead) && (
+            {confirming === "received" && canReceive && undoable.length > 0 && (
+              <AlertDialogAction
+                onClick={() => {
+                  setConfirming(null);
+                  setUndoing(undoable);
+                }}
+                className="gap-1.5"
+              >
+                <Undo2 className="h-4 w-4" aria-hidden="true" />
+                {isAr ? "إلغاء الاستلام" : "Undo receiving"}
+              </AlertDialogAction>
+            )}
+            {confirming !== "received" && (!heldByPayments || cancelInstead) && (
               <AlertDialogAction
                 disabled={busy}
                 onClick={(e) => {
@@ -408,22 +459,26 @@ function OrderMenu({
   canPlace,
   canCancel,
   canDelete,
+  canUndo,
   onEdit,
   onPlace,
   onCancel,
   onDelete,
+  onUndo,
 }: {
   isAr: boolean;
   canEdit: boolean;
   canPlace: boolean;
   canCancel: boolean;
   canDelete: boolean;
+  canUndo: boolean;
   onEdit: () => void;
   onPlace: () => void;
   onCancel: () => void;
   onDelete: () => void;
+  onUndo: () => void;
 }) {
-  if (!canEdit && !canPlace && !canCancel && !canDelete) return null;
+  if (!canEdit && !canPlace && !canCancel && !canDelete && !canUndo) return null;
   return (
     <div className="flex items-center gap-2">
       {canEdit && (
@@ -432,7 +487,7 @@ function OrderMenu({
           {isAr ? "تعديل" : "Edit"}
         </Button>
       )}
-      {(canPlace || canCancel || canDelete) && (
+      {(canPlace || canCancel || canDelete || canUndo) && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -450,6 +505,12 @@ function OrderMenu({
               <DropdownMenuItem onSelect={onPlace}>
                 <Send className="h-4 w-4" aria-hidden="true" />
                 {isAr ? "إرسال الطلبية" : "Place order"}
+              </DropdownMenuItem>
+            )}
+            {canUndo && (
+              <DropdownMenuItem onSelect={onUndo}>
+                <Undo2 className="h-4 w-4" aria-hidden="true" />
+                {isAr ? "إلغاء الاستلام" : "Undo receiving"}
               </DropdownMenuItem>
             )}
             {canCancel && (

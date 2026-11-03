@@ -51,10 +51,18 @@ const movement = (id: string, actor_id: string | null) => ({
 const fetchProfileNames = vi.fn(async (ids: string[]) =>
   ids.map((id) => ({ id, full_name: "Maryam Al-Sayed", email: "maryam@pura.bh" })),
 );
+// Pieces from a supplier's order, and the same pieces leaving when the receipt was undone.
+const supplier = (id: string, delta: number) => ({
+  ...movement(id, "user-1"),
+  delta,
+  reason: delta > 0 ? "manual_adjust" : "correction",
+  reference_type: "purchase_order",
+  reference_id: "po-1",
+});
 const catalog = {
   fetchInventoryMovements: vi.fn(async () => ({
-    rows: [movement("m1", "user-1"), movement("m2", null)],
-    count: 2,
+    rows: [movement("m1", "user-1"), movement("m2", null), supplier("m3", 4), supplier("m4", -4)],
+    count: 4,
   })),
 };
 const orders = { fetchInvoiceNumbers: vi.fn(async () => []) };
@@ -85,8 +93,11 @@ describe("the stock history", () => {
         />
       </I18nProvider>,
     );
-    await waitFor(() => expect(screen.getByText("Maryam Al-Sayed")).toBeDefined());
+    await waitFor(() => expect(screen.getAllByText("Maryam Al-Sayed").length).toBeGreaterThan(0));
     expect(fetchProfileNames).toHaveBeenCalledWith(["user-1"]);
     expect(screen.getAllByText("System").length).toBeGreaterThan(0);
+    // A supplier's pieces read as received, and as undone when they left again.
+    expect(screen.getAllByText("Received from supplier").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Receiving undone").length).toBeGreaterThan(0);
   });
 });

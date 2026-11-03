@@ -10,6 +10,7 @@ import type {
 import type { LineValues, SavePlan } from "@/features/supplier-orders/lib/order-form";
 import { piecePurpose, type PiecePurpose } from "@/features/supplier-orders/lib/after-sending";
 import { orderReleased } from "@/lib/order-released";
+import type { UndoMode, UndoResult } from "@/features/supplier-orders/lib/undo-receiving";
 
 /**
  * Supplier orders (a tailor's order): the `purchase_orders` of a store with their lines, what
@@ -144,6 +145,10 @@ export type SupplierReceipt = {
   cost_after: number;
   note: string | null;
   received_at: string;
+  /** When the receipt was taken back (`undo_purchase_order_receipts`); null while it stands. */
+  undone_at: string | null;
+  /** How many of its pieces left the stock when it was undone. */
+  undo_taken_out: number | null;
 };
 
 /** What arrived for one order, in the order it arrived. */
@@ -155,7 +160,7 @@ export async function fetchSupplierReceipts(
     supabase
       .from("purchase_order_receipts")
       .select(
-        "id, item_id, variant_id, request_id, quantity, unit_cost, cost_before, cost_after, note, received_at",
+        "id, item_id, variant_id, request_id, quantity, unit_cost, cost_before, cost_after, note, received_at, undone_at, undo_taken_out",
         { count: "exact" },
       )
       .eq("brand_id", brandId)
@@ -517,6 +522,26 @@ export async function receiveSupplierOrder(
   });
   if (error) throw error;
   return data as unknown as { status: SupplierOrderStatus; repeated: boolean };
+}
+
+/**
+ * Takes receipts back, the latest first: their pieces leave the stock (`mode`), each size's cost
+ * goes back unless it changed since, and the order reopens. One press, one `requestId`.
+ */
+export async function undoSupplierReceipts(
+  orderId: string,
+  receiptIds: string[],
+  mode: UndoMode,
+  requestId: string,
+): Promise<UndoResult> {
+  const { data, error } = await supabase.rpc("undo_purchase_order_receipts", {
+    p_po_id: orderId,
+    p_receipt_ids: receiptIds,
+    p_mode: mode,
+    p_request_id: requestId,
+  });
+  if (error) throw error;
+  return data as unknown as UndoResult;
 }
 
 /** After a receipt: the orders, and the catalog's stock and costs the inventory shows. */

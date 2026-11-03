@@ -786,6 +786,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "undo_purchase_order_receipts(p_po_id uuid, p_receipt_ids uuid[], p_mode text, p_request_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who manage the inventory and see the finances of the order's store: checked inside (can_access_brand, has_permission); one request id writes once"
+    },
     "update_incubator_inventory_item(p_inventory_id uuid, p_external_code text, p_consignment_price numeric, p_commission_type text, p_commission_value numeric)": {
       "anon": false,
       "authenticated": true,

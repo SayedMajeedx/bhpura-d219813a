@@ -17,6 +17,13 @@ const stubs = vi.hoisted(() => ({
   permissions: ["manage_inventory", "view_financials"],
   receiveSupplierOrder: vi.fn(async () => ({ status: "partially_received", repeated: false })),
   invalidateAfterReceipt: vi.fn(async () => undefined),
+  undoSupplierReceipts: vi.fn(async () => ({
+    status: "ordered",
+    repeated: false,
+    pieces: 4,
+    taken_out: 4,
+    costs_kept: 0,
+  })),
   createSupplierOrder: vi.fn(async () => "po-new"),
   invalidateSupplierOrders: vi.fn(async () => undefined),
   navigate: vi.fn(),
@@ -96,6 +103,7 @@ const mocks: Record<string, unknown> = {
     voidSupplierPayment: stubs.voidSupplierPayment,
     receiveSupplierOrder: stubs.receiveSupplierOrder,
     invalidateAfterReceipt: stubs.invalidateAfterReceipt,
+    undoSupplierReceipts: stubs.undoSupplierReceipts,
     createSupplierOrder: stubs.createSupplierOrder,
     updateSupplierOrder: vi.fn(),
     invalidateSupplierOrders: stubs.invalidateSupplierOrders,
@@ -503,5 +511,83 @@ describe("deleting an order", () => {
     const dialog = await openDelete();
     fireEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
     await waitFor(() => expect(supplierData.deleteSupplierOrder).toHaveBeenCalledWith("b1", "po1"));
+  });
+});
+
+describe("undoing a receipt", () => {
+  const receipt = (over: Record<string, unknown>) => ({
+    item_id: "s",
+    variant_id: "v-s",
+    request_id: "r1",
+    quantity: 4,
+    unit_cost: 18,
+    cost_before: 15,
+    cost_after: 16.714,
+    note: null,
+    received_at: "2026-10-12T08:00:00Z",
+    undone_at: null,
+    undo_taken_out: null,
+    ...over,
+  });
+  const received = () =>
+    tailorOrder({
+      status: "partially_received",
+      paid_amount: 0,
+      items: tailorOrder().items.map((l) =>
+        l.id === "fabric" ? l : { ...l, received_quantity: 4 },
+      ),
+    });
+
+  it("is offered when cancel or delete is asked, and takes the pieces out", async () => {
+    stubs.order = received();
+    stubs.receipts = [
+      receipt({ id: "rc1" }),
+      receipt({ id: "rc0", undone_at: "2026-10-11T08:00:00Z", quantity: 1 }),
+    ];
+    wrap(<SupplierOrderPage orderId="po1" />);
+    // An undone receipt stays on record, with no button.
+    expect(await screen.findByText(/Undone/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Undo receiving Black abaya/ })).toHaveLength(1);
+    const menu = screen.getByRole("button", { name: "Order options" });
+    fireEvent.keyDown(menu, { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: /Delete/ }));
+    const why = await screen.findByRole("alertdialog");
+    expect(within(why).getByText(/Undo the receiving first/)).toBeInTheDocument();
+    fireEvent.click(within(why).getByRole("button", { name: "Undo receiving" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Leaving the stock: 4 pieces/)).toBeInTheDocument();
+    expect(within(dialog).queryByRole("radio")).toBeNull();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Undo receiving" }));
+    await waitFor(() => expect(stubs.undoSupplierReceipts).toHaveBeenCalledTimes(1));
+    expect(stubs.undoSupplierReceipts.mock.calls[0]).toEqual([
+      "po1",
+      ["rc1"],
+      "take_out",
+      expect.stringMatching(/^[0-9a-f-]{36}$/),
+    ]);
+    expect(stubs.toast.success).toHaveBeenCalledWith(
+      "Receiving of 4 pieces undone. They left the stock.",
+    );
+  });
+
+  it("asks what to do when the pieces already left the store", async () => {
+    stubs.order = received();
+    // Size M holds none: its two pieces were sold or counted out.
+    stubs.receipts = [receipt({ id: "rm", item_id: "m", variant_id: "v-m", quantity: 2 })];
+    wrap(<SupplierOrderPage orderId="po1" />);
+    fireEvent.click(await screen.findByRole("button", { name: /^Undo receiving Black abaya/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/the store still holds 0 pieces of them/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("radio", { name: /Take out what is left/ })).toBeChecked();
+    fireEvent.click(within(dialog).getByRole("radio", { name: /Leave the stock as it is/ }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Undo receiving" }));
+    await waitFor(() =>
+      expect(stubs.undoSupplierReceipts).toHaveBeenCalledWith(
+        "po1",
+        ["rm"],
+        "leave",
+        expect.any(String),
+      ),
+    );
   });
 });
