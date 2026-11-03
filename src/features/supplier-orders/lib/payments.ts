@@ -120,10 +120,13 @@ export function lateOrderMessage(
 export function supplierDashboardLine(orders: readonly SupplierOrder[], today: string) {
   let late = 0;
   let owed = 0;
+  // Customers' pieces sent with no price: finance staff are to add it.
+  let prices = 0;
   for (const order of orders) {
     if (isLate(order, today)) late += 1;
     if (order.status !== "draft") owed += paymentOf(order).owed;
+    if (order.status !== "cancelled") prices += order.items.filter((l) => l.price_pending).length;
   }
   owed = roundCost(owed);
-  return late === 0 && owed === 0 ? null : { late, owed };
+  return late === 0 && owed === 0 && prices === 0 ? null : { late, owed, prices };
 }

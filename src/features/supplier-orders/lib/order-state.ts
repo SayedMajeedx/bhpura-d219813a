@@ -32,6 +32,11 @@ export type SupplierOrderLine = {
   purpose?: "make" | "fix" | "alteration";
   /** What to fix or change. */
   work_note?: string | null;
+  /**
+   * A customer's piece sent by staff who cannot see costs: its price is for finance staff to add
+   * (migration `20261116100000`); until then the order's total leaves it out.
+   */
+  price_pending?: boolean;
   /** A cancelled customer's piece kept for sale: whose it was. */
   released_order_item_id?: string | null;
 };
@@ -146,7 +151,12 @@ export function ordersSummary(orders: readonly SupplierOrder[], today: string) {
   let late = 0;
   let awaited = 0;
   let owed = 0;
+  // Orders holding a customer's piece whose price is still to add: their totals are short.
+  let pricesMissing = 0;
   for (const order of orders) {
+    if (order.items.some((line) => line.price_pending) && order.status !== "cancelled") {
+      pricesMissing += 1;
+    }
     if (isOpen(order)) {
       open += 1;
       awaited += piecesOf(order).remaining;
@@ -154,7 +164,7 @@ export function ordersSummary(orders: readonly SupplierOrder[], today: string) {
     }
     if (order.status !== "draft") owed += paymentOf(order).owed;
   }
-  return { open, late, awaited, owed: roundCost(owed) };
+  return { open, late, awaited, owed: roundCost(owed), pricesMissing };
 }
 
 /** "6 قطع", "قطعتان", "1 piece": a count of pieces as each language says it. */
@@ -170,4 +180,10 @@ export function ordersLabel(n: number, lang: "ar" | "en"): string {
     return arCount(n, { one: "طلبية واحدة", two: "طلبيتان", few: "طلبيات", many: "طلبية" });
   }
   return `${n} ${n === 1 ? "order" : "orders"}`;
+}
+
+/** The pieces on an order whose price is still to add. */
+export function pricesToAdd(order: Pick<SupplierOrder, "status" | "items">): number {
+  if (order.status === "cancelled") return 0;
+  return order.items.filter((line) => line.price_pending).length;
 }

@@ -86,7 +86,8 @@ describe("the job sheet in the order's documents", () => {
     fireEvent.click(screen.getByRole("radio", { name: "العربية" }));
     fireEvent.click(screen.getByRole("button", { name: "Print" }));
     expect(print).toHaveBeenCalledTimes(1);
-    expect(print).toHaveBeenCalledWith("ar");
+    // No supplier holds the piece yet: the sheet says nothing of who has it.
+    expect(print).toHaveBeenCalledWith("ar", null);
   });
 
   it("speaks Arabic with the store's word for the workshop", () => {

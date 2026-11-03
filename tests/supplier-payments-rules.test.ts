@@ -123,11 +123,26 @@ describe("a late order", () => {
   });
 
   it("puts one line on the dashboard with what is late and what is owed, or none", () => {
-    expect(supplierDashboardLine([order()], TODAY)).toEqual({ late: 1, owed: 150 });
+    expect(supplierDashboardLine([order()], TODAY)).toEqual({ late: 1, owed: 150, prices: 0 });
     expect(
       supplierDashboardLine([order({ paid_amount: 200, expected_at: "2026-12-01" })], TODAY),
     ).toBeNull();
     expect(supplierDashboardLine([order({ status: "draft" })], TODAY)).toBeNull();
+  });
+
+  it("says when a customer's piece was sent with no price, for finance staff to add", () => {
+    const pending = order({
+      paid_amount: 200,
+      expected_at: "2026-12-01",
+      items: [
+        ...order().items,
+        { ...order().items[0], id: "pending", order_item_id: "oi-1", price_pending: true },
+      ],
+    });
+    expect(supplierDashboardLine([pending], TODAY)).toEqual(
+      expect.objectContaining({ late: 0, prices: 1 }),
+    );
+    expect(supplierDashboardLine([{ ...pending, status: "cancelled" }], TODAY)).toBeNull();
   });
 });
 

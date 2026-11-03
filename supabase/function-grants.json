@@ -321,6 +321,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "order_workshop_pieces(p_order_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand on the order's store, and manage_orders or view_financials); it returns where the order's pieces are with suppliers, never an amount"
+    },
     "place_booking_order(p_booking_id uuid, p_hold_token uuid, p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text, p_fulfillment text, p_branch_id uuid, p_digital_channel text, p_digital_contact text, p_promo_code text, p_benefit_receipt_id uuid, p_shipping_fee numeric, p_shipping_zone text, p_idempotency_key text)": {
       "anon": true,
       "authenticated": true,
@@ -835,6 +840,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in person reading their own device's alert choices: only the caller's own subscription"
+    },
+    "workshop_suppliers(p_brand uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, and manage_orders or view_financials); it returns the store's suppliers, their language, phone and open orders' numbers and due days, never an amount"
     }
   }
 }

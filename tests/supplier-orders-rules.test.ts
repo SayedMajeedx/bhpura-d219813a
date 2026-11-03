@@ -132,7 +132,13 @@ describe("an order's state", () => {
       "done",
     ]);
     expect(ordersInTab(list, "open").map((o) => o.id)).toEqual(["later", "late", "soon", "draft"]);
-    expect(ordersSummary(list, today)).toEqual({ open: 3, late: 1, awaited: 30, owed: 640 });
+    expect(ordersSummary(list, today)).toEqual({
+      open: 3,
+      late: 1,
+      awaited: 30,
+      owed: 640,
+      pricesMissing: 0,
+    });
   });
 });
 

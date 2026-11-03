@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { supplierOrderQueries } from "@/lib/data/supplier-orders";
+import { useSupplierCatalog } from "../hooks/use-supplier-catalog";
+import { usePrintSupplierSheets } from "../hooks/use-print-supplier-sheets";
 import { CheckCircle2, Scissors } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,6 +31,15 @@ export function PiecesToMakeTab({ currency, lang }: { currency: string; lang: "a
   const navigate = useNavigate();
   const { vocabulary } = useVocabulary();
   const { groups, isLoading } = usePiecesToMake(brand.id);
+  const qc = useQueryClient();
+  const catalog = useSupplierCatalog(brand.id, lang);
+  // A batch's job sheets, all in one print, from the supplier order the send made or joined.
+  const printSheets = usePrintSupplierSheets({
+    brandId: brand.id,
+    catalog,
+    brandName: (isAr ? brand.name_ar || brand.name_en : brand.name_en) || brand.slug,
+    lang,
+  });
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [sending, setSending] = useState(false);
   const chosenGroups = useMemo(
@@ -170,21 +182,26 @@ export function PiecesToMakeTab({ currency, lang }: { currency: string; lang: "a
           currency={currency}
           lang={lang}
           title={sendWords}
-          onSent={(poId) => {
-            setPicked(new Set());
-            toast.success(isAr ? "أُرسلت القطع للمورد" : "Pieces sent to the supplier", {
-              action: poId
-                ? {
-                    label: isAr ? "راسل المورد" : "Message the supplier",
-                    onClick: () =>
-                      navigate({
-                        to: "/admin/b/$slug/supplier-orders/$id",
-                        params: { slug: brand.slug, id: poId },
-                      }),
-                  }
-                : undefined,
-            });
+          onSent={() => setPicked(new Set())}
+          onPrintSheet={(sheetLang, _where, sent) => {
+            const poId = sent.poId;
+            if (!poId) return;
+            void printSheets(
+              async () => {
+                const order = await qc.fetchQuery(supplierOrderQueries.detail(brand.id, poId));
+                if (!order) throw new Error("PURCHASE_ORDER_NOT_FOUND");
+                return order;
+              },
+              sheetLang,
+              sent.orderItemIds,
+            );
           }}
+          onOpenSupplierOrder={(id) =>
+            navigate({
+              to: "/admin/b/$slug/supplier-orders/$id",
+              params: { slug: brand.slug, id },
+            })
+          }
         />
       )}
     </div>

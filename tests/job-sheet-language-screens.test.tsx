@@ -71,6 +71,34 @@ const supplierOrders = vi.hoisted(() => ({
 vi.mock("../src/lib/data/supplier-orders", () => supplierOrders);
 vi.mock("@/lib/data/supplier-orders", () => supplierOrders);
 
+// Where the order's pieces are, as every member of order staff reads it (migration 20261116100000).
+const workshop = vi.hoisted(() => ({
+  workshopQueries: {
+    orderPieces: () => ({
+      queryKey: ["job-sheet-lang", "workshop-pieces", vendorLanguage.value],
+      queryFn: async () => [
+        {
+          orderItemId: "item-1",
+          itemId: "pol-1",
+          purpose: "make",
+          quantity: 1,
+          receivedQuantity: 0,
+          pricePending: false,
+          poId: "po-1",
+          poNumber: "PO-0007",
+          expectedAt: "2026-11-12",
+          vendorId: "00000000-0000-4000-8000-0000000000v1",
+          vendorName: "Umm Ali",
+          vendorPhone: null,
+          language: vendorLanguage.value,
+        },
+      ],
+    }),
+  },
+}));
+vi.mock("../src/lib/data/supplier-orders/workshop", () => workshop);
+vi.mock("@/lib/data/supplier-orders/workshop", () => workshop);
+
 const returnsData = vi.hoisted(() => ({
   returnsQueries: {
     forOrder: () => ({ queryKey: ["job-sheet-lang", "returns"], queryFn: async () => [] }),
@@ -134,8 +162,14 @@ describe("printing a job sheet", () => {
         screen.getByRole("radio", { name: "الاثنتان معاً" }).getAttribute("aria-checked"),
       ).toBe("true"),
     );
+    // The card says who has the piece, and the sheet carries it.
+    expect(screen.getByText(/^عند Umm Ali على PO-0007، التسليم/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "طباعة" }));
-    expect(print).toHaveBeenCalledWith("both");
+    expect(print).toHaveBeenCalledWith("both", {
+      supplier: "Umm Ali",
+      poNumber: "PO-0007",
+      expectedAt: "2026-11-12",
+    });
   });
 });
 

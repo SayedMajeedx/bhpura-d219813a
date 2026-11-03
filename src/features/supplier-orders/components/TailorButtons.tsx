@@ -1,5 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { useBrandOptional } from "@/lib/brand-context";
+import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useProfileOptional } from "@/lib/profile-context";
@@ -13,15 +16,25 @@ import type { CustomerLine } from "../lib/customer-pieces";
 import { supplierOrderError } from "../lib/errors";
 import { SendToTailorDialog } from "./SendToTailorDialog";
 
-/** Staff who may put a customer's piece on a tailor's account: they handle orders and costs. */
+/** Staff who may receive a customer's piece on a tailor's account: they handle orders and costs. */
 function useTracksTailor() {
   const profile = useProfileOptional();
   return Boolean(profile?.hasPermission("manage_orders") && profile.canViewFinancials);
 }
 
 /**
- * "Send to workshop" on a customer's order. For staff who see the finances it opens the send
- * (which tailor, which order, each piece's price); for anyone else it moves the stage, as before.
+ * Staff who send a customer's piece to the workshop: order staff. Those who cannot see costs
+ * send it at no price, for finance staff to add (the owner's decision of 2026-11-03).
+ */
+function useSendsToWorkshop() {
+  const profile = useProfileOptional();
+  return Boolean(profile?.isAdmin || profile?.hasPermission("manage_orders"));
+}
+
+/**
+ * "Send to workshop" on a customer's order: one step (step 2 of `docs/workshop-flow-plan.md`):
+ * a supplier and their order, or the store's own workshop, then the job sheet, the supplier's
+ * message and telling the customer. Staff who do not handle orders move the stage, as before.
  */
 export function SendToTailorButton({
   brandId,
@@ -32,30 +45,48 @@ export function SendToTailorButton({
   children,
   onPlainSend,
   onSent,
+  onPrintSheet,
+  onTellCustomer,
   title,
 }: {
   /** The send's words in this store, as its button says them. */
   title: string;
+  /** Prints the order's job sheet in the language chosen, saying who has the piece. */
+  onPrintSheet?: (sheetLang: SheetLang, where: SheetWhere) => void;
+  onTellCustomer?: () => void;
   brandId: string;
   orderId: string;
   lines: readonly CustomerLine[];
   lang: "ar" | "en";
   className?: string;
   children: ReactNode;
-  onPlainSend: () => Promise<void> | void;
+  /** Moves the stage alone; `offerTell` when nothing else will offer telling the customer. */
+  onPlainSend: (offerTell?: boolean) => Promise<void> | void;
   onSent: () => Promise<void> | void;
 }) {
-  const tracks = useTracksTailor();
-  if (!tracks) {
+  const sends = useSendsToWorkshop();
+  if (!sends) {
     return (
-      <Button className={className} onClick={() => onPlainSend()}>
+      <Button className={className} onClick={() => onPlainSend(true)}>
         {children}
       </Button>
     );
   }
   return (
     <TrackedSend
-      {...{ brandId, orderId, lines, lang, className, children, onPlainSend, onSent, title }}
+      {...{
+        brandId,
+        orderId,
+        lines,
+        lang,
+        className,
+        children,
+        onPlainSend,
+        onSent,
+        onPrintSheet,
+        onTellCustomer,
+        title,
+      }}
     />
   );
 }
@@ -69,10 +100,14 @@ function TrackedSend({
   children,
   onPlainSend,
   onSent,
+  onPrintSheet,
+  onTellCustomer,
   title,
 }: Parameters<typeof SendToTailorButton>[0]) {
   const currency = useStoreCurrency(brandId);
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const slug = useBrandOptional()?.slug;
   return (
     <>
       <Button className={className} onClick={() => setOpen(true)}>
@@ -88,6 +123,19 @@ function TrackedSend({
           lang={lang}
           onSent={() => onSent()}
           onPlainSend={onPlainSend}
+          onPrintSheet={
+            onPrintSheet ? (sheetLang, where) => onPrintSheet(sheetLang, where) : undefined
+          }
+          onTellCustomer={onTellCustomer}
+          onOpenSupplierOrder={
+            slug
+              ? (id) =>
+                  void navigate({
+                    to: "/admin/b/$slug/supplier-orders/$id",
+                    params: { slug, id },
+                  })
+              : undefined
+          }
           title={title}
         />
       )}

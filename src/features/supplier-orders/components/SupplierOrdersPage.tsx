@@ -168,6 +168,14 @@ export function SupplierOrdersPage() {
             />
           </dl>
 
+          {summary.pricesMissing > 0 && (
+            <p className="rounded-lg bg-warning/10 px-3 py-2 text-xs font-semibold">
+              {isAr
+                ? `${ordersLabel(summary.pricesMissing, lang)} فيها قطع لم يُضف سعرها: افتحها وأضف السعر.`
+                : `${ordersLabel(summary.pricesMissing, lang)} with pieces still to price: open them to add the price.`}
+            </p>
+          )}
+
           <CancelledPiecesNotice orders={orders} slug={brand.slug} lang={lang} />
 
           <div

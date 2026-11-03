@@ -19,6 +19,17 @@ type Common = {
   customerName?: string | null;
   /** The note the customer left on the whole order, if any. */
   orderNote?: string | null;
+  /**
+   * Who has the piece: a supplier's order (its supplier, number and due day) or the store's own
+   * workshop (`supplier` null). Absent: the sheet says nothing of it, as before.
+   */
+  where?: SheetWhere | null;
+};
+
+export type SheetWhere = {
+  supplier: string | null;
+  poNumber: string | null;
+  expectedAt: string | null;
 };
 
 export type JobSheetArgs = Common &
@@ -55,6 +66,10 @@ const WORDS = {
     handedOver: "سُلّمت بتاريخ",
     receivedBack: "استُلمت بتاريخ",
     signature: "التوقيع",
+    supplier: "المورد",
+    supplierOrder: "طلبية المورد",
+    inHouse: "في ورشتنا",
+    sheetFor: "ورقة الطلب",
   },
   en: {
     title: "Job sheet",
@@ -73,6 +88,10 @@ const WORDS = {
     handedOver: "Handed over on",
     receivedBack: "Received back on",
     signature: "Signature",
+    supplier: "Supplier",
+    supplierOrder: "Supplier order",
+    inHouse: "In our workshop",
+    sheetFor: "Sheet for",
   },
 } as const;
 
@@ -233,8 +252,8 @@ const PRINT_SCRIPT = `
     window.addEventListener('afterprint', function () { window.close(); });
   </script>`;
 
-/** The printable page. */
-export function jobSheetHtml(a: JobSheetArgs): string {
+/** One order's sheet: its words, direction and body (headed, its pieces, the signatures). */
+function sheetBody(a: JobSheetArgs) {
   const number = e(orderNumberLabel(a.orderNumber, a.numberFormat));
   const blank = `<span class="blank"></span>`;
   const twoLanguages = a.lang === "both";
@@ -246,7 +265,8 @@ export function jobSheetHtml(a: JobSheetArgs): string {
       ? both(`${WORDS.ar.to}: ${a.workshop.ar}`, `${WORDS.en.to}: ${a.workshop.en}`)
       : `${WORDS[a.lang].to}: ${a.workshop}`;
   // Dates in Western digits; written once in a sheet in both languages.
-  const date = formatDate(a.orderDate, a.lang === "ar" ? "ar-BH-u-nu-latn" : "en-US");
+  const dateOf = (day: string | null | undefined) =>
+    formatDate(day, a.lang === "ar" ? "ar-BH-u-nu-latn" : "en-US");
 
   let pieces: string;
   if (a.lang === "both") {
@@ -269,18 +289,23 @@ export function jobSheetHtml(a: JobSheetArgs): string {
     ? `<div class="order-note" dir="auto"><b>${e(say((w) => w.orderNote))}:</b> ${e(filled(a.orderNote))}</div>`
     : "";
 
-  const pageDir = a.lang === "ar" ? "rtl" : "ltr";
-  const pageLang = a.lang === "both" ? "ar" : a.lang;
+  // Who has the piece, and by when: the supplier's order, or the store's own workshop.
+  const where = a.where;
+  const whereLine = !where
+    ? ""
+    : where.supplier
+      ? `<div class="where"><span><b>${e(say((w) => w.supplier))}:</b> <span dir="auto">${e(where.supplier)}</span></span>${
+          where.poNumber
+            ? `<span><b>${e(say((w) => w.supplierOrder))}:</b> <span dir="ltr">${e(where.poNumber)}</span></span>`
+            : ""
+        }</div>`
+      : `<div class="where"><span><b>${e(say((w) => w.inHouse))}</b></span></div>`;
+  const neededBy = where?.expectedAt ? `<b>${e(dateOf(where.expectedAt))}</b>` : blank;
+  const footer = where?.poNumber
+    ? `<div class="sheet-foot">${e(say((w) => w.sheetFor))} ${number} · <span dir="ltr">${e(where.poNumber)}</span></div>`
+    : "";
 
-  return `<!DOCTYPE html>
-<html dir="${pageDir}" lang="${pageLang}">
-<head>
-  <meta charset="utf-8" />
-  <title>${e(say((w) => w.title))} ${number}</title>
-  <style>${style(a.lang !== "en")}
-  </style>
-</head>
-<body>
+  const body = `
   <div class="header">
     <div class="brand">${e(a.brand)}</div>
     <div style="text-align:end;">
@@ -288,12 +313,13 @@ export function jobSheetHtml(a: JobSheetArgs): string {
       <div class="to">${e(forLine)}</div>
     </div>
   </div>
+  ${whereLine}
 
   <div class="meta">
     <div><span>${e(say((w) => w.order))}</span><b>${number}</b></div>
-    <div><span>${e(say((w) => w.date))}</span><b>${e(date)}</b></div>
+    <div><span>${e(say((w) => w.date))}</span><b>${e(dateOf(a.orderDate))}</b></div>
     <div><span>${e(say((w) => w.customer))}</span><b dir="auto">${e(filled(a.customerName) || "—")}</b></div>
-    <div><span>${e(say((w) => w.neededBy))}</span>${blank}</div>
+    <div><span>${e(say((w) => w.neededBy))}</span>${neededBy}</div>
   </div>
 
   ${orderNote}
@@ -304,7 +330,45 @@ export function jobSheetHtml(a: JobSheetArgs): string {
     <div>${blank}${e(say((w) => w.receivedBack))}</div>
     <div>${blank}${e(say((w) => w.signature))}</div>
   </div>
+  ${footer}`;
+
+  return {
+    title: `${say((w) => w.title)} ${orderNumberLabel(a.orderNumber, a.numberFormat)}`,
+    dir: a.lang === "ar" ? "rtl" : "ltr",
+    lang: a.lang === "both" ? "ar" : a.lang,
+    body,
+  };
+}
+
+const SHEETS_STYLE = `
+    .where { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: -4px 0 12px; font-size: 13px; }
+    .sheet-foot { margin-top: 14px; font-size: 10px; color: dimgray; text-align: center; }
+    .sheet + .sheet { break-before: page; page-break-before: always; }`;
+
+/**
+ * Several orders' sheets in one print, one after another, each on a page of its own: the
+ * supplier order's pieces, or a batch sent at once.
+ */
+export function jobSheetsHtml(sheets: readonly JobSheetArgs[]): string {
+  const read = sheets.map(sheetBody);
+  const first = read[0];
+  const arabic = sheets.some((sheet) => sheet.lang !== "en");
+  return `<!DOCTYPE html>
+<html dir="${first?.dir ?? "ltr"}" lang="${first?.lang ?? "en"}">
+<head>
+  <meta charset="utf-8" />
+  <title>${e(first?.title ?? "")}</title>
+  <style>${style(arabic)}${SHEETS_STYLE}
+  </style>
+</head>
+<body>
+${read.map((sheet) => `<div class="sheet" dir="${sheet.dir}" lang="${sheet.lang}">${sheet.body}</div>`).join("\n")}
 ${PRINT_SCRIPT}
 </body>
 </html>`;
+}
+
+/** The printable page of one order's sheet. */
+export function jobSheetHtml(a: JobSheetArgs): string {
+  return jobSheetsHtml([a]);
 }

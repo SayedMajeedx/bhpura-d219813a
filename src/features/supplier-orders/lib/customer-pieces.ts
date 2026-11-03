@@ -53,11 +53,20 @@ export type SendForm = {
 
 export type SendProblem = "vendor" | "nothing" | { cost: string };
 
-export function sendProblems(form: SendForm): SendProblem[] {
+/**
+ * What stops a send. A price is asked only of staff who may see the store's costs (`prices`):
+ * anyone else's piece goes at no price, for finance staff to add (the owner's decision of
+ * 2026-11-03; the database holds it, `send_order_to_supplier`).
+ */
+export function sendProblems(
+  form: SendForm,
+  { prices = true }: { prices?: boolean } = {},
+): SendProblem[] {
   const problems: SendProblem[] = [];
   if (!form.vendorId) problems.push("vendor");
   const chosen = Object.entries(form.pieces).filter(([, piece]) => piece.send);
   if (chosen.length === 0) problems.push("nothing");
+  if (!prices) return problems;
   for (const [id, piece] of chosen) {
     const text = piece.cost.trim();
     const n = Number(text);
@@ -68,8 +77,11 @@ export function sendProblems(form: SendForm): SendProblem[] {
   return problems;
 }
 
-/** What `send_order_to_supplier` is asked: call it only on a form with no `sendProblems`. */
-export function sendRequest(form: SendForm) {
+/**
+ * What `send_order_to_supplier` is asked: call it only on a form with no `sendProblems`. With
+ * no `prices` every piece goes at 0, which the database takes as a price still to add.
+ */
+export function sendRequest(form: SendForm, { prices = true }: { prices?: boolean } = {}) {
   return {
     vendorId: form.vendorId,
     poId: form.target === "new" ? null : form.target,
@@ -78,7 +90,7 @@ export function sendRequest(form: SendForm) {
       .filter(([, piece]) => piece.send)
       .map(([order_item_id, piece]) => ({
         order_item_id,
-        unit_cost: roundCost(Number(piece.cost)),
+        unit_cost: prices ? roundCost(Number(piece.cost)) : 0,
       })),
   };
 }
@@ -96,8 +108,12 @@ export type SendGroup = {
  * order, the first making the supplier order (or naming an open one) and the rest joining it.
  * Orders with no piece chosen are left out.
  */
-export function sendBatches(form: SendForm, groups: readonly SendGroup[]) {
-  const request = sendRequest(form);
+export function sendBatches(
+  form: SendForm,
+  groups: readonly SendGroup[],
+  { prices = true }: { prices?: boolean } = {},
+) {
+  const request = sendRequest(form, { prices });
   const chosen = new Map(request.lines.map((line) => [line.order_item_id, line]));
   return groups
     .map((group) => ({
