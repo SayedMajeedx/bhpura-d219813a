@@ -231,6 +231,11 @@ describe("printing a card in the store", () => {
     expect(html).toContain("@page{size:210mm 297mm;margin:0}");
     expect(html).toContain("ABCD-EFGH-JKMN");
     expect(html).toContain("Sara");
+    fireEvent.click(screen.getByRole("button", { name: "Print to fold and glue" }));
+    await waitFor(() => expect(sheet.document.write).toHaveBeenCalledTimes(2));
+    const folded = String(sheet.document.write.mock.calls[1][0]);
+    expect(folded).toContain("Fold on the dashed line");
+    expect(folded).toContain("ABCD-EFGH-JKMN");
     open.mockRestore();
   });
 });
