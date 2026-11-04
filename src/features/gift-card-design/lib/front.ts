@@ -1,14 +1,11 @@
-import {
-  contrastRatio,
-  mixColours,
-  readableInk,
-} from "@/features/content-studio/lib/studio-styles";
 import type { StoreColours } from "@/features/content-studio/lib/studio-styles";
 import { cardOccasion, type Ornament } from "./occasions";
 import { designParts, palette, type CardDesign, type Palette } from "./design";
 import {
   BLEED,
   archPath,
+  doubleFrame,
+  framedPhoto,
   cardSize,
   ornamentShapes,
   ribbonPath,
@@ -137,6 +134,7 @@ function signature(ctx: Ctx): Shape[] {
     : { w: w * 0.38, h: 22, cy: h * 0.42 };
   const shapes: Shape[] = [
     ground(w, h, pal.ground),
+    ...doubleFrame(w, h, m * 0.42, pal.metal),
     ...storeMark(
       ctx.content,
       langs.main,
@@ -234,15 +232,12 @@ function photo(ctx: Ctx): Shape[] {
   const shapes: Shape[] = [ground(w, h, pal.ground)];
   if (ctx.portrait) {
     const seam = h * 0.6;
+    // The photograph sits on the paper inside its margin, as a print in a mount: nothing runs to
+    // the edge a home printer cannot reach.
     if (content.photo) {
-      shapes.push({
-        kind: "image",
-        href: content.photo,
-        x: -BLEED,
-        y: -BLEED,
-        w: w + BLEED * 2,
-        h: seam + BLEED,
-      });
+      shapes.push(
+        ...framedPhoto(content.photo, { x: m, y: m, w: w - m * 2, h: seam - m }, pal.rule),
+      );
     }
     const block = greetingBlock(ctx, {
       x: w / 2,
@@ -272,14 +267,7 @@ function photo(ctx: Ctx): Shape[] {
   }
   const seam = w * 0.5;
   if (content.photo) {
-    shapes.push({
-      kind: "image",
-      href: content.photo,
-      x: -BLEED,
-      y: -BLEED,
-      w: seam + BLEED,
-      h: h + BLEED * 2,
-    });
+    shapes.push(...framedPhoto(content.photo, { x: m, y: m, w: seam - m, h: h - m * 2 }, pal.rule));
   }
   const colW = w - seam - m * 2;
   const cx = seam + m + colW / 2;
@@ -389,15 +377,14 @@ function pattern(ctx: Ctx): Shape[] {
   return shapes;
 }
 
-function block(ctx: Ctx, tone: string): Shape[] {
+function block(ctx: Ctx): Shape[] {
   const { w, h, m, pal, langs } = ctx;
-  const paper =
-    tone === "brand" ? palette("cream", { accent: pal.accent, background: null, text: null }) : pal;
-  let field = pal.accent;
-  // A store colour too near the paper (a dark one on black) gives way to the paper's own ink.
-  if (contrastRatio(field, paper.ground) < 1.6) field = paper.ink;
-  const fieldInk = readableInk(field, ["#F3EEE6", "#171615"], "#F3EEE6");
-  const fieldSoft = mixColours(fieldInk, field, 0.3);
+  const paper = pal;
+  // The store's colour as a light field (never a deep one: it would band on a home printer), the
+  // greeting on it in the store's own ink.
+  const field = pal.tint;
+  const fieldInk = pal.ink;
+  const fieldSoft = pal.soft;
   const align: Align = langs.second ? "center" : startOf(langs.main);
   const shapes: Shape[] = [ground(w, h, paper.ground)];
   if (ctx.portrait) {
@@ -584,5 +571,5 @@ export function cardFront(
   if (composition === "type") return typeLed(ctx);
   if (composition === "photo") return photo(ctx);
   if (composition === "pattern") return pattern(ctx);
-  return block(ctx, tone);
+  return block(ctx);
 }
