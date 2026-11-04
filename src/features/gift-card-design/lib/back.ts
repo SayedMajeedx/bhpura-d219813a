@@ -120,7 +120,8 @@ function valueBlock(
     const store = storeNameIn(content, main);
     const spend = body(main, 2.7);
     shapes.push(oneLine(spendLine(content.kind, store, main), spend, x, y, align, ink.soft));
-    y -= leading(spend) + 0.4;
+    // Room under the value for its letters' fall (an Arabic currency sinks below the line).
+    y -= leading(spend) + 1.6;
     const money = formatMoney(content.amount, content.currency, main).replace(
       /\u00a0|\u202f/g,
       " ",
