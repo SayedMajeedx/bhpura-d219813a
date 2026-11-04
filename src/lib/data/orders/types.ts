@@ -26,4 +26,15 @@ export type OrderListRow = Tables<"orders"> & {
 /** A row of `ORDER_DETAIL_SELECT`. */
 export type OrderDetail = OrderListRow & {
   shipping_address: Tables<"customer_addresses"> | null;
+  line_revisions?: Pick<
+    Tables<"order_line_revisions">,
+    | "id"
+    | "order_item_id"
+    | "revision"
+    | "changes"
+    | "note"
+    | "changed_by"
+    | "changed_at"
+    | "told_supplier_at"
+  >[];
 };

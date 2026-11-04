@@ -155,3 +155,60 @@ export function messagePieces(
       };
     });
 }
+
+/**
+ * The short message a person sends a supplier holding a piece whose details changed after its
+ * sheet was given (step 4 of `docs/workshop-flow-plan.md`): the order and the piece, what changed
+ * from what, the new notes in full, and that the new sheet replaces the old. No customer's name,
+ * number or address.
+ */
+export function changeMessage({
+  vendorName,
+  storeName,
+  poNumber,
+  title,
+  revision,
+  changes,
+  note,
+  lang,
+}: {
+  vendorName: string;
+  storeName: string;
+  poNumber: string;
+  title: string;
+  revision: number;
+  changes: ReadonlyArray<{
+    key?: string;
+    label_ar?: string;
+    label_en?: string;
+    from?: string;
+    to?: string;
+  }>;
+  note?: string | null;
+  lang: "ar" | "en";
+}): string {
+  const isAr = lang === "ar";
+  const name = (c: (typeof changes)[number]) =>
+    (isAr ? c.label_ar || c.label_en : c.label_en || c.label_ar) || c.key || "";
+  const lines = changes.map((c) => {
+    const isNote = c.key === "tailoring_notes" || c.key === "custom_measurements";
+    if (isNote) return `• ${name(c)}: ${c.to || (isAr ? "(حُذفت)" : "(removed)")}`;
+    return `• ${name(c)}: ${[c.from || "—", c.to || "—"].join(" → ")}`;
+  });
+  const head = isAr
+    ? [
+        `السلام عليكم ${vendorName}،`,
+        `تعديل على طلبية ${storeName} رقم ${poNumber}، القطعة: ${title} (النسخة ${revision}):`,
+      ]
+    : [
+        `Hello ${vendorName},`,
+        `A change to ${storeName}'s order ${poNumber}, piece: ${title} (revision ${revision}):`,
+      ];
+  const foot = [
+    ...(note ? [`${isAr ? "ملاحظة" : "Note"}: ${note}`] : []),
+    isAr
+      ? "يُرجى العمل بالنسخة الجديدة بدل الورقة السابقة. شكراً لك."
+      : "Please work from this revision instead of the earlier sheet. Thank you.",
+  ];
+  return [head.join("\n"), lines.join("\n"), foot.join("\n")].join("\n\n");
+}

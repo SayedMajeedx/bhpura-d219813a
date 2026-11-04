@@ -16,6 +16,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "amend_order_line_details(p_item_id uuid, p_values jsonb, p_note text, p_request_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders: checked inside (can_access_brand, has_permission manage_orders); only a made-to-order piece of an order not cancelled and not yet made, only the answers the line or its product knows, bounded; never a price or stock; one request id writes once"
+    },
     "apply_brand_vertical_change(p_brand_id uuid, p_to_vertical text, p_reason text, p_installed_addons text[], p_disable_addons text[], p_remove_category_ids uuid[], p_add_categories jsonb)": {
       "anon": false,
       "authenticated": true,
@@ -320,6 +325,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
+    "mark_order_line_supplier_told(p_item_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who handle orders: checked inside (can_access_brand, has_permission manage_orders); records only that the supplier holding the piece was given its latest revision"
     },
     "order_inventory_transition(p_order_id uuid)": {
       "anon": true,

@@ -64,6 +64,7 @@ export function normalizeCustomFieldValues(value: unknown): OrderItem["custom_fi
 export function orderItemFromRow(i: any): OrderItem {
   return {
     id: i.id,
+    ...(i.revision != null ? { revision: Number(i.revision) || 1 } : {}),
     product_id: i.product_id,
     variant_id: i.variant_id,
     description: i.description,

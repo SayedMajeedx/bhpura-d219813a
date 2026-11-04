@@ -1,3 +1,4 @@
+import { toLineRevisions } from "@/lib/data/orders/line-revisions";
 import { toast } from "sonner";
 import { formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -181,6 +182,9 @@ export function createOrderDocumentActions({
       lang: sheetLang,
       brandAddons: storeProfile.addons,
       storeVertical: storeProfile.vertical,
+      // A piece whose details changed after it was placed prints as its revision.
+      revisions: toLineRevisions(order.line_revisions),
+      orderDate: order.order_date ?? null,
     });
     const workshopIn = (l: "ar" | "en") =>
       vocabulary.workshop?.[l] || (l === "ar" ? "الورشة" : "Workshop");

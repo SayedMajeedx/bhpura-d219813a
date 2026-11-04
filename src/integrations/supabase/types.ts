@@ -5611,6 +5611,7 @@ export type Database = {
           packaging_cost_snapshot: number | null;
           product_id: string | null;
           quantity: number;
+          revision: number;
           selected_variant: Json | null;
           unit_cost: number | null;
           unit_price: number;
@@ -5634,6 +5635,7 @@ export type Database = {
           packaging_cost_snapshot?: number | null;
           product_id?: string | null;
           quantity?: number;
+          revision?: number;
           selected_variant?: Json | null;
           unit_cost?: number | null;
           unit_price?: number;
@@ -5657,6 +5659,7 @@ export type Database = {
           packaging_cost_snapshot?: number | null;
           product_id?: string | null;
           quantity?: number;
+          revision?: number;
           selected_variant?: Json | null;
           unit_cost?: number | null;
           unit_price?: number;
@@ -5690,6 +5693,73 @@ export type Database = {
             columns: ["variant_id"];
             isOneToOne: false;
             referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      order_line_revisions: {
+        Row: {
+          brand_id: string;
+          changed_at: string;
+          changed_by: string | null;
+          changes: Json;
+          id: string;
+          note: string | null;
+          order_id: string;
+          order_item_id: string;
+          request_id: string | null;
+          revision: number;
+          told_by: string | null;
+          told_supplier_at: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          changes: Json;
+          id?: string;
+          note?: string | null;
+          order_id: string;
+          order_item_id: string;
+          request_id?: string | null;
+          revision: number;
+          told_by?: string | null;
+          told_supplier_at?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          changed_at?: string;
+          changed_by?: string | null;
+          changes?: Json;
+          id?: string;
+          note?: string | null;
+          order_id?: string;
+          order_item_id?: string;
+          request_id?: string | null;
+          revision?: number;
+          told_by?: string | null;
+          told_supplier_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "order_line_revisions_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_line_revisions_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_line_revisions_order_item_id_fkey";
+            columns: ["order_item_id"];
+            isOneToOne: false;
+            referencedRelation: "order_items";
             referencedColumns: ["id"];
           },
         ];
@@ -7065,6 +7135,7 @@ export type Database = {
           quantity: number;
           received_quantity: number;
           released_order_item_id: string | null;
+          sheet_revision: number | null;
           sort_order: number;
           unit_cost: number;
           variant_id: string | null;
@@ -7082,6 +7153,7 @@ export type Database = {
           quantity?: number;
           received_quantity?: number;
           released_order_item_id?: string | null;
+          sheet_revision?: number | null;
           sort_order?: number;
           unit_cost?: number;
           variant_id?: string | null;
@@ -7099,6 +7171,7 @@ export type Database = {
           quantity?: number;
           received_quantity?: number;
           released_order_item_id?: string | null;
+          sheet_revision?: number | null;
           sort_order?: number;
           unit_cost?: number;
           variant_id?: string | null;
@@ -10115,6 +10188,15 @@ export type Database = {
         };
         Returns: string;
       };
+      amend_order_line_details: {
+        Args: {
+          p_item_id: string;
+          p_note?: string;
+          p_request_id?: string;
+          p_values: Json;
+        };
+        Returns: Json;
+      };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
       approve_gift_card_purchase: {
         Args: { p_purchase_id: string };
@@ -11224,6 +11306,10 @@ export type Database = {
         Args: { p_purchase_id: string };
         Returns: Json;
       };
+      mark_order_line_supplier_told: {
+        Args: { p_item_id: string };
+        Returns: Json;
+      };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
@@ -11268,6 +11354,15 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      order_line_changes_text: {
+        Args: { p_changes: Json; p_lang: string };
+        Returns: string;
+      };
+      order_line_field_changes: {
+        Args: { p_new: Json; p_old: Json };
+        Returns: Json;
+      };
+      order_line_has_answers: { Args: { p_fields: Json }; Returns: boolean };
       order_line_made_to_measure: {
         Args: { p_fields: Json; p_location: string };
         Returns: boolean;

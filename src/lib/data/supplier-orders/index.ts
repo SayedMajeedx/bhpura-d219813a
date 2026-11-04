@@ -13,11 +13,10 @@ import { orderReleased } from "@/lib/order-released";
 import type { UndoMode, UndoResult } from "@/features/supplier-orders/lib/undo-receiving";
 
 /**
- * Supplier orders (a tailor's order): the `purchase_orders` of a store with their lines, what
- * arrived, and the receiving. Read and written by staff who see the store's finances (the
- * tables' row policies); receiving also needs `manage_inventory` and goes through
- * `receive_purchase_order`, which adds the pieces to the stock and sets their cost (migration
- * `20261019100000`). The state and the total are the database's: a screen never writes them.
+ * Supplier orders (a tailor's order): a store's `purchase_orders` with their lines, what arrived
+ * and the receiving, read and written by staff who see its finances (the row policies). Receiving
+ * also needs `manage_inventory` and goes through `receive_purchase_order`, which adds the pieces
+ * to the stock and sets their cost (migration `20261019100000`). State and total: the database's.
  */
 
 export const supplierOrderKeys = {
@@ -39,7 +38,7 @@ export const supplierOrderKeys = {
 };
 
 const ORDER_SELECT =
-  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, purpose, work_note, released_order_item_id, price_pending, order_items!purchase_order_items_order_item_id_fkey(order_id, orders(invoice_number, status, payment_status)))";
+  "id, po_number, status, vendor_id, total_amount, paid_amount, expected_at, received_at, created_at, notes, vendors(name, phone), purchase_order_items(id, variant_id, product_id, order_item_id, description, quantity, received_quantity, unit_cost, line_total, sort_order, purpose, work_note, released_order_item_id, price_pending, sheet_revision, order_items!purchase_order_items_order_item_id_fkey(order_id, revision, orders(invoice_number, status, payment_status)))";
 
 type OrderRow = {
   id: string;
@@ -58,6 +57,7 @@ type OrderRow = {
       purpose: string | null;
       order_items?: {
         order_id: string;
+        revision?: number | null;
         orders: {
           invoice_number: number | string | null;
           status: string | null;
@@ -90,6 +90,7 @@ function toOrder(row: OrderRow): SupplierOrder {
         unit_cost: Number(line.unit_cost) || 0,
         line_total: Number(line.line_total) || 0,
         purpose: piecePurpose(line.purpose),
+        line_revision: customerLine?.revision ?? null,
         customer_order: customerLine
           ? {
               id: customerLine.order_id,

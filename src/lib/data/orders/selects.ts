@@ -12,9 +12,13 @@
 export const ORDER_LIST_SELECT =
   "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location), alterations:order_alterations!order_alterations_source_order_id_fkey(status)";
 
-/** The order editor, with the delivery address the order points at. Type: `OrderDetail`. */
+/**
+ * The order editor, with the delivery address the order points at and the changes made to its
+ * lines after it was placed (`order_line_revisions`, order and finance staff only: anyone else
+ * reads none). Type: `OrderDetail`.
+ */
 export const ORDER_DETAIL_SELECT =
-  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)";
+  "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*), line_revisions:order_line_revisions(id, order_item_id, revision, changes, note, changed_by, changed_at, told_supplier_at)";
 
 /**
  * Finance views (dashboard KPIs, P&L and cash-flow reports): money, status,

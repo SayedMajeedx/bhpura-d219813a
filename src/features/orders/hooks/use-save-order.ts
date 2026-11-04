@@ -27,6 +27,7 @@ import {
   replaceOrderItems,
   updateOrder,
 } from "@/lib/data/orders";
+import { supplierOrderKeys } from "@/lib/data/supplier-orders";
 import { catalogKeys } from "@/lib/data/catalog";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -139,9 +140,12 @@ export function useSaveOrder({
     const itemsModified = haveOrderItemsChanged(originalItems, items);
 
     if (itemsModified) {
-      const itemsPayload = items.map((i) =>
-        orderItemRow(i, { user_id: user.id, brand_id: brandId, order_id: order.id }),
-      );
+      // Each line goes back with its id: the database keeps it (its supplier's order, its
+      // returns, its revisions) and deletes only the lines taken out.
+      const itemsPayload = items.map((i) => ({
+        ...orderItemRow(i, { user_id: user.id, brand_id: brandId, order_id: order.id }),
+        ...(i.id ? { id: i.id } : {}),
+      }));
 
       const repErr = await replaceOrderItems(order.id, itemsPayload).then(
         () => null,
@@ -153,12 +157,12 @@ export function useSaveOrder({
         if (repErr.message?.includes("INSUFFICIENT_STOCK")) {
           return toast.error(t("orderDetail.insufficientStock"));
         }
-        // A line an alteration points to stays (migration 20261117100000).
+        // A line an alteration points to is not taken out (migration 20261117100000).
         if (repErr.message?.includes("ORDER_LINE_HAS_ALTERATION")) {
           return toast.error(
             lang === "ar"
-              ? "في هذا الطلب تعديل قائم: تبقى قطعه كما هي. ألغِ التعديل أولاً لتغييرها."
-              : "This order has an alteration in progress: its lines stay as they are. Cancel the alteration first to change them.",
+              ? "لا تُحذف قطعة عليها تعديل قائم ولا سطر سعره. ألغِ التعديل أولاً."
+              : "A piece with an alteration in progress, or its charge, cannot be removed. Cancel the alteration first.",
           );
         }
         return toast.error(repErr.message);
@@ -191,8 +195,9 @@ export function useSaveOrder({
     setEditingUnlocked(false);
     setSaving(false);
     invalidateOrders(qc, brandId);
-    // Saving lines moves stock.
+    // Saving lines moves stock, and a changed measurement leaves a supplier's sheet behind.
     qc.invalidateQueries({ queryKey: catalogKeys.variants(brandId) });
+    qc.invalidateQueries({ queryKey: supplierOrderKeys.all(brandId) });
     invalidateActivityLogs(qc);
   };
 

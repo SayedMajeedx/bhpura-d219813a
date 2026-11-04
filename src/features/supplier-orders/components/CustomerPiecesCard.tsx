@@ -11,6 +11,7 @@ import { piecesLabel, type SupplierOrderLine } from "../lib/order-state";
 import { CancelledPieceDialog } from "./CancelledPieceDialog";
 import { PiecePriceField } from "./PiecePriceField";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { supplierBehind } from "@/features/orders/lib/line-revisions";
 
 /**
  * A supplier order's customers' pieces: each with its customer's order (by number, never a
@@ -88,6 +89,18 @@ export function CustomerPiecesCard({
                       {line.work_note}
                     </p>
                   )}
+                  {line.received_quantity < line.quantity &&
+                    supplierBehind(line.line_revision, line.sheet_revision) && (
+                      <p className="mt-1 flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs font-semibold">
+                        <AlertTriangle
+                          className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning"
+                          aria-hidden="true"
+                        />
+                        {isAr
+                          ? `تغيّرت تفاصيل القطعة (النسخة ${line.line_revision}) ولدى المورّد الورقة السابقة: أرسل التعديل من صفحة الطلب.`
+                          : `The piece's details changed (revision ${line.line_revision}) and the supplier has the earlier sheet: send the change from the order's page.`}
+                      </p>
+                    )}
                 </div>
                 <span dir="ltr" className="shrink-0 whitespace-nowrap px-2 tabular-nums">
                   <span
