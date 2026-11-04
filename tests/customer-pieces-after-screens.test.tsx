@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SupplierOrderLine } from "../src/features/supplier-orders/lib/order-state";
 
 // A customer's piece after it went to a supplier, on screen: the store decides on a cancelled
-// customer's piece, and a piece that came back goes to a supplier again for a fix or an
-// alteration, from the customer's order.
+// customer's piece, and the customer's order says where each piece is (a fix or an alteration
+// is sent from its Alterations block: tests/order-alterations-screens.test.tsx).
 
 const stubs = vi.hoisted(() => ({
   sendOrderToSupplier: vi.fn(),
@@ -172,82 +172,20 @@ describe("a cancelled customer's piece", () => {
 describe("a piece that came back", () => {
   const lines = [{ id: "oi-1", description: "Black abaya · custom", quantity: 1 }];
 
-  it("goes back to the supplier who made it, to be fixed for free", async () => {
+  it("says where it is and who has it, and is sent again from the order's Alterations", async () => {
     wrap(
       <OrderTailorPieces
         brandId="b1"
         slug="pura"
-        orderId="o-1"
         lines={lines}
         cancelled={false}
         currency="BHD"
         lang="en"
       />,
     );
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Send Black abaya · custom back to the supplier" }),
-    );
-    const dialog = await screen.findByRole("dialog");
-    await within(dialog).findByRole("option", { name: "Umm Ali" });
-    expect(within(dialog).getByLabelText("Supplier")).toHaveValue("maker");
-    // A fix has no charge to type.
-    expect(within(dialog).queryByLabelText(/charge a piece/)).toBeNull();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }));
-    expect(
-      await within(dialog).findByText("Write what the supplier needs to do."),
-    ).toBeInTheDocument();
-    fireEvent.change(within(dialog).getByLabelText("What to fix"), {
-      target: { value: "The hem is uneven" },
-    });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }));
-    await waitFor(() =>
-      expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith("o-1", {
-        vendorId: "maker",
-        poId: null,
-        expectedAt: null,
-        lines: [{ order_item_id: "oi-1", unit_cost: 0, purpose: "fix", note: "The hem is uneven" }],
-      }),
-    );
-  });
-
-  it("goes for an alteration at the supplier's charge, to another supplier if chosen", async () => {
-    wrap(
-      <OrderTailorPieces
-        brandId="b1"
-        slug="pura"
-        orderId="o-1"
-        lines={lines}
-        cancelled={false}
-        currency="BHD"
-        lang="en"
-      />,
-    );
-    fireEvent.click(await screen.findByRole("button", { name: /back to the supplier/ }));
-    const dialog = await screen.findByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("radio", { name: /An alteration/ }));
-    await within(dialog).findByRole("option", { name: "Atelier Noor" });
-    fireEvent.change(within(dialog).getByLabelText("Supplier"), { target: { value: "fixer" } });
-    fireEvent.change(within(dialog).getByLabelText("What to change"), {
-      target: { value: "Shorten by 2 cm" },
-    });
-    fireEvent.change(within(dialog).getByLabelText(/charge a piece/), { target: { value: "3.5" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }));
-    await waitFor(() =>
-      expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith(
-        "o-1",
-        expect.objectContaining({
-          vendorId: "fixer",
-          lines: [
-            {
-              order_item_id: "oi-1",
-              unit_cost: 3.5,
-              purpose: "alteration",
-              note: "Shorten by 2 cm",
-            },
-          ],
-        }),
-      ),
-    );
+    expect(await screen.findByText("With Umm Ali")).toBeInTheDocument();
+    expect(screen.getByText(/Black abaya · custom · back/)).toBeInTheDocument();
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
   it("of a cancelled order is decided on the supplier order, not sent again", async () => {
@@ -255,7 +193,6 @@ describe("a piece that came back", () => {
       <OrderTailorPieces
         brandId="b1"
         slug="pura"
-        orderId="o-1"
         lines={lines}
         cancelled
         currency="BHD"
@@ -265,75 +202,5 @@ describe("a piece that came back", () => {
     expect(
       await screen.findByText(/The order is cancelled: open the supplier order/),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /back to the supplier/ })).toBeNull();
-  });
-});
-
-describe("a ready-made piece", () => {
-  it("goes for an alteration from an order with nothing sent, in a store that makes to order", async () => {
-    const ready = [
-      { id: "oi-1", description: "Black abaya · custom", quantity: 1 },
-      { id: "oi-7", description: "Ready dress", quantity: 1 },
-    ];
-    wrap(
-      <OrderTailorPieces
-        brandId="b1"
-        slug="pura"
-        orderId="o-1"
-        lines={ready}
-        cancelled={false}
-        offerAlteration
-        currency="BHD"
-        lang="en"
-      />,
-    );
-    fireEvent.click(await screen.findByRole("button", { name: "Send a piece for alteration" }));
-    const dialog = await screen.findByRole("dialog");
-    // The custom abaya is already with a supplier: only the dress is offered, and no free fix.
-    expect(
-      within(dialog).getByRole("heading", { name: "A piece for an alteration" }),
-    ).toBeInTheDocument();
-    expect(within(dialog).queryByRole("radio")).toBeNull();
-    expect(within(dialog).queryByLabelText("Which piece")).toBeNull();
-    expect(dialog).toHaveTextContent("Ready dress");
-    await within(dialog).findByRole("option", { name: "Atelier Noor" });
-    fireEvent.change(within(dialog).getByLabelText("Supplier"), { target: { value: "fixer" } });
-    fireEvent.change(within(dialog).getByLabelText("What to change"), {
-      target: { value: "Take in the waist" },
-    });
-    fireEvent.change(within(dialog).getByLabelText(/charge a piece/), { target: { value: "2" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Send" }));
-    await waitFor(() =>
-      expect(stubs.sendOrderToSupplier).toHaveBeenCalledWith(
-        "o-1",
-        expect.objectContaining({
-          vendorId: "fixer",
-          lines: [
-            {
-              order_item_id: "oi-7",
-              unit_cost: 2,
-              purpose: "alteration",
-              note: "Take in the waist",
-            },
-          ],
-        }),
-      ),
-    );
-  });
-
-  it("is not offered where the store does not make to order", async () => {
-    wrap(
-      <OrderTailorPieces
-        brandId="b1"
-        slug="pura"
-        orderId="o-1"
-        lines={[{ id: "oi-7", description: "Ready dress", quantity: 1 }]}
-        cancelled={false}
-        currency="BHD"
-        lang="en"
-      />,
-    );
-    await waitFor(() => expect(screen.queryByText("Ready dress")).toBeNull());
-    expect(screen.queryByRole("button", { name: "Send a piece for alteration" })).toBeNull();
   });
 });

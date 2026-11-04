@@ -78,4 +78,20 @@ export const DELIVERY_ESTIMATE_SETTINGS: SettingsFieldDef[] = [
       en: ["opening hours", "business hours", "closed", "open"],
     },
   },
+  {
+    // Whether the order page offers "Alter this piece" (migration 20261117100000): on for the
+    // fashion family, off for the rest; a free fix of a piece the store had made is always offered.
+    key: "offers_alterations",
+    table: "business_settings",
+    tab: "orders",
+    group: "fulfillment",
+    level: "basic",
+    owner: "settings",
+    type: "boolean",
+    label: { ar: "نقدّم التعديلات", en: "We do alterations" },
+    keywords: {
+      ar: ["تعديل", "تعديلات", "تقصير", "تضييق", "خياط"],
+      en: ["alterations", "alter", "hemming", "tailor"],
+    },
+  },
 ];

@@ -66,6 +66,7 @@ import { renderOrderPrimaryAction } from "@/features/orders/components/order-pri
 import { OrderCustomerCard } from "@/features/orders/components/OrderCustomerCard";
 import { OrderBookingCard } from "@/features/orders/components/OrderBookingCard";
 import { OrderItemsCard } from "@/features/orders/components/OrderItemsCard";
+import { OrderAlterationsCard } from "@/features/orders/components/OrderAlterationsCard";
 import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialCard";
 import { PendingTransferReview } from "@/features/orders/components/PendingTransferReview";
 import { assignOrderCourier } from "@/lib/data/orders";
@@ -801,6 +802,17 @@ function OrderEditor() {
             </div>
           </div>
         </fieldset>
+
+        {/* The order's alterations and fixes (outside the editor's fieldset) */}
+        {!isCreationMode && order && (
+          <OrderAlterationsCard
+            {...{ slug, order, items, currency, settings: settingsQ.data, unsaved: isDirty }}
+            brandId={brand.id}
+            products={productsQ.data ?? []}
+            storeName={brand.name_en || ""}
+            lang={lang === "ar" ? "ar" : "en"}
+          />
+        )}
 
         {/* Unified Sales Documents Chain */}
         {!isCreationMode && order && (

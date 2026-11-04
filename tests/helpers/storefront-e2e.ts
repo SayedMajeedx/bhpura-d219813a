@@ -37,6 +37,7 @@ export type WriteGuard = {
  */
 export async function guardWrites(page: Page): Promise<WriteGuard> {
   const guard: WriteGuard = { orderPayloads: [], stubbedWrites: [] };
+  await privacyChoiceMade(page);
 
   // Registered first, so it runs after the RPC handler below.
   await page.route(/\/(rest|storage|functions)\/v1\//, async (route) => {
@@ -84,14 +85,42 @@ export type LiveProduct = {
 export const inStock = (v: LiveVariant) =>
   Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) > 0;
 
+const readHeaders = () => ({ apikey: ANON_KEY!, Authorization: `Bearer ${ANON_KEY}` });
+
+/** The live store's id (read-only). */
+async function liveBrandId(): Promise<string | null> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/brands?slug=eq.${SLUG}&select=id`, {
+    headers: readHeaders(),
+  });
+  const [brand] = (await res.json()) as Array<{ id: string }>;
+  return brand?.id ?? null;
+}
+
+/**
+ * The shopper has made their privacy choices already. The live store may ask for them (a setting
+ * the merchant can turn on at any time), and its banner, fixed over the foot of the page, would
+ * cover the buttons the specs press ("Place order" was).
+ */
+async function privacyChoiceMade(page: Page) {
+  const brandId = await liveBrandId().catch(() => null);
+  if (!brandId) return;
+  await page.addInitScript((key) => {
+    try {
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({ decided: true, analytics: false, marketing: false }),
+      );
+    } catch {
+      // Storage unavailable: the banner shows, as it would for a shopper.
+    }
+  }, `boutq-consent:${brandId}`);
+}
+
 /** The store's active products with their variants (read-only, same shape the storefront reads). */
 export async function fetchLiveProducts(): Promise<LiveProduct[]> {
-  const headers = { apikey: ANON_KEY!, Authorization: `Bearer ${ANON_KEY}` };
-  const brandRes = await fetch(`${SUPABASE_URL}/rest/v1/brands?slug=eq.${SLUG}&select=id`, {
-    headers,
-  });
-  const [brand] = (await brandRes.json()) as Array<{ id: string }>;
-  if (!brand) return [];
+  const headers = readHeaders();
+  const brand = { id: await liveBrandId() };
+  if (!brand.id) return [];
   const query = new URLSearchParams({
     select:
       "id,name,image_url,product_variants(id,size,color,fabric,selling_price,stock_main,stock_incubator)",

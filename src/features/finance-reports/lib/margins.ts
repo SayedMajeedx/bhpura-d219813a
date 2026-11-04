@@ -11,6 +11,8 @@ import { COUNT_FORMAT, PERCENT_FORMAT, moneyFormat, type XCell, type XSheet } fr
 export type MarginRow = {
   currency: string;
   product_id: string | null;
+  /** `alteration`: an alteration's charge (migration `20261117100000`), a row of its own. */
+  line_kind?: string | null;
   product_name: string | null;
   product_name_ar: string | null;
   category: string | null;
@@ -53,6 +55,7 @@ export type MarginSort = "profit" | "margin" | "sales" | "units";
 
 export const MARGIN_WORDS = {
   unlinked: { en: "Not linked to a product", ar: "غير مرتبطة بمنتج" },
+  alterations: { en: "Alterations", ar: "التعديلات" },
   noCategory: { en: "No category", ar: "بلا قسم" },
 };
 
@@ -62,6 +65,7 @@ export function marginRows(value: unknown): MarginRow[] {
   return (Array.isArray(value) ? value : []).map((row: Record<string, unknown>) => ({
     currency: String(row.currency ?? ""),
     product_id: (row.product_id as string | null) ?? null,
+    line_kind: (row.line_kind as string | null) ?? null,
     product_name: (row.product_name as string | null) ?? null,
     product_name_ar: (row.product_name_ar as string | null) ?? null,
     category: (row.category as string | null) ?? null,
@@ -115,10 +119,14 @@ function withShares(lines: Array<Omit<MarginLine, "share">>): MarginLine[] {
   }));
 }
 
+/** A line with no product: an alteration's charge, or a line not linked to one. */
+const noProductKey = (row: MarginRow) =>
+  row.line_kind === "alteration" ? "alterations" : "unlinked";
+
 const productName = (row: MarginRow, lang: "ar" | "en") =>
   row.product_id
     ? (lang === "ar" ? row.product_name_ar || row.product_name : row.product_name) || "—"
-    : MARGIN_WORDS.unlinked[lang];
+    : MARGIN_WORDS[noProductKey(row)][lang];
 
 const categoryName = (row: MarginRow, lang: "ar" | "en") =>
   (lang === "ar" ? row.category_name_ar || row.category_name : row.category_name) ||
@@ -129,7 +137,7 @@ export function productMargins(rows: MarginRow[], currency: string, lang: "ar" |
   const mine = rows.filter((r) => r.currency === currency);
   const byProduct = new Map<string, MarginRow[]>();
   for (const row of mine) {
-    const key = row.product_id ?? "unlinked";
+    const key = row.product_id ?? noProductKey(row);
     byProduct.set(key, [...(byProduct.get(key) ?? []), row]);
   }
   return withShares(
@@ -149,14 +157,16 @@ export function categoryMargins(rows: MarginRow[], currency: string, lang: "ar" 
   const mine = rows.filter((r) => r.currency === currency);
   const byCategory = new Map<string, MarginRow[]>();
   for (const row of mine) {
-    const key = row.product_id ? (row.category ?? row.category_name ?? "none") : "unlinked";
+    const key = row.product_id ? (row.category ?? row.category_name ?? "none") : noProductKey(row);
     byCategory.set(key, [...(byCategory.get(key) ?? []), row]);
   }
   return withShares(
     [...byCategory.entries()].map(([key, group]) => ({
       ...line(
         key,
-        key === "unlinked" ? MARGIN_WORDS.unlinked[lang] : categoryName(group[0], lang),
+        key === "unlinked" || key === "alterations"
+          ? MARGIN_WORDS[key][lang]
+          : categoryName(group[0], lang),
         null,
         group,
       ),

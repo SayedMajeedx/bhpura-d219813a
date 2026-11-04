@@ -106,7 +106,13 @@ export function isWorkshopLine(line: JobSheetLine, product?: JobSheetProduct | n
 export function jobSheetPieces(
   lines: readonly JobSheetLine[],
   products: readonly JobSheetProduct[],
-  options: { lang: Lang; brandAddons?: unknown[] | null; storeVertical?: string | null },
+  options: {
+    lang: Lang;
+    brandAddons?: unknown[] | null;
+    storeVertical?: string | null;
+    /** Every piece given, not only the workshop's (an alteration of a ready-made piece). */
+    every?: boolean;
+  },
 ): JobSheetPiece[] {
   const { lang } = options;
   const addonDefaults = variantAxisDefaultsFrom(
@@ -117,7 +123,11 @@ export function jobSheetPieces(
     line.product_id ? (products.find((p) => p.id === line.product_id) ?? null) : null;
 
   return lines
-    .filter((line) => isWorkshopLine(line, productOf(line)))
+    .filter((line) =>
+      options.every
+        ? productOf(line)?.item_kind !== "service"
+        : isWorkshopLine(line, productOf(line)),
+    )
     .map((line) => {
       const product = productOf(line);
       const axes = resolveAllVariantAxes({
@@ -177,7 +187,12 @@ export type SheetPieces =
 export function sheetPieces(
   lines: readonly JobSheetLine[],
   products: readonly JobSheetProduct[],
-  options: { lang: SheetLang; brandAddons?: unknown[] | null; storeVertical?: string | null },
+  options: {
+    lang: SheetLang;
+    brandAddons?: unknown[] | null;
+    storeVertical?: string | null;
+    every?: boolean;
+  },
 ): SheetPieces {
   const read = (lang: Lang) => jobSheetPieces(lines, products, { ...options, lang });
   return options.lang === "both"

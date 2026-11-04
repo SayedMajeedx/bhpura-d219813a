@@ -1,8 +1,9 @@
 # Workshop flow: job sheets, supplier orders, alterations and changes — the plan
 
-Status: **PRs 1 and 2 built** (2026-11-03: the sheet and the supplier's message in Arabic,
+Status: **PRs 1, 2 and 3 built** (2026-11-03: the sheet and the supplier's message in Arabic,
 English or both, migration `20261115100000`; one "Send to workshop" step for every member of
-order staff, migration `20261116100000`, applied by the owner). PRs 3 and 4 to come. Written
+order staff, migration `20261116100000`; alterations of ready-made and custom pieces, charged on
+the open order or a linked one, migration `20261117100000`). PR 4 to come. Written
 2026-11-03 from a read-only review of `main` at `d48e8277` plus PR #492. Four pull requests, in
 order. Each one stands on its own and is merged before the next starts.
 

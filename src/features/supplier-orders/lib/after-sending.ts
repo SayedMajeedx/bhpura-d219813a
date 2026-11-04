@@ -1,11 +1,10 @@
-import { roundCost } from "./landed-cost";
 import type { SupplierOrder, SupplierOrderLine } from "./order-state";
 
 /**
  * A customer's piece after it went to a supplier (migration `20261021100000`): the customer
- * cancels and the store chooses (stop it with the supplier, or keep it for sale), a faulty piece
- * goes back to be fixed for free, and an alteration goes to a tailor at their charge, which is
- * added to the piece's cost when it comes back.
+ * cancels and the store chooses (stop it with the supplier, or keep it for sale), and where each
+ * piece is. Sending a piece back for an alteration or a fix is the order's own
+ * (`create_order_alteration`, `src/features/orders/lib/alterations.ts`).
  */
 
 export type PiecePurpose = "make" | "fix" | "alteration";
@@ -74,18 +73,6 @@ export function tailorPieceLines(items: ReadonlyArray<OrderItemLike> | null | un
   });
 }
 
-/**
- * The order's pieces that never went to a supplier (a ready-made piece, or one made in the
- * store): they may go for an alteration, not for a free fix (nobody's work to put right).
- */
-export function readyToAlter<L extends { id: string }>(
-  lines: readonly L[],
-  sent: readonly Pick<SentPiece, "order_item_id">[],
-): L[] {
-  const withSupplier = new Set(sent.map((piece) => piece.order_item_id));
-  return lines.filter((line) => !withSupplier.has(line.id));
-}
-
 export type SentPiece = {
   order_item_id: string;
   quantity: number;
@@ -113,48 +100,4 @@ export function orderPieceStates<L extends { id: string }>(
     const last = out ?? mine[mine.length - 1];
     return [{ line, out, lastVendorId: last.vendor_id, lastVendorName: last.vendor_name }];
   });
-}
-
-export type BackForm = {
-  purpose: "fix" | "alteration";
-  vendorId: string;
-  /** One of the supplier's open orders, or "new". */
-  target: string;
-  expectedAt: string;
-  /** The tailor's charge for an alteration; a fix is free. */
-  cost: string;
-  /** What to fix or change: the tailor reads it. */
-  note: string;
-};
-
-export type BackProblem = "vendor" | "note" | "cost";
-
-export function backProblems(form: BackForm): BackProblem[] {
-  const problems: BackProblem[] = [];
-  if (!form.vendorId) problems.push("vendor");
-  if (!form.note.trim()) problems.push("note");
-  if (form.purpose === "alteration") {
-    const text = form.cost.trim();
-    const n = Number(text);
-    if (text !== "" && (!Number.isFinite(n) || n < 0 || roundCost(n) !== n)) problems.push("cost");
-  }
-  return problems;
-}
-
-/** What `send_order_to_supplier` is asked: call it only on a form with no `backProblems`. */
-export function backRequest(form: BackForm, orderItemId: string) {
-  const cost = form.purpose === "alteration" && form.cost.trim() ? roundCost(Number(form.cost)) : 0;
-  return {
-    vendorId: form.vendorId,
-    poId: form.target === "new" ? null : form.target,
-    expectedAt: form.target === "new" && form.expectedAt ? form.expectedAt : null,
-    lines: [
-      {
-        order_item_id: orderItemId,
-        unit_cost: cost,
-        purpose: form.purpose,
-        note: form.note.trim().slice(0, 500),
-      },
-    ],
-  };
 }

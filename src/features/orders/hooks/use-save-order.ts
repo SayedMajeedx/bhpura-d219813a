@@ -153,6 +153,14 @@ export function useSaveOrder({
         if (repErr.message?.includes("INSUFFICIENT_STOCK")) {
           return toast.error(t("orderDetail.insufficientStock"));
         }
+        // A line an alteration points to stays (migration 20261117100000).
+        if (repErr.message?.includes("ORDER_LINE_HAS_ALTERATION")) {
+          return toast.error(
+            lang === "ar"
+              ? "في هذا الطلب تعديل قائم: تبقى قطعه كما هي. ألغِ التعديل أولاً لتغييرها."
+              : "This order has an alteration in progress: its lines stay as they are. Cancel the alteration first to change them.",
+          );
+        }
         return toast.error(repErr.message);
       }
     }

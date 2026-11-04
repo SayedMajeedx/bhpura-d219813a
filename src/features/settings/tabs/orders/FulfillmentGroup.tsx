@@ -20,6 +20,7 @@ import { Banknote, CreditCard, Plus, QrCode, Sparkles, Trash2, Truck } from "luc
 import { DeliveryShopperPreview } from "@/features/settings/tabs/orders/DeliveryShopperPreview";
 import { DeliveryScheduleCard } from "@/features/settings/tabs/orders/DeliveryScheduleCard";
 import { OpeningHoursCard } from "@/features/settings/tabs/orders/OpeningHoursCard";
+import { AlterationsSettingCard } from "@/features/settings/tabs/orders/AlterationsSettingCard";
 import { MadeToOrderEstimateField } from "@/features/settings/tabs/orders/MadeToOrderEstimateField";
 import type { DeliveryInfoSettings } from "@/lib/delivery-info";
 
@@ -682,6 +683,7 @@ export function FulfillmentGroup({ madeToOrder = false }: { madeToOrder?: boolea
         {/* The day and time a shopper picks at checkout */}
         {(bs.delivery_enabled || bs.pickup_enabled) && <DeliveryScheduleCard />}
         <OpeningHoursCard />
+        <AlterationsSettingCard lang={isAr ? "ar" : "en"} />
       </div>
     </div>
   );

@@ -1,14 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  backProblems,
-  backRequest,
   orderPieceStates,
   piecePurpose,
   piecesAwaitingChoice,
-  readyToAlter,
   releaseChoices,
   tailorPieceLines,
-  type BackForm,
   type SentPiece,
 } from "../src/features/supplier-orders/lib/after-sending";
 import {
@@ -122,42 +118,6 @@ describe("a piece back to a supplier", () => {
     ]);
   });
 
-  const form = (over: Partial<BackForm> = {}): BackForm => ({
-    purpose: "fix",
-    vendorId: "maker",
-    target: "new",
-    expectedAt: "2026-10-28",
-    cost: "",
-    note: "  The hem is uneven ",
-    ...over,
-  });
-
-  it("is free for a fix, and costs what the supplier charges for an alteration", () => {
-    expect(backRequest(form({ cost: "9" }), "oi-1")).toEqual({
-      vendorId: "maker",
-      poId: null,
-      expectedAt: "2026-10-28",
-      lines: [{ order_item_id: "oi-1", unit_cost: 0, purpose: "fix", note: "The hem is uneven" }],
-    });
-    expect(
-      backRequest(form({ purpose: "alteration", cost: "3.5", target: "po-7" }), "oi-1"),
-    ).toMatchObject({
-      poId: "po-7",
-      expectedAt: null,
-      lines: [{ unit_cost: 3.5, purpose: "alteration" }],
-    });
-    expect(backRequest(form({ purpose: "alteration", cost: "" }), "oi-1").lines[0].unit_cost).toBe(
-      0,
-    );
-  });
-
-  it("needs a supplier and what to do; an alteration's charge is a number or nothing", () => {
-    expect(backProblems(form({ vendorId: "", note: " " }))).toEqual(["vendor", "note"]);
-    expect(backProblems(form({ purpose: "alteration", cost: "abc" }))).toEqual(["cost"]);
-    expect(backProblems(form({ purpose: "alteration", cost: "1.2345" }))).toEqual(["cost"]);
-    expect(backProblems(form({ purpose: "fix", cost: "abc" }))).toEqual([]);
-  });
-
   it("tells the supplier what to fix or change, first", () => {
     const pieces = messagePieces(
       [line({ purpose: "fix", work_note: "The hem is uneven", unit_cost: 0, line_total: 0 })],
@@ -189,7 +149,7 @@ describe("a piece back to a supplier", () => {
 });
 
 describe("a ready-made piece", () => {
-  it("is a piece to alter; a service is not, and a piece with a supplier is not offered twice", () => {
+  it("is a piece to alter; a service is not", () => {
     const lines = tailorPieceLines([
       { id: "dress", title: "Ready dress", quantity: 1, products: { item_kind: "physical" } },
       { id: "fitting", description: "Fitting", product: { item_kind: "service" } },
@@ -199,6 +159,5 @@ describe("a ready-made piece", () => {
       { id: "dress", description: "Ready dress", quantity: 1 },
       { id: "abaya", description: "Black abaya · custom", quantity: 1 },
     ]);
-    expect(readyToAlter(lines, [{ order_item_id: "abaya" }]).map((l) => l.id)).toEqual(["dress"]);
   });
 });
