@@ -65,6 +65,8 @@ export type OrderSnapshot = { order: EditableOrderSource; items: OrderItem[] };
 /** One line in the order editor, as edited (numbers already parsed). */
 export type OrderItem = {
   id?: string;
+  /** The line's revision: raised by the database when its details change after it was placed. */
+  revision?: number;
   product_id?: string | null;
   variant_id?: string | null;
   description: string;

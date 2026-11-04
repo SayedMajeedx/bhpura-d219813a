@@ -27,6 +27,9 @@ export type WorkshopPiece = {
   quantity: number;
   receivedQuantity: number;
   pricePending: boolean;
+  /** The revision of the sheet the supplier was given, and the line's own (migration `20261119100000`). */
+  sheetRevision: number;
+  lineRevision: number;
   poId: string;
   poNumber: string;
   expectedAt: string | null;
@@ -71,6 +74,8 @@ export function toWorkshopPieces(data: unknown): WorkshopPiece[] {
     quantity: count(row.quantity),
     receivedQuantity: count(row.received_quantity),
     pricePending: row.price_pending === true,
+    sheetRevision: Number(row.sheet_revision) || 1,
+    lineRevision: Number(row.line_revision) || 1,
     poId: text(row.po_id),
     poNumber: text(row.po_number),
     expectedAt: textOrNull(row.expected_at),

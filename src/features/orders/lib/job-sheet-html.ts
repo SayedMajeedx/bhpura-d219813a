@@ -2,6 +2,7 @@ import { formatDate } from "@/lib/format";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 import type { JobSheetPiece, JobSheetRow, Lang } from "./job-sheet";
 import { changeLine, type AlterationChange, type AlterationKind } from "./alterations";
+import { revisionBanner } from "./line-revisions";
 
 /**
  * The job sheet's printable page, in Arabic, in English, or in both side by side (the owner's
@@ -83,6 +84,7 @@ const WORDS = {
     alteration: "أمر تعديل",
     fix: "أمر تصليح",
     changes: "المطلوب",
+    changed: "تغيّرت",
   },
   en: {
     title: "Job sheet",
@@ -108,6 +110,7 @@ const WORDS = {
     alteration: "Alteration sheet",
     fix: "Fix sheet",
     changes: "What to do",
+    changed: "changed",
   },
 } as const;
 
@@ -124,13 +127,25 @@ function escapeHtml(text: string) {
 }
 const e = escapeHtml;
 
+// A revised piece's changed value is marked, with what it was struck through beside it.
 const rows = (list: JobSheetRow[]) =>
   list
     .map(
       (row) =>
-        `<div class="row"><span class="label">${e(row.label)}</span><span class="value">${e(row.value)}</span></div>`,
+        `<div class="row${row.changed ? " changed" : ""}"><span class="label">${e(row.label)}</span><span class="value">${e(row.value)}${
+          row.was ? ` <s class="was">${e(row.was)}</s>` : ""
+        }</span></div>`,
     )
     .join("");
+
+/** "Revision 2 — replaces the sheet of 3 Nov 2026", at the top of a revised piece. */
+const revisionOf = (piece: JobSheetPiece, lang: Lang | "both") => {
+  const r = piece.revision;
+  if (!r) return "";
+  const say = (l: Lang) => revisionBanner(r.number, r.replacesSheetOf, l);
+  const text = lang === "both" ? both(say("ar"), say("en")) : say(lang);
+  return `<div class="revision">${e(text)}</div>`;
+};
 
 const chosenOf = (piece: JobSheetPiece) =>
   piece.options.length
@@ -139,9 +154,14 @@ const chosenOf = (piece: JobSheetPiece) =>
         .join("")}</div>`
     : "";
 
-const notesOf = (piece: JobSheetPiece, heading: string) =>
+const notesOf = (piece: JobSheetPiece, heading: string, changed = "") =>
   piece.notes.length
-    ? `<h3>${e(heading)}</h3>${piece.notes.map((note) => `<p class="note" dir="auto">${e(note)}</p>`).join("")}`
+    ? `<h3>${e(heading)}${piece.revision?.notesChanged && changed ? ` <span class="was-mark">(${e(changed)})</span>` : ""}</h3>${piece.notes
+        .map(
+          (note) =>
+            `<p class="note${piece.revision?.notesChanged ? " changed" : ""}" dir="auto">${e(note)}</p>`,
+        )
+        .join("")}`
     : "";
 
 const extrasOf = (piece: JobSheetPiece, heading: string) =>
@@ -153,12 +173,14 @@ const photoOf = (piece: JobSheetPiece) =>
   piece.imageUrl ? `<img class="photo" src="${e(piece.imageUrl)}" alt="" />` : "";
 
 /** One piece in one language: the page as it always was. */
-function onePiece(piece: JobSheetPiece, index: number, of: number, words: Words, workshop: string) {
+function onePiece(piece: JobSheetPiece, index: number, of: number, lang: Lang, workshop: string) {
+  const words = WORDS[lang];
   const details = piece.details.length
     ? `<h3>${e(words.details)}</h3><div class="grid">${rows(piece.details)}</div>`
     : "";
   return `
   <section class="piece">
+    ${revisionOf(piece, lang)}
     <div class="piece-head">
       ${photoOf(piece)}
       <div class="piece-title">
@@ -169,7 +191,7 @@ function onePiece(piece: JobSheetPiece, index: number, of: number, words: Words,
       <div class="qty"><span>${e(words.quantity)}</span><b>${piece.quantity}</b></div>
     </div>
     ${details}
-    ${notesOf(piece, words.notes)}
+    ${notesOf(piece, words.notes, words.changed)}
     ${extrasOf(piece, words.extras)}
     <h3>${e(words.workshopNotes(workshop))}</h3>
     <div class="lines"><i></i><i></i></div>
@@ -206,6 +228,7 @@ function twoColumnPiece(
   const shared = pieces.ar;
   return `
   <section class="piece">
+    ${revisionOf(pieces.en, "both")}
     <div class="piece-head">
       ${photoOf(shared)}
       <div class="piece-title">
@@ -214,7 +237,7 @@ function twoColumnPiece(
       <div class="qty"><span>${e(both(WORDS.ar.quantity, WORDS.en.quantity))}</span><b>${shared.quantity}</b></div>
     </div>
     <div class="cols">${column("en")}${column("ar")}</div>
-    ${notesOf(shared, both(WORDS.ar.notes, WORDS.en.notes))}
+    ${notesOf(shared, both(WORDS.ar.notes, WORDS.en.notes), both(WORDS.ar.changed, WORDS.en.changed))}
     ${extrasOf(shared, both(WORDS.ar.extras, WORDS.en.extras))}
     <h3>${e(both(WORDS.ar.workshopNotes(workshop.ar), WORDS.en.workshopNotes(workshop.en)))}</h3>
     <div class="lines"><i></i><i></i></div>
@@ -294,10 +317,10 @@ function sheetBody(a: JobSheetArgs) {
       .join("");
   } else {
     const list = a.pieces;
-    const words = WORDS[a.lang];
+    const lang = a.lang;
     const workshop = a.workshop;
     pieces = list
-      .map((piece, index) => onePiece(piece, index, list.length, words, workshop))
+      .map((piece, index) => onePiece(piece, index, list.length, lang, workshop))
       .join("");
   }
 
@@ -378,6 +401,12 @@ const SHEETS_STYLE = `
     .to-do ul { margin: 0; padding-inline-start: 18px; font-size: 14px; font-weight: 600; }
     .where { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: -4px 0 12px; font-size: 13px; }
     .sheet-foot { margin-top: 14px; font-size: 10px; color: dimgray; text-align: center; }
+    .revision { border: 2px solid black; border-radius: 6px; padding: 6px 10px; margin: 0 0 10px; font-size: 14px; font-weight: 800; }
+    .row.changed { border-bottom: 2px solid black; }
+    .row.changed .value { font-weight: 800; font-size: 15px; }
+    .was { color: dimgray; font-weight: 400; font-size: 12px; }
+    .note.changed { border: 2px solid black; }
+    .was-mark { color: black; font-weight: 800; }
     .sheet + .sheet { break-before: page; page-break-before: always; }`;
 
 /**

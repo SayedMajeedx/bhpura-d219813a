@@ -12,6 +12,7 @@ import {
   type SheetWhere,
 } from "../lib/job-sheet";
 import type { AlterationChange, AlterationKind } from "../lib/alterations";
+import type { LineRevision } from "../lib/line-revisions";
 
 export type AlterationSheet = {
   sourceItemId: string;
@@ -21,9 +22,13 @@ export type AlterationSheet = {
   where: SheetWhere | null;
 };
 
+/** A piece's own sheet again, revised: its details changed after it was placed. */
+export type RevisedSheet = { sourceItemId: string; revised: true; where: SheetWhere | null };
+
 /**
  * Prints an alteration's sheet (PR 1's job sheet with an "Alteration" or "Fix" heading and what
- * to do first): the piece as it was made, from the order's own line, in the language chosen.
+ * to do first): the piece as it was made, from the order's own line, in the language chosen; or
+ * a piece's revised sheet ("Revision 2", what changed marked, migration `20261119100000`).
  * Printing is kept in the order's activity.
  */
 export function useAlterationSheet({
@@ -33,6 +38,7 @@ export function useAlterationSheet({
   products,
   storeName,
   customerName,
+  revisions = [],
 }: {
   brandId: string;
   order: { id: string; invoice_number?: number | null; order_date?: string | null };
@@ -40,12 +46,14 @@ export function useAlterationSheet({
   products: readonly JobSheetProduct[];
   storeName: string;
   customerName: string | null;
+  /** The order's line revisions: a revised sheet says which it is and what changed. */
+  revisions?: readonly LineRevision[];
 }) {
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const { vocabulary } = useVocabulary();
   const numberFormat = useOrderNumberFormat(brandId);
 
-  return (sheet: AlterationSheet, sheetLang: SheetLang, lang: "ar" | "en") => {
+  return (sheet: AlterationSheet | RevisedSheet, sheetLang: SheetLang, lang: "ar" | "en") => {
     const line = lines.find((l) => l.id === sheet.sourceItemId);
     if (!line) return;
     const w = window.open("", "_blank", "width=800,height=900");
@@ -60,6 +68,8 @@ export function useAlterationSheet({
       brandAddons: storeProfile.addons,
       storeVertical: storeProfile.vertical,
       every: true,
+      revisions,
+      orderDate: order.order_date ?? null,
     });
     const workshopIn = (l: "ar" | "en") =>
       vocabulary.workshop?.[l] || (l === "ar" ? "الورشة" : "Workshop");
@@ -70,7 +80,8 @@ export function useAlterationSheet({
       orderDate: order.order_date ?? null,
       customerName,
       where: sheet.where,
-      alteration: { kind: sheet.kind, changes: sheet.changes, note: sheet.note },
+      alteration:
+        "kind" in sheet ? { kind: sheet.kind, changes: sheet.changes, note: sheet.note } : null,
     };
     w.document.open();
     w.document.write(
@@ -89,6 +100,16 @@ export function useAlterationSheet({
           }),
     );
     w.document.close();
+    if (!("kind" in sheet)) {
+      const revision = Number(line.revision) || 1;
+      void logActivity({
+        action: "job_sheet_printed",
+        order_id: order.id,
+        en: `Printed the revised job sheet (revision ${revision})`,
+        ar: `طبع أمر التشغيل المعدّل (النسخة ${revision})`,
+      });
+      return;
+    }
     void logActivity({
       action: "job_sheet_printed",
       order_id: order.id,

@@ -39,6 +39,12 @@ export type SupplierOrderLine = {
   price_pending?: boolean;
   /** A cancelled customer's piece kept for sale: whose it was. */
   released_order_item_id?: string | null;
+  /**
+   * The revision of the sheet the supplier was given, and the customer's line's own: a higher
+   * line revision means the supplier has the earlier sheet (migration `20261119100000`).
+   */
+  sheet_revision?: number | null;
+  line_revision?: number | null;
 };
 
 /** A line that is a piece: a size of the store's, or a customer's piece. */

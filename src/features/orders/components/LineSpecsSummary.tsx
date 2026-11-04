@@ -54,6 +54,12 @@ export function LineSpecsSummary({
             : vocabulary.customization_options?.[lang] ||
               (isAr ? "المواصفات والخيارات" : "Specifications & Options")}
         </span>
+        {/* Changed after the order was placed (its history is in the measurements card). */}
+        {(it.revision ?? 1) > 1 && (
+          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+            {isAr ? `النسخة ${it.revision}` : `Revision ${it.revision}`}
+          </span>
+        )}
       </div>
       {variant && (
         <div className="flex flex-wrap gap-2">
