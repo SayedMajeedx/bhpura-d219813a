@@ -99,3 +99,22 @@ export function lineFields<F extends Field>(values: readonly F[] | null | undefi
       .map((f) => String(f.value ?? "").trim()),
   };
 }
+
+/** What a size reads for a piece made to measure, in the reader's language. */
+export function madeToMeasureLabel(lang: "ar" | "en"): string {
+  return lang === "ar" ? "حسب المقاس" : "Made to measure";
+}
+
+/** A line's text as an invoice prints it: a piece made to measure without its size line. */
+export function lineDescription(text: string, line: Line | null | undefined): string {
+  return madeToMeasure(line) ? withoutSizeLine(text, line?.selected_variant?.size) : text;
+}
+
+/** What a line's size reads ("56", "Made to measure"), or null when it names none. */
+export function lineSizeText(
+  line: Line | null | undefined,
+  lang: "ar" | "en",
+  fallback?: string | null,
+): string | null {
+  return madeToMeasure(line) ? madeToMeasureLabel(lang) : lineSize(line, fallback);
+}

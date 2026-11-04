@@ -13,8 +13,8 @@ import {
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
-import { isDefaultSize } from "@/lib/default-variant";
-import { lineFields, lineSize, madeToMeasure, withoutSizeLine } from "@/lib/made-to-measure";
+import { lineDescription, lineFields, lineSizeText } from "@/lib/made-to-measure";
+import { LineNotes } from "@/components/orders/LineNotes";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
@@ -77,9 +77,7 @@ type Item = {
     size?: string | null;
     color?: string | null;
     fabric?: string | null;
-    made_to_measure?: boolean | null;
   } | null;
-  location?: string | null;
   custom_field_values?: CustomFieldValue[];
 };
 
@@ -708,11 +706,10 @@ export default function InvoicePreview({
                   >
                     <td className="p-3 text-start">
                       {(() => {
-                        // A piece made to measure names no size, not even in the editor's text.
-                        const named = orderLineName(it, isRTL ? "ar" : "en") || "—";
-                        const rawDesc = madeToMeasure(it)
-                          ? withoutSizeLine(named, it.selected_variant?.size)
-                          : named;
+                        const rawDesc = lineDescription(
+                          orderLineName(it, isRTL ? "ar" : "en") || "—",
+                          it,
+                        );
                         const lines = rawDesc
                           .split(/\r?\n/)
                           .map((s) => s.trim())
@@ -778,16 +775,12 @@ export default function InvoicePreview({
                             addonDefaults,
                             lang: isRTL ? "ar" : "en",
                           });
+                          const size = lineSizeText(it, isRTL ? "ar" : "en");
                           const parts = [
                             it.selected_variant.color &&
                               axes.color.visible &&
                               `${axes.color.label}: ${it.selected_variant.color}`,
-                            madeToMeasure(it) && axes.size.visible
-                              ? `${axes.size.label}: ${isRTL ? "تفصيل حسب المقاس" : "Made to measure"}`
-                              : lineSize(it) &&
-                                !isDefaultSize(lineSize(it)) &&
-                                axes.size.visible &&
-                                `${axes.size.label}: ${lineSize(it)}`,
+                            size && axes.size.visible && `${axes.size.label}: ${size}`,
                             it.selected_variant.fabric &&
                               axes.fabric.visible &&
                               `${axes.fabric.label}: ${it.selected_variant.fabric}`,
@@ -821,22 +814,10 @@ export default function InvoicePreview({
                           ))}
                         </ul>
                       )}
-                      {lineFields(it.custom_field_values).notes.length > 0 && (
-                        <div className="mt-1 text-xs" style={{ opacity: 0.75 }}>
-                          <p className="font-medium">
-                            {isRTL ? "ملاحظات للورشة" : "Notes for the workshop"}
-                          </p>
-                          {lineFields(it.custom_field_values).notes.map((note, ni) => (
-                            <p
-                              key={ni}
-                              dir="auto"
-                              className="whitespace-pre-line [overflow-wrap:anywhere]"
-                            >
-                              {note}
-                            </p>
-                          ))}
-                        </div>
-                      )}
+                      <LineNotes
+                        notes={lineFields(it.custom_field_values).notes}
+                        lang={isRTL ? "ar" : "en"}
+                      />
                     </td>
                     <td className="p-3 text-end" style={{ color: text }}>
                       {num(it.quantity)}

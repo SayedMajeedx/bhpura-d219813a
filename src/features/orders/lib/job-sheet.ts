@@ -1,4 +1,10 @@
-import { isHiddenField, lineSize, madeToMeasure, NOTE_KEYS } from "@/lib/made-to-measure";
+import {
+  isHiddenField,
+  lineSize,
+  madeToMeasure,
+  madeToMeasureLabel,
+  NOTE_KEYS,
+} from "@/lib/made-to-measure";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName } from "@/lib/order-line-name";
@@ -150,7 +156,7 @@ export function jobSheetPieces(
       if (madeToMeasure(line) && axes.size.visible) {
         chosen.push({
           label: axes.size.label,
-          value: lang === "ar" ? "حسب المقاس" : "Made to measure",
+          value: madeToMeasureLabel(lang),
         });
       } else if (size && axes.size.visible) {
         chosen.push({ label: axes.size.label, value: optionValue(size) });

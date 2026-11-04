@@ -1,6 +1,13 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isDefaultSize } from "@/lib/default-variant";
-import { lineFields, lineSize, madeToMeasure, withoutSizeLine } from "@/lib/made-to-measure";
+import {
+  lineFields,
+  lineSize,
+  madeToMeasure,
+  madeToMeasureLabel,
+  withoutSizeLine,
+} from "@/lib/made-to-measure";
+import { LineNotes } from "@/components/orders/LineNotes";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 
@@ -75,7 +82,7 @@ function ItemDetails({
   const options = [
     color && axes.color.visible ? [axes.color.label, color] : null,
     measured && axes.size.visible
-      ? [axes.size.label, lang === "ar" ? "تفصيل حسب المقاس" : "Made to measure"]
+      ? [axes.size.label, madeToMeasureLabel(lang)]
       : size && !isDefaultSize(size) && axes.size.visible
         ? [axes.size.label, size]
         : null,
@@ -119,18 +126,7 @@ function ItemDetails({
           {customFieldLabel(field, lang)}: {customFieldValue(field, lang)}
         </p>
       ))}
-      {notes.length > 0 && (
-        <div className="pt-0.5 text-xs" style={muted}>
-          <p className="font-medium">
-            {lang === "ar" ? "ملاحظات للورشة" : "Notes for the workshop"}
-          </p>
-          {notes.map((note, i) => (
-            <p key={`n${i}`} dir="auto" className="whitespace-pre-line [overflow-wrap:anywhere]">
-              {note}
-            </p>
-          ))}
-        </div>
-      )}
+      <LineNotes notes={notes} lang={lang} style={muted} />
     </div>
   );
 }

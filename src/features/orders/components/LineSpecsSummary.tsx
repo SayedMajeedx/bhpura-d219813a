@@ -1,7 +1,7 @@
 import { FileText, Ruler, Scissors, SlidersHorizontal } from "lucide-react";
 import { resolveAllVariantAxes, type variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
-import { lineFields, lineSize, madeToMeasure } from "@/lib/made-to-measure";
+import { lineFields, lineSize, madeToMeasure, madeToMeasureLabel } from "@/lib/made-to-measure";
 import type { useVocabulary } from "@/hooks/use-vocabulary";
 import type { OrderItem } from "@/features/orders/types";
 
@@ -66,7 +66,7 @@ export function LineSpecsSummary({
           {!length && measured && (
             <span className={chip}>
               <Ruler className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-              <b>{isAr ? "تفصيل حسب المقاس" : "Made to measure"}</b>
+              <b>{madeToMeasureLabel(lang)}</b>
             </span>
           )}
           {!length && size && axes.size.visible && (

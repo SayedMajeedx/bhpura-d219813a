@@ -1,7 +1,7 @@
 import { formatDate, formatMoney } from "@/lib/format";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
-import { lineFields, lineSize, madeToMeasure } from "@/lib/made-to-measure";
+import { lineFields, lineSize, madeToMeasure, madeToMeasureLabel } from "@/lib/made-to-measure";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 type ThermalItem = {
@@ -103,7 +103,7 @@ export function printThermalReceipt(a: ThermalArgs) {
         // A piece made to measure names no size (`lineSize`).
         madeToMeasure(it) &&
           axes.size.visible &&
-          `${escapeHtml(sizeLabel)}: ${isRTL ? "حسب المقاس" : "Made to measure"}`,
+          `${escapeHtml(sizeLabel)}: ${madeToMeasureLabel(isRTL ? "ar" : "en")}`,
         lineSize(it) &&
           axes.size.visible &&
           `${escapeHtml(sizeLabel)}: ${escapeHtml(lineSize(it) ?? "")}`,
@@ -314,7 +314,7 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
         // A piece made to measure names no size (`lineSize`).
         madeToMeasure(it) &&
           axes.size.visible &&
-          `${escapeHtml(sizeLabel)}: ${isRTL ? "حسب المقاس" : "Made to measure"}`,
+          `${escapeHtml(sizeLabel)}: ${madeToMeasureLabel(isRTL ? "ar" : "en")}`,
         lineSize(it) &&
           axes.size.visible &&
           `${escapeHtml(sizeLabel)}: ${escapeHtml(lineSize(it) ?? "")}`,
