@@ -295,3 +295,21 @@ export function showsCustomSizing({
 }): boolean {
   return (showSizeModeToggle && sizeMode === "custom") || (!hasReadySizes && isTailoringActive);
 }
+
+/**
+ * Whether the product page offers the notes for the workshop: with every piece being made for
+ * the shopper in a store that makes to order, whatever fields the product asks. It sat with the
+ * product's extra fields, so a store whose tailoring fields are all measurements (the fit
+ * passport's) never showed it (the owner's report of 2026-11-04).
+ */
+export function workshopNotesShown({
+  isService,
+  isTailoringActive,
+  madeToOrderModule,
+}: {
+  isService: boolean;
+  isTailoringActive: boolean;
+  madeToOrderModule: boolean;
+}): boolean {
+  return !isService && isTailoringActive && madeToOrderModule;
+}

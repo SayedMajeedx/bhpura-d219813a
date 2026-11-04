@@ -1,5 +1,5 @@
 import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib/order-number";
-import { realSize } from "@/lib/default-variant";
+import { lineSize } from "@/lib/made-to-measure";
 
 /**
  * A delivery as its courier needs to read it: who, where, what to hand over, how much to
@@ -158,7 +158,8 @@ export function courierDelivery(order: CourierOrder, lang: Lang): CourierDeliver
       key: item.id ?? String(index),
       title: text(item.description) || (lang === "ar" ? "قطعة" : "Item"),
       quantity: Number(item.quantity) || 1,
-      detail: [text(variant?.color), realSize(text(variant?.size)), text(variant?.fabric)]
+      // A piece made to measure names no size (`lineSize`).
+      detail: [text(variant?.color), lineSize(item), text(variant?.fabric)]
         .filter(Boolean)
         .join(" · "),
     };

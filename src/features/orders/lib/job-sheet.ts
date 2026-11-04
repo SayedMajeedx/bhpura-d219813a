@@ -1,4 +1,10 @@
-import { isDefaultSize } from "@/lib/default-variant";
+import {
+  isHiddenField,
+  lineSize,
+  madeToMeasure,
+  madeToMeasureLabel,
+  NOTE_KEYS,
+} from "@/lib/made-to-measure";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName } from "@/lib/order-line-name";
@@ -49,6 +55,7 @@ export type JobSheetLine = {
     size?: string | null;
     color?: string | null;
     fabric?: string | null;
+    made_to_measure?: boolean | null;
   } | null;
   custom_field_values?: Array<{
     key?: string | null;
@@ -85,13 +92,13 @@ export type JobSheetPiece = {
   extras: string[];
 };
 
-/** The fields a customer writes free notes in; everything else is a labelled answer. */
-const NOTE_KEYS = new Set(["tailoring_notes", "custom_measurements"]);
-
 const filled = (value: string | null | undefined) => (value ?? "").trim();
 
+/** What the customer answered, less the bookkeeping kept with it (the unit, the version). */
 function answers(line: JobSheetLine) {
-  return (line.custom_field_values ?? []).filter((field) => filled(field?.value));
+  return (line.custom_field_values ?? []).filter(
+    (field) => filled(field?.value) && !isHiddenField(field?.key),
+  );
 }
 
 /**
@@ -144,8 +151,15 @@ export function jobSheetPieces(
       if (filled(variant?.color) && axes.color.visible) {
         chosen.push({ label: axes.color.label, value: optionValue(variant?.color) });
       }
-      if (filled(variant?.size) && axes.size.visible && !isDefaultSize(variant?.size)) {
-        chosen.push({ label: axes.size.label, value: optionValue(variant?.size) });
+      // A piece made to the customer's measurements is made to them, not to a size.
+      const size = lineSize(line);
+      if (madeToMeasure(line) && axes.size.visible) {
+        chosen.push({
+          label: axes.size.label,
+          value: madeToMeasureLabel(lang),
+        });
+      } else if (size && axes.size.visible) {
+        chosen.push({ label: axes.size.label, value: optionValue(size) });
       }
       if (filled(variant?.fabric) && axes.fabric.visible) {
         chosen.push({ label: axes.fabric.label, value: optionValue(variant?.fabric) });

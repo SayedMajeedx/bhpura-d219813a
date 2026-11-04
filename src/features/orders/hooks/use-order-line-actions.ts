@@ -10,6 +10,7 @@ import {
   recalcOrderItem,
 } from "@/features/orders/lib/order-editor";
 import type { Dispatch, SetStateAction } from "react";
+import { lineSupplyFor } from "@/features/orders/lib/line-supply";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
 
@@ -58,18 +59,22 @@ export function useOrderLineActions({
     const incStock = Number(variant.stock_incubator ?? 0);
     const fallbackStock = Number(variant.stock ?? variant.quantity ?? 0);
     const totalStock = mainStock + incStock > 0 ? mainStock + incStock : fallbackStock;
+    const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
 
-    if (!force && totalStock <= 0) {
+    // A made-to-order piece is not out of stock: it is made (no warning, no ready stock taken).
+    const madeToOrder = Boolean(p?.is_made_to_order);
+    if (!force && totalStock <= 0 && !madeToOrder) {
       setOutOfStockConfirmVariant(variant);
       return;
     }
 
-    const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
     const line = orderLineFromVariant(variant, p, axesFor(p));
     const variantTitle = line.description.replace(/\n/g, " — ");
-    const preferredLoc: "main" | "incubator" = (variant.stock_main ?? 0) > 0 ? "main" : "incubator";
-    setItems((prev) => [...prev, newOrderLine(line, preferredLoc)]);
+    setItems((prev) => [
+      ...prev,
+      newOrderLine(line, lineSupplyFor({ mainStock, partnerStock: incStock, madeToOrder })),
+    ]);
     toast.success(
       isAr ? `تمت إضافة "${variantTitle}" إلى الطلب!` : `Added "${variantTitle}" to order!`,
     );

@@ -13,7 +13,8 @@ import {
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
-import { isDefaultSize } from "@/lib/default-variant";
+import { lineDescription, lineFields, lineSizeText } from "@/lib/made-to-measure";
+import { LineNotes } from "@/components/orders/LineNotes";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
@@ -705,7 +706,10 @@ export default function InvoicePreview({
                   >
                     <td className="p-3 text-start">
                       {(() => {
-                        const rawDesc = orderLineName(it, isRTL ? "ar" : "en") || "—";
+                        const rawDesc = lineDescription(
+                          orderLineName(it, isRTL ? "ar" : "en") || "—",
+                          it,
+                        );
                         const lines = rawDesc
                           .split(/\r?\n/)
                           .map((s) => s.trim())
@@ -771,14 +775,12 @@ export default function InvoicePreview({
                             addonDefaults,
                             lang: isRTL ? "ar" : "en",
                           });
+                          const size = lineSizeText(it, isRTL ? "ar" : "en");
                           const parts = [
                             it.selected_variant.color &&
                               axes.color.visible &&
                               `${axes.color.label}: ${it.selected_variant.color}`,
-                            it.selected_variant.size &&
-                              !isDefaultSize(it.selected_variant.size) &&
-                              axes.size.visible &&
-                              `${axes.size.label}: ${it.selected_variant.size}`,
+                            size && axes.size.visible && `${axes.size.label}: ${size}`,
                             it.selected_variant.fabric &&
                               axes.fabric.visible &&
                               `${axes.fabric.label}: ${it.selected_variant.fabric}`,
@@ -790,9 +792,9 @@ export default function InvoicePreview({
                             </p>
                           );
                         })()}
-                      {it.custom_field_values && it.custom_field_values.length > 0 && (
+                      {lineFields(it.custom_field_values).rows.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
-                          {it.custom_field_values.map((cf, ci) => (
+                          {lineFields(it.custom_field_values).rows.map((cf, ci) => (
                             <li key={ci}>
                               {customFieldLabel(cf, isRTL ? "ar" : "en")}:{" "}
                               {cf.value.startsWith("http") ? (
@@ -812,6 +814,10 @@ export default function InvoicePreview({
                           ))}
                         </ul>
                       )}
+                      <LineNotes
+                        notes={lineFields(it.custom_field_values).notes}
+                        lang={isRTL ? "ar" : "en"}
+                      />
                     </td>
                     <td className="p-3 text-end" style={{ color: text }}>
                       {num(it.quantity)}

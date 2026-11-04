@@ -11268,6 +11268,11 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      order_line_made_to_measure: {
+        Args: { p_fields: Json; p_location: string };
+        Returns: boolean;
+      };
+      order_line_measurement_key: { Args: { p_key: string }; Returns: boolean };
       order_made_to_order_transition: {
         Args: { p_desired_state: string; p_order_id: string };
         Returns: undefined;

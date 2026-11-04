@@ -45,6 +45,7 @@ import {
   resolveProductAxes,
   showsCustomSizing,
   tailoringState,
+  workshopNotesShown,
   type VariantSelection,
 } from "@/features/product-page/lib/variant-options";
 import { madeToOrderLimit } from "@/lib/product-availability";
@@ -74,6 +75,7 @@ import { ProductGallery } from "@/features/product-page/components/ProductGaller
 import { ProductOptionPickers } from "@/features/product-page/components/ProductOptionPickers";
 import { ProductAddonsPicker } from "@/features/product-page/components/ProductAddonsPicker";
 import { ProductCustomFields } from "@/features/product-page/components/ProductCustomFields";
+import { TailoringNotesField } from "@/features/product-page/components/TailoringNotesField";
 import { ProductMobileBuyBar } from "@/features/product-page/components/ProductMobileBuyBar";
 import { productHead } from "@/features/product-page/lib/product-head";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
@@ -831,20 +833,32 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 cfLabel={cfLabel}
                 cfValues={cfValues}
                 lang={lang}
-                modules={modules}
                 setCfValues={setCfValues}
                 setErrorMsg={setErrorMsg}
-                setTailoringNotes={setTailoringNotes}
                 setUploadingField={setUploadingField}
                 showSizeModeToggle={showSizeModeToggle}
                 sizeMode={sizeMode}
                 t={t}
-                tailoringNotes={tailoringNotes}
                 uploadingField={uploadingField}
                 visibleCustomFields={visibleCustomFields}
                 vocabulary={vocabulary}
               />
             )}
+
+          {/* Notes for the workshop: with every piece being made for the shopper. */}
+          {workshopNotesShown({
+            isService,
+            isTailoringActive,
+            madeToOrderModule: Boolean(modules.made_to_order),
+          }) && (
+            <TailoringNotesField
+              value={tailoringNotes}
+              onChange={setTailoringNotes}
+              lang={lang}
+              t={t}
+              vocabulary={vocabulary}
+            />
+          )}
 
           <AddonSlot
             placement="storefront.product.afterCta"
