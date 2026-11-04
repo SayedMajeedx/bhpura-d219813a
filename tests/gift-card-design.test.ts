@@ -20,13 +20,14 @@ import { cardFront } from "../src/features/gift-card-design/lib/front";
 import { CODE_PLACEHOLDER, cardBack } from "../src/features/gift-card-design/lib/back";
 import { cardContent, type CardContent } from "../src/features/gift-card-design/lib/content";
 import {
+  BLEED,
   cardSize,
   crescentPath,
   starPolygon,
   type Shape,
 } from "../src/features/gift-card-design/lib/geometry";
 import { cardSvg, textAnchor } from "../src/features/gift-card-design/lib/svg";
-import { cardPrintHtml } from "../src/features/gift-card-design/lib/print";
+import { cardPrintHtml, foldSheet } from "../src/features/gift-card-design/lib/print";
 import { roughMeasure } from "../src/features/gift-card-design/lib/type";
 
 // Gift card designs (the owner's brief of 2026-10-31): occasions in the Gulf's words and seasons,
@@ -266,6 +267,70 @@ describe("drawing and printing", () => {
     // On A4 the card keeps its bleed (111 x 154 mm), so the colour runs past the cut.
     expect(a4).toContain('width="111mm" height="154mm"');
   });
+
+  it("print on one side of A4 to fold, glue and cut, for a printer with no two-sided mode", () => {
+    const d = design({ language: "en" });
+    const faces = {
+      front: cardFront(d, content(), COLOURS, roughMeasure),
+      back: cardBack(d, content(), COLOURS, roughMeasure),
+      lang: "en" as const,
+      origin: "https://pura.boutq.store",
+      format: "fold" as const,
+    };
+    const portrait = cardPrintHtml({ ...faces, size: cardSize("portrait") });
+    expect(portrait).toContain("@page{size:210mm 297mm;margin:0}");
+    expect(portrait.match(/<section class="page">/g)).toHaveLength(1);
+    expect(portrait.match(/class="card-art"/g)).toHaveLength(2);
+    expect(portrait.match(/class="marks"/g)).toHaveLength(1);
+    expect(portrait).toContain('width="111mm" height="154mm"');
+    expect(portrait).toContain("stroke-dasharray");
+    expect(portrait).toContain("Fold on the dashed line");
+    expect(portrait).toContain("print-color-adjust:exact");
+    expect(portrait.match(/rotate\(90deg\)/g)).toHaveLength(2);
+    const landscape = cardPrintHtml({ ...faces, size: cardSize("landscape") });
+    expect(landscape.match(/rotate\(180deg\)/g)).toHaveLength(1);
+    expect(cardPrintHtml({ ...faces, lang: "ar", size: cardSize("portrait") })).toContain(
+      "اطوِ على الخط المتقطع",
+    );
+  });
+
+  it.each(["portrait", "landscape"] as const)(
+    "fold a %s card so its back sits exactly behind its front and reads upright",
+    (orientation) => {
+      const size = cardSize(orientation);
+      const sheet = foldSheet(size);
+      // Where a point of a face lands on the sheet, in millimetres.
+      const onSheet = (at: typeof sheet.front, u: number, v: number) => {
+        const a = u - size.w / 2;
+        const b = v - size.h / 2;
+        const turn = (at.turn * Math.PI) / 180;
+        return {
+          x: at.x + at.w / 2 + a * Math.cos(turn) - b * Math.sin(turn),
+          y: at.y + at.h / 2 + a * Math.sin(turn) + b * Math.cos(turn),
+        };
+      };
+      // A card turned over like a page: the back's (w - u, v) is behind the front's (u, v).
+      for (const [u, v] of [
+        [0, 0],
+        [size.w, 0],
+        [0, size.h],
+        [12, 30],
+      ]) {
+        const front = onSheet(sheet.front, u, v);
+        const back = onSheet(sheet.back, size.w - u, v);
+        expect(back.x).toBeCloseTo(front.x, 6);
+        expect(sheet.fold * 2 - back.y).toBeCloseTo(front.y, 6);
+      }
+      // The cut marks stay where a printer reaches, and the bleed stays off the fold.
+      const reach = BLEED + 1.5 + 6;
+      const printerMargin = 5;
+      expect(sheet.front.x - reach).toBeGreaterThanOrEqual(printerMargin);
+      expect(sheet.front.y - reach).toBeGreaterThanOrEqual(printerMargin);
+      expect(sheet.back.y + sheet.back.h + reach).toBeLessThanOrEqual(297 - printerMargin);
+      expect(sheet.front.y + sheet.front.h + BLEED).toBeLessThan(sheet.fold);
+      expect(sheet.back.y - BLEED).toBeGreaterThan(sheet.fold);
+    },
+  );
 
   it("draw marks with ruler and compass", () => {
     expect(starPolygon(0, 0, 10).match(/[ML]/g)).toHaveLength(16);

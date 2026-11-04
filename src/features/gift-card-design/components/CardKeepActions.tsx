@@ -13,7 +13,8 @@ import type { CardKit } from "../hooks/use-card-kit";
 
 /**
  * Keeping a card: its two faces as pictures (to send on WhatsApp, shared from a phone or saved),
- * or printed, on A6 paper or on A4 at its true size with cut marks.
+ * or printed: on one side of A4 to fold, glue and cut (any printer), on A6 paper, or on A4 at its
+ * true size with cut marks.
  */
 export function CardKeepActions({
   kit,
@@ -104,42 +105,59 @@ export function CardKeepActions({
   };
 
   return (
-    <div className="flex flex-wrap justify-center gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-1.5"
-        onClick={save}
-        disabled={saving}
-      >
-        {saving ? (
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-        ) : (
-          <Download className="size-4" aria-hidden="true" />
-        )}
-        {isAr ? "حفظ صورة البطاقة" : "Save the card"}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-1.5"
-        onClick={() => print("a6")}
-      >
-        <Printer className="size-4" aria-hidden="true" />
-        {isAr ? "طباعة على ورق A6" : "Print on A6"}
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="gap-1.5"
-        onClick={() => print("a4")}
-      >
-        <Printer className="size-4" aria-hidden="true" />
-        {isAr ? "طباعة على A4 للقص" : "Print on A4 to cut out"}
-      </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap justify-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={save}
+          disabled={saving}
+        >
+          {saving ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Download className="size-4" aria-hidden="true" />
+          )}
+          {isAr ? "حفظ صورة البطاقة" : "Save the card"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => print("fold")}
+        >
+          <Printer className="size-4" aria-hidden="true" />
+          {isAr ? "طباعة للطي واللصق" : "Print to fold and glue"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => print("a6")}
+        >
+          <Printer className="size-4" aria-hidden="true" />
+          {isAr ? "طباعة على ورق A6" : "Print on A6"}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => print("a4")}
+        >
+          <Printer className="size-4" aria-hidden="true" />
+          {isAr ? "طباعة على A4 للقص" : "Print on A4 to cut out"}
+        </Button>
+      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        {isAr
+          ? "لأي طابعة: وجه واحد من A4 يُطوى ويُلصق ويُقص، فتطلع بطاقة بوجهين. التصاميم البيضاء والبيج أوضح على الطابعات المنزلية."
+          : "For any printer: one side of A4, folded, glued and cut into a two-sided card. White and nude designs print cleanest at home."}
+      </p>
     </div>
   );
 }
