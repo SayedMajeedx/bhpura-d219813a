@@ -1,29 +1,29 @@
-import { useStorefront, useStoreModules } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Upload, X, Loader2, Scissors, FileText } from "lucide-react";
+import { Upload, X, Loader2, Scissors } from "lucide-react";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { toast } from "sonner";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { CustomField } from "@/features/product-page/types";
-/** Customer fields for custom sizing: measurements, choices, uploads and workshop notes. */
+/**
+ * Customer fields for custom sizing: choices, text and uploads. The notes for the workshop are
+ * `TailoringNotesField`, shown with every piece being made (the measurements are the fit
+ * passport's).
+ */
 export function ProductCustomFields({
   brand,
   cfLabel,
   cfValues,
   lang,
-  modules,
   setCfValues,
   setErrorMsg,
-  setTailoringNotes,
   setUploadingField,
   showSizeModeToggle,
   sizeMode,
   t,
-  tailoringNotes,
   uploadingField,
   visibleCustomFields,
   vocabulary,
@@ -32,15 +32,12 @@ export function ProductCustomFields({
   cfLabel: (f: CustomField) => string;
   cfValues: Record<string, string>;
   lang: ReturnType<typeof useStorefront>["lang"];
-  modules: ReturnType<typeof useStoreModules>;
   setCfValues: Dispatch<SetStateAction<Record<string, string>>>;
   setErrorMsg: Dispatch<SetStateAction<string | null>>;
-  setTailoringNotes: Dispatch<SetStateAction<string>>;
   setUploadingField: Dispatch<SetStateAction<Record<string, boolean>>>;
   showSizeModeToggle: boolean;
   sizeMode: "ready" | "custom";
   t: ReturnType<typeof useStorefront>["t"];
-  tailoringNotes: string;
   uploadingField: Record<string, boolean>;
   visibleCustomFields: CustomField[];
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
@@ -223,44 +220,6 @@ export function ProductCustomFields({
           </div>
         );
       })}
-
-      {/* 📝 Customer Tailoring & Workshop Notes Box */}
-      {modules.made_to_order && (
-        <div className="space-y-2 pt-3 border-t border-border-subtle">
-          <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs sm:text-sm font-bold text-foreground">
-              <FileText className="h-4 w-4 text-primary shrink-0" />
-              <span>
-                {vocabulary.workshop_notes_label?.[lang] ||
-                  t("ملاحظات وتفاصيل التجهيز (اختياري)", "Production & Workshop Notes (Optional)")}
-              </span>
-            </label>
-            <span className="text-xs text-muted-foreground font-normal">
-              {vocabulary.workshop_instructions?.[lang] || t("تعليمات للورشة", "Workshop notes")}
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {vocabulary.workshop_notes_placeholder?.[lang]
-              ? `${t("ملاحظات خاصة:", "Special instructions:")} ${vocabulary.workshop_notes_placeholder[lang]}`
-              : t(
-                  "اكتب هنا أي تفاصيل خاصة للتجهيز ترغب بإبلاغ الورشة بها",
-                  "Add any specific production instructions for the workshop",
-                )}
-          </p>
-          <Textarea
-            rows={3}
-            value={tailoringNotes}
-            onChange={(e) => setTailoringNotes(e.target.value)}
-            placeholder={
-              vocabulary.workshop_notes_placeholder?.[lang] ||
-              (lang === "ar"
-                ? "أدخل الملاحظات والتعليمات الخاصة هنا..."
-                : "Type any special requests or notes here...")
-            }
-            className="text-xs bg-background resize-none leading-relaxed rounded-xl border border-input shadow-2xs focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { resolveAllVariantAxes } from "@/lib/addons/addon-registry";
 import { isDefaultSize } from "@/lib/default-variant";
+import { lineFields, lineSize, madeToMeasure, withoutSizeLine } from "@/lib/made-to-measure";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 
@@ -42,8 +43,11 @@ function ItemDetails({
   money,
   textColor,
 }: Pick<Props, "lang" | "addonDefaults" | "money" | "textColor"> & { it: any }) {
-  // The name in the invoice's language (a product's own, or the line's: a booking's add-on).
-  const lines = String(orderLineName(it, lang) || "—")
+  // The name in the invoice's language (a product's own, or the line's: a booking's add-on). A
+  // piece made to measure names no size, not even in the text the order editor wrote.
+  const measured = madeToMeasure(it);
+  const named = String(orderLineName(it, lang) || "—");
+  const lines = (measured ? withoutSizeLine(named, it.product_variants?.size) : named)
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean);
@@ -65,14 +69,21 @@ function ItemDetails({
     it.selected_variant?.[key] || it.product_variants?.[key];
   const color = pick("color");
   // A booked service's length in the invoice's language ("3 ساعات"), not its variant's text.
-  const size = serviceLengthLabel(it.product_variants, lang) || pick("size");
+  const size =
+    serviceLengthLabel(it.product_variants, lang) || lineSize(it, it.product_variants?.size);
   const fabric = pick("fabric");
   const options = [
     color && axes.color.visible ? [axes.color.label, color] : null,
-    size && !isDefaultSize(size) && axes.size.visible ? [axes.size.label, size] : null,
+    measured && axes.size.visible
+      ? [axes.size.label, lang === "ar" ? "تفصيل حسب المقاس" : "Made to measure"]
+      : size && !isDefaultSize(size) && axes.size.visible
+        ? [axes.size.label, size]
+        : null,
     fabric && axes.fabric.visible ? [axes.fabric.label, fabric] : null,
   ].filter(Boolean) as Array<[string, string]>;
   const muted = { color: textColor, opacity: 0.75 };
+  // The customer's answers as rows, what they wrote for the workshop as written (no bookkeeping).
+  const { rows, notes } = lineFields(it.custom_field_values);
 
   return (
     <div className="min-w-0 space-y-0.5">
@@ -103,11 +114,23 @@ function ItemDetails({
           + {c.name} ({money(c.price_delta)})
         </p>
       ))}
-      {(it.custom_field_values ?? []).map((field: any, i: number) => (
+      {rows.map((field: any, i: number) => (
         <p key={`f${i}`} className="text-xs" style={muted}>
           {customFieldLabel(field, lang)}: {customFieldValue(field, lang)}
         </p>
       ))}
+      {notes.length > 0 && (
+        <div className="pt-0.5 text-xs" style={muted}>
+          <p className="font-medium">
+            {lang === "ar" ? "ملاحظات للورشة" : "Notes for the workshop"}
+          </p>
+          {notes.map((note, i) => (
+            <p key={`n${i}`} dir="auto" className="whitespace-pre-line [overflow-wrap:anywhere]">
+              {note}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

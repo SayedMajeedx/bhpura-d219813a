@@ -1,7 +1,7 @@
 import { formatDate, formatMoney } from "@/lib/format";
-import { isDefaultSize } from "@/lib/default-variant";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { lineFields, lineSize, madeToMeasure } from "@/lib/made-to-measure";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 type ThermalItem = {
@@ -16,7 +16,9 @@ type ThermalItem = {
     size?: string | null;
     color?: string | null;
     fabric?: string | null;
+    made_to_measure?: boolean | null;
   } | null;
+  location?: string | null;
   custom_field_values?: Array<{
     key?: string;
     label_ar?: string | null;
@@ -98,10 +100,13 @@ export function printThermalReceipt(a: ThermalArgs) {
         it.selected_variant?.color &&
           axes.color.visible &&
           `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
-        it.selected_variant?.size &&
-          !isDefaultSize(it.selected_variant.size) &&
+        // A piece made to measure names no size (`lineSize`).
+        madeToMeasure(it) &&
           axes.size.visible &&
-          `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
+          `${escapeHtml(sizeLabel)}: ${isRTL ? "حسب المقاس" : "Made to measure"}`,
+        lineSize(it) &&
+          axes.size.visible &&
+          `${escapeHtml(sizeLabel)}: ${escapeHtml(lineSize(it) ?? "")}`,
         it.selected_variant?.fabric &&
           axes.fabric.visible &&
           `${escapeHtml(fabricLabel)}: ${escapeHtml(it.selected_variant.fabric)}`,
@@ -112,11 +117,20 @@ export function printThermalReceipt(a: ThermalArgs) {
           ? `<div class="variant-meta" style="font-size:10px;opacity:0.85;">${variantParts.join(" · ")}</div>`
           : "";
 
+      // The answers as rows, the notes for the workshop last, the bookkeeping left out.
+      const fields = lineFields(it.custom_field_values);
+      const shownFields = [
+        ...fields.rows,
+        ...fields.notes.map((value) => ({
+          key: "tailoring_notes",
+          label_ar: "ملاحظات للورشة",
+          label_en: "Notes for the workshop",
+          value,
+        })),
+      ];
       const customFieldsHtml =
-        (it.custom_field_values ?? []).length > 0
-          ? `<div class="custom-fields" style="font-size:10px;opacity:0.85;">${(
-              it.custom_field_values ?? []
-            )
+        shownFields.length > 0
+          ? `<div class="custom-fields" style="font-size:10px;opacity:0.85;white-space:pre-line;">${shownFields
               .map(
                 (cf) =>
                   `${escapeHtml(customFieldLabel(cf, isRTL ? "ar" : "en"))}: ${escapeHtml(customFieldValue(cf, isRTL ? "ar" : "en"))}`,
@@ -297,10 +311,13 @@ export function printDeliveryNote(a: DeliveryNoteArgs) {
         it.selected_variant?.color &&
           axes.color.visible &&
           `${escapeHtml(colorLabel)}: ${escapeHtml(it.selected_variant.color)}`,
-        it.selected_variant?.size &&
-          !isDefaultSize(it.selected_variant.size) &&
+        // A piece made to measure names no size (`lineSize`).
+        madeToMeasure(it) &&
           axes.size.visible &&
-          `${escapeHtml(sizeLabel)}: ${escapeHtml(it.selected_variant.size)}`,
+          `${escapeHtml(sizeLabel)}: ${isRTL ? "حسب المقاس" : "Made to measure"}`,
+        lineSize(it) &&
+          axes.size.visible &&
+          `${escapeHtml(sizeLabel)}: ${escapeHtml(lineSize(it) ?? "")}`,
         it.selected_variant?.fabric &&
           axes.fabric.visible &&
           `${escapeHtml(fabricLabel)}: ${escapeHtml(it.selected_variant.fabric)}`,

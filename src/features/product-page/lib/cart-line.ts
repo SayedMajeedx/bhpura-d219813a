@@ -3,6 +3,7 @@ import { formatPrice } from "@/lib/storefront-context";
 import type { useVocabulary } from "@/hooks/use-vocabulary";
 import { formatCustomField } from "@/lib/addons/custom-fields";
 import { realSize } from "@/lib/default-variant";
+import { MADE_TO_MEASURE_KEY, isHiddenField } from "@/lib/made-to-measure";
 import type {
   fetchCustomizationOptions,
   StorefrontProductDetail as Product,
@@ -228,16 +229,35 @@ export function productCartLine({
     });
   }
 
-  if (tailoringNotes.trim()) {
+  // The notes for the workshop go with a piece being made only (the field shows only then), as
+  // written, labelled in each language.
+  const notes = isTailoringActive ? tailoringNotes.trim() : "";
+  const noteLabel = (l: "ar" | "en") =>
+    vocabulary.workshop_notes_label?.[l]?.replace(/[:：]\s*$/, "") ||
+    (l === "ar" ? "ملاحظات للتفصيل" : "Notes for the workshop");
+  if (notes) {
     custom.push({
       key: "tailoring_notes",
-      label_ar:
-        vocabulary.workshop_notes_label?.[lang] ||
-        (lang === "ar" ? "ملاحظات وتفاصيل التجهيز" : "Production & Workshop Notes"),
-      label_en:
-        vocabulary.workshop_notes_label?.[lang] ||
-        (lang === "ar" ? "ملاحظات وتفاصيل التجهيز" : "Production & Workshop Notes"),
-      value: tailoringNotes.trim(),
+      label_ar: noteLabel("ar"),
+      label_en: noteLabel("en"),
+      value: notes,
+      type: "text",
+      price_delta: 0,
+    });
+  }
+
+  // Made to the shopper's measurements: the size the line is priced by is not one they chose, and
+  // the database leaves it off the order (migration 20261118100000), by this mark if no
+  // measurement says so.
+  const madeToMeasure =
+    (showSizeModeToggle && sizeMode === "custom") ||
+    (isTailoringActive && !realSize(targetVariant?.size));
+  if (madeToMeasure) {
+    custom.push({
+      key: MADE_TO_MEASURE_KEY,
+      label_ar: "حسب المقاس",
+      label_en: "Made to measure",
+      value: "true",
       type: "text",
       price_delta: 0,
     });
@@ -249,12 +269,14 @@ export function productCartLine({
   const custom_text = textField ? (cfValues[textField.key] ?? "").trim() : "";
 
   const selected_customizations = {
-    options: custom.map((c) => ({
-      name: lang === "ar" ? c.label_ar || c.label_en : c.label_en || c.label_ar,
-      value: c.value,
-      price_delta: c.price_delta,
-    })),
-    custom_text: tailoringNotes.trim() || custom_text,
+    options: custom
+      .filter((c) => !isHiddenField(c.key))
+      .map((c) => ({
+        name: lang === "ar" ? c.label_ar || c.label_en : c.label_en || c.label_ar,
+        value: c.value,
+        price_delta: c.price_delta,
+      })),
+    custom_text: notes || custom_text,
     file_url,
   };
 

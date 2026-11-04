@@ -10,13 +10,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Minus, Pencil, Trash2, Scissors, SlidersHorizontal, FileText } from "lucide-react";
+import { Plus, Minus, Pencil, Trash2, Scissors, FileText } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { useProfileOptional } from "@/lib/profile-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import type { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit-passport";
 import { useId, type Dispatch, type SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
@@ -26,7 +26,8 @@ import { OrderItemEditDialog } from "@/features/orders/components/OrderItemEditD
 import { isTailoredLine } from "@/features/orders/lib/order-editor";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
 import { LineThumbnail } from "@/features/orders/components/LineThumbnail";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { LineSpecsSummary } from "@/features/orders/components/LineSpecsSummary";
+import { LineSupplyChoice } from "@/features/orders/components/LineSupplyChoice";
 /** One order line: image, SKU, stock, quantity and price, with its edit dialog. */
 export function OrderLineCard({
   addonDefaults,
@@ -335,7 +336,7 @@ export function OrderLineCard({
       (it.custom_field_values && it.custom_field_values.length > 0) ||
       editingItems[idx] ? (
         <div className="space-y-2">
-          {tailored && (
+          {tailored && !it.variant_id && (
             <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex flex-wrap items-center justify-between gap-2">
               <span className="flex items-center gap-1.5">
                 {storeProfile.modules.made_to_order ? (
@@ -386,126 +387,32 @@ export function OrderLineCard({
               />
             ) : null
           ) : (
-            (it.selected_variant ||
-              (it.custom_field_values && it.custom_field_values.length > 0)) && (
-              <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs space-y-2">
-                <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
-                  {storeProfile.modules.made_to_order ? (
-                    <Scissors className="h-3.5 w-3.5 text-primary" />
-                  ) : (
-                    <SlidersHorizontal className="h-3.5 w-3.5 text-primary" />
-                  )}
-                  <span>
-                    {appointment ? (isAr ? "تفاصيل الحجز" : "Booking details") : null}
-                    {!appointment &&
-                      (vocabulary.customization_options?.[lang] ||
-                        (isAr ? "المواصفات والخيارات" : "Specifications & Options"))}
-                  </span>
-                </div>
-                {it.selected_variant &&
-                  (() => {
-                    const itemAxes = resolveAllVariantAxes({
-                      product,
-                      addonDefaults,
-                      lang: isAr ? "ar" : "en",
-                    });
-                    return (
-                      <div className="flex flex-wrap gap-2">
-                        {length && (
-                          <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                            <span className="text-muted-foreground">
-                              {isAr ? "المدة:" : "Length:"}
-                            </span>
-                            <b>{length}</b>
-                          </span>
-                        )}
-                        {!length && it.selected_variant.size && itemAxes.size.visible && (
-                          <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                            <span className="text-muted-foreground">{itemAxes.size.label}:</span>
-                            <b>
-                              {String(it.selected_variant?.size ?? "").includes("custom") ||
-                              String(it.selected_variant?.size ?? "").includes("خاص") ||
-                              String(it.selected_variant?.size ?? "").includes(
-                                vocabulary.custom_order?.[lang] || "custom",
-                              )
-                                ? vocabulary.custom_sizing?.[lang] ||
-                                  (isAr ? "قياسات خاصة" : "Custom Sizing")
-                                : it.selected_variant.size}
-                            </b>
-                          </span>
-                        )}
-                        {it.selected_variant.color && itemAxes.color.visible && (
-                          <span className="inline-flex items-center gap-1.5 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                            <span className="text-muted-foreground">{itemAxes.color.label}:</span>
-                            <b>{it.selected_variant.color}</b>
-                          </span>
-                        )}
-                        {it.selected_variant.fabric && itemAxes.fabric.visible && (
-                          <span className="inline-flex items-center gap-1 bg-background border border-border-strong px-2.5 py-1 rounded-lg text-xs font-medium text-foreground">
-                            <span className="text-muted-foreground">{itemAxes.fabric.label}:</span>
-                            <b>{it.selected_variant.fabric}</b>
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })()}
-                {it.custom_field_values && it.custom_field_values.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border-subtle">
-                    {it.custom_field_values.map((cf, i) => (
-                      <div key={i} className="min-w-0 text-xs [overflow-wrap:anywhere]">
-                        <span className="font-bold text-muted-foreground">
-                          {customFieldLabel(cf, isAr ? "ar" : "en")}:{" "}
-                        </span>
-                        <span className="text-foreground font-medium">
-                          {customFieldValue(cf, isAr ? "ar" : "en")}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
+            <LineSpecsSummary
+              it={it}
+              product={product}
+              addonDefaults={addonDefaults}
+              length={length}
+              appointment={appointment}
+              madeToOrderModule={Boolean(storeProfile.modules.made_to_order)}
+              lang={isAr ? "ar" : "en"}
+              vocabulary={vocabulary}
+            />
           )}
         </div>
-      ) : (
-        it.variant_id &&
-        !appointment && (
-          <div>
-            <Label className="text-xs">{isAr ? "خصم المخزون من" : "Deduct Stock From"}</Label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {(
-                [
-                  {
-                    key: "main",
-                    en: `Direct Sales · Main (${mainStock})`,
-                    ar: `الرئيسي (${mainStock})`,
-                  },
-                  {
-                    key: "incubator",
-                    en: `Partner shop (${incStock})`,
-                    ar: `المحل الشريك (${incStock})`,
-                  },
-                ] as const
-              ).map((opt) => {
-                const active = it.location === opt.key;
-                return (
-                  <button
-                    key={opt.key}
-                    type="button"
-                    onClick={() => updateItem(idx, { location: opt.key })}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      active
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "border-border hover:bg-secondary"
-                    }`}
-                  >
-                    {isAr ? opt.ar : opt.en}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )
+      ) : null}
+
+      {it.variant_id && !appointment && (
+        <LineSupplyChoice
+          it={it}
+          mainStock={mainStock}
+          partnerStock={incStock}
+          madeToOrderModule={Boolean(storeProfile.modules.made_to_order)}
+          isReadOnly={isReadOnly}
+          lang={isAr ? "ar" : "en"}
+          vocabulary={vocabulary}
+          onChoose={(location) => updateItem(idx, { location })}
+          onOpenEditor={() => setEditingItemSheetIdx(idx)}
+        />
       )}
 
       {Boolean(it.product_id) && !appointment && (

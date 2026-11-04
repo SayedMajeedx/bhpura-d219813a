@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Scissors, Ruler, Check, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { withoutSizeLine } from "@/lib/made-to-measure";
 
 export interface ItemTailoringData {
   id?: string;
@@ -25,6 +26,7 @@ export interface ItemTailoringData {
   quantity?: number;
   unit_price?: number;
   location?: "main" | "incubator" | "custom";
+  description?: string;
   selected_variant?: { size?: string | null; color?: string | null; fabric?: string | null } | null;
   custom_field_values?: Array<{
     key: string;
@@ -32,6 +34,24 @@ export interface ItemTailoringData {
     label_en: string | null;
     value: string;
   }>;
+}
+
+/**
+ * A line given measurements is made to measure (migration `20261118100000`): made to order, and
+ * naming no size, neither in its options nor in its text ("Size: 56" under the product's name).
+ * It once kept the size it had, or took "Custom / Fit Passport" as its size.
+ */
+function madeToMeasurePatch(
+  item: ItemTailoringData,
+  fields: NonNullable<ItemTailoringData["custom_field_values"]>,
+): Partial<ItemTailoringData> {
+  const size = item.selected_variant?.size ?? null;
+  return {
+    location: "custom",
+    custom_field_values: fields,
+    selected_variant: { ...(item.selected_variant ?? {}), size: null },
+    ...(item.description ? { description: withoutSizeLine(item.description, size) } : {}),
+  };
 }
 
 export interface ItemTailoringCustomizerProps {
@@ -131,16 +151,7 @@ export function ItemTailoringCustomizer({
       value: unit,
     });
 
-    onChange({
-      selected_variant: {
-        ...(item.selected_variant ?? {}),
-        size:
-          item.selected_variant?.size ||
-          (isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport"),
-      },
-      location: "custom",
-      custom_field_values: cleaned,
-    });
+    onChange(madeToMeasurePatch(item, cleaned));
   };
 
   const passportValues =
@@ -197,14 +208,7 @@ export function ItemTailoringCustomizer({
         value: String(passport.version),
       },
     ];
-    onChange({
-      selected_variant: {
-        ...(item.selected_variant ?? {}),
-        size: isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport",
-      },
-      location: "custom",
-      custom_field_values: [...retained, ...snapshot],
-    });
+    onChange(madeToMeasurePatch(item, [...retained, ...snapshot]));
     toast.success(isAr ? "تم تطبيق مقاسات العميل المحفوظة" : "Customer Fit Passport applied");
   };
 
@@ -221,14 +225,16 @@ export function ItemTailoringCustomizer({
     const others = (item.custom_field_values ?? []).filter(
       (cf) => cf.key !== "tailoring_notes" && cf.key !== "custom_measurements",
     );
-    const updated = notesVal.trim()
+    // Kept as typed: trimming on every key press swallowed each space (the owner's report of
+    // 2026-11-04); the screens and the sheet show it trimmed.
+    const updated = notesVal
       ? [
           ...others,
           {
             key: "tailoring_notes",
-            label_ar: "ملاحظات وتفاصيل التفصيل",
-            label_en: "Tailoring & Measurements",
-            value: notesVal.trim(),
+            label_ar: "ملاحظات للورشة",
+            label_en: "Notes for the workshop",
+            value: notesVal,
           },
         ]
       : others;

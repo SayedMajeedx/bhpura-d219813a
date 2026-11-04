@@ -14,6 +14,7 @@ import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
 import { isDefaultSize } from "@/lib/default-variant";
+import { lineFields, lineSize, madeToMeasure, withoutSizeLine } from "@/lib/made-to-measure";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
@@ -76,7 +77,9 @@ type Item = {
     size?: string | null;
     color?: string | null;
     fabric?: string | null;
+    made_to_measure?: boolean | null;
   } | null;
+  location?: string | null;
   custom_field_values?: CustomFieldValue[];
 };
 
@@ -705,7 +708,11 @@ export default function InvoicePreview({
                   >
                     <td className="p-3 text-start">
                       {(() => {
-                        const rawDesc = orderLineName(it, isRTL ? "ar" : "en") || "—";
+                        // A piece made to measure names no size, not even in the editor's text.
+                        const named = orderLineName(it, isRTL ? "ar" : "en") || "—";
+                        const rawDesc = madeToMeasure(it)
+                          ? withoutSizeLine(named, it.selected_variant?.size)
+                          : named;
                         const lines = rawDesc
                           .split(/\r?\n/)
                           .map((s) => s.trim())
@@ -775,10 +782,12 @@ export default function InvoicePreview({
                             it.selected_variant.color &&
                               axes.color.visible &&
                               `${axes.color.label}: ${it.selected_variant.color}`,
-                            it.selected_variant.size &&
-                              !isDefaultSize(it.selected_variant.size) &&
-                              axes.size.visible &&
-                              `${axes.size.label}: ${it.selected_variant.size}`,
+                            madeToMeasure(it) && axes.size.visible
+                              ? `${axes.size.label}: ${isRTL ? "تفصيل حسب المقاس" : "Made to measure"}`
+                              : lineSize(it) &&
+                                !isDefaultSize(lineSize(it)) &&
+                                axes.size.visible &&
+                                `${axes.size.label}: ${lineSize(it)}`,
                             it.selected_variant.fabric &&
                               axes.fabric.visible &&
                               `${axes.fabric.label}: ${it.selected_variant.fabric}`,
@@ -790,9 +799,9 @@ export default function InvoicePreview({
                             </p>
                           );
                         })()}
-                      {it.custom_field_values && it.custom_field_values.length > 0 && (
+                      {lineFields(it.custom_field_values).rows.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
-                          {it.custom_field_values.map((cf, ci) => (
+                          {lineFields(it.custom_field_values).rows.map((cf, ci) => (
                             <li key={ci}>
                               {customFieldLabel(cf, isRTL ? "ar" : "en")}:{" "}
                               {cf.value.startsWith("http") ? (
@@ -811,6 +820,22 @@ export default function InvoicePreview({
                             </li>
                           ))}
                         </ul>
+                      )}
+                      {lineFields(it.custom_field_values).notes.length > 0 && (
+                        <div className="mt-1 text-xs" style={{ opacity: 0.75 }}>
+                          <p className="font-medium">
+                            {isRTL ? "ملاحظات للورشة" : "Notes for the workshop"}
+                          </p>
+                          {lineFields(it.custom_field_values).notes.map((note, ni) => (
+                            <p
+                              key={ni}
+                              dir="auto"
+                              className="whitespace-pre-line [overflow-wrap:anywhere]"
+                            >
+                              {note}
+                            </p>
+                          ))}
+                        </div>
                       )}
                     </td>
                     <td className="p-3 text-end" style={{ color: text }}>

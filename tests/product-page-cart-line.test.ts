@@ -204,6 +204,8 @@ describe("productCartLine", () => {
         visibleCustomFields: [finish, { ...engraving, key: "empty", required: false }],
         cfValues: { engraving: " Gold + 5 BHD " },
         tailoringNotes: " shorter sleeves ",
+        // Made to order in its size 52: the notes go with it, and it keeps its size.
+        isTailoringActive: true,
       }),
     );
     expect(line.custom_fields).toEqual([
@@ -223,6 +225,48 @@ describe("productCartLine", () => {
       value: "Gold + 5 BHD",
       price_delta: 5,
     });
+  });
+
+  it("keeps the notes for the workshop as written, labelled in each language, for a piece being made only", () => {
+    const vocabulary = {
+      workshop_notes_label: { ar: "ملاحظات وتفاصيل التجهيز:", en: "Production & Workshop Notes:" },
+    } as unknown as LineInput["vocabulary"];
+    const made = productCartLine(
+      lineInput({
+        tailoringNotes: "Full lining,  sleeves 2 cm longer",
+        isTailoringActive: true,
+        vocabulary,
+      }),
+    );
+    expect(made.custom_fields).toEqual([
+      expect.objectContaining({
+        key: "tailoring_notes",
+        label_ar: "ملاحظات وتفاصيل التجهيز",
+        label_en: "Production & Workshop Notes",
+        value: "Full lining,  sleeves 2 cm longer",
+      }),
+    ]);
+    // A ready piece: the notes field is not shown, and nothing it held goes with the line.
+    expect(productCartLine(lineInput({ tailoringNotes: "Full lining" })).custom_fields).toEqual([]);
+  });
+
+  it("marks a piece made to the shopper's measurements, whose size is only what prices it", () => {
+    const measured = productCartLine(
+      lineInput({ showSizeModeToggle: true, sizeMode: "custom", isTailoringActive: true }),
+    );
+    expect(measured.custom_fields).toEqual([
+      expect.objectContaining({ key: "made_to_measure", value: "true" }),
+    ]);
+    // Shown to nobody: not an option of the line.
+    expect(measured.selected_customizations.options).toEqual([]);
+    // Made to order in a size the shopper chose: not made to measure.
+    const sized = productCartLine(lineInput({ isTailoringActive: true }));
+    expect(sized.custom_fields).toEqual([]);
+    // Made to order with no size to choose: made to measure.
+    const unsized = productCartLine(
+      lineInput({ isTailoringActive: true, targetVariant: variant({ size: null }) }),
+    );
+    expect(unsized.custom_fields).toEqual([expect.objectContaining({ key: "made_to_measure" })]);
   });
 
   it("never prices text a shopper typed, whatever it says", () => {

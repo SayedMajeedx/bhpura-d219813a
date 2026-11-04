@@ -44,6 +44,7 @@ export function formatCustomField(
     rawKey === "fit_unit" ||
     rawKey.endsWith("_version") ||
     rawKey === "fit_passport_version" ||
+    rawKey === "made_to_measure" ||
     !field.value ||
     !field.value.trim()
   ) {
