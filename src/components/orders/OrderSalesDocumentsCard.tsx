@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { formatMoney, formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { OrderTailorPieces } from "@/features/supplier-orders/components/OrderTailorPieces";
+import { RecordWithSupplierButton } from "@/features/supplier-orders/components/RecordWithSupplier";
+import { workshopActionLabels } from "@/lib/store-vocabulary";
 import { tailorPieceLines } from "@/features/supplier-orders/lib/after-sending";
 import { orderReleased } from "@/lib/order-released";
 import { Card } from "@/components/ui/card";
@@ -267,6 +269,18 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
                 <MessageCircle className="h-3.5 w-3.5" />
                 {isAr ? "أبلغ العميل ببدء العمل" : "Tell the customer work has started"}
               </Button>
+            )}
+            {storeProfile?.modules?.made_to_order && (
+              <RecordWithSupplierButton
+                brandId={brandId}
+                orderId={order.id}
+                lines={items}
+                released={orderReleased(order.status, order.payment_status)}
+                title={workshopActionLabels(vocabulary, lang).send}
+                onPrintSheet={onPrintJobSheet}
+                onTellCustomer={workshopActions?.tellCustomerWorkStarted}
+                lang={lang}
+              />
             )}
             <Button
               variant="outline"

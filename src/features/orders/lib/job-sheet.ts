@@ -102,7 +102,8 @@ export type JobSheetPiece = {
   revision?: { number: number; replacesSheetOf: string | null; notesChanged: boolean } | null;
 };
 
-const filled = (value: string | null | undefined) => (value ?? "").trim();
+// A value read from the order as text (a stored answer may be a number).
+const filled = (value: unknown) => (value == null ? "" : String(value)).trim();
 
 /** What the customer answered, less the bookkeeping kept with it (the unit, the version). */
 function answers(line: JobSheetLine) {

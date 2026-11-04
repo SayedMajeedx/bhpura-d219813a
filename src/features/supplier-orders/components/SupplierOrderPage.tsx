@@ -64,6 +64,7 @@ import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintD
 import { sheetLanguageFor } from "@/features/orders/lib/job-sheet";
 import { accountingQueries } from "@/lib/data/accounting";
 import { usePrintSupplierSheets } from "../hooks/use-print-supplier-sheets";
+import { PrintPurchaseOrderButton } from "./PurchaseOrderPrintDialog";
 import { UndoReceivingDialog } from "./UndoReceivingDialog";
 import { undoableReceipts } from "../lib/undo-receiving";
 
@@ -223,6 +224,11 @@ export function SupplierOrderPage({
                   <span className="hidden sm:inline">{isAr ? "رسالة للمورد" : "Message"}</span>
                 </Button>
               )}
+              <PrintPurchaseOrderButton
+                {...{ order, catalog, storeName, currency, lang }}
+                brandId={brand.id}
+                supplierLang={sheetLang}
+              />
               {hasCustomerPieces && order.status !== "cancelled" && (
                 <Button
                   type="button"

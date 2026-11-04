@@ -44,6 +44,7 @@ import {
 import { piecesLabel, piecesOf } from "../lib/order-state";
 import { sentPiecesMessage } from "../lib/after-send";
 import { supplierOrderError } from "../lib/errors";
+import { rememberedSupplier, rememberSupplier } from "../lib/remembered-supplier";
 import { useSupplierCatalog } from "../hooks/use-supplier-catalog";
 import { SupplierField } from "./SupplierField";
 import { SendPiecesList } from "./SendPiecesList";
@@ -163,6 +164,13 @@ export function SendToTailorDialog({
     }));
   }, [prices, ordersQ.data, form.vendorId, supplier, isAr, lang]);
 
+  // The dialog opens on the supplier this browser last sent pieces to, still in the list.
+  useEffect(() => {
+    if (!open || form.vendorId) return;
+    const last = rememberedSupplier(brandId, suppliers);
+    if (last) setForm((f) => (f.vendorId ? f : { ...f, vendorId: last }));
+  }, [open, brandId, suppliers, form.vendorId]);
+
   // Each piece starts chosen, at its suggested cost; a cost typed by hand is kept when the
   // tailor or their last prices change.
   useEffect(() => {
@@ -246,6 +254,7 @@ export function SendToTailorDialog({
         });
         sentOrders += 1;
       }
+      rememberSupplier(brandId, request.vendorId);
       await invalidateSupplierOrders(qc, brandId);
       await onSent(poId);
       await finish(poId);

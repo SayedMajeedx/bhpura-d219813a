@@ -18,6 +18,7 @@ import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import { SupplierOrderStatusBadge } from "./SupplierOrderStatusBadge";
 import { PaymentsCard } from "./PaymentsCard";
 import { CustomerPiecesCard } from "./CustomerPiecesCard";
+import { usePieceSpecs } from "../hooks/use-purchase-order";
 import { lateOrderMessage } from "../lib/payments";
 import { undoableReceipts } from "../lib/undo-receiving";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
@@ -74,6 +75,7 @@ export function SupplierOrderView({
   }, [order.items]);
   const extras = order.items.filter((line) => !isPieceLine(line));
   const customerLines = order.items.filter((line) => line.order_item_id);
+  const specs = usePieceSpecs(brandId, customerLines, catalog.products, lang);
   const money = (n: number) => formatMoney(n, currency, lang);
   const undoable = useMemo(
     () => new Set(undoableReceipts(receiptsQ.data ?? [], order.items).map((r) => r.id)),
@@ -219,6 +221,7 @@ export function SupplierOrderView({
             sizeName={(id) => catalog.sizeName(id)}
             open={order.status !== "cancelled"}
             lang={lang}
+            specs={specs}
           />
         )}
       </section>

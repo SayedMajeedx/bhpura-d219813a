@@ -12,6 +12,45 @@ import { CancelledPieceDialog } from "./CancelledPieceDialog";
 import { PiecePriceField } from "./PiecePriceField";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
 import { supplierBehind } from "@/features/orders/lib/line-revisions";
+import type { PieceSpec } from "../lib/purchase-order-sheet";
+
+/** What the customer's order says the piece is: its options, measurements, notes and extras. */
+function PieceSpecLines({ spec, isAr }: { spec: PieceSpec; isAr: boolean }) {
+  const rows = [...spec.options, ...spec.details];
+  return (
+    <div className="space-y-1 text-xs">
+      {rows.length > 0 && (
+        <dl className="flex flex-wrap gap-x-3 gap-y-0.5">
+          {rows.map((row) => (
+            <div key={`${row.label}:${row.value}`} className="flex min-w-0 gap-1">
+              <dt className="text-muted-foreground">{row.label}:</dt>
+              <dd dir="auto" className="break-words font-semibold">
+                {row.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {spec.notes.length > 0 && (
+        <p
+          dir="auto"
+          className="text-page-start whitespace-pre-wrap break-words rounded-md bg-muted/50 px-2 py-1"
+        >
+          <span className="text-muted-foreground">
+            {isAr ? "ملاحظات للورشة: " : "Notes for the workshop: "}
+          </span>
+          {spec.notes.join(" · ")}
+        </p>
+      )}
+      {spec.extras.length > 0 && (
+        <p dir="auto" className="text-page-start break-words">
+          <span className="text-muted-foreground">{isAr ? "إضافات: " : "Extras: "}</span>
+          {spec.extras.join(" · ")}
+        </p>
+      )}
+    </div>
+  );
+}
 
 /**
  * A supplier order's customers' pieces: each with its customer's order (by number, never a
@@ -25,7 +64,10 @@ export function CustomerPiecesCard({
   sizeName,
   open,
   lang,
+  specs,
 }: {
+  /** Each piece's specification from its customer's order line, by that line. */
+  specs?: ReadonlyMap<string, PieceSpec>;
   brandId: string;
   lines: readonly SupplierOrderLine[];
   /** A piece's cost with its share of the order's other costs. */
@@ -59,6 +101,7 @@ export function CustomerPiecesCard({
         {lines.map((line) => {
           const work = purposeLabel(line.purpose, isAr);
           const cancelled = awaitsChoice(line);
+          const spec = line.order_item_id ? specs?.get(line.order_item_id) : undefined;
           return (
             <li key={line.id} className="space-y-1.5 py-2">
               <div className="flex min-w-0 items-center gap-3">
@@ -89,6 +132,7 @@ export function CustomerPiecesCard({
                       {line.work_note}
                     </p>
                   )}
+                  {spec && <PieceSpecLines spec={spec} isAr={isAr} />}
                   {line.received_quantity < line.quantity &&
                     supplierBehind(line.line_revision, line.sheet_revision) && (
                       <p className="mt-1 flex items-start gap-1.5 rounded-lg bg-warning/10 px-2.5 py-1.5 text-xs font-semibold">

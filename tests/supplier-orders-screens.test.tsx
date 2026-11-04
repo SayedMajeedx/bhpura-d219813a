@@ -98,6 +98,7 @@ const mocks: Record<string, unknown> = {
   "data/supplier-orders": {
     supplierOrderQueries: {
       orderPieces: () => options("pieces", () => []),
+      pieceDetails: () => options("piece-details", () => []),
       list: () => options("orders", () => stubs.orders),
       detail: () => options("order", () => stubs.order),
       receipts: () => options("receipts", () => stubs.receipts),
