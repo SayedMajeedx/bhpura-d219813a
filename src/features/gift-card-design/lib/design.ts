@@ -108,7 +108,19 @@ export function readStoreDesigns(value: unknown): StoreDesigns {
 
 // --- Tones ------------------------------------------------------------------------------------
 
-/** A tone's colours: the paper, its ink, a quieter ink, the flat metallic ink and the rules. */
+/**
+ * A tone is the paper and the ink a card is printed with. **Every card is printed on light paper**
+ * (the owner's report of 2026-11-04: the black and store-colour cards came out streaked, faded
+ * and uneven on the printers a shop has, and the edge a home printer cannot reach stayed white).
+ * The ground is the paper itself or the lightest tint, so it prints evenly on any printer or none
+ * at all; the colour is in the writing, the rules, the marks and the logo. `printSafe` holds it.
+ *
+ * - brand: white paper, the store's colour as the ink;
+ * - black: white paper, black ink;
+ * - cream: nude paper, the store's colour as the ink;
+ * - white: paper tinted lightly with the store's colour, its colour as the ink (the id is kept:
+ *   stores and purchases already name it).
+ */
 export type Palette = {
   ground: string;
   ink: string;
@@ -117,58 +129,57 @@ export type Palette = {
   rule: string;
   /** The tone-on-tone pattern's line. */
   pattern: string;
-  /** The store's own colour, for a colour block. */
+  /** The store's own colour. */
   accent: string;
-  dark: boolean;
+  /** A light field of the store's colour (a colour block), as light as the paper may be. */
+  tint: string;
 };
 
-/** Flat metallic inks, as a printer's proof shows foil: never a gradient. */
-const GOLD_ON_DARK = "#C4A570";
-const GOLD_ON_LIGHT = "#97773F";
-const SOFT_BLACK = "#171615";
-const WARM_WHITE = "#F3EEE6";
-const NUDE = "#EEE6DB";
+/** A flat metallic ink, as a printer's proof shows foil: never a gradient. */
+const GOLD = "#97773F";
+const SOFT_BLACK = "#1C1B1A";
+const NUDE = "#F5EFE6";
 const PAPER_WHITE = "#FFFFFF";
 const FALLBACK_ACCENT = "#3f121a";
+
+/**
+ * How dark a printed field may be, as its contrast with white paper: a light tint that any
+ * printer lays down evenly (a home inkjet bands and streaks a deep field, and wets the paper).
+ */
+export const LIGHT_PAPER_CONTRAST = 1.18;
 
 const isHex = (value: string | null | undefined): value is string =>
   typeof value === "string" && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value.trim());
 
-const isDark = (color: string) => contrastRatio(color, "#ffffff") > contrastRatio(color, "#000000");
+/** Whether a colour is light enough to print as a field on any printer. */
+export const isLightPaper = (color: string) =>
+  contrastRatio(color, PAPER_WHITE) <= LIGHT_PAPER_CONTRAST;
 
-function metalFor(ground: string, ink: string): string {
-  const gold = isDark(ground) ? GOLD_ON_DARK : GOLD_ON_LIGHT;
-  return contrastRatio(gold, ground) >= 1.9 ? gold : ink;
+/** The store's colour as a light field: as much of it as stays light paper. */
+export function lightTint(accent: string, most = 0.12): string {
+  for (let share = most; share > 0.01; share -= 0.01) {
+    const tint = mixColours(PAPER_WHITE, accent, share);
+    if (isLightPaper(tint)) return tint;
+  }
+  return mixColours(PAPER_WHITE, accent, 0.02);
 }
 
 export function palette(tone: Tone, colours: StoreColours): Palette {
   const accent = isHex(colours.accent) ? colours.accent.trim() : FALLBACK_ACCENT;
   const text = isHex(colours.text) ? colours.text.trim() : null;
-  let ground: string;
-  let ink: string;
-  if (tone === "brand") {
-    ground = accent;
-    ink = readableInk(ground, [WARM_WHITE, SOFT_BLACK], WARM_WHITE);
-  } else if (tone === "black") {
-    ground = SOFT_BLACK;
-    ink = WARM_WHITE;
-  } else if (tone === "cream") {
-    ground = NUDE;
-    ink = readableInk(ground, [accent, text], "#3A332D");
-  } else {
-    ground = PAPER_WHITE;
-    ink = readableInk(ground, [accent, text], "#1A1A1A");
-  }
-  const dark = isDark(ground);
+  const ground = tone === "cream" ? NUDE : tone === "white" ? lightTint(accent, 0.08) : PAPER_WHITE;
+  // The store's colour where it reads (deepened when it is too light to read on paper).
+  const ink = tone === "black" ? SOFT_BLACK : readableInk(ground, [accent, text], accent);
   return {
     ground,
     ink,
     soft: mixColours(ink, ground, 0.32),
-    metal: metalFor(ground, ink),
+    metal: contrastRatio(GOLD, ground) >= 1.9 ? GOLD : ink,
     rule: mixColours(ink, ground, 0.7),
-    pattern: mixColours(ground, ink, dark ? 0.13 : 0.1),
+    // Fine lines of gold, half as strong: a pattern that reads, at a line's ink only.
+    pattern: mixColours(ground, contrastRatio(GOLD, ground) >= 1.9 ? GOLD : ink, 0.42),
     accent,
-    dark,
+    tint: tone === "white" ? PAPER_WHITE : lightTint(tone === "black" ? SOFT_BLACK : accent),
   };
 }
 
@@ -187,21 +198,21 @@ export function verticalKind(lineage: readonly string[] | null | undefined): Ver
   return "other";
 }
 
-/** Which designs a kind of store shows first: abayas dark and nude, coffee photos on cream. */
+/** Which designs a kind of store shows first: abayas in their own colour, coffee photos on nude. */
 const LEADS: Record<VerticalKind, DesignId[]> = {
   fashion: [
-    "pattern:black",
+    "pattern:brand",
     "type:cream",
-    "signature:black",
+    "signature:brand",
     "photo:cream",
-    "block:cream",
+    "block:white",
     "type:black",
   ],
-  beauty: ["signature:black", "photo:white", "type:white", "block:white", "pattern:cream"],
+  beauty: ["signature:black", "photo:white", "type:white", "block:brand", "pattern:cream"],
   coffee: ["photo:cream", "type:cream", "signature:brand", "block:cream", "pattern:brand"],
-  food: ["photo:white", "type:cream", "signature:brand", "block:cream", "pattern:cream"],
-  services: ["photo:white", "signature:black", "type:cream", "block:white", "pattern:black"],
-  other: ["signature:brand", "type:white", "photo:white", "pattern:cream", "block:white"],
+  food: ["photo:white", "type:cream", "signature:brand", "block:brand", "pattern:cream"],
+  services: ["photo:white", "signature:black", "type:cream", "block:brand", "pattern:black"],
+  other: ["signature:brand", "type:white", "photo:white", "pattern:cream", "block:brand"],
 };
 
 /** What an occasion asks for first: the Islamic ones a pattern, a wedding type on light paper. */
@@ -271,7 +282,7 @@ export const TONE_WORDS: Record<Tone, { ar: string; en: string }> = {
   brand: { ar: "لون المتجر", en: "Store colour" },
   black: { ar: "أسود", en: "Black" },
   cream: { ar: "بيج", en: "Nude" },
-  white: { ar: "أبيض", en: "White" },
+  white: { ar: "لون المتجر الفاتح", en: "Light store colour" },
 };
 
 export function designName(id: DesignId, lang: "ar" | "en"): string {

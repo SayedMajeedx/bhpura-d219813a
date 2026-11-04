@@ -198,3 +198,46 @@ export function ribbonPath(
   }
   return lines.join("");
 }
+
+/**
+ * A double frame of fine rules inside the margin, as engraved stationery has: lines, never a
+ * field, so it prints sharp on any printer and leaves the paper's edge to be cut.
+ */
+export function doubleFrame(w: number, h: number, inset: number, color: string): Shape[] {
+  const inner = inset + 1.1;
+  return [
+    {
+      kind: "rect",
+      x: inset,
+      y: inset,
+      w: w - inset * 2,
+      h: h - inset * 2,
+      stroke: color,
+      width: 0.32,
+    },
+    {
+      kind: "rect",
+      x: inner,
+      y: inner,
+      w: w - inner * 2,
+      h: h - inner * 2,
+      stroke: color,
+      width: 0.14,
+    },
+  ];
+}
+
+/**
+ * A photograph inside the paper's margin with a hairline round it, as a print in a mount: nothing
+ * runs to the edge a home printer cannot reach.
+ */
+export function framedPhoto(
+  href: string,
+  box: { x: number; y: number; w: number; h: number },
+  rule: string,
+): Shape[] {
+  return [
+    { kind: "image", href, ...box },
+    { kind: "rect", ...box, stroke: rule, width: 0.2 },
+  ];
+}

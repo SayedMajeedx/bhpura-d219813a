@@ -124,7 +124,9 @@ describe("the buyer's picker", () => {
     const designs = await screen.findByRole("radiogroup", { name: "Design" });
     // The signature card leads; a design the store turned off is not offered.
     await waitFor(() =>
-      expect(within(designs).getAllByRole("radio")[0]).toHaveAccessibleName("Colour block · White"),
+      expect(within(designs).getAllByRole("radio")[0]).toHaveAccessibleName(
+        "Colour block · Light store colour",
+      ),
     );
     expect(within(designs).queryByRole("radio", { name: "Pattern · Black" })).toBeNull();
     fireEvent.click(screen.getByRole("radio", { name: "Eid al-Fitr" }));
