@@ -6,7 +6,11 @@ import {
   NOTE_KEYS,
 } from "@/lib/made-to-measure";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import {
+  customFieldLabel,
+  customFieldValue,
+  withoutRepeatedOptions,
+} from "@/lib/order-custom-fields";
 import { orderLineName } from "@/lib/order-line-name";
 import { translateOptionValue } from "@/lib/variant-i18n";
 import { replacedSheetDate, type LineRevision } from "./line-revisions";
@@ -197,6 +201,13 @@ export function jobSheetPieces(
             }
           : {};
 
+      const kept = withoutRepeatedOptions(
+        given,
+        { color: variant?.color, size, fabric: variant?.fabric },
+        axes,
+        lang,
+      );
+
       return {
         // The line's name in the sheet's language (its own names, else its product's), what a
         // person wrote by hand as written.
@@ -204,8 +215,10 @@ export function jobSheetPieces(
         quantity: Number(line.quantity) || 1,
         imageUrl: filled(product?.image_url) || null,
         options: chosen,
+        // An answer that only repeats an option goes, unless this revision changed it.
         details: given
           .filter((field) => !NOTE_KEYS.has(filled(field.key)))
+          .filter((field) => kept.includes(field) || changed.has(filled(field.key)))
           .map((field) => ({
             label: labelOf(field),
             value: filled(customFieldValue(field, lang)),

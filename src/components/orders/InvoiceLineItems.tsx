@@ -8,8 +8,13 @@ import {
   withoutSizeLine,
 } from "@/lib/made-to-measure";
 import { LineNotes } from "@/components/orders/LineNotes";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import {
+  customFieldLabel,
+  customFieldValue,
+  withoutRepeatedOptions,
+} from "@/lib/order-custom-fields";
 import { orderLineName, serviceLengthLabel } from "@/lib/order-line-name";
+import { translateOptionValue } from "@/lib/variant-i18n";
 
 /**
  * The customer invoice's lines. From `sm` (and on paper) a table; on a phone each line is a card
@@ -90,7 +95,8 @@ function ItemDetails({
   ].filter(Boolean) as Array<[string, string]>;
   const muted = { color: textColor, opacity: 0.75 };
   // The customer's answers as rows, what they wrote for the workshop as written (no bookkeeping).
-  const { rows, notes } = lineFields(it.custom_field_values);
+  const { rows: answers, notes } = lineFields(it.custom_field_values);
+  const rows = withoutRepeatedOptions(answers, { color, size, fabric }, axes, lang);
 
   return (
     <div className="min-w-0 space-y-0.5">
@@ -113,7 +119,7 @@ function ItemDetails({
       ))}
       {options.map(([label, value]) => (
         <p key={label} className="text-xs" style={muted}>
-          {label}: <span className="font-medium">{value}</span>
+          {label}: <span className="font-medium">{translateOptionValue(value, lang) || value}</span>
         </p>
       ))}
       {(it.customizations ?? []).map((c: any, i: number) => (

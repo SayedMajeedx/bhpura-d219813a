@@ -9,6 +9,7 @@ import {
   invoiceDate,
   invoicePayment,
   invoicePdfMethod,
+  invoicePrintCss,
   invoiceTitle as titleOfInvoice,
   showsTaxLine,
 } from "@/lib/invoice-display";
@@ -260,9 +261,8 @@ function PublicInvoice() {
       lang={lang}
       className="min-h-screen bg-neutral-100 py-6 px-3 sm:py-10 sm:px-6 print:min-h-0 print:bg-transparent print:p-0"
     >
-      {/* Download PDF prints this page to A4 (real text, every page). The invoice keeps the colours
-          the store chose; a line or the totals are not split across two pages. */}
-      <style>{`@media print{@page{size:A4;margin:12mm}.pdf-totals-row,.pdf-line-items tr{break-inside:avoid}}`}</style>
+      {/* Download PDF prints this page to A4 (real text, every page), in the colours the store chose. */}
+      <style>{invoicePrintCss(bgColor)}</style>
       <div className="mx-auto max-w-3xl print:max-w-none">
         <div className="print:hidden mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm">
           <div>
@@ -473,7 +473,7 @@ function PublicInvoice() {
 
             {showContact && (
               <div
-                className="pdf-contact-block mb-8 pb-6 text-sm"
+                className="pdf-contact-block pdf-keep mb-8 pb-6 text-sm"
                 style={{
                   borderBottom: `1px solid ${dividerColor}`,
                   textAlign: "start",
@@ -532,7 +532,7 @@ function PublicInvoice() {
 
             {showFulfillment && (order.fulfillment_method || order.branch_id) && (
               <div
-                className="mb-8 rounded-lg p-4 text-sm"
+                className="pdf-keep mb-8 rounded-lg p-4 text-sm"
                 style={{ backgroundColor: secondaryColor, textAlign: "start" }}
               >
                 <div>
@@ -741,7 +741,7 @@ function PublicInvoice() {
                 )}
                 {showTerms && (
                   <div
-                    className="space-y-1 rounded-md p-3 text-xs leading-relaxed"
+                    className="pdf-keep space-y-1 rounded-md p-3 text-xs leading-relaxed"
                     style={{ backgroundColor: secondaryColor }}
                   >
                     <p className="font-semibold" style={{ color: surfaceCardTextColor }}>
