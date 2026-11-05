@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Copy, Download, Pencil, Sticker } from "lucide-react";
 import { toast } from "sonner";
@@ -12,27 +12,13 @@ import { isInstalled } from "@/lib/addons/addon-registry";
 import { deliverCreativeFile } from "@/lib/creative-export";
 import { useI18n } from "@/lib/i18n";
 import { POSTS } from "../content/posts";
-import { PLAN, REELS } from "../content/plan";
+import { PLAN, REELS, VIDEO_REELS } from "../content/plan";
 import { usePostKit, type PostKit } from "../hooks/use-post-kit";
 import { renderPost } from "../lib/render";
 import type { Post } from "../lib/types";
 import { PostMaker } from "./PostMaker";
-
-/** The canvas a card's post is drawn on, at a size a page of them can hold. */
-function PostPicture({ post, kit, label }: { post: Post; kit: PostKit; label: string }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    if (ref.current) renderPost(ref.current, post, kit.photos, 0.5);
-  }, [post, kit.photos]);
-  return (
-    <canvas
-      ref={ref}
-      role="img"
-      aria-label={label}
-      className="block h-auto w-full rounded-lg bg-muted"
-    />
-  );
-}
+import { PostPicture } from "./PostPicture";
+import { VideoReelCard } from "./VideoReelCard";
 
 export async function savePost(post: Post, kit: PostKit, isAr: boolean) {
   const canvas = document.createElement("canvas");
@@ -248,7 +234,7 @@ function PostKitBody() {
       <Tabs defaultValue="posts" className="space-y-4">
         <TabsList>
           <TabsTrigger value="posts">{isAr ? "البوستات" : "Posts"}</TabsTrigger>
-          <TabsTrigger value="reels">{isAr ? "ريلز تصورونها" : "Reels to shoot"}</TabsTrigger>
+          <TabsTrigger value="reels">{isAr ? "الريلز" : "Reels"}</TabsTrigger>
           <TabsTrigger value="plan">{isAr ? "خطة النشر" : "Plan"}</TabsTrigger>
         </TabsList>
         <TabsContent value="posts">
@@ -266,8 +252,31 @@ function PostKitBody() {
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="reels">
-          <ReelsList isAr={isAr} />
+        <TabsContent value="reels" className="space-y-6">
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              {isAr ? "جاهزة بدون تصوير" : "Ready, no filming"}
+            </h2>
+            <div className="grid max-w-3xl gap-4">
+              {VIDEO_REELS.map((reel) => (
+                <VideoReelCard
+                  key={reel.key}
+                  reel={reel}
+                  kit={kit}
+                  onEdit={(postKey) => {
+                    setEditing(postKey);
+                    window.scrollTo({ top: 0 });
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              {isAr ? "تصورونها بنفسكم" : "To shoot yourselves"}
+            </h2>
+            <ReelsList isAr={isAr} />
+          </section>
         </TabsContent>
         <TabsContent value="plan">
           <PlanTable isAr={isAr} />
