@@ -67,7 +67,8 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
     },
     {
       rel: "manifest",
-      href: `/${b.slug}/manifest.webmanifest`,
+      // In the page's language: an English page installs the store under its English name.
+      href: `/${b.slug}/manifest.webmanifest${lang === "en" ? "?lang=en" : ""}`,
     },
     // Self-hosted faces for the active language are fetched at high priority
     // alongside the CSS so text renders in the final font on first paint.

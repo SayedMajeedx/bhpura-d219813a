@@ -1,4 +1,11 @@
 import {
+  alertSyncStep,
+  forgetAlertDevice,
+  rememberAlertDevice,
+  rememberedAlertDevice,
+} from "@/lib/alert-device";
+import { getCurrentUser } from "@/lib/auth/session";
+import {
   fetchAlertChoices,
   registerWebPushSubscription,
   removeWebPushSubscription,
@@ -19,7 +26,16 @@ import {
 export const VAPID_PUBLIC_KEY = "BF7pwTsbHu-eE0lo3szbjRl9gmt9l5AeoD57e4h1b5kLRw_Yh6ARvbOBdouNY0h5GzrwAPbAzNa6nGDG5Ka2X6Y"; // gitleaks:allow (a public key)
 
 export const ADMIN_WORKER = "/admin-sw.js";
-export const ADMIN_SCOPE = "/admin/";
+/**
+ * The worker covers `/admin` itself, the installed app's start: the server sends `/admin/` to
+ * `/admin`, which a `/admin/` scope did not cover. Devices that turned alerts on before keep their
+ * subscription under the old scope (`LEGACY_SCOPE`), served by the same worker file.
+ */
+export const ADMIN_SCOPE = "/admin";
+export const LEGACY_SCOPE = "/admin/";
+/** The one-colour, see-through icon Android draws in its status bar. */
+export const ALERT_BADGE = "/admin-app/badge-96.png";
+export const ALERT_ICON = "/admin-app/icon-192.png";
 
 export type AlertsAvailability = "supported" | "needs-install" | "unsupported";
 
@@ -73,15 +89,41 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-async function adminRegistration(): Promise<ServiceWorkerRegistration | undefined> {
-  if (!("serviceWorker" in navigator)) return undefined;
-  return navigator.serviceWorker.getRegistration(ADMIN_SCOPE);
+/** The admin's worker registrations: the current scope first, then the one from before. */
+async function adminRegistrations(): Promise<ServiceWorkerRegistration[]> {
+  if (!("serviceWorker" in navigator)) return [];
+  const all = await navigator.serviceWorker.getRegistrations();
+  const at = (scope: string) => all.find((r) => new URL(r.scope).pathname === scope) ?? null;
+  return [at(ADMIN_SCOPE), at(LEGACY_SCOPE)].filter(
+    (r): r is ServiceWorkerRegistration => r !== null,
+  );
 }
 
-/** This device's subscription for alerts, if it has one. */
+async function adminRegistration(): Promise<ServiceWorkerRegistration | undefined> {
+  return (await adminRegistrations())[0];
+}
+
+/** This device's subscription for alerts, if it has one (under either scope). */
 export async function currentAlertSubscription(): Promise<PushSubscription | null> {
-  const registration = await adminRegistration();
-  return (await registration?.pushManager.getSubscription()) ?? null;
+  for (const registration of await adminRegistrations()) {
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) return subscription;
+  }
+  return null;
+}
+
+/**
+ * Registers the admin's worker for every member, not only those with alerts on: it is what makes
+ * the installed app open without a connection (its offline page) and keeps alerts working when the
+ * browser renews a subscription. Registering again is harmless; a refusal is ignored.
+ */
+export async function ensureAdminWorker(): Promise<void> {
+  if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  try {
+    await navigator.serviceWorker.register(ADMIN_WORKER, { scope: ADMIN_SCOPE });
+  } catch {
+    // A private window or a browser setting can refuse it: the admin works as a website.
+  }
 }
 
 async function activeRegistration(): Promise<ServiceWorkerRegistration> {
@@ -105,8 +147,9 @@ export async function turnOnOrderAlerts(brandId: string): Promise<"on" | "blocke
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return "blocked";
   const registration = await activeRegistration();
+  // A subscription from before (under either scope) is kept: the device is the same.
   const subscription =
-    (await registration.pushManager.getSubscription()) ??
+    (await currentAlertSubscription()) ??
     (await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: keyBytes(VAPID_PUBLIC_KEY),
@@ -120,7 +163,77 @@ export async function turnOnOrderAlerts(brandId: string): Promise<"on" | "blocke
     auth: keys.auth,
     deviceName: navigator.userAgent.slice(0, 180),
   });
+  const user = await getCurrentUser();
+  if (user) rememberAlertDevice({ brandId, endpoint, userId: user.id });
   return "on";
+}
+
+/** Gives the store this browser's subscription, under the person's alert choices so far. */
+async function giveSubscription(
+  brandId: string,
+  subscription: PushSubscription,
+  oldEndpoint: string | null,
+  userId: string,
+) {
+  const { endpoint, keys } = subscription.toJSON();
+  if (!endpoint || !keys?.p256dh || !keys.auth) return;
+  // The old subscription's choices, while the platform still has it.
+  const choices = oldEndpoint ? await fetchAlertChoices(oldEndpoint).catch(() => null) : null;
+  await registerWebPushSubscription({
+    brandId,
+    endpoint,
+    p256dh: keys.p256dh,
+    auth: keys.auth,
+    deviceName: navigator.userAgent.slice(0, 180),
+  });
+  if (choices) {
+    const kept = Object.fromEntries(
+      Object.entries(choices).filter(
+        (entry): entry is [string, boolean] => typeof entry[1] === "boolean",
+      ),
+    );
+    if (Object.keys(kept).length) await saveAlertChoices(endpoint, kept);
+  }
+  if (oldEndpoint) await removeWebPushSubscription(oldEndpoint).catch(() => undefined);
+  rememberAlertDevice({ brandId, endpoint, userId });
+}
+
+/**
+ * When the admin opens (and when the worker says the browser renewed the subscription): keeps the
+ * alerts this person turned on in this browser working (`alertSyncStep`). Quiet: a refusal (the
+ * person lost the permission, the store is gone) leaves things as they are.
+ */
+export async function syncAlertDevice(): Promise<void> {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  try {
+    const remembered = rememberedAlertDevice();
+    if (!remembered || Notification.permission !== "granted") return;
+    const user = await getCurrentUser();
+    if (!user) return;
+    const subscription = await currentAlertSubscription();
+    const known = subscription
+      ? (await fetchAlertChoices(subscription.endpoint).catch(() => null)) !== null
+      : false;
+    const step = alertSyncStep({
+      permission: Notification.permission,
+      endpoint: subscription?.endpoint ?? null,
+      remembered,
+      known,
+      userId: user.id,
+    });
+    if (step.kind === "none") return;
+    const current =
+      subscription ??
+      (await (
+        await activeRegistration()
+      ).pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: keyBytes(VAPID_PUBLIC_KEY),
+      }));
+    await giveSubscription(step.brandId, current, step.oldEndpoint, user.id);
+  } catch {
+    // Alerts are given again from the alerts card in the settings.
+  }
 }
 
 /** Turns alerts off for this device: the platform forgets it, then the browser does. */
@@ -129,6 +242,7 @@ export async function turnOffOrderAlerts(): Promise<void> {
   if (!subscription) return;
   await removeWebPushSubscription(subscription.endpoint);
   await subscription.unsubscribe();
+  forgetAlertDevice();
 }
 
 /** A notification shown at once, as an alert will look and sound on this device. */
@@ -136,8 +250,8 @@ export async function showTestAlert(title: string, body: string): Promise<void> 
   const registration = await adminRegistration();
   await registration?.showNotification(title, {
     body,
-    icon: "/admin-app/icon-192.png",
-    badge: "/admin-app/icon-192.png",
+    icon: ALERT_ICON,
+    badge: ALERT_BADGE,
     tag: "boutq-test",
     silent: false,
   });
