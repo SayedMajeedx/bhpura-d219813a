@@ -232,9 +232,15 @@ describe("storefrontHead", () => {
     });
   });
 
-  it("links the manifest and adds structured data", () => {
+  it("links the manifest in the page's language and adds structured data", () => {
     const head = storefrontHead({ brand, settings, initialLang: "en" });
+    // An English page installs the store under its English name (the PWA review of 2026-11-05).
     expect("links" in head && head.links).toContainEqual({
+      rel: "manifest",
+      href: "/pura/manifest.webmanifest?lang=en",
+    });
+    const arabic = storefrontHead({ brand, settings, initialLang: "ar" });
+    expect("links" in arabic && arabic.links).toContainEqual({
       rel: "manifest",
       href: "/pura/manifest.webmanifest",
     });
