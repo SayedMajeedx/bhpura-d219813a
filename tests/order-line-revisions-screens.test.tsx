@@ -292,5 +292,37 @@ describe("on the supplier order", () => {
       />,
     );
     expect(screen.queryByText(/the supplier has the earlier sheet/)).toBeNull();
+
+    // Each customer's piece shows what its order says (the owner's report of 2026-11-04).
+    rerender(
+      <CustomerPiecesCard
+        brandId="b1"
+        lines={[line]}
+        cost={() => "20"}
+        sizeName={() => ""}
+        open
+        lang="en"
+        specs={
+          new Map([
+            [
+              "l1",
+              {
+                title: "Black abaya",
+                quantity: 1,
+                imageUrl: null,
+                options: [{ label: "Size", value: "Made to measure" }],
+                details: [{ label: "Length", value: "58" }],
+                notes: ["Full lining"],
+                extras: ["Gold buttons"],
+              },
+            ],
+          ])
+        }
+      />,
+    );
+    expect(screen.getByText("Made to measure")).toBeInTheDocument();
+    expect(screen.getByText("58")).toBeInTheDocument();
+    expect(screen.getByText(/Full lining/)).toBeInTheDocument();
+    expect(screen.getByText(/Gold buttons/)).toBeInTheDocument();
   });
 });
