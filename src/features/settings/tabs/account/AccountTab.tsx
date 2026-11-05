@@ -9,6 +9,7 @@ import { SignOutEverywhere } from "@/components/auth/SignOutEverywhere";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
 import { OrderAlertsSettings } from "./OrderAlertsSettings";
+import { InstallAppCard } from "./InstallAppCard";
 
 export function AccountTab() {
   const { lang } = useI18n();
@@ -43,6 +44,7 @@ export function AccountTab() {
       icon: Smartphone,
       render: () => (
         <div className="space-y-6">
+          <InstallAppCard />
           <OrderAlertsSettings />
           <MobileAppDownloadsCard brandSlug={brand.slug || ""} isAr={isAr} />
         </div>

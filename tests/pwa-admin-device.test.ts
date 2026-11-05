@@ -5,7 +5,7 @@ import {
   reloadForNewBuild,
   shouldReloadForNewBuild,
 } from "../src/lib/stale-chunk";
-import workerSource from "../public/admin-sw.js?raw";
+import { runAdminWorker as runWorker } from "./helpers/admin-worker";
 
 // The PWA review of 2026-11-05: alerts stopped with nothing said when a browser renewed its push
 // subscription; an installed admin left open across a release showed "Something went wrong" on
@@ -88,37 +88,6 @@ describe("a page left open across a release", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 });
-
-/** The admin's worker, run with a stand-in for the browser's `self`. */
-function runWorker() {
-  const handlers: Record<string, (event: unknown) => void> = {};
-  const shown: Array<{ title: string; options: Record<string, unknown> }> = [];
-  const posted: unknown[] = [];
-  const subscribe = vi.fn(async () => ({}));
-  const self = {
-    addEventListener: (type: string, fn: (event: unknown) => void) => (handlers[type] = fn),
-    skipWaiting: vi.fn(),
-    location: { origin: "https://boutq.store" },
-    registration: {
-      showNotification: async (title: string, options: Record<string, unknown>) => {
-        shown.push({ title, options });
-      },
-      pushManager: { subscribe },
-    },
-    clients: {
-      claim: vi.fn(),
-      matchAll: async () => [{ postMessage: (m: unknown) => posted.push(m) }],
-      openWindow: vi.fn(),
-    },
-  };
-  new Function("self", workerSource)(self);
-  const fire = async (type: string, event: Record<string, unknown>) => {
-    let work: Promise<unknown> = Promise.resolve();
-    handlers[type]({ ...event, waitUntil: (p: Promise<unknown>) => (work = p) });
-    await work;
-  };
-  return { fire, shown, posted, subscribe };
-}
 
 describe("the admin's worker", () => {
   it("shows an alert with a one-colour badge Android can draw", async () => {

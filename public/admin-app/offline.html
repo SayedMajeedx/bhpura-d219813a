@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1e202c" />
+    <title>Boutq · لا يوجد اتصال</title>
+    <!--
+      The installed admin's page when it opens with no connection (kept on the device by
+      public/admin-sw.js). Self-contained: no file it needs can be fetched offline. It goes back to
+      where the person was as soon as the connection returns.
+    -->
+    <style>
+      :root {
+        color-scheme: light dark;
+        --ink: #1e202c;
+        --paper: #fcfcfd;
+        --muted: #6b6f80;
+        --line: #e4e5ea;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --ink: #f2f3f6;
+          --paper: #1c1e28;
+          --muted: #a2a6b5;
+          --line: #2e3140;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, "Noto Sans Arabic", Roboto,
+          sans-serif;
+      }
+      main {
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+        text-align: center;
+      }
+      .mark {
+        width: 64px;
+        height: 64px;
+        border-radius: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.4;
+      }
+      p {
+        margin: 0;
+        max-width: 22rem;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--muted);
+      }
+      .en {
+        direction: ltr;
+        border-top: 1px solid var(--line);
+        padding-top: 16px;
+      }
+      button {
+        min-height: 44px;
+        padding: 0 22px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--ink);
+        color: var(--paper);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--ink);
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img
+        class="mark"
+        src="data:image/png;base64,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"
+        alt=""
+        width="64"
+        height="64"
+      />
+      <div>
+        <h1>لا يوجد اتصال بالإنترنت</h1>
+        <p>Boutq يحتاج اتصالاً ليعرض طلباتك ومنتجاتك. يرجع بنفسه حين يعود الاتصال.</p>
+      </div>
+      <div class="en" lang="en">
+        <h1>You're offline</h1>
+        <p>Boutq needs a connection to show your orders and products. It comes back by itself.</p>
+      </div>
+      <button type="button" id="retry">إعادة المحاولة · Try again</button>
+    </main>
+    <script>
+      document.getElementById("retry").addEventListener("click", function () {
+        location.reload();
+      });
+      window.addEventListener("online", function () {
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

@@ -3,6 +3,7 @@ import { fetchCallerProfile } from "@/lib/data/profiles";
 import { fetchAnyBrandSlug, fetchBrandSlug } from "@/lib/data/brands";
 import { getCurrentUser } from "@/lib/auth/session";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
+import { readShortcut, shortcutTarget, type Shortcut } from "@/lib/app-shortcuts";
 
 /**
  * /admin smart redirector.
@@ -11,9 +12,14 @@ import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
  * - super admin → /admin/brands (unless they have a brand assigned, then to that brand's dashboard)
  * - brand admin / staff → /admin/b/{their-slug}/dashboard
  * - anyone without a brand assignment → /admin/brands (super admin) or /auth
+ * - `?go=` (the installed app's shortcuts, `src/lib/app-shortcuts.ts`): that page of their store
  */
 export const Route = createFileRoute("/_authenticated/admin/")({
-  beforeLoad: async () => {
+  validateSearch: (search: Record<string, unknown>): { go?: Shortcut } => {
+    const go = readShortcut(search.go);
+    return go ? { go } : {};
+  },
+  beforeLoad: async ({ search }) => {
     const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
 
@@ -32,16 +38,13 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     if (profile?.brand_id) {
       const slug = await fetchBrandSlug(profile.brand_id);
       if (slug) {
-        throw redirect({
-          to: profile?.role === "courier" ? "/admin/b/$slug/orders" : "/admin/b/$slug/dashboard",
-          params: { slug },
-        });
+        throw redirect(shortcutTarget(slug, search?.go, profile?.role === "courier"));
       }
     }
 
     const fallback = await fetchAnyBrandSlug();
     if (fallback) {
-      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: fallback } });
+      throw redirect(shortcutTarget(fallback, search?.go, false));
     }
 
     throw redirect({ to: "/auth" });
