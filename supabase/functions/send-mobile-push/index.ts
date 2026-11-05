@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { alertChoice, pushOutcome, webPushRequest } from "./web-push.ts";
+import { alertIcon } from "./alert-icon.ts";
 
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
@@ -25,6 +26,20 @@ type WebTarget = { id: string; endpoint: string; p256dh: string; auth: string };
  * its orders, still active). Best effort per device: a subscription the browser dropped is
  * removed, and one push service failing never holds back the others or the merchant app.
  */
+// Each store's alert picture, read once a run.
+const storeIcons = new Map<string, string | null>();
+async function storeIcon(brandId: string): Promise<string | null> {
+  if (storeIcons.has(brandId)) return storeIcons.get(brandId) ?? null;
+  const { data } = await supabase
+    .from("business_settings")
+    .select("favicon_url, logo_url")
+    .eq("brand_id", brandId)
+    .maybeSingle();
+  const icon = alertIcon(data);
+  storeIcons.set(brandId, icon);
+  return icon;
+}
+
 async function deliverToWeb(event: any, base: string): Promise<number> {
   if (!vapid) return 0;
   const { data, error } = await supabase.rpc("web_push_targets", {
@@ -38,6 +53,7 @@ async function deliverToWeb(event: any, base: string): Promise<number> {
     body: event.body,
     url: `${base}${event.target_url ?? ""}`,
     tag: `${event.event_type}-${event.entity_id ?? event.id}`,
+    icon: await storeIcon(event.brand_id).catch(() => null),
   };
   const results = await Promise.all(
     targets.map(async (target) => {

@@ -65,6 +65,10 @@ export function storefrontHead(loaderData: unknown, options: { home?: boolean } 
       href: favicon,
       ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
     },
+    // An iPhone's home-screen icon for the store: its own picture (an SVG is not drawn there).
+    ...(faviconType(favicon) === "image/svg+xml"
+      ? []
+      : [{ rel: "apple-touch-icon", href: favicon }]),
     {
       rel: "manifest",
       // In the page's language: an English page installs the store under its English name.
