@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { Eye, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,15 +22,23 @@ import { HowToOrderPanel } from "@/features/content-studio/components/HowToOrder
 import { MadeForYouPanel } from "@/features/content-studio/components/MadeForYouPanel";
 import { isCollectionTemplate } from "@/features/content-studio/lib/lookbook";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/content-studio")({
-  component: ContentStudioPage,
+  component: ContentStudioRoute,
 });
+
+/** The studio, or on an address below it (a private add-on's page) that page. */
+function ContentStudioRoute() {
+  const { slug } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const studioPath = `/admin/b/${encodeURIComponent(slug)}/content-studio`;
+  if (pathname.replace(/\/+$/, "") !== studioPath) return <Outlet />;
+  return <ContentStudioPage slug={slug} />;
+}
 
 /**
  * The content studio: pick a product and a look, edit the copy, and export a
  * post or story. State lives in useContentStudio; each section is a component.
  */
-function ContentStudioPage() {
-  const { slug } = Route.useParams();
+function ContentStudioPage({ slug }: { slug: string }) {
   const studio = useContentStudio(slug);
   const { isAr } = studio;
   return (

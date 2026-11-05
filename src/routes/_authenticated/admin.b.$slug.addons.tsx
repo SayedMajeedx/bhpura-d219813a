@@ -58,7 +58,7 @@ function AddonsPageRoute() {
           selectedAddonId={searchAddon || null}
           onSelectAddon={(addonId) => {
             navigate({
-              search: (prev) => ({
+              search: (prev: AddonsSearch) => ({
                 ...prev,
                 addon: addonId || undefined,
               }),

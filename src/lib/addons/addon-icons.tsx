@@ -7,6 +7,7 @@ import {
   Printer,
   Puzzle,
   Ruler,
+  Sticker,
   Scissors,
   Shirt,
   Sparkles,
@@ -22,6 +23,7 @@ import type { AddonId } from "./addon-types";
  */
 const ADDON_ICONS: Partial<Record<AddonId, LucideIcon>> = {
   "size-guides": Ruler,
+  "post-kit": Sticker,
   "fit-passport": UserCheck,
   "made-to-order": Scissors,
   "abaya-pack": Crown,

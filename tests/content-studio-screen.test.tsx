@@ -232,6 +232,9 @@ vi.mock("@tanstack/react-router", () => ({
     useParams: () => ({ slug: "pura" }),
   }),
   Link: ({ children }: { children: React.ReactNode }) => <a>{children}</a>,
+  Outlet: () => null,
+  useRouterState: ({ select }: { select: (state: unknown) => unknown }) =>
+    select({ location: { pathname: "/admin/b/pura/content-studio" } }),
 }));
 
 const { Route } =

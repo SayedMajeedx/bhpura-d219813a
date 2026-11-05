@@ -102,6 +102,17 @@ export const installAddon = createServerFn({ method: "POST" })
         .eq("addon_id", id)
         .maybeSingle();
 
+      // A private add-on goes in only by the platform's owner, or for a store its policy names.
+      if (getAddon(id).private) {
+        const named =
+          Array.isArray(policy?.allowed_brand_ids) &&
+          policy.allowed_brand_ids.includes(data.brandId);
+        if (!named) {
+          const { data: isSuperAdmin } = await db.rpc("is_super_admin");
+          if (!isSuperAdmin) throw new Error("ADDON_NOT_AVAILABLE_FOR_BRAND");
+        }
+      }
+
       if (policy) {
         if (policy.availability === "deprecated") {
           throw new Error("ADDON_DEPRECATED");

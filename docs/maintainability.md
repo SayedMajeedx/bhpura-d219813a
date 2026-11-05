@@ -98,7 +98,7 @@ The 23 files still over 1,000 lines (split on touch; `registry.ts` and `addon-sh
 |  1  | `src/features/settings/registry.ts`                                                | 2,616 |
 |  2  | `src/routes/_authenticated/admin.b.$slug.content-studio.tsx`                       | 2,404 |
 |  3  | `src/components/subscription/BrandSubscriptionHub.tsx`                             | 1,954 |
-|  4  | `src/lib/addons/addon-showcase-data.ts`                                            | 1,893 |
+|  4  | `src/lib/addons/addon-showcase-data.ts`                                            | 1,859 |
 |  5  | `src/routes/_authenticated/admin.b.$slug.export.tsx` (now 6: out of the list)      |   6   |
 |  6  | `src/components/super/SuperPlansManager.tsx`                                       | 1,721 |
 |  7  | `src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx`                  | 1,703 |
@@ -151,7 +151,7 @@ Each file listed below has an individual ceiling recorded in `tests/maintainabil
 |  8  | `src/routes/_authenticated/admin.b.$slug.dashboard.tsx`             |     2,105      |
 |  9  | `src/components/subscription/BrandSubscriptionHub.tsx`              |     1,972      |
 | 10  | `src/routes/_authenticated/admin.b.$slug.export.tsx`                |     1,937      |
-| 11  | `src/lib/addons/addon-showcase-data.ts`                             |     1,893      |
+| 11  | `src/lib/addons/addon-showcase-data.ts`                             |     1,859      |
 | 12  | `src/routes/_authenticated/admin.b.$slug.customers.tsx`             |     1,808      |
 | 13  | `src/components/super/SuperPlansManager.tsx`                        |     1,728      |
 | 14  | `src/routes/_authenticated/admin.b.$slug.team.tsx`                  |     1,715      |

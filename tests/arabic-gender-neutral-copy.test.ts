@@ -108,10 +108,18 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-const FILES = ROOTS.flatMap((r) => walk(resolve(process.cwd(), r))).map((file) => ({
-  rel: file.split(/[\\/]/).slice(-4).join("/"),
-  lines: readFileSync(file, "utf8").split("\n"),
-}));
+/**
+ * One store's own posts, in its own voice to its own customers (the owner's decision of
+ * 2026-11-05): they are that store's words, not the platform's, and only that store has them.
+ */
+const STORE_VOICE = /[\\/]addons[\\/]post-kit[\\/]content[\\/]/;
+
+const FILES = ROOTS.flatMap((r) => walk(resolve(process.cwd(), r)))
+  .filter((file) => !STORE_VOICE.test(file))
+  .map((file) => ({
+    rel: file.split(/[\\/]/).slice(-4).join("/"),
+    lines: readFileSync(file, "utf8").split("\n"),
+  }));
 
 function findViolations(pattern: RegExp) {
   const hits: Array<{ file: string; line: number; text: string }> = [];

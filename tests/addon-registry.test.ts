@@ -23,7 +23,7 @@ describe("Addon Registry", () => {
   it("lists all registered addons", () => {
     const addons = listAddons();
     // One manifest per directory under src/addons (registry.ts excluded).
-    expect(addons.length).toBe(12);
+    expect(addons.length).toBe(13);
     const ids = addons.map((a) => a.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toContain("coffee-roastery");

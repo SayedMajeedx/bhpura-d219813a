@@ -20,6 +20,7 @@ import type { ContentStudio } from "@/features/content-studio/hooks/use-content-
 import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
 import { DraftsDialog } from "@/features/content-studio/components/DraftsDialog";
 import { ShimmerText } from "@/components/motion/ShimmerText";
+import { AddonSlot } from "@/components/addons/AddonSlot";
 
 /** The page header: what the studio does, the caption copy and the export actions. */
 export function StudioHero({ studio }: { studio: ContentStudio }) {
@@ -65,6 +66,7 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 shrink-0">
+          <AddonSlot placement="admin.contentStudio.action" />
           <Button
             type="button"
             variant="outline"

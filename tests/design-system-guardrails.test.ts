@@ -37,6 +37,8 @@ const HEX_EXEMPT = [
 
 /** Directory/file prefixes with the same exemption rationale as HEX_EXEMPT. */
 const HEX_EXEMPT_PREFIXES = [
+  // Posts drawn on a canvas, in one store's colours: a picture has no theme to read tokens from.
+  "addons/post-kit/lib/",
   // The settings editors moved from the monolithic settings route into feature groups
   // (colour pickers with literal defaults, live invoice/hero previews).
   "features/settings/",

@@ -52,6 +52,7 @@ export function validateRegistry(): string[] {
     "admin.order.itemPanel",
     "admin.order.headerActions",
     "admin.customer.panel",
+    "admin.contentStudio.action",
     "admin.readiness.check",
   ]);
 
