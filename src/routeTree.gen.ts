@@ -95,6 +95,7 @@ import { Route as AuthenticatedAdminBSlugSignupsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminBSlugSizeGuidesRouteImport } from './routes/_authenticated/admin.b.$slug.size-guides'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
 import { Route as ApiPublicBookingsCalendarTokenRouteImport } from './routes/api.public.bookings.calendar.$token'
+import { Route as AuthenticatedAdminBSlugContentStudioPostsRouteImport } from './routes/_authenticated/admin.b.$slug.content-studio.posts'
 import { Route as AuthenticatedAdminBSlugCustomersCustomerIdRouteImport } from './routes/_authenticated/admin.b.$slug.customers.$customerId'
 import { Route as AuthenticatedAdminBSlugOrdersIndexRouteImport } from './routes/_authenticated/admin.b.$slug.orders.index'
 import { Route as AuthenticatedAdminBSlugOrdersIdRouteImport } from './routes/_authenticated/admin.b.$slug.orders.$id'
@@ -590,6 +591,12 @@ const ApiPublicBookingsCalendarTokenRoute =
     path: '/api/public/bookings/calendar/$token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminBSlugContentStudioPostsRoute =
+  AuthenticatedAdminBSlugContentStudioPostsRouteImport.update({
+    id: '/posts',
+    path: '/posts',
+    getParentRoute: () => AuthenticatedAdminBSlugContentStudioRoute,
+  } as any)
 const AuthenticatedAdminBSlugCustomersCustomerIdRoute =
   AuthenticatedAdminBSlugCustomersCustomerIdRouteImport.update({
     id: '/$customerId',
@@ -751,7 +758,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
-  '/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRoute
+  '/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRouteWithChildren
   '/admin/b/$slug/customers': typeof AuthenticatedAdminBSlugCustomersRouteWithChildren
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
@@ -773,6 +780,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
+  '/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
   '/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
@@ -852,7 +860,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
-  '/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRoute
+  '/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRouteWithChildren
   '/admin/b/$slug/customers': typeof AuthenticatedAdminBSlugCustomersRouteWithChildren
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
@@ -873,6 +881,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
+  '/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
   '/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
@@ -956,7 +965,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/_authenticated/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
-  '/_authenticated/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRoute
+  '/_authenticated/admin/b/$slug/content-studio': typeof AuthenticatedAdminBSlugContentStudioRouteWithChildren
   '/_authenticated/admin/b/$slug/customers': typeof AuthenticatedAdminBSlugCustomersRouteWithChildren
   '/_authenticated/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/_authenticated/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
@@ -978,6 +987,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/_authenticated/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
+  '/_authenticated/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
   '/_authenticated/admin/b/$slug/customers/$customerId': typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
   '/_authenticated/admin/b/$slug/orders/$id': typeof AuthenticatedAdminBSlugOrdersIdRoute
   '/_authenticated/admin/b/$slug/reports/advance': typeof AuthenticatedAdminBSlugReportsAdvanceRoute
@@ -1083,6 +1093,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
+    | '/admin/b/$slug/content-studio/posts'
     | '/admin/b/$slug/customers/$customerId'
     | '/admin/b/$slug/orders/$id'
     | '/admin/b/$slug/reports/advance'
@@ -1183,6 +1194,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
+    | '/admin/b/$slug/content-studio/posts'
     | '/admin/b/$slug/customers/$customerId'
     | '/admin/b/$slug/orders/$id'
     | '/admin/b/$slug/reports/advance'
@@ -1287,6 +1299,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/size-guides'
     | '/_authenticated/admin/b/$slug/team'
     | '/api/public/bookings/calendar/$token'
+    | '/_authenticated/admin/b/$slug/content-studio/posts'
     | '/_authenticated/admin/b/$slug/customers/$customerId'
     | '/_authenticated/admin/b/$slug/orders/$id'
     | '/_authenticated/admin/b/$slug/reports/advance'
@@ -1938,6 +1951,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingsCalendarTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/b/$slug/content-studio/posts': {
+      id: '/_authenticated/admin/b/$slug/content-studio/posts'
+      path: '/posts'
+      fullPath: '/admin/b/$slug/content-studio/posts'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugContentStudioPostsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugContentStudioRoute
+    }
     '/_authenticated/admin/b/$slug/customers/$customerId': {
       id: '/_authenticated/admin/b/$slug/customers/$customerId'
       path: '/$customerId'
@@ -2099,6 +2119,21 @@ const SlugRouteRouteWithChildren = SlugRouteRoute._addFileChildren(
   SlugRouteRouteChildren,
 )
 
+interface AuthenticatedAdminBSlugContentStudioRouteChildren {
+  AuthenticatedAdminBSlugContentStudioPostsRoute: typeof AuthenticatedAdminBSlugContentStudioPostsRoute
+}
+
+const AuthenticatedAdminBSlugContentStudioRouteChildren: AuthenticatedAdminBSlugContentStudioRouteChildren =
+  {
+    AuthenticatedAdminBSlugContentStudioPostsRoute:
+      AuthenticatedAdminBSlugContentStudioPostsRoute,
+  }
+
+const AuthenticatedAdminBSlugContentStudioRouteWithChildren =
+  AuthenticatedAdminBSlugContentStudioRoute._addFileChildren(
+    AuthenticatedAdminBSlugContentStudioRouteChildren,
+  )
+
 interface AuthenticatedAdminBSlugCustomersRouteChildren {
   AuthenticatedAdminBSlugCustomersCustomerIdRoute: typeof AuthenticatedAdminBSlugCustomersCustomerIdRoute
 }
@@ -2160,7 +2195,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugCampaignsRoute: typeof AuthenticatedAdminBSlugCampaignsRoute
   AuthenticatedAdminBSlugCategoriesRoute: typeof AuthenticatedAdminBSlugCategoriesRoute
   AuthenticatedAdminBSlugCommunicationsRoute: typeof AuthenticatedAdminBSlugCommunicationsRoute
-  AuthenticatedAdminBSlugContentStudioRoute: typeof AuthenticatedAdminBSlugContentStudioRoute
+  AuthenticatedAdminBSlugContentStudioRoute: typeof AuthenticatedAdminBSlugContentStudioRouteWithChildren
   AuthenticatedAdminBSlugCustomersRoute: typeof AuthenticatedAdminBSlugCustomersRouteWithChildren
   AuthenticatedAdminBSlugDashboardRoute: typeof AuthenticatedAdminBSlugDashboardRoute
   AuthenticatedAdminBSlugDiscountsRoute: typeof AuthenticatedAdminBSlugDiscountsRoute
@@ -2202,7 +2237,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugCommunicationsRoute:
       AuthenticatedAdminBSlugCommunicationsRoute,
     AuthenticatedAdminBSlugContentStudioRoute:
-      AuthenticatedAdminBSlugContentStudioRoute,
+      AuthenticatedAdminBSlugContentStudioRouteWithChildren,
     AuthenticatedAdminBSlugCustomersRoute:
       AuthenticatedAdminBSlugCustomersRouteWithChildren,
     AuthenticatedAdminBSlugDashboardRoute:

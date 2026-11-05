@@ -51,7 +51,7 @@ const BUDGETS = {
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2433,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
-  "src/lib/addons/addon-showcase-data.ts": 1893,
+  "src/lib/addons/addon-showcase-data.ts": 1859,
   "src/components/super/SuperPlansManager.tsx": 1721,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/lib/public-api/public-api-router.server.ts": 1271,

@@ -31,6 +31,7 @@ describe("Vanilla Core Guard Tests", () => {
     path.normalize("src/lib/addons/addon-registry.ts"),
     path.normalize("src/routes/$slug.size-guide.tsx"),
     path.normalize("src/routes/_authenticated/admin.b.$slug.size-guides.tsx"),
+    path.normalize("src/routes/_authenticated/admin.b.$slug.content-studio.posts.tsx"),
   ]);
 
   it("prohibits any core file from directly importing @/addons/*", () => {

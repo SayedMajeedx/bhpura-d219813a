@@ -16,7 +16,8 @@ export type AddonId =
   | "digital-products"
   | "gifts"
   | "print-stamps"
-  | "jewelry";
+  | "jewelry"
+  | "post-kit";
 
 export type AddonKind = "feature" | "pack";
 
@@ -65,6 +66,7 @@ export type SlotPlacement =
   | "admin.order.itemPanel" // لوحة داخل بند الطلب (وضع التحرير)
   | "admin.order.headerActions" // أزرار إجراءات في رأس الطلب
   | "admin.customer.panel" // بطاقة في صفحة العميل
+  | "admin.contentStudio.action" // زر في رأس استوديو المحتوى
   | "admin.readiness.check"; // بند جاهزية
 
 export type SlotComponent<P = Record<string, unknown>> = {
@@ -129,6 +131,8 @@ export type AddonManifest = {
   id: AddonId;
   version: number;
   kind: AddonKind;
+  /** One store's own: the add-on store lists it only for the platform's owner, and only they install it. */
+  private?: boolean;
   name: Bilingual;
   description: Bilingual;
   whatItAdds: Bilingual[]; // تُعرض في بطاقة المتجر

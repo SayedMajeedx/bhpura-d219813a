@@ -11,6 +11,7 @@ import { giftsManifest } from "./gifts/manifest";
 import { printStampsManifest } from "./print-stamps/manifest";
 import { jewelryManifest } from "./jewelry/manifest";
 import { coffeeRoasteryManifest } from "./coffee-roastery/manifest";
+import { postKitManifest } from "./post-kit/manifest";
 
 export const ADDON_MANIFESTS: AddonManifest[] = [
   sizeGuidesManifest,
@@ -25,4 +26,5 @@ export const ADDON_MANIFESTS: AddonManifest[] = [
   giftsManifest,
   printStampsManifest,
   jewelryManifest,
+  postKitManifest,
 ];

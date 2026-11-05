@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useState } from "react";
 import { useI18n } from "@/lib/i18n";
+import { useProfile } from "@/lib/profile-context";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { getAllAddons, starterPackFor, dependentsOf } from "@/lib/addons/addon-registry";
 import type {
@@ -95,7 +96,15 @@ export function AddonStore({
   const [purgeConfirmationText, setPurgeConfirmationText] = useState("");
   const [showEventsDialog, setShowEventsDialog] = useState(false);
 
-  const allManifests = React.useMemo(() => getAllAddons(), []);
+  const { isSuperAdmin } = useProfile();
+  // A private add-on is one store's own: only the platform's owner sees it, or a store that has it.
+  const allManifests = React.useMemo(
+    () =>
+      getAllAddons().filter(
+        (m) => !m.private || isSuperAdmin || installedRows.some((row) => row.addon_id === m.id),
+      ),
+    [isSuperAdmin, installedRows],
+  );
 
   // Compute installed map
   const installedMap = React.useMemo(() => {
