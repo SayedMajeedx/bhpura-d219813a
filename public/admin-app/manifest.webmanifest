@@ -2,7 +2,8 @@
   "id": "/admin",
   "name": "Boutq",
   "short_name": "Boutq",
-  "description": "Boutq OS: orders, products and customers for your store.",
+  "dir": "auto",
+  "description": "Boutq OS: orders, products and customers for your store · طلبات متجرك ومنتجاته وعملاؤه",
   "start_url": "/admin",
   "scope": "/",
   "display": "standalone",
@@ -75,6 +76,30 @@
           "type": "image/png"
         }
       ]
+    }
+  ],
+  "categories": ["business", "shopping", "productivity"],
+  "screenshots": [
+    {
+      "src": "/admin-app/screenshots/pocket-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your boutique in your pocket · متجرك في جيبك"
+    },
+    {
+      "src": "/admin-app/screenshots/alerts-narrow.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "An alert for every new order · تنبيه لكل طلب جديد"
+    },
+    {
+      "src": "/admin-app/screenshots/overview-wide.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Orders, products and customers · الطلبات والمنتجات والعملاء"
     }
   ]
 }

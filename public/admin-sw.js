@@ -75,6 +75,11 @@ self.addEventListener("fetch", (event) => {
 // the orders page is opened. The count of those that arrived while the app was open is the page's.
 const BADGE_EVENTS = ["order_new", "booking_new", "gift_card_new"];
 
+const storeIcon = (icon) =>
+  typeof icon === "string" && icon.startsWith("https://media.boutq.store/") && icon.length <= 512
+    ? icon
+    : null;
+
 self.addEventListener("push", (event) => {
   let message = {};
   try {
@@ -90,7 +95,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: message.body || "",
-      icon: "/admin-app/icon-192.png",
+      // The store's own picture (the push sender's `alertIcon`), only from the media host.
+      icon: storeIcon(message.icon) || "/admin-app/icon-192.png",
       // Android draws the badge as a white silhouette of its see-through parts: a one-colour mark.
       badge: "/admin-app/badge-96.png",
       tag: message.tag || undefined,
