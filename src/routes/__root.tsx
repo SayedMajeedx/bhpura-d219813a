@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { jsonForScript } from "@/lib/seo/json-for-script";
 import { rememberNativePushDevice } from "@/lib/native-push";
 import { documentLanguage } from "@/lib/seo/canonical";
+import { installStaleBuildReload, isStaleBuildError, reloadForNewBuild } from "@/lib/stale-chunk";
 
 function NotFoundComponent() {
   return (
@@ -46,6 +47,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    // A page left open across a release asks for the old build's files: load the new one instead.
+    if (isStaleBuildError(error) && reloadForNewBuild()) return;
     reportAppError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -160,6 +163,7 @@ function RootComponent() {
   useEffect(() => {
     installNumericInputBehavior();
   }, []);
+  useEffect(() => installStaleBuildReload(), []);
   useEffect(() => {
     const handleNativePush = async (event: Event) => {
       const detail = (event as CustomEvent).detail;
