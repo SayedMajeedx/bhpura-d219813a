@@ -1,3 +1,17 @@
+import type { VideoReel } from "../lib/reels";
+
+/** A reel made from the kit's own frames, with no filming. */
+export const VIDEO_REELS: VideoReel[] = [
+  {
+    key: "bel-tayyeb",
+    title: "بالطيب ما ينفع",
+    frames: [
+      { post: "kind-1", seconds: 3 },
+      { post: "kind-2", seconds: 5 },
+    ],
+  },
+];
+
 /** What the team shoots itself, and the order the posts go out in. */
 export const REELS = [
   {
