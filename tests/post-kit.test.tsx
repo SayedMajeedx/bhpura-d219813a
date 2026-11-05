@@ -272,7 +272,17 @@ vi.mock("@/components/addons/AddonsProvider", () => ({
 vi.mock("../src/components/addons/AddonsProvider", () => ({
   useAddons: () => ({ addons: addonsState.rows, isLoading: false }),
 }));
-const kitState = vi.hoisted(() => ({ edit: vi.fn(), reset: vi.fn() }));
+const saveToast = vi.hoisted(() => vi.fn());
+const saveDismiss = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { error: saveToast, success: vi.fn(), dismiss: saveDismiss }),
+}));
+const kitState = vi.hoisted(() => ({
+  edit: vi.fn(),
+  reset: vi.fn(),
+  retry: vi.fn(),
+  saveState: "idle" as "idle" | "saving" | "saved" | "failed",
+}));
 vi.mock("../src/addons/post-kit/hooks/use-post-kit", () => ({
   usePostKit: () => ({
     brand: { slug: "store", id: "b" },
@@ -284,7 +294,9 @@ vi.mock("../src/addons/post-kit/hooks/use-post-kit", () => ({
     saveEdit: kitState.edit,
     resetEdit: kitState.reset,
     addUploads: vi.fn(),
-    removeUpload: vi.fn(),
+    removeUpload: vi.fn(async () => null),
+    saveState: kitState.saveState,
+    retrySave: kitState.retry,
   }),
 }));
 vi.mock("@/lib/i18n", () => ({ useI18n: () => ({ lang: "ar" }) }));
@@ -310,5 +322,60 @@ describe("the page", () => {
     fireEvent.click(edits[0]);
     expect(screen.getByRole("button", { name: /رجوع للبوستات/ })).toBeInTheDocument();
     expect(screen.getByLabelText("العنوان")).toHaveValue(POSTS[0].head);
+  });
+
+  it("says saved only once it is, and offers another try when it was not", async () => {
+    const { default: PostKitPage } = await import("../src/addons/post-kit/components/PostKitPage");
+    const open = () => {
+      const view = render(<PostKitPage slug="store" />);
+      fireEvent.click(screen.getAllByRole("button", { name: /عدّل/ })[0]);
+      return view;
+    };
+
+    kitState.saveState = "idle";
+    let view = open();
+    expect(screen.queryByRole("status")).toBeNull();
+    view.unmount();
+
+    kitState.saveState = "saving";
+    view = open();
+    expect(screen.getByRole("status")).toHaveTextContent("جاري الحفظ");
+    expect(screen.queryByText("انحفظ في المتجر")).toBeNull();
+    view.unmount();
+
+    kitState.saveState = "saved";
+    view = open();
+    expect(screen.getByRole("status")).toHaveTextContent("انحفظ في المتجر");
+    expect(saveDismiss).toHaveBeenCalledWith("post-kit-save");
+    view.unmount();
+
+    kitState.saveState = "failed";
+    view = open();
+    expect(screen.getByRole("alert")).toHaveTextContent("ما انحفظ في المتجر");
+    expect(saveToast).toHaveBeenCalledWith(
+      "ما انحفظ في المتجر، بس محفوظ في هالجهاز.",
+      expect.objectContaining({ id: "post-kit-save" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "حاول مرة ثانية" }));
+    expect(kitState.retry).toHaveBeenCalledTimes(1);
+    view.unmount();
+    kitState.saveState = "idle";
+  });
+
+  it("keeps a change made just before leaving the post", async () => {
+    vi.useFakeTimers();
+    try {
+      kitState.edit.mockClear();
+      const { default: PostKitPage } =
+        await import("../src/addons/post-kit/components/PostKitPage");
+      render(<PostKitPage slug="store" />);
+      fireEvent.click(screen.getAllByRole("button", { name: /عدّل/ })[0]);
+      fireEvent.change(screen.getByLabelText("العنوان"), { target: { value: "كلام جديد" } });
+      fireEvent.click(screen.getByRole("button", { name: /رجوع للبوستات/ }));
+      expect(kitState.edit).toHaveBeenCalledTimes(1);
+      expect(kitState.edit.mock.calls[0][0].head).toBe("كلام جديد");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

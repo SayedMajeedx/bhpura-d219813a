@@ -1,28 +1,46 @@
+import type { Outbox } from "./stored";
 import type { Post } from "./types";
 
 /**
- * What stays on this device until the shared store comes: edited posts in localStorage and the
- * merchant's own photos in IndexedDB. Either can be refused (a private window): the page goes on.
+ * What a device holds for itself. The store's shared record is the truth (`src/lib/data/post-kit`);
+ * this is the outbox, a change not yet in it, so a lost connection or a closed tab loses nothing.
+ * It also reads what the kit kept here before there was a shared record (edits in localStorage,
+ * photos in IndexedDB), which moves up once and is then cleared. Storage can be refused (a private
+ * window): the page goes on.
  */
-const editsKey = (brandId: string) => `post-kit-edits-${brandId}`;
+const outboxKey = (brandId: string) => `post-kit-outbox-${brandId}`;
+const oldEditsKey = (brandId: string) => `post-kit-edits-${brandId}`;
 
-export function readEdits(brandId: string): Record<string, Post> {
+function readJson<T>(key: string): T | null {
   try {
-    return JSON.parse(localStorage.getItem(editsKey(brandId)) ?? "{}") as Record<string, Post>;
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
   } catch {
-    return {};
+    return null;
   }
 }
 
-export function writeEdits(brandId: string, edits: Record<string, Post>) {
+function writeJson(key: string, value: unknown) {
   try {
-    localStorage.setItem(editsKey(brandId), JSON.stringify(edits));
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, JSON.stringify(value));
   } catch {
-    /* kept for this visit only */
+    /* kept in memory for this visit only */
   }
 }
 
-export type SavedPhoto = { id: string; name: string; blob: Blob };
+export const readOutbox = (brandId: string): Outbox => readJson<Outbox>(outboxKey(brandId)) ?? {};
+
+export const writeOutbox = (brandId: string, outbox: Outbox) =>
+  writeJson(outboxKey(brandId), Object.keys(outbox).length ? outbox : null);
+
+export const readOldEdits = (brandId: string): Record<string, Post> =>
+  readJson<Record<string, Post>>(oldEditsKey(brandId)) ?? {};
+
+export const writeOldEdits = (brandId: string, edits: Record<string, Post> | null) =>
+  writeJson(oldEditsKey(brandId), edits);
+
+export type OldPhoto = { id: string; name: string; blob: Blob };
 
 function openPhotos(brandId: string): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
@@ -45,7 +63,7 @@ async function run<T>(
 ): Promise<T | null> {
   const db = await openPhotos(brandId);
   if (!db) return null;
-  return new Promise((resolve) => {
+  return new Promise<T | null>((resolve) => {
     try {
       const request = work(db.transaction("photos", mode).objectStore("photos"));
       request.onsuccess = () => resolve(request.result);
@@ -53,17 +71,13 @@ async function run<T>(
     } catch {
       resolve(null);
     }
-  });
+  }).finally(() => db.close());
 }
 
-export const savedPhotos = async (brandId: string): Promise<SavedPhoto[]> =>
-  (await run<SavedPhoto[]>(brandId, "readonly", (store) => store.getAll())) ?? [];
+export const oldPhotos = async (brandId: string): Promise<OldPhoto[]> =>
+  (await run<OldPhoto[]>(brandId, "readonly", (store) => store.getAll())) ?? [];
 
-/** Whether the photo was kept, so the page can say when it will not survive a reload. */
-export const keepPhoto = async (brandId: string, photo: SavedPhoto): Promise<boolean> =>
-  (await run(brandId, "readwrite", (store) => store.put(photo))) !== null;
-
-export const forgetPhoto = (brandId: string, id: string) =>
+export const forgetOldPhoto = (brandId: string, id: string) =>
   run(brandId, "readwrite", (store) => store.delete(id));
 
 /** A phone's photo can be 12 megapixels: keep what a 1080 post can show. */
