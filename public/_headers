@@ -9,3 +9,6 @@
 
 /admin-app/manifest.webmanifest
   Cache-Control: no-cache
+
+/admin-app/offline.html
+  Cache-Control: no-cache
