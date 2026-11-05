@@ -72,6 +72,36 @@ function StickerThumb({ id }: { id: string }) {
   return <canvas ref={ref} aria-hidden="true" className="block h-auto w-full" />;
 }
 
+/** Whether what the merchant just did is in the store: never "saved" until it really is. */
+function SaveStatus({ kit }: { kit: PostKit }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  if (kit.saveState === "failed") {
+    return (
+      <span role="alert" className="flex flex-wrap items-center gap-2 text-xs text-destructive">
+        {isAr
+          ? "ما انحفظ في المتجر، بس محفوظ في هالجهاز."
+          : "Not saved to the store yet, but kept on this device."}
+        <Button type="button" size="sm" variant="outline" onClick={() => void kit.retrySave()}>
+          {isAr ? "حاول مرة ثانية" : "Try again"}
+        </Button>
+      </span>
+    );
+  }
+  if (kit.saveState === "idle") return null;
+  return (
+    <span role="status" className="text-xs text-muted-foreground">
+      {kit.saveState === "saving"
+        ? isAr
+          ? "جاري الحفظ…"
+          : "Saving…"
+        : isAr
+          ? "انحفظ في المتجر"
+          : "Saved to the store"}
+    </span>
+  );
+}
+
 /** Editing one post: the post itself beside everything that changes it. */
 export function PostMaker({
   postKey,
@@ -113,9 +143,19 @@ export function PostMaker({
     return () => clearTimeout(timer);
   }, [post, saveEdit]);
 
-  // A finger on a sticker moves the sticker; anywhere else it scrolls the page.
   const latest = useRef(post);
   latest.current = post;
+
+  // Leaving straight after a change still keeps it: the timer above is cleared on the way out.
+  useEffect(
+    () => () => {
+      const json = JSON.stringify(latest.current);
+      if (json !== opened.current) saveEdit(latest.current);
+    },
+    [saveEdit],
+  );
+
+  // A finger on a sticker moves the sticker; anywhere else it scrolls the page.
   useEffect(() => {
     const canvas = stage.current;
     if (!canvas) return;
@@ -222,6 +262,7 @@ export function PostMaker({
           {isAr ? "رجوع للبوستات" : "Back to posts"}
         </Button>
         <h2 className="min-w-0 flex-1 text-base font-semibold text-foreground">{post.title}</h2>
+        <SaveStatus kit={kit} />
       </div>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-3 lg:sticky lg:top-4">
@@ -286,6 +327,7 @@ export function PostMaker({
                 type="button"
                 variant="outline"
                 onClick={() => {
+                  opened.current = JSON.stringify(latest.current);
                   kit.resetEdit(postKey);
                   onClose();
                 }}

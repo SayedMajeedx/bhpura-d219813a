@@ -193,12 +193,32 @@ function PostKitBody() {
   const [editing, setEditing] = useState<string | null>(null);
   const Back = isAr ? ArrowRight : ArrowLeft;
 
+  // Said from here, not only in the maker: on a phone its heading has scrolled away, and a change
+  // can still fail after the merchant left the post.
+  const { saveState, retrySave } = kit;
+  useEffect(() => {
+    if (saveState === "saved") toast.dismiss("post-kit-save");
+    if (saveState !== "failed") return;
+    toast.error(
+      isAr
+        ? "ما انحفظ في المتجر، بس محفوظ في هالجهاز."
+        : "Not saved to the store yet, but kept on this device.",
+      {
+        id: "post-kit-save",
+        action: {
+          label: isAr ? "حاول مرة ثانية" : "Try again",
+          onClick: () => void retrySave(),
+        },
+      },
+    );
+  }, [saveState, retrySave, isAr]);
+
   if (kit.failed) {
     return (
       <p className="p-6 text-sm text-destructive">
         {isAr
-          ? "ما قدرنا نقرا المنتجات. جرّب مرة ثانية."
-          : "Could not read the products. Try again."}
+          ? "ما قدرنا نقرا المنتجات والبوستات. جرّب مرة ثانية."
+          : "Could not read the products and posts. Try again."}
       </p>
     );
   }

@@ -81,8 +81,8 @@ export function PhotoLibrary({
               className="grid h-auto w-full gap-1 whitespace-normal rounded-lg bg-card p-1 text-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
             >
               <img
-                crossOrigin={photo.upload ? undefined : "anonymous"}
-                src={photo.img?.src ?? ""}
+                crossOrigin="anonymous"
+                src={photo.img?.src ?? photo.url ?? ""}
                 alt=""
                 className="aspect-[3/4] w-full rounded-md object-cover object-top"
               />
@@ -102,7 +102,16 @@ export function PhotoLibrary({
                     return;
                   }
                   setArmed(null);
-                  onRemoved(key, kit.removeUpload(key));
+                  void kit.removeUpload(key).then((result) => {
+                    if (result) onRemoved(key, result.fallback);
+                    else {
+                      toast.error(
+                        isAr
+                          ? "ما قدرنا نحذف الصورة. جرّب مرة ثانية."
+                          : "Could not delete the photo. Try again.",
+                      );
+                    }
+                  });
                 }}
               >
                 {armed === key ? isAr ? "تحذفها؟" : "Delete?" : <X className="size-4" />}
@@ -124,20 +133,13 @@ export function PhotoLibrary({
             const files = [...(e.target.files ?? [])];
             e.target.value = "";
             if (!files.length) return;
-            const { added, failed, lasting } = await kit.addUploads(files);
+            const { added, failed } = await kit.addUploads(files);
             if (added[0]) onPick(added[0]);
             if (failed) {
               toast.error(
                 isAr
-                  ? "ما قدرنا نقرا كل الصور. جرّب JPG أو PNG."
-                  : "Some photos could not be read. Try JPG or PNG.",
-              );
-            }
-            if (!lasting) {
-              toast(
-                isAr
-                  ? "هالمتصفح ما يسمح نحفظها، فبتروح إذا قفلتي الصفحة."
-                  : "This browser will not keep it after you close the page.",
+                  ? "ما قدرنا نرفع كل الصور. تأكد من النت، وجرّب JPG أو PNG."
+                  : "Some photos did not upload. Check your connection and try JPG or PNG.",
               );
             }
           }}
@@ -161,8 +163,8 @@ export function PhotoLibrary({
       <p className="text-xs text-muted-foreground">{hint}</p>
       <p className="text-xs text-muted-foreground">
         {isAr
-          ? "صوركم وتعديلاتكم تنحفظ في هالجهاز للحين."
-          : "Your photos and edits are kept on this device for now."}
+          ? "صوركم وتعديلاتكم تنحفظ في المتجر، وتفتح من أي جهاز للفريق."
+          : "Your photos and edits are kept in the store, and open on any of your team's devices."}
       </p>
     </div>
   );

@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { TablesUpdate } from "@/integrations/supabase/types";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { businessSettingsKeys } from "./keys";
 
 /**
@@ -23,12 +23,15 @@ export function invalidateBusinessSettings(qc: QueryClient, brandId: string) {
 
 /**
  * Writes columns of the brand's settings row, creating the row when the brand
- * has none yet (upsert on `brand_id`).
+ * has none yet (upsert on `brand_id`). A new row's `offers_alterations` has no
+ * column default, so the types ask for it, but the database fills it in by the
+ * store's vertical (`trg_business_settings_alterations_default`).
  */
 export async function saveBusinessSettings(brandId: string, patch: BusinessSettingsPatch) {
+  const row = { ...patch, brand_id: brandId } as TablesInsert<"business_settings">;
   const { error } = await supabase
     .from("business_settings")
-    .upsert({ ...patch, brand_id: brandId }, { onConflict: "brand_id" });
+    .upsert(row, { onConflict: "brand_id" });
   if (error) throw error;
 }
 

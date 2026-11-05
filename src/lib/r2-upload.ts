@@ -8,6 +8,7 @@ export type PublicMediaKind =
   | "category"
   | "hero"
   | "page"
+  | "post"
   | "payment-qr"
   | "expense-receipt";
 

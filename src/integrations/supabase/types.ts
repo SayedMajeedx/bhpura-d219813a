@@ -2352,7 +2352,7 @@ export type Database = {
           newsletter_title_ar?: string | null;
           newsletter_title_en?: string | null;
           next_invoice_number?: number;
-          offers_alterations?: boolean;
+          offers_alterations: boolean;
           offers_combine?: string;
           opening_hours?: Json;
           order_number_digits?: number | null;
@@ -6214,13 +6214,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "orders_related_order_id_fkey";
-            columns: ["related_order_id"];
-            isOneToOne: false;
-            referencedRelation: "orders";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "orders_assigned_by_fkey";
             columns: ["assigned_by"];
             isOneToOne: false;
@@ -6281,6 +6274,13 @@ export type Database = {
             columns: ["promo_code_id"];
             isOneToOne: false;
             referencedRelation: "promo_codes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "orders_related_order_id_fkey";
+            columns: ["related_order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
             referencedColumns: ["id"];
           },
           {
@@ -6415,6 +6415,67 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      post_kit_edits: {
+        Row: {
+          brand_id: string;
+          post: Json;
+          post_key: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          post: Json;
+          post_key: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          post?: Json;
+          post_key?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "post_kit_edits_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      post_kit_photos: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          id: string;
+          name: string;
+          url: string;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          url: string;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          url?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "post_kit_photos_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       product_attribute_definitions: {
         Row: {
@@ -10106,6 +10167,15 @@ export type Database = {
         Returns: number;
       };
       advance_rules_for_brand: { Args: { p_brand_id: string }; Returns: Json };
+      amend_order_line_details: {
+        Args: {
+          p_item_id: string;
+          p_note?: string;
+          p_request_id?: string;
+          p_values: Json;
+        };
+        Returns: Json;
+      };
       apply_bom_to_all_products: {
         Args: {
           p_brand_id: string;
@@ -10187,15 +10257,6 @@ export type Database = {
           p_status_at: string;
         };
         Returns: string;
-      };
-      amend_order_line_details: {
-        Args: {
-          p_item_id: string;
-          p_note?: string;
-          p_request_id?: string;
-          p_values: Json;
-        };
-        Returns: Json;
       };
       approve_benefit_payment: { Args: { p_order_id: string }; Returns: Json };
       approve_gift_card_purchase: {
@@ -10754,6 +10815,7 @@ export type Database = {
           newsletter_title_ar: string | null;
           newsletter_title_en: string | null;
           next_invoice_number: number;
+          offers_alterations: boolean;
           offers_combine: string;
           opening_hours: Json;
           order_number_digits: number | null;
@@ -11323,6 +11385,11 @@ export type Database = {
         Returns: number;
       };
       order_advance_due: { Args: { p_order_id: string }; Returns: number };
+      order_alteration_back: { Args: { p_id: string }; Returns: undefined };
+      order_alteration_reprice: {
+        Args: { p_delta: number; p_order_id: string };
+        Returns: undefined;
+      };
       order_alteration_target: {
         Args: { p_fulfillment: string; p_status: string };
         Returns: string;
@@ -11484,6 +11551,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      post_kit_may_write: { Args: { p_brand: string }; Returns: boolean };
       product_has_history: { Args: { p_product_id: string }; Returns: boolean };
       prune_system_health_events: {
         Args: { p_retention_days?: number };

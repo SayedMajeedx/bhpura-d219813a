@@ -20,6 +20,7 @@ const mediaKinds = [
   "category",
   "hero",
   "page",
+  "post",
   "payment-qr",
   "expense-receipt",
 ] as const;
