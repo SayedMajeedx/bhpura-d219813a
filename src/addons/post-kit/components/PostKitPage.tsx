@@ -18,6 +18,7 @@ import { renderPost } from "../lib/render";
 import type { Post } from "../lib/types";
 import { PostMaker } from "./PostMaker";
 import { PostPicture } from "./PostPicture";
+import { StickersTab } from "./StickersTab";
 import { VideoReelCard } from "./VideoReelCard";
 
 export async function savePost(post: Post, kit: PostKit, isAr: boolean) {
@@ -235,6 +236,7 @@ function PostKitBody() {
         <TabsList>
           <TabsTrigger value="posts">{isAr ? "البوستات" : "Posts"}</TabsTrigger>
           <TabsTrigger value="reels">{isAr ? "الريلز" : "Reels"}</TabsTrigger>
+          <TabsTrigger value="stickers">{isAr ? "ملصقات للطباعة" : "Print stickers"}</TabsTrigger>
           <TabsTrigger value="plan">{isAr ? "خطة النشر" : "Plan"}</TabsTrigger>
         </TabsList>
         <TabsContent value="posts">
@@ -277,6 +279,9 @@ function PostKitBody() {
             </h2>
             <ReelsList isAr={isAr} />
           </section>
+        </TabsContent>
+        <TabsContent value="stickers">
+          <StickersTab kit={kit} />
         </TabsContent>
         <TabsContent value="plan">
           <PlanTable isAr={isAr} />
