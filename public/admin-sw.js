@@ -9,15 +9,26 @@
 
 // The one page kept on the device: what the installed app shows when it opens with no connection.
 // Pages, data and files are never cached, so the app is always the latest version.
-const OFFLINE_CACHE = "boutq-admin-offline-v1";
+const OFFLINE_CACHE = "boutq-admin-offline-v2";
 const OFFLINE_PAGE = "/admin-app/offline.html";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       try {
-        const cache = await caches.open(OFFLINE_CACHE);
-        await cache.add(new Request(OFFLINE_PAGE, { cache: "reload" }));
+        // Kept as a plain page: Cloudflare redirects .html addresses, and a browser refuses to
+        // open a redirected answer from a worker, so the page itself was a failure.
+        const fetched = await fetch(new Request(OFFLINE_PAGE, { cache: "reload" }));
+        if (fetched.ok) {
+          const cache = await caches.open(OFFLINE_CACHE);
+          await cache.put(
+            OFFLINE_PAGE,
+            new Response(await fetched.text(), {
+              status: 200,
+              headers: { "Content-Type": "text/html; charset=utf-8" },
+            }),
+          );
+        }
       } catch {
         // No connection while installing: the next update keeps it.
       }
@@ -48,23 +59,31 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// The answer when even the offline page was not kept: never a blank screen.
+const NO_PAGE_KEPT =
+  '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boutq</title><body style="font:16px system-ui;display:grid;place-items:center;min-height:90vh;text-align:center"><p>لا يوجد اتصال بالإنترنت · You\'re offline</p><button onclick="location.reload()" style="min-height:44px;padding:0 16px">إعادة المحاولة · Try again</button>';
+
 // Opening an admin page goes to the network as always; only when it cannot be reached does the
-// offline page answer. Nothing else passes through the worker.
+// offline page answer. A failed fast path (navigation preload) is not a lost connection, so the
+// network is asked itself first. Nothing else passes through the worker.
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.mode !== "navigate" || request.method !== "GET") return;
   if (!new URL(request.url).pathname.startsWith("/admin")) return;
   event.respondWith(
     (async () => {
+      const preloaded = await Promise.resolve(event.preloadResponse).catch(() => undefined);
+      if (preloaded) return preloaded;
       try {
-        const preloaded = await event.preloadResponse;
-        if (preloaded) return preloaded;
         return await fetch(request);
       } catch {
         const offline = await caches.match(OFFLINE_PAGE);
         return (
           offline ||
-          new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } })
+          new Response(NO_PAGE_KEPT, {
+            status: 503,
+            headers: { "Content-Type": "text/html; charset=utf-8" },
+          })
         );
       }
     })(),
@@ -89,8 +108,13 @@ self.addEventListener("push", (event) => {
   }
   const title = message.title || "Boutq";
   const marks = BADGE_EVENTS.some((kind) => String(message.tag || "").startsWith(kind));
-  if (marks && self.navigator && typeof self.navigator.setAppBadge === "function") {
-    self.navigator.setAppBadge().catch(() => undefined);
+  // Never in the alert's way: a push that shows nothing costs a device its subscription on iOS.
+  try {
+    if (marks && self.navigator && typeof self.navigator.setAppBadge === "function") {
+      self.navigator.setAppBadge().catch(() => undefined);
+    }
+  } catch {
+    // No mark on the icon, and the alert still shows.
   }
   event.waitUntil(
     self.registration.showNotification(title, {

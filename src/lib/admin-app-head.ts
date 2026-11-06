@@ -1,3 +1,5 @@
+import { appBootGuardScript } from "@/lib/app-boot-guard";
+
 /**
  * What makes the admin an installable app (a phone's home screen, a laptop's dock): its manifest,
  * the iPhone's icon and the standalone look. On the sign-in page and every admin page, so it can be
@@ -39,6 +41,7 @@ export function launchScreenLinks() {
 
 export function adminAppHead() {
   return {
+    scripts: [{ children: appBootGuardScript }],
     links: [
       { rel: "manifest", href: "/admin-app/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/admin-app/icon-180.png" },

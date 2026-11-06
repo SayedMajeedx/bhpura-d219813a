@@ -14,9 +14,8 @@ export function runAdminWorker(options: { fetch?: (request: unknown) => Promise<
   const stored = new Map<string, unknown>();
   const caches = {
     open: async () => ({
-      add: async (request: { url?: string } | string) => {
-        const url = typeof request === "string" ? request : String(request.url);
-        stored.set(new URL(url, "https://boutq.store").pathname, { offline: true, url });
+      put: async (url: string, response: unknown) => {
+        stored.set(new URL(url, "https://boutq.store").pathname, response);
       },
     }),
     keys: async () => ["boutq-admin-offline-v0", "boutq-admin-offline-v1"],

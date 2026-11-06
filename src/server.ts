@@ -13,6 +13,7 @@ import {
 } from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
 import { storeHostRedirectResponse } from "./lib/seo/host-redirect";
+import { wholeDocument } from "./lib/whole-document";
 import { isHeartbeatMinute, scheduledWork } from "./lib/system-health";
 
 const SECURITY_HEADERS = {
@@ -289,7 +290,22 @@ export default {
         return await handleR2MediaRequest(request, env);
       }
 
-      const response = await handler.fetch(request);
+      const response = await wholeDocument({
+        request,
+        first: await handler.fetch(request),
+        render: async () => handler.fetch(request),
+        givenUp: () =>
+          new Response(renderErrorPage(), {
+            status: 503,
+            headers: { "content-type": "text/html; charset=utf-8", "Retry-After": "1" },
+          }),
+        onIncomplete: (attempt) =>
+          logOperationalEvent("warn", "document_incomplete", {
+            correlationId,
+            path: url.pathname,
+            attempt,
+          }),
+      });
       return withPerformanceCacheHeaders(
         request,
         withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), correlationId),
