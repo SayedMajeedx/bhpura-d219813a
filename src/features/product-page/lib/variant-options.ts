@@ -136,6 +136,31 @@ export function chosenVariant(
 }
 
 /**
+ * The options still to choose before the piece can go in the cart: every option offered with more
+ * than one value, except the size of a piece being tailored, which has none. A piece being
+ * tailored once went in the cart with no colour chosen, and the order read the first colour, so
+ * it could be sewn in a colour the shopper never picked.
+ */
+export function unchosenOptions(
+  selection: VariantSelection,
+  offered: OfferedOptions,
+  tailoring: boolean,
+): Axis[] {
+  return (Object.keys(AXIS_FIELD) as Axis[]).filter(
+    (axis) => !(tailoring && axis === "size") && offered[axis].length > 1 && !selection[axis],
+  );
+}
+
+/**
+ * Whether what is chosen so far has no ready piece: no variant has it, or none of those that do
+ * holds a piece. This is when a made-to-order piece offers to be tailored instead.
+ */
+export function readyChoiceGone(variants: Variant[], selection: VariantSelection): boolean {
+  if (!Object.values(selection).some(Boolean)) return false;
+  return matchingVariantsFor(variants, selection).every((v) => unitsOf(v) <= 0);
+}
+
+/**
  * The variant whose photo the gallery shows while the choice is partial (a
  * colour picked, no size yet): the first fitting one with a photo, one in
  * stock first. None until something is chosen, so the page opens on the
@@ -158,17 +183,21 @@ export function choiceUnavailable({
   variants,
   product,
   isTailoringActive,
+  selection = null,
 }: {
   variant: Variant | null | undefined;
   variants: Variant[];
   product: AvailabilityProduct;
   isTailoringActive: boolean;
+  /** What is chosen so far: a colour and size no variant has can be bought no more than a sold-out one. */
+  selection?: VariantSelection | null;
 }): boolean {
   // Taken off sale for a while: nothing can be bought, made to order or not.
   if (offSaleUntil(product)) return true;
   if (isTailoringActive) return false;
   if (variant) return unitsOf(variant) <= 0;
   if (variants.length === 0) return false;
+  if (selection && readyChoiceGone(variants, selection)) return true;
   return !productAvailability(product, readyUnitsOf(variants)).sellable;
 }
 

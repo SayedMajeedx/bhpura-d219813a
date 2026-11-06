@@ -201,16 +201,16 @@ export function StorefrontAnalytics() {
   return (
     <Card
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="fixed inset-x-3 z-[100] mx-auto max-w-2xl p-4 shadow-2xl"
+      className="fixed inset-x-3 z-[100] mx-auto max-w-2xl px-3 py-2.5 shadow-lg"
       // Clears a bottom-fixed CTA bar (mobile purchase bar) when one is present,
       // so the banner never covers the primary action.
       style={{ bottom: "calc(0.75rem + var(--sf-sticky-cta-h, 0px))" }}
     >
-      <h2 className="font-semibold">{t("خيارات الخصوصية", "Privacy choices")}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <h2 className="sr-only">{t("خيارات الخصوصية", "Privacy choices")}</h2>
+      <p className="text-xs leading-relaxed text-muted-foreground">
         {t(
-          "نستخدم ملفات ضرورية لعمل المتجر. التحليلات والتسويق لا يعملان إلا بموافقتك.",
-          "Essential storage keeps the store working. Analytics and marketing only run with your permission.",
+          "نستخدم ملفات ضرورية لعمل المتجر، والتحليلات والتسويق بموافقتك فقط.",
+          "We use essential storage. Analytics and marketing run only with your permission.",
         )}
       </p>
       {customizing && (
@@ -231,30 +231,23 @@ export function StorefrontAnalytics() {
           </label>
         </div>
       )}
-      <div className="mt-3 flex flex-wrap gap-2">
-        <Button
-          size="touch"
-          onClick={() => save({ decided: true, analytics: true, marketing: true })}
-        >
+      <div className="mt-2 flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => save({ decided: true, analytics: true, marketing: true })}>
           {t("قبول الكل", "Accept all")}
         </Button>
         <Button
           variant="outline"
-          size="touch"
+          size="sm"
           onClick={() => save({ decided: true, analytics: false, marketing: false })}
         >
           {t("الضروري فقط", "Essential only")}
         </Button>
         {customizing ? (
-          <Button
-            variant="secondary"
-            size="touch"
-            onClick={() => save({ ...choice, decided: true })}
-          >
+          <Button variant="secondary" size="sm" onClick={() => save({ ...choice, decided: true })}>
             {t("حفظ", "Save choices")}
           </Button>
         ) : (
-          <Button variant="ghost" size="touch" onClick={() => setCustomizing(true)}>
+          <Button variant="ghost" size="sm" onClick={() => setCustomizing(true)}>
             {t("تخصيص", "Customize")}
           </Button>
         )}

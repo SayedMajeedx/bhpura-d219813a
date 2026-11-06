@@ -15,16 +15,26 @@ export interface FormattedCustomField {
   isUrl: boolean;
 }
 
+/**
+ * In the words the shopper typed under: the form says "الصدر", and whether that is a width or a
+ * circumference is the store's own. The cart once said "محيط الصدر" over a width. The longer keys
+ * come first: `armpit_height` also ends in `_height`.
+ */
 const MEASUREMENT_KEY_LABELS: Record<string, { ar: string; en: string }> = {
+  chest_width: { ar: "عرض الصدر", en: "Chest width" },
+  armpit_height: { ar: "ارتفاع الإبط", en: "Armpit height" },
+  waist_width: { ar: "عرض الوسط", en: "Waist width" },
+  hem_width: { ar: "عرض الأسفل", en: "Hem width" },
+  sleeve_opening: { ar: "فتحة الكم", en: "Sleeve opening" },
   length: { ar: "الطول", en: "Length" },
-  bust: { ar: "محيط الصدر", en: "Bust" },
-  waist: { ar: "محيط الخصر", en: "Waist" },
-  hips: { ar: "محيط الأرداف", en: "Hips" },
+  bust: { ar: "الصدر", en: "Bust" },
+  waist: { ar: "الخصر", en: "Waist" },
+  hips: { ar: "الأرداف", en: "Hips" },
   sleeve: { ar: "طول الكم", en: "Sleeve Length" },
   shoulder: { ar: "عرض الكتف", en: "Shoulder Width" },
   arm_width: { ar: "عرض الذراع", en: "Arm Width" },
   height: { ar: "الطول الكامل", en: "Full Height" },
-  chest: { ar: "محيط الصدر", en: "Chest" },
+  chest: { ar: "الصدر", en: "Chest" },
 };
 
 /**

@@ -30,20 +30,22 @@ export const FASHION_FIT_PROFILES: FitProfileDefinition[] = [
     match: {
       keywords: ["abaya", "عباية", "عبايات", "قفطان", "kaftan", "jalabiya", "جلابية"],
     },
+    // Measured on an abaya laid flat, edge to edge: the size guide's drawing (the owner's decision
+    // of 2026-11-06). A store with its own `fit_profiles` keeps them.
     fields: [
       {
         key: "length",
         label_ar: "الطول",
-        label_en: "Length",
+        label_en: "Full length",
         required: true,
         aliases: ["length", "height", "طول"],
       },
       {
-        key: "bust",
-        label_ar: "الصدر",
-        label_en: "Bust",
+        key: "chest_width",
+        label_ar: "عرض الصدر",
+        label_en: "Chest width",
         required: true,
-        aliases: ["bust", "chest", "صدر"],
+        aliases: ["chest_width", "chest width", "عرض الصدر"],
       },
       {
         key: "sleeve",
@@ -53,32 +55,32 @@ export const FASHION_FIT_PROFILES: FitProfileDefinition[] = [
         aliases: ["sleeve", "كم"],
       },
       {
-        key: "shoulder",
-        label_ar: "عرض الكتف",
-        label_en: "Shoulder",
+        key: "armpit_height",
+        label_ar: "ارتفاع الإبط",
+        label_en: "Armpit height",
         required: true,
-        aliases: ["shoulder", "كتف"],
+        aliases: ["armpit_height", "armpit height", "ارتفاع الإبط", "إبط"],
       },
       {
-        key: "waist",
-        label_ar: "الخصر",
-        label_en: "Waist",
+        key: "waist_width",
+        label_ar: "عرض الوسط",
+        label_en: "Waist width",
         required: false,
-        aliases: ["waist", "خصر"],
+        aliases: ["waist_width", "waist width", "عرض الوسط"],
       },
       {
-        key: "hips",
-        label_ar: "الأرداف",
-        label_en: "Hips",
+        key: "hem_width",
+        label_ar: "عرض الأسفل",
+        label_en: "Hem width",
         required: false,
-        aliases: ["hips", "أرداف", "ارداف", "ورك"],
+        aliases: ["hem_width", "hem width", "عرض الأسفل"],
       },
       {
-        key: "arm_width",
-        label_ar: "عرض الذراع",
-        label_en: "Arm width",
+        key: "sleeve_opening",
+        label_ar: "فتحة الكم",
+        label_en: "Sleeve opening",
         required: false,
-        aliases: ["arm_width", "arm width", "عرض الذراع", "ذراع"],
+        aliases: ["sleeve_opening", "sleeve opening", "فتحة الكم"],
       },
     ],
   },
@@ -145,13 +147,13 @@ export const FASHION_FIT_PROFILES: FitProfileDefinition[] = [
 
 export const FIT_PROFILE_FIELDS = {
   abaya: [
-    ["length", "الطول", "Length", true],
-    ["bust", "الصدر", "Bust", true],
+    ["length", "الطول", "Full length", true],
+    ["chest_width", "عرض الصدر", "Chest width", true],
     ["sleeve", "طول الكم", "Sleeve length", true],
-    ["shoulder", "عرض الكتف", "Shoulder", true],
-    ["waist", "الخصر", "Waist", false],
-    ["hips", "الأرداف", "Hips", false],
-    ["arm_width", "عرض الذراع", "Arm width", false],
+    ["armpit_height", "ارتفاع الإبط", "Armpit height", true],
+    ["waist_width", "عرض الوسط", "Waist width", false],
+    ["hem_width", "عرض الأسفل", "Hem width", false],
+    ["sleeve_opening", "فتحة الكم", "Sleeve opening", false],
   ],
   dress: [
     ["length", "الطول", "Length", true],
@@ -377,6 +379,11 @@ const FIT_RANGES_IN: Record<string, readonly [number, number]> = {
   waist: [10, 80],
   hips: [10, 90],
   arm_width: [3, 30],
+  chest_width: [10, 45],
+  armpit_height: [5, 25],
+  waist_width: [10, 50],
+  hem_width: [12, 90],
+  sleeve_opening: [3, 30],
 };
 const GENERAL_FIT_RANGE_IN: readonly [number, number] = [1, 120];
 const CM_PER_INCH = 2.54;

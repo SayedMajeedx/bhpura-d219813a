@@ -1,5 +1,6 @@
 import type { StoreVertical } from "@/lib/store-profile";
 import type { SizeGuide } from "./size-guide";
+import { FLAT_DIAGRAM_NOTE, FLAT_DIAGRAM_STEPS, FLAT_DIAGRAM_TEMPLATE_KEY } from "./flat-diagram";
 
 export type SizeGuideTemplate = {
   key: string;
@@ -608,6 +609,31 @@ export const SIZE_GUIDE_TEMPLATES: SizeGuideTemplate[] = [
     },
   },
 ];
+
+SIZE_GUIDE_TEMPLATES.push({
+  key: FLAT_DIAGRAM_TEMPLATE_KEY,
+  name_ar: "رسم قياسات العباية",
+  name_en: "Abaya measurement diagram",
+  vertical_hint: ["fashion"],
+  guide: {
+    name_ar: "طريقة أخذ المقاسات",
+    name_en: "How to measure",
+    template_key: FLAT_DIAGRAM_TEMPLATE_KEY,
+    base_unit: "none",
+    columns: [],
+    rows: [],
+    how_to_measure: FLAT_DIAGRAM_STEPS,
+    diagram_url: null,
+    video_url: null,
+    recommender_enabled: false,
+    placement: "modal",
+    notes_ar: FLAT_DIAGRAM_NOTE.ar,
+    notes_en: FLAT_DIAGRAM_NOTE.en,
+    is_default: false,
+    is_active: true,
+    sort_order: 0,
+  },
+});
 
 export const ALL_SIZE_GUIDE_TEMPLATES = SIZE_GUIDE_TEMPLATES.map((t) => ({
   key: t.key,

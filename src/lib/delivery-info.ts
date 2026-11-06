@@ -225,3 +225,12 @@ export function deliveryInfo({
       facts.length > 0 || Boolean(note) || Boolean(returnTerms) || policyPages.length > 0,
   };
 }
+
+/**
+ * The store's return terms in one sentence, for the moment a shopper decides: its return policy's
+ * terms, else what it wrote about shipping and returns, without the list mark it was typed with.
+ */
+export function returnsSentence(info: Pick<DeliveryInfo, "returnTerms" | "note">): string | null {
+  const text = info.returnTerms ?? info.note;
+  return text ? text.replace(/^[-•–\s]+/, "").trim() || null : null;
+}

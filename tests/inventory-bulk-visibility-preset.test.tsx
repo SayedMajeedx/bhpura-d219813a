@@ -60,7 +60,7 @@ describe("addPresetToProduct", () => {
     const patch = addPresetToProduct({ custom_fields: some }, preset, 7);
     const keys = patch?.custom_fields.map((f) => f.key) ?? [];
     expect(keys.filter((k) => k.endsWith("passport_abaya_length"))).toHaveLength(1);
-    expect(keys.some((k) => k.endsWith("passport_abaya_bust"))).toBe(true);
+    expect(keys.some((k) => k.endsWith("passport_abaya_chest_width"))).toBe(true);
     // The hand-made "length" would ask for the measurement twice; the unrelated "note" stays.
     expect(keys).not.toContain("length");
     expect(keys).toContain("note");

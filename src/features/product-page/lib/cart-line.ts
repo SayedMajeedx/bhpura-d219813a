@@ -21,10 +21,11 @@ import { fieldPriceDelta } from "@/features/product-page/lib/variant-options";
 type Storefront = ReturnType<typeof useStorefront>;
 
 /**
- * Why the current choice cannot go in the cart, or null. With the ready/custom
- * toggle: ready needs an in-stock size, custom needs measurements and required
- * fields. Without it: an in-stock option (unless the product is custom-only),
- * measurements when tailoring, and required fields.
+ * Why the current choice cannot go in the cart, or null. The options still to choose come first,
+ * by name: "please select a ready size" once showed under a size that was selected, because the
+ * colour was what was missing. Then with the ready/custom toggle: ready needs an in-stock size,
+ * custom needs measurements and required fields. Without it: an in-stock option (unless the
+ * product is custom-only), measurements when tailoring, and required fields.
  */
 export function productSelectionError({
   showSizeModeToggle,
@@ -39,6 +40,8 @@ export function productSelectionError({
   uniqueSizes,
   isTailoringActive,
   cfLabel,
+  unchosenLabels = [],
+  measurementsProblem = null,
   t,
 }: {
   showSizeModeToggle: boolean;
@@ -47,6 +50,10 @@ export function productSelectionError({
   variant: Variant | null | undefined;
   hasMeasurementFields: boolean;
   measurementsApplied: boolean;
+  /** The options still to choose, in the store's own words for them. */
+  unchosenLabels?: readonly string[];
+  /** What the measurements still need, said by the form that holds them. */
+  measurementsProblem?: string | null;
   visibleCustomFields: CustomField[];
   cfValues: Record<string, string>;
   hasCustomFields: boolean;
@@ -55,21 +62,25 @@ export function productSelectionError({
   cfLabel: (f: CustomField) => string;
   t: Storefront["t"];
 }): string | null {
+  if (unchosenLabels.length > 0) {
+    return t(
+      `يرجى اختيار ${unchosenLabels.join(" و")}`,
+      `Please choose ${unchosenLabels.join(" and ").toLowerCase()}`,
+    );
+  }
+  const measurementsMessage =
+    measurementsProblem ||
+    t("يرجى إكمال المقاسات المطلوبة", "Please complete the required measurements");
   if (showSizeModeToggle) {
     if (sizeMode === "ready") {
       if (hasVariants && !variant) {
-        return t("يرجى اختيار مقاس جاهز أولاً", "Please select a ready size first");
+        return t("هذا الاختيار غير متوفر جاهز", "This choice is not available ready-made");
       }
       if (variant && Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) <= 0) {
         return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
       }
     } else {
-      if (hasMeasurementFields && !measurementsApplied) {
-        return t(
-          "يرجى تطبيق المقاسات المطلوبة لإكمال الطلب",
-          "Please apply the required measurements to continue",
-        );
-      }
+      if (hasMeasurementFields && !measurementsApplied) return measurementsMessage;
       for (const f of visibleCustomFields) {
         if (f.required && !(cfValues[f.key] ?? "").trim()) {
           return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
@@ -87,10 +98,7 @@ export function productSelectionError({
       }
     }
     if (isTailoringActive && hasMeasurementFields && !measurementsApplied) {
-      return t(
-        "يرجى تطبيق المقاسات المطلوبة لإكمال الطلب",
-        "Please apply the required measurements to continue",
-      );
+      return measurementsMessage;
     }
     for (const f of visibleCustomFields) {
       if (f.required && !(cfValues[f.key] ?? "").trim()) {

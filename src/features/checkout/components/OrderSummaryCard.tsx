@@ -28,6 +28,8 @@ import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { arNoun } from "@/lib/arabic-count";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
+import { ReturnsLine } from "@/components/storefront/ReturnsLine";
+import { placeOrderHint } from "@/features/checkout/lib/checkout-validation";
 import { appliedOfferName, type OffersOutcome } from "@/lib/offers";
 
 export type SummaryTax = { amount: number; added: boolean; rate: number };
@@ -154,6 +156,7 @@ export function OrderSummaryCard({
 }) {
   // A refused code shakes its field (transitions.dev's error state shake).
   const [promoRow, shakePromo] = useShake<HTMLDivElement>();
+  const orderHint = placeOrderHint({ acceptedTerms, method, benefitReceipt, receiptRequired, t });
   useEffect(() => {
     if (promoRefusals > 0) shakePromo();
   }, [promoRefusals, shakePromo]);
@@ -494,6 +497,7 @@ export function OrderSummaryCard({
         currency={currency}
         appointment={Boolean(appointment)}
       />
+      {!appointment && <ReturnsLine />}
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
         <Checkbox
           className="mt-0.5"
@@ -544,6 +548,11 @@ export function OrderSummaryCard({
           }
         >
           {intakeNote}
+        </p>
+      )}
+      {orderHint && !closedToOrders && (
+        <p role="status" className="text-xs font-medium text-muted-foreground">
+          {orderHint}
         </p>
       )}
       <Button

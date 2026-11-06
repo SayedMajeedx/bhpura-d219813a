@@ -17,9 +17,20 @@ export const RECEIPT_WINDOW_MS = 6 * 60 * 60 * 1000;
 /** Digits a typed phone must share with the order's, from the end (a local number's length). */
 export const PHONE_DIGITS_COMPARED = 8;
 
+export type ReceiptField = {
+  key?: string | null;
+  label_ar?: string | null;
+  label_en?: string | null;
+  value?: string | null;
+};
+
 export type ReceiptLine = NamedOrderLine & {
   quantity: number;
   line_total: number;
+  /** "custom" for a piece being made for the shopper. */
+  location?: string | null;
+  /** The shopper's answers: their measurements on a piece being made. */
+  custom_field_values?: readonly ReceiptField[] | null;
 };
 
 export type OrderReceipt = {
@@ -41,8 +52,15 @@ export type OrderReceipt = {
   fulfillmentMethod: string | null;
   /** Opens the order's invoice; null when the order has none yet. */
   invoiceToken: string | null;
+  /** The days the store says a piece of this order takes, when it counts in days. */
+  estimateDays: number | null;
   lines: ReceiptLine[];
 };
+
+/** Whether an order holds a piece being made for the shopper. */
+export function receiptTailored(receipt: Pick<OrderReceipt, "lines">): boolean {
+  return receipt.lines.some((line) => line.location === "custom");
+}
 
 /** The thank-you page shows a storefront order from its id only while it is fresh. */
 export function receiptOpen(

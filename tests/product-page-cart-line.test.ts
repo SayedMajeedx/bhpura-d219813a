@@ -90,8 +90,15 @@ describe("productSelectionError", () => {
       hasMeasurementFields: true,
       visibleCustomFields: [engraving],
     });
+    // Whatever is unchosen is named; a choice with nothing left to pick and no variant says so.
+    expect(productSelectionError({ ...toggle, variant: null, unchosenLabels: ["Color"] })).toBe(
+      "Please choose color",
+    );
+    expect(
+      productSelectionError({ ...toggle, variant: null, unchosenLabels: ["Color", "Size"] }),
+    ).toBe("Please choose color and size");
     expect(productSelectionError({ ...toggle, variant: null })).toBe(
-      "Please select a ready size first",
+      "This choice is not available ready-made",
     );
     expect(productSelectionError({ ...toggle, variant: variant({ stock_main: 0 }) })).toBe(
       "This size is out of stock",
@@ -100,8 +107,14 @@ describe("productSelectionError", () => {
     expect(productSelectionError(toggle)).toBeNull();
 
     const custom = { ...toggle, sizeMode: "custom" as const, variant: null };
-    expect(productSelectionError(custom)).toBe(
-      "Please apply the required measurements to continue",
+    expect(productSelectionError(custom)).toBe("Please complete the required measurements");
+    // The form that holds the measurements says which.
+    expect(
+      productSelectionError({ ...custom, measurementsProblem: "Complete these: Chest width" }),
+    ).toBe("Complete these: Chest width");
+    // A colour is asked for before a piece is made in it.
+    expect(productSelectionError({ ...custom, unchosenLabels: ["Color"] })).toBe(
+      "Please choose color",
     );
     expect(productSelectionError({ ...custom, measurementsApplied: true })).toBe(
       "Required field: Engraving",

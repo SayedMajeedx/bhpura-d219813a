@@ -1,7 +1,7 @@
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { formatSizeWithUnit } from "@/lib/format";
-import { ShoppingBag, Sparkles, MessageCircle, Bell, Check } from "lucide-react";
+import { ShoppingBag, MessageCircle, Bell, Check } from "lucide-react";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { useFlash } from "@/components/motion/use-flash";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
@@ -157,34 +157,21 @@ export function ProductMobileBuyBar({
         ) : (
           <>
             <Button
-              className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
+              className="h-11 gap-1.5 px-3 font-semibold bg-primary text-primary-foreground"
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => {
                 if (doAdd(false)) flashAdded();
               }}
-              aria-label={
-                isTailoringActive
-                  ? vocabulary.custom_order?.[lang]
-                    ? lang === "ar"
-                      ? `طلب ${vocabulary.custom_order[lang]} القطعة`
-                      : `Order ${vocabulary.custom_order[lang]} Piece`
-                    : t("طلب تجهيز القطعة", "Order Custom Piece")
-                  : t("أضف للسلة", "Add to cart")
-              }
+              aria-label={t("أضف للسلة", "Add to cart")}
             >
               {/* The bag turns into a tick once the piece is in it (icon swap). */}
               <IconSwap
                 showSecond={added}
-                first={
-                  isTailoringActive ? (
-                    <Sparkles className="h-4 w-4" />
-                  ) : (
-                    <ShoppingBag className="h-4 w-4" />
-                  )
-                }
+                first={<ShoppingBag className="h-4 w-4" />}
                 second={<Check className="h-4 w-4" />}
               />
+              <span>{t("أضف", "Add")}</span>
             </Button>
             <Button
               variant="outline"
@@ -193,11 +180,7 @@ export function ProductMobileBuyBar({
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}
             >
-              {/* Short on a phone: the line beside the price already names the made-to-order
-                  choice in the store's word ("تفصيل حسب المقاس"). */}
-              <span className="truncate">
-                {isTailoringActive ? t("إتمام الطلب", "Complete order") : t("اشتر الآن", "Buy now")}
-              </span>
+              <span className="truncate">{t("اشتر الآن", "Buy now")}</span>
             </Button>
           </>
         )}

@@ -24,6 +24,9 @@ const storefrontModule = async (importOriginal: () => Promise<object>) => ({
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+const liveOffersModule = { useLiveOffers: () => [] };
+vi.mock("../src/hooks/use-live-offers", () => liveOffersModule);
+vi.mock("@/hooks/use-live-offers", () => liveOffersModule);
 const client = { supabase: { rpc: vi.fn(async () => ({ data: null, error: null })) } };
 vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);

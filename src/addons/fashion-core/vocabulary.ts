@@ -26,5 +26,6 @@ export const FASHION_VOCABULARY: Partial<StoreVocabulary> = {
   },
   ready_made: { ar: "جاهز", en: "Ready-made" },
   made_to_order: { ar: "تفصيل حسب الطلب", en: "Made to order" },
+  being_made: { ar: "قيد التفصيل", en: "Being tailored" },
   sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
 };

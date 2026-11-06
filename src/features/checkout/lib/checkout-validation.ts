@@ -104,3 +104,32 @@ export function checkoutFormError({
   }
   return null;
 }
+
+/**
+ * What the shopper still has to do before the place-order button works. It once sat greyed out
+ * with nothing to say why, on a phone with the terms and the receipt far above it.
+ */
+export function placeOrderHint({
+  acceptedTerms,
+  method,
+  benefitReceipt,
+  receiptRequired,
+  t,
+}: {
+  acceptedTerms: boolean;
+  method: PaymentMethod | string | null | undefined;
+  benefitReceipt: File | null;
+  receiptRequired: boolean;
+  t: Storefront["t"];
+}): string | null {
+  if (method === "benefit" && receiptRequired && !benefitReceipt) {
+    return t(
+      "ارفع صورة إيصال التحويل لتأكيد الطلب",
+      "Upload your transfer receipt to place the order",
+    );
+  }
+  if (!acceptedTerms) {
+    return t("وافق على الشروط والأحكام لتأكيد الطلب", "Agree to the terms to place the order");
+  }
+  return null;
+}

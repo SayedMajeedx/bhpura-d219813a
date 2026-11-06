@@ -1,50 +1,31 @@
+import {
+  READY_ORDER_STEPS,
+  TAILORED_ORDER_STEPS,
+  activeTrackStep,
+} from "@/features/order-receipt/lib/order-track";
+
 export function OrderTimelineTracker({
   status,
   paymentStatus,
   fulfillmentStatus,
+  tailored = false,
+  makingLabel = null,
   isAr,
   t,
 }: {
   status: string;
   paymentStatus: string | null;
   fulfillmentStatus: string | null;
+  /** The order holds a piece being made: its time at the workshop is a step of its own. */
+  tailored?: boolean;
+  /** The store's own word for that step ("قيد التفصيل"). */
+  makingLabel?: string | null;
   isAr: boolean;
   t: any;
 }) {
   const currentStatus = status.toLowerCase();
-  const pay = String(paymentStatus || "unpaid").toLowerCase();
-  const ful = String(fulfillmentStatus || "ON_HOLD").toUpperCase();
-
-  const steps = [
-    { key: "pending", labelAr: "تم الاستلام", labelEn: "Placed" },
-    { key: "confirmed", labelAr: "تأكيد الطلب", labelEn: "Confirmed" },
-    { key: "shipped", labelAr: "قيد الشحن", labelEn: "Shipped" },
-    { key: "completed", labelAr: "تم التوصيل", labelEn: "Delivered" },
-  ];
-
-  let activeIndex = 0;
-  if (currentStatus === "cancelled" || currentStatus === "refunded") {
-    activeIndex = -1;
-  } else if (ful === "COMPLETED" || ful === "DELIVERED" || currentStatus === "completed") {
-    activeIndex = 3;
-  } else if (
-    ful === "SHIPPED" ||
-    ful === "ASSIGNED" ||
-    ful === "OUT_FOR_DELIVERY" ||
-    currentStatus === "shipped"
-  ) {
-    activeIndex = 2;
-  } else if (
-    ful === "SENT_TO_TAILOR" ||
-    ful === "RECEIVED_FROM_TAILOR" ||
-    ful === "PACKING" ||
-    ful === "NEEDS_PACKING" ||
-    ful === "READY_FOR_PICKUP" ||
-    currentStatus === "confirmed" ||
-    pay === "paid"
-  ) {
-    activeIndex = 1;
-  }
+  const steps = tailored ? TAILORED_ORDER_STEPS : READY_ORDER_STEPS;
+  const activeIndex = activeTrackStep({ status, paymentStatus, fulfillmentStatus, tailored });
 
   if (activeIndex === -1) {
     return (
@@ -94,7 +75,7 @@ export function OrderTimelineTracker({
                   isActive ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
-                {isAr ? step.labelAr : step.labelEn}
+                {(step.key === "making" && makingLabel) || (isAr ? step.labelAr : step.labelEn)}
               </span>
             </div>
           );

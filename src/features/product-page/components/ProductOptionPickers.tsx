@@ -15,6 +15,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 
 import { resolveColorHex } from "@/lib/color-names";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { TailorInsteadNote } from "@/features/product-page/components/TailorInsteadNote";
 /** Option pickers: ready/custom size mode, colour swatches, size, fabric and extra option pills, and a fallback variant list. */
 export function ProductOptionPickers({
   hasReadySizes,
@@ -50,6 +51,8 @@ export function ProductOptionPickers({
   showSizeModeToggle,
   sizeMode,
   t,
+  tailorInstead = false,
+  tailoringTime = null,
   uniqueColors,
   uniqueFabrics,
   uniqueFive,
@@ -92,6 +95,10 @@ export function ProductOptionPickers({
   showSizeModeToggle: boolean;
   sizeMode: "ready" | "custom";
   t: ReturnType<typeof useStorefront>["t"];
+  /** What is chosen has no ready piece, and the piece can be made. */
+  tailorInstead?: boolean;
+  /** How long making it takes, in the store's own words. */
+  tailoringTime?: string | null;
   uniqueColors: string[];
   uniqueFabrics: string[];
   uniqueFive: string[];
@@ -152,6 +159,18 @@ export function ProductOptionPickers({
               <span>{vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}</span>
             </Button>
           </div>
+          {/* The guide matters most here: this is where the shopper takes the measurements. */}
+          {sizeMode === "custom" && (
+            <div className="mt-2 flex items-center justify-between gap-2 px-1">
+              <span className="text-xs text-muted-foreground">
+                {t("كيف تؤخذ المقاسات؟", "How to measure?")}
+              </span>
+              <AddonSlot
+                placement="storefront.product.optionsAside"
+                props={{ product, selectedSize: null, uniqueSizes: [] }}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -176,7 +195,7 @@ export function ProductOptionPickers({
           </p>
           <div className="pt-2 flex items-center justify-between border-t border-primary/10">
             <span className="text-xs text-muted-foreground">
-              {t("تحتاجين مساعدة في القياسات؟", "Need measuring guidance?")}
+              {t("كيف تؤخذ المقاسات؟", "How to measure?")}
             </span>
             <AddonSlot
               placement="storefront.product.optionsAside"
@@ -358,6 +377,19 @@ export function ProductOptionPickers({
             </div>
           </div>
         )}
+
+      {tailorInstead && (
+        <TailorInsteadNote
+          lang={lang}
+          t={t}
+          tailoringTime={tailoringTime}
+          vocabulary={vocabulary}
+          onTailor={() => {
+            setSizeMode("custom");
+            setErrorMsg(null);
+          }}
+        />
+      )}
 
       {/* 🧵 Fabric Selection Pills (if any) */}
       {uniqueFabrics.length > 0 && (

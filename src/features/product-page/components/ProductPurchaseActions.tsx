@@ -1,13 +1,6 @@
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
-import {
-  ShoppingBag,
-  AlertCircle,
-  AlertTriangle,
-  Sparkles,
-  MessageCircle,
-  Check,
-} from "lucide-react";
+import { ShoppingBag, AlertCircle, AlertTriangle, MessageCircle, Check } from "lucide-react";
 import { MorphText } from "@/components/motion/MorphText";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { useFlash } from "@/components/motion/use-flash";
@@ -192,27 +185,13 @@ export function ProductPurchaseActions({
           >
             <IconSwap
               showSecond={added}
-              first={
-                isTailoringActive ? (
-                  <Sparkles className="h-4 w-4" />
-                ) : (
-                  <ShoppingBag className="h-4 w-4" />
-                )
-              }
+              first={<ShoppingBag className="h-4 w-4" />}
               second={<Check className="h-4 w-4" />}
             />
+            {/* The same words for a piece being made: it goes in the bag too. "Order this piece"
+                read as if the order were placed. */}
             <MorphText
-              text={
-                added
-                  ? t("أُضيفت إلى السلة", "Added to cart")
-                  : isTailoringActive
-                    ? vocabulary.custom_order?.[lang]
-                      ? lang === "ar"
-                        ? `طلب ${vocabulary.custom_order[lang]} القطعة`
-                        : `Order ${vocabulary.custom_order[lang]} Piece`
-                      : t("طلب تجهيز القطعة", "Order Custom Piece")
-                    : t("أضف للسلة", "Add to cart")
-              }
+              text={added ? t("أُضيفت إلى السلة", "Added to cart") : t("أضف للسلة", "Add to cart")}
             />
           </Button>
           <Button
@@ -222,13 +201,7 @@ export function ProductPurchaseActions({
             aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
             onClick={() => doAdd(true)}
           >
-            {isTailoringActive
-              ? vocabulary.custom_order?.[lang]
-                ? lang === "ar"
-                  ? `إتمام طلب ال${vocabulary.custom_order[lang]}`
-                  : `Complete ${vocabulary.custom_order[lang]}`
-                : t("إتمام الطلب الآن", "Complete Order Now")
-              : t("اشتر الآن", "Buy now")}
+            {t("اشتر الآن", "Buy now")}
           </Button>
         </div>
       )}
