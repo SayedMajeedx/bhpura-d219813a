@@ -1,6 +1,10 @@
 import { formatDate, formatMoney } from "@/lib/format";
 import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import {
+  customFieldLabel,
+  customFieldValue,
+  withoutRepeatedOptions,
+} from "@/lib/order-custom-fields";
 import { lineFields, lineSize, madeToMeasure, madeToMeasureLabel } from "@/lib/made-to-measure";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
@@ -120,7 +124,16 @@ export function printThermalReceipt(a: ThermalArgs) {
       // The answers as rows, the notes for the workshop last, the bookkeeping left out.
       const fields = lineFields(it.custom_field_values);
       const shownFields = [
-        ...fields.rows,
+        ...withoutRepeatedOptions(
+          fields.rows,
+          {
+            color: it.selected_variant?.color,
+            size: lineSize(it),
+            fabric: it.selected_variant?.fabric,
+          },
+          axes,
+          isRTL ? "ar" : "en",
+        ),
         ...fields.notes.map((value) => ({
           key: "tailoring_notes",
           label_ar: "ملاحظات للورشة",

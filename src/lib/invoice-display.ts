@@ -115,6 +115,30 @@ export function invoiceTitle(
   return lang === "ar" ? "فاتورة" : "INVOICE";
 }
 
+/** A colour safe to write into a style sheet, or null: it comes from the store's settings. */
+const PRINTABLE_COLOR =
+  /^(#[0-9a-f]{3,8}|[a-z]{3,20}|(?:rgb|rgba|hsl|hsla|oklch)\([\d\s.,%/-]+\))$/i;
+
+/**
+ * The invoice on paper. The page has no margin of its own and the invoice carries it as padding,
+ * so a dark invoice runs to the sheet's edge with no white band and the browser prints no address
+ * or date around it. The padding repeats on a second page, and a block that belongs together
+ * (a line, the totals, the terms) moves to the next page whole instead of being cut across two.
+ */
+export function invoicePrintCss(background: string | null | undefined): string {
+  const color = (background ?? "").trim();
+  const sheet = PRINTABLE_COLOR.test(color) ? `background:${color}!important;` : "";
+  return [
+    "@media print{",
+    "@page{size:A4;margin:0}",
+    `html,body{${sheet}-webkit-print-color-adjust:exact;print-color-adjust:exact}`,
+    ".invoice-card{overflow:visible!important}",
+    ".pdf-invoice-body{padding:12mm!important;-webkit-box-decoration-break:clone;box-decoration-break:clone}",
+    ".pdf-keep,.pdf-totals-row,.pdf-line-items tr{break-inside:avoid}",
+    "}",
+  ].join("");
+}
+
 /** Browsers inside social apps cannot print (Save as PDF does nothing there). */
 const IN_APP_BROWSER = /FBAN|FBAV|Instagram|Line\/|Snapchat|TikTok|musical_ly|BytedanceWebview/i;
 

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Paperclip } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
@@ -13,10 +12,9 @@ import {
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
 import { effectiveFulfillmentStatus, getInvoiceStatusLabel } from "@/lib/status-labels";
-import { lineDescription, lineFields, lineSizeText } from "@/lib/made-to-measure";
-import { LineNotes } from "@/components/orders/LineNotes";
+import { lineDescription } from "@/lib/made-to-measure";
 import { useVocabulary } from "@/hooks/use-vocabulary";
-import { resolveAllVariantAxes, variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
+import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { branchesQueries } from "@/lib/data/branches";
 import { addonDataQueries } from "@/lib/data/addons";
 import { bookingsQueries } from "@/lib/data/bookings";
@@ -30,7 +28,7 @@ import { InvoiceBookingTerms } from "@/components/orders/InvoiceBookingTerms";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
 import { policyLines } from "@/lib/bookings/policies";
 import { invoiceDepositPercent } from "@/lib/bookings/deposit";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import { InvoicePreviewLineDetails } from "@/components/orders/InvoicePreviewLineDetails";
 import { orderLineName } from "@/lib/order-line-name";
 import { orderNumberText } from "@/lib/order-number";
 
@@ -768,55 +766,10 @@ export default function InvoicePreview({
                           ))}
                         </ul>
                       )}
-                      {it.selected_variant &&
-                        (() => {
-                          const axes = resolveAllVariantAxes({
-                            product: (it as any).products || (it as any).product,
-                            addonDefaults,
-                            lang: isRTL ? "ar" : "en",
-                          });
-                          const size = lineSizeText(it, isRTL ? "ar" : "en");
-                          const parts = [
-                            it.selected_variant.color &&
-                              axes.color.visible &&
-                              `${axes.color.label}: ${it.selected_variant.color}`,
-                            size && axes.size.visible && `${axes.size.label}: ${size}`,
-                            it.selected_variant.fabric &&
-                              axes.fabric.visible &&
-                              `${axes.fabric.label}: ${it.selected_variant.fabric}`,
-                          ].filter(Boolean);
-                          if (parts.length === 0) return null;
-                          return (
-                            <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
-                              {parts.join(" · ")}
-                            </p>
-                          );
-                        })()}
-                      {lineFields(it.custom_field_values).rows.length > 0 && (
-                        <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
-                          {lineFields(it.custom_field_values).rows.map((cf, ci) => (
-                            <li key={ci}>
-                              {customFieldLabel(cf, isRTL ? "ar" : "en")}:{" "}
-                              {cf.value.startsWith("http") ? (
-                                <a
-                                  href={cf.value}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
-                                >
-                                  <Paperclip className="h-3 w-3" aria-hidden="true" />
-                                  {isRTL ? "تحميل/عرض الملف" : "View File"}
-                                </a>
-                              ) : (
-                                customFieldValue(cf, isRTL ? "ar" : "en")
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <LineNotes
-                        notes={lineFields(it.custom_field_values).notes}
+                      <InvoicePreviewLineDetails
+                        it={it}
                         lang={isRTL ? "ar" : "en"}
+                        addonDefaults={addonDefaults}
                       />
                     </td>
                     <td className="p-3 text-end" style={{ color: text }}>

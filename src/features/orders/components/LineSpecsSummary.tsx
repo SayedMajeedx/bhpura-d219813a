@@ -1,6 +1,10 @@
 import { FileText, Ruler, Scissors, SlidersHorizontal } from "lucide-react";
 import { resolveAllVariantAxes, type variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
-import { customFieldLabel, customFieldValue } from "@/lib/order-custom-fields";
+import {
+  customFieldLabel,
+  customFieldValue,
+  withoutRepeatedOptions,
+} from "@/lib/order-custom-fields";
 import { lineFields, lineSize, madeToMeasure, madeToMeasureLabel } from "@/lib/made-to-measure";
 import type { useVocabulary } from "@/hooks/use-vocabulary";
 import type { OrderItem } from "@/features/orders/types";
@@ -34,12 +38,18 @@ export function LineSpecsSummary({
   vocabulary: ReturnType<typeof useVocabulary>["vocabulary"];
 }) {
   const isAr = lang === "ar";
-  const { rows, notes } = lineFields(it.custom_field_values);
+  const { rows: answers, notes } = lineFields(it.custom_field_values);
   const measured = madeToMeasure(it);
   const variant = it.selected_variant;
-  if (!variant && rows.length === 0 && notes.length === 0) return null;
   const axes = resolveAllVariantAxes({ product, addonDefaults, lang });
   const size = lineSize(it);
+  const rows = withoutRepeatedOptions(
+    answers,
+    { color: variant?.color, size, fabric: variant?.fabric },
+    axes,
+    lang,
+  );
+  if (!variant && rows.length === 0 && notes.length === 0) return null;
   const Icon = madeToOrderModule ? Scissors : SlidersHorizontal;
 
   return (
