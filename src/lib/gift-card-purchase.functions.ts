@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { allowTry, clientIp } from "@/lib/request-tries";
+import { purchasePageUrl } from "@/lib/gift-card-notices";
 
 /**
  * A shopper buying a gift card on the storefront (step four of docs/gift-cards-plan.md). Both run
@@ -191,4 +192,70 @@ export const getGiftCardPurchaseReceiptUrl = createServerFn({ method: "POST" })
       throw new Error("INVALID_RECEIPT_KEY");
     }
     return { url: await createPrivateViewUrl(purchase.receipt_key), expiresInSeconds: 300 };
+  });
+
+/** What staff read of an order beyond its row: the buyer's page, and how the email went. */
+export type GiftCardOrderRecord = {
+  /** The buyer's own page for this order, with its private token. */
+  link: string;
+  /** The buyer's "paid" email in the outbox; null until there is one. */
+  paidEmail: { status: string; customer_done: boolean; last_error: string | null } | null;
+  /** Whether the store's customer mailbox is set up: without it no email goes. */
+  hasMailbox: boolean;
+};
+
+/**
+ * The buyer's page holds a private token a browser cannot read, and the email outbox is the
+ * server's, so staff who handle orders ask here. Reading the row first as the caller keeps it to
+ * their own store.
+ */
+export const getGiftCardOrderRecord = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((data: unknown) => z.object({ purchaseId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }): Promise<GiftCardOrderRecord> => {
+    const { data: row, error } = await context.supabase
+      .from("gift_card_purchases")
+      .select("id, brand_id")
+      .eq("id", data.purchaseId)
+      .maybeSingle();
+    const purchase = row as { id: string; brand_id: string } | null;
+    if (error || !purchase) throw new Error("PURCHASE_NOT_FOUND");
+    const { data: allowed } = await context.supabase.rpc("has_permission", {
+      p_permission: "manage_orders",
+    });
+    if (!allowed) throw new Error("FORBIDDEN");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const [{ data: secret }, { data: brand }, { data: event }, { data: mailbox }] =
+      await Promise.all([
+        supabaseAdmin
+          .from("gift_card_purchases")
+          .select("token")
+          .eq("id", purchase.id)
+          .maybeSingle(),
+        supabaseAdmin.from("brands").select("slug").eq("id", purchase.brand_id).maybeSingle(),
+        supabaseAdmin
+          .from("gift_card_purchase_events")
+          .select("status, customer_done, last_error")
+          .eq("purchase_id", purchase.id)
+          .eq("event", "paid")
+          .maybeSingle(),
+        (supabaseAdmin.rpc as unknown as Rpc)("get_integration_credential_secret", {
+          p_brand_id: purchase.brand_id,
+          p_provider: "resend_customer_email",
+        }),
+      ]);
+    const token = (secret as { token?: string } | null)?.token;
+    const slug = (brand as { slug?: string } | null)?.slug;
+    if (!token || !slug) throw new Error("PURCHASE_NOT_FOUND");
+    const credentials = Array.isArray(mailbox)
+      ? (mailbox[0] as { is_active?: boolean; api_key?: string; base_url?: string } | undefined)
+      : undefined;
+    return {
+      link: purchasePageUrl({ slug, purchase_id: purchase.id, token }),
+      paidEmail: (event as GiftCardOrderRecord["paidEmail"]) ?? null,
+      hasMailbox: Boolean(
+        credentials?.is_active && credentials.api_key?.trim() && credentials.base_url?.trim(),
+      ),
+    };
   });

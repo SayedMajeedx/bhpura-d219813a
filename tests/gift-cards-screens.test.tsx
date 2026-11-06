@@ -47,6 +47,11 @@ vi.mock("../src/lib/data/gift-cards", () => ({
 }));
 const purchaseFns = {
   getGiftCardPurchaseReceiptUrl: vi.fn(async () => ({ url: "https://r2.test/r" })),
+  getGiftCardOrderRecord: vi.fn(async () => ({
+    link: "https://pura.boutq.store/pura/gift-card/pu3?t=secret",
+    paidEmail: { status: "processed", customer_done: true, last_error: null },
+    hasMailbox: true,
+  })),
 };
 vi.mock("../src/lib/gift-card-purchase.functions", () => purchaseFns);
 vi.mock("@/lib/gift-card-purchase.functions", () => purchaseFns);
@@ -81,6 +86,12 @@ vi.mock("@/lib/profile-context", () => ({
   useProfile: () => ({ hasPermission: () => profile.allowed }),
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  Link: ({ children, params }: { children: React.ReactNode; params: { id: string } }) => (
+    <a href={`/orders/${params.id}`}>{children}</a>
+  ),
+}));
 
 const rules = await import("../src/features/gift-cards/lib/gift-cards");
 const { GiftCardsPage } = await import("../src/features/gift-cards/components/GiftCardsPage");
@@ -191,6 +202,9 @@ describe("a card's rules", () => {
   });
 });
 
+// The page keeps its tab in the address, which a test's window keeps too.
+beforeEach(() => window.history.replaceState(null, "", "/"));
+
 describe("the gift cards page", () => {
   beforeEach(() => {
     data.cards = [
@@ -204,9 +218,10 @@ describe("the gift cards page", () => {
 
   it("shows what is held and every card, and opens one with its moves", async () => {
     wrap(<GiftCardsPage />);
+    expect(await screen.findByText("Held on active cards")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Cards" }));
     expect(await screen.findByText("ABCD-EFGH-JKMN")).toBeInTheDocument();
-    expect(screen.getByText("Held on active cards")).toBeInTheDocument();
-    expect(screen.getByText(/Used up/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Used up/).length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("ABCD-EFGH-JKMN"));
     expect(await screen.findByText("Issued")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Void card" })).toBeDisabled();
@@ -294,12 +309,106 @@ describe("paying an order with a card", () => {
   });
 });
 
+describe("a gift card order", () => {
+  const paid = {
+    id: "9f1c2d3e-0000-4000-8000-000000000001",
+    brand_id: "b1",
+    amount: 50,
+    currency: "BHD",
+    payment_method: "card",
+    status: "paid",
+    buyer_name: "Mona",
+    buyer_phone: "+97339001122",
+    buyer_email: "mona@mail.com",
+    recipient_name: "Noor",
+    message: "Eid Mubarak",
+    receipt_key: null,
+    gateway_reference: "chg_123",
+    gift_card_id: "c1",
+    delivery_channel: "email",
+    lang: "en",
+    buyer_user_id: null,
+    created_at: "2026-10-31T10:00:00Z",
+    paid_at: "2026-10-31T10:01:00Z",
+    code_sent_at: null,
+    gift_cards: { code: "ABCD-EFGH-JKMN", expires_on: null, balance: 30, status: "active" },
+  };
+
+  it("has a reference, and its sheet says everything, with the buyer's link", async () => {
+    data.cards = [card()];
+    data.purchases = [paid];
+    wrap(<GiftCardsPage />);
+    expect(await screen.findByText(/GC-9F1C2D/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Mona"));
+    expect(await screen.findByText("Buyer's page")).toBeInTheDocument();
+    expect(screen.getByText("chg_123")).toBeInTheDocument();
+    expect(screen.getByText("“Eid Mubarak”")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "mona@mail.com" })).toHaveAttribute(
+      "href",
+      "mailto:mona@mail.com",
+    );
+    // The email's state and the link come from the server, not from a guess.
+    expect(await screen.findByText("Code emailed")).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Open the page" })).toHaveAttribute(
+      "href",
+      "https://pura.boutq.store/pura/gift-card/pu3?t=secret",
+    );
+    expect(screen.getByText("Paid and issued")).toBeInTheDocument();
+  });
+
+  it("leads to its card, and the card leads back", async () => {
+    data.cards = [card()];
+    data.purchases = [paid];
+    data.moves = [
+      {
+        id: "m1",
+        kind: "redeemed",
+        amount: -20,
+        order_id: "o9",
+        created_at: "2026-10-31T11:00:00Z",
+        note: null,
+      },
+    ];
+    wrap(<GiftCardsPage />);
+    fireEvent.click(await screen.findByText("Mona"));
+    fireEvent.click(await screen.findByRole("button", { name: "Open the card" }));
+    expect(await screen.findByRole("link", { name: "View order" })).toHaveAttribute(
+      "href",
+      "/orders/o9",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "View the order" }));
+    expect(await screen.findByText("Buyer's page")).toBeInTheDocument();
+  });
+
+  it("opens the Orders tab on what waits, and keeps the other groups a tap away", async () => {
+    data.cards = [];
+    data.purchases = [
+      { ...paid, id: "a", buyer_name: "Done Buyer" },
+      {
+        ...paid,
+        id: "b",
+        buyer_name: "Waiting Buyer",
+        status: "pending",
+        payment_method: "benefit",
+        gift_cards: null,
+      },
+    ];
+    wrap(<GiftCardsPage />);
+    expect(await screen.findByText("Waiting Buyer")).toBeInTheDocument();
+    expect(screen.queryByText("Done Buyer")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Completed/ }));
+    expect(await screen.findByText("Done Buyer")).toBeInTheDocument();
+    expect(screen.queryByText("Waiting Buyer")).toBeNull();
+  });
+});
+
 describe("selling cards on the store", () => {
   it("saves the store's offer: on, its amounts as typed and how long a card lasts", async () => {
     profile.allowed = true;
     data.settings = null;
     data.purchases = [];
     wrap(<GiftCardsPage />);
+    fireEvent.click(screen.getByRole("tab", { name: "Settings" }));
     fireEvent.click(await screen.findByRole("switch", { name: "Sell gift cards on the store" }));
     fireEvent.change(screen.getByLabelText(/Amounts offered/), { target: { value: "50, 25" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
@@ -330,8 +439,9 @@ describe("selling cards on the store", () => {
       },
     ];
     wrap(<GiftCardsPage />);
-    expect(await screen.findByText(/Transfers to check/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Approve and issue the card" }));
+    // It opens on what waits, and the row says what to do.
+    fireEvent.click(await screen.findByText("Sara"));
+    fireEvent.click(await screen.findByRole("button", { name: "Approve and issue the card" }));
     await waitFor(() => expect(data.approveGiftCardPurchase).toHaveBeenCalledWith("pu1"));
   });
 
@@ -373,13 +483,9 @@ describe("selling cards on the store", () => {
       },
     ];
     wrap(<GiftCardsPage />);
-    expect(await screen.findByText(/Codes to send on WhatsApp/)).toBeInTheDocument();
-    expect(screen.getByText("Code on WhatsApp to +97339001122")).toBeInTheDocument();
-    expect(screen.getByText("Code by email to mona@mail.com")).toBeInTheDocument();
-    expect(screen.getByText(/Code emailed automatically/)).toBeInTheDocument();
-    // Only the WhatsApp buyer's code waits for a person; the emailed one has no button.
-    const send = screen.getByRole("link", { name: /Send the code on WhatsApp/ });
-    expect(screen.getAllByRole("link", { name: /Send the code/ })).toHaveLength(1);
+    // Only the WhatsApp buyer's code waits for a person; the email one is done.
+    fireEvent.click(await screen.findByText("Sara"));
+    const send = await screen.findByRole("link", { name: /Send the code on WhatsApp/ });
     const href = send.getAttribute("href") ?? "";
     expect(href.startsWith("https://wa.me/97339001122?text=")).toBe(true);
     expect(decodeURIComponent(href)).toContain("WXYZ-2345-6789");
@@ -392,7 +498,8 @@ describe("selling cards on the store", () => {
     profile.allowed = false;
     data.purchases = [];
     wrap(<GiftCardsPage />);
-    await screen.findByText("Selling on the store");
+    await screen.findByRole("tab", { name: "Orders" });
+    expect(screen.queryByRole("tab", { name: "Settings" })).toBeNull();
     expect(screen.queryByRole("switch", { name: "Sell gift cards on the store" })).toBeNull();
     profile.allowed = true;
   });

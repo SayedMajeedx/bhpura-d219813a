@@ -2,7 +2,7 @@ import React from "react";
 import { fireEvent, render as rtlRender, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
-import { codeSentWords, codesToSend } from "../src/features/gift-cards/lib/online-sales";
+import { codesToSend } from "../src/features/gift-cards/lib/online-sales";
 
 // The gift card refinement of 2026-10-31: a signed-in shopper reveals the codes of the cards they
 // bought in their account (`storefront_my_gift_cards`, run in a real Postgres by
@@ -109,14 +109,5 @@ describe("the codes the store sends by hand", () => {
       purchase("unpaid", { status: "pending", gift_cards: null }),
     ]);
     expect(list.map((p: { id: string }) => p.id)).toEqual(["early", "late"]);
-  });
-
-  it("say where a paid code stands, and nothing before it is paid", () => {
-    expect(codeSentWords(purchase("a"), "en")).toBe("Code not sent yet");
-    expect(codeSentWords(purchase("b", { code_sent_at: "x" }), "en")).toBe("Code sent on WhatsApp");
-    expect(codeSentWords(purchase("c", { delivery_channel: "email" }), "en")).toBe(
-      "Code emailed automatically",
-    );
-    expect(codeSentWords(purchase("d", { status: "pending" }), "en")).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Globe } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useBrand } from "@/lib/brand-context";
-import { useProfile } from "@/lib/profile-context";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { storeAddress } from "@/lib/platform-host";
 import { countOf } from "@/lib/arabic-count";
@@ -17,41 +16,17 @@ import {
   invalidateGiftCardOnline,
   saveGiftCardSettings,
 } from "@/lib/data/gift-cards";
-import { PurchaseRow, TransferRow } from "./GiftCardPurchaseRows";
 import { giftCardError } from "../lib/gift-cards";
-import {
-  VALIDITY_CHOICES,
-  amountsFromText,
-  amountsText,
-  codesToSend,
-  waitingTransfers,
-} from "../lib/online-sales";
+import { VALIDITY_CHOICES, amountsFromText, amountsText } from "../lib/online-sales";
+import { CardDesignsSection } from "./CardDesignsSection";
 
-/**
- * Selling cards on the store (step four): whether the store sells them online, the amounts a
- * shopper picks from and how long a card lasts (staff who may change settings), the transfers
- * waiting to be checked (approving one issues its card), the codes a buyer asked for on WhatsApp
- * still to send, and the latest purchases with who bought them and how they get the code.
- */
-export function OnlineGiftCardsSection({ lang }: { lang: "ar" | "en" }) {
-  const isAr = lang === "ar";
+/** How the store sells its cards, for staff who may change settings: the offer, and the designs. */
+export function GiftCardSettingsTab({ lang }: { lang: "ar" | "en" }) {
   const brand = useBrand();
-  const { hasPermission } = useProfile();
-  const mayEdit = hasPermission("manage_settings");
   const settingsQ = useQuery(giftCardOnlineQueries.settings(brand.id));
-  const purchasesQ = useQuery(giftCardOnlineQueries.purchases(brand.id));
-  const purchases = purchasesQ.data ?? [];
-  const waiting = waitingTransfers(purchases);
-  const toSend = codesToSend(purchases);
-  const recent = purchases.filter((p) => !waiting.includes(p) && !toSend.includes(p)).slice(0, 10);
-
   return (
-    <section className="space-y-3">
-      <h2 className="flex items-center gap-2 text-sm font-semibold">
-        <Globe className="size-4" aria-hidden="true" />
-        {isAr ? "البيع على المتجر" : "Selling on the store"}
-      </h2>
-      {mayEdit && settingsQ.isSuccess && (
+    <div className="space-y-4">
+      {settingsQ.isSuccess && (
         <SettingsCard
           key={settingsQ.data?.updated_at ?? "new"}
           brandId={brand.id}
@@ -60,52 +35,8 @@ export function OnlineGiftCardsSection({ lang }: { lang: "ar" | "en" }) {
           initial={settingsQ.data}
         />
       )}
-      {waiting.length > 0 && (
-        <Card className="space-y-2 p-3">
-          <p className="text-sm font-semibold">
-            {isAr
-              ? `تحويلات بانتظار التحقق: ${countOf(waiting.length, "card", lang)}`
-              : `Transfers to check: ${countOf(waiting.length, "card", lang)}`}
-          </p>
-          <ul className="space-y-2">
-            {waiting.map((purchase) => (
-              <TransferRow key={purchase.id} purchase={purchase} lang={lang} />
-            ))}
-          </ul>
-        </Card>
-      )}
-      {toSend.length > 0 && (
-        <Card className="space-y-1 p-3">
-          <p className="text-sm font-semibold">
-            {isAr
-              ? `رموز لإرسالها على واتساب: ${countOf(toSend.length, "card", lang)}`
-              : `Codes to send on WhatsApp: ${countOf(toSend.length, "card", lang)}`}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "اختار المشتري استلام الرمز على واتساب؛ يفتح الزر المحادثة بالرسالة جاهزة."
-              : "The buyer asked for the code on WhatsApp; the button opens the chat with the message written."}
-          </p>
-          <ul className="divide-y divide-border">
-            {toSend.map((purchase) => (
-              <PurchaseRow key={purchase.id} purchase={purchase} lang={lang} />
-            ))}
-          </ul>
-        </Card>
-      )}
-      {recent.length > 0 && (
-        <Card className="p-3">
-          <p className="mb-2 text-xs font-semibold text-muted-foreground">
-            {isAr ? "آخر عمليات الشراء" : "Latest purchases"}
-          </p>
-          <ul className="divide-y divide-border">
-            {recent.map((purchase) => (
-              <PurchaseRow key={purchase.id} purchase={purchase} lang={lang} />
-            ))}
-          </ul>
-        </Card>
-      )}
-    </section>
+      <CardDesignsSection lang={lang} />
+    </div>
   );
 }
 
