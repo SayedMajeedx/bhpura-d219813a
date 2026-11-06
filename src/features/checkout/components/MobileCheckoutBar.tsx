@@ -2,6 +2,7 @@ import { formatPrice } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import type { Storefront } from "@/features/checkout/types";
+import { placeOrderHint } from "@/features/checkout/lib/checkout-validation";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 
@@ -40,8 +41,17 @@ export function MobileCheckoutBar({
   leftToPay?: number | null;
   t: Storefront["t"];
 }) {
+  const orderHint = placeOrderHint({ acceptedTerms, method, benefitReceipt, receiptRequired, t });
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 py-3 shadow-[0_-6px_20px_-12px_rgba(0,0,0,0.35)] backdrop-blur md:hidden">
+      {orderHint && !closedToOrders && (
+        <p
+          role="status"
+          className="mx-auto mb-2 max-w-lg text-xs font-medium text-muted-foreground"
+        >
+          {orderHint}
+        </p>
+      )}
       <div className="mx-auto flex max-w-lg items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="text-xs text-muted-foreground">

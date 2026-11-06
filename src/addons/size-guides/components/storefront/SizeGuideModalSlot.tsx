@@ -1,4 +1,4 @@
-import { useStorefront } from "@/lib/storefront-context";
+import { pickName, useStorefront } from "@/lib/storefront-context";
 import { resolveSizeGuideForProduct } from "../../lib/size-guide";
 import { SizeGuideModal } from "./SizeGuideModal";
 
@@ -27,7 +27,7 @@ export function SizeGuideModalSlot({
   return (
     <SizeGuideModal
       isAr={isAr}
-      productName={product.name}
+      productName={pickName(lang, product)}
       guide={resolvedGuide}
       selectedSize={selectedSize}
       onSelectSize={onSelectSize}

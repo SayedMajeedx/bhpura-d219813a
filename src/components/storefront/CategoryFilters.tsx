@@ -198,7 +198,7 @@ export function CategoryFilters({
       {!servicesStore && (
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor="filter-instock" className="cursor-pointer text-xs font-medium">
-            {t("المتوفر في المخزون فقط", "In-stock items only")}
+            {t("الجاهز للتسليم فقط", "Ready to ship only")}
           </Label>
           <Switch
             id="filter-instock"

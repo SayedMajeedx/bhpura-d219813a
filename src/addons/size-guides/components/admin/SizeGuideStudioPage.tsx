@@ -49,6 +49,7 @@ import {
   parseSizeGuidePaste,
 } from "../../lib/size-guide";
 import { ALL_SIZE_GUIDE_TEMPLATES, ABAYA_GULF_TEMPLATE } from "../../lib/size-guide-templates";
+import { drawsGarmentDiagram } from "../../lib/flat-diagram";
 import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
 import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
 import { studioNames } from "@/addons/size-guides/lib/studio-names";
@@ -128,6 +129,7 @@ export function SizeGuidesStudioPage() {
   // duplicate). The sync effect must not replace it with an existing guide.
   const [isNewDraft, setIsNewDraft] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm());
+  const garmentGuide = drawsGarmentDiagram(form);
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [pasteDialogOpen, setPasteDialogOpen] = useState(false);
   const [pasteText, setPasteText] = useState("");
@@ -330,11 +332,12 @@ export function SizeGuidesStudioPage() {
       );
       return;
     }
-    if (form.columns.length === 0) {
+    // A guide drawn as a garment has no chart to fill in.
+    if (!garmentGuide && form.columns.length === 0) {
       toast.error(isAr ? "يجب إضافة عمود واحد على الأقل" : "At least one column is required");
       return;
     }
-    if (form.rows.length === 0) {
+    if (!garmentGuide && form.rows.length === 0) {
       toast.error(isAr ? "يجب إضافة مقاس واحد على الأقل" : "At least one size row is required");
       return;
     }
@@ -502,8 +505,8 @@ export function SizeGuidesStudioPage() {
               </h1>
               <p className="text-xs text-muted-foreground">
                 {isAr
-                  ? "إدارة جداول المقاسات، طرق القياس، ومقترح المقاسات الذكي"
-                  : "Manage size charts, measuring instructions, and the smart recommender"}
+                  ? "إدارة جداول المقاسات ورسومها وطرق القياس"
+                  : "Manage size charts, diagrams and measuring instructions"}
               </p>
             </div>
           </div>
@@ -768,8 +771,16 @@ export function SizeGuidesStudioPage() {
                 </div>
               </div>
 
+              {garmentGuide && (
+                <p className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+                  {isAr
+                    ? "هذا الدليل رسم للقطعة بدون جدول. عدّل الخطوات من تبويب طريقة القياس."
+                    : "This guide is a drawing with no chart. Edit its steps in the How to measure tab."}
+                </p>
+              )}
+
               {/* Columns Editor */}
-              <div className="space-y-3 border-t border-border pt-4">
+              <div hidden={garmentGuide} className="space-y-3 border-t border-border pt-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
@@ -959,7 +970,7 @@ export function SizeGuidesStudioPage() {
               </div>
 
               {/* Rows Editor */}
-              <div className="space-y-3 border-t border-border pt-4">
+              <div hidden={garmentGuide} className="space-y-3 border-t border-border pt-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     {isAr ? "الصفوف والمقاسات" : "Size Rows"} ({form.rows.length})
@@ -1393,26 +1404,6 @@ export function SizeGuidesStudioPage() {
                 <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-muted/20">
                   <div className="space-y-0.5">
                     <div className="text-xs font-bold text-foreground flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      <span>{isAr ? "مُقترح المقاسات الذكي" : "Smart Size Recommender"}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {isAr
-                        ? "يسمح للمشتري بإدخال مقاساته ويقترح له تلقائياً المقاس الأنسب بدقة"
-                        : "Prompts shoppers for their measurements to suggest their perfect size"}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={form.recommender_enabled}
-                    onCheckedChange={(checked) =>
-                      setForm({ ...form, recommender_enabled: checked })
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-xl border border-border p-3.5 bg-muted/20">
-                  <div className="space-y-0.5">
-                    <div className="text-xs font-bold text-foreground flex items-center gap-2">
                       <Star className="h-4 w-4 text-primary" />
                       <span>
                         {isAr ? "جعله الدليل الافتراضي للمتجر" : "Default Guide for Store"}
@@ -1591,7 +1582,13 @@ export function SizeGuidesStudioPage() {
                 </div>
 
                 <div className="mt-3 pt-2 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{countOf(tmpl.rows.length, "size", isAr ? "ar" : "en")}</span>
+                  <span>
+                    {tmpl.rows.length > 0
+                      ? countOf(tmpl.rows.length, "size", isAr ? "ar" : "en")
+                      : isAr
+                        ? "رسم بدون جدول"
+                        : "Drawing, no chart"}
+                  </span>
                   <span className="text-primary font-medium group-hover:underline">
                     {isAr ? "استخدام القالب ←" : "Use template →"}
                   </span>

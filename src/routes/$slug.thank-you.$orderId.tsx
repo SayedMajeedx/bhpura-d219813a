@@ -10,6 +10,10 @@ import { useQuery } from "@tanstack/react-query";
 import { bookingsQueries } from "@/lib/data/bookings";
 import { orderReceiptQueries } from "@/features/order-receipt/lib/queries";
 import { OrderReceiptCard } from "@/features/order-receipt/components/OrderReceiptCard";
+import { receiptTailored } from "@/features/order-receipt/lib/order-receipt";
+import { measurementsStillOpen, storeChatLink } from "@/features/order-receipt/lib/order-track";
+import { orderNumberLabel } from "@/lib/order-number";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 
 /**
  * How the order is fulfilled comes from the URL: checkout sets it from the
@@ -76,6 +80,7 @@ function ThankYou() {
 
   const isPickup = fulfillment === "pickup";
   const isDigital = fulfillment === "digital";
+  const tailored = receipt ? receiptTailored(receipt) : false;
 
   return (
     <div className="mx-auto max-w-lg p-6 sm:p-8 animate-in fade-in duration-(--motion-very-slow)">
@@ -122,15 +127,20 @@ function ThankYou() {
                     "تم استلام طلبك وسيتم إرسال المنتج الرقمي إلى بريدك الإلكتروني بعد تجهيز الطلب.",
                     "We received your order. Your digital product will be sent to your email once it is ready.",
                   )
-              : isPickup
+              : tailored
                 ? t(
-                    "تم استلام طلبكم وسيتم التواصل معكم فور تجهيز الطلب للاستلام.",
-                    "We received your order and will contact you as soon as it is ready for pickup.",
+                    "استلمنا طلبك، ونبدأ تجهيز قطعتك بعد تأكيده.",
+                    "We received your order. We start making your piece once it is confirmed.",
                   )
-                : t(
-                    "تم استلام طلبك وسيتم التواصل معك قريباً لتأكيد التوصيل.",
-                    "We received your order and will contact you shortly to confirm delivery.",
-                  )}
+                : isPickup
+                  ? t(
+                      "تم استلام طلبك وسيتم التواصل معك فور تجهيزه للاستلام.",
+                      "We received your order and will contact you as soon as it is ready for pickup.",
+                    )
+                  : t(
+                      "تم استلام طلبك وسيتم التواصل معك قريباً لتأكيد التوصيل.",
+                      "We received your order and will contact you shortly to confirm delivery.",
+                    )}
         </p>
         {search.for && (
           <p className="-mt-3 mb-6 text-sm font-semibold text-foreground">
@@ -141,7 +151,27 @@ function ThankYou() {
 
         {receipt && (
           <div className="mb-6">
-            <OrderReceiptCard receipt={receipt} lang={lang} slug={brand.slug} trackLink />
+            <OrderReceiptCard
+              receipt={receipt}
+              lang={lang}
+              slug={brand.slug}
+              trackLink
+              reviewMeasurements={
+                tailored && measurementsStillOpen(receipt.status, receipt.fulfillmentStatus)
+              }
+              askUrl={
+                tailored
+                  ? storeChatLink(
+                      settings?.whatsapp_enabled ? whatsappChatUrl(settings.whatsapp_number) : null,
+                      t(
+                        `أريد تعديل مقاسات الطلب ${orderNumberLabel(receipt.invoiceNumber, receipt.numberFormat)}`,
+                        `I would like to change the measurements on order ${orderNumberLabel(receipt.invoiceNumber, receipt.numberFormat)}`,
+                      ),
+                    )
+                  : null
+              }
+              askLabel={t("تعديل المقاسات", "Change measurements")}
+            />
           </div>
         )}
 

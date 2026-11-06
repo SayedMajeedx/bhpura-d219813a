@@ -23,6 +23,8 @@ export type OrderRow = {
     /** What was ordered, for "order again" on a menu (null for a line staff typed by hand). */
     product_id?: string | null;
     variant_id?: string | null;
+    /** "custom" for a piece being made for the shopper. */
+    location?: string | null;
   }>;
 };
 

@@ -8,6 +8,7 @@ import {
   type OrderReceipt,
   type ReceiptLine,
 } from "@/features/order-receipt/lib/order-receipt";
+import { estimateDays } from "@/lib/delivery-estimate";
 
 /**
  * A shopper's own order, read by the server with the service role (a visitor reads no order):
@@ -21,7 +22,8 @@ const ORDER_COLUMNS = `
   tax_amount, total, advance_paid, payment_method, payment_status, status, fulfillment_status,
   fulfillment_method, public_invoice_token, customer_phone_snapshot,
   customers(phone),
-  order_items(description, name_ar, name_en, quantity, line_total, products(name, name_ar, name_en))
+  order_items(description, name_ar, name_en, quantity, line_total, location, custom_field_values,
+    products(name, name_ar, name_en))
 `;
 
 type OrderRow = {
@@ -53,6 +55,9 @@ type StoreRow = {
   currency: string | null;
   order_number_prefix: string | null;
   order_number_digits: number | null;
+  /** How long the store says a ready piece and a piece being made take, in its own words. */
+  ready_estimate: string | null;
+  tailored_estimate: string | null;
 };
 
 async function storeOf(slug: string): Promise<StoreRow | null> {
@@ -65,7 +70,9 @@ async function storeOf(slug: string): Promise<StoreRow | null> {
   if (!brand) return null;
   const { data: settings } = await supabaseAdmin
     .from("business_settings")
-    .select("currency, order_number_prefix, order_number_digits")
+    .select(
+      "currency, order_number_prefix, order_number_digits, delivery_estimate_ar, delivery_estimate_en, delivery_estimate_tailored_ar, delivery_estimate_tailored_en",
+    )
     .eq("brand_id", brand.id)
     .maybeSingle();
   return {
@@ -73,12 +80,17 @@ async function storeOf(slug: string): Promise<StoreRow | null> {
     currency: settings?.currency ?? null,
     order_number_prefix: settings?.order_number_prefix ?? null,
     order_number_digits: settings?.order_number_digits ?? null,
+    ready_estimate: settings?.delivery_estimate_ar || settings?.delivery_estimate_en || null,
+    tailored_estimate:
+      settings?.delivery_estimate_tailored_ar || settings?.delivery_estimate_tailored_en || null,
   };
 }
 
 const money = (value: number | null | undefined) => Number(value ?? 0) || 0;
 
 function receiptOf(order: OrderRow, store: StoreRow): OrderReceipt {
+  const lines = order.order_items ?? [];
+  const tailored = lines.some((line) => line.location === "custom");
   return {
     invoiceNumber: order.invoice_number,
     numberFormat: {
@@ -99,13 +111,16 @@ function receiptOf(order: OrderRow, store: StoreRow): OrderReceipt {
     fulfillmentStatus: order.fulfillment_status,
     fulfillmentMethod: order.fulfillment_method,
     invoiceToken: order.public_invoice_token,
-    lines: (order.order_items ?? []).map((line) => ({
+    estimateDays: estimateDays(tailored ? store.tailored_estimate : store.ready_estimate),
+    lines: lines.map((line) => ({
       description: line.description,
       name_ar: line.name_ar,
       name_en: line.name_en,
       products: line.products ?? null,
       quantity: Number(line.quantity ?? 0),
       line_total: money(line.line_total),
+      location: line.location ?? null,
+      custom_field_values: line.custom_field_values ?? null,
     })),
   };
 }

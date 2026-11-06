@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { type SizeGuide, type SizeGuideUnit, formatCell } from "../../../lib/size-guide";
-import { SizeRecommender } from "./SizeRecommender";
+import { FLAT_DIAGRAM_INTRO, drawsGarmentDiagram, showsSizeChart } from "../../../lib/flat-diagram";
+import { GarmentMeasureDiagram } from "./GarmentMeasureDiagram";
 import { Ruler, HelpCircle, Video } from "lucide-react";
 
 export interface SizeGuidePanelProps {
@@ -15,7 +16,6 @@ export interface SizeGuidePanelProps {
   selectedSize?: string | null;
   onSelectSize?: (size: string) => void;
   initialUnit?: SizeGuideUnit;
-  showRecommender?: boolean;
 }
 
 export function SizeGuidePanel({
@@ -24,7 +24,6 @@ export function SizeGuidePanel({
   selectedSize,
   onSelectSize,
   initialUnit,
-  showRecommender = true,
 }: SizeGuidePanelProps) {
   const isAr = lang === "ar";
 
@@ -33,14 +32,20 @@ export function SizeGuidePanel({
     return guide.base_unit === "in" ? "in" : "cm";
   });
 
-  const showUnitToggle = guide.base_unit !== "none";
+  // A guide drawn as a garment has no chart, so nothing to switch between units.
+  const garmentDiagram = drawsGarmentDiagram(guide);
+  const sizeChart = showsSizeChart(guide);
+  const showUnitToggle = sizeChart && guide.base_unit !== "none";
   const guideName = isAr ? guide.name_ar : guide.name_en;
   const guideNotes = isAr ? guide.notes_ar : guide.notes_en;
 
   return (
     <div className="space-y-6">
-      {/* Header Bar: Title + Unit Toggles */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+      {/* Header Bar: Title + Unit Toggles (a drawing has neither to add to the page's own title) */}
+      <div
+        hidden={garmentDiagram}
+        className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3"
+      >
         <div className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-lg bg-primary/10 text-primary">
             <Ruler className="h-4 w-4" />
@@ -81,90 +86,92 @@ export function SizeGuidePanel({
         )}
       </div>
 
+      {/* A garment laid flat, each measurement marked on it */}
+      {garmentDiagram && (
+        <div className="space-y-3">
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {isAr ? FLAT_DIAGRAM_INTRO.ar : FLAT_DIAGRAM_INTRO.en}
+          </p>
+          {!guide.diagram_url && <GarmentMeasureDiagram lang={lang} />}
+        </div>
+      )}
+
       {/* Sizing Chart Table */}
-      <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left rtl:text-right border-collapse">
-            <thead>
-              <tr className="bg-muted/60 border-b border-border text-foreground font-semibold">
-                <th className="sticky start-0 z-10 bg-muted/90 backdrop-blur px-3 py-2.5 min-w-[70px]">
-                  {isAr ? "المقاس" : "Size"}
-                </th>
-                {guide.columns.map((col) => (
-                  <th key={col.key} className="px-3 py-2.5 min-w-[90px] whitespace-nowrap">
-                    {isAr ? col.label_ar : col.label_en}
-                    {col.kind === "measurement" && showUnitToggle && (
-                      <span className="ms-1 text-muted-foreground font-normal text-xs">
-                        ({currentUnit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
-                      </span>
-                    )}
+      {sizeChart && (
+        <div className="rounded-xl border border-border overflow-hidden bg-card shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left rtl:text-right border-collapse">
+              <thead>
+                <tr className="bg-muted/60 border-b border-border text-foreground font-semibold">
+                  <th className="sticky start-0 z-10 bg-muted/90 backdrop-blur px-3 py-2.5 min-w-[70px]">
+                    {isAr ? "المقاس" : "Size"}
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {guide.rows.map((row, idx) => {
-                const isSelected = selectedSize && selectedSize.trim() === row.label.trim();
-                return (
-                  <tr
-                    key={`${row.label}-${idx}`}
-                    onClick={() => onSelectSize && onSelectSize(row.label)}
-                    className={`transition-colors ${
-                      isSelected
-                        ? "bg-primary/10 font-semibold"
-                        : onSelectSize
-                          ? "hover:bg-muted/40 cursor-pointer"
-                          : "hover:bg-muted/20"
-                    }`}
-                  >
-                    <td
-                      className={`sticky start-0 z-10 px-3 py-2.5 font-bold ${
+                  {guide.columns.map((col) => (
+                    <th key={col.key} className="px-3 py-2.5 min-w-[90px] whitespace-nowrap">
+                      {isAr ? col.label_ar : col.label_en}
+                      {col.kind === "measurement" && showUnitToggle && (
+                        <span className="ms-1 text-muted-foreground font-normal text-xs">
+                          ({currentUnit === "in" ? (isAr ? "إنش" : "in") : isAr ? "سم" : "cm"})
+                        </span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {guide.rows.map((row, idx) => {
+                  const isSelected = selectedSize && selectedSize.trim() === row.label.trim();
+                  return (
+                    <tr
+                      key={`${row.label}-${idx}`}
+                      onClick={() => onSelectSize && onSelectSize(row.label)}
+                      className={`transition-colors ${
                         isSelected
-                          ? "bg-primary/15 text-primary border-s-2 border-primary"
-                          : "bg-card text-foreground"
+                          ? "bg-primary/10 font-semibold"
+                          : onSelectSize
+                            ? "hover:bg-muted/40 cursor-pointer"
+                            : "hover:bg-muted/20"
                       }`}
                     >
-                      {row.label}
-                    </td>
-                    {guide.columns.map((col) => {
-                      const formatted = formatCell(
-                        row.values[col.key],
-                        col,
-                        guide.base_unit,
-                        currentUnit,
-                      );
-                      return (
-                        <td
-                          key={col.key}
-                          className="px-3 py-2.5 whitespace-nowrap text-muted-foreground"
-                        >
-                          {formatted}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td
+                        className={`sticky start-0 z-10 px-3 py-2.5 font-bold ${
+                          isSelected
+                            ? "bg-primary/15 text-primary border-s-2 border-primary"
+                            : "bg-card text-foreground"
+                        }`}
+                      >
+                        {row.label}
+                      </td>
+                      {guide.columns.map((col) => {
+                        const formatted = formatCell(
+                          row.values[col.key],
+                          col,
+                          guide.base_unit,
+                          currentUnit,
+                        );
+                        return (
+                          <td
+                            key={col.key}
+                            className="px-3 py-2.5 whitespace-nowrap text-muted-foreground"
+                          >
+                            {formatted}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Row Notes or General Notes */}
       {guideNotes && (
         <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground border border-border">
           {guideNotes}
         </div>
-      )}
-
-      {/* Recommender Widget */}
-      {guide.recommender_enabled && showRecommender && (
-        <SizeRecommender
-          guide={guide}
-          lang={lang}
-          currentUnit={currentUnit}
-          onRecommendSize={onSelectSize}
-        />
       )}
 
       {/* How to Measure & Diagram Section */}

@@ -87,12 +87,30 @@ describe("filtering a category's products", () => {
     expect(ids(filterProducts(ALL, filters({ minPrice: 30, maxPrice: 50 })))).toEqual(["c"]);
   });
 
-  it("treats made-to-order products and services as always in stock", () => {
+  it("reads ready to ship as a piece on the shelf, for a made-to-order product too", () => {
     const custom = product("m", [{ size: "52", stock: 0 }], { is_made_to_order: true });
+    const ready = product("r", [{ size: "52", stock: 1 }], { is_made_to_order: true });
     const service = product("s", [{ size: "2 hours", stock: 0 }], { item_kind: "service" });
-    expect(ids(filterProducts([custom, service, B], filters({ inStockOnly: true })))).toEqual([
-      "m",
+    expect(ids(filterProducts([custom, ready, service], filters({ inStockOnly: true })))).toEqual([
+      "r",
       "s",
+    ]);
+  });
+
+  it("wants the piece in the size picked", () => {
+    const made = product(
+      "m",
+      [
+        { size: "57", stock: 0 },
+        { size: "54", stock: 2 },
+      ],
+      {
+        is_made_to_order: true,
+      },
+    );
+    expect(ids(filterProducts([made], filters({ inStockOnly: true, sizes: ["57"] })))).toEqual([]);
+    expect(ids(filterProducts([made], filters({ inStockOnly: true, sizes: ["54"] })))).toEqual([
+      "m",
     ]);
   });
 

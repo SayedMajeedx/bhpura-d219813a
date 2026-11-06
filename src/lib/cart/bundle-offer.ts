@@ -51,6 +51,9 @@ export function bundleBlock({
  * name it: a piece made to order or with details to fill needs its own page;
  * a piece with one variant is that variant, in stock; a piece in several is
  * the size the shopper chose for the main one, when exactly one in stock has it.
+ * A made-to-order piece's ready size is a ready piece: the shopper gives no
+ * measurements for it, as on a card's quick add (`readyOnly`). Without this the
+ * section vanished once a size was chosen in a store where everything can be made.
  */
 export function companionVariant<V extends StockedVariant>(
   item: {
@@ -59,9 +62,12 @@ export function companionVariant<V extends StockedVariant>(
     product_variants?: readonly V[] | null;
   },
   mainVariant: StockedVariant | null | undefined,
+  { readyOnly = false }: { readyOnly?: boolean } = {},
 ): V | null {
-  if (item.is_made_to_order) return null;
-  if (Array.isArray(item.custom_fields) && item.custom_fields.length > 0) return null;
+  if (!readyOnly) {
+    if (item.is_made_to_order) return null;
+    if (Array.isArray(item.custom_fields) && item.custom_fields.length > 0) return null;
+  }
   const variants = item.product_variants ?? [];
   const stocked = variants.filter((v) => units(v) > 0);
   if (variants.length === 1) return stocked[0] ?? null;

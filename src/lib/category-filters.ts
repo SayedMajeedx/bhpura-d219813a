@@ -135,12 +135,13 @@ function variantMeets(
   if (filters.minPrice !== null && price < filters.minPrice) return false;
   if (filters.maxPrice !== null && price > filters.maxPrice) return false;
   if (filters.inStockOnly) {
-    // Made-to-order products and services are always orderable.
-    const orderable =
-      product.is_made_to_order ||
+    // A piece on the shelf, in the size and colour picked. A store whose every product can also
+    // be made to order once saw the same list with this on and off, so a shopper who wanted a
+    // piece today could not find one. A service is booked, so it has nothing to run out of.
+    const ready =
       product.item_kind === "service" ||
       Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) > 0;
-    if (!orderable) return false;
+    if (!ready) return false;
   }
   return true;
 }
@@ -183,7 +184,7 @@ function productMeets(product: ProductRow, filters: FilterState, skip?: Skip): b
       (skip === "color" || filters.colors.length === 0) &&
       filters.minPrice === null &&
       filters.maxPrice === null &&
-      (!filters.inStockOnly || Boolean(product.is_made_to_order || product.item_kind === "service"))
+      (!filters.inStockOnly || product.item_kind === "service")
     );
   }
   return variants.some((variant) => variantMeets(product, variant, filters, skip));

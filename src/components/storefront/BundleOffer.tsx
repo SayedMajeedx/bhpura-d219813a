@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { buildCartItem } from "@/lib/cart/add-to-cart";
 import { bundleBlock, companionVariant } from "@/lib/cart/bundle-offer";
-import { cardPrice } from "@/lib/product-price";
+import { offeredCardPrice, offeredPiecePrice } from "@/lib/offer-price";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { quickAddPlan } from "@/features/product-page/lib/quick-add";
 import { toast } from "sonner";
 import { Plus, Check, ShoppingBag, Sparkles, Image as ImageIcon } from "lucide-react";
 
@@ -23,6 +25,8 @@ interface BundleOfferProps {
   mainVariant?: any;
   /** The shopper is having the piece made to order: its details are taken by the page, not here. */
   madeToOrderChoice?: boolean;
+  /** The store makes to order: a second piece that can be tailored is offered in a ready size. */
+  madeToOrderModule?: boolean;
   bundleItems: any[];
 }
 
@@ -37,9 +41,11 @@ export function BundleOffer({
   mainProduct,
   mainVariant,
   madeToOrderChoice = false,
+  madeToOrderModule = false,
   bundleItems = [],
 }: BundleOfferProps) {
   const { addToCart, currency, lang, t } = useStorefront();
+  const offers = useLiveOffers();
   const isAr = lang === "ar";
   const [selectedComplementaryId, setSelectedComplementaryId] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
@@ -50,21 +56,32 @@ export function BundleOffer({
   const choosing = block === "choose";
   // Until the size is chosen every piece is shown; then only those one tap can name.
   const offered = bundleItems
-    .map((item) => ({ item, variant: companionVariant<BundleVariant>(item, mainVariant) }))
+    .map((item) => {
+      // A piece that can also be tailored is offered in a ready size; one that is only made to
+      // measure, or asks for details of its own, needs its own page.
+      const plan = quickAddPlan(item, item.product_variants, {
+        madeToOrderModule,
+      });
+      const readyOnly = plan.kind === "add" && plan.tailorToo;
+      if (plan.kind === "page" && plan.reason !== "tailor") return { item, variant: null };
+      return { item, variant: companionVariant<BundleVariant>(item, mainVariant, { readyOnly }) };
+    })
     .filter((entry) => choosing || entry.variant);
   if (offered.length === 0) return null;
 
   const chosen = offered.find((entry) => entry.item.id === selectedComplementaryId) ?? offered[0];
   const selectedItem = chosen.item;
 
-  // Until a size names the variant, a piece costs what its card says (`cardPrice`): the product's
-  // `base_price` is not a price a shopper pays (Pura's Sabeeka read 30 here and 24 on its card).
-  const mainPrice = Number(
-    mainVariant?.selling_price ?? cardPrice(mainProduct, mainProduct.product_variants).from,
-  );
-  const compPrice = Number(
-    chosen.variant?.selling_price ?? cardPrice(selectedItem, selectedItem.product_variants).from,
-  );
+  // What a shopper pays, the store's offers taken off, as on a card and on the product's own page
+  // (a pair read 49 here while the same two pieces cost 39.2 in the bag). Until a size names the
+  // variant, a piece costs what its card says: the product's `base_price` is not a price anyone
+  // pays (Pura's Sabeeka read 30 here and 24 on its card).
+  const piecePrice = (product: any, variant: BundleVariant | null | undefined) =>
+    variant
+      ? offeredPiecePrice(offers, product, variant).price
+      : offeredCardPrice(product, product.product_variants, offers).from;
+  const mainPrice = piecePrice(mainProduct, mainVariant);
+  const compPrice = piecePrice(selectedItem, chosen.variant);
   const bundleTotal = mainPrice + compPrice;
 
   const handleAddBundle = () => {
@@ -72,7 +89,8 @@ export function BundleOffer({
     // The main piece as chosen, in a ready size: a made-to-order product's line says so.
     const mainCartItem = buildCartItem({ product: mainProduct, variant: mainVariant, qty: 1 });
     addToCart(mainProduct.is_made_to_order ? { ...mainCartItem, tailored: false } : mainCartItem);
-    addToCart(buildCartItem({ product: selectedItem, variant: chosen.variant, qty: 1 }));
+    const second = buildCartItem({ product: selectedItem, variant: chosen.variant, qty: 1 });
+    addToCart(selectedItem.is_made_to_order ? { ...second, tailored: false } : second);
 
     setAdded(true);
     toast.success(t("تمت إضافة العرض إلى السلة بنجاح!", "Bundle added to cart successfully!"));

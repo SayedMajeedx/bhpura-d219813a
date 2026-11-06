@@ -14,7 +14,8 @@ import { Card } from "@/components/ui/card";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
 import { useVariantTranslations } from "@/lib/use-variant-translations";
-import { isCatalogMode, shouldShowPrices, buildWhatsAppInquiryUrl } from "@/lib/storefront-mode";
+import { isCatalogMode } from "@/lib/storefront-mode";
+import { customFieldLabel, productInquiryUrl } from "@/features/product-page/lib/inquiry";
 import { useStickyCtaOffset } from "@/hooks/use-sticky-cta-offset";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useAddons } from "@/components/addons/AddonsProvider";
@@ -39,6 +40,8 @@ import {
   outOfStockByValue,
   previewVariant,
   choiceUnavailable,
+  readyChoiceGone,
+  unchosenOptions,
   fieldPriceDelta,
   sortVariants,
   uniqueOptionValues,
@@ -78,8 +81,10 @@ import { ProductCustomFields } from "@/features/product-page/components/ProductC
 import { TailoringNotesField } from "@/features/product-page/components/TailoringNotesField";
 import { ProductMobileBuyBar } from "@/features/product-page/components/ProductMobileBuyBar";
 import { productHead } from "@/features/product-page/lib/product-head";
+import { productDeliveryLine } from "@/features/product-page/lib/delivery-line";
 import { ProductAccordion } from "@/components/storefront/ProductAccordion";
 import { BundleOffer } from "@/components/storefront/BundleOffer";
+import { ReturnsLine } from "@/components/storefront/ReturnsLine";
 import { ProductReviews } from "@/features/product-page/components/ProductReviews";
 import {
   fetchProductReviews,
@@ -200,6 +205,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     linkSearch.mode === "custom" ? "custom" : "ready",
   );
   const [measurementsApplied, setMeasurementsApplied] = useState(false);
+  const [measurementsProblem, setMeasurementsProblem] = useState<string | null>(null);
   const [tailoringNotes, setTailoringNotes] = useState("");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -495,6 +501,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
   }, [tailoredOnly]);
 
+  // Measurements finished: the message that asked for them goes.
+  useEffect(() => {
+    if (measurementsApplied) setErrorMsg(null);
+  }, [measurementsApplied]);
+
   // A made-to-order piece cannot be asked for in more pieces than the store can still make.
   useEffect(() => {
     if (isTailoringActive && madeToOrder.left !== null && madeToOrder.left > 0) {
@@ -548,16 +559,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   );
   const bundleItems = relatedProducts.filter((item) => item.item_kind !== "service").slice(0, 3);
 
-  const cfLabel = (f: CustomField) => {
-    const label = lang === "ar" ? f.label_ar || f.label_en : f.label_en || f.label_ar;
-    if (label) return label;
-    if (/^f\d+$/.test(f.key)) {
-      return lang === "ar"
-        ? "النص المطلوب / تفاصيل إضافية"
-        : "Required Text / Special Instructions";
-    }
-    return f.key;
-  };
+  const cfLabel = (f: CustomField) => customFieldLabel(f, lang);
 
   const primary = settings.primary_color || "#111111";
 
@@ -570,7 +572,27 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     variants,
     product,
     isTailoringActive,
+    selection: optionSelection,
   });
+
+  // A colour or size with no ready piece, on a piece the store can make: it is offered at once.
+  const tailorInstead =
+    showSizeModeToggle && sizeMode === "ready" && readyChoiceGone(variants, optionSelection);
+  const tailoringTime = tailorInstead
+    ? productDeliveryLine({ settings, lang, madeForShopper: true })
+    : null;
+
+  const unchosenLabels = unchosenOptions(
+    optionSelection,
+    {
+      size: uniqueSizes,
+      color: uniqueColors,
+      fabric: uniqueFabrics,
+      four: uniqueFour,
+      five: uniqueFive,
+    },
+    isTailoringActive,
+  ).map((axis) => resolvedAxes[axis].label);
 
   const validate = (): string | null =>
     productSelectionError({
@@ -586,6 +608,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       uniqueSizes,
       isTailoringActive,
       cfLabel,
+      unchosenLabels,
+      measurementsProblem,
       t,
     });
 
@@ -680,40 +704,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const discountPercent = discountPercentFor(originalPriceWithAddons, displayPrice);
   const priceRange = { min: minMatchingPrice, max: maxMatchingPrice };
 
-  // A catalog asks by WhatsApp; a shop with WhatsApp on lets a shopper ask about this product.
-  const inquiryUrl =
-    isCatalogMode(settings) || settings.whatsapp_enabled
-      ? buildWhatsAppInquiryUrl({
-          number: settings.whatsapp_number,
-          template:
-            lang === "ar"
-              ? settings.catalog_inquiry_message_ar
-              : settings.catalog_inquiry_message_en,
-          lang,
-          ctx: {
-            brandName: lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en,
-            productName: displayName,
-            productUrl: typeof window !== "undefined" ? window.location.href : "",
-            variantLabel: variant
-              ? [
-                  showsCustomSizing({
-                    showSizeModeToggle,
-                    sizeMode,
-                    hasReadySizes,
-                    isTailoringActive,
-                  })
-                    ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
-                    : formatSizeWithUnit(variant.size, variant.size_unit, lang),
-                  variant.color,
-                  variant.fabric,
-                ]
-                  .filter(Boolean)
-                  .join(" · ")
-              : null,
-            priceLabel: shouldShowPrices(settings) ? priceLabel : undefined,
-          },
-        })
-      : null;
+  const inquiryUrl = productInquiryUrl({
+    settings,
+    lang,
+    brandName: lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en,
+    productName: displayName,
+    priceLabel,
+    variantLabel: variant
+      ? [
+          showsCustomSizing({ showSizeModeToggle, sizeMode, hasReadySizes, isTailoringActive })
+            ? vocabulary.custom_sizing?.[lang] || t("قياس خاص", "Custom Sizing")
+            : formatSizeWithUnit(variant.size, variant.size_unit, lang),
+          variant.color,
+          variant.fabric,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : null,
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-clip w-full max-w-full">
@@ -790,6 +798,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               showSizeModeToggle={showSizeModeToggle}
               sizeMode={sizeMode}
               t={t}
+              tailorInstead={tailorInstead}
+              tailoringTime={tailoringTime}
               uniqueColors={uniqueColors}
               uniqueFabrics={uniqueFabrics}
               uniqueFive={uniqueFive}
@@ -821,7 +831,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               cfValues,
               setCfValues,
               sizeMode,
-              onApplied: (applied: boolean) => setMeasurementsApplied(applied),
+              onApplied: (applied: boolean, problem: string | null) => {
+                setMeasurementsApplied(applied);
+                setMeasurementsProblem(problem);
+              },
             }}
           />
 
@@ -893,6 +906,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             />
           )}
 
+          {!isService && <ReturnsLine className="mt-3" />}
+
           {/* The description, the details, delivery and returns, the size guide: drawn once, here. */}
           <ProductAccordion
             description={displayDescription}
@@ -909,6 +924,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               mainProduct={product}
               mainVariant={variant}
               madeToOrderChoice={isTailoringActive}
+              madeToOrderModule={Boolean(modules.made_to_order)}
               bundleItems={bundleItems}
             />
           )}

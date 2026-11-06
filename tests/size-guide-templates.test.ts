@@ -9,8 +9,8 @@ import fs from "fs";
 import path from "path";
 
 describe("Size Guide Templates Catalog", () => {
-  it("includes all 9 specialized templates matching vertical requirements", () => {
-    expect(ALL_SIZE_GUIDE_TEMPLATES.length).toBe(9);
+  it("includes all 10 specialized templates matching vertical requirements", () => {
+    expect(ALL_SIZE_GUIDE_TEMPLATES.length).toBe(10);
     expect(ABAYA_GULF_TEMPLATE.key).toBe("abaya_gulf");
     const keys = ALL_SIZE_GUIDE_TEMPLATES.map((t) => t.key);
     expect(keys).toContain("abaya_gulf");
@@ -22,6 +22,7 @@ describe("Size Guide Templates Catalog", () => {
     expect(keys).toContain("rings");
     expect(keys).toContain("bracelets");
     expect(keys).toContain("kids");
+    expect(keys).toContain("abaya_flat_diagram");
   });
 
   it("ensures every template is valid and normalizable", () => {
@@ -30,8 +31,11 @@ describe("Size Guide Templates Catalog", () => {
       expect(template.name_ar).toBeTruthy();
       expect(template.name_en).toBeTruthy();
       expect(["in", "cm", "mm", "none"]).toContain(template.base_unit);
-      expect(template.columns.length).toBeGreaterThanOrEqual(1);
-      expect(template.rows.length).toBeGreaterThanOrEqual(1);
+      // A guide drawn as a garment has no chart; every other template has one.
+      if (template.key !== "abaya_flat_diagram") {
+        expect(template.columns.length).toBeGreaterThanOrEqual(1);
+        expect(template.rows.length).toBeGreaterThanOrEqual(1);
+      }
 
       // Verify template passes normalizeSizeGuide without loss
       const normalized = normalizeSizeGuide({

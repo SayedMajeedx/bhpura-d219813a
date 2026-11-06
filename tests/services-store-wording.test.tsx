@@ -158,7 +158,7 @@ describe("the listing filters", () => {
     state.lang = "en";
     render(<CategoryFilters {...props} />);
     expect(screen.getByText("Filters")).toBeInTheDocument();
-    expect(screen.getByText("In-stock items only")).toBeInTheDocument();
+    expect(screen.getByText("Ready to ship only")).toBeInTheDocument();
   });
 });
 

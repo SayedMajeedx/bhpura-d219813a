@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,7 @@ import {
 } from "../../lib/fit-passport";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Ruler, Check, X } from "lucide-react";
+import { Ruler, Check } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ProductFitPassportSectionProps {
@@ -26,7 +26,8 @@ export interface ProductFitPassportSectionProps {
   setCfValues?: (updater: (prev: Record<string, string>) => Record<string, string>) => void;
   sizeMode?: "ready" | "custom";
   customer?: { id: string } | null;
-  onApplied?: (applied: boolean) => void;
+  /** Whether the order can use the measurements, and if not, what the shopper still has to do. */
+  onApplied?: (applied: boolean, problem: string | null) => void;
 }
 
 export function ProductFitPassportSection({
@@ -86,8 +87,8 @@ export function ProductFitPassportSection({
   });
 
   const [guestUnit, setGuestUnit] = useState<"in" | "cm">("in");
+  const [chosenUnit, setChosenUnit] = useState<"in" | "cm" | null>(null);
   const [passportDraft, setPassportDraft] = useState<Record<string, string>>({});
-  const [passportApplied, setPassportApplied] = useState(false);
   const [savingPassport, setSavingPassport] = useState(false);
   const [tailoringNotes, setTailoringNotes] = useState("");
 
@@ -131,100 +132,109 @@ export function ProductFitPassportSection({
     storedFitProfiles,
   ]);
 
-  if (!passportConfigured || sizeMode === "ready") return null;
+  const currentUnit =
+    chosenUnit ?? (isGuest ? guestUnit : (fitPassportQ.data?.preferred_length_unit ?? "in"));
 
-  const currentUnit = isGuest ? guestUnit : (fitPassportQ.data?.preferred_length_unit ?? "in");
+  const fields = useMemo<
+    Array<{ key: string; label_ar: string; label_en: string; required: boolean }>
+  >(
+    () =>
+      activeDef?.fields ??
+      (FIT_PROFILE_FIELDS as any)[fitProfileType]?.map(([k, ar, en, req]: any[]) => ({
+        key: k,
+        label_ar: ar,
+        label_en: en,
+        required: req,
+      })) ??
+      [],
+    [activeDef, fitProfileType],
+  );
 
-  const fields =
-    activeDef?.fields ??
-    (FIT_PROFILE_FIELDS as any)[fitProfileType]?.map(([k, ar, en, req]: any[]) => ({
-      key: k,
-      label_ar: ar,
-      label_en: en,
-      required: req,
-    })) ??
-    [];
+  /**
+   * What is typed for this profile. A passport saved before the profile changed keeps other
+   * keys, which no field shows and so no shopper could correct.
+   */
+  const typed = useMemo(() => {
+    const entries = fields
+      .map((f) => [f.key, (passportDraft[f.key] ?? "").trim()] as const)
+      .filter(([, value]) => value !== "");
+    return Object.fromEntries(entries);
+  }, [fields, passportDraft]);
 
-  /** Tells the shopper which measurements cannot be right; true when there is one. */
-  const rangeError = (): boolean => {
-    const problems = fitRangeProblems(passportDraft, currentUnit);
-    if (problems.length === 0) return false;
-    toast.error(
-      fitRangeMessage(
-        problems,
-        (key) => {
-          const field = fields.find((f: { key: string }) => f.key === key);
-          return (isAr ? field?.label_ar : field?.label_en) || key;
-        },
-        currentUnit,
-        isAr,
-      ),
-    );
-    return true;
+  const labelOf = (key: string) => {
+    const field = fields.find((f) => f.key === key);
+    return (isAr ? field?.label_ar : field?.label_en) || key;
   };
 
-  const handleApplyPassport = () => {
-    if (missingFitFields(fitProfiles, fitProfileType, passportDraft).length) {
-      toast.error(
-        t(
-          "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
-          "Complete all required measurements with values greater than zero",
-        ),
-      );
-      return;
-    }
-    if (rangeError()) return;
+  const rangeProblems = fitRangeProblems(typed, currentUnit);
+  const missing = missingFitFields(fitProfiles, fitProfileType, typed);
+  const rangeSentence =
+    rangeProblems.length > 0 ? fitRangeMessage(rangeProblems, labelOf, currentUnit, isAr) : null;
+  const problem =
+    rangeSentence ??
+    (missing.length > 0
+      ? t(
+          `أكمل المقاسات المطلوبة: ${missing.map(labelOf).join("، ")}`,
+          `Complete these measurements: ${missing.map(labelOf).join(", ")}`,
+        )
+      : null);
+  const complete = problem === null;
 
-    if (isGuest && brand?.slug) {
-      try {
-        localStorage.setItem(
-          `pura_guest_fit_passport_${brand.slug}_${fitProfileType}`,
-          JSON.stringify({ draft: passportDraft, unit: guestUnit }),
-        );
-      } catch {
-        // LocalStorage fallback
-      }
-    }
-
-    if (!setCfValues) return;
+  // Measurements go on the order as they are typed: there is no "apply" to forget. The button
+  // that asked for one once stopped shoppers who had filled in every field.
+  const answerRef = useRef(onApplied);
+  useEffect(() => {
+    answerRef.current = onApplied;
+  });
+  const profileName = activeDef ? `${activeDef.label_ar} / ${activeDef.label_en}` : fitProfileType;
+  useEffect(() => {
+    if (!passportConfigured || sizeMode === "ready" || !setCfValues) return;
     setCfValues((prev) => {
       const next = { ...prev };
-      for (const f of fields) {
-        if (passportDraft[f.key]) {
-          next[`fit_passport_${fitProfileType}_${f.key}`] =
-            `${passportDraft[f.key]} ${currentUnit}`;
-        }
+      for (const f of fields) delete next[`fit_passport_${fitProfileType}_${f.key}`];
+      delete next["fit_passport_profile"];
+      delete next["fit_passport_unit"];
+      if (!complete) return next;
+      for (const [key, value] of Object.entries(typed)) {
+        next[`fit_passport_${fitProfileType}_${key}`] = `${value} ${currentUnit}`;
       }
-      next["fit_passport_profile"] = activeDef
-        ? `${activeDef.label_ar} / ${activeDef.label_en}`
-        : fitProfileType;
+      next["fit_passport_profile"] = profileName;
       next["fit_passport_unit"] = currentUnit;
       return next;
     });
-    setPassportApplied(true);
-    onApplied?.(true);
-    toast.success(isAr ? "تم تطبيق مقاساتك على طلبك" : "Fit Passport measurements applied");
-  };
+    answerRef.current?.(complete, problem);
+  }, [
+    passportConfigured,
+    sizeMode,
+    setCfValues,
+    fields,
+    fitProfileType,
+    profileName,
+    typed,
+    currentUnit,
+    complete,
+    problem,
+  ]);
 
-  const handleSaveAndApplyPassport = async () => {
-    if (isGuest) {
-      handleApplyPassport();
-      return;
-    }
-    if (missingFitFields(fitProfiles, fitProfileType, passportDraft).length) {
-      toast.error(
-        t(
-          "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
-          "Complete all required measurements with values greater than zero",
-        ),
+  // A guest's measurements wait for them on this device.
+  useEffect(() => {
+    if (!isGuest || !brand?.slug || Object.keys(typed).length === 0) return;
+    try {
+      localStorage.setItem(
+        `pura_guest_fit_passport_${brand.slug}_${fitProfileType}`,
+        JSON.stringify({ draft: typed, unit: currentUnit }),
       );
-      return;
+    } catch {
+      // LocalStorage fallback
     }
-    if (rangeError()) return;
+  }, [isGuest, brand?.slug, fitProfileType, typed, currentUnit]);
+
+  if (!passportConfigured || sizeMode === "ready") return null;
+
+  const handleSavePassport = async () => {
+    if (!complete) return;
     const cleanedProfile = Object.fromEntries(
-      Object.entries(passportDraft)
-        .filter(([, value]) => Number(value) > 0)
-        .map(([key, value]) => [key, Number(value)]),
+      Object.entries(typed).map(([key, value]) => [key, Number(value)]),
     );
     setSavingPassport(true);
     try {
@@ -239,42 +249,26 @@ export function ProductFitPassportSection({
         },
         { onConflict: "brand_id,auth_user_id" },
       );
-      setSavingPassport(false);
       if (error) {
         toast.error(t("تعذر حفظ المقاسات", "Could not save measurements"));
         return;
       }
       await fitPassportQ.refetch();
-      handleApplyPassport();
-      toast.success(t("تم حفظ المقاسات في Passport وتطبيقها", "Measurements saved and applied"));
-    } catch {
+      toast.success(t("تم حفظ المقاسات في حسابك", "Measurements saved to your account"));
+    } finally {
       setSavingPassport(false);
-      handleApplyPassport();
     }
   };
 
-  const handleRemovePassport = () => {
-    if (!setCfValues) return;
-    setCfValues((prev) => {
-      const next = { ...prev };
-      for (const f of fields) {
-        delete next[`fit_passport_${fitProfileType}_${f.key}`];
-      }
-      delete next["fit_passport_profile"];
-      delete next["fit_passport_unit"];
-      return next;
-    });
-    setPassportApplied(false);
-    onApplied?.(false);
-    toast.info(isAr ? "تم إلغاء تطبيق المقاسات" : "Measurements removed");
+  const chooseUnit = (unit: "in" | "cm") => {
+    setGuestUnit(unit);
+    setChosenUnit(unit);
   };
 
   return (
     <div
       className={`rounded-xl border p-4 mb-6 ${
-        passportApplied
-          ? "border-primary/20 bg-primary/[0.045]"
-          : "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20"
+        complete ? "border-primary/20 bg-primary/[0.045]" : "border-border bg-muted/30"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -298,71 +292,56 @@ export function ProductFitPassportSection({
               )}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {passportApplied
+              {complete
                 ? t(
-                    "تم تطبيق هذه المقاسات على طلبك.",
-                    "These measurements are applied to your order.",
+                    "مقاساتك مكتملة، وتصل مع طلبك كما كتبتها.",
+                    "Your measurements are complete and go with your order as typed.",
                   )
-                : isGuest
-                  ? t(
-                      "إدخال المقاسات لتفصيل هذه القطعة كطلب ضيف مباشرة.",
-                      "Enter measurements to tailor this item directly as a guest.",
-                    )
-                  : t(
-                      "يمكن تعديل المقاسات هنا، ثم حفظها واستخدامها مباشرة.",
-                      "Edit measurements here, then save and use them instantly.",
-                    )}
+                : t(
+                    "أدخل المقاسات، وتصل مع طلبك كما كتبتها.",
+                    "Enter your measurements. They go with your order as typed.",
+                  )}
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {isGuest && !passportApplied && (
-            <div className="flex items-center rounded-lg border border-border bg-background p-0.5 text-xs font-semibold">
-              <Button
-                type="button"
-                variant={guestUnit === "in" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setGuestUnit("in")}
-                className="h-7 px-2 text-xs"
-              >
-                {lengthUnitLabel("in", isAr ? "ar" : "en")}
-              </Button>
-              <Button
-                type="button"
-                variant={guestUnit === "cm" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setGuestUnit("cm")}
-                className="h-7 px-2 text-xs"
-              >
-                {lengthUnitLabel("cm", isAr ? "ar" : "en")}
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center rounded-lg border border-border bg-background p-0.5 text-xs font-semibold">
+            <Button
+              type="button"
+              variant={currentUnit === "in" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => chooseUnit("in")}
+              className="h-7 px-2 text-xs"
+            >
+              {lengthUnitLabel("in", isAr ? "ar" : "en")}
+            </Button>
+            <Button
+              type="button"
+              variant={currentUnit === "cm" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => chooseUnit("cm")}
+              className="h-7 px-2 text-xs"
+            >
+              {lengthUnitLabel("cm", isAr ? "ar" : "en")}
+            </Button>
+          </div>
 
-          <Button
-            type="button"
-            size="sm"
-            variant={passportApplied ? "outline" : "default"}
-            disabled={savingPassport}
-            onClick={
-              passportApplied
-                ? handleRemovePassport
-                : isGuest
-                  ? handleApplyPassport
-                  : handleSaveAndApplyPassport
-            }
-            className="gap-2"
-          >
-            {passportApplied ? <X className="size-4" /> : <Check className="size-4" />}
-            {passportApplied
-              ? t("إلغاء التطبيق", "Remove")
-              : savingPassport
+          {!isGuest && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={savingPassport || !complete}
+              onClick={handleSavePassport}
+              className="gap-2"
+            >
+              <Check className="size-4" />
+              {savingPassport
                 ? t("جارٍ الحفظ…", "Saving…")
-                : isGuest
-                  ? t("تطبيق المقاسات", "Apply")
-                  : t("حفظ واستخدام", "Save & use")}
-          </Button>
+                : t("حفظ في حسابي", "Save to my account")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -388,8 +367,8 @@ export function ProductFitPassportSection({
                 inputMode="decimal"
                 min="0.1"
                 step="0.1"
+                aria-invalid={rangeProblems.some((item) => item.key === key) || undefined}
                 value={passportDraft[key] ?? ""}
-                disabled={passportApplied}
                 onChange={(event) =>
                   setPassportDraft((current) => ({
                     ...current,
@@ -406,17 +385,13 @@ export function ProductFitPassportSection({
         ))}
       </div>
 
-      {passportApplied && (
-        <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-          <Check className="size-3.5" />
-          {t(
-            "تم ربط هذه المقاسات بالطلب. يمكن إلغاء التطبيق لتعديلها في أي وقت.",
-            "Measurements attached to this order. Click Remove to modify them anytime.",
-          )}
+      {rangeSentence && (
+        <p role="alert" className="mt-3 text-xs font-medium text-destructive">
+          {rangeSentence}
         </p>
       )}
 
-      {isGuest && !passportApplied && brand?.slug && (
+      {isGuest && brand?.slug && (
         <div className="mt-3.5 pt-3 border-t border-border flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
           <span>
             {t(

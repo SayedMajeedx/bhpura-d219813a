@@ -110,6 +110,38 @@ export function zoneEstimate(
   return clean(lang === "ar" ? zone?.estimate_ar : zone?.estimate_en);
 }
 
+/**
+ * The store's sentence where the screen already says what it is about: a store's text often opens
+ * with the same words, and checkout read "التوصيل المتوقع: التوصيل المتوقع خلال 7 ايام".
+ */
+export function withoutEstimateLabel(text: string): string {
+  return text.replace(/^\s*(التوصيل المتوقع|estimated delivery)\s*:?\s*/i, "").trim() || text;
+}
+
+const toWesternDigits = (text: string) =>
+  text.replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)));
+
+/**
+ * The days a store's text promises, its latest when it writes a range ("3 - 5 days"), or null when
+ * it counts in anything else (hours, weeks) or says no number. Only a time the store wrote.
+ */
+export function estimateDays(text: string | null | undefined): number | null {
+  const plain = toWesternDigits(text ?? "");
+  if (!/(يوم|أيام|ايام|days?\b)/i.test(plain) || /(ساعة|ساعات|hours?\b)/i.test(plain)) return null;
+  const numbers = (plain.match(/\d+/g) ?? []).map(Number);
+  return numbers.length > 0 ? Math.max(...numbers) : null;
+}
+
+/** The day an order placed at `placedAt` should reach its shopper, in the reader's language. */
+export function expectedDay(placedAt: string, days: number, lang: Lang): string | null {
+  const start = new Date(placedAt).getTime();
+  if (!Number.isFinite(start)) return null;
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-u-nu-latn" : "en-GB", {
+    day: "numeric",
+    month: "long",
+  }).format(new Date(start + days * 86_400_000));
+}
+
 /** One line as a sentence: "Ready pieces: within 24 hours". */
 export function estimateLineText(line: EstimateLine): string {
   return line.label ? `${line.label}: ${line.text}` : line.text;

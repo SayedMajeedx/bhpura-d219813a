@@ -7,6 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trackOrder, type TrackResult } from "@/lib/order-receipt.functions";
 import { OrderReceiptCard } from "@/features/order-receipt/components/OrderReceiptCard";
+import { receiptTailored } from "@/features/order-receipt/lib/order-receipt";
+import {
+  measurementsStillOpen,
+  orderHandedOver,
+  storeChatLink,
+} from "@/features/order-receipt/lib/order-track";
+import { orderNumberLabel } from "@/lib/order-number";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import { OrderTimelineTracker } from "@/features/storefront-account/components/OrderTimelineTracker";
 import { statusMeta } from "@/features/storefront-account/lib/account-shared";
 
@@ -25,7 +34,8 @@ export const Route = createFileRoute("/$slug/track-order")({
 });
 
 function TrackOrderPage() {
-  const { brand, lang, t } = useStorefront();
+  const { brand, lang, settings, t } = useStorefront();
+  const { vocabulary } = useVocabulary();
   const search = Route.useSearch();
   const [number, setNumber] = useState(search.number ?? "");
   const [phone, setPhone] = useState("");
@@ -50,6 +60,38 @@ function TrackOrderPage() {
   const status = receipt
     ? statusMeta(receipt.status, receipt.paymentStatus, receipt.fulfillmentStatus, isAr)
     : null;
+
+  // Before the workshop a measurement can be put right; once it arrives, an alteration asked for.
+  const stillOpen =
+    Boolean(receipt) &&
+    receiptTailored(receipt!) &&
+    measurementsStillOpen(receipt!.status, receipt!.fulfillmentStatus);
+  const handedOver = receipt ? orderHandedOver(receipt.status, receipt.fulfillmentStatus) : false;
+  const number_ = receipt ? orderNumberLabel(receipt.invoiceNumber, receipt.numberFormat) : "";
+  const chat = settings?.whatsapp_enabled ? whatsappChatUrl(settings.whatsapp_number) : null;
+  const ask = stillOpen
+    ? {
+        url: storeChatLink(
+          chat,
+          t(
+            `أريد تعديل مقاسات الطلب ${number_}`,
+            `I would like to change the measurements on order ${number_}`,
+          ),
+        ),
+        label: t("تعديل المقاسات", "Change measurements"),
+      }
+    : handedOver
+      ? {
+          url: storeChatLink(
+            chat,
+            t(
+              `أريد طلب تعديل على الطلب ${number_}`,
+              `I would like an alteration on order ${number_}`,
+            ),
+          ),
+          label: t("طلب تعديل", "Ask for an alteration"),
+        }
+      : null;
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-6 px-4 py-8 sm:py-12">
@@ -121,10 +163,19 @@ function TrackOrderPage() {
             status={receipt.status}
             paymentStatus={receipt.paymentStatus}
             fulfillmentStatus={receipt.fulfillmentStatus}
+            tailored={receiptTailored(receipt)}
+            makingLabel={vocabulary.being_made?.[lang]}
             isAr={isAr}
             t={t}
           />
-          <OrderReceiptCard receipt={receipt} lang={lang} slug={brand.slug} />
+          <OrderReceiptCard
+            receipt={receipt}
+            lang={lang}
+            slug={brand.slug}
+            reviewMeasurements={stillOpen}
+            askUrl={ask?.url}
+            askLabel={ask?.label}
+          />
         </div>
       )}
     </div>

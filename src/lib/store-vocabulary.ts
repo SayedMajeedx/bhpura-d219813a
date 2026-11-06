@@ -20,6 +20,8 @@ export type StoreVocabulary = {
   workshop_notes_placeholder: VocabularyEntry;
   ready_made: VocabularyEntry;
   made_to_order: VocabularyEntry;
+  /** The step of an order while its piece is being made, on the shopper's tracking. */
+  being_made: VocabularyEntry;
   sizing_guide: VocabularyEntry;
   product_noun: VocabularyEntry;
   collections_noun: VocabularyEntry;
@@ -48,6 +50,7 @@ export const DEFAULT_VOCABULARY: StoreVocabulary = {
   },
   ready_made: { ar: "جاهز", en: "Ready-made" },
   made_to_order: { ar: "صنع حسب الطلب", en: "Made to order" },
+  being_made: { ar: "قيد التجهيز", en: "Being made" },
   sizing_guide: { ar: "دليل المقاسات", en: "Size Guide" },
   product_noun: { ar: "المنتج", en: "Product" },
   collections_noun: { ar: "التشكيلات", en: "Collections" },
@@ -203,6 +206,7 @@ export function resolveVocabulary(
     workshop_notes_placeholder: { ...base.workshop_notes_placeholder },
     ready_made: { ...base.ready_made },
     made_to_order: { ...base.made_to_order },
+    being_made: { ...base.being_made },
     sizing_guide: { ...base.sizing_guide },
     product_noun: { ...base.product_noun },
     collections_noun: { ...base.collections_noun },

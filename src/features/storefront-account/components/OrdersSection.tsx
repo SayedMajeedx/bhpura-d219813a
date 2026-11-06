@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { statusMeta } from "@/features/storefront-account/lib/account-shared";
 import type { OrderRow } from "@/features/storefront-account/lib/account-shared";
+import { useVocabulary } from "@/hooks/use-vocabulary";
 import { OrderTimelineTracker } from "@/features/storefront-account/components/OrderTimelineTracker";
 import { orderNumberLabel, orderNumberText } from "@/lib/order-number";
 
@@ -35,6 +36,7 @@ export function OrdersSection({
   onRequestReturn?: (order: OrderRow) => void;
 }) {
   const { t, settings } = useStorefront();
+  const { vocabulary } = useVocabulary();
   const [expandedOrder, setExpandedOrder] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -141,6 +143,8 @@ export function OrdersSection({
               status={o.status}
               paymentStatus={o.payment_status}
               fulfillmentStatus={o.fulfillment_status}
+              tailored={o.order_items?.some((line) => line.location === "custom")}
+              makingLabel={vocabulary.being_made?.[isAr ? "ar" : "en"]}
               isAr={isAr}
               t={t}
             />
