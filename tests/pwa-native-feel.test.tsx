@@ -27,18 +27,20 @@ describe("opening with no connection", () => {
   });
 
   it("keeps the offline page on install, and answers with it when the network fails", async () => {
+    let online = true;
     const worker = runAdminWorker({
       fetch: async () => {
-        throw new TypeError("Failed to fetch");
+        if (!online) throw new TypeError("Failed to fetch");
+        return new Response("<html>offline</html>", { headers: { "content-type": "text/html" } });
       },
     });
     await worker.fire("install", {});
     expect(worker.stored.has("/admin-app/offline.html")).toBe(true);
     await worker.fire("activate", {});
     expect(worker.caches.delete).toHaveBeenCalledWith("boutq-admin-offline-v0");
-    expect(await worker.fire("fetch", navigate("/admin/b/pura/orders"))).toMatchObject({
-      offline: true,
-    });
+    online = false;
+    const answer = (await worker.fire("fetch", navigate("/admin/b/pura/orders"))) as Response;
+    expect(await answer.text()).toBe("<html>offline</html>");
   });
 
   it("goes to the network as always while online, and leaves every other request alone", async () => {
