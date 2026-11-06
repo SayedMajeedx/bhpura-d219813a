@@ -8,6 +8,9 @@ import {
   type CollectionLimits,
 } from "@/features/content-studio/lib/lookbook";
 import type { Product } from "@/features/content-studio/lib/studio-content";
+import type { StoreOffer } from "@/lib/offers";
+
+const NO_OFFERS: readonly StoreOffer[] = [];
 
 /**
  * The products a template that shows several draws (the Lookbook, a Menu, a
@@ -22,6 +25,7 @@ export function useLookbook({
   variants,
   leadId,
   isAr,
+  offers = NO_OFFERS,
 }: {
   templateId: string;
   products: readonly Product[];
@@ -29,9 +33,12 @@ export function useLookbook({
     product_id: string;
     selling_price: number | null;
     duration_minutes?: number | null;
+    original_price?: number | null;
   }>;
   leadId: string | null | undefined;
   isAr: boolean;
+  /** The store's live automatic offers: each piece is priced after them. */
+  offers?: readonly StoreOffer[];
 }) {
   const active = isCollectionTemplate(templateId);
   const limits: CollectionLimits = active
@@ -52,8 +59,8 @@ export function useLookbook({
     [lookbookIds, limits],
   );
   const collection = useMemo(
-    () => (active ? lookbookEntries(lookbook, variants, isAr ? "ar" : "en") : null),
-    [active, lookbook, variants, isAr],
+    () => (active ? lookbookEntries(lookbook, variants, isAr ? "ar" : "en", offers) : null),
+    [active, lookbook, variants, isAr, offers],
   );
   return {
     lookbookIds,

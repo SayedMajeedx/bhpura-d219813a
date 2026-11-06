@@ -47,6 +47,8 @@ export type SceneData = {
   currencyLabel: string;
   /** The saving as a whole percentage, when there is a sale. */
   discountPercent: number | null;
+  /** When the sale ends, in the reader's words ("Until 14 Nov"); null with no end or no sale. */
+  saleEnds?: string | null;
   /** The product photo or, while exporting a video, the current video frame. */
   media: Drawable | null;
   /**
@@ -74,6 +76,10 @@ export type SceneData = {
     price: string | null;
     media: Drawable | null;
     note?: string | null;
+    /** The price before a sale, when the product has one. */
+    originalPrice?: string | null;
+    /** This product's own short description (a lookbook shows each piece's own). */
+    body?: string | null;
   }> | null;
   /** The collection's prices added up and formatted, when every one has a price. */
   collectionTotal?: string | null;

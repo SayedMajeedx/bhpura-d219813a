@@ -6,6 +6,7 @@ import {
   type Box,
 } from "@/features/content-studio/engine/draw";
 import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
+import { drawSaleEnds } from "@/features/content-studio/engine/sale-ends";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type { FormatKey, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
 import { fitText, textDirection } from "@/features/content-studio/engine/text-layout";
@@ -71,7 +72,15 @@ type Slide = NonNullable<SceneData["collection"]>[number];
 /** The slides: the lookbook's products, or the chosen product on its own. */
 function slidesOf(scene: SceneData): Slide[] {
   if (scene.collection && scene.collection.length > 0) return scene.collection;
-  return [{ name: scene.productName, price: scene.price, media: scene.media }];
+  return [
+    {
+      name: scene.productName,
+      price: scene.price,
+      media: scene.media,
+      originalPrice: scene.originalPrice,
+      body: scene.body,
+    },
+  ];
 }
 
 /** When each slide arrives, and how long it stays. */
@@ -154,8 +163,9 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   ctx.restore();
 
   // The track: each product's card, gliding to the next with its neighbours peeking in.
-  const body = scene.body.trim();
-  const cardH = (layout.cardH - (body ? BODY_ROOM[scene.format] : 0)) * H;
+  const bodies = slides.map((slide) => (slide.body ?? "").trim());
+  const anyBody = bodies.some(Boolean);
+  const cardH = (layout.cardH - (anyBody ? BODY_ROOM[scene.format] : 0)) * H;
   const cardW = Math.min(W - 200 * u, cardH * layout.aspect);
   const cardIn = progress(t, 0.1, 0.9, ease.outExpo);
   const cardY = layout.cardY * H + (1 - cardIn) * 40 * u;
@@ -236,12 +246,19 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     );
     return { dir, family, style, ...fit, lines: fit.lines.slice(0, layout.nameLines) } as const;
   });
-  const bodyFit = body
-    ? fitText(body, { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 27 * u }, (size) => {
-        ctx.font = font(size, STUDIO_FONTS.body, 400);
-        return (text) => ctx.measureText(text).width;
-      })
-    : null;
+  // Each piece says its own description, fitted on its own.
+  const bodyFits = bodies.map((text) =>
+    text
+      ? fitText(
+          text,
+          { maxWidth: W - 2 * margin, maxLines: 2, min: 22 * u, max: 27 * u },
+          (size) => {
+            ctx.font = font(size, STUDIO_FONTS.body, 400);
+            return (line) => ctx.measureText(line).width;
+          },
+        )
+      : null,
+  );
 
   slides.forEach((slide, index) => {
     const alpha = presence(t, {
@@ -268,14 +285,38 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
       ctx.globalAlpha = alpha * 0.9;
       ctx.font = font(34 * u, STUDIO_FONTS.body, 500);
       ctx.direction = textDirection(slide.price);
+      const priceW = ctx.measureText(slide.price).width;
       ctx.fillText(slide.price, W / 2, y + 14 * u);
+      if (slide.originalPrice) {
+        // The price before the offer, struck through beside the one the shopper pays.
+        ctx.globalAlpha = alpha * 0.5;
+        ctx.font = font(26 * u, STUDIO_FONTS.body, 400);
+        ctx.direction = textDirection(slide.originalPrice);
+        const wasW = ctx.measureText(slide.originalPrice).width;
+        const wasX = W / 2 + (rtl ? -1 : 1) * (priceW / 2 + 20 * u + wasW / 2);
+        ctx.fillText(slide.originalPrice, wasX, y + 18 * u);
+        ctx.fillRect(wasX - wasW / 2, y + 18 * u + 13 * u, wasW, 2 * u);
+      }
       y += 14 * u + 34 * u;
+      if (scene.saleEnds && slide.originalPrice) {
+        ctx.globalAlpha = alpha;
+        drawSaleEnds(ctx, scene.saleEnds, {
+          x: W / 2,
+          y: y + 6 * u,
+          u,
+          color: palette.accent,
+          size: 24,
+          alpha: 0.95,
+        });
+        y += 36 * u;
+      }
     }
     // The body copy follows each product's name and price, so it sits close under them.
+    const bodyFit = bodyFits[index];
     if (bodyFit) {
       ctx.globalAlpha = alpha * 0.75;
       ctx.font = font(bodyFit.size, STUDIO_FONTS.body, 400);
-      ctx.direction = textDirection(body);
+      ctx.direction = textDirection(bodies[index]);
       bodyFit.lines.slice(0, 2).forEach((line, lineIndex) => {
         ctx.fillText(line, W / 2, y + 30 * u + lineIndex * bodyFit.size * 1.45);
       });

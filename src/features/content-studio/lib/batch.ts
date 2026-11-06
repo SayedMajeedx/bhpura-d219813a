@@ -1,6 +1,7 @@
 import type { Drawable, SceneData } from "@/features/content-studio/engine/scene";
 import { extractSnappySnippet, type Product } from "@/features/content-studio/lib/studio-content";
 import type { Sale } from "@/features/content-studio/lib/sale-price";
+import { offerEnds } from "@/lib/offers";
 import type { OptionRun } from "@/features/content-studio/lib/option-run";
 import { DEFAULT_DETAIL_POINT } from "@/features/content-studio/templates/detail-zoom";
 
@@ -61,6 +62,7 @@ export function batchSceneFields({
   showPrice,
   currencySymbol,
   sale,
+  saleEndsAt = null,
   run,
   media,
   stopMedia,
@@ -71,6 +73,8 @@ export function batchSceneFields({
   currencySymbol: string;
   /** The sale every variant shares, or null. */
   sale: Sale | null;
+  /** When the offer behind `sale` ends, or null. */
+  saleEndsAt?: string | null;
   run: OptionRun | null;
   media: Drawable | null;
   /** Each option's own photo, in the run's order (null where it has none). */
@@ -85,6 +89,7 @@ export function batchSceneFields({
   | "priceAmount"
   | "originalAmount"
   | "discountPercent"
+  | "saleEnds"
   | "media"
   | "options"
   | "detail"
@@ -102,6 +107,7 @@ export function batchSceneFields({
     priceAmount,
     originalAmount,
     discountPercent: showPrice && sale ? sale.percent : null,
+    saleEnds: showPrice && sale ? offerEnds({ ends_at: saleEndsAt }, lang) : null,
     media,
     options: run
       ? {

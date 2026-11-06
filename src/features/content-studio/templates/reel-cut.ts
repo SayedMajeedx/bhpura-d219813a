@@ -1,3 +1,4 @@
+import { drawSaleEnds } from "@/features/content-studio/engine/sale-ends";
 import {
   drawCover,
   drawShade,
@@ -276,6 +277,14 @@ function drawSticker(
     ctx.font = font(24 * u, STUDIO_FONTS.body, 600);
     ctx.direction = "ltr";
     ctx.fillText(`-${scene.discountPercent}%`, 0, -amountFit.size * 0.85);
+    drawSaleEnds(ctx, scene.saleEnds, {
+      x: 0,
+      y: r * 0.68,
+      u,
+      color: palette.ground,
+      size: 17,
+      baseline: "middle",
+    });
   }
   ctx.restore();
 }

@@ -1,3 +1,4 @@
+import { drawSaleEnds } from "@/features/content-studio/engine/sale-ends";
 import { drawCover, drawShade, font, type Box } from "@/features/content-studio/engine/draw";
 import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
@@ -305,6 +306,14 @@ function drawSticker(
     ctx.font = font(r * 0.2, STUDIO_FONTS.body, 600);
     ctx.direction = "ltr";
     ctx.fillText(`-${scene.discountPercent}%`, 0, -amountFit.size * 0.74);
+    drawSaleEnds(ctx, scene.saleEnds, {
+      x: 0,
+      y: r * 0.62,
+      u,
+      color: palette.ink,
+      size: (r * 0.13) / u,
+      baseline: "middle",
+    });
   }
   ctx.restore();
 }

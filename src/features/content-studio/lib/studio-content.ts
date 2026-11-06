@@ -13,6 +13,8 @@ export type Product = {
   base_price: number | null;
   fabric_type?: string | null;
   occasion?: string | null;
+  /** The category slug an offer may name. */
+  category?: string | null;
   /** False for a product hidden from the store (offered only to Coming Soon). */
   is_active?: boolean | null;
   /** A piece made after it is ordered (Made for You suggests these). */

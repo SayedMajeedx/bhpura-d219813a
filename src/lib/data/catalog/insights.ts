@@ -104,7 +104,7 @@ export async function fetchContentStudioProducts(brandId: string) {
     supabase
       .from("products")
       .select(
-        "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion,is_active,is_made_to_order",
+        "id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion,category,is_active,is_made_to_order",
         { count: "exact" },
       )
       .eq("brand_id", brandId)
