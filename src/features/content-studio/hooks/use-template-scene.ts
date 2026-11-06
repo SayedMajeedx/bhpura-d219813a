@@ -8,6 +8,7 @@ import type { LogoTint } from "@/features/content-studio/engine/brand-mark";
 import type { LookbookEntry } from "@/features/content-studio/lib/lookbook";
 import { formatAmount } from "@/features/content-studio/lib/batch";
 import { formatDuration } from "@/lib/bookings/format";
+import { offerEnds } from "@/lib/offers";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -80,6 +81,8 @@ export function useTemplateScene({
   effectivePrice,
   currencySymbol,
   sale,
+  saleEndsAt,
+  selectedId,
   run,
   collection,
   detail,
@@ -109,6 +112,10 @@ export function useTemplateScene({
   currencySymbol: string;
   /** The chosen product's sale, when it has one (the sale price wins over effectivePrice). */
   sale: Sale | null;
+  /** When the offer behind `sale` ends (null: it has no end, or the sale is the product's own). */
+  saleEndsAt: string | null;
+  /** The chosen product: in a lookbook its slide carries the copy the merchant edits. */
+  selectedId: string | null;
   /** The product's options for Swatch Run, or null. */
   run: OptionRun | null;
   /** The lookbook's products, or null outside the lookbook. */
@@ -147,6 +154,8 @@ export function useTemplateScene({
   const selling = sale?.price ?? effectivePrice;
   const priceAmount = showPrice && selling ? formatAmount(selling) : null;
   const originalAmount = showPrice && sale ? formatAmount(sale.original) : null;
+  const saleEnds =
+    showPrice && sale ? offerEnds({ ends_at: saleEndsAt }, isAr ? "ar" : "en") : null;
 
   const buildScene = useCallback(
     (width: number, height: number, media?: Drawable | null): SceneData => ({
@@ -174,6 +183,7 @@ export function useTemplateScene({
       currencyLabel: currencySymbol,
       issueLabel,
       discountPercent: showPrice && sale ? sale.percent : null,
+      saleEnds,
       media: media === undefined ? photoImage : media,
       // The product's photos, while the studio draws its own product (an export's
       // video frames or another product's photo cut between their own details).
@@ -199,6 +209,12 @@ export function useTemplateScene({
               showPrice && entry.price ? `${formatAmount(entry.price)} ${currencySymbol}` : null,
             media: collectionImages[index] ?? null,
             note: entry.minutes ? formatDuration(entry.minutes, isAr) : null,
+            originalPrice:
+              showPrice && entry.price && entry.originalPrice
+                ? `${formatAmount(entry.originalPrice)} ${currencySymbol}`
+                : null,
+            // Each piece says its own description; the chosen one carries what the merchant edited.
+            body: entry.id === selectedId ? body : entry.body,
           }))
         : null,
       collectionTotal:
@@ -225,6 +241,8 @@ export function useTemplateScene({
       body,
       priceAmount,
       originalAmount,
+      saleEnds,
+      selectedId,
       currencySymbol,
       issueLabel,
       showPrice,

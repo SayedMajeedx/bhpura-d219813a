@@ -79,6 +79,8 @@ describe("the lookbook's products", () => {
       id: "a",
       name: "Noor",
       price: 20,
+      originalPrice: null,
+      body: "",
       minutes: null,
       imageUrl: "https://cdn.example/a.jpg",
     });
@@ -136,9 +138,14 @@ const scene = (overrides: Partial<SceneData> = {}): SceneData => ({
   media: null,
   options: null,
   collection: [
-    { name: "Noor", price: "30.000 BHD", media: photo("noor") },
-    { name: "Layla", price: "25.000 BHD", media: photo("layla") },
-    { name: "Reem", price: null, media: photo("reem") },
+    { name: "Noor", price: "30.000 BHD", media: photo("noor"), body: "Softly tailored pieces." },
+    {
+      name: "Layla",
+      price: "25.000 BHD",
+      media: photo("layla"),
+      body: "Light crepe, wide sleeves.",
+    },
+    { name: "Reem", price: null, media: photo("reem"), body: "" },
   ],
   ...overrides,
 });
@@ -161,7 +168,9 @@ describe("the Lookbook template", () => {
     expect(texts).toContain("25.000 BHD");
     expect(texts).toContain("02 / 03");
     expect(texts).toContain("THE PURA EDIT");
-    expect(texts).toContain("Softly tailored pieces.");
+    // Its own description, not the first piece's.
+    expect(texts).toContain("Light crepe, wide sleeves.");
+    expect(texts).not.toContain("Softly tailored pieces.");
     // Its neighbours peek in on both sides.
     expect(images.map((image) => (image as { name: string }).name)).toEqual([
       "noor",
@@ -169,6 +178,35 @@ describe("the Lookbook template", () => {
       "reem",
     ]);
     expect(texts).not.toContain("Noor");
+  });
+
+  it("says each piece's own description as it comes, and none for a piece that has none", () => {
+    const times = lookbookCarousel.slideTimes!(scene());
+    const seen = times.map((t) => {
+      const { ctx, texts } = recordingContext();
+      lookbookCarousel.render(ctx, t, scene());
+      return texts;
+    });
+    expect(seen[0]).toContain("Softly tailored pieces.");
+    expect(seen[1]).toContain("Light crepe, wide sleeves.");
+    expect(seen[2]).not.toContain("Softly tailored pieces.");
+    expect(seen[2]).not.toContain("Light crepe, wide sleeves.");
+  });
+
+  it("strikes the price before an offer and says when it ends", () => {
+    const offered = scene({
+      saleEnds: "Until 14 Nov",
+      collection: [
+        { name: "Noor", price: "24.000 BHD", originalPrice: "30.000 BHD", media: photo("noor") },
+        { name: "Layla", price: "20.000 BHD", originalPrice: "25.000 BHD", media: photo("layla") },
+      ],
+    });
+    const [first] = lookbookCarousel.slideTimes!(offered);
+    const { ctx, texts } = recordingContext();
+    lookbookCarousel.render(ctx, first, offered);
+    expect(texts).toContain("24.000 BHD");
+    expect(texts).toContain("30.000 BHD");
+    expect(texts).toContain("Until 14 Nov");
   });
 
   it("falls back to the chosen product alone, without numbers", () => {

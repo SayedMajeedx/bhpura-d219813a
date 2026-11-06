@@ -1,6 +1,10 @@
+import { offeredPiecePrice } from "@/lib/offer-price";
+import type { StoreOffer } from "@/lib/offers";
+import { buyableVariants, sellingPrice, type PricedProduct } from "@/lib/product-price";
+
 type PricedVariant = {
-  selling_price: number | null;
-  original_price: number | null;
+  selling_price?: number | null;
+  original_price?: number | null;
 };
 
 export type Sale = {
@@ -43,4 +47,41 @@ export function studioSale(
     (sale) => sale && sale.price === first.price && sale.original === first.original,
   );
   return shared ? first : null;
+}
+
+/** The product as the store's price rules read it. */
+export type OfferedProductLike = PricedProduct & { id: string; category?: string | null };
+
+/**
+ * The sale to show for a product once the store's live automatic offers are counted, as the
+ * storefront's own price rule reads them (`offeredPiecePrice`: the offer that saves most, applied
+ * to the chosen variant, or to the cheapest one a shopper can buy when none is chosen), and when
+ * that offer ends (`ends_at`, null with no end). With no offer reaching it, the product's own sale.
+ */
+export function studioOfferedSale(
+  product: OfferedProductLike | null | undefined,
+  variants: ReadonlyArray<PricedVariant & { id?: string }>,
+  activeVariant: (PricedVariant & { id?: string }) | null,
+  offers: readonly StoreOffer[],
+): { sale: Sale | null; endsAt: string | null; offer: StoreOffer | null } {
+  const own = { sale: studioSale(variants, activeVariant), endsAt: null, offer: null };
+  if (!product || offers.length === 0) return own;
+  const candidates = activeVariant
+    ? [activeVariant]
+    : buyableVariants(product, variants).filter((variant) => sellingPrice(variant, product) > 0);
+  const pieces = candidates
+    .map((variant) => offeredPiecePrice(offers, product, variant))
+    .filter((piece) => piece.offer && piece.was != null && piece.was > piece.price);
+  if (pieces.length === 0) return own;
+  const best = pieces.reduce((lowest, piece) => (piece.price < lowest.price ? piece : lowest));
+  const was = best.was as number;
+  return {
+    sale: {
+      original: was,
+      price: best.price,
+      percent: Math.max(1, Math.round(((was - best.price) / was) * 100)),
+    },
+    endsAt: best.offer?.ends_at ?? null,
+    offer: best.offer,
+  };
 }

@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { offersQueries } from "@/lib/data/offers";
 import { useBrand } from "@/lib/brand-context";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
@@ -40,7 +42,7 @@ import { firstImage } from "@/features/content-studio/lib/studio-content";
 import { ENGINE_TEMPLATES } from "@/features/content-studio/templates";
 import type { ContentDraft } from "@/lib/data/content-drafts";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
-import { studioSale } from "@/features/content-studio/lib/sale-price";
+import { studioOfferedSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
 import { reelShotUrls } from "@/features/content-studio/lib/reel-shots";
 import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
@@ -127,10 +129,15 @@ export function useContentStudio(slug: string) {
     isAr,
   });
   const { productVariants, activeVariant } = product;
-  const sale = useMemo(
-    () => studioSale(productVariants, activeVariant),
-    [productVariants, activeVariant],
+  // The store's live automatic offers (a discount with no code) are part of the price it shows:
+  // the post says what the shopper pays and when the offer ends, as the storefront does.
+  const offersQ = useQuery(offersQueries.live(brand.slug));
+  const liveOffers = useMemo(() => offersQ.data ?? [], [offersQ.data]);
+  const offered = useMemo(
+    () => studioOfferedSale(selected, productVariants, activeVariant, liveOffers),
+    [selected, productVariants, activeVariant, liveOffers],
   );
+  const sale = offered.sale;
   // The option Swatch Run cycles through, labelled the way the inventory
   // labels this store's axes (a roastery's "colour" column is its roast).
   const axisDefaults = useInventoryAxisDefaults(brand.id);
@@ -152,6 +159,7 @@ export function useContentStudio(slug: string) {
     variants: variantList,
     leadId: selected?.id,
     isAr,
+    offers: liveOffers,
   });
   const detailZoom = useDetailZoom({
     active: templateId === "detail-zoom",
@@ -182,6 +190,7 @@ export function useContentStudio(slug: string) {
     axisDefaults,
     isAr,
     currencySymbol,
+    liveOffer: offered.offer,
   });
   const launch = useLaunch({ active: templateId === "coming-soon", isAr });
   const madeForYou = useMadeForYou({
@@ -234,6 +243,8 @@ export function useContentStudio(slug: string) {
     effectivePrice: product.effectivePrice,
     currencySymbol,
     sale,
+    saleEndsAt: offered.endsAt,
+    selectedId: selected?.id ?? null,
     run,
     collection: lookbook.collection,
     detail: detailZoom.detail,
@@ -261,6 +272,7 @@ export function useContentStudio(slug: string) {
     buildScene,
     products: product.products,
     variants: variantList,
+    offers: liveOffers,
     axisDefaults,
     leadId: selected?.id,
     format,

@@ -1,4 +1,10 @@
-import { firstImage, type Product } from "@/features/content-studio/lib/studio-content";
+import {
+  extractSnappySnippet,
+  firstImage,
+  type Product,
+} from "@/features/content-studio/lib/studio-content";
+import { studioOfferedSale } from "@/features/content-studio/lib/sale-price";
+import type { StoreOffer } from "@/lib/offers";
 
 /** How many products a lookbook carries: enough to browse, few enough to read. */
 export const LOOKBOOK_MIN = 2;
@@ -31,14 +37,20 @@ type PricedVariant = {
   selling_price: number | null;
   /** A service's length, when the variant is one. */
   duration_minutes?: number | null;
+  /** The price before the variant's own sale. */
+  original_price?: number | null;
 };
 
 /** One product in the lookbook, as the template shows it. */
 export type LookbookEntry = {
   id: string;
   name: string;
-  /** The price it starts from, or null when it has none. */
+  /** The price it starts from (after the store's offers), or null when it has none. */
   price: number | null;
+  /** The price before a sale or an offer, when it is on one. */
+  originalPrice: number | null;
+  /** The product's own short description in the post's language ("" when it has none). */
+  body: string;
   /** A service's shortest length in minutes, or null for a product. */
   minutes: number | null;
   imageUrl: string | null;
@@ -111,19 +123,38 @@ export function shortestMinutes(
   return minutes.length > 0 ? Math.min(...minutes) : null;
 }
 
-/** The lookbook's products, named in `lang`, with their price and photo. */
+/** The first line of the product's own description, in the post's language ("" with none). */
+export function entryBody(product: Product, lang: "ar" | "en"): string {
+  const description =
+    lang === "ar"
+      ? product.description_ar || product.description
+      : product.description || product.description_ar;
+  return extractSnappySnippet(description, "");
+}
+
+/**
+ * The lookbook's products, named in `lang`, each with its own price (after the store's live
+ * offers), photo and description.
+ */
 export function lookbookEntries(
   products: readonly Product[],
   variants: readonly PricedVariant[],
   lang: "ar" | "en",
+  offers: readonly StoreOffer[] = [],
 ): LookbookEntry[] {
-  return products.map((product) => ({
-    id: product.id,
-    name:
-      (lang === "ar" ? product.name_ar || product.name : product.name_en || product.name) ||
-      product.name,
-    price: fromPrice(product, variants),
-    minutes: shortestMinutes(product, variants),
-    imageUrl: firstImage(product),
-  }));
+  return products.map((product) => {
+    const own = variants.filter((variant) => variant.product_id === product.id);
+    const offered = offers.length > 0 ? studioOfferedSale(product, own, null, offers).sale : null;
+    return {
+      id: product.id,
+      name:
+        (lang === "ar" ? product.name_ar || product.name : product.name_en || product.name) ||
+        product.name,
+      price: offered ? offered.price : fromPrice(product, variants),
+      originalPrice: offered ? offered.original : null,
+      body: entryBody(product, lang),
+      minutes: shortestMinutes(product, variants),
+      imageUrl: firstImage(product),
+    };
+  });
 }

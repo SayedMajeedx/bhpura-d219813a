@@ -1,3 +1,4 @@
+import { drawSaleEnds } from "@/features/content-studio/engine/sale-ends";
 import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import {
   drawCover,
@@ -181,6 +182,20 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.restore();
   }
 
+  // When the sale ends, small under the price.
+  const endsRoom = onSale && scene.saleEnds ? 44 * u : 0;
+  if (endsRoom > 0) {
+    drawSaleEnds(ctx, scene.saleEnds, {
+      x: startX,
+      y: cursorY + amountSize * 1.16 + 10 * u,
+      u,
+      color: palette.accent,
+      size: 28,
+      align: rtl ? "right" : "left",
+      alpha: out(flipStart + 0.5),
+    });
+  }
+
   // The body copy under the price, two lines at most.
   const body = scene.body.trim();
   if (body) {
@@ -199,7 +214,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     drawLines(ctx, bodyFit.lines.slice(0, 2), {
       x: startX,
       // Below the amount's descenders (the display figures dip under the line).
-      y: cursorY + amountSize * 1.16 + 14 * u,
+      y: cursorY + amountSize * 1.16 + 14 * u + endsRoom,
       lineHeight: bodyFit.size * 1.45,
       dir: textDirection(body),
     });

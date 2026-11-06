@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { promoCodesQueries } from "@/lib/data/promo-codes";
 import { leadsQueries } from "@/lib/data/leads";
 import { reviewsQueries } from "@/lib/data/reviews";
 import { describeVariantAxes, type ResolvedVariantAxis } from "@/lib/variant-axes";
+import type { StoreOffer } from "@/lib/offers";
 import type { SceneData } from "@/features/content-studio/engine/scene";
 import {
   askedCount,
@@ -36,6 +37,7 @@ export function useMoments({
   axisDefaults,
   isAr,
   currencySymbol,
+  liveOffer = null,
 }: {
   templateId: string;
   brandId: string;
@@ -45,6 +47,8 @@ export function useMoments({
   axisDefaults: Parameters<typeof describeVariantAxes>[0]["addonDefaults"];
   isAr: boolean;
   currencySymbol: string;
+  /** The store's automatic offer that reaches the chosen product, when one does. */
+  liveOffer?: StoreOffer | null;
 }) {
   const lang = isAr ? "ar" : "en";
   const lastChance = templateId === "last-chance";
@@ -66,16 +70,30 @@ export function useMoments({
     // A code's own last day is the post's.
     if (picked?.end_date) setDeadlineDay(localDay(picked.end_date));
   };
+  // A store's offer with no code is what the post announces, and its last day is the post's.
+  const offerEndsAt = liveOffer?.ends_at ?? null;
+  const offerId = liveOffer?.id ?? null;
+  useEffect(() => {
+    if (offerEndsAt) setDeadlineDay(localDay(offerEndsAt));
+  }, [offerId, offerEndsAt]);
   const deadline = useMemo<SceneData["deadline"]>(() => {
     if (!lastChance) return null;
     const parts = deadlineParts(deadlineDay, lang);
     if (!parts) return null;
+    const offerLine =
+      liveOffer && liveOffer.discount_type === "percentage"
+        ? promoOffer(
+            { discount_type: "percentage", discount_value: Number(liveOffer.discount_value) },
+            lang,
+            currencySymbol,
+          )
+        : null;
     return {
       ...parts,
       code: promo?.code ?? null,
-      offer: promo ? promoOffer(promo, lang, currencySymbol) : null,
+      offer: promo ? promoOffer(promo, lang, currencySymbol) : offerLine,
     };
-  }, [lastChance, deadlineDay, lang, promo, currencySymbol]);
+  }, [lastChance, deadlineDay, lang, promo, currencySymbol, liveOffer]);
 
   // Back in Stock: the options on the shelf, and who asked.
   const leadsQ = useQuery({

@@ -7,7 +7,8 @@ import { exportTemplateMp4, exportTemplatePng } from "@/features/content-studio/
 import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
 import type { StudioTemplate } from "@/features/content-studio/engine/scene";
 import { FORMATS, firstImage, type Product } from "@/features/content-studio/lib/studio-content";
-import { studioSale } from "@/features/content-studio/lib/sale-price";
+import { studioOfferedSale } from "@/features/content-studio/lib/sale-price";
+import type { StoreOffer } from "@/lib/offers";
 import { optionRun } from "@/features/content-studio/lib/option-run";
 import {
   BATCH_TEMPLATES,
@@ -54,6 +55,7 @@ export function useBatchExport({
   buildScene,
   products,
   variants,
+  offers,
   axisDefaults,
   leadId,
   format,
@@ -67,6 +69,8 @@ export function useBatchExport({
   buildScene: ReturnType<typeof useTemplateScene>["buildScene"];
   products: readonly Product[];
   variants: Variants;
+  /** The store's live automatic offers: each product is priced after them. */
+  offers: readonly StoreOffer[];
   axisDefaults: ReturnType<typeof useInventoryAxisDefaults>;
   leadId: string | undefined;
   format: keyof typeof FORMATS;
@@ -118,6 +122,7 @@ export function useBatchExport({
           loadImage(firstImage(product)),
           Promise.all((run?.stops ?? []).map((stop) => loadImage(stop.imageUrl))),
         ]);
+        const offered = studioOfferedSale(product, own, null, offers);
         const scene = {
           ...buildScene(width, height, media),
           ...batchSceneFields({
@@ -125,7 +130,8 @@ export function useBatchExport({
             lang,
             showPrice,
             currencySymbol,
-            sale: studioSale(own, null),
+            sale: offered.sale,
+            saleEndsAt: offered.endsAt,
             run,
             media,
             stopMedia,
