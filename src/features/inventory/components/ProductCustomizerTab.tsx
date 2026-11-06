@@ -227,7 +227,9 @@ export function ProductCustomizerTab({
                               ? f.label_ar || f.label_en || "اسم الحقل"
                               : f.label_en || f.label_ar || "Field Name"}
                           </span>
-                          {f.required && <span className="text-red-500 font-bold">*</span>}
+                          {f.required && !f.key.includes("passport_") && (
+                            <span className="text-red-500 font-bold">*</span>
+                          )}
                         </div>
                         {f.type === "text" && (
                           <Input
@@ -291,15 +293,22 @@ export function ProductCustomizerTab({
                       className="flex items-center justify-between border-t border-border-subtle pt-3 text-xs"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center gap-2 text-xs font-medium">
-                        <Switch
-                          checked={!!f.required}
-                          onCheckedChange={(v) => upd({ required: v })}
-                        />
+                      {/* A measurement is required or not by the store's own profiles. */}
+                      {f.key.includes("passport_") ? (
                         <span className="text-muted-foreground">
-                          {isAr ? "حقل إلزامي" : "Required field"}
+                          {isAr ? "الإجباري من الإعدادات" : "Required is set in Settings"}
                         </span>
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs font-medium">
+                          <Switch
+                            checked={!!f.required}
+                            onCheckedChange={(v) => upd({ required: v })}
+                          />
+                          <span className="text-muted-foreground">
+                            {isAr ? "حقل إلزامي" : "Required field"}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-0.5">
                         <Button
                           type="button"

@@ -170,6 +170,8 @@ export function ProductFitPassportSection({
   const missing = missingFitFields(fitProfiles, fitProfileType, typed);
   const rangeSentence =
     rangeProblems.length > 0 ? fitRangeMessage(rangeProblems, labelOf, currentUnit, isAr) : null;
+  // A store can make every measurement optional; a piece still cannot be made from none.
+  const nothingTyped = Object.keys(typed).length === 0;
   const problem =
     rangeSentence ??
     (missing.length > 0
@@ -177,7 +179,9 @@ export function ProductFitPassportSection({
           `أكمل المقاسات المطلوبة: ${missing.map(labelOf).join("، ")}`,
           `Complete these measurements: ${missing.map(labelOf).join(", ")}`,
         )
-      : null);
+      : nothingTyped
+        ? t("أدخل مقاساتك", "Enter your measurements")
+        : null);
   const complete = problem === null;
 
   // Measurements go on the order as they are typed: there is no "apply" to forget. The button
