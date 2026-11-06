@@ -7,6 +7,7 @@ export {
   missingFitFields,
   normalizeFitProfiles,
   resolveFitProfiles,
+  withFieldRequired,
   type FitMeasurements,
   type FitProfileDefinition,
   type FitProfileField,

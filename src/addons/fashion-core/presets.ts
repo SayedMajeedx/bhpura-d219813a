@@ -80,11 +80,11 @@ export const FASHION_CUSTOMIZER_PRESETS: Record<string, CustomFieldPreset> = {
       },
       {
         key: "passport_abaya_armpit_height",
-        label_ar: "ارتفاع الإبط",
-        label_en: "Armpit height",
+        label_ar: "ارتفاع الإبط (اختياري)",
+        label_en: "Armpit height (optional)",
         type: "number",
         options: [],
-        required: true,
+        required: false,
       },
       {
         key: "passport_abaya_waist_width",

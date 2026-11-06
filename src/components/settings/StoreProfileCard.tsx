@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
+import { FitProfilesEditor } from "@/components/settings/FitProfilesEditor";
 import {
   listAddons,
   starterPackFor,
@@ -576,8 +577,8 @@ export function StoreProfileCard({
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {isAr
-                        ? "الملفات المعرّفة للعملاء والطلبات وصنع المنتجات ومقاساتها"
-                        : "Configured measurement profiles for customers, PDP, and order production"}
+                        ? "حدد الإجباري والاختياري من كل قياس، ثم احفظ. ينطبق على كل المنتجات."
+                        : "Choose which measurements are required, then save. It applies to every product."}
                     </p>
                   </div>
                 </div>
@@ -595,38 +596,11 @@ export function StoreProfileCard({
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {activeFitProfiles.map((prof) => (
-                  <div
-                    key={prof.key}
-                    className="rounded-lg border border-border bg-card p-3 space-y-2 text-xs"
-                  >
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="font-medium text-foreground">
-                        {isAr ? prof.label_ar : prof.label_en}
-                      </span>
-                      <Badge variant="outline" className="text-xs font-normal">
-                        {prof.fields.filter((f) => f.required).length}{" "}
-                        {isAr ? "حقول إجبارية" : "required"}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {prof.fields.map((f) => (
-                        <span
-                          key={f.key}
-                          className={`rounded px-1.5 py-0.5 text-xs ${
-                            f.required
-                              ? "bg-primary/10 text-primary font-medium"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {isAr ? f.label_ar : f.label_en}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <FitProfilesEditor
+                profiles={activeFitProfiles}
+                onChange={setFitProfiles}
+                isAr={isAr}
+              />
             </div>
           )}
 

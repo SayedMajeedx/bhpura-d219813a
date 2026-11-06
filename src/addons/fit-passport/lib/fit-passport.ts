@@ -58,7 +58,7 @@ export const FASHION_FIT_PROFILES: FitProfileDefinition[] = [
         key: "armpit_height",
         label_ar: "ارتفاع الإبط",
         label_en: "Armpit height",
-        required: true,
+        required: false,
         aliases: ["armpit_height", "armpit height", "ارتفاع الإبط", "إبط"],
       },
       {
@@ -150,7 +150,7 @@ export const FIT_PROFILE_FIELDS = {
     ["length", "الطول", "Full length", true],
     ["chest_width", "عرض الصدر", "Chest width", true],
     ["sleeve", "طول الكم", "Sleeve length", true],
-    ["armpit_height", "ارتفاع الإبط", "Armpit height", true],
+    ["armpit_height", "ارتفاع الإبط", "Armpit height", false],
     ["waist_width", "عرض الوسط", "Waist width", false],
     ["hem_width", "عرض الأسفل", "Hem width", false],
     ["sleeve_opening", "فتحة الكم", "Sleeve opening", false],
@@ -165,6 +165,25 @@ export const FIT_PROFILE_FIELDS = {
     ["arm_width", "عرض الذراع", "Arm width", false],
   ],
 } as const;
+
+/** The profiles with one measurement made required or optional. */
+export function withFieldRequired(
+  profiles: readonly FitProfileDefinition[],
+  profileKey: string,
+  fieldKey: string,
+  required: boolean,
+): FitProfileDefinition[] {
+  return profiles.map((profile) =>
+    profile.key !== profileKey
+      ? profile
+      : {
+          ...profile,
+          fields: profile.fields.map((field) =>
+            field.key === fieldKey ? { ...field, required } : field,
+          ),
+        },
+  );
+}
 
 export function resolveFitProfiles(raw: unknown): FitProfileDefinition[] {
   if (Array.isArray(raw) && raw.length > 0) {
