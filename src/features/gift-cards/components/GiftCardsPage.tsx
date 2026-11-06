@@ -1,30 +1,36 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Gift, Plus, Search } from "lucide-react";
+import { Gift, Plus } from "lucide-react";
 import {
   AdminPageAction,
   AdminPageCount,
   AdminPageHeader,
 } from "@/components/admin/AdminPageHeader";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { countOf } from "@/lib/arabic-count";
+import { cn } from "@/lib/utils";
+import { replaceUrlQuietly } from "@/lib/quiet-url";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
-import { giftCardQueries, type GiftCard } from "@/lib/data/gift-cards";
+import { giftCardOnlineQueries, giftCardQueries } from "@/lib/data/gift-cards";
 import { localToday } from "@/features/supplier-orders/lib/order-state";
-import { CARD_STATE_WORDS, cardState, cardsHeld, searchCards } from "../lib/gift-cards";
+import { cardsHeld } from "../lib/gift-cards";
+import { orderCounts, pageViewSearch, readPageView, type PageTab } from "../lib/card-orders";
 import { IssueGiftCardDialog } from "./IssueGiftCardDialog";
 import { GiftCardDetailsSheet } from "./GiftCardDetailsSheet";
-import { OnlineGiftCardsSection } from "./OnlineGiftCardsSection";
-import { CardDesignsSection } from "./CardDesignsSection";
+import { GiftCardOrderSheet } from "./GiftCardOrderSheet";
+import { GiftCardOrdersTab } from "./GiftCardOrdersTab";
+import { GiftCardCardsTab } from "./GiftCardCardsTab";
+import { GiftCardSettingsTab } from "./GiftCardSettingsTab";
 
 /**
- * A store's gift cards: what it holds for them (money owed to shoppers in goods), every card with
- * what is left on it, issuing one and opening one. Taking a card as payment is on the order.
+ * A store's gift cards, in three parts: the orders shoppers placed on the store, what needs a
+ * person first; every card with what is left on it; and how the store sells them. Taking a card
+ * as payment is on the order. The part open and the order open are in the address, so a link
+ * brings staff back to the same place.
  */
 export function GiftCardsPage() {
   const { lang: rawLang } = useI18n();
@@ -32,18 +38,46 @@ export function GiftCardsPage() {
   const isAr = lang === "ar";
   const brand = useBrand();
   const { hasPermission } = useProfile();
-  const mayChooseDesigns = hasPermission("manage_settings");
+  const maySetUp = hasPermission("manage_settings");
   const currency = useStoreCurrency(brand.id);
   const cardsQ = useQuery(giftCardQueries.list(brand.id));
+  const purchasesQ = useQuery(giftCardOnlineQueries.purchases(brand.id));
   const [issuing, setIssuing] = useState(false);
-  const [search, setSearch] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [tab, setTab] = useState<PageTab>("orders");
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [cardId, setCardId] = useState<string | null>(null);
   const today = localToday();
   const cards = useMemo(() => cardsQ.data ?? [], [cardsQ.data]);
-  const shown = useMemo(() => searchCards(cards, search), [cards, search]);
+  const purchases = useMemo(() => purchasesQ.data ?? [], [purchasesQ.data]);
   const held = useMemo(() => cardsHeld(cards, today), [cards, today]);
-  const open = cards.find((card) => card.id === openId) ?? null;
-  const money = (n: number, cur = currency) => formatMoney(n, cur, lang);
+  const toDo = useMemo(() => orderCounts(purchases).todo, [purchases]);
+  const openCard = cards.find((card) => card.id === cardId) ?? null;
+  const openOrder = purchases.find((purchase) => purchase.id === orderId) ?? null;
+  const orderOfCard = openCard
+    ? (purchases.find((purchase) => purchase.gift_card_id === openCard.id) ?? null)
+    : null;
+
+  // The address after the first paint: the page is sent before a browser's address is known.
+  useEffect(() => {
+    const view = readPageView(window.location.search);
+    setTab(view.tab === "settings" && !maySetUp ? "orders" : view.tab);
+    setOrderId(view.orderId);
+  }, [maySetUp]);
+
+  const show = (nextTab: PageTab, nextOrder: string | null) => {
+    setTab(nextTab);
+    setOrderId(nextOrder);
+    const search = pageViewSearch(window.location.search, { tab: nextTab, orderId: nextOrder });
+    replaceUrlQuietly(`${window.location.pathname}${search}`);
+  };
+
+  const tabs: { id: PageTab; label: string; count: number | null }[] = [
+    { id: "orders", label: isAr ? "الطلبات" : "Orders", count: toDo > 0 ? toDo : null },
+    { id: "cards", label: isAr ? "البطاقات" : "Cards", count: null },
+    ...(maySetUp
+      ? [{ id: "settings" as const, label: isAr ? "الإعدادات" : "Settings", count: null }]
+      : []),
+  ];
 
   return (
     <div
@@ -73,70 +107,70 @@ export function GiftCardsPage() {
         }
       />
 
-      <dl className="grid grid-cols-2 gap-2">
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <dt className="text-xs text-muted-foreground">
-            {isAr ? "رصيد البطاقات الصالحة" : "Held on active cards"}
-          </dt>
-          <dd className="font-mono text-lg font-semibold" dir="ltr">
-            {money(held.held)}
-          </dd>
-        </div>
-        <div className="rounded-2xl border border-border bg-card p-3">
-          <dt className="text-xs text-muted-foreground">
-            {isAr ? "على بطاقات منتهية" : "On expired cards"}
-          </dt>
-          <dd className="font-mono text-lg font-semibold" dir="ltr">
-            {money(held.expired)}
-          </dd>
-        </div>
+      <dl className="grid grid-cols-3 gap-2">
+        <Figure
+          label={isAr ? "طلبات تنتظرك" : "Orders to act on"}
+          value={String(toDo)}
+          urgent={toDo > 0}
+        />
+        <Figure
+          label={isAr ? "رصيد البطاقات الصالحة" : "Held on active cards"}
+          value={formatMoney(held.held, currency, lang)}
+        />
+        <Figure
+          label={isAr ? "على بطاقات منتهية" : "On expired cards"}
+          value={formatMoney(held.expired, currency, lang)}
+        />
       </dl>
 
-      <OnlineGiftCardsSection lang={lang} />
-      {mayChooseDesigns && <CardDesignsSection lang={lang} />}
-
-      <div className="relative">
-        <Search
-          className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          aria-hidden
-        />
-        <Input
-          aria-label={isAr ? "ابحث بالرمز أو الاسم" : "Search by code or name"}
-          placeholder={isAr ? "ابحث بالرمز أو الاسم" : "Search by code or name"}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="ps-9"
-        />
+      <div
+        role="tablist"
+        aria-label={isAr ? "أقسام بطاقات الهدايا" : "Gift card sections"}
+        className="flex gap-1 rounded-lg bg-muted/50 p-1"
+      >
+        {tabs.map((option) => (
+          <Button
+            key={option.id}
+            type="button"
+            variant="ghost"
+            role="tab"
+            aria-selected={tab === option.id}
+            onClick={() => show(option.id, null)}
+            className={cn(
+              "h-auto min-h-9 flex-1 gap-1.5 whitespace-nowrap rounded-md px-3 text-xs font-bold pointer-coarse:min-h-11",
+              tab === option.id
+                ? "bg-background text-foreground shadow-2xs hover:bg-background"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {option.label}
+            {option.count !== null && (
+              <span className="rounded-full bg-warning/20 px-1.5 font-mono text-foreground">
+                {option.count}
+              </span>
+            )}
+          </Button>
+        ))}
       </div>
 
-      {cardsQ.isLoading ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          {isAr ? "جارٍ التحميل…" : "Loading…"}
-        </Card>
-      ) : shown.length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">
-          {cards.length === 0
-            ? isAr
-              ? "لا بطاقات بعد. أصدر أول بطاقة لعميل يريد إهداءها."
-              : "No cards yet. Issue the first one for a customer who wants to give it."
-            : isAr
-              ? "لا بطاقة تطابق البحث."
-              : "No card matches the search."}
-        </Card>
-      ) : (
-        <ul className="space-y-2">
-          {shown.map((card) => (
-            <GiftCardRow
-              key={card.id}
-              card={card}
-              today={today}
-              lang={lang}
-              onOpen={() => setOpenId(card.id)}
-              money={money}
-            />
-          ))}
-        </ul>
+      {tab === "orders" && (
+        <GiftCardOrdersTab
+          purchases={purchases}
+          loading={purchasesQ.isLoading}
+          lang={lang}
+          onOpen={(id) => show("orders", id)}
+        />
       )}
+      {tab === "cards" && (
+        <GiftCardCardsTab
+          cards={cards}
+          loading={cardsQ.isLoading}
+          today={today}
+          lang={lang}
+          onOpen={setCardId}
+        />
+      )}
+      {tab === "settings" && maySetUp && <GiftCardSettingsTab lang={lang} />}
 
       <IssueGiftCardDialog
         brandId={brand.id}
@@ -144,56 +178,55 @@ export function GiftCardsPage() {
         open={issuing}
         onOpenChange={setIssuing}
       />
-      <GiftCardDetailsSheet
-        card={open}
-        brandId={brand.id}
+      <GiftCardOrderSheet
+        key={orderId ?? "none"}
+        purchase={openOrder}
         lang={lang}
-        onClose={() => setOpenId(null)}
+        onClose={() => show(tab, null)}
+        onOpenCard={(id) => {
+          show(tab, null);
+          setCardId(id);
+        }}
+      />
+      <GiftCardDetailsSheet
+        card={openCard}
+        brandId={brand.id}
+        slug={brand.slug}
+        lang={lang}
+        onClose={() => setCardId(null)}
+        onOpenOrder={
+          orderOfCard
+            ? () => {
+                setCardId(null);
+                show("orders", orderOfCard.id);
+              }
+            : null
+        }
       />
     </div>
   );
 }
 
-function GiftCardRow({
-  card,
-  today,
-  lang,
-  onOpen,
-  money,
+function Figure({
+  label,
+  value,
+  urgent = false,
 }: {
-  card: GiftCard;
-  today: string;
-  lang: "ar" | "en";
-  onOpen: () => void;
-  money: (n: number, currency?: string) => string;
+  label: string;
+  value: string;
+  urgent?: boolean;
 }) {
-  const state = cardState(card, today);
-  const isAr = lang === "ar";
   return (
-    <li>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-border bg-card p-3 text-start hover:bg-muted/40"
-      >
-        <span className="min-w-0 space-y-0.5">
-          <span className="block font-mono text-sm font-semibold" dir="ltr">
-            {card.code}
-          </span>
-          <span className="block text-xs text-muted-foreground">
-            {CARD_STATE_WORDS[state][lang]}
-            {card.recipient_name ? ` · ${isAr ? "لـ" : "for"} ${card.recipient_name}` : ""}
-          </span>
-        </span>
-        <span className="text-end">
-          <span className="block font-mono text-sm font-semibold" dir="ltr">
-            {money(Number(card.balance), card.currency)}
-          </span>
-          <span className="block text-xs text-muted-foreground" dir="ltr">
-            / {money(Number(card.initial_amount), card.currency)}
-          </span>
-        </span>
-      </button>
-    </li>
+    <div
+      className={cn(
+        "min-w-0 rounded-2xl border bg-card p-3",
+        urgent ? "border-warning/50 bg-warning/10" : "border-border",
+      )}
+    >
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="font-mono text-base font-semibold sm:text-lg">
+        <span dir="ltr">{value}</span>
+      </dd>
+    </div>
   );
 }

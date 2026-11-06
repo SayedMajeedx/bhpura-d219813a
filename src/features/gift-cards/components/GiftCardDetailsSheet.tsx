@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -33,13 +34,18 @@ import { GiftCardShare } from "./GiftCardShare";
 export function GiftCardDetailsSheet({
   card,
   brandId,
+  slug,
   lang,
   onClose,
+  onOpenOrder,
 }: {
   card: GiftCard | null;
   brandId: string;
+  slug: string;
   lang: "ar" | "en";
   onClose: () => void;
+  /** Opens the storefront order that bought this card, when one did. */
+  onOpenOrder?: (() => void) | null;
 }) {
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -70,7 +76,7 @@ export function GiftCardDetailsSheet({
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
       <SheetContent dir={isAr ? "rtl" : "ltr"} className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeader>
+        <SheetHeader className="text-start">
           <SheetTitle>
             {money(Number(card.balance))}{" "}
             <span className="text-sm font-normal text-muted-foreground">
@@ -87,6 +93,30 @@ export function GiftCardDetailsSheet({
         </SheetHeader>
 
         <div className="space-y-5 px-4 pb-6">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+            <Fact label={isAr ? "الرمز" : "Code"} value={card.code} mono />
+            <Fact
+              label={isAr ? "تاريخ الإصدار" : "Issued"}
+              value={shortDate(card.issued_at, lang)}
+            />
+            <Fact
+              label={isAr ? "ينتهي" : "Expires"}
+              value={
+                card.expires_on ? shortDate(card.expires_on, lang) : isAr ? "لا ينتهي" : "Never"
+              }
+            />
+            {card.purchaser_name && (
+              <Fact label={isAr ? "المشتري" : "Bought by"} value={card.purchaser_name} />
+            )}
+            {card.note && <Fact label={isAr ? "ملاحظة" : "Note"} value={card.note} wide />}
+          </dl>
+
+          {onOpenOrder && (
+            <Button type="button" variant="outline" size="sm" onClick={onOpenOrder}>
+              {isAr ? "عرض طلب الشراء" : "View the order"}
+            </Button>
+          )}
+
           {state === "active" && <GiftCardShare card={card} lang={lang} />}
 
           <section className="space-y-2">
@@ -105,6 +135,15 @@ export function GiftCardDetailsSheet({
                       {new Date(move.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-GB")}
                     </span>
                     {move.note && <span className="block text-muted-foreground">{move.note}</span>}
+                    {move.order_id && (
+                      <Link
+                        to="/admin/b/$slug/orders/$id"
+                        params={{ slug, id: move.order_id }}
+                        className="block font-medium text-foreground underline underline-offset-2"
+                      >
+                        {isAr ? "عرض الطلب" : "View order"}
+                      </Link>
+                    )}
                   </span>
                   <span className="shrink-0 font-mono" dir="ltr">
                     {Number(move.amount) > 0 ? "+" : "−"}
@@ -152,6 +191,36 @@ export function GiftCardDetailsSheet({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+const shortDate = (value: string, lang: "ar" | "en") =>
+  new Date(value.length === 10 ? `${value}T12:00:00` : value).toLocaleDateString(
+    lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
+    { day: "numeric", month: "short", year: "numeric" },
+  );
+
+function Fact({
+  label,
+  value,
+  mono = false,
+  wide = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  wide?: boolean;
+}) {
+  return (
+    <div className={wide ? "col-span-2 min-w-0" : "min-w-0"}>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd
+        className={mono ? "font-mono font-semibold" : "font-medium break-words"}
+        dir={mono ? "ltr" : "auto"}
+      >
+        {value}
+      </dd>
+    </div>
   );
 }
 
