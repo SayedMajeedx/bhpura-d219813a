@@ -741,7 +741,7 @@ function OrdersList() {
               renderPrimaryAction={(o) => renderContextualButton(o)}
               onCopyInvoice={(id: string) => {
                 const ord = orders.find((x: any) => x.id === id);
-                if (ord) copyInvoiceLink((ord as any).public_invoice_token, t);
+                if (ord) copyInvoiceLink(brand, (ord as any).public_invoice_token, t);
               }}
               onPrintThermal={(o) => {
                 setInspectOrder(o);

@@ -1,3 +1,4 @@
+import { invoiceAddress } from "@/lib/platform-host";
 import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { CalendarCheck, MessageCircle } from "lucide-react";
@@ -26,7 +27,7 @@ import {
 } from "@/lib/bookings/format";
 import { bookingMinutes, overbookable, pastMoveTerms } from "@/lib/bookings/move";
 import { slotTaken } from "@/features/bookings/lib/booking-actions";
-import { bookingInvoiceOf, invoiceLink } from "@/features/bookings/lib/booking-invoice";
+import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { bookingMovedMessage, customerChatLink } from "@/features/bookings/lib/booking-messages";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -92,7 +93,7 @@ export function BookingMoveDialog({
           reference: booking.reference,
           dayLabel: dayTitle(day, isAr),
           timeLabel: formatClockRange(start, end, isAr),
-          link: invoice ? invoiceLink(window.location.origin, invoice.token) : null,
+          link: invoice ? invoiceAddress(brand, invoice.token) : null,
         }),
       )
     : null;

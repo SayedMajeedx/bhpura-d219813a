@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { getCurrentSession } from "@/lib/auth/session";
+import { invoiceAddress } from "@/lib/platform-host";
 
 export async function authenticatedJsonHeaders() {
   const session = await getCurrentSession();
@@ -12,9 +13,12 @@ export async function authenticatedJsonHeaders() {
   };
 }
 
-export async function copyInvoiceLink(id: string, t: (k: string) => string) {
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const url = `${origin}/invoice/${id}`;
+export async function copyInvoiceLink(
+  store: { slug: string; custom_domain?: string | null },
+  id: string,
+  t: (k: string) => string,
+) {
+  const url = invoiceAddress(store, id);
   try {
     if (navigator?.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);

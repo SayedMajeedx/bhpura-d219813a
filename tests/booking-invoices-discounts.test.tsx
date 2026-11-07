@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   bookingInvoiceOf,
-  invoiceLink,
   paymentBadge,
   whatsAppToCustomer,
 } from "../src/features/bookings/lib/booking-invoice";
@@ -192,7 +191,6 @@ describe("a booking's invoice", () => {
   });
 
   it("links to the public invoice and the customer's WhatsApp", () => {
-    expect(invoiceLink("https://pura.example/", "tok")).toBe("https://pura.example/invoice/tok");
     expect(whatsAppToCustomer("3900 1122", "hi there")).toBe(
       "https://wa.me/97339001122?text=hi%20there",
     );
@@ -247,7 +245,7 @@ describe("the booking card", () => {
     renderCard(booking());
     fireEvent.click(screen.getByRole("button", { name: /Copy link/ }));
     await waitFor(() =>
-      expect(state.copied).toEqual([`${window.location.origin}/invoice/tok-123`]),
+      expect(state.copied).toEqual(["https://booth.boutq.store/invoice/tok-123"]),
     );
     const whatsapp = screen.getByRole("link", { name: /Send on WhatsApp/ });
     const href = decodeURIComponent(whatsapp.getAttribute("href")!);

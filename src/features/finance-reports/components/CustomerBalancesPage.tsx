@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { OsLoadFailedState, combinedLoadState } from "@/components/os/os-load-failed-state";
 import { useBrand } from "@/lib/brand-context";
+import { invoiceAddress } from "@/lib/platform-host";
 import { useI18n } from "@/lib/i18n";
 import { formatDate, moneyFractionDigits } from "@/lib/format";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
@@ -351,11 +352,12 @@ function OrderRow({
 }) {
   const orderNo = useOrderNumber();
   const numberFormat = useOrderNumberFormat();
+  const store = useBrand();
   const isAr = lang === "ar";
   const chat = whatsappChatUrl(customer.phone);
   const invoice =
     order.public_invoice_token && typeof window !== "undefined"
-      ? `${window.location.origin}/invoice/${order.public_invoice_token}`
+      ? invoiceAddress(store, order.public_invoice_token)
       : null;
   const message =
     chat && invoice && order.invoice_number !== null

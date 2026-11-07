@@ -1,9 +1,10 @@
+import { invoiceAddress } from "@/lib/platform-host";
 import { BellRing, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { addDays } from "@/lib/bookings/rules";
 import { bookingPlaceText, dayTitle, formatClockRange, localTime } from "@/lib/bookings/format";
 import type { Booking } from "@/lib/data/bookings";
-import { bookingInvoiceOf, invoiceLink } from "@/features/bookings/lib/booking-invoice";
+import { bookingInvoiceOf } from "@/features/bookings/lib/booking-invoice";
 import { bookingBalance, canRemind } from "@/features/bookings/lib/agenda";
 import { bookingReminderMessage, customerChatLink } from "@/features/bookings/lib/booking-messages";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
@@ -34,7 +35,7 @@ export function BookingReminderButton({ page, booking }: { page: BookingsPage; b
     balance: bookingBalance(booking),
     currency: invoice?.currency ?? page.currency,
     tomorrow: booking.event_date === addDays(today, 1),
-    link: invoice ? invoiceLink(window.location.origin, invoice.token) : null,
+    link: invoice ? invoiceAddress(brand, invoice.token) : null,
   });
   const chat = customerChatLink(booking.customer_phone, text);
   if (!chat) return null;

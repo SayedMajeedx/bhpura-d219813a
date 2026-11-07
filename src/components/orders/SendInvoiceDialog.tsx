@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { invoiceAddress } from "@/lib/platform-host";
 import {
   createMessageTemplate,
   deleteMessageTemplate,
@@ -313,11 +314,11 @@ export default function SendInvoiceDialog({
   const [open, setOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
+  const brand = useBrand();
 
   const vars = useMemo(() => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const token = order?.public_invoice_token || order?.id || "";
-    const invoiceLink = token ? `${origin}/invoice/${token}` : "";
+    const invoiceLink = token ? invoiceAddress(brand, token) : "";
 
     return {
       customer_name: getOrderCustomerName(order) || (lang === "ar" ? "عميلنا العزيز" : "there"),
@@ -337,9 +338,8 @@ export default function SendInvoiceDialog({
       invoiceUrl: invoiceLink,
       "Dynamic Invoice Link": invoiceLink,
     };
-  }, [order, totals, settings, currency, lang]);
+  }, [order, totals, settings, currency, lang, brand]);
 
-  const brand = useBrand();
   const brandId = brand.id;
   const templatesQ = useQuery({ ...messageTemplatesQueries.list(brandId), select: asTemplates });
 
@@ -369,9 +369,8 @@ export default function SendInvoiceDialog({
           ? "لا يوجد رقم هاتف للعميل — يرجى إضافة رقم الهاتف مع رمز الدولة"
           : "This customer has no phone on file — add it in Customers or type one here (with country code)",
       );
-    const origin = typeof window !== "undefined" ? window.location.origin : "";
     const token = order?.public_invoice_token || order?.id || "";
-    const invoiceLink = token ? `${origin}/invoice/${token}` : "";
+    const invoiceLink = token ? invoiceAddress(brand, token) : "";
 
     let finalMessage = message;
     if (invoiceLink) {
