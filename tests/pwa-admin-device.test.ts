@@ -6,6 +6,8 @@ import {
   shouldReloadForNewBuild,
 } from "../src/lib/stale-chunk";
 import { runAdminWorker as runWorker } from "./helpers/admin-worker";
+// @ts-expect-error a plain script, with no types of its own
+import { unguardedImports } from "../scripts/check-client-bundle.mjs";
 
 // The PWA review of 2026-11-05: alerts stopped with nothing said when a browser renewed its push
 // subscription; an installed admin left open across a release showed "Something went wrong" on
@@ -86,6 +88,55 @@ describe("a page left open across a release", () => {
     expect(reloadForNewBuild(1_000_000)).toBe(true);
     expect(reloadForNewBuild(1_000_500)).toBe(false);
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("a dynamic import that failed", () => {
+  const preloadError = (payload: unknown) => {
+    const event = new Event("vite:preloadError", { cancelable: true });
+    (event as Event & { payload?: unknown }).payload = payload;
+    window.dispatchEvent(event);
+    return event;
+  };
+
+  it("reloads only when a file of the build is missing", async () => {
+    // A fresh copy: the module remembers a reload it has already begun.
+    vi.resetModules();
+    const { installStaleBuildReload } = await import("../src/lib/stale-chunk");
+    const reload = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      reload,
+    } as Location);
+    window.sessionStorage.removeItem("boutq:stale-build-reload");
+    const stop = installStaleBuildReload();
+
+    // A server-only module asked for in the browser: nothing to do with a release. Reloading on it
+    // took the first click on a product and opened every admin page twice.
+    const unrelated = preloadError(
+      new TypeError("Failed to resolve module specifier 'vinxi/http'"),
+    );
+    expect(unrelated.defaultPrevented).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("boutq:stale-build-reload")).toBeNull();
+
+    // The file of an old build, gone with a release.
+    const stale = preloadError(new TypeError("Failed to fetch dynamically imported module: x.js"));
+    expect(stale.defaultPrevented).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+    stop();
+  });
+});
+
+describe("the check on the client bundle", () => {
+  it("passes a server-only import behind a server check, and fails a bare one", () => {
+    expect(
+      unguardedImports("new TextEncoder,typeof window>`u`&&r(()=>import(`vinxi/http`),[])"),
+    ).toEqual([]);
+    expect(unguardedImports("var i=`vinxi/http`;r(()=>import(i),[]).catch(()=>{});")).toHaveLength(
+      1,
+    );
+    expect(unguardedImports("const unrelated = 1;")).toEqual([]);
   });
 });
 

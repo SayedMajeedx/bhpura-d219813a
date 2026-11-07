@@ -50,11 +50,17 @@ export function reloadForNewBuild(now = Date.now()): boolean {
 
 let reloading = false;
 
-/** Listens for the bundler's own sign of a file that cannot load (`vite:preloadError`). */
+/**
+ * Listens for the bundler's own sign of a file that cannot load (`vite:preloadError`). The bundler
+ * sends it for any dynamic import that fails, whatever the reason and even when the code ignores
+ * the failure, so its reason is read first: reloading on all of them took a page's first click and
+ * opened every admin page twice (the owner's report of 2026-11-07).
+ */
 export function installStaleBuildReload(): () => void {
   if (typeof window === "undefined") return () => undefined;
   const onPreloadError = (event: Event) => {
-    if (reloadForNewBuild()) event.preventDefault();
+    const reason = (event as Event & { payload?: unknown }).payload;
+    if (isStaleBuildError(reason) && reloadForNewBuild()) event.preventDefault();
   };
   window.addEventListener("vite:preloadError", onPreloadError);
   return () => window.removeEventListener("vite:preloadError", onPreloadError);
