@@ -44,6 +44,8 @@ export type StickerDef = {
   photoCard?: boolean;
 };
 
+export type PaperLook = "receipt" | "circular" | "licence";
+
 export type Post = {
   key: string;
   series: string;
@@ -62,6 +64,10 @@ export type Post = {
   chatSize?: number;
   items?: string;
   bag?: string;
+  /** The look of the paper layout, and the words only a paper has. */
+  paper?: PaperLook;
+  total?: string;
+  stamp?: string;
   photo1?: string;
   photo2?: string;
   focus?: number;
@@ -73,6 +79,8 @@ export type Post = {
 
 export type Photo = {
   label: string;
+  /** The piece's whole name with no price, "عباية كلاود", for a Piece card's headline. */
+  name?: string;
   full?: string;
   img?: HTMLImageElement;
   url?: string;

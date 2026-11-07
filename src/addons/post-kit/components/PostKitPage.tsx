@@ -1,6 +1,15 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight, Copy, Download, Pencil, Sticker } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Copy,
+  CopyPlus,
+  Download,
+  Pencil,
+  Plus,
+  Sticker,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { useAddons } from "@/components/addons/AddonsProvider";
@@ -12,10 +21,12 @@ import { isInstalled } from "@/lib/addons/addon-registry";
 import { deliverCreativeFile } from "@/lib/creative-export";
 import { useI18n } from "@/lib/i18n";
 import { POSTS } from "../content/posts";
-import { PLAN, REELS, VIDEO_REELS } from "../content/plan";
+import { PLAN, PLAN_NOTES, REELS, VIDEO_REELS } from "../content/plan";
 import { usePostKit, type PostKit } from "../hooks/use-post-kit";
+import { pieceOnSale } from "../lib/own-posts";
 import { renderPost } from "../lib/render";
 import type { Post } from "../lib/types";
+import { NewPostDialog } from "./NewPostDialog";
 import { PostMaker } from "./PostMaker";
 import { PostPicture } from "./PostPicture";
 import { StickersTab } from "./StickersTab";
@@ -51,7 +62,17 @@ export async function copyWords(text: string, isAr: boolean) {
   }
 }
 
-function PostCard({ postKey, kit, onEdit }: { postKey: string; kit: PostKit; onEdit: () => void }) {
+function PostCard({
+  postKey,
+  kit,
+  onEdit,
+  onCopied,
+}: {
+  postKey: string;
+  kit: PostKit;
+  onEdit: () => void;
+  onCopied: (key: string) => void;
+}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const post = kit.currentOf(postKey);
@@ -99,6 +120,19 @@ function PostCard({ postKey, kit, onEdit }: { postKey: string; kit: PostKit; onE
             {isAr ? "الكابشن" : "Caption"}
           </Button>
         ) : null}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          aria-label={`${isAr ? "انسخ بوست" : "Copy the post"} ${post.title}`}
+          onClick={() => {
+            const key = kit.copyPost(post);
+            if (key) onCopied(key);
+          }}
+        >
+          <CopyPlus className="size-4" />
+          {isAr ? "نسخة" : "Copy"}
+        </Button>
       </div>
     </Card>
   );
@@ -144,32 +178,70 @@ function ReelsList({ isAr }: { isAr: boolean }) {
 
 function PlanTable({ isAr }: { isAr: boolean }) {
   return (
-    <Card className="overflow-x-auto p-0" dir="rtl">
-      <table className="w-full min-w-[560px] text-start text-xs">
-        <thead className="text-muted-foreground">
-          <tr className="border-b border-border">
-            <th scope="col" className="p-3 text-start font-medium">
-              {isAr ? "اليوم" : "Day"}
-            </th>
-            <th scope="col" className="p-3 text-start font-medium">
-              {isAr ? "النوع" : "Kind"}
-            </th>
-            <th scope="col" className="p-3 text-start font-medium">
-              {isAr ? "البوست" : "Post"}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {PLAN.flatMap((week) => week.rows).map(([day, kind, what]) => (
-            <tr key={`${day}-${what}`} className="border-b border-border last:border-0">
-              <td className="p-3 font-medium text-foreground">{day}</td>
-              <td className="p-3 text-muted-foreground">{kind}</td>
-              <td className="p-3 text-foreground">{what}</td>
-            </tr>
+    <div className="space-y-3">
+      <Card className="p-4" dir="rtl">
+        <ul className="list-disc space-y-1 ps-4 text-xs leading-relaxed text-foreground">
+          {PLAN_NOTES.map((note) => (
+            <li key={note}>{note}</li>
           ))}
-        </tbody>
-      </table>
-    </Card>
+        </ul>
+      </Card>
+      <Card className="overflow-x-auto p-0" dir="rtl">
+        <table className="w-full min-w-[640px] text-start text-xs">
+          <thead className="text-muted-foreground">
+            <tr className="border-b border-border">
+              <th scope="col" className="p-3 text-start font-medium">
+                {isAr ? "اليوم" : "Day"}
+              </th>
+              <th scope="col" className="p-3 text-start font-medium">
+                {isAr ? "النوع" : "Kind"}
+              </th>
+              <th scope="col" className="p-3 text-start font-medium">
+                {isAr ? "البوست" : "Post"}
+              </th>
+              <th scope="col" className="p-3 text-start font-medium">
+                {isAr ? "من وين" : "From"}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {PLAN.flatMap((week) => week.rows).map(([day, kind, what, from]) => (
+              <tr key={`${day}-${what}`} className="border-b border-border last:border-0">
+                <td className="p-3 font-medium text-foreground">{day}</td>
+                <td className="p-3 text-muted-foreground">{kind}</td>
+                <td className="p-3 text-foreground">{what}</td>
+                <td className="p-3 text-muted-foreground">{from}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+
+/** A heading and a grid of posts, or nothing while it holds none. */
+function PostGrid({
+  title,
+  keys,
+  kit,
+  open,
+}: {
+  title: string;
+  keys: string[];
+  kit: PostKit;
+  open: (key: string) => void;
+}) {
+  if (!keys.length) return null;
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
+        {keys.map((key) => (
+          <PostCard key={key} postKey={key} kit={kit} onEdit={() => open(key)} onCopied={open} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -178,7 +250,12 @@ function PostKitBody() {
   const isAr = lang === "ar";
   const kit = usePostKit();
   const [editing, setEditing] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
   const Back = isAr ? ArrowRight : ArrowLeft;
+  const open = (key: string) => {
+    setEditing(key);
+    window.scrollTo({ top: 0 });
+  };
 
   // Said from here, not only in the maker: on a phone its heading has scrolled away, and a change
   // can still fail after the merchant left the post.
@@ -210,9 +287,23 @@ function PostKitBody() {
     );
   }
   if (!kit.ready) return <SectionSkeleton rows={4} />;
-  if (editing) {
-    return <PostMaker key={editing} postKey={editing} kit={kit} onClose={() => setEditing(null)} />;
+  // A post deleted on another device leaves nothing to edit: back to the list, never a blank maker.
+  if (editing && kit.currentOf(editing)) {
+    return (
+      <PostMaker
+        key={editing}
+        postKey={editing}
+        kit={kit}
+        onClose={() => setEditing(null)}
+        onOpenCopy={open}
+      />
+    );
   }
+  const onSale = POSTS.filter((post) => pieceOnSale(post, kit.photos));
+  const keysOf = (tpl: string) => onSale.filter((post) => post.tpl === tpl).map((post) => post.key);
+  const rest = onSale
+    .filter((post) => post.tpl !== "piece" && post.tpl !== "paper")
+    .map((post) => post.key);
   return (
     <div className="space-y-4">
       <AdminPageHeader
@@ -224,14 +315,21 @@ function PostKitBody() {
             : "Ready posts with your photos and prices. Edit, save and publish them."
         }
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/admin/b/$slug/content-studio" params={{ slug: kit.brand.slug }}>
-              <Back className="size-4" />
-              {isAr ? "الاستوديو" : "Studio"}
-            </Link>
-          </Button>
+          <>
+            <Button type="button" size="sm" onClick={() => setStarting(true)}>
+              <Plus className="size-4" />
+              {isAr ? "بوست جديد" : "New post"}
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/admin/b/$slug/content-studio" params={{ slug: kit.brand.slug }}>
+                <Back className="size-4" />
+                {isAr ? "الاستوديو" : "Studio"}
+              </Link>
+            </Button>
+          </>
         }
       />
+      <NewPostDialog open={starting} onOpenChange={setStarting} kit={kit} onCreated={open} />
       <Tabs defaultValue="posts" className="space-y-4">
         <TabsList>
           <TabsTrigger value="posts">{isAr ? "البوستات" : "Posts"}</TabsTrigger>
@@ -239,20 +337,31 @@ function PostKitBody() {
           <TabsTrigger value="stickers">{isAr ? "ملصقات للطباعة" : "Print stickers"}</TabsTrigger>
           <TabsTrigger value="plan">{isAr ? "خطة النشر" : "Plan"}</TabsTrigger>
         </TabsList>
-        <TabsContent value="posts">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,240px),1fr))] gap-4">
-            {POSTS.map((post) => (
-              <PostCard
-                key={post.key}
-                postKey={post.key}
-                kit={kit}
-                onEdit={() => {
-                  setEditing(post.key);
-                  window.scrollTo({ top: 0 });
-                }}
-              />
-            ))}
-          </div>
+        <TabsContent value="posts" className="space-y-6">
+          <PostGrid
+            title={isAr ? "بوستاتكم" : "Your posts"}
+            keys={kit.ownKeys}
+            kit={kit}
+            open={open}
+          />
+          <PostGrid
+            title={isAr ? "البوستات الجاهزة" : "Ready posts"}
+            keys={rest}
+            kit={kit}
+            open={open}
+          />
+          <PostGrid
+            title={isAr ? "أوراق شمّوعة" : "Shammoua's papers"}
+            keys={keysOf("paper")}
+            kit={kit}
+            open={open}
+          />
+          <PostGrid
+            title={isAr ? "كروت القطع" : "Piece cards"}
+            keys={keysOf("piece")}
+            kit={kit}
+            open={open}
+          />
         </TabsContent>
         <TabsContent value="reels" className="space-y-6">
           <section className="space-y-3">
@@ -261,15 +370,7 @@ function PostKitBody() {
             </h2>
             <div className="grid max-w-3xl gap-4">
               {VIDEO_REELS.map((reel) => (
-                <VideoReelCard
-                  key={reel.key}
-                  reel={reel}
-                  kit={kit}
-                  onEdit={(postKey) => {
-                    setEditing(postKey);
-                    window.scrollTo({ top: 0 });
-                  }}
-                />
+                <VideoReelCard key={reel.key} reel={reel} kit={kit} onEdit={open} />
               ))}
             </div>
           </section>

@@ -1,10 +1,12 @@
 import type { Post } from "../lib/types";
+import { PAPER_POSTS } from "./papers";
+import { PIECE_CARDS } from "./piece-cards";
 
 /**
  * The ready posts, in this store's words. A piece's price is never written here: {price:key},
  * {full:key} and {from} are read from the live catalogue when a post opens (lib/photos.ts).
  */
-export const POSTS: Post[] = [
+const READY_POSTS: Post[] = [
   {
     key: "bukra-1",
     series: "كاروسيل بكرا: 1 من 3",
@@ -532,3 +534,5 @@ export const POSTS: Post[] = [
     note: "انشريه يوم 15 ديسمبر، قبل المناسبة بيوم.",
   },
 ];
+
+export const POSTS: Post[] = [...READY_POSTS, ...PIECE_CARDS, ...PAPER_POSTS];
