@@ -1,7 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { A4_MM, chunk, gridLayout, mmToPx, withPngDpi } from "../src/addons/post-kit/lib/print-png";
-import { BAG_SIZES_MM, bagLabelsPerSheet } from "../src/addons/post-kit/lib/bag-label";
-import { printableStickerIds, stickerPages } from "../src/addons/post-kit/lib/sticker-sheet";
+import {
+  BAG_SIZES_MM,
+  bagLabelsPerSheet,
+  drawBagLabel,
+  LABEL_DESIGNS,
+  renderBagLabel,
+} from "../src/addons/post-kit/lib/bag-label";
+import { drawFineLabel, FINE_WORDS } from "../src/addons/post-kit/lib/fine-label";
+import {
+  printableStickerIds,
+  renderStickerSheet,
+  STICKER_CELL,
+  stickerPages,
+} from "../src/addons/post-kit/lib/sticker-sheet";
 import { STICKERS } from "../src/addons/post-kit/lib/stickers";
 
 /** A 1x1 PNG, as a canvas writes it, with no physical size. */
@@ -76,5 +88,109 @@ describe("the printed stickers", () => {
   it("fit on an A4 in whole numbers, and the bag label at each size", () => {
     expect(stickerPages()[0].length).toBeGreaterThanOrEqual(12);
     expect(BAG_SIZES_MM.map(bagLabelsPerSheet)).toEqual([12, 6, 6]);
+  });
+});
+
+type Call = { name: string; args: unknown[] };
+
+/** A canvas that writes down what it was told, as a test has no real one. */
+function recorder() {
+  const calls: Call[] = [];
+  const ctx: unknown = new Proxy(
+    {},
+    {
+      get(target: Record<string, unknown>, name: string) {
+        if (name in target) return target[name];
+        if (name === "measureText") return () => ({ width: 100 });
+        return (...args: unknown[]) => {
+          calls.push({ name, args });
+        };
+      },
+      set(target: Record<string, unknown>, name: string, value: unknown) {
+        target[name] = value;
+        if (name === "font") calls.push({ name: "font", args: [value] });
+        return true;
+      },
+    },
+  );
+  return { calls, ctx: ctx as CanvasRenderingContext2D };
+}
+
+describe("the printed labels' edges", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const paths = () => vi.stubGlobal("Path2D", class {});
+
+  it("fill the whole square, with nothing cutting its corners", () => {
+    paths();
+    for (const draw of [drawBagLabel, drawFineLabel]) {
+      const { calls, ctx } = recorder();
+      draw(ctx);
+      expect(calls.some((call) => call.name === "clip")).toBe(false);
+      expect(calls.find((call) => call.name === "fillRect")?.args).toEqual([0, 0, 1000, 1000]);
+    }
+  });
+
+  it("print the store's number on both labels, and nothing in its place without one", () => {
+    paths();
+    const written = (draw: typeof drawBagLabel, phone?: string) => {
+      const { calls, ctx } = recorder();
+      draw(ctx, "@x", phone);
+      return calls.filter((call) => call.name === "fillText").map((call) => String(call.args[0]));
+    };
+    expect(written(drawFineLabel, "+973 1")).toEqual([FINE_WORDS, "@x", "+973 1"]);
+    expect(written(drawFineLabel)).toEqual([FINE_WORDS, "@x"]);
+    expect(written(drawBagLabel, "+973 1").at(-1)).toBe("@x  ·  +973 1");
+    expect(written(drawBagLabel).at(-1)).toBe("@x");
+  });
+
+  it("write Shammoua's words in the clear face, not the hand one", () => {
+    paths();
+    const { calls, ctx } = recorder();
+    drawBagLabel(ctx);
+    const fonts = calls.filter((call) => call.name === "font").map((call) => String(call.args[0]));
+    expect(fonts.length).toBeGreaterThan(0);
+    expect(fonts.some((font) => font.includes("Marhey"))).toBe(false);
+  });
+
+  it("frame the quiet label with straight lines and no drawing", () => {
+    paths();
+    const { calls, ctx } = recorder();
+    drawFineLabel(ctx);
+    expect(calls.filter((call) => call.name === "strokeRect")).toHaveLength(2);
+    expect(calls.some((call) => call.name === "arcTo" || call.name === "ellipse")).toBe(false);
+    const text = calls.filter((call) => call.name === "fillText").map((call) => call.args[0]);
+    expect(text).toEqual([FINE_WORDS, "@puraline.bh"]);
+  });
+
+  it("draw the design asked for, Shammoua's by default", () => {
+    paths();
+    expect(LABEL_DESIGNS).toEqual(["shammoua", "fine"]);
+    const draw = (design?: "shammoua" | "fine") => {
+      const { calls, ctx } = recorder();
+      const canvas = { getContext: () => ctx, width: 0, height: 0 } as unknown as HTMLCanvasElement;
+      renderBagLabel(canvas, 60, "@x", design);
+      return calls.filter((call) => call.name === "strokeRect").length;
+    };
+    // The quiet label has its two gold lines; Shammoua's has its one stitched border.
+    expect(draw("fine")).toBe(2);
+    expect(draw("shammoua")).toBe(1);
+    expect(draw()).toBe(draw("shammoua"));
+  });
+
+  it("cuts a sticker sheet along straight lines, one square a sticker, only when asked", () => {
+    const ids = stickerPages()[0].slice(0, 3);
+    const lines = (cutLine: boolean) => {
+      const { calls, ctx } = recorder();
+      const canvas = { getContext: () => ctx, width: 0, height: 0 } as unknown as HTMLCanvasElement;
+      vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
+        recorder().ctx as unknown as null,
+      );
+      renderStickerSheet(canvas, ids, cutLine);
+      return calls.filter((call) => call.name === "strokeRect");
+    };
+    expect(lines(false)).toHaveLength(0);
+    const cuts = lines(true);
+    expect(cuts).toHaveLength(3);
+    expect(cuts[0].args.slice(2)).toEqual([STICKER_CELL, STICKER_CELL]);
   });
 });

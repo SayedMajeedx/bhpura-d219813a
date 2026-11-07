@@ -10,10 +10,12 @@ import type { PostKit } from "../hooks/use-post-kit";
 import {
   BAG_SIZES_MM,
   BAG_WORDS,
+  LABEL_DESIGNS,
   bagLabelsPerSheet,
   renderBagLabel,
   renderBagLabelSheet,
   type BagSize,
+  type LabelDesign,
 } from "../lib/bag-label";
 import { canvasToPrintPng } from "../lib/print-png";
 import { printableStickerIds, renderStickerSheet, stickerPages } from "../lib/sticker-sheet";
@@ -66,7 +68,39 @@ function Preview({
   );
 }
 
-function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
+const LABEL_WORDS: Record<
+  LabelDesign,
+  { title: [string, string]; about: [string, string]; file: string }
+> = {
+  shammoua: {
+    title: ["ملصق الكيس", "Bag label"],
+    about: [
+      `شمّوعة تقول «${BAG_WORDS}» على كل طلب. اطبعه على ورق ستيكر وقصّه.`,
+      `Shammoua says “${BAG_WORDS}” on every order. Print it on sticker paper and cut it out.`,
+    ],
+    file: "bag-label",
+  },
+  fine: {
+    title: ["الملصق الراقي", "Fine label"],
+    about: [
+      `الشعار و«${BAG_WORDS}» بخط البراند وإطار ذهبي رفيع، بدون رسومات.`,
+      `Your logo and “${BAG_WORDS}” in your brand's typeface with a fine gold frame, and no drawings.`,
+    ],
+    file: "fine-label",
+  },
+};
+
+function BagLabelSection({
+  kit,
+  isAr,
+  design,
+}: {
+  kit: PostKit;
+  isAr: boolean;
+  design: LabelDesign;
+}) {
+  const words = LABEL_WORDS[design];
+  const title = isAr ? words.title[0] : words.title[1];
   const [mm, setMm] = useState<BagSize>(80);
   const single = useRef<HTMLCanvasElement | null>(null);
   const sheet = useRef<HTMLCanvasElement | null>(null);
@@ -75,14 +109,8 @@ function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-sm font-semibold text-foreground">
-          {isAr ? "ملصق الكيس" : "Bag label"}
-        </h2>
-        <p className="text-xs text-muted-foreground">
-          {isAr
-            ? `شمّوعة تقول «${BAG_WORDS}» على كل طلب. اطبعه على ورق ستيكر وقصّه.`
-            : `Shammoua says “${BAG_WORDS}” on every order. Print it on sticker paper and cut it out.`}
-        </p>
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <p className="text-xs text-muted-foreground">{isAr ? words.about[0] : words.about[1]}</p>
       </div>
       <div
         role="group"
@@ -105,9 +133,9 @@ function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
       <div className="grid gap-4 md:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
         <Card className="min-w-0 space-y-3 p-3">
           <Preview
-            draw={(c) => renderBagLabel(c, mm, handle)}
-            drawKey={`label-${mm}`}
-            label={isAr ? `ملصق الكيس: ${BAG_WORDS}` : `Bag label: ${BAG_WORDS}`}
+            draw={(c) => renderBagLabel(c, mm, handle, design, kit.phone)}
+            drawKey={`label-${design}-${mm}-${kit.phone}`}
+            label={`${title}: ${BAG_WORDS}`}
             canvasRef={(el) => (single.current = el)}
           />
           <Button
@@ -116,21 +144,21 @@ function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
             onClick={() =>
               void savePng(
                 single.current,
-                `${kit.brand.slug}-bag-label-${mm}mm.png`,
+                `${kit.brand.slug}-${words.file}-${mm}mm.png`,
                 BAG_WORDS,
                 isAr,
               )
             }
           >
             <Download className="size-4" />
-            {isAr ? "حمّل الملصق (شفاف الحواف)" : "Save the label (clear corners)"}
+            {isAr ? "حمّل الملصق" : "Save the label"}
           </Button>
         </Card>
         <Card className="min-w-0 space-y-3 p-3">
           <Preview
-            draw={(c) => renderBagLabelSheet(c, mm, handle)}
-            drawKey={`sheet-${mm}`}
-            label={isAr ? "ورقة A4 من ملصق الكيس" : "A4 sheet of bag labels"}
+            draw={(c) => renderBagLabelSheet(c, mm, handle, design, kit.phone)}
+            drawKey={`sheet-${design}-${mm}-${kit.phone}`}
+            label={isAr ? `ورقة A4 من ${title}` : `A4 sheet: ${title}`}
             canvasRef={(el) => (sheet.current = el)}
             className="max-w-sm"
           />
@@ -146,7 +174,7 @@ function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
             onClick={() =>
               void savePng(
                 sheet.current,
-                `${kit.brand.slug}-bag-labels-a4-${mm}mm.png`,
+                `${kit.brand.slug}-${words.file}s-a4-${mm}mm.png`,
                 BAG_WORDS,
                 isAr,
               )
@@ -162,7 +190,7 @@ function BagLabelSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
 }
 
 function StickerSheetsSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
-  const [cutLine, setCutLine] = useState(false);
+  const [cutLine, setCutLine] = useState(true);
   const pages = stickerPages();
   const total = printableStickerIds().length;
   const refs = useRef<(HTMLCanvasElement | null)[]>([]);
@@ -174,13 +202,13 @@ function StickerSheetsSection({ kit, isAr }: { kit: PostKit; isAr: boolean }) {
         </h2>
         <p className="text-xs text-muted-foreground">
           {isAr
-            ? `${total} ستيكر بحافتها البيضاء، بحجم ٤٫٢ سم. اطبعها على ورق ستيكر بالحجم الحقيقي.`
-            : `${total} stickers with their white edge, 4.2 cm each. Print on sticker paper at actual size.`}
+            ? `${total} ستيكر، كل واحد مربع بحجم ٤٫٢ سم. اطبعها على ورق ستيكر بالحجم الحقيقي وقصّها بالمسطرة.`
+            : `${total} stickers, each a 4.2 cm square. Print on sticker paper at actual size and cut with a ruler.`}
         </p>
       </div>
       <label className="flex w-fit items-center gap-2 text-xs text-foreground">
         <Switch checked={cutLine} onCheckedChange={setCutLine} />
-        {isAr ? "خط القص حول كل ستيكر" : "Cut line around each sticker"}
+        {isAr ? "خط قص مستقيم حول كل ستيكر" : "Straight cut line around each sticker"}
       </label>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,260px),1fr))] gap-4">
         {pages.map((ids, i) => (
@@ -219,7 +247,9 @@ export function StickersTab({ kit }: { kit: PostKit }) {
   const isAr = lang === "ar";
   return (
     <div className="space-y-8">
-      <BagLabelSection kit={kit} isAr={isAr} />
+      {LABEL_DESIGNS.map((design) => (
+        <BagLabelSection key={design} kit={kit} isAr={isAr} design={design} />
+      ))}
       <StickerSheetsSection kit={kit} isAr={isAr} />
     </div>
   );

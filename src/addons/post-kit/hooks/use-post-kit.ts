@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { displayPhone } from "@/lib/invoice-display";
 import { catalogInsightQueries, catalogQueries } from "@/lib/data/catalog";
 import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
 import { POSTS } from "../content/posts";
@@ -34,9 +35,12 @@ async function loadKitFonts() {
   const faces = sheet.then(() =>
     Promise.all([
       loadStudioFonts(),
-      ...['600 40px "Marhey"', '700 40px "Marhey"', '700 60px "Aref Ruqaa"'].map((face) =>
-        document.fonts.load(face, "عربي").catch(() => []),
-      ),
+      ...[
+        '600 40px "Marhey"',
+        '700 40px "Marhey"',
+        '700 60px "Aref Ruqaa"',
+        '200 60px "29LT Azer"',
+      ].map((face) => document.fonts.load(face, "عربي").catch(() => [])),
     ]),
   );
   await Promise.race([faces, new Promise((resolve) => setTimeout(resolve, 5000))]);
@@ -54,6 +58,11 @@ export function usePostKit() {
   const making = (
     settingsQ.data as { delivery_estimate_tailored_ar?: string | null } | null | undefined
   )?.delivery_estimate_tailored_ar;
+
+  // The number printed on a label is the store's own, as its settings say today.
+  const contact = settingsQ.data as
+    { phone?: string | null; whatsapp_number?: string | null } | null | undefined;
+  const phone = displayPhone(contact?.phone || contact?.whatsapp_number);
 
   const catalogue: Catalogue | null = useMemo(() => {
     if (!productsQ.data || !variantsQ.data) return null;
@@ -111,6 +120,7 @@ export function usePostKit() {
 
   return {
     brand,
+    phone,
     ready: Boolean(pieces) && store.loaded,
     failed:
       (productsQ.isError && !productsQ.data) ||
