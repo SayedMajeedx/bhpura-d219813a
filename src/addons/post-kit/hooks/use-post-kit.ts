@@ -125,6 +125,8 @@ export function usePostKit() {
     resetEdit: store.resetEdit,
     createPost: store.createPost,
     copyPost: store.copyPost,
+    calendar: store.calendar,
+    saveCalendar: store.saveCalendar,
     saveState: store.saveState,
     retrySave: store.retrySave,
     addUploads: store.addUploads,

@@ -16,6 +16,7 @@ import {
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { POSTS } from "../content/posts";
 import type { Catalogue } from "../lib/photos";
+import { CALENDAR_KEY, readCalendar, type CalendarState } from "../lib/calendar";
 import { copyOf, isOwnPost, newestFirst, ownPostKey, ownTemplate } from "../lib/own-posts";
 import { withoutPhoto } from "../lib/post-rules";
 import {
@@ -266,6 +267,18 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
   const ownStoredRef = useRef(ownStored);
   ownStoredRef.current = ownStored;
 
+  /** The posting calendar: one row of the record, kept and sent like any change to a post. */
+  const calendar = useMemo(() => {
+    const row = (serverEdits ?? []).find((edit) => edit.post_key === CALENDAR_KEY);
+    return readCalendar(outbox[CALENDAR_KEY]?.post ?? row?.post);
+  }, [serverEdits, outbox]);
+
+  const saveCalendar = useCallback(
+    (next: CalendarState) =>
+      enqueue({ [CALENDAR_KEY]: { post: next as unknown as Post, at: Date.now() } }),
+    [enqueue],
+  );
+
   const ownKeys = useMemo(() => newestFirst(Object.keys(edits).filter(isOwnPost)), [edits]);
 
   const saveEdit = useCallback(
@@ -417,6 +430,8 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     resetEdit,
     createPost,
     copyPost,
+    calendar,
+    saveCalendar,
     retrySave: flush,
     addUploads,
     removeUpload,

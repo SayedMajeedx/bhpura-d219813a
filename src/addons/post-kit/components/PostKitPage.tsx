@@ -21,12 +21,13 @@ import { isInstalled } from "@/lib/addons/addon-registry";
 import { deliverCreativeFile } from "@/lib/creative-export";
 import { useI18n } from "@/lib/i18n";
 import { POSTS } from "../content/posts";
-import { PLAN, PLAN_NOTES, REELS, VIDEO_REELS } from "../content/plan";
+import { REELS, VIDEO_REELS } from "../content/plan";
 import { usePostKit, type PostKit } from "../hooks/use-post-kit";
 import { pieceOnSale } from "../lib/own-posts";
 import { renderPost } from "../lib/render";
 import type { Post } from "../lib/types";
 import { NewPostDialog } from "./NewPostDialog";
+import { PostCalendar } from "./PostCalendar";
 import { PostMaker } from "./PostMaker";
 import { PostPicture } from "./PostPicture";
 import { StickersTab } from "./StickersTab";
@@ -172,50 +173,6 @@ function ReelsList({ isAr }: { isAr: boolean }) {
           </div>
         </Card>
       ))}
-    </div>
-  );
-}
-
-function PlanTable({ isAr }: { isAr: boolean }) {
-  return (
-    <div className="space-y-3">
-      <Card className="p-4" dir="rtl">
-        <ul className="list-disc space-y-1 ps-4 text-xs leading-relaxed text-foreground">
-          {PLAN_NOTES.map((note) => (
-            <li key={note}>{note}</li>
-          ))}
-        </ul>
-      </Card>
-      <Card className="overflow-x-auto p-0" dir="rtl">
-        <table className="w-full min-w-[640px] text-start text-xs">
-          <thead className="text-muted-foreground">
-            <tr className="border-b border-border">
-              <th scope="col" className="p-3 text-start font-medium">
-                {isAr ? "اليوم" : "Day"}
-              </th>
-              <th scope="col" className="p-3 text-start font-medium">
-                {isAr ? "النوع" : "Kind"}
-              </th>
-              <th scope="col" className="p-3 text-start font-medium">
-                {isAr ? "البوست" : "Post"}
-              </th>
-              <th scope="col" className="p-3 text-start font-medium">
-                {isAr ? "من وين" : "From"}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {PLAN.flatMap((week) => week.rows).map(([day, kind, what, from]) => (
-              <tr key={`${day}-${what}`} className="border-b border-border last:border-0">
-                <td className="p-3 font-medium text-foreground">{day}</td>
-                <td className="p-3 text-muted-foreground">{kind}</td>
-                <td className="p-3 text-foreground">{what}</td>
-                <td className="p-3 text-muted-foreground">{from}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
     </div>
   );
 }
@@ -385,7 +342,7 @@ function PostKitBody() {
           <StickersTab kit={kit} />
         </TabsContent>
         <TabsContent value="plan">
-          <PlanTable isAr={isAr} />
+          <PostCalendar kit={kit} onOpen={open} />
         </TabsContent>
       </Tabs>
     </div>

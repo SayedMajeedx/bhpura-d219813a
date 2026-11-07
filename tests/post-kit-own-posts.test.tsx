@@ -7,6 +7,7 @@ import { PIECE_CARDS } from "../src/addons/post-kit/content/piece-cards";
 import { PAPER_POSTS } from "../src/addons/post-kit/content/papers";
 import { PLAN, REELS } from "../src/addons/post-kit/content/plan";
 import { STARTERS, postFromStarter } from "../src/addons/post-kit/content/starters";
+import { CALENDAR_KEY, withPosted } from "../src/addons/post-kit/lib/calendar";
 import { parseRows } from "../src/addons/post-kit/lib/layout-piece";
 import { paperLook } from "../src/addons/post-kit/lib/layout-paper";
 import { TEMPLATES } from "../src/addons/post-kit/lib/layouts";
@@ -187,6 +188,25 @@ describe("a store's own post", () => {
   });
 });
 
+describe("the calendar's record", () => {
+  it("is saved beside the posts, read back on another device, and is never taken for a post", async () => {
+    const device = await opened(openDevice(prices("25 د.ب")));
+    expect(device.result.current.calendar.days).toEqual({});
+    act(() => {
+      device.result.current.saveCalendar(
+        withPosted(device.result.current.calendar, "2026-11-08", true),
+      );
+    });
+    expect(device.result.current.calendar.days["2026-11-08"].posted).toBe(true);
+    const row = await stored(CALENDAR_KEY);
+    expect((row.post as unknown as { key: string }).key).toBe(CALENDAR_KEY);
+    const other = await opened(openDevice(prices("25 د.ب")));
+    expect(other.result.current.calendar.days["2026-11-08"].posted).toBe(true);
+    expect(other.result.current.edits[CALENDAR_KEY]).toBeUndefined();
+    expect(other.result.current.ownKeys).toEqual([]);
+  });
+});
+
 describe("the starting points", () => {
   it("name only layouts, colours and stickers that exist, and cover every layout", () => {
     const layouts = new Set(STARTERS.map((starter) => starter.post.tpl));
@@ -294,7 +314,7 @@ describe("the plan", () => {
       POSTS.some((post) => what.includes(post.series.split(":")[0].replace("كاروسيل ", "")));
     for (const [, , what, from] of rows) {
       if (from === "جاهز في العدة" && !what.includes("بالطيب") && !what.includes("تحدي الموقع")) {
-        expect(named(what.replace("كرت القطعة: ", "عباية ")), what).toBe(true);
+        expect(named(what), what).toBe(true);
       }
       if (from === "تصورونه بنفسكم") {
         expect(
@@ -309,7 +329,7 @@ describe("the plan", () => {
     const friday = rows.find((row) => row[0].startsWith("الجمعة 27"));
     expect(friday?.[2]).toContain("الجمعة البيضاء");
     const sunday = rows.find((row) => row[0].startsWith("الأحد 22"));
-    expect(sunday?.[2]).toContain("كرت القطعة");
+    expect(sunday?.[2]).toContain("كرت القطعة: عباية ياقوت");
     expect(sunday?.[2]).toContain("لو قررتوا");
   });
 });
