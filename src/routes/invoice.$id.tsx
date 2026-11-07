@@ -29,32 +29,20 @@ import { getReadableTextColor } from "@/lib/color-utils";
 import { variantAxisDefaultsFrom } from "@/lib/addons/addon-registry";
 import { toast } from "sonner";
 import { orderNumberLabel, orderNumberText } from "@/lib/order-number";
+import { invoiceHead, isInvoiceToken } from "@/lib/invoice-head";
 
 export const Route = createFileRoute("/invoice/$id")({
-  ssr: false,
+  // The data on the server, for the link preview (`invoiceHead`); the page itself in the browser.
+  ssr: "data-only",
   loader: async ({ params }) => {
+    // The server reads this before the page shows, so a mistyped link is "not found", not an error.
+    if (!isInvoiceToken(params.id)) throw notFound();
     const res = await getPublicInvoice({ data: { id: params.id } });
     if (!res) throw notFound();
     return res;
   },
   component: PublicInvoice,
-  head: ({ loaderData }) => {
-    const inv = loaderData?.order?.invoice_number;
-    const brand = loaderData?.settings?.business_name || "Boutq";
-    const title = inv
-      ? `Invoice ${orderNumberLabel(inv, loaderData?.settings)} — ${brand}`
-      : `Invoice — ${brand}`;
-    return {
-      meta: [
-        { title },
-        { name: "description", content: `Invoice from ${brand}.` },
-        { name: "robots", content: "noindex, nofollow" },
-        { property: "og:title", content: title },
-        { property: "og:description", content: `Invoice from ${brand}.` },
-        { property: "og:type", content: "website" },
-      ],
-    };
-  },
+  head: ({ loaderData }) => invoiceHead(loaderData),
   notFoundComponent: () => (
     <div className="min-h-screen grid place-items-center bg-background px-4 text-center">
       <div>
