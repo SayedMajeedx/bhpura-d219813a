@@ -23,8 +23,32 @@ type TextField =
   | "total"
   | "stamp";
 
+/** A field's words where a layout uses it differently. */
+const FIELD_WORDS: Record<string, Partial<Record<TextField, [string, string]>>> = {
+  split: {
+    labelA: ["السطر الصغير للجزء الأول", "Small line, first part"],
+    head: ["كلام الجزء الأول", "First part"],
+    labelB: ["السطر الصغير للجزء الثاني", "Small line, second part"],
+    foot: ["كلام الجزء الثاني", "Second part"],
+  },
+  reply: { lead: ["مين علّق", "Who commented"], head: ["التعليق", "The comment"] },
+  proof: {
+    lead: ["مين قالت", "Who said it"],
+    head: ["كلام الزبونة", "The customer's words"],
+    label: ["اسم القطعة", "The piece"],
+  },
+  grid: { foot: ["السطر تحت", "Line below"] },
+};
+
 /** What a list field holds in each layout: a piece's traits and a paper's rows are "a name: a value". */
 function itemsLabel(post: Post): [string, string] {
+  if (post.tpl === "grid") {
+    return [
+      "كل خانة في سطر. الخانة بين نجمتين تتعبى، والعنوان قبل النقطتين يطلع فوق كلامها",
+      "One cell a line. A cell between asterisks is filled, and a heading before a colon sits above its words",
+    ];
+  }
+  if (post.tpl === "reply") return ["رد شمّوعة", "Shammoua's answer"];
   if (post.tpl === "piece") {
     return ["كل سطر: العنوان ونقطتين والكلام", "One a line: a heading, a colon and the words"];
   }
@@ -56,7 +80,11 @@ export function PostTextFields({
     const set = (text: string) => onChange({ [name]: text });
     return (
       <div className="space-y-1.5" key={name}>
-        <Label htmlFor={id}>{isAr ? ar : en}</Label>
+        <Label htmlFor={id}>
+          {isAr
+            ? (FIELD_WORDS[post.tpl]?.[name]?.[0] ?? ar)
+            : (FIELD_WORDS[post.tpl]?.[name]?.[1] ?? en)}
+        </Label>
         {multi ? (
           <Textarea
             id={id}

@@ -1,6 +1,7 @@
 import type { Post } from "../lib/types";
 import { PAPER_POSTS } from "./papers";
 import { PIECE_CARDS } from "./piece-cards";
+import { SERIES_POSTS } from "./series";
 
 /**
  * The ready posts, in this store's words. A piece's price is never written here: {price:key},
@@ -535,4 +536,4 @@ const READY_POSTS: Post[] = [
   },
 ];
 
-export const POSTS: Post[] = [...READY_POSTS, ...PIECE_CARDS, ...PAPER_POSTS];
+export const POSTS: Post[] = [...READY_POSTS, ...PIECE_CARDS, ...PAPER_POSTS, ...SERIES_POSTS];

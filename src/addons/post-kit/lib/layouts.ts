@@ -3,6 +3,7 @@ import { drawText, fit, LOGO_RATIO, roundRect, sewnTag, wrap } from "./text";
 import { coverImage, handle, photoCrop, sideNote, stitchedFrame, wordmark } from "./frame";
 import { drawPaper } from "./layout-paper";
 import { drawPiece } from "./layout-piece";
+import { drawGrid, drawProof, drawReply, drawSplit } from "./layout-series";
 import type { Ctx, Geometry, PhotoBook, Post, TextLayout, Tone } from "./types";
 
 /* The layouts a post can take. */
@@ -26,6 +27,16 @@ export const TEMPLATES: Record<string, { name: { ar: string; en: string }; field
   paper: {
     name: { ar: "أوراق شمّوعة", en: "Shammoua's papers" },
     fields: ["lead", "head", "items", "total", "foot", "stamp"],
+  },
+  grid: { name: { ar: "خانات", en: "Grid" }, fields: ["head", "items", "foot"] },
+  split: {
+    name: { ar: "قبل وبعد", en: "Before and after" },
+    fields: ["labelA", "head", "labelB", "foot"],
+  },
+  reply: { name: { ar: "رد على تعليق", en: "Comment reply" }, fields: ["lead", "head", "items"] },
+  proof: {
+    name: { ar: "كلام زبونة", en: "Customer words" },
+    fields: ["lead", "head", "label", "photo1"],
   },
 };
 
@@ -254,4 +265,8 @@ export const DRAW: Record<
   poster: drawPoster,
   piece: drawPiece,
   paper: (ctx, s, g, tone) => drawPaper(ctx, s, g, tone),
+  grid: (ctx, s, g, tone) => drawGrid(ctx, s, g, tone),
+  split: (ctx, s, g, tone) => drawSplit(ctx, s, g, tone),
+  reply: (ctx, s, g, tone) => drawReply(ctx, s, g, tone),
+  proof: drawProof,
 };
