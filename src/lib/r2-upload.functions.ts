@@ -5,12 +5,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isProductPictureKey, productPictureInUse } from "@/lib/product-picture-use";
 
 let getEventFn: any = null;
-const vinxiHttp = "vinxi/http";
-import(/* @vite-ignore */ vinxiHttp)
-  .then((m) => {
-    getEventFn = m.getEvent;
-  })
-  .catch(() => {});
+// The server's alone: this file's top level also runs in the browser, which cannot resolve it.
+if (typeof window === "undefined") {
+  const vinxiHttp = "vinxi/http";
+  import(/* @vite-ignore */ vinxiHttp)
+    .then((m) => {
+      getEventFn = m.getEvent;
+    })
+    .catch(() => {});
+}
 
 const mediaKinds = [
   "logo",
