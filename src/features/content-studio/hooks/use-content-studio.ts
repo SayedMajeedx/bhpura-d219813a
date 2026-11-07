@@ -171,6 +171,7 @@ export function useContentStudio(slug: string) {
     currency,
     isAr,
     handle: instagram,
+    making: settingsQ.data?.delivery_estimate_tailored_ar,
   });
   // Reel Cut, Coming Soon and Made for You cut between the product's photos; the others never load them.
   const { productMediaList, photo: chosenPhoto } = product;
@@ -366,7 +367,10 @@ export function useContentStudio(slug: string) {
     variantsQ: product.variantsQ,
     currencySymbol,
     effectivePrice: product.effectivePrice,
-    storeProfile,
+    making: isAr
+      ? settingsQ.data?.delivery_estimate_tailored_ar
+      : settingsQ.data?.delivery_estimate_tailored_en,
+    brandId: brand.id,
     isAr,
     override: occasion.occasionCaptionText,
   });

@@ -1,4 +1,4 @@
-import { stepToSend } from "@/lib/funnel";
+import { stepToSend, visitSource } from "@/lib/funnel";
 import { recordFunnelStep } from "@/lib/data/storefront-funnel";
 export type StorefrontEvent =
   | "page_view"
@@ -48,7 +48,19 @@ function recordFunnel(event: StorefrontEvent) {
       sessionStorage.setItem(visitKey, visit);
     }
     sessionStorage.setItem(stepKey, String(step));
-    void recordFunnelStep(slug, visit, step).catch(() => {
+    // Read once, as the visit starts: later pages of the store are not where it came from.
+    const sourceKey = `boutq-visit-source:${slug}`;
+    let source = sessionStorage.getItem(sourceKey);
+    if (!source) {
+      source = visitSource({
+        search: window.location.search,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        host: window.location.hostname,
+      });
+      sessionStorage.setItem(sourceKey, source);
+    }
+    void recordFunnelStep(slug, visit, step, source).catch(() => {
       // A step that could not be sent is not counted; the page goes on.
     });
   } catch {

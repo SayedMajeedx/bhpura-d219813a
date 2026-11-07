@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { storefrontFunnelQueries } from "@/lib/data/storefront-funnel";
-import { conversionRate, funnelStages, type FunnelStage } from "@/lib/funnel";
+import { conversionRate, funnelStages, type FunnelStage, type VisitSource } from "@/lib/funnel";
 
 /** The last 30 days, as the dashboard's other figures read them (from midnight 29 days ago). */
 export function last30Days(now: Date): { from: string; to: string } {
@@ -27,6 +27,17 @@ const SERVICE_WORDS: Partial<Record<FunnelStage["key"], { ar: string; en: string
   orders: { ar: "حجوزات وطلبات", en: "Bookings & orders" },
 };
 
+const SOURCE_WORDS: Record<VisitSource, { ar: string; en: string }> = {
+  instagram: { ar: "انستقرام", en: "Instagram" },
+  facebook: { ar: "فيسبوك", en: "Facebook" },
+  tiktok: { ar: "تيك توك", en: "TikTok" },
+  snapchat: { ar: "سناب شات", en: "Snapchat" },
+  whatsapp: { ar: "واتساب", en: "WhatsApp" },
+  google: { ar: "جوجل", en: "Google" },
+  other: { ar: "مواقع أخرى", en: "Other sites" },
+  direct: { ar: "مباشرة", en: "Direct" },
+};
+
 /**
  * On the dashboard: how many shoppers visited in the last 30 days, how far they went and the
  * conversion rate (orders placed out of visits), from the store's own count of visits. Before it
@@ -43,6 +54,9 @@ export function StoreFunnelCard({
 }) {
   const period = useMemo(() => last30Days(new Date()), []);
   const { data } = useQuery(storefrontFunnelQueries.period(brandId, period.from, period.to));
+  const { data: sources } = useQuery(
+    storefrontFunnelQueries.sources(brandId, period.from, period.to),
+  );
   if (!data) return null;
 
   const stages = funnelStages(data);
@@ -105,6 +119,42 @@ export function StoreFunnelCard({
           ))}
         </ol>
       )}
+
+      {sources && sources.length > 0 ? (
+        <table className="w-full text-xs">
+          <caption className="pb-1.5 text-start text-xs font-medium text-foreground">
+            {isAr ? "من وين جاءت الزيارات" : "Where visits came from"}
+          </caption>
+          <thead className="text-muted-foreground">
+            <tr>
+              <th scope="col" className="pb-1 text-start font-normal">
+                {isAr ? "المصدر" : "Source"}
+              </th>
+              <th scope="col" className="pb-1 text-end font-normal">
+                {isAr ? "زيارات" : "Visits"}
+              </th>
+              <th scope="col" className="pb-1 text-end font-normal">
+                {isAr ? "طلبات" : "Orders"}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {sources.map((row) => (
+              <tr key={row.source} className="border-t border-border">
+                <td className="py-1 text-muted-foreground">
+                  {isAr ? SOURCE_WORDS[row.source].ar : SOURCE_WORDS[row.source].en}
+                </td>
+                <td className="py-1 text-end font-mono tabular-nums" dir="ltr">
+                  {row.visits.toLocaleString("en-US")}
+                </td>
+                <td className="py-1 text-end font-mono tabular-nums" dir="ltr">
+                  {row.orders.toLocaleString("en-US")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
     </section>
   );
 }

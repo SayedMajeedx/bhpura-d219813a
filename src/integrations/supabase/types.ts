@@ -8914,6 +8914,7 @@ export type Database = {
           last_seen: string;
           reached: number;
           session_id: string;
+          source: string | null;
         };
         Insert: {
           brand_id: string;
@@ -8921,6 +8922,7 @@ export type Database = {
           last_seen?: string;
           reached?: number;
           session_id: string;
+          source?: string | null;
         };
         Update: {
           brand_id?: string;
@@ -8928,6 +8930,7 @@ export type Database = {
           last_seen?: string;
           reached?: number;
           session_id?: string;
+          source?: string | null;
         };
         Relationships: [
           {
@@ -11663,10 +11666,20 @@ export type Database = {
         Args: { p_brand_slug: string; p_event?: string; p_product_id: string };
         Returns: undefined;
       };
-      record_storefront_step: {
-        Args: { p_session: string; p_slug: string; p_step: number };
-        Returns: undefined;
-      };
+      record_storefront_step:
+        | {
+            Args: { p_session: string; p_slug: string; p_step: number };
+            Returns: undefined;
+          }
+        | {
+            Args: {
+              p_session: string;
+              p_slug: string;
+              p_source: string;
+              p_step: number;
+            };
+            Returns: undefined;
+          };
       record_supplier_payment: {
         Args: {
           p_amount: number;
@@ -12493,6 +12506,14 @@ export type Database = {
           checkouts: number;
           orders: number;
           product_views: number;
+          visits: number;
+        }[];
+      };
+      storefront_funnel_sources: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          orders: number;
+          source: string;
           visits: number;
         }[];
       };

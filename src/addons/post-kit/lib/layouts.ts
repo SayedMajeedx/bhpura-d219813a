@@ -1,6 +1,7 @@
 import { AR, HAND } from "./tones";
 import { drawText, fit, LOGO_RATIO, roundRect, sewnTag, wrap } from "./text";
 import { coverImage, handle, photoCrop, sideNote, stitchedFrame, wordmark } from "./frame";
+import { drawBracket } from "./layout-bracket";
 import { drawPaper } from "./layout-paper";
 import { drawPiece } from "./layout-piece";
 import { drawGrid, drawProof, drawReply, drawSplit } from "./layout-series";
@@ -269,4 +270,6 @@ export const DRAW: Record<
   split: (ctx, s, g, tone) => drawSplit(ctx, s, g, tone),
   reply: (ctx, s, g, tone) => drawReply(ctx, s, g, tone),
   proof: drawProof,
+  // Drawn from the cup's results, never chosen as a layout in the maker.
+  bracket: (ctx, s, g, tone) => drawBracket(ctx, s, g, tone),
 };

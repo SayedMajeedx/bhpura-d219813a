@@ -8,6 +8,7 @@ import { PAPER_POSTS } from "../src/addons/post-kit/content/papers";
 import { PLAN, REELS } from "../src/addons/post-kit/content/plan";
 import { STARTERS, postFromStarter } from "../src/addons/post-kit/content/starters";
 import { CALENDAR_KEY, withPosted } from "../src/addons/post-kit/lib/calendar";
+import { CUP_KEY, startCup } from "../src/addons/post-kit/lib/cup";
 import { parseRows } from "../src/addons/post-kit/lib/layout-piece";
 import { paperLook } from "../src/addons/post-kit/lib/layout-paper";
 import { TEMPLATES } from "../src/addons/post-kit/lib/layouts";
@@ -203,6 +204,20 @@ describe("the calendar's record", () => {
     const other = await opened(openDevice(prices("25 د.ب")));
     expect(other.result.current.calendar.days["2026-11-08"].posted).toBe(true);
     expect(other.result.current.edits[CALENDAR_KEY]).toBeUndefined();
+    expect(other.result.current.ownKeys).toEqual([]);
+  });
+});
+
+describe("the cup's record", () => {
+  it("is saved and read back, and is never taken for a post", async () => {
+    const device = await opened(openDevice(prices("25 د.ب")));
+    expect(device.result.current.cup.entrants).toEqual([]);
+    act(() => device.result.current.saveCup(startCup(["a", "b", "c", "d"])));
+    expect(device.result.current.cup.entrants).toHaveLength(4);
+    await stored(CUP_KEY);
+    const other = await opened(openDevice(prices("25 د.ب")));
+    expect(other.result.current.cup.entrants).toEqual(["a", "b", "c", "d"]);
+    expect(other.result.current.edits[CUP_KEY]).toBeUndefined();
     expect(other.result.current.ownKeys).toEqual([]);
   });
 });
