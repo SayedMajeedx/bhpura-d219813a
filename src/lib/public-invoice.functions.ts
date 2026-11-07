@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { variantSpecs } from "@/lib/order-variant-specs";
 import { invoiceDepositPercent } from "@/lib/bookings/deposit";
+import { storeShareImage, type ShareImageStore } from "@/lib/seo/share-image";
 
 const inputSchema = z.object({ id: z.string().uuid() });
 
@@ -39,6 +40,20 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       )
       .eq("brand_id", order.brand_id)
       .maybeSingle();
+
+    // For the link preview only: what the page needs, and nothing of these rows goes to the browser.
+    const [{ data: store }, { data: shareSettings }] = await Promise.all([
+      supabaseAdmin
+        .from("brands")
+        .select("name_en, name_ar, logo_url, hero_media")
+        .eq("id", order.brand_id)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("business_settings")
+        .select("homepage_editorial_sections")
+        .eq("brand_id", order.brand_id)
+        .maybeSingle(),
+    ]);
 
     const { data: brandAddons } = await (supabaseAdmin.from("brand_addons") as any)
       .select("addon_id, status")
@@ -113,6 +128,17 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
     return {
       order: publicOrder,
       settings,
+      storeName: store?.name_en || store?.name_ar || null,
+      shareImage: storeShareImage({
+        brand: {
+          logo_url: store?.logo_url,
+          hero_media: store?.hero_media as ShareImageStore["brand"]["hero_media"],
+        },
+        settings: {
+          logo_url: settings?.logo_url,
+          homepage_editorial_sections: shareSettings?.homepage_editorial_sections,
+        },
+      }),
       shippingAddress,
       branch,
       bookingTimezone,
