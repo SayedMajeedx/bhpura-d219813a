@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const data = vi.hoisted(() => ({
   recordFunnelStep: vi.fn(async () => undefined),
   counts: null as null | Record<string, number>,
+  sources: [] as { source: string; visits: number; orders: number }[],
 }));
 vi.mock("../src/lib/data/storefront-funnel", () => ({
   recordFunnelStep: data.recordFunnelStep,
@@ -16,6 +17,10 @@ vi.mock("../src/lib/data/storefront-funnel", () => ({
     period: (brandId: string, from: string, to: string) => ({
       queryKey: ["storefront-funnel", brandId, from, to],
       queryFn: async () => data.counts,
+    }),
+    sources: (brandId: string, from: string, to: string) => ({
+      queryKey: ["storefront-funnel", "sources", brandId, from, to],
+      queryFn: async () => data.sources,
     }),
   },
 }));
@@ -26,10 +31,15 @@ vi.mock("@/lib/data/storefront-funnel", () => ({
       queryKey: ["storefront-funnel", brandId, from, to],
       queryFn: async () => data.counts,
     }),
+    sources: (brandId: string, from: string, to: string) => ({
+      queryKey: ["storefront-funnel", "sources", brandId, from, to],
+      queryFn: async () => data.sources,
+    }),
   },
 }));
 
-const { stepToSend, funnelStages, conversionRate, share } = await import("../src/lib/funnel");
+const { stepToSend, funnelStages, conversionRate, share, visitSource } =
+  await import("../src/lib/funnel");
 const { trackStorefrontEvent, setFunnelRecording } =
   await import("../src/lib/storefront-analytics");
 const { StoreFunnelCard, last30Days } =
@@ -63,6 +73,75 @@ describe("the funnel's rules", () => {
   });
 });
 
+describe("where a visit came from", () => {
+  const from = (over: Partial<Parameters<typeof visitSource>[0]> = {}) =>
+    visitSource({
+      search: "",
+      referrer: "",
+      userAgent: "Mozilla/5.0 Chrome",
+      host: "pura.boutq.store",
+      ...over,
+    });
+
+  it("is direct with nothing to go on, or from the store's own pages", () => {
+    expect(from()).toBe("direct");
+    expect(from({ referrer: "https://pura.boutq.store/pura" })).toBe("direct");
+  });
+
+  it("knows a link in an Instagram bio by Instagram's own browser, with no referrer", () => {
+    expect(from({ userAgent: "Mozilla/5.0 (iPhone) Instagram 300.0" })).toBe("instagram");
+    expect(from({ referrer: "https://l.instagram.com/" })).toBe("instagram");
+  });
+
+  it("takes a link the store tagged before anything else", () => {
+    expect(from({ search: "?utm_source=ig", userAgent: "Mozilla FBAV/1" })).toBe("instagram");
+    expect(from({ search: "?utm_source=newsletter" })).toBe("other");
+  });
+
+  it("tells Instagram's browser from Facebook's, though both add fbclid", () => {
+    expect(from({ search: "?fbclid=x", userAgent: "Instagram 300" })).toBe("instagram");
+    expect(from({ search: "?fbclid=x" })).toBe("facebook");
+  });
+
+  it("names the other apps and sites, and never keeps the address", () => {
+    expect(from({ referrer: "https://wa.me/973" })).toBe("whatsapp");
+    expect(from({ referrer: "https://www.google.com.bh/" })).toBe("google");
+    expect(from({ referrer: "https://notgoogle.example/" })).toBe("other");
+    expect(from({ referrer: "not an address" })).toBe("direct");
+  });
+});
+
+describe("the card's sources", () => {
+  const show = async (isAr: boolean) => {
+    data.counts = { visits: 130, product_views: 52, carts: 13, checkouts: 12, orders: 5 };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <StoreFunnelCard brandId="b1" isAr={isAr} />
+      </QueryClientProvider>,
+    );
+    await screen.findAllByText(isAr ? "زيارات" : "Visits");
+  };
+
+  it("say how many visits and orders each source brought", async () => {
+    data.sources = [
+      { source: "instagram", visits: 90, orders: 4 },
+      { source: "direct", visits: 40, orders: 1 },
+    ];
+    await show(false);
+    const row = (await screen.findByText("Instagram")).closest("tr") as HTMLElement;
+    expect(row).toHaveTextContent("90");
+    expect(row).toHaveTextContent("4");
+    expect(screen.getByText("Direct")).toBeInTheDocument();
+  });
+
+  it("are left out until a visit has a source", async () => {
+    data.sources = [];
+    await show(true);
+    expect(screen.queryByText("من وين جاءت الزيارات")).toBeNull();
+  });
+});
+
 describe("the storefront", () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -81,6 +160,18 @@ describe("the storefront", () => {
     expect(calls.map(([, , step]) => step)).toEqual([1, 2, 3]);
     expect(new Set(calls.map(([slug, visit]) => `${slug}:${visit}`)).size).toBe(1);
     expect(calls[0][1]).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("sends one source for the whole visit, and marks the order", () => {
+    setFunnelRecording({ slug: "pura", allowed: true });
+    trackStorefrontEvent("page_view");
+    trackStorefrontEvent("purchase");
+    const calls = data.recordFunnelStep.mock.calls as unknown as Array<
+      [string, string, number, string]
+    >;
+    expect(calls.map(([, , step]) => step)).toEqual([1, 5]);
+    expect(new Set(calls.map(([, , , source]) => source)).size).toBe(1);
+    expect(calls[0][3]).toBe("direct");
   });
 
   it("sends nothing when the store asks for consent and analytics was not allowed", () => {

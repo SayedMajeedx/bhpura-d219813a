@@ -17,6 +17,7 @@ import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { POSTS } from "../content/posts";
 import type { Catalogue } from "../lib/photos";
 import { CALENDAR_KEY, readCalendar, type CalendarState } from "../lib/calendar";
+import { CUP_KEY, readCup, type CupState } from "../lib/cup";
 import { copyOf, isOwnPost, newestFirst, ownPostKey, ownTemplate } from "../lib/own-posts";
 import { withoutPhoto } from "../lib/post-rules";
 import {
@@ -279,6 +280,17 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     [enqueue],
   );
 
+  /** Shammoua's Cup: who entered and who won, kept the same way. */
+  const cup = useMemo(() => {
+    const row = (serverEdits ?? []).find((edit) => edit.post_key === CUP_KEY);
+    return readCup(outbox[CUP_KEY]?.post ?? row?.post);
+  }, [serverEdits, outbox]);
+
+  const saveCup = useCallback(
+    (next: CupState) => enqueue({ [CUP_KEY]: { post: next as unknown as Post, at: Date.now() } }),
+    [enqueue],
+  );
+
   const ownKeys = useMemo(() => newestFirst(Object.keys(edits).filter(isOwnPost)), [edits]);
 
   const saveEdit = useCallback(
@@ -432,6 +444,8 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     copyPost,
     calendar,
     saveCalendar,
+    cup,
+    saveCup,
     retrySave: flush,
     addUploads,
     removeUpload,

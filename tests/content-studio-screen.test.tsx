@@ -325,10 +325,11 @@ describe("the content studio", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy Instagram Caption" }));
     await waitFor(() => expect(clipboard.writeText).toHaveBeenCalledTimes(1));
     const caption = String(clipboard.writeText.mock.lastCall?.[0]);
-    expect(caption).toContain("✨ Silk Abaya");
-    expect(caption).toContain("💰 39.000 BHD");
-    expect(caption).toContain("المقاسات المتوفرة للبيع الفوري: M");
+    expect(caption).toContain("Silk Abaya");
+    expect(caption).toContain("39 BHD");
+    expect(caption).toContain("Ready now in M");
     expect(caption).not.toContain("M · L");
+    expect(caption).not.toContain("✨");
   });
 
   it("offers the video exports once the product video is picked", async () => {

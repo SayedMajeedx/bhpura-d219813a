@@ -26,6 +26,7 @@ import { usePostKit, type PostKit } from "../hooks/use-post-kit";
 import { pieceOnSale } from "../lib/own-posts";
 import { renderPost } from "../lib/render";
 import type { Post } from "../lib/types";
+import { CupTab } from "./CupTab";
 import { NewPostDialog } from "./NewPostDialog";
 import { PostCalendar } from "./PostCalendar";
 import { PostMaker } from "./PostMaker";
@@ -288,11 +289,12 @@ function PostKitBody() {
       />
       <NewPostDialog open={starting} onOpenChange={setStarting} kit={kit} onCreated={open} />
       <Tabs defaultValue="posts" className="space-y-4">
-        <TabsList>
+        <TabsList className="h-auto max-w-full flex-wrap justify-start">
           <TabsTrigger value="posts">{isAr ? "البوستات" : "Posts"}</TabsTrigger>
           <TabsTrigger value="reels">{isAr ? "الريلز" : "Reels"}</TabsTrigger>
           <TabsTrigger value="stickers">{isAr ? "ملصقات للطباعة" : "Print stickers"}</TabsTrigger>
           <TabsTrigger value="plan">{isAr ? "خطة النشر" : "Plan"}</TabsTrigger>
+          <TabsTrigger value="cup">{isAr ? "الكأس" : "Cup"}</TabsTrigger>
         </TabsList>
         <TabsContent value="posts" className="space-y-6">
           <PostGrid
@@ -340,6 +342,9 @@ function PostKitBody() {
         </TabsContent>
         <TabsContent value="stickers">
           <StickersTab kit={kit} />
+        </TabsContent>
+        <TabsContent value="cup">
+          <CupTab kit={kit} />
         </TabsContent>
         <TabsContent value="plan">
           <PostCalendar kit={kit} onOpen={open} />

@@ -3,11 +3,15 @@
  * languages, when each falls (Islamic dates by the Umm al-Qura calendar, so
  * they move each year), and the store's own National Day. Besides the
  * religious and national days, a seasonal pack follows the retail year:
- * White Friday, New Year, back to school, graduation and summer.
+ * White Friday, New Year, back to school, graduation and summer. Two are Bahrain's own words
+ * (قرقاعون and غبقة), and two exist only for a store that writes its making time: the last day to
+ * order a piece to be made in time for the Eid or National Day.
  */
 
 export type OccasionId =
   | "ramadan"
+  | "ghabga"
+  | "gergaoon"
   | "eid-al-fitr"
   | "eid-al-adha"
   | "national-day"
@@ -16,7 +20,9 @@ export type OccasionId =
   | "new-year"
   | "back-to-school"
   | "graduation"
-  | "summer";
+  | "summer"
+  | "order-by-eid"
+  | "order-by-national-day";
 
 type Words = { en: string; ar: string };
 
@@ -35,6 +41,20 @@ export const OCCASIONS: readonly Occasion[] = [
     greeting: { en: "Ramadan Kareem", ar: "رمضان كريم" },
     message: { en: "Wishing you a blessed month", ar: "كل عام وأنتم بخير" },
     hashtags: { en: "#RamadanKareem #Ramadan", ar: "#رمضان_كريم #رمضان" },
+  },
+  {
+    id: "ghabga",
+    name: { en: "Ghabga", ar: "غبقة" },
+    greeting: { en: "Ghabga season", ar: "موسم الغبقات" },
+    message: { en: "Good company, and something lovely to wear", ar: "لمّة حلوة وإطلالة أحلى" },
+    hashtags: { en: "#Ghabga #Ramadan #Bahrain", ar: "#غبقة #رمضان #البحرين" },
+  },
+  {
+    id: "gergaoon",
+    name: { en: "Gergaoon", ar: "قرقاعون" },
+    greeting: { en: "Happy Gergaoon", ar: "قرقاعون" },
+    message: { en: "Sweet nights for the little ones", ar: "ليلة حلوة وعساكم من عوّاده" },
+    hashtags: { en: "#Gergaoon #Bahrain", ar: "#قرقاعون #البحرين" },
   },
   {
     id: "eid-al-fitr",
@@ -99,6 +119,23 @@ export const OCCASIONS: readonly Occasion[] = [
     message: { en: "Light pieces for long days", ar: "قطع خفيفة لأيام الصيف" },
     hashtags: { en: "#Summer", ar: "#صيف" },
   },
+  {
+    id: "order-by-eid",
+    name: { en: "Last day before Eid", ar: "آخر يوم قبل العيد" },
+    greeting: { en: "Last day to order", ar: "آخر يوم للطلب" },
+    message: { en: "So it is made in time for Eid", ar: "عشان تتفصّل وتوصل قبل العيد" },
+    hashtags: { en: "#EidMubarak", ar: "#عيد_الفطر" },
+  },
+  {
+    id: "order-by-national-day",
+    name: { en: "Last day before National Day", ar: "آخر يوم قبل العيد الوطني" },
+    greeting: { en: "Last day to order", ar: "آخر يوم للطلب" },
+    message: {
+      en: "So it is made in time for National Day",
+      ar: "عشان تتفصّل وتوصل قبل العيد الوطني",
+    },
+    hashtags: { en: "#NationalDay", ar: "#العيد_الوطني" },
+  },
 ];
 
 /** The seasonal pack: the retail year's moments, beside the religious and national days. */
@@ -114,11 +151,19 @@ export function occasionById(id: OccasionId): Occasion {
   return OCCASIONS.find((occasion) => occasion.id === id) ?? OCCASIONS[0];
 }
 
-type Country = { name: Words; month: number; day: number };
+export type Country = {
+  name: Words;
+  month: number;
+  day: number;
+  /** Only Bahrain calls the mid-Ramadan night and the Ramadan gathering by these words. */
+  bahraini?: boolean;
+  /** The days a store says a piece takes to make, for its last-day-to-order dates. */
+  makingDays?: number | null;
+};
 
 /** Each GCC country's National Day, keyed by its currency. */
 const COUNTRIES: Record<string, Country> = {
-  BHD: { name: { en: "Bahrain", ar: "البحرين" }, month: 12, day: 16 },
+  BHD: { name: { en: "Bahrain", ar: "البحرين" }, month: 12, day: 16, bahraini: true },
   SAR: { name: { en: "Saudi Arabia", ar: "السعودية" }, month: 9, day: 23 },
   AED: { name: { en: "UAE", ar: "الإمارات" }, month: 12, day: 2 },
   KWD: { name: { en: "Kuwait", ar: "الكويت" }, month: 2, day: 25 },
@@ -150,6 +195,19 @@ export function hijriDate(date: Date): { year: number; month: number; day: numbe
   };
 }
 
+/** The occasions a store has: its country's own words, and order-by dates once it wrote a time. */
+export function occasionsFor(country: Country): readonly Occasion[] {
+  return OCCASIONS.filter((occasion) => {
+    if (occasion.id === "ghabga" || occasion.id === "gergaoon") return Boolean(country.bahraini);
+    if (occasion.id === "order-by-eid" || occasion.id === "order-by-national-day") {
+      return Boolean(country.makingDays && country.makingDays > 0);
+    }
+    return true;
+  });
+}
+
+const DAY = 86_400_000;
+
 /** White Friday: the Friday after the fourth Thursday of November (23 to 29 November). */
 function isWhiteFriday(date: Date) {
   return (
@@ -174,13 +232,23 @@ function within(id: OccasionId, date: Date, country: Country): boolean {
   if (id === "back-to-school") return (month === 8 && day >= 25) || (month === 9 && day <= 5);
   if (id === "graduation") return month === 6 && day >= 15;
   if (id === "summer") return month === 6 && day >= 21 && day <= 30;
+  if (id === "order-by-national-day" || id === "order-by-eid") {
+    if (!country.makingDays) return false;
+    const ready = new Date(date.getTime() + country.makingDays * DAY);
+    if (id === "order-by-national-day") {
+      return ready.getUTCMonth() + 1 === country.month && ready.getUTCDate() === country.day;
+    }
+    const eve = hijriDate(ready);
+    return eve.month === 10 && eve.day === 1;
+  }
   const hijri = hijriDate(date);
   if (id === "ramadan") return hijri.month === 9;
+  if (id === "ghabga") return hijri.month === 9 && hijri.day <= 13;
+  // The nights around the middle of Ramadan: Bahrain keeps the 14th, with the 15th beside it.
+  if (id === "gergaoon") return hijri.month === 9 && (hijri.day === 14 || hijri.day === 15);
   if (id === "eid-al-fitr") return hijri.month === 10 && hijri.day <= 3;
   return hijri.month === 12 && hijri.day >= 10 && hijri.day <= 13;
 }
-
-const DAY = 86_400_000;
 
 /**
  * When an occasion next falls, from `today` (today itself while it is on): the
@@ -198,7 +266,7 @@ export function nextDate(id: OccasionId, today: Date, country: Country): Date {
 /** The occasion coming up next (or on now), to open the pack on. */
 export function upcomingOccasion(today: Date, country: Country): OccasionId {
   let best: { id: OccasionId; at: number } | null = null;
-  for (const occasion of OCCASIONS) {
+  for (const occasion of occasionsFor(country)) {
     const at = nextDate(occasion.id, today, country).getTime();
     if (!best || at < best.at) best = { id: occasion.id, at };
   }
@@ -216,6 +284,9 @@ export function occasionEyebrow(
   lang: "ar" | "en",
 ): string {
   if (id === "national-day") return country.name[lang];
+  if (id === "order-by-eid" || id === "order-by-national-day") {
+    return formatOccasionDate(date, lang);
+  }
   if (id === "mothers-day") return lang === "ar" ? "٢١ مارس" : "21 March";
   const gregorian = date.getUTCFullYear();
   if (id === "back-to-school") return `${gregorian}–${gregorian + 1}`;

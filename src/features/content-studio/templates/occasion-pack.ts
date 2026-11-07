@@ -101,6 +101,34 @@ function artFor(
         ],
         sparkles,
       };
+    case "ghabga":
+      return {
+        lines: [
+          ...lantern(cx, 0, cy - r * 0.9, r * 1.6),
+          ...lantern(outerL, 0, H * 0.14, 150 * u),
+          ...lantern(edgeR, 0, H * 0.2, 130 * u),
+        ],
+        sparkles,
+      };
+    case "gergaoon":
+      return {
+        lines: [
+          ...crescent(cx - side * r * 0.1, cy, r * 0.9, rtl),
+          star(cx + side * r * 0.5, cy - r * 0.08, r * 0.18, 5),
+          ...burst(outerL, H * 0.28, 44 * u, 8),
+          ...burst(edgeR, H * 0.58, 38 * u, 8),
+        ],
+        sparkles: [...sparkles, [outerL, H * 0.62, 14 * u]],
+      };
+    case "order-by-eid":
+    case "order-by-national-day":
+      return {
+        lines: [
+          ...priceTag(cx, cy, r * 1.9, rtl ? 0.35 : -0.35, rtl),
+          star(cx + side * r * 0.2, cy, r * 0.2, 5),
+        ],
+        sparkles,
+      };
     case "eid-al-fitr":
       return {
         lines: [

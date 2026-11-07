@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Check, Copy, MessageSquareHeart, Sparkles, ArrowUpLeft } from "lucide-react";
+import { CAPTION_VOICES } from "@/features/content-studio/lib/studio-caption";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,8 @@ export function CopyPanel({ studio }: { studio: ContentStudio }) {
     copiedCaption,
     captionText,
     handleCopyCaption,
+    captionVoice,
+    setCaptionVoice,
   } = studio;
   return (
     <>
@@ -184,6 +187,27 @@ export function CopyPanel({ studio }: { studio: ContentStudio }) {
             <span>{copiedCaption ? (isAr ? "تم النسخ" : "Copied") : isAr ? "نسخ" : "Copy"}</span>
           </Button>
         </div>
+        {isAr ? (
+          <div
+            role="radiogroup"
+            aria-label="تخاطبون مين في الكابشن"
+            className="flex flex-wrap gap-2"
+          >
+            {CAPTION_VOICES.map((voice) => (
+              <Button
+                key={voice.id}
+                type="button"
+                role="radio"
+                aria-checked={captionVoice === voice.id}
+                size="sm"
+                variant={captionVoice === voice.id ? "default" : "outline"}
+                onClick={() => setCaptionVoice(voice.id)}
+              >
+                {voice.label}
+              </Button>
+            ))}
+          </div>
+        ) : null}
         <pre
           dir="rtl"
           className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border border-border-subtle select-all"

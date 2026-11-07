@@ -272,6 +272,9 @@ vi.mock("@/components/addons/AddonsProvider", () => ({
 vi.mock("../src/components/addons/AddonsProvider", () => ({
   useAddons: () => ({ addons: addonsState.rows, isLoading: false }),
 }));
+// The first test imports the whole page, which can pass 5 seconds when the suite loads the machine.
+vi.setConfig({ testTimeout: 20_000 });
+
 const saveToast = vi.hoisted(() => vi.fn());
 const saveDismiss = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({

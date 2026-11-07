@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import {
-  OCCASIONS,
   nextDate,
+  occasionsFor,
   occasionById,
   occasionCaption,
   occasionEyebrow,
@@ -10,6 +10,7 @@ import {
   type OccasionId,
 } from "@/features/content-studio/lib/occasions";
 import type { SceneData } from "@/features/content-studio/engine/scene";
+import { estimateDays } from "@/lib/delivery-estimate";
 
 /**
  * The Occasion Pack's choices: the occasion (the next one coming up until the
@@ -21,17 +22,23 @@ export function useOccasion({
   currency,
   isAr,
   handle,
+  making,
   today = new Date(),
 }: {
   active: boolean;
   currency: string | null | undefined;
   isAr: boolean;
   handle: string | null;
+  /** The making time the store wrote, which its last-day-to-order dates are worked from. */
+  making?: string | null;
   /** Today, as a parameter so tests can fix the date. */
   today?: Date;
 }) {
   const lang = isAr ? "ar" : "en";
-  const country = useMemo(() => storeCountry(currency), [currency]);
+  const country = useMemo(
+    () => ({ ...storeCountry(currency), makingDays: estimateDays(making) }),
+    [currency, making],
+  );
   const day = today.toISOString().slice(0, 10);
   const [chosen, setOccasionId] = useState<OccasionId | null>(null);
   const occasionId = useMemo(
@@ -46,10 +53,12 @@ export function useOccasion({
   // Every occasion with its next date, soonest first, for the panel's chips.
   const occasionChoices = useMemo(
     () =>
-      OCCASIONS.map((item) => ({
-        occasion: item,
-        date: nextDate(item.id, new Date(day), country),
-      })).sort((a, b) => a.date.getTime() - b.date.getTime()),
+      occasionsFor(country)
+        .map((item) => ({
+          occasion: item,
+          date: nextDate(item.id, new Date(day), country),
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime()),
     [day, country],
   );
 

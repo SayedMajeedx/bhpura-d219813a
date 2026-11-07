@@ -68,6 +68,8 @@ export type Post = {
   paper?: PaperLook;
   total?: string;
   stamp?: string;
+  /** The cup's bracket: each round's names, an empty string for a place not decided. */
+  rounds?: string[][];
   photo1?: string;
   photo2?: string;
   focus?: number;

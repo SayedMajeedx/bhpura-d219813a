@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import type { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { realSize } from "@/lib/default-variant";
 import type { Product } from "@/features/content-studio/lib/studio-content";
 import type { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
+import {
+  readCaptionVoice,
+  studioCaption,
+  type CaptionVoice,
+} from "@/features/content-studio/lib/studio-caption";
 
 /**
  * The Instagram caption for the chosen product and variant (or `override`,
@@ -16,7 +21,8 @@ export function useStudioCaption({
   variantsQ,
   currencySymbol,
   effectivePrice,
-  storeProfile,
+  making,
+  brandId,
   isAr,
   override = null,
 }: {
@@ -27,56 +33,58 @@ export function useStudioCaption({
   variantsQ: ReturnType<typeof useStudioProduct>["variantsQ"];
   currencySymbol: string;
   effectivePrice: number | null;
-  storeProfile: ReturnType<typeof useAdminStoreProfile>["profile"];
+  making: string | null | undefined;
+  brandId: string;
   isAr: boolean;
   override?: string | null;
 }) {
   const [copiedCaption, setCopiedCaption] = useState(false);
 
+  // A convenience of this device, per store: a caption is always there to read and change.
+  const voiceKey = `studio-caption-voice:${brandId}`;
+  const [voice, setVoiceState] = useState<CaptionVoice>(() => {
+    try {
+      return readCaptionVoice(localStorage.getItem(voiceKey));
+    } catch {
+      return "plural";
+    }
+  });
+  const setCaptionVoice = (next: CaptionVoice) => {
+    setVoiceState(next);
+    try {
+      localStorage.setItem(voiceKey, next);
+    } catch {
+      /* kept for this visit only */
+    }
+  };
+
   const productCaption = useMemo(() => {
     if (!selected) return "";
-    const title = headline.trim() ? `✨ ${headline.trim()}` : "✨ [العنوان العاطفي]";
-    const desc = body.trim() || selectedDescription || "";
-
-    const pVariants = (variantsQ.data ?? []).filter((v) => v.product_id === selected.id);
-    const availableSizes = Array.from(
+    const sizes = Array.from(
       new Set(
-        pVariants
+        (variantsQ.data ?? [])
+          .filter((v) => v.product_id === selected.id)
           .filter(
-            (v) => (Number(v.stock_main) || 0) + (Number(v.stock_incubator) || 0) > 0 && v.size,
+            (v) =>
+              (Number(v.stock_main) || 0) + (Number(v.stock_incubator) || 0) > 0 &&
+              realSize(v.size),
           )
-          .map((v) => v.size!.trim()),
+          .map((v) => String(v.size).trim()),
       ),
     );
-
-    const sizesFormatted = availableSizes.length > 0 ? availableSizes.join(" · ") : "";
-
-    const occasionFormatted = selected.occasion ? selected.occasion.trim() : "";
-    const fabricFormatted = selected.fabric_type ? selected.fabric_type.trim() : "";
-    const priceFormatted = effectivePrice != null ? Number(effectivePrice).toFixed(3) : "0.000";
-
-    const details: string[] = [];
-    if (sizesFormatted) {
-      details.push(`📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}`);
-    } else if (storeProfile.modules.made_to_order) {
-      details.push("📏 المقاسات: متوفرة حسب الطلب");
-    }
-    if (occasionFormatted && storeProfile.vertical === "fashion") {
-      details.push(`👗 مناسبة لـ: ${occasionFormatted}`);
-    }
-    if (fabricFormatted && storeProfile.vertical === "fashion") {
-      details.push(`🧵 نوع القماش: ${fabricFormatted}`);
-    }
-    if (storeProfile.modules.made_to_order) {
-      details.push("✂️ متوفرة حسب الطلب: نعم");
-    }
-
-    const detailsBlock = details.length > 0 ? `\n\n${details.join("\n")}` : "";
-
-    return `${title}
-${desc}${detailsBlock}
-
-💰 ${priceFormatted} ${currencySymbol}`;
+    return studioCaption({
+      headline,
+      body,
+      description: selectedDescription,
+      occasion: selected.occasion,
+      madeToOrder: Boolean(selected.is_made_to_order),
+      making,
+      sizes,
+      price: effectivePrice,
+      currency: currencySymbol,
+      lang: isAr ? "ar" : "en",
+      voice,
+    });
   }, [
     selected,
     headline,
@@ -85,8 +93,9 @@ ${desc}${detailsBlock}
     variantsQ.data,
     currencySymbol,
     effectivePrice,
-    storeProfile.modules.made_to_order,
-    storeProfile.vertical,
+    making,
+    isAr,
+    voice,
   ]);
   const captionText = override ?? productCaption;
 
@@ -108,5 +117,7 @@ ${desc}${detailsBlock}
     copiedCaption,
     captionText,
     handleCopyCaption,
+    captionVoice: voice,
+    setCaptionVoice,
   };
 }
