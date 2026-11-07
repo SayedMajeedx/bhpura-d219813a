@@ -46,6 +46,8 @@ export type Catalogue = {
   prices: Record<string, string>;
   /** The lowest abaya or piece on sale, for "from 22". */
   from: string | null;
+  /** The making time the store wrote, for {making}: none written, none said. */
+  making?: string;
 };
 
 /** The pieces the store sells now, each with its picture, name and live price. */
@@ -53,6 +55,7 @@ export function catalogueFrom(
   products: readonly KitProduct[],
   variants: readonly KitVariant[],
   currency: string | null | undefined,
+  making?: string | null,
 ): Catalogue {
   const photos: PhotoBook = {};
   const prices: Record<string, string> = {};
@@ -72,12 +75,18 @@ export function catalogueFrom(
     prices[key] = price;
     photos[key] = {
       label,
+      name: `${kind ? `${kind} ` : ""}${label}`,
       url,
       full: `${kind ? `${kind} ` : ""}${label}${price ? ` · ${price}` : ""}`,
     };
     if (amount > 0 && kind && (lowest === null || amount < lowest)) lowest = amount;
   }
-  return { photos, prices, from: lowest === null ? null : postPrice(lowest, currency) };
+  return {
+    photos,
+    prices,
+    from: lowest === null ? null : postPrice(lowest, currency),
+    making: making?.trim() || "",
+  };
 }
 
 function fillIn(text: string, catalogue: Catalogue): string {
@@ -85,6 +94,7 @@ function fillIn(text: string, catalogue: Catalogue): string {
     .replace(/\{price:([\w-]+)\}/g, (_, key: string) => catalogue.prices[key] ?? "")
     .replace(/\{full:([\w-]+)\}/g, (_, key: string) => catalogue.photos[key]?.full ?? "")
     .replace(/\{from\}/g, catalogue.from ?? "")
+    .replace(/\{making\}\n?/g, catalogue.making ? `${catalogue.making}\n` : "")
     .replace(/ {2,}/g, " ");
 }
 

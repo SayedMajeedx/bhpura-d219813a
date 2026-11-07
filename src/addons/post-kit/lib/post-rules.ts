@@ -39,6 +39,10 @@ export function withPhoto(post: Post, key: string, photo: Photo, target: PhotoTa
     delete next.crop[target.slot];
   }
   if (post.tpl === "photo") next.label = photo.full ?? "";
+  if (post.tpl === "piece") {
+    next.label = photo.full ?? "";
+    if (!photo.upload) next.head = photo.name ?? photo.label;
+  }
   if (post.tpl === "poll") {
     next[target.slot === "photo1" ? "labelA" : "labelB"] = photo.upload ? "" : photo.label;
   }

@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Copy,
+  CopyPlus,
   Download,
   FlipHorizontal,
   RotateCcw,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,11 +19,11 @@ import { useI18n } from "@/lib/i18n";
 import type { PostKit } from "../hooks/use-post-kit";
 import { geometry } from "../lib/frame";
 import { TEMPLATES } from "../lib/layouts";
+import { isOwnPost } from "../lib/own-posts";
 import {
   cropOf,
   fieldsOf,
   hasPhotoSlot,
-  hasSceneText,
   newSticker,
   photoNotes,
   stickerAt,
@@ -35,9 +36,7 @@ import { TONES } from "../lib/tones";
 import type { Post } from "../lib/types";
 import { copyWords, savePost } from "./PostKitPage";
 import { PhotoLibrary } from "./PhotoLibrary";
-
-type TextField =
-  "lead" | "head" | "foot" | "label" | "labelA" | "labelB" | "chat" | "items" | "bag";
+import { PostTextFields } from "./PostTextFields";
 
 function Choice({
   active,
@@ -107,10 +106,12 @@ export function PostMaker({
   postKey,
   kit,
   onClose,
+  onOpenCopy,
 }: {
   postKey: string;
   kit: PostKit;
   onClose: () => void;
+  onOpenCopy: (key: string) => void;
 }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -207,28 +208,6 @@ export function PostMaker({
     return { x: (e.clientX - box.left) / box.width, y: (e.clientY - box.top) / box.height };
   };
 
-  const textInput = (name: TextField, ar: string, en: string, multi = false) => {
-    const id = `${uid}-${name}`;
-    const value = post[name] ?? "";
-    const set = (text: string) => update({ [name]: text });
-    return (
-      <div className="space-y-1.5" key={name}>
-        <Label htmlFor={id}>{isAr ? ar : en}</Label>
-        {multi ? (
-          <Textarea
-            id={id}
-            dir="rtl"
-            value={value}
-            onChange={(e) => set(e.target.value)}
-            rows={3}
-          />
-        ) : (
-          <Input id={id} dir="rtl" value={value} onChange={(e) => set(e.target.value)} />
-        )}
-      </div>
-    );
-  };
-
   const crop = hasPhotoSlot(post) || sticker?.id === "photo" ? cropOf(post, slot, sticker) : null;
   const cropCard = sticker?.id === "photo" ? selected : undefined;
   const cropSlider = (
@@ -322,7 +301,36 @@ export function PostMaker({
               <Copy className="size-4" />
               {isAr ? "انسخ الكابشن" : "Copy the caption"}
             </Button>
-            {kit.edits[postKey] ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const key = kit.copyPost(latest.current);
+                if (key) onOpenCopy(key);
+              }}
+            >
+              <CopyPlus className="size-4" />
+              {isAr ? "انسخ البوست" : "Copy the post"}
+            </Button>
+            {isOwnPost(postKey) ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  const sure = await confirmDialog({
+                    title: isAr ? "نحذف هالبوست؟" : "Delete this post?",
+                    destructive: true,
+                  });
+                  if (!sure) return;
+                  opened.current = JSON.stringify(latest.current);
+                  kit.resetEdit(postKey);
+                  onClose();
+                }}
+              >
+                <Trash2 className="size-4" />
+                {isAr ? "احذف البوست" : "Delete the post"}
+              </Button>
+            ) : kit.edits[postKey] ? (
               <Button
                 type="button"
                 variant="outline"
@@ -415,43 +423,7 @@ export function PostMaker({
             </div>
           </div>
 
-          {fields.includes("lead")
-            ? textInput("lead", "السطر الصغير فوق", "Small line above")
-            : null}
-          {fields.includes("head") ? (
-            <div className="space-y-1">
-              {textInput("head", "العنوان", "Headline", true)}
-              <p className="text-xs text-muted-foreground">
-                {isAr
-                  ? "حط الكلمة المهمة بين نجمتين عشان تطلع على الليبل: *جذي*"
-                  : "Put the key words between two asterisks to set them on the label: *like this*"}
-              </p>
-            </div>
-          ) : null}
-          {fields.includes("chat")
-            ? textInput(
-                "chat",
-                "المحادثة: كل رسالة في سطر، الاسم ونقطتين والكلام",
-                "Chat: one message a line, a name, a colon and the words",
-                true,
-              )
-            : null}
-          {fields.includes("items")
-            ? textInput("items", "القائمة: كل نقطة في سطر", "List: one point a line", true)
-            : null}
-          {fields.includes("foot")
-            ? textInput("foot", "التعليق بخط اليد", "Handwritten note")
-            : null}
-          {fields.includes("label") ? textInput("label", "ليبل المنتج", "Product label") : null}
-          {fields.includes("labelA") ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {textInput("labelA", "اسم الخيار 1", "Option 1")}
-              {textInput("labelB", "اسم الخيار 2", "Option 2")}
-            </div>
-          ) : null}
-          {hasSceneText(post)
-            ? textInput("bag", "الكلام على الرسمة", "Words on the drawing", true)
-            : null}
+          <PostTextFields post={post} onChange={update} />
 
           <div className="space-y-2">
             <p className="text-xs font-medium text-foreground">

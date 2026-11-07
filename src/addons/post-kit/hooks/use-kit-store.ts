@@ -16,6 +16,7 @@ import {
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { POSTS } from "../content/posts";
 import type { Catalogue } from "../lib/photos";
+import { copyOf, isOwnPost, newestFirst, ownPostKey, ownTemplate } from "../lib/own-posts";
 import { withoutPhoto } from "../lib/post-rules";
 import {
   forgetOldPhoto,
@@ -35,6 +36,9 @@ export type SaveState = "idle" | "saving" | "saved" | "failed";
 const TEMPLATE = Object.fromEntries(POSTS.map((post) => [post.key, post]));
 const SAVE_AFTER_MS = 800;
 const uploadKey = (id: string) => `upload-${id}`;
+/** The post a stored row is read over: as it shipped, or a store's own post's blank. */
+const baseOf = (key: string): Post | undefined =>
+  TEMPLATE[key] ?? (isOwnPost(key) ? ownTemplate(key) : undefined);
 
 /** A row of the shared record as `Json`, and back again: a post is plain data all the way. */
 const asJson = (post: Post) => JSON.parse(JSON.stringify(post)) as Json;
@@ -229,12 +233,12 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     const book: Record<string, Post> = {};
     if (!catalogue) return book;
     for (const row of serverEdits ?? []) {
-      const template = TEMPLATE[row.post_key];
+      const template = baseOf(row.post_key);
       const post = template && fromStored(row.post, template, catalogue);
       if (post) book[row.post_key] = post;
     }
     for (const [key, entry] of Object.entries(outbox)) {
-      const template = TEMPLATE[key];
+      const template = baseOf(key);
       if (!template) continue;
       const post = entry.post && fromStored(entry.post, template, catalogue);
       if (post) book[key] = post;
@@ -243,20 +247,72 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     return book;
   }, [serverEdits, outbox, catalogue]);
 
+  /**
+   * The store's own posts as they are kept, tokens and all. To an own post this is what a ready post's
+   * template is: what it reads back to, so a price it did not touch stays live.
+   */
+  const ownStored = useMemo(() => {
+    const book: Record<string, Post> = {};
+    for (const row of serverEdits ?? []) {
+      if (isOwnPost(row.post_key)) book[row.post_key] = row.post as unknown as Post;
+    }
+    for (const [key, entry] of Object.entries(outbox)) {
+      if (!isOwnPost(key)) continue;
+      if (entry.post) book[key] = entry.post;
+      else delete book[key];
+    }
+    return book;
+  }, [serverEdits, outbox]);
+  const ownStoredRef = useRef(ownStored);
+  ownStoredRef.current = ownStored;
+
+  const ownKeys = useMemo(() => newestFirst(Object.keys(edits).filter(isOwnPost)), [edits]);
+
   const saveEdit = useCallback(
     (post: Post) => {
+      const prices = catalogueRef.current;
+      if (!prices) return;
+      if (isOwnPost(post.key)) {
+        const base = ownStoredRef.current[post.key] ?? ownTemplate(post.key);
+        enqueue({ [post.key]: { post: toStored(post, base, prices), at: Date.now() } });
+        return;
+      }
       const template = TEMPLATE[post.key];
-      if (!template || !catalogueRef.current) return;
-      const stored = toStored(post, template, catalogueRef.current);
+      if (!template) return;
+      const stored = toStored(post, template, prices);
       const untouched = JSON.stringify(stored) === JSON.stringify(template);
       enqueue({ [post.key]: { post: untouched ? null : stored, at: Date.now() } });
     },
     [enqueue],
   );
 
+  /** Takes a ready post back to how it came; an own post has nothing to go back to, so it goes. */
   const resetEdit = useCallback(
     (key: string) => enqueue({ [key]: { post: null, at: Date.now() } }),
     [enqueue],
+  );
+
+  /** A new post of the store's own. Its key is its place in the record, and the answer. */
+  const createPost = useCallback(
+    (post: Post) => {
+      enqueue({ [post.key]: { post, at: Date.now() } });
+      return post.key;
+    },
+    [enqueue],
+  );
+
+  /** A copy of a post as it stands now, its untouched prices still live. */
+  const copyPost = useCallback(
+    (post: Post) => {
+      const prices = catalogueRef.current;
+      if (!prices) return null;
+      const base = isOwnPost(post.key)
+        ? (ownStoredRef.current[post.key] ?? ownTemplate(post.key))
+        : TEMPLATE[post.key];
+      if (!base) return null;
+      return createPost(copyOf(toStored(post, base, prices), ownPostKey()));
+    },
+    [createPost],
   );
 
   // The merchant's own photos, each loaded once, however often the list is read again.
@@ -338,10 +394,9 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
         for (const [postKey, post] of Object.entries(edits)) {
           const next = withoutPhoto(post, key, fallback);
           if (JSON.stringify(next) === JSON.stringify(post)) continue;
-          change[postKey] = {
-            post: toStored(next, TEMPLATE[postKey], current),
-            at: Date.now(),
-          };
+          const base = TEMPLATE[postKey] ?? ownStoredRef.current[postKey] ?? baseOf(postKey);
+          if (!base) continue;
+          change[postKey] = { post: toStored(next, base, current), at: Date.now() };
         }
         if (Object.keys(change).length) enqueue(change);
       }
@@ -355,10 +410,13 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     // A later read that fails leaves what is on screen alone: only a first read can stop the page.
     failed: (editsQ.isError && !serverEdits) || (photosQ.isError && !photoRows),
     edits,
+    ownKeys,
     ownPhotos: ownPhotos ?? {},
     saveState,
     saveEdit,
     resetEdit,
+    createPost,
+    copyPost,
     retrySave: flush,
     addUploads,
     removeUpload,

@@ -89,7 +89,7 @@ describe("the ready posts are sound", () => {
 
   it("every plan row and reel has its words", () => {
     expect(REELS.length).toBeGreaterThan(0);
-    for (const row of PLAN.flatMap((week) => week.rows)) expect(row).toHaveLength(3);
+    for (const row of PLAN.flatMap((week) => week.rows)) expect(row).toHaveLength(4);
   });
 });
 
@@ -290,6 +290,10 @@ vi.mock("../src/addons/post-kit/hooks/use-post-kit", () => ({
     failed: false,
     photos: {},
     edits: {},
+    ownKeys: [],
+    catalogue: null,
+    createPost: vi.fn(),
+    copyPost: vi.fn(),
     currentOf: (key: string) => POSTS.find((post) => post.key === key),
     saveEdit: kitState.edit,
     resetEdit: kitState.reset,
@@ -318,7 +322,8 @@ describe("the page", () => {
     render(<PostKitPage slug="store" />);
     expect(screen.getByRole("img", { name: POSTS[0].title })).toBeInTheDocument();
     const edits = screen.getAllByRole("button", { name: /عدّل/ });
-    expect(edits).toHaveLength(POSTS.length);
+    // A Piece card is listed only while its piece is on sale, and this store has no photos.
+    expect(edits).toHaveLength(POSTS.filter((post) => post.tpl !== "piece").length);
     fireEvent.click(edits[0]);
     expect(screen.getByRole("button", { name: /رجوع للبوستات/ })).toBeInTheDocument();
     expect(screen.getByLabelText("العنوان")).toHaveValue(POSTS[0].head);
@@ -360,7 +365,8 @@ describe("the page", () => {
     expect(kitState.retry).toHaveBeenCalledTimes(1);
     view.unmount();
     kitState.saveState = "idle";
-  });
+    // Four renders of the whole page: past the default 5 seconds when the full suite loads the machine.
+  }, 20000);
 
   it("keeps a change made just before leaving the post", async () => {
     vi.useFakeTimers();

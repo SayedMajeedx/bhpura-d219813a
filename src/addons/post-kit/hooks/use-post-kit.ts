@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
 import { catalogInsightQueries, catalogQueries } from "@/lib/data/catalog";
 import { loadStudioFonts } from "@/features/content-studio/engine/fonts";
 import { POSTS } from "../content/posts";
@@ -48,6 +49,11 @@ export function usePostKit() {
   const currency = useStoreCurrency(brandId);
   const productsQ = useQuery(catalogInsightQueries.contentStudio(brandId));
   const variantsQ = useQuery(catalogQueries.variants(brandId));
+  const settingsQ = useQuery(businessSettingsQueries.detail(brandId));
+  // A post says the store's written making time. While it is being read a post says none, not a guess.
+  const making = (
+    settingsQ.data as { delivery_estimate_tailored_ar?: string | null } | null | undefined
+  )?.delivery_estimate_tailored_ar;
 
   const catalogue: Catalogue | null = useMemo(() => {
     if (!productsQ.data || !variantsQ.data) return null;
@@ -55,8 +61,9 @@ export function usePostKit() {
       productsQ.data as unknown as KitProduct[],
       variantsQ.data as unknown as KitVariant[],
       currency,
+      making,
     );
-  }, [productsQ.data, variantsQ.data, currency]);
+  }, [productsQ.data, variantsQ.data, currency, making]);
 
   const store = useKitStore(brandId, catalogue);
   const [pieces, setPieces] = useState<PhotoBook | null>(null);
@@ -111,9 +118,13 @@ export function usePostKit() {
       store.failed,
     photos,
     edits,
+    ownKeys: store.ownKeys,
     currentOf,
+    catalogue,
     saveEdit: store.saveEdit,
     resetEdit: store.resetEdit,
+    createPost: store.createPost,
+    copyPost: store.copyPost,
     saveState: store.saveState,
     retrySave: store.retrySave,
     addUploads: store.addUploads,

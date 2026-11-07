@@ -1,9 +1,11 @@
 import { AR, HAND } from "./tones";
 import { drawText, fit, LOGO_RATIO, roundRect, sewnTag, wrap } from "./text";
 import { coverImage, handle, photoCrop, sideNote, stitchedFrame, wordmark } from "./frame";
+import { drawPaper } from "./layout-paper";
+import { drawPiece } from "./layout-piece";
 import type { Ctx, Geometry, PhotoBook, Post, TextLayout, Tone } from "./types";
 
-/* The six layouts a post can take. */
+/* The layouts a post can take. */
 export const TEMPLATES: Record<string, { name: { ar: string; en: string }; fields: string[] }> = {
   joke: { name: { ar: "نكتة", en: "Joke" }, fields: ["lead", "head", "foot"] },
   photo: {
@@ -17,6 +19,14 @@ export const TEMPLATES: Record<string, { name: { ar: string; en: string }; field
   chat: { name: { ar: "محادثة", en: "Chat" }, fields: ["head", "chat"] },
   list: { name: { ar: "قائمة", en: "List" }, fields: ["head", "items", "foot"] },
   poster: { name: { ar: "صورة كاملة", en: "Full photo" }, fields: ["head", "photo1"] },
+  piece: {
+    name: { ar: "كرت القطعة", en: "Piece card" },
+    fields: ["head", "items", "label", "photo1"],
+  },
+  paper: {
+    name: { ar: "أوراق شمّوعة", en: "Shammoua's papers" },
+    fields: ["lead", "head", "items", "total", "foot", "stamp"],
+  },
 };
 
 function drawJoke(ctx: Ctx, s: Post, g: Geometry, tone: Tone, _photos: PhotoBook) {
@@ -242,4 +252,6 @@ export const DRAW: Record<
   chat: drawChat,
   list: drawList,
   poster: drawPoster,
+  piece: drawPiece,
+  paper: (ctx, s, g, tone) => drawPaper(ctx, s, g, tone),
 };
