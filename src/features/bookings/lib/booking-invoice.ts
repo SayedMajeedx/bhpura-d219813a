@@ -46,11 +46,6 @@ export function bookingInvoiceOf(booking: {
   };
 }
 
-/** The customer's public invoice page. */
-export function invoiceLink(origin: string, token: string): string {
-  return `${origin.replace(/\/$/, "")}/invoice/${token}`;
-}
-
 /** How far it is paid, as a short label and a tone for its badge. */
 export function paymentBadge(
   invoice: Pick<BookingInvoice, "paymentStatus" | "paid" | "total">,

@@ -9,7 +9,8 @@ import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { ADVANCE_REPORT_LIMIT, advanceReportQueries } from "@/lib/data/advance-report";
-import { invoiceLink, whatsAppToCustomer } from "@/features/bookings/lib/booking-invoice";
+import { whatsAppToCustomer } from "@/features/bookings/lib/booking-invoice";
+import { invoiceAddress } from "@/lib/platform-host";
 import { owedRows, reminderMessage, summarizeAdvance } from "../lib/advance-report";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
 import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
@@ -150,7 +151,7 @@ export function AdvanceReportView() {
                       stage: row.stage,
                       balance: row.balance,
                       currency: order.currency,
-                      link: invoiceLink(window.location.origin, order.public_invoice_token),
+                      link: invoiceAddress(brand, order.public_invoice_token),
                     }),
                   );
                   return (

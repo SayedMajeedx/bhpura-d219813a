@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { formatMoney, formatDate } from "@/lib/format";
+import { invoiceAddress } from "@/lib/platform-host";
 import { Button } from "@/components/ui/button";
 import { OrderTailorPieces } from "@/features/supplier-orders/components/OrderTailorPieces";
 import { RecordWithSupplierButton } from "@/features/supplier-orders/components/RecordWithSupplier";
@@ -125,7 +126,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
 
   const linkedReturns = returnRequestsQ.data ?? [];
   const publicInvoiceUrl = order?.public_invoice_token
-    ? `${window.location.origin}/invoice/${order.public_invoice_token}`
+    ? invoiceAddress(brand, order.public_invoice_token)
     : null;
 
   const handleCopyInvoiceUrl = async () => {

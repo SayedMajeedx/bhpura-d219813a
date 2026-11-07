@@ -1,6 +1,7 @@
 import { toLineRevisions } from "@/lib/data/orders/line-revisions";
 import { toast } from "sonner";
 import { formatOrderStatus } from "@/lib/format";
+import { invoiceAddress } from "@/lib/platform-host";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
 import { printThermalReceipt } from "@/lib/thermal-print";
@@ -56,10 +57,15 @@ export function createOrderDocumentActions({
   totals: ReturnType<typeof orderTotals>;
   currency: string;
   vocabulary: Pick<StoreVocabulary, "workshop">;
-  brand: { name_ar?: string | null; name_en?: string | null };
+  brand: {
+    slug: string;
+    custom_domain?: string | null;
+    name_ar?: string | null;
+    name_en?: string | null;
+  };
 }) {
   const copyLink = async () => {
-    const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
+    const url = invoiceAddress(brand, order.public_invoice_token ?? order.id ?? "");
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);

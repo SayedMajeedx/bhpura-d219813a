@@ -9,6 +9,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { appointmentHtml, escapeHtml, fulfillmentText } from "./appointment.ts";
 import { orderNumberLabel, orderNumberText } from "./order-number.ts";
+import { invoiceAddress } from "./store-address.ts";
 
 const allowedOrigins = Array.from(
   new Set(
@@ -365,7 +366,7 @@ ${
   o.public_invoice_token || o.id
     ? `
 <div style="margin:24px 0 16px;text-align:center;">
-  <a href="https://boutq.store/invoice/${escapeHtml(o.public_invoice_token || o.id)}" style="display:inline-block;padding:12px 28px;background:${primary};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+  <a href="${escapeHtml(invoiceAddress(o.brand, o.public_invoice_token || o.id))}" style="display:inline-block;padding:12px 28px;background:${primary};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
     ${isAr ? "عرض وتنزيل الفاتورة الإلكترونية" : "View & Download Invoice"}
   </a>
 </div>`
@@ -665,7 +666,7 @@ async function sendAndLog(
         shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
         benefit_receipt_rejection_reason, public_invoice_token,
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
-        brand:brands ( slug, booking_settings ( timezone ) ),
+        brand:brands ( slug, custom_domain, booking_settings ( timezone ) ),
         bookings ( reference, event_date, starts_at, ends_at, location ),
         order_items ( description, name_ar, name_en, quantity, unit_price, line_total ),
         customer:customers ( email, name )

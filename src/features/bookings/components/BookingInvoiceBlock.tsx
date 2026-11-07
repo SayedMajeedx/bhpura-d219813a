@@ -1,3 +1,4 @@
+import { invoiceAddress } from "@/lib/platform-host";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -14,7 +15,6 @@ import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
 import {
   balanceReminderMessage,
   bookingInvoiceOf,
-  invoiceLink,
   invoiceMessage,
   paymentBadge,
   whatsAppToCustomer,
@@ -70,7 +70,7 @@ export function BookingInvoiceBlock({
     );
   }
 
-  const link = invoiceLink(window.location.origin, invoice.token);
+  const link = invoiceAddress(brand, invoice.token);
   const badge = paymentBadge(invoice, isAr);
   const message = invoiceMessage({
     isAr,
