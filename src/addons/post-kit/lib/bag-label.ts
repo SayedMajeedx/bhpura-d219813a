@@ -1,6 +1,7 @@
-import { HAND, TONES } from "./tones";
+import { AR, TONES } from "./tones";
 import { drawLogo } from "./text";
 import { A4_MM, gridLayout, mmToPx } from "./print-png";
+import { drawFineLabel } from "./fine-label";
 import { STICKERS } from "./stickers";
 import { DARK, googly, hangerBody, mouth, roundRectPath } from "./sticker-kit";
 import type { Ctx } from "./types";
@@ -11,6 +12,10 @@ import type { Ctx } from "./types";
 export const BAG_WORDS = "ملبوس العافية";
 export const BAG_SIZES_MM = [60, 80, 90] as const;
 export type BagSize = (typeof BAG_SIZES_MM)[number];
+
+/** The two labels a store prints: Shammoua's, and the quiet one with no drawing. */
+export type LabelDesign = "shammoua" | "fine";
+export const LABEL_DESIGNS: readonly LabelDesign[] = ["shammoua", "fine"];
 
 const WINE = "#3C0A1B";
 const CREAM = "#F7ECE6";
@@ -34,11 +39,8 @@ function heart(c: Ctx, x: number, y: number, k: number, fill: string) {
   c.restore();
 }
 
-export function drawBagLabel(c: Ctx, handle = "@puraline.bh") {
+export function drawBagLabel(c: Ctx, handle = "@puraline.bh", phone = "") {
   c.save();
-  c.beginPath();
-  roundRectPath(c, 0, 0, 1000, 1000, 96);
-  c.clip();
   c.fillStyle = CREAM;
   c.fillRect(0, 0, 1000, 1000);
 
@@ -47,9 +49,7 @@ export function drawBagLabel(c: Ctx, handle = "@puraline.bh") {
   c.lineWidth = 5;
   c.setLineDash([24, 17]);
   c.lineCap = "round";
-  c.beginPath();
-  roundRectPath(c, 34, 34, 932, 932, 70);
-  c.stroke();
+  c.strokeRect(34, 34, 932, 932);
   c.setLineDash([]);
 
   // The bubble: what she says, large.
@@ -81,7 +81,7 @@ export function drawBagLabel(c: Ctx, handle = "@puraline.bh") {
   c.textBaseline = "middle";
   let size = 170;
   do {
-    c.font = `700 ${size}px ${HAND}`;
+    c.font = `700 ${size}px ${AR}`;
     size -= 4;
   } while (c.measureText(BAG_WORDS).width > 700 && size > 40);
   c.fillText(BAG_WORDS, 500, 214);
@@ -122,15 +122,22 @@ export function drawBagLabel(c: Ctx, handle = "@puraline.bh") {
   c.fillRect(0, 790, 1000, 210);
   drawLogo(c, 398, 826, 204, CREAM);
   c.direction = "ltr";
-  c.font = `600 34px ${HAND}`;
+  c.font = `500 32px ${AR}`;
   c.fillStyle = SAND;
-  c.fillText(handle, 500, 944);
+  // The store's way to reach it on one line, so a parcel's label says who to ask.
+  c.fillText(phone ? `${handle}  ·  ${phone}` : handle, 500, 944);
   c.textBaseline = "alphabetic";
   c.restore();
 }
 
-/** One label at a real size, with see-through corners. */
-export function renderBagLabel(canvas: HTMLCanvasElement, mm: number, handle?: string) {
+/** One label at a real size, its corners square. */
+export function renderBagLabel(
+  canvas: HTMLCanvasElement,
+  mm: number,
+  handle?: string,
+  design: LabelDesign = "shammoua",
+  phone?: string,
+) {
   const px = mmToPx(mm);
   canvas.width = px;
   canvas.height = px;
@@ -138,7 +145,7 @@ export function renderBagLabel(canvas: HTMLCanvasElement, mm: number, handle?: s
   c.clearRect(0, 0, px, px);
   c.save();
   c.scale(px / 1000, px / 1000);
-  drawBagLabel(c, handle);
+  (design === "fine" ? drawFineLabel : drawBagLabel)(c, handle, phone);
   c.restore();
 }
 
@@ -156,7 +163,13 @@ export function bagLabelsPerSheet(mm: number): number {
 }
 
 /** A4 of the same label to cut apart, as many as fit. */
-export function renderBagLabelSheet(canvas: HTMLCanvasElement, mm: number, handle?: string) {
+export function renderBagLabelSheet(
+  canvas: HTMLCanvasElement,
+  mm: number,
+  handle?: string,
+  design: LabelDesign = "shammoua",
+  phone?: string,
+) {
   const W = mmToPx(A4_MM.w);
   const H = mmToPx(A4_MM.h);
   canvas.width = W;
@@ -166,7 +179,7 @@ export function renderBagLabelSheet(canvas: HTMLCanvasElement, mm: number, handl
   c.fillRect(0, 0, W, H);
   const px = mmToPx(mm);
   const one = document.createElement("canvas");
-  renderBagLabel(one, mm, handle);
+  renderBagLabel(one, mm, handle, design, phone);
   gridLayout(W, H, mmToPx(SHEET_MARGIN_MM), px, mmToPx(SHEET_GAP_MM)).cells.forEach((cell) => {
     c.drawImage(one, cell.x, cell.y, px, px);
   });

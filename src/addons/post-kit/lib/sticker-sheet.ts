@@ -25,33 +25,6 @@ export function stickerPages(ids = printableStickerIds()): string[][] {
   return chunk(ids, stickersPerSheet());
 }
 
-const cutCache: Record<string, HTMLCanvasElement> = {};
-/** The sticker with a hairline just outside its white edge: where the scissors or the machine go. */
-function withCutLine(id: string): HTMLCanvasElement {
-  if (cutCache[id]) return cutCache[id];
-  const src = stickerCanvas(id);
-  const out = document.createElement("canvas");
-  out.width = src.width;
-  out.height = src.height;
-  const silhouette = document.createElement("canvas");
-  silhouette.width = src.width;
-  silhouette.height = src.height;
-  const sc = silhouette.getContext("2d") as Ctx;
-  sc.drawImage(src, 0, 0);
-  sc.globalCompositeOperation = "source-in";
-  sc.fillStyle = "#8A7F82";
-  sc.fillRect(0, 0, src.width, src.height);
-  const oc = out.getContext("2d") as Ctx;
-  const r = 4;
-  for (let i = 0; i < 24; i++) {
-    const a = (i / 24) * Math.PI * 2;
-    oc.drawImage(silhouette, Math.cos(a) * r, Math.sin(a) * r);
-  }
-  oc.drawImage(src, 0, 0);
-  cutCache[id] = out;
-  return out;
-}
-
 export function renderStickerSheet(canvas: HTMLCanvasElement, ids: string[], cutLine: boolean) {
   canvas.width = SHEET.w;
   canvas.height = SHEET.h;
@@ -60,8 +33,13 @@ export function renderStickerSheet(canvas: HTMLCanvasElement, ids: string[], cut
   c.fillRect(0, 0, SHEET.w, SHEET.h);
   const { cells } = gridLayout(SHEET.w, SHEET.h, MARGIN, STICKER_CELL, GAP);
   ids.slice(0, cells.length).forEach((id, i) => {
-    const art = cutLine ? withCutLine(id) : stickerCanvas(id);
-    c.drawImage(art, cells[i].x, cells[i].y, STICKER_CELL, STICKER_CELL);
+    c.drawImage(stickerCanvas(id), cells[i].x, cells[i].y, STICKER_CELL, STICKER_CELL);
+    if (cutLine) {
+      // A straight line round each one, so a sheet is cut with a ruler and every corner is square.
+      c.strokeStyle = "#8A7F82";
+      c.lineWidth = 2;
+      c.strokeRect(cells[i].x, cells[i].y, STICKER_CELL, STICKER_CELL);
+    }
   });
 }
 
