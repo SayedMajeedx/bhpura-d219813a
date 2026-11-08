@@ -1,8 +1,9 @@
 import { stepToSend, visitSource } from "@/lib/funnel";
 import { recordFunnelStep } from "@/lib/data/storefront-funnel";
-import { sendMetaBrowsingEvent, sendMetaPurchase } from "@/lib/ad-events.functions";
+import { sendAdBrowsingEvent, sendAdPurchase } from "@/lib/ad-events.functions";
 import { metaPayload, readCookie } from "@/lib/ad-events/meta-browser";
-import { fbcFromClickId, purchaseEventId } from "@/lib/ad-events/meta-conversions";
+import { landingClicks, snapPixelCall, tiktokPixelCall } from "@/lib/ad-events/pixel-calls";
+import { purchaseEventId } from "@/lib/ad-events/shared";
 export type StorefrontEvent =
   | "page_view"
   | "view_item"
@@ -16,14 +17,37 @@ type AnalyticsConfig = {
   brandId: string;
   gaId: string | null;
   metaId: string | null;
+  tiktokId?: string | null;
+  snapId?: string | null;
   analyticsAllowed: boolean;
   marketingAllowed: boolean;
 };
 
 let config: AnalyticsConfig | null = null;
 
+/**
+ * Events from before the analytics were set up. The storefront sets them up after the first scroll
+ * or tap, or 5 seconds (so the first screen is not slowed), while the landing page's view, and a
+ * product's when the shopper lands on one, are sent at once: they used to find nothing set up and
+ * were dropped, so no visit's first page ever reached Google or the ad platforms (2026-11-08). They
+ * wait here and are sent, under the choices made by then, once the analytics are set up.
+ */
+type Waiting = {
+  event: StorefrontEvent;
+  payload: Record<string, unknown>;
+  dedupeKey?: string;
+  done: () => void;
+};
+const MAX_WAITING = 20;
+let waiting: Waiting[] = [];
+
 export function setStorefrontAnalyticsConfig(next: AnalyticsConfig | null) {
   config = next;
+  if (!next || !waiting.length) return;
+  const held = waiting;
+  waiting = [];
+  for (const item of held)
+    void sendEvent(next, item.event, item.payload, item.dedupeKey).then(item.done);
 }
 
 /**
@@ -71,35 +95,48 @@ function recordFunnel(event: StorefrontEvent) {
   }
 }
 
-/** The ad's click id from the landing page's address, kept for the tab (see `fbcFromClickId`). */
-const CLICK_KEY = "boutq-fbc";
+/** The ads' click ids from the landing page's address, kept for the tab (`landingClicks`). */
+const CLICK_KEYS = { fbc: "boutq-fbc", ttclid: "boutq-ttclid", scClickId: "boutq-sccid" } as const;
 
 export function rememberAdClick() {
   try {
-    const fbc = fbcFromClickId(
-      new URLSearchParams(window.location.search).get("fbclid"),
-      Date.now(),
-    );
-    if (fbc) sessionStorage.setItem(CLICK_KEY, fbc);
+    const clicks = landingClicks(window.location.search, Date.now());
+    for (const key of Object.keys(CLICK_KEYS) as (keyof typeof CLICK_KEYS)[]) {
+      const value = clicks[key];
+      if (value) sessionStorage.setItem(CLICK_KEYS[key], value);
+    }
   } catch {
-    // Storage unavailable: the pixel's own cookie, if any, still names the ad.
+    // Storage unavailable: the pixels' own cookies, if any, still name the ad.
   }
 }
 
-function adClick(): string | null {
-  const cookie = readCookie(document.cookie, "_fbc");
-  if (cookie) return cookie;
+function keptClick(key: keyof typeof CLICK_KEYS): string | null {
   try {
-    return sessionStorage.getItem(CLICK_KEY);
+    return sessionStorage.getItem(CLICK_KEYS[key]);
   } catch {
     return null;
   }
 }
 
+/** The visit's ad cookies and click ids, for the store's server. */
+function visitCookies() {
+  const cookies = document.cookie;
+  return {
+    pageUrl: window.location.href,
+    fbp: readCookie(cookies, "_fbp"),
+    fbc: readCookie(cookies, "_fbc") ?? keptClick("fbc"),
+    ttp: readCookie(cookies, "_ttp"),
+    ttclid: keptClick("ttclid"),
+    scid: readCookie(cookies, "_scid"),
+    scClickId: keptClick("scClickId"),
+  };
+}
+
 /**
- * The event sent by the store's server too (Meta's Conversions API), under the pixel's own event
- * id so Meta counts it once. The server sends it only for a store that saved its token; a purchase
- * is read there from the order. Resolves when it is sent or could not be, never rejects.
+ * The event sent by the store's server too (Meta, TikTok and Snapchat's server APIs), under the
+ * pixels' own event id so each platform counts it once. The server sends it only to a platform
+ * whose token the store saved; a purchase is read there from the order. Resolves when it is sent
+ * or could not be, never rejects.
  */
 function sendToServer(
   event: StorefrontEvent,
@@ -107,17 +144,13 @@ function sendToServer(
   eventId: string,
   brandId: string,
 ): Promise<void> {
-  const cookies = {
-    pageUrl: window.location.href,
-    fbp: readCookie(document.cookie, "_fbp"),
-    fbc: adClick(),
-  };
+  const cookies = visitCookies();
   const meta = metaPayload(payload);
   let sending: Promise<unknown> | null = null;
   if (event === "purchase" && typeof payload.transaction_id === "string" && payload.transaction_id)
-    sending = sendMetaPurchase({ data: { orderId: payload.transaction_id, ...cookies } });
+    sending = sendAdPurchase({ data: { orderId: payload.transaction_id, ...cookies } });
   else if (event === "view_item" || event === "add_to_cart" || event === "begin_checkout")
-    sending = sendMetaBrowsingEvent({
+    sending = sendAdBrowsingEvent({
       data: {
         brandId,
         event,
@@ -148,9 +181,9 @@ function newEventId(event: StorefrontEvent, payload: Record<string, unknown>): s
 }
 
 /**
- * Sends a storefront event to the store's analytics. Resolves once the store's server has sent
- * its copy to Meta (or could not): checkout waits a moment for a purchase's before it leaves for
- * the card page.
+ * Sends a storefront event to the store's analytics, or holds it until they are set up. Resolves
+ * once the store's server has sent its copy to the ad platforms (or could not): checkout waits a
+ * moment for a purchase's before it leaves for the card page.
  */
 export function trackStorefrontEvent(
   event: StorefrontEvent,
@@ -159,7 +192,17 @@ export function trackStorefrontEvent(
 ): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   recordFunnel(event);
-  if (!config) return Promise.resolve();
+  if (config) return sendEvent(config, event, payload, dedupeKey);
+  if (waiting.length >= MAX_WAITING) return Promise.resolve();
+  return new Promise((done) => waiting.push({ event, payload, dedupeKey, done }));
+}
+
+function sendEvent(
+  config: AnalyticsConfig,
+  event: StorefrontEvent,
+  payload: Record<string, unknown>,
+  dedupeKey?: string,
+): Promise<void> {
   if (dedupeKey) {
     const key = `boutq-event:${config.brandId}:${event}:${dedupeKey}`;
     if (sessionStorage.getItem(key)) return Promise.resolve();
@@ -169,9 +212,10 @@ export function trackStorefrontEvent(
   if (config.analyticsAllowed && config.gaId && typeof w.gtag === "function") {
     w.gtag("event", event, { ...payload, send_to: config.gaId });
   }
-  if (!config.marketingAllowed || !config.metaId) return Promise.resolve();
+  const { metaId, tiktokId, snapId } = config;
+  if (!config.marketingAllowed || !(metaId || tiktokId || snapId)) return Promise.resolve();
   const eventId = newEventId(event, payload);
-  if (typeof w.fbq === "function") {
+  if (metaId && typeof w.fbq === "function") {
     const names: Record<StorefrontEvent, string> = {
       page_view: "PageView",
       view_item: "ViewContent",
@@ -183,7 +227,7 @@ export function trackStorefrontEvent(
     };
     w.fbq(
       "trackSingle",
-      config.metaId,
+      metaId,
       names[event],
       { ...payload, ...metaPayload(payload) },
       {
@@ -191,5 +235,11 @@ export function trackStorefrontEvent(
       },
     );
   }
+  const tiktok = tiktokId && w.ttq ? tiktokPixelCall(event, payload, eventId) : null;
+  if (tiktok?.kind === "page") w.ttq.page();
+  else if (tiktok) w.ttq.track(tiktok.name, tiktok.props, tiktok.options);
+  const snap =
+    snapId && typeof w.snaptr === "function" ? snapPixelCall(event, payload, eventId) : null;
+  if (snap) w.snaptr("track", snap.name, snap.props);
   return sendToServer(event, payload, eventId, config.brandId);
 }

@@ -41,7 +41,18 @@ export function benefitAccountNumber(rows: unknown): string | null {
 export function publicSettingsFromPageData(brand: Brand, pageData: PageData): PublicSettings {
   const settings = pageData.settings ?? {};
   const benefitSettings = pageData.benefitSettings ?? [];
-  const trackingSettings = pageData.trackingSettings ?? {};
+  // The page data's tracking object (`get_storefront_page_data`): the analytics and ad pixel ids.
+  const tracking = (pageData.trackingSettings ?? {}) as Partial<{
+    google_analytics_enabled: boolean;
+    google_analytics_id: string | null;
+    meta_pixel_enabled: boolean;
+    meta_pixel_id: string | null;
+    tiktok_pixel_enabled: boolean;
+    tiktok_pixel_id: string | null;
+    snap_pixel_enabled: boolean;
+    snap_pixel_id: string | null;
+    consent_required: boolean;
+  }>;
 
   const s = settings as any;
   const footerTitles = storedFooterTitles(s?.pages);
@@ -236,11 +247,15 @@ export function publicSettingsFromPageData(brand: Brand, pageData: PageData): Pu
     global_sale_badges_enabled: s?.global_sale_badges_enabled ?? true,
     cart_drawer_checkout_bg: s?.cart_drawer_checkout_bg ?? null,
     cart_drawer_checkout_fg: s?.cart_drawer_checkout_fg ?? null,
-    google_analytics_enabled: Boolean((trackingSettings as any)?.google_analytics_enabled),
-    google_analytics_id: (trackingSettings as any)?.google_analytics_id ?? null,
-    meta_pixel_enabled: Boolean((trackingSettings as any)?.meta_pixel_enabled),
-    meta_pixel_id: (trackingSettings as any)?.meta_pixel_id ?? null,
-    analytics_consent_required: (trackingSettings as any)?.consent_required ?? true,
+    google_analytics_enabled: Boolean(tracking.google_analytics_enabled),
+    google_analytics_id: tracking.google_analytics_id ?? null,
+    meta_pixel_enabled: Boolean(tracking.meta_pixel_enabled),
+    meta_pixel_id: tracking.meta_pixel_id ?? null,
+    tiktok_pixel_enabled: Boolean(tracking.tiktok_pixel_enabled),
+    tiktok_pixel_id: tracking.tiktok_pixel_id ?? null,
+    snap_pixel_enabled: Boolean(tracking.snap_pixel_enabled),
+    snap_pixel_id: tracking.snap_pixel_id ?? null,
+    analytics_consent_required: tracking.consent_required ?? true,
     storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
     storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
     trust_badges: normalizedTrustBadges,

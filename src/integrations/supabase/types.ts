@@ -1812,6 +1812,10 @@ export type Database = {
           google_analytics_id: string | null;
           meta_pixel_enabled: boolean;
           meta_pixel_id: string | null;
+          snap_pixel_enabled: boolean;
+          snap_pixel_id: string | null;
+          tiktok_pixel_enabled: boolean;
+          tiktok_pixel_id: string | null;
           updated_at: string;
         };
         Insert: {
@@ -1821,6 +1825,10 @@ export type Database = {
           google_analytics_id?: string | null;
           meta_pixel_enabled?: boolean;
           meta_pixel_id?: string | null;
+          snap_pixel_enabled?: boolean;
+          snap_pixel_id?: string | null;
+          tiktok_pixel_enabled?: boolean;
+          tiktok_pixel_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -1830,6 +1838,10 @@ export type Database = {
           google_analytics_id?: string | null;
           meta_pixel_enabled?: boolean;
           meta_pixel_id?: string | null;
+          snap_pixel_enabled?: boolean;
+          snap_pixel_id?: string | null;
+          tiktok_pixel_enabled?: boolean;
+          tiktok_pixel_id?: string | null;
           updated_at?: string;
         };
         Relationships: [

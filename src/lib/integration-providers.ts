@@ -1,3 +1,5 @@
+import { AD_CREDENTIALS } from "@/lib/ad-events/platforms";
+
 /**
  * The services a store can save credentials for on the Integrations page. Only what the
  * platform really calls is offered: Aramex, Posta Plus and Stripe were offered and saved, and
@@ -17,8 +19,8 @@ export const PROVIDER_PRESETS = [
 /** Saved before they were hidden; not shown and not offered. */
 export const HIDDEN_PROVIDERS: ReadonlySet<string> = new Set(["aramex", "posta_plus", "stripe"]);
 
-/** Kept with the other keys, edited where they belong: the Conversions API token under the pixel. */
-export const EDITED_ELSEWHERE: ReadonlySet<string> = new Set(["meta_capi"]);
+/** Kept with the other keys, edited where they belong: each ad platform's token under its pixel. */
+export const EDITED_ELSEWHERE: ReadonlySet<string> = AD_CREDENTIALS;
 
 export function shownIntegration(row: { provider: string }): boolean {
   return !HIDDEN_PROVIDERS.has(row.provider) && !EDITED_ELSEWHERE.has(row.provider);

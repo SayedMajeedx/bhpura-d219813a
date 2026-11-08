@@ -267,6 +267,10 @@ export type PublicSettings = {
   google_analytics_id: string | null;
   meta_pixel_enabled: boolean;
   meta_pixel_id: string | null;
+  tiktok_pixel_enabled?: boolean;
+  tiktok_pixel_id?: string | null;
+  snap_pixel_enabled?: boolean;
+  snap_pixel_id?: string | null;
   analytics_consent_required: boolean;
   storefront_loader_text_ar?: string | null;
   storefront_loader_text_en?: string | null;
