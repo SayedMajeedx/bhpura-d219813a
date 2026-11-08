@@ -172,6 +172,23 @@ jobs:
         # correspond to any real commit on gitleaks/gitleaks-action, so the
         # step failed before ever running. This is the actual SHA for the
         # v2.3.7 tag the comment already claimed.
+        #
+        # The action downloads the gitleaks binary from GitHub's releases on every run, and that
+        # download sometimes times out ("Unexpected HTTP response: 504", 2026-11-08, PR #521): the
+        # scan then never ran. A failed first try is tried once more after a pause; a real leak
+        # fails both times and the job fails as before.
+        id: gitleaks_first
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@83373cf2f8c4db6e24b41c1a9b086bb9619e9cd3 # v2.3.7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait before the second Gitleaks try
+        if: steps.gitleaks_first.outcome == 'failure'
+        run: sleep 30
+
+      - name: Run Gitleaks Secret Scan (second try)
+        if: steps.gitleaks_first.outcome == 'failure'
         uses: gitleaks/gitleaks-action@83373cf2f8c4db6e24b41c1a9b086bb9619e9cd3 # v2.3.7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
