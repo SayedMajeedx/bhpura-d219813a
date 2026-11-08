@@ -97,13 +97,34 @@ export function detectProductColumns(headers: readonly string[]): ProductColumnM
   return mappings;
 }
 
+/** Arabic-Indic and Persian digits as Western ones, and the Arabic decimal mark as a point. */
+function westernDigits(text: string): string {
+  return text
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 0x06f0))
+    .replace(/٫/g, ".");
+}
+
 /**
- * The custom preset's stock cell: its digits, with `whenEmpty` only when the
- * cell has none (a stock of 0 stays 0).
+ * A stock cell: its digits, with `whenEmpty` only when the cell has none (a
+ * stock of 0 stays 0). A file that says nothing about stock has none: the
+ * importer passes 0, never a made-up count (bug #51: it passed 10, which the
+ * opening-ledger trigger then recorded as real pieces).
  */
-export function stockFromCell(cell: string | undefined, whenEmpty: number): number {
-  const digits = (cell ?? "").replace(/[^\d]/g, "");
+export function stockFromCell(cell: string | undefined, whenEmpty = 0): number {
+  const digits = westernDigits(cell ?? "").replace(/[^\d]/g, "");
   return digits === "" ? whenEmpty : Number.parseInt(digits, 10);
+}
+
+/**
+ * A price cell as a number, or null when it gives none (empty, or no digits).
+ * A price of 0 stays 0: it once became 10, as did an empty cell (bug #51).
+ */
+export function priceFromCell(cell: string | undefined): number | null {
+  const text = westernDigits(cell ?? "").replace(/[^\d.]/g, "");
+  if (!/\d/.test(text)) return null;
+  const value = Number.parseFloat(text);
+  return Number.isFinite(value) ? value : null;
 }
 
 export type ImportRunSummary = {
@@ -157,7 +178,7 @@ export type ImportedProductPayload = {
   name: string;
   name_ar: string | null;
   name_en: string | null;
-  description: string;
+  description: string | null;
   description_ar: string | null;
   description_en: string | null;
   category: string;
@@ -174,10 +195,13 @@ const defaultSku = () => `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
  * - `preset` selects platform-specific column names (Shopify, WooCommerce,
  *   Salla/Zid); "custom" uses the admin-confirmed `mappings`.
  * - Shopify exports one row per variant; rows are merged by Handle.
- * - Rows without a name or with an invalid price are dropped and counted.
- *
- * Known quirk kept as-is (see Phase 5 report): with the custom preset an
- * empty or "0" stock cell imports as 10 units; other presets import 0.
+ * - Rows without a name are dropped and counted (`invalidCount`).
+ * - Nothing the file does not say is made up (bug #51): a product whose file
+ *   gives no price for a size comes in hidden at 0, so nothing is sold at a
+ *   price no one set, and the inventory lists it under "No price" until it is
+ *   priced (`unpricedCount`); a stock the file does not give is 0; no
+ *   description is written. A Shopify row that only adds a photo adds that
+ *   photo, never a variant.
  */
 export function buildProductImportPayload({
   rows: dataRows,
@@ -186,6 +210,7 @@ export function buildProductImportPayload({
   mappings: finalMappings,
   isAr,
   makeSku = defaultSku,
+  pricesMatter = true,
 }: {
   rows: string[][];
   headers: string[];
@@ -193,7 +218,9 @@ export function buildProductImportPayload({
   mappings: Record<string, number>;
   isAr: boolean;
   makeSku?: () => string;
-}): { products: ImportedProductPayload[]; invalidCount: number } {
+  /** False for a catalog that shows no prices: a product with no price comes in as it is. */
+  pricesMatter?: boolean;
+}): { products: ImportedProductPayload[]; invalidCount: number; unpricedCount: number } {
   const findHeaderIdx = (names: string[]) => {
     return headersList.findIndex((h) =>
       names.some((name) => h.trim().toLowerCase() === name.toLowerCase()),
@@ -202,9 +229,12 @@ export function buildProductImportPayload({
 
   const productsPayload = dataRows.map((row) => {
     let nameVal = "";
-    let priceVal = 10.0;
+    let priceVal: number | null = null;
     let imageVal: string | null = null;
-    let stockVal = 10;
+    let stockVal = 0;
+    // Whether the row describes a variant (a price, stock, SKU or option); a Shopify
+    // row that only adds a photo does not.
+    let variantGiven = true;
     let skuVal = makeSku();
     let sizeVal: string | null = null;
     let colorVal: string | null = null;
@@ -237,13 +267,19 @@ export function buildProductImportPayload({
       }
 
       nameVal = titleIdx !== -1 ? row[titleIdx] : "";
-      priceVal =
-        priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+      priceVal = priceIdx !== -1 ? priceFromCell(row[priceIdx]) : null;
       imageVal = imageIdx !== -1 ? row[imageIdx] : null;
-      stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+      stockVal = stockIdx !== -1 ? stockFromCell(row[stockIdx]) : 0;
       if (skuIdx !== -1 && row[skuIdx]) {
         skuVal = row[skuIdx];
       }
+      const filled = (index: number) => index !== -1 && Boolean(row[index]?.trim());
+      variantGiven =
+        filled(priceIdx) ||
+        filled(stockIdx) ||
+        filled(skuIdx) ||
+        filled(option1ValueIdx) ||
+        filled(option2ValueIdx);
     } else if (preset === "woocommerce") {
       const nameIdx = findHeaderIdx(["name", "title", "post_title"]);
       const priceIdx = findHeaderIdx(["regular price", "sale price", "price", "_regular_price"]);
@@ -252,10 +288,9 @@ export function buildProductImportPayload({
       const skuIdx = findHeaderIdx(["sku"]);
 
       nameVal = nameIdx !== -1 ? row[nameIdx] : "";
-      priceVal =
-        priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+      priceVal = priceIdx !== -1 ? priceFromCell(row[priceIdx]) : null;
       imageVal = imageIdx !== -1 ? row[imageIdx]?.split(",")?.[0]?.trim() || null : null;
-      stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+      stockVal = stockIdx !== -1 ? stockFromCell(row[stockIdx]) : 0;
       if (skuIdx !== -1 && row[skuIdx]) {
         skuVal = row[skuIdx];
       }
@@ -273,33 +308,33 @@ export function buildProductImportPayload({
       const skuIdx = findHeaderIdx(["رمز المنتج", "sku"]);
 
       nameVal = nameIdx !== -1 ? row[nameIdx] : "";
-      priceVal =
-        priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+      priceVal = priceIdx !== -1 ? priceFromCell(row[priceIdx]) : null;
       imageVal = imageIdx !== -1 ? row[imageIdx]?.split(",")?.[0]?.trim() || null : null;
-      stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+      stockVal = stockIdx !== -1 ? stockFromCell(row[stockIdx]) : 0;
       if (skuIdx !== -1 && row[skuIdx]) {
         skuVal = row[skuIdx];
       }
     } else {
       nameVal = finalMappings.name !== -1 ? row[finalMappings.name] : "";
-      priceVal =
-        finalMappings.price !== -1
-          ? parseFloat(row[finalMappings.price]?.replace(/[^\d.]/g, "") || "10") || 10.0
-          : 10.0;
-      imageVal = finalMappings.image !== -1 ? row[finalMappings.image] : null;
-      stockVal = finalMappings.stock !== -1 ? stockFromCell(row[finalMappings.stock], 10) : 10;
+      priceVal = finalMappings.price !== -1 ? priceFromCell(row[finalMappings.price]) : null;
+      imageVal = finalMappings.image !== -1 ? row[finalMappings.image]?.trim() || null : null;
+      stockVal = finalMappings.stock !== -1 ? stockFromCell(row[finalMappings.stock]) : 0;
+      const skuIdx = finalMappings.sku ?? -1;
+      if (skuIdx !== -1 && row[skuIdx]?.trim()) skuVal = row[skuIdx].trim();
     }
 
     return {
       name: nameVal.trim(),
       name_ar: isAr ? nameVal : null,
       name_en: isAr ? null : nameVal,
-      description: isAr ? "تم الاستيراد بنجاح" : "Imported product details",
-      description_ar: isAr ? "تم الاستيراد بنجاح" : null,
-      description_en: isAr ? null : "Imported product details",
+      description: null,
+      description_ar: null,
+      description_en: null,
       category: "General",
       image_url: imageVal,
       is_active: true,
+      variantGiven,
+      unpriced: priceVal === null,
       variants: [
         {
           size: sizeVal,
@@ -309,7 +344,7 @@ export function buildProductImportPayload({
           sku: skuVal,
           barcode: null,
           cost_price: 0,
-          selling_price: priceVal,
+          selling_price: priceVal ?? 0,
           stock_main: stockVal,
           stock_incubator: 0,
         },
@@ -329,7 +364,16 @@ export function buildProductImportPayload({
       const existing = groups.get(key);
       if (!existing) groups.set(key, product);
       else {
-        existing.variants.push(...product.variants);
+        if (product.variantGiven) {
+          // The group's first row may have been only a photo: it holds no variant then.
+          if (!existing.variantGiven) {
+            existing.variants = [];
+            existing.unpriced = false;
+            existing.variantGiven = true;
+          }
+          existing.variants.push(...product.variants);
+          existing.unpriced = existing.unpriced || product.unpriced;
+        }
         if (!existing.image_url && product.image_url) existing.image_url = product.image_url;
         if (!existing.name && product.name) {
           existing.name = product.name;
@@ -342,14 +386,16 @@ export function buildProductImportPayload({
   }
 
   let invalidCount = 0;
-  const products = consolidatedPayload.filter((product) => {
-    const valid =
-      product.name.trim().length > 0 &&
-      product.variants.every(
-        (variant) => Number.isFinite(variant.selling_price) && variant.selling_price >= 0,
-      );
-    if (!valid) invalidCount += 1;
-    return valid;
-  });
-  return { products, invalidCount };
+  let unpricedCount = 0;
+  const products: ImportedProductPayload[] = [];
+  for (const { variantGiven: _variantGiven, unpriced, ...product } of consolidatedPayload) {
+    if (product.name.trim().length === 0) {
+      invalidCount += 1;
+      continue;
+    }
+    const hide = unpriced && pricesMatter;
+    if (hide) unpricedCount += 1;
+    products.push({ ...product, is_active: !hide });
+  }
+  return { products, invalidCount, unpricedCount };
 }
