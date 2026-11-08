@@ -7,10 +7,10 @@ import {
 } from "@/features/inventory/lib/product-list";
 
 /**
- * How the list is drawn: rows, or the products' photos as cards (a boutique knows a piece by its
- * picture before its name).
+ * How the list is drawn: rows, the products' photos as cards (a boutique knows a piece by its
+ * picture before its name), or the sheet that changes many sizes at once (`bulk-sheet.ts`).
  */
-export type InventoryLayout = "list" | "photos";
+export type InventoryLayout = "list" | "photos" | "sheet";
 
 /**
  * What the inventory list is showing: the tab, the search, the filters, the sort, the page and
@@ -69,7 +69,7 @@ export function inventoryViewFromSearch(search: Record<string, unknown>): Invent
       ? (sort as InventorySort)
       : "newest",
     page: Number.isInteger(page) && page > 1 ? page : 1,
-    layout: text(search.view) === "photos" ? "photos" : "list",
+    layout: (["photos", "sheet"] as const).find((layout) => layout === text(search.view)) ?? "list",
   };
 }
 

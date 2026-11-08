@@ -47,6 +47,8 @@ import { isServicesProfile } from "@/lib/store-profile";
 import { ProductBulkDialogsHost } from "@/features/inventory/components/ProductBulkDialogsHost";
 import { DeleteProductDialog } from "@/features/inventory/components/DeleteProductDialog";
 import { InventoryEmptyState } from "@/features/inventory/components/InventoryEmptyState";
+import { InventorySheet } from "@/features/inventory/components/InventorySheet";
+import { productCreatedNotice, useSheetLayout } from "@/features/inventory/hooks/use-sheet-layout";
 import { useInventoryCategories } from "@/features/inventory/hooks/use-inventory-categories";
 import { ProductDialog } from "@/features/inventory/components/ProductDialog";
 
@@ -139,6 +141,11 @@ export function ProductsSection({
   const { view, variantsByProduct, salesByVariant, productStock, lowestPrice } = list;
   const filteredDisplayProducts = list.filtered;
   const photos = view.layout === "photos";
+  const { sheet, changeLayout, setSheetDirty } = useSheetLayout({
+    layout: view.layout,
+    setLayout: list.setLayout,
+    isAr,
+  });
   const paginatedProducts = list.pageProducts;
 
   const {
@@ -322,47 +329,49 @@ export function ProductsSection({
           <InventoryLayoutSwitch
             lang={isAr ? "ar" : "en"}
             layout={view.layout}
-            onChange={list.setLayout}
+            onChange={(layout) => void changeLayout(layout)}
           />
         }
       />
 
-      <BulkSelectionToolbar
-        lang={isAr ? "ar" : "en"}
-        noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
-        selectedCount={selectedProductIds.size}
-        allFilteredSelected={allFilteredProductsSelected}
-        disabled={
-          bulk.bulkDeleting ||
-          bulk.bulkCategoryApplying ||
-          bulk.bulkVisibilityApplying ||
-          bulk.bulkPresetApplying ||
-          filteredDisplayProducts.length === 0
-        }
-        onSelectAll={() =>
-          setSelectedProductIds((current) => {
-            const next = new Set(current);
-            filteredProductIds.forEach((id) => next.add(id));
-            return next;
-          })
-        }
-        onDeselectAll={() => setSelectedProductIds(new Set())}
-        onDeleteSelected={() => bulk.setBulkDeleteOpen(true)}
-        onUpdateCategory={() => {
-          bulk.setBulkSelectedCategory("");
-          bulk.setBulkCategoryOpen(true);
-        }}
-        onPublish={() => bulk.setBulkVisibilityTarget(true)}
-        onHide={() => bulk.setBulkVisibilityTarget(false)}
-        onApplyPreset={() => bulk.setBulkPresetOpen(true)}
-        onTransferToIncubator={() => {
-          const selectedProds = products.filter((p) => selectedProductIds.has(p.id));
-          if (selectedProds.length > 0) {
-            setIncubatorTransferProducts(selectedProds);
-            setIncubatorTransferModalOpen(true);
+      {!sheet && (
+        <BulkSelectionToolbar
+          lang={isAr ? "ar" : "en"}
+          noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
+          selectedCount={selectedProductIds.size}
+          allFilteredSelected={allFilteredProductsSelected}
+          disabled={
+            bulk.bulkDeleting ||
+            bulk.bulkCategoryApplying ||
+            bulk.bulkVisibilityApplying ||
+            bulk.bulkPresetApplying ||
+            filteredDisplayProducts.length === 0
           }
-        }}
-      />
+          onSelectAll={() =>
+            setSelectedProductIds((current) => {
+              const next = new Set(current);
+              filteredProductIds.forEach((id) => next.add(id));
+              return next;
+            })
+          }
+          onDeselectAll={() => setSelectedProductIds(new Set())}
+          onDeleteSelected={() => bulk.setBulkDeleteOpen(true)}
+          onUpdateCategory={() => {
+            bulk.setBulkSelectedCategory("");
+            bulk.setBulkCategoryOpen(true);
+          }}
+          onPublish={() => bulk.setBulkVisibilityTarget(true)}
+          onHide={() => bulk.setBulkVisibilityTarget(false)}
+          onApplyPreset={() => bulk.setBulkPresetOpen(true)}
+          onTransferToIncubator={() => {
+            const selectedProds = products.filter((p) => selectedProductIds.has(p.id));
+            if (selectedProds.length > 0) {
+              setIncubatorTransferProducts(selectedProds);
+              setIncubatorTransferModalOpen(true);
+            }
+          }}
+        />
+      )}
 
       {filteredDisplayProducts.length === 0 && (
         <InventoryEmptyState
@@ -370,6 +379,19 @@ export function ProductsSection({
           isAr={isAr}
           onAddProduct={openNewProduct}
           onClearFilters={list.clearFilters}
+        />
+      )}
+
+      {sheet && filteredDisplayProducts.length > 0 && (
+        <InventorySheet
+          brandId={brandId}
+          products={filteredDisplayProducts}
+          variantsByProduct={variantsByProduct}
+          currency={currency}
+          isAr={isAr}
+          canViewCosts={canViewCosts}
+          onSaved={onChanged}
+          onDirtyChange={setSheetDirty}
         />
       )}
 
@@ -395,7 +417,7 @@ export function ProductsSection({
       {/* 5. Mobile Purpose-Built Product Cards */}
       <div
         className="space-y-3 block sm:hidden"
-        hidden={photos || filteredDisplayProducts.length === 0}
+        hidden={photos || sheet || filteredDisplayProducts.length === 0}
       >
         {paginatedProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
@@ -438,7 +460,9 @@ export function ProductsSection({
 
       {/* 6. Desktop High-Density Work Queue */}
       <div
-        className={photos || filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"}
+        className={
+          photos || sheet || filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"
+        }
       >
         <InventoryWorkQueue
           lang={isAr ? "ar" : "en"}
@@ -473,15 +497,17 @@ export function ProductsSection({
         />
       </div>
 
-      <ListPagination
-        lang={isAr ? "ar" : "en"}
-        noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
-        totalItems={filteredDisplayProducts.length}
-        page={list.page}
-        pageSize={list.pageSize}
-        onPageChange={list.setPage}
-        onPageSizeChange={list.setPageSize}
-      />
+      {!sheet && (
+        <ListPagination
+          lang={isAr ? "ar" : "en"}
+          noun={isServicesProfile(storeProfile.modules) ? "service" : "product"}
+          totalItems={filteredDisplayProducts.length}
+          page={list.page}
+          pageSize={list.pageSize}
+          onPageChange={list.setPage}
+          onPageSizeChange={list.setPageSize}
+        />
+      )}
 
       <ProductBulkDialogsHost
         bulk={bulk}
@@ -512,28 +538,13 @@ export function ProductsSection({
             setOpen(false);
             setEditing(null);
             onChanged();
-            if (newProductId && kind === "service") {
-              // A service's prices were saved with it: nothing to add.
+            if (newProductId) {
               setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
-              toast.success(isAr ? "تم إنشاء الخدمة." : "Service created.");
-            } else if (newProductId) {
-              setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
-              toast.success(
-                isAr
-                  ? "تم إنشاء المنتج بنجاح! تم فتح قسم المقاسات والألوان لإضافة خياراتك."
-                  : "Product created successfully! Variants panel opened to add sizes & colors.",
-                {
-                  action: {
-                    label: isAr ? "إضافة مقاسات وألوان" : "Add sizes & colors",
-                    onClick: () => {
-                      setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
-                      const el = document.getElementById(`product-row-${newProductId}`);
-                      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    },
-                  },
-                  duration: 8000,
-                },
-              );
+              productCreatedNotice(kind ?? "product", isAr, () => {
+                setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+                const el = document.getElementById(`product-row-${newProductId}`);
+                el?.scrollIntoView({ behavior: "smooth", block: "center" });
+              });
             }
           }}
         />
