@@ -1,12 +1,51 @@
+import {
+  cleanBrowsing,
+  clientAgent,
+  clientIp,
+  hashOf,
+  normalCountry,
+  normalEmail,
+  normalName,
+  normalPhone,
+  orderPieces,
+  sourceUrl,
+  splitName,
+  type AdEvent,
+  type AdPlatform,
+  type BrowsingData,
+  type PurchaseOrder,
+  type SendResult,
+  type ServerEvent,
+  type Shopper,
+  type Visit,
+} from "./shared";
+
+export {
+  cleanToken,
+  isServerEvent,
+  normalEmail,
+  normalName,
+  normalPhone,
+  purchaseEventId,
+  sha256Hex,
+  sourceUrl,
+  type BrowsingData,
+  type Line,
+  type PurchaseOrder,
+  type SendResult,
+  type ServerEvent,
+  type Shopper,
+  type Visit,
+} from "./shared";
+
 /**
  * Meta's Conversions API: the events a store's own server sends to Meta beside the browser pixel,
  * so a purchase is counted when the pixel was blocked (an ad blocker, Safari's tracking limits, an
  * Instagram in-app browser that drops the cookie) and Instagram ads learn from every sale.
  *
- * Pure rules only (no request, no database): what an event holds, how a shopper's details are
- * hashed, and the click id. The server sends what these return (`src/lib/ad-events.functions.ts`).
- * Meta counts an event once when the pixel and the server send it with the same name and
- * `event_id` (`purchaseEventId`, or the id the browser made for the event).
+ * Pure rules only: what an event holds in Meta's words and the click id. Meta counts an event
+ * once when the pixel and the server send it with the same name and `event_id`
+ * (`purchaseEventId`, or the id the browser made for the event).
  */
 
 /** The Graph API version the events are posted to: supported until 2028-07-29. */
@@ -15,87 +54,17 @@ export const META_GRAPH_VERSION = "v25.0";
 /** The credential the store's Conversions API access token is kept under (encrypted). */
 export const META_CAPI_PROVIDER = "meta_capi";
 
-/** The storefront events the server also sends, by Meta's names. A page view stays the pixel's. */
-export const SERVER_EVENTS = {
+/** The storefront events the server also sends, by Meta's names. */
+export const SERVER_EVENTS: Record<ServerEvent, string> = {
   view_item: "ViewContent",
   add_to_cart: "AddToCart",
   begin_checkout: "InitiateCheckout",
   purchase: "Purchase",
-} as const;
-
-export type ServerEvent = keyof typeof SERVER_EVENTS;
-
-export function isServerEvent(event: string): event is ServerEvent {
-  return Object.prototype.hasOwnProperty.call(SERVER_EVENTS, event);
-}
-
-/** One order's purchase, from both sides: the pixel and the server name it the same. */
-export function purchaseEventId(orderId: string): string {
-  return `purchase:${orderId}`;
-}
+};
 
 /** A pixel id as Meta gives it: digits only. */
 export function validPixelId(value: string | null | undefined): value is string {
   return /^\d{5,30}$/.test(String(value ?? ""));
-}
-
-/** A token pasted with spaces or a line break around it is still the token. */
-export function cleanToken(value: string | null | undefined): string | null {
-  const token = String(value ?? "").trim();
-  return /^[A-Za-z0-9_-]{20,1000}$/.test(token) ? token : null;
-}
-
-export async function sha256Hex(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-/** Meta's normalisation before hashing: an email trimmed and in lower case. */
-export function normalEmail(value: string | null | undefined): string | null {
-  const email = String(value ?? "")
-    .trim()
-    .toLowerCase();
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
-}
-
-/**
- * A phone as Meta wants it: digits only, with its country code and no leading zeros or plus. The
- * checkout keeps the number with its code (+973...); an international "00" is dropped.
- */
-export function normalPhone(value: string | null | undefined): string | null {
-  const digits = String(value ?? "")
-    .replace(/\D/g, "")
-    .replace(/^00/, "");
-  return digits.length >= 8 && digits.length <= 15 ? digits : null;
-}
-
-/** A first or last name in lower case, with no spaces or punctuation (Meta's rule; Arabic stays). */
-export function normalName(value: string | null | undefined): string | null {
-  const name = String(value ?? "")
-    .toLowerCase()
-    .replace(/[\s\p{P}\p{S}\d]/gu, "");
-  return name || null;
-}
-
-export function normalCountry(value: string | null | undefined): string | null {
-  const code = String(value ?? "")
-    .trim()
-    .toLowerCase();
-  return /^[a-z]{2}$/.test(code) ? code : null;
-}
-
-/** First name and the rest, from the one name the checkout asks. */
-export function splitName(full: string | null | undefined): {
-  first: string | null;
-  last: string | null;
-} {
-  const parts = String(full ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!parts.length) return { first: null, last: null };
-  return { first: parts[0], last: parts.length > 1 ? parts[parts.length - 1] : null };
 }
 
 /**
@@ -114,26 +83,13 @@ export function metaCookie(value: string | null | undefined): string | null {
   return /^fb\.\d\.\d{10,16}\.[A-Za-z0-9_.-]{1,500}$/.test(cookie) ? cookie : null;
 }
 
-export type Shopper = {
-  email?: string | null;
-  phone?: string | null;
-  name?: string | null;
-  country?: string | null;
-  /** The store's own id for the customer, hashed as `external_id`. */
-  customerId?: string | null;
-};
-
-export type Visit = {
-  ip?: string | null;
-  userAgent?: string | null;
-  fbp?: string | null;
-  fbc?: string | null;
-};
-
 /** `user_data`: what lets Meta match the event to a person, every personal detail hashed. */
 export async function userData(shopper: Shopper, visit: Visit) {
   const { first, last } = splitName(shopper.name);
-  const hashed = async (value: string | null) => (value ? [await sha256Hex(value)] : undefined);
+  const hashed = async (value: string | null) => {
+    const hash = await hashOf(value);
+    return hash ? [hash] : undefined;
+  };
   const data: Record<string, unknown> = {
     em: await hashed(normalEmail(shopper.email)),
     ph: await hashed(normalPhone(shopper.phone)),
@@ -141,59 +97,40 @@ export async function userData(shopper: Shopper, visit: Visit) {
     ln: await hashed(normalName(last)),
     country: await hashed(normalCountry(shopper.country)),
     external_id: await hashed(shopper.customerId ? String(shopper.customerId) : null),
-    client_ip_address: visit.ip && visit.ip !== "unknown" ? visit.ip : undefined,
-    client_user_agent: visit.userAgent ? visit.userAgent.slice(0, 500) : undefined,
+    client_ip_address: clientIp(visit),
+    client_user_agent: clientAgent(visit),
     fbp: metaCookie(visit.fbp) ?? undefined,
     fbc: metaCookie(visit.fbc) ?? undefined,
   };
   return Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
 }
 
-export type Line = { productId: string | null; quantity: number; lineTotal: number };
-
-export type PurchaseOrder = {
-  id: string;
-  currency: string;
-  total: number;
-  lines: Line[];
-};
-
 /** `custom_data` of a purchase, from the order the database wrote: never from the browser. */
 export function purchaseData(order: PurchaseOrder) {
-  const lines = order.lines.filter((line) => line.productId && line.quantity > 0);
+  const pieces = orderPieces(order);
   return {
     currency: order.currency.toUpperCase(),
     value: Math.max(0, Number(order.total.toFixed(3))),
     order_id: order.id,
     content_type: "product",
-    content_ids: [...new Set(lines.map((line) => String(line.productId)))],
-    contents: lines.map((line) => ({
-      id: String(line.productId),
-      quantity: line.quantity,
-      item_price: Number((line.lineTotal / line.quantity).toFixed(3)),
+    content_ids: [...new Set(pieces.map((piece) => piece.id))],
+    contents: pieces.map((piece) => ({
+      id: piece.id,
+      quantity: piece.quantity,
+      item_price: piece.price,
     })),
-    num_items: lines.reduce((sum, line) => sum + line.quantity, 0),
+    num_items: pieces.reduce((sum, piece) => sum + piece.quantity, 0),
   };
 }
 
-export type BrowsingData = {
-  currency?: string | null;
-  value?: number | null;
-  contentIds?: string[];
-  numItems?: number | null;
-};
-
 /** `custom_data` of a view, an add or a checkout begun, as the storefront described it. */
 export function browsingData(data: BrowsingData) {
+  const clean = cleanBrowsing(data);
   const out: Record<string, unknown> = { content_type: "product" };
-  if (data.currency && /^[A-Za-z]{3}$/.test(data.currency))
-    out.currency = data.currency.toUpperCase();
-  if (typeof data.value === "number" && Number.isFinite(data.value) && data.value >= 0)
-    out.value = Number(data.value.toFixed(3));
-  const ids = (data.contentIds ?? []).filter((id) => /^[A-Za-z0-9_-]{1,64}$/.test(id)).slice(0, 50);
-  if (ids.length) out.content_ids = ids;
-  if (typeof data.numItems === "number" && data.numItems > 0)
-    out.num_items = Math.floor(data.numItems);
+  if (clean.currency) out.currency = clean.currency;
+  if (clean.value !== undefined) out.value = clean.value;
+  if (clean.contentIds.length) out.content_ids = clean.contentIds;
+  if (clean.numItems !== undefined) out.num_items = clean.numItems;
   return out;
 }
 
@@ -206,17 +143,6 @@ export type MetaEvent = {
   user_data: Record<string, unknown>;
   custom_data: Record<string, unknown>;
 };
-
-/** A page address worth sending: the store's own page, without its query (it can hold tokens). */
-export function sourceUrl(value: string | null | undefined): string | undefined {
-  try {
-    const url = new URL(String(value ?? ""));
-    if (url.protocol !== "https:" && url.protocol !== "http:") return undefined;
-    return `${url.origin}${url.pathname}`.slice(0, 1000);
-  } catch {
-    return undefined;
-  }
-}
 
 export function metaEvent(input: {
   event: ServerEvent;
@@ -252,15 +178,6 @@ export function eventsBody(events: MetaEvent[], token: string, testEventCode?: s
   };
 }
 
-/** What Meta answered, in words the merchant can act on. */
-export type SendResult =
-  | { sent: true; received: number }
-  | {
-      sent: false;
-      reason: "off" | "not_found" | "too_many" | "refused" | "unreachable";
-      detail?: string;
-    };
-
 export function readMetaAnswer(status: number, body: unknown): SendResult {
   const answer = (body ?? {}) as {
     events_received?: number;
@@ -271,3 +188,35 @@ export function readMetaAnswer(status: number, body: unknown): SendResult {
   const message = answer.error?.message ? String(answer.error.message).slice(0, 300) : undefined;
   return { sent: false, reason: "refused", detail: message ?? `HTTP ${status}` };
 }
+
+async function metaRequest(
+  pixelId: string,
+  token: string,
+  event: AdEvent,
+  testCode?: string | null,
+) {
+  const custom = event.order ? purchaseData(event.order) : browsingData(event.browsing ?? {});
+  const body = eventsBody(
+    [
+      metaEvent({
+        event: event.event,
+        eventId: event.eventId,
+        now: event.now,
+        pageUrl: event.pageUrl,
+        user: await userData(event.shopper, event.visit),
+        custom,
+      }),
+    ],
+    token,
+    testCode,
+  );
+  return { url: eventsEndpoint(pixelId), headers: { "Content-Type": "application/json" }, body };
+}
+
+export const metaPlatform: AdPlatform = {
+  credential: META_CAPI_PROVIDER,
+  validPixel: validPixelId,
+  request: metaRequest,
+  testRequest: metaRequest,
+  readAnswer: readMetaAnswer,
+};

@@ -10,6 +10,9 @@ import {
   setStorefrontAnalyticsConfig,
   trackStorefrontEvent,
 } from "@/lib/storefront-analytics";
+import { loadSnapPixel, loadTiktokPixel } from "@/lib/ad-events/pixel-scripts";
+import { validTiktokPixel } from "@/lib/ad-events/tiktok-events";
+import { validSnapPixel } from "@/lib/ad-events/snap-conversions";
 
 type Choice = { decided: boolean; analytics: boolean; marketing: boolean };
 const empty: Choice = { decided: false, analytics: false, marketing: false };
@@ -46,7 +49,11 @@ export function StorefrontAnalytics() {
         : {
             decided: true,
             analytics: settings.google_analytics_enabled,
-            marketing: settings.meta_pixel_enabled,
+            marketing: Boolean(
+              settings.meta_pixel_enabled ||
+              settings.tiktok_pixel_enabled ||
+              settings.snap_pixel_enabled,
+            ),
           },
     [choice, settings],
   );
@@ -84,6 +91,14 @@ export function StorefrontAnalytics() {
     const metaId =
       settings.meta_pixel_enabled && /^\d{5,30}$/.test(settings.meta_pixel_id || "")
         ? settings.meta_pixel_id
+        : null;
+    const tiktokId =
+      settings.tiktok_pixel_enabled && validTiktokPixel(settings.tiktok_pixel_id)
+        ? settings.tiktok_pixel_id
+        : null;
+    const snapId =
+      settings.snap_pixel_enabled && validSnapPixel(settings.snap_pixel_id)
+        ? settings.snap_pixel_id
         : null;
     const w = window as any;
 
@@ -131,10 +146,14 @@ export function StorefrontAnalytics() {
         }
         w.fbq("init", metaId);
       }
+      if (effective.marketing && tiktokId) loadTiktokPixel(tiktokId);
+      if (effective.marketing && snapId) loadSnapPixel(snapId);
       setStorefrontAnalyticsConfig({
         brandId: brand.id,
         gaId,
         metaId,
+        tiktokId,
+        snapId,
         analyticsAllowed: Boolean(effective.analytics),
         marketingAllowed: Boolean(effective.marketing),
       });
@@ -177,6 +196,10 @@ export function StorefrontAnalytics() {
     settings.google_analytics_id,
     settings.meta_pixel_enabled,
     settings.meta_pixel_id,
+    settings.tiktok_pixel_enabled,
+    settings.tiktok_pixel_id,
+    settings.snap_pixel_enabled,
+    settings.snap_pixel_id,
   ]);
 
   // The store's own visit count: kept unless the store asks for consent and it was not given.
