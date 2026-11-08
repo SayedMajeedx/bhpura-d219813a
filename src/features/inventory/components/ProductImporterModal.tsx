@@ -23,7 +23,7 @@ import {
 } from "@/features/inventory/lib/product-import";
 import { importExportQueries } from "@/lib/data/import-export";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
-import { arNounOblique } from "@/lib/arabic-count";
+import { arNounOblique, countOf } from "@/lib/arabic-count";
 
 type ImportIssueItem = { row: number; code: string; name: string };
 
@@ -33,6 +33,8 @@ export function ProductImporterModal(props: {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   renderTrigger?: (onClick: () => void) => React.ReactNode;
+  /** False for a catalog that shows no prices: a product with no price is then as meant. */
+  pricesMatter?: boolean;
 }) {
   const {
     brandId,
@@ -40,6 +42,7 @@ export function ProductImporterModal(props: {
     isOpen: controlledIsOpen,
     onOpenChange: setControlledIsOpen,
     renderTrigger,
+    pricesMatter = true,
   } = props;
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -53,6 +56,8 @@ export function ProductImporterModal(props: {
   const [successCount, setSuccessCount] = useState(0);
   const [skippedCount, setSkippedCount] = useState(0);
   const [failedCount, setFailedCount] = useState(0);
+  /** Products the file gave no price for: they came in hidden, listed under "No price". */
+  const [unpricedCount, setUnpricedCount] = useState(0);
   const [importIssues, setImportIssues] = useState<ImportIssueItem[]>([]);
   const [importSessionId, setImportSessionId] = useState(() => crypto.randomUUID());
   const [totalCount, setTotalCount] = useState(0);
@@ -120,17 +125,24 @@ export function ProductImporterModal(props: {
     setSuccessCount(0);
     setSkippedCount(0);
     setFailedCount(0);
+    setUnpricedCount(0);
     setImportIssues([]);
 
     try {
-      const { products: consolidatedPayload, invalidCount } = buildProductImportPayload({
+      const {
+        products: consolidatedPayload,
+        invalidCount,
+        unpricedCount: unpriced,
+      } = buildProductImportPayload({
         rows: dataRows,
         headers: headersList,
         preset,
         mappings: finalMappings,
         isAr,
+        pricesMatter,
       });
       if (invalidCount > 0) setFailedCount((count) => count + invalidCount);
+      setUnpricedCount(unpriced);
       setTotalCount(consolidatedPayload.length);
 
       // Split into batches of 10 to provide elegant live feedback to the merchant!
@@ -454,6 +466,13 @@ export function ProductImporterModal(props: {
                     ? `تم استيراد ${successCount} منتج، وتخطي ${skippedCount} مكرر، وتعذر ${failedCount}.`
                     : `Imported ${successCount} products, skipped ${skippedCount} duplicates, and ${failedCount} failed.`}
                 </p>
+                {unpricedCount > 0 && (
+                  <p className="text-xs text-muted-foreground" role="status">
+                    {isAr
+                      ? `دخلت مخفية لأن الملف لم يذكر سعرها: ${countOf(unpricedCount, "product", "ar")}. تجدها في المخزون تحت «يحتاج انتباهاً» ← «بدون سعر»، وتظهر في المتجر حين تسعّرها وتُظهرها.`
+                      : `${countOf(unpricedCount, "product", "en")} came in hidden because the file gave no price. Find them in the inventory under Needs attention → No price, and show them once priced.`}
+                  </p>
+                )}
                 {importIssues.length > 0 && (
                   <p className="text-xs text-amber-600">
                     {isAr

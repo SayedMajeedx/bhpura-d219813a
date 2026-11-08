@@ -574,6 +574,7 @@ export function ProductsSection({
       />
       <ProductImporterModal
         brandId={brandId}
+        pricesMatter={pricesMatter}
         isOpen={isProductImporterOpen}
         onOpenChange={setIsProductImporterOpen}
         onComplete={onChanged}

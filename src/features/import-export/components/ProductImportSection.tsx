@@ -17,7 +17,11 @@ import { toast } from "sonner";
 import { parseCSV } from "@/lib/csv-parser";
 import { importProductCatalog } from "@/lib/universal-importer";
 import { downloadTemplate } from "@/features/import-export/lib/import-templates";
-import { arNounOblique } from "@/lib/arabic-count";
+import { arNounOblique, countOf } from "@/lib/arabic-count";
+import { useQuery } from "@tanstack/react-query";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { shouldShowPrices } from "@/lib/storefront-mode";
+import { buildProductImportPayload } from "@/features/inventory/lib/product-import";
 
 // -------------------------------------------------------------
 // Component: Product Import Section
@@ -48,6 +52,10 @@ export function ProductImportSection({
   });
   const [step, setStep] = useState<"upload" | "map" | "success">("upload");
   const [lastCount, setLastCount] = useState(0);
+  /** Rows with no name, left out; products with no price, brought in hidden. */
+  const [skippedNoName, setSkippedNoName] = useState(0);
+  const [unpriced, setUnpriced] = useState(0);
+  const settings = useQuery(businessSettingsQueries.detail(brandId));
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -115,48 +123,23 @@ export function ProductImportSection({
 
     try {
       const sessionId = crypto.randomUUID();
-      const rawProducts = parsedRows.map((row, index) => {
-        const nameVal = mappings.name !== -1 ? row[mappings.name]?.trim() : `Product ${index + 1}`;
-        const priceVal =
-          mappings.price !== -1
-            ? parseFloat(row[mappings.price]?.replace(/[^\d.]/g, "") || "10") || 10
-            : 10;
-        const imageVal = mappings.image !== -1 ? row[mappings.image]?.trim() || null : null;
-        const stockVal =
-          mappings.stock !== -1
-            ? parseInt(row[mappings.stock]?.replace(/[^\d]/g, "") || "10") || 10
-            : 10;
-        const skuVal =
-          mappings.sku !== -1 && row[mappings.sku]?.trim()
-            ? row[mappings.sku].trim().toUpperCase()
-            : `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-
-        return {
-          name: nameVal || `Product ${index + 1}`,
-          name_ar: isAr ? nameVal : null,
-          name_en: isAr ? null : nameVal,
-          description: isAr ? "تم الاستيراد بنجاح" : "Imported product details",
-          description_ar: isAr ? "تم الاستيراد بنجاح" : null,
-          description_en: isAr ? null : "Imported product details",
-          category: "General",
-          image_url: imageVal,
-          is_active: true,
-          variants: [
-            {
-              size: null,
-              size_unit: null,
-              color: null,
-              fabric: null,
-              sku: skuVal,
-              barcode: null,
-              cost_price: 0,
-              selling_price: priceVal,
-              stock_main: stockVal,
-              stock_incubator: 0,
-            },
-          ],
-        };
+      // The inventory importer's own rules, with this page's column choices: nothing the file
+      // does not say is made up (bug #51: a price and a stock of 10, a description, and a
+      // "Product 3" for a row with no name).
+      const {
+        products: rawProducts,
+        invalidCount,
+        unpricedCount,
+      } = buildProductImportPayload({
+        rows: parsedRows,
+        headers,
+        preset: "custom",
+        mappings,
+        isAr,
+        pricesMatter: shouldShowPrices(settings.data),
       });
+      setSkippedNoName(invalidCount);
+      setUnpriced(unpricedCount);
 
       const batchSize = 10;
       let inserted = 0;
@@ -379,6 +362,20 @@ export function ProductImportSection({
                   ? `تمت إضافة ${arNounOblique(lastCount, "product")} بنجاح إلى مخزونك. أصبحت جاهزة للتعديل والعرض في المتجر.`
                   : `Successfully added ${lastCount} products to your store inventory.`}
               </p>
+              {unpriced > 0 && (
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-2" role="status">
+                  {isAr
+                    ? `دخلت مخفية لأن الملف لم يذكر سعرها: ${countOf(unpriced, "product", "ar")}. تجدها في المخزون تحت «يحتاج انتباهاً» ← «بدون سعر»، وتظهر في المتجر حين تسعّرها وتُظهرها.`
+                    : `${countOf(unpriced, "product", "en")} came in hidden because the file gave no price. Find them in the inventory under Needs attention → No price, and show them once priced.`}
+                </p>
+              )}
+              {skippedNoName > 0 && (
+                <p className="text-xs text-amber-600 max-w-sm mx-auto mt-2">
+                  {isAr
+                    ? `لم تُستورد صفوف بلا اسم منتج: ${skippedNoName}.`
+                    : `Rows with no product name were left out: ${skippedNoName}.`}
+                </p>
+              )}
             </div>
             <Button
               variant="outline"
