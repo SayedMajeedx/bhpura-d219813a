@@ -148,6 +148,25 @@ describe("one event id for the pixel and the server", () => {
     expect(ads.sendAdBrowsingEvent).toHaveBeenCalled();
   });
 
+  it("sends the landing page's view once the analytics are set up, not before", async () => {
+    setStorefrontAnalyticsConfig(null);
+    const sent = trackStorefrontEvent("page_view", {}, "/pura");
+    trackStorefrontEvent("page_view", {}, "/pura");
+    expect(fbq).not.toHaveBeenCalled();
+    configure(true);
+    await sent;
+    expect(fbq).toHaveBeenCalledTimes(1);
+    expect(fbq.mock.calls[0][2]).toBe("PageView");
+  });
+
+  it("holds a product view from before set-up under the choices made by then", async () => {
+    setStorefrontAnalyticsConfig(null);
+    void trackStorefrontEvent("view_item", { content_ids: ["p1"] });
+    configure(false);
+    expect(fbq).not.toHaveBeenCalled();
+    expect(ads.sendAdBrowsingEvent).not.toHaveBeenCalled();
+  });
+
   it("keeps a page view the pixel's alone", async () => {
     configure(true);
     await trackStorefrontEvent("page_view", {});

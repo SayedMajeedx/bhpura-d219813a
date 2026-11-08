@@ -25,8 +25,29 @@ type AnalyticsConfig = {
 
 let config: AnalyticsConfig | null = null;
 
+/**
+ * Events from before the analytics were set up. The storefront sets them up after the first scroll
+ * or tap, or 5 seconds (so the first screen is not slowed), while the landing page's view, and a
+ * product's when the shopper lands on one, are sent at once: they used to find nothing set up and
+ * were dropped, so no visit's first page ever reached Google or the ad platforms (2026-11-08). They
+ * wait here and are sent, under the choices made by then, once the analytics are set up.
+ */
+type Waiting = {
+  event: StorefrontEvent;
+  payload: Record<string, unknown>;
+  dedupeKey?: string;
+  done: () => void;
+};
+const MAX_WAITING = 20;
+let waiting: Waiting[] = [];
+
 export function setStorefrontAnalyticsConfig(next: AnalyticsConfig | null) {
   config = next;
+  if (!next || !waiting.length) return;
+  const held = waiting;
+  waiting = [];
+  for (const item of held)
+    void sendEvent(next, item.event, item.payload, item.dedupeKey).then(item.done);
 }
 
 /**
@@ -160,9 +181,9 @@ function newEventId(event: StorefrontEvent, payload: Record<string, unknown>): s
 }
 
 /**
- * Sends a storefront event to the store's analytics. Resolves once the store's server has sent
- * its copy to the ad platforms (or could not): checkout waits a moment for a purchase's before it leaves for
- * the card page.
+ * Sends a storefront event to the store's analytics, or holds it until they are set up. Resolves
+ * once the store's server has sent its copy to the ad platforms (or could not): checkout waits a
+ * moment for a purchase's before it leaves for the card page.
  */
 export function trackStorefrontEvent(
   event: StorefrontEvent,
@@ -171,7 +192,17 @@ export function trackStorefrontEvent(
 ): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   recordFunnel(event);
-  if (!config) return Promise.resolve();
+  if (config) return sendEvent(config, event, payload, dedupeKey);
+  if (waiting.length >= MAX_WAITING) return Promise.resolve();
+  return new Promise((done) => waiting.push({ event, payload, dedupeKey, done }));
+}
+
+function sendEvent(
+  config: AnalyticsConfig,
+  event: StorefrontEvent,
+  payload: Record<string, unknown>,
+  dedupeKey?: string,
+): Promise<void> {
   if (dedupeKey) {
     const key = `boutq-event:${config.brandId}:${event}:${dedupeKey}`;
     if (sessionStorage.getItem(key)) return Promise.resolve();
