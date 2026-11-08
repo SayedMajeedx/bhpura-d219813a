@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useStorefront } from "@/lib/storefront-context";
 import {
+  rememberAdClick,
   setFunnelRecording,
   setStorefrontAnalyticsConfig,
   trackStorefrontEvent,
@@ -19,6 +20,9 @@ export function StorefrontAnalytics() {
   const storageKey = `boutq-consent:${brand.id}`;
   const [choice, setChoice] = useState<Choice>(empty);
   const [visible, setVisible] = useState(false);
+
+  // An ad's click id is read from the landing address before a later page drops it.
+  useEffect(() => rememberAdClick(), []);
 
   useEffect(() => {
     try {

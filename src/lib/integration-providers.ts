@@ -17,8 +17,11 @@ export const PROVIDER_PRESETS = [
 /** Saved before they were hidden; not shown and not offered. */
 export const HIDDEN_PROVIDERS: ReadonlySet<string> = new Set(["aramex", "posta_plus", "stripe"]);
 
+/** Kept with the other keys, edited where they belong: the Conversions API token under the pixel. */
+export const EDITED_ELSEWHERE: ReadonlySet<string> = new Set(["meta_capi"]);
+
 export function shownIntegration(row: { provider: string }): boolean {
-  return !HIDDEN_PROVIDERS.has(row.provider);
+  return !HIDDEN_PROVIDERS.has(row.provider) && !EDITED_ELSEWHERE.has(row.provider);
 }
 
 export const PAYMENT_PROVIDERS: ReadonlySet<string> = new Set(["tap", "benefit"]);

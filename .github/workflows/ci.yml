@@ -172,9 +172,46 @@ jobs:
         # correspond to any real commit on gitleaks/gitleaks-action, so the
         # step failed before ever running. This is the actual SHA for the
         # v2.3.7 tag the comment already claimed.
+        #
+        # The action downloads the gitleaks binary from github.com/.../releases/download on every
+        # run. On 2026-11-08 (PR #521) that address answered 504 for every release of every
+        # project, all day, while the same files came whole through the releases API: the scan
+        # never ran. When the action fails, the next step fetches the same version through the
+        # API, checks its checksum and runs the action's own command over the same commits. A real
+        # leak fails both steps, so the job fails as before.
+        id: gitleaks_action
+        continue-on-error: true
         uses: gitleaks/gitleaks-action@83373cf2f8c4db6e24b41c1a9b086bb9619e9cd3 # v2.3.7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run Gitleaks Secret Scan (fetched through the releases API)
+        if: steps.gitleaks_action.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The version the action installs (its default), so both find the same things.
+          GITLEAKS_VERSION: 8.16.1
+          # The commits the action scans: the pull request's, or the ones a push brought.
+          FIRST: ${{ github.event.pull_request.base.sha || github.event.before }}
+          LAST: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/gitleaks"
+          mkdir -p "$dir"
+          file="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          sums="gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          # gh downloads a release file through the API (api.github.com/.../releases/assets/<id>).
+          gh release download "v${GITLEAKS_VERSION}" --repo gitleaks/gitleaks \
+            --pattern "$file" --pattern "$sums" --dir "$dir"
+          (cd "$dir" && grep " ${file}\$" "$sums" | sha256sum --check --strict -)
+          tar -xzf "$dir/$file" -C "$dir" gitleaks
+          range="${FIRST}..${LAST}"
+          # A new branch pushed with no earlier commit (before = 000...) is scanned from its root.
+          if [ -z "$FIRST" ] || [ "$FIRST" = "0000000000000000000000000000000000000000" ]; then
+            range="$LAST"
+          fi
+          "$dir/gitleaks" detect --redact -v --exit-code=2 --log-level=info \
+            --log-opts="--no-merges --first-parent ${range}"
 
   supabase-migration-drift:
     name: Supabase Linked Migration Drift Check
