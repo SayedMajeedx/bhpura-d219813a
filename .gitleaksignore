@@ -4,3 +4,5 @@
 d4e4d71abc40ee39397d3dee8644781d2ef89849:src/lib/web-push.ts:generic-api-key:13
 # A made-up Search Console code in a test (tests/store-seo-settings.test.tsx), not a secret.
 c9c57252c0bc778c4947618a182db6e2f3ab6d8a:tests/store-seo-settings.test.tsx:generic-api-key:158
+# A made-up event id in a test (tests/tiktok-snap-events.test.ts: Snapchat's client_dedup_id), not a secret.
+b5f08802328958b760aefe9eb51eb830955389e7:tests/tiktok-snap-events.test.ts:generic-api-key:149
