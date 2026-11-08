@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { integrationsQueries, saveTrackingSettings } from "@/lib/data/integrations";
+import { MetaConversionsFields } from "./MetaConversionsFields";
 
 /** A failed write's message, as the toasts showed it before. */
 const errorOf = (error: unknown) => ({
@@ -131,6 +132,11 @@ export function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr
               setForm((f) => ({ ...f, meta_pixel_id: e.target.value.replace(/\D/g, "") }))
             }
             placeholder="123456789012345"
+          />
+          <MetaConversionsFields
+            brandId={brandId}
+            isAr={isAr}
+            pixelOn={Boolean(q.data?.meta_pixel_enabled && q.data?.meta_pixel_id)}
           />
         </div>
         <div className="flex items-center justify-between gap-3 rounded-lg border p-4">

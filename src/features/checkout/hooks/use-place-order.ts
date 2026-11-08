@@ -262,7 +262,7 @@ export function usePlaceOrder({
           }
         }
       }
-      trackStorefrontEvent(
+      const purchaseTracked = trackStorefrontEvent(
         "purchase",
         {
           transaction_id: String(orderId ?? ""),
@@ -305,6 +305,8 @@ export function usePlaceOrder({
             toast.dismiss(toastId);
           } else {
             const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
+            // Leaving the page can cut the store's purchase event short: give it a moment.
+            await Promise.race([purchaseTracked, new Promise((done) => setTimeout(done, 1500))]);
             toast.dismiss(toastId);
             window.location.href = redirectUrl;
             return;
