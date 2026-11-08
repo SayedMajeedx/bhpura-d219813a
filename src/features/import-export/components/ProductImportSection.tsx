@@ -370,7 +370,7 @@ export function ProductImportSection({
                 </p>
               )}
               {skippedNoName > 0 && (
-                <p className="text-xs text-amber-600 max-w-sm mx-auto mt-2">
+                <p className="text-xs text-warning max-w-sm mx-auto mt-2">
                   {isAr
                     ? `لم تُستورد صفوف بلا اسم منتج: ${skippedNoName}.`
                     : `Rows with no product name were left out: ${skippedNoName}.`}

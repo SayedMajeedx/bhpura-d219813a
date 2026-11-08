@@ -1,4 +1,4 @@
-import { EyeOff, LayoutGrid, List, Package } from "lucide-react";
+import { EyeOff, LayoutGrid, List, Package, Sheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatMoney } from "@/lib/format";
@@ -134,7 +134,7 @@ export function InventoryPhotoGrid({
   );
 }
 
-/** Rows or photos, beside the list's sort. */
+/** Rows, photos, or the sheet to change many sizes at once, beside the list's sort. */
 export function InventoryLayoutSwitch({
   lang,
   layout,
@@ -148,6 +148,7 @@ export function InventoryLayoutSwitch({
   const options: Array<{ id: InventoryLayout; label: string; Icon: typeof List }> = [
     { id: "list", label: isAr ? "عرض كقائمة" : "Show as a list", Icon: List },
     { id: "photos", label: isAr ? "عرض بالصور" : "Show as photos", Icon: LayoutGrid },
+    { id: "sheet", label: isAr ? "تعديل كجدول" : "Edit as a sheet", Icon: Sheet },
   ];
   return (
     <div
