@@ -25,18 +25,33 @@ export function orderReference(purchase: Pick<GiftCardPurchase, "id">): string {
 }
 
 /** What the store must do for this order, or null when nothing waits on it. */
-export type OrderStep = "check_transfer" | "send_code";
+export type OrderStep = "check_transfer" | "send_code" | "print_card" | "deliver_card";
+
+/** A paid card the store prints: still to print, then still to deliver (null once delivered). */
+export function printStep(purchase: GiftCardPurchase): "print_card" | "deliver_card" | null {
+  if (!purchase.print_by_store || purchase.status !== "paid" || purchase.print_delivered_at) {
+    return null;
+  }
+  return purchase.printed_at ? "deliver_card" : "print_card";
+}
 
 export function orderStep(purchase: GiftCardPurchase): OrderStep | null {
   if (waitingTransfers([purchase]).length > 0) return "check_transfer";
   if (codesToSend([purchase]).length > 0) return "send_code";
-  return null;
+  return printStep(purchase);
 }
 
 export const ORDER_STEP_WORDS: Record<OrderStep, { ar: string; en: string }> = {
   check_transfer: { ar: "تحقق من التحويل", en: "Check the transfer" },
   send_code: { ar: "أرسل الرمز على واتساب", en: "Send the code on WhatsApp" },
+  print_card: { ar: "اطبع البطاقة", en: "Print the card" },
+  deliver_card: { ar: "وصّل البطاقة المطبوعة", en: "Deliver the printed card" },
 };
+
+/** What the buyer paid: the card's value, plus the store's fee when it prints the card. */
+export function orderTotal(purchase: Pick<GiftCardPurchase, "amount" | "print_fee">): number {
+  return Math.round((Number(purchase.amount) + Number(purchase.print_fee ?? 0)) * 1000) / 1000;
+}
 
 export function orderGroup(purchase: GiftCardPurchase): OrderGroup {
   if (orderStep(purchase)) return "todo";
@@ -116,6 +131,22 @@ export function orderTimeline(purchase: GiftCardPurchase): OrderMoment[] {
       at: purchase.code_sent_at,
       ar: "أُرسل الرمز على واتساب",
       en: "Code sent on WhatsApp",
+    });
+  }
+  if (purchase.printed_at) {
+    moments.push({
+      key: "printed",
+      at: purchase.printed_at,
+      ar: "طُبعت البطاقة",
+      en: "Card printed",
+    });
+  }
+  if (purchase.print_delivered_at) {
+    moments.push({
+      key: "delivered",
+      at: purchase.print_delivered_at,
+      ar: "وصلت البطاقة المطبوعة",
+      en: "Printed card delivered",
     });
   }
   if (purchase.cancelled_at) {

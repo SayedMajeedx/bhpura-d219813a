@@ -153,7 +153,9 @@ describe("the buyer's design", () => {
       language: "both",
       from: "Sara and Mona",
       photo: null,
-      print: true,
+      // Since migration 20261124100000 the store prints a card, never the buyer: the design's
+      // flag says whether the store was asked to (`p_buyer.print`), not what the design sent.
+      print: false,
     });
     // One of the store's own photos is kept.
     const own = await buy({ design: "photo:cream", photo: "https://media.test/chosen.jpg" });

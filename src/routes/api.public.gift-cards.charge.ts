@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { tapCustomer } from "@/lib/payments/gift-card-charge";
+import { purchaseTotal, tapCustomer } from "@/lib/payments/gift-card-charge";
 
 /**
  * Starts the card payment of a gift card bought online (step four of docs/gift-cards-plan.md).
@@ -97,7 +97,7 @@ export const Route = createFileRoute("/api/public/gift-cards/charge")({
             method: "POST",
             headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              amount: Number(purchase.amount),
+              amount: purchaseTotal(purchase),
               currency: purchase.currency.toUpperCase(),
               threeDSecure: true,
               save_card: false,

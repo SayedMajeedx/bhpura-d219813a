@@ -93,12 +93,21 @@ The owner asked for cards that look made by a person, minimal but luxurious, wit
 - **Occasions** in the Gulf's own wording (a gift, birthday, thank you, congratulations, anniversary, just because, Ramadan, both Eids, graduation, wedding, new baby, appreciation, National Day, Mother's Day, get well, new home); what is in season leads.
 - **Five compositions on four tones**, all from the store's colours and logo: signature (the store's mark alone), type (the greeting large), photo (the store's own product photo), pattern (the star-and-cross pattern and a pointed arch) and colour block; on the store's colour, black, nude or white. Gold is a flat ink, never a gradient; every mark is drawn with ruler and compass.
 - **Portrait or landscape; Arabic, English or both.** The back holds who it is for and from, the note, the value, the code in a ruled box, its end date and how to use it.
-- **Kept and printed:** the purchase keeps the design; the buyer sees the card on its page and in their account, saves it as pictures, or prints it on A6 paper or on A4 at true size with cut marks. Staff print any card from its details.
+- **Kept and printed:** the purchase keeps the design; the buyer sees the card on its page and in their account and saves it as pictures. Staff print any card from its details (A6, A4 at true size with cut marks, or one side of A4 to fold). Since 2026-11-08 a buyer never prints a card (next section).
 - **The store's choices:** designs turned off, a signature card shown first, and the products whose photos the photo designs use.
 
 - **The store's mark and lettering** (later the same day): the logo's size on every card (half to twice as designed), the logo measured to its own edges so it sits exactly on the card's margins and lines, and a font of the store's own for the cards' large words in Arabic and in English.
 
 No illustrator: no illustrated or watercolour art (the owner's answer); variety comes from type, colour, geometry and the store's photographs.
+
+## The store prints the card (2026-11-08)
+
+The owner's decision: a buyer no longer prints a card themselves. A shopper chooses a digital card or a printed one; the printed one is printed by the store and delivered, and the shopper pays the store's own fee for printing and delivering it on top of the card's value.
+
+- **The store's offer:** printing on or off, and its fee in the store's currency (0 to 1000, 0 for free), on the Gift cards page's Settings tab.
+- **The purchase:** where to deliver and a number there; the fee as it was when bought; what the shopper pays is the card's value plus the fee, charged by card or checked against the transfer. **The card holds its value only.**
+- **The store's side:** the order asks to print the card (on the design the buyer chose), then to deliver it; each press is recorded with who and when, and the buyer's page says it is on its way, then that it arrived.
+- **Not done yet:** the fee is not in the reports (it is the store's income for a service, not money held on a card), and the emails still name the card's value only.
 
 ## Order of work
 

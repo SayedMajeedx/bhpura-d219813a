@@ -696,6 +696,16 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) and cleans what is saved"
     },
+    "set_gift_card_print(p_brand_id uuid, p_enabled boolean, p_fee numeric)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings)"
+    },
+    "set_gift_card_print_step(p_purchase_id uuid, p_step text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
     "set_gift_card_settings(p_brand_id uuid, p_sell_online boolean, p_amounts numeric[], p_valid_months integer)": {
       "anon": false,
       "authenticated": true,

@@ -45,6 +45,13 @@ const START = z.object({
         print: z.boolean().optional(),
       })
       .optional(),
+    /** The store prints the card and delivers it here, for its fee (it must offer to). */
+    print: z
+      .object({
+        address: z.string().trim().min(3).max(400),
+        phone: z.string().trim().min(6).max(32),
+      })
+      .optional(),
   }),
   receiptId: z.string().uuid().nullable().optional(),
   /** The shopper's session when signed in: the purchase is then theirs in their account. */
@@ -107,6 +114,14 @@ export type PurchaseView = {
   expiresOn: string | null;
   /** The design the buyer chose (null for a purchase made before cards had designs). */
   design: StoredCardDesign | null;
+  /** The store prints this card and delivers it (migration 20261124100000). */
+  printByStore: boolean;
+  printFee: number;
+  /** What the buyer pays: the card's value plus the printing fee. */
+  total: number;
+  printAddress: string | null;
+  printedAt: string | null;
+  printDeliveredAt: string | null;
 };
 
 /** A card's design as the database keeps it (read with `readDesign`). */
@@ -129,7 +144,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin
       .from("gift_card_purchases")
       .select(
-        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, gift_cards(code, expires_on)",
+        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, print_by_store, print_fee, print_address, printed_at, print_delivered_at, gift_cards(code, expires_on)",
       )
       .eq("id", data.purchaseId)
       .eq("token", data.token)
@@ -147,8 +162,14 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       buyer_email: string | null;
       buyer_phone: string | null;
       design: StoredCardDesign | null;
+      print_by_store: boolean | null;
+      print_fee: number | null;
+      print_address: string | null;
+      printed_at: string | null;
+      print_delivered_at: string | null;
       gift_cards: { code: string; expires_on: string | null } | null;
     };
+    const printFee = purchase.print_by_store ? Number(purchase.print_fee ?? 0) : 0;
     const paid = purchase.status === "paid";
     return {
       status: purchase.status,
@@ -164,6 +185,12 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       code: paid ? (purchase.gift_cards?.code ?? null) : null,
       expiresOn: paid ? (purchase.gift_cards?.expires_on ?? null) : null,
       design: purchase.design ?? null,
+      printByStore: purchase.print_by_store === true,
+      printFee,
+      total: Math.round((Number(purchase.amount) + printFee) * 1000) / 1000,
+      printAddress: purchase.print_by_store ? purchase.print_address : null,
+      printedAt: purchase.printed_at,
+      printDeliveredAt: purchase.print_delivered_at,
     };
   });
 

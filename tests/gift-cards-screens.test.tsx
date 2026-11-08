@@ -19,6 +19,8 @@ const data = vi.hoisted(() => ({
   approveGiftCardPurchase: vi.fn(async () => null),
   cancelGiftCardPurchase: vi.fn(async () => undefined),
   markGiftCardPurchaseSent: vi.fn(async () => undefined),
+  saveGiftCardPrint: vi.fn(async () => null),
+  setGiftCardPrintStep: vi.fn(async () => undefined),
 }));
 vi.mock("../src/lib/data/gift-cards", () => ({
   giftCardQueries: {
@@ -43,6 +45,8 @@ vi.mock("../src/lib/data/gift-cards", () => ({
   approveGiftCardPurchase: data.approveGiftCardPurchase,
   cancelGiftCardPurchase: data.cancelGiftCardPurchase,
   markGiftCardPurchaseSent: data.markGiftCardPurchaseSent,
+  saveGiftCardPrint: data.saveGiftCardPrint,
+  setGiftCardPrintStep: data.setGiftCardPrintStep,
   invalidateGiftCardOnline: vi.fn(async () => undefined),
 }));
 const purchaseFns = {
@@ -492,6 +496,69 @@ describe("selling cards on the store", () => {
     expect(decodeURIComponent(href)).toContain("بطاقة هدية");
     fireEvent.click(send);
     await waitFor(() => expect(data.markGiftCardPurchaseSent).toHaveBeenCalledWith("pu2"));
+  });
+
+  it("saves whether the store prints cards, and its fee for printing and delivering one", async () => {
+    profile.allowed = true;
+    data.settings = {
+      sell_online: true,
+      amounts: [25],
+      valid_months: 12,
+      print_enabled: false,
+      print_fee: 0,
+      updated_at: "x",
+    };
+    data.purchases = [];
+    wrap(<GiftCardsPage />);
+    fireEvent.click(screen.getByRole("tab", { name: "Settings" }));
+    fireEvent.click(await screen.findByRole("switch", { name: "We print and deliver cards" }));
+    fireEvent.change(screen.getByLabelText(/Printing and delivery fee/), {
+      target: { value: "٢٫٥" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save printing" }));
+    await waitFor(() =>
+      expect(data.saveGiftCardPrint).toHaveBeenCalledWith("b1", { enabled: true, fee: 2.5 }),
+    );
+  });
+
+  it("asks staff to print a paid card the store prints, then to deliver it", async () => {
+    data.settings = { sell_online: true, amounts: [25], valid_months: 12, updated_at: "x" };
+    const order = {
+      id: "pu5",
+      brand_id: "b1",
+      amount: 25,
+      currency: "BHD",
+      payment_method: "benefit",
+      status: "paid",
+      buyer_name: "Hessa",
+      buyer_phone: null,
+      buyer_email: "hessa@mail.com",
+      delivery_channel: "email",
+      lang: "ar",
+      recipient_name: "Noor",
+      message: null,
+      receipt_key: null,
+      created_at: "2026-11-08T10:00:00Z",
+      paid_at: "2026-11-08T10:05:00Z",
+      code_sent_at: null,
+      design: { occasion: "birthday", design: "type:cream", print: true },
+      print_by_store: true,
+      print_fee: 2.5,
+      print_address: "Adliya, block 338, road 3803, house 12",
+      print_phone: "+97339001122",
+      printed_at: null,
+      print_delivered_at: null,
+      gift_cards: { code: "PRNT-2345-6789", expires_on: null },
+    };
+    data.purchases = [order];
+    wrap(<GiftCardsPage />);
+    fireEvent.click(await screen.findByText("Hessa"));
+    expect(await screen.findAllByText("Print the card")).not.toHaveLength(0);
+    expect(screen.getByText("Adliya, block 338, road 3803, house 12")).toBeInTheDocument();
+    // The buyer paid the card's value and the fee; the card holds the value.
+    expect(screen.getByText("BHD 27.500")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Printed" }));
+    await waitFor(() => expect(data.setGiftCardPrintStep).toHaveBeenCalledWith("pu5", "printed"));
   });
 
   it("shows the offer's settings only to staff who may change settings", async () => {

@@ -185,6 +185,14 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
     ar: "لم يُدفع هذا الشراء بعد.",
     en: "This purchase is not paid yet.",
   },
+  PURCHASE_NOT_PRINTED_BY_STORE: {
+    ar: "لم يطلب المشتري طباعة هذه البطاقة.",
+    en: "The buyer did not ask for this card to be printed.",
+  },
+  GIFT_CARD_PRINT_FEE_INVALID: {
+    ar: "رسوم الطباعة من 0 إلى 1000.",
+    en: "The printing fee is from 0 to 1000.",
+  },
   PURCHASE_NOT_FOUND: { ar: "لم يُعثر على الشراء.", en: "The purchase was not found." },
   FORBIDDEN: {
     ar: "لا تملك صلاحية إدارة الطلبات.",

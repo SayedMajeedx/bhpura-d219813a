@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeSupabase } from "./helpers/server-fn";
-import { judgeGiftCardCharge, tapCustomer } from "../src/lib/payments/gift-card-charge";
+import {
+  judgeGiftCardCharge,
+  purchaseTotal,
+  tapCustomer,
+} from "../src/lib/payments/gift-card-charge";
 
 // A gift card bought online and paid by card (step four): the charge route starts a Tap charge
 // for the purchase's own amount, and the redirect and the webhook check the charge with Tap
@@ -153,6 +157,23 @@ describe("starting the card payment", () => {
         values: { gateway_reference: "chg_new" },
       }),
     ]);
+  });
+
+  it("charges a card the store prints at its value plus the printing fee", async () => {
+    expect(purchaseTotal({ amount: 25, print_fee: 2.5 })).toBe(27.5);
+    expect(purchaseTotal({ amount: "50.000", print_fee: null })).toBe(50);
+    server(purchaseRow({ gateway_reference: null, amount: 25, print_fee: 2.5 }));
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ id: "chg_new", transaction: { url: "https://tap.test/pay" } }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await start({ purchaseId: PURCHASE, brandId: BRAND, token: TOKEN });
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body)).amount).toBe(27.5);
   });
 
   it("refuses another site, a purchase not found, and one already paid", async () => {

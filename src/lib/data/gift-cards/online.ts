@@ -16,6 +16,9 @@ export type GiftCardOffer = {
   validMonths: number | null;
   card: boolean;
   benefit: boolean;
+  /** The store prints the card and delivers it, for its own fee (migration 20261124100000). */
+  print: boolean;
+  printFee: number;
 };
 
 export function readOffer(raw: unknown): GiftCardOffer | null {
@@ -32,6 +35,8 @@ export function readOffer(raw: unknown): GiftCardOffer | null {
     validMonths: offer.valid_months == null ? null : Number(offer.valid_months),
     card: offer.card === true,
     benefit: offer.benefit === true,
+    print: offer.print === true,
+    printFee: Math.max(0, Number(offer.print_fee) || 0),
   };
 }
 
@@ -53,12 +58,14 @@ export type GiftCardPurchase = Omit<Tables<"gift_card_purchases">, "token"> & {
 };
 
 export const PURCHASE_SELECT =
-  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, gift_cards(code, expires_on, balance, status)";
+  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, total_due, gift_cards(code, expires_on, balance, status)";
 
 export async function fetchGiftCardSettings(brandId: string): Promise<GiftCardSettings | null> {
   const { data, error } = await supabase
     .from("gift_card_settings")
-    .select("brand_id, sell_online, amounts, valid_months, updated_at, updated_by")
+    .select(
+      "brand_id, sell_online, amounts, valid_months, print_enabled, print_fee, updated_at, updated_by",
+    )
     .eq("brand_id", brandId)
     .maybeSingle();
   if (error) throw error;
@@ -156,6 +163,26 @@ export async function saveGiftCardSettings(
   });
   if (error) throw error;
   return data;
+}
+
+/** Whether the store prints cards bought online, and its fee for printing and delivering one. */
+export async function saveGiftCardPrint(brandId: string, input: { enabled: boolean; fee: number }) {
+  const { data, error } = await supabase.rpc("set_gift_card_print", {
+    p_brand_id: brandId,
+    p_enabled: input.enabled,
+    p_fee: input.fee,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** A card the store prints: on paper now, or delivered to its address (delivered is printed too). */
+export async function setGiftCardPrintStep(purchaseId: string, step: "printed" | "delivered") {
+  const { error } = await supabase.rpc("set_gift_card_print_step", {
+    p_purchase_id: purchaseId,
+    p_step: step,
+  });
+  if (error) throw error;
 }
 
 export async function approveGiftCardPurchase(purchaseId: string) {

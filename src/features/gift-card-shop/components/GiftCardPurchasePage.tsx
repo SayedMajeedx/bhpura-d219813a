@@ -1,12 +1,12 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, Clock, Copy, Gift, MessageCircle, XCircle } from "lucide-react";
+import { Check, Clock, Copy, Gift, MessageCircle, Printer, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { storeAddress } from "@/lib/platform-host";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
-import { deliveryLine, purchaseState, recipientMessage } from "../lib/gift-card-shop";
+import { deliveryLine, printLine, purchaseState, recipientMessage } from "../lib/gift-card-shop";
 import { GiftCardPreview } from "@/features/gift-card-design/components/GiftCardPreview";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
 import { readDesign } from "@/features/gift-card-design/lib/design";
@@ -54,6 +54,9 @@ export function GiftCardPurchasePage({
   }
 
   const money = formatPrice(view.amount, view.currency, lang);
+  // What the buyer pays: the card's value, plus the store's fee when it prints the card.
+  const due = formatPrice(view.total, view.currency, lang);
+  const printed = printLine(view, lang);
   const state = purchaseState(view, paymentFailed);
   const design = readDesign(view.design, lang);
   const details = {
@@ -162,6 +165,7 @@ export function GiftCardPurchasePage({
             </a>
           </Button>
         </div>
+        {printed && <PrintNote text={printed} />}
         <p className="text-center text-xs text-muted-foreground">
           {deliveryLine(view, lang)}{" "}
           {t("الرمز يُكتب عند الدفع في المتجر.", "The code is typed at the store's checkout.")}
@@ -187,11 +191,12 @@ export function GiftCardPurchasePage({
           <h1 className="font-display text-2xl">{t("وصلنا طلبك", "We have your request")}</h1>
           <p className="text-sm text-muted-foreground">
             {t(
-              `يتحقق المتجر من تحويل ${money}، ثم يظهر رمز البطاقة هنا.`,
-              `The store is checking your ${money} transfer; the card's code then shows here.`,
+              `يتحقق المتجر من تحويل ${due}، ثم يظهر رمز البطاقة هنا.`,
+              `The store is checking your ${due} transfer; the card's code then shows here.`,
             )}
           </p>
           <p className="text-sm text-muted-foreground">{deliveryLine(view, lang)}</p>
+          {printed && <PrintNote text={printed} />}
           <KeepLink t={t} />
         </>
       ) : state === "over" ? (
@@ -213,7 +218,7 @@ export function GiftCardPurchasePage({
               : t("لم يكتمل الدفع بعد", "The payment is not finished yet")}
           </h1>
           <Button type="button" className="min-h-11" onClick={retry} disabled={retrying}>
-            {t(`ادفع ${money}`, `Pay ${money}`)}
+            {t(`ادفع ${due}`, `Pay ${due}`)}
           </Button>
         </>
       )}
@@ -225,6 +230,16 @@ export function GiftCardPurchasePage({
         {t("العودة إلى المتجر", "Back to the store")}
       </Link>
     </div>
+  );
+}
+
+/** The card the store prints: where it is going, or that it is on its way or arrived. */
+function PrintNote({ text }: { text: string }) {
+  return (
+    <p className="flex items-start justify-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm break-words">
+      <Printer className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+      <span dir="auto">{text}</span>
+    </p>
   );
 }
 

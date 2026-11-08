@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
   judgeGiftCardCharge,
+  purchaseTotal,
   type ChargeVerdict,
   type GiftCardCharge,
 } from "@/lib/payments/gift-card-charge";
@@ -24,6 +25,8 @@ export type PurchaseRow = {
   id: string;
   brand_id: string;
   amount: number;
+  /** The store's fee for printing and delivering the card (0 for a digital card). */
+  print_fee: number;
   currency: string;
   status: string;
   payment_method: string;
@@ -32,7 +35,7 @@ export type PurchaseRow = {
 };
 
 export const PURCHASE_COLUMNS =
-  "id, brand_id, amount, currency, status, payment_method, gateway_reference, token";
+  "id, brand_id, amount, print_fee, currency, status, payment_method, gateway_reference, token";
 
 export async function tapKey(admin: Admin, brandId: string): Promise<string | null> {
   const { data, error } = await (admin.rpc as unknown as Rpc)("get_integration_credential_secret", {
@@ -123,7 +126,7 @@ export async function settleGiftCardCharge(
   const verdict = judgeGiftCardCharge(charge, {
     id: purchase.id,
     brandId: purchase.brand_id,
-    amount: Number(purchase.amount),
+    amount: purchaseTotal(purchase),
     currency: purchase.currency,
   });
   if (verdict === "paid" && purchase.status !== "paid") {

@@ -13,8 +13,9 @@ import type { CardKit } from "../hooks/use-card-kit";
 
 /**
  * Keeping a card: its two faces as pictures (to send on WhatsApp, shared from a phone or saved),
- * or printed: on one side of A4 to fold, glue and cut (any printer), on A6 paper, or on A4 at its
- * true size with cut marks.
+ * and, for the store's staff only (`printing`), printed: on one side of A4 to fold, glue and cut
+ * (any printer), on A6 paper, or on A4 at its true size with cut marks. A buyer never prints a
+ * card: the store prints it and delivers it (the owner's decision of 2026-11-08).
  */
 export function CardKeepActions({
   kit,
@@ -23,6 +24,7 @@ export function CardKeepActions({
   primary,
   lang,
   fileName = "gift-card",
+  printing = false,
 }: {
   kit: CardKit;
   design: CardDesign;
@@ -30,6 +32,8 @@ export function CardKeepActions({
   primary: "ar" | "en";
   lang: "ar" | "en";
   fileName?: string;
+  /** The store's staff print the card; a buyer only saves its picture. */
+  printing?: boolean;
 }) {
   const isAr = lang === "ar";
   const [saving, setSaving] = useState(false);
@@ -74,8 +78,8 @@ export function CardKeepActions({
     } catch {
       toast.error(
         isAr
-          ? "تعذّر حفظ صورة البطاقة. جرّب الطباعة بدلًا منها."
-          : "The card's picture could not be saved. Try printing it instead.",
+          ? "تعذّر حفظ صورة البطاقة. حاول مرة أخرى."
+          : "The card's picture could not be saved. Try again.",
       );
     } finally {
       setSaving(false);
@@ -122,42 +126,48 @@ export function CardKeepActions({
           )}
           {isAr ? "حفظ صورة البطاقة" : "Save the card"}
         </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => print("fold")}
-        >
-          <Printer className="size-4" aria-hidden="true" />
-          {isAr ? "طباعة للطي واللصق" : "Print to fold and glue"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => print("a6")}
-        >
-          <Printer className="size-4" aria-hidden="true" />
-          {isAr ? "طباعة على ورق A6" : "Print on A6"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-1.5"
-          onClick={() => print("a4")}
-        >
-          <Printer className="size-4" aria-hidden="true" />
-          {isAr ? "طباعة على A4 للقص" : "Print on A4 to cut out"}
-        </Button>
+        {printing && (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => print("fold")}
+            >
+              <Printer className="size-4" aria-hidden="true" />
+              {isAr ? "طباعة للطي واللصق" : "Print to fold and glue"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => print("a6")}
+            >
+              <Printer className="size-4" aria-hidden="true" />
+              {isAr ? "طباعة على ورق A6" : "Print on A6"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => print("a4")}
+            >
+              <Printer className="size-4" aria-hidden="true" />
+              {isAr ? "طباعة على A4 للقص" : "Print on A4 to cut out"}
+            </Button>
+          </>
+        )}
       </div>
-      <p className="text-center text-xs text-muted-foreground">
-        {isAr
-          ? "لأي طابعة: وجه واحد من A4 يُطوى ويُلصق ويُقص، فتطلع بطاقة بوجهين. التصاميم البيضاء والبيج أوضح على الطابعات المنزلية."
-          : "For any printer: one side of A4, folded, glued and cut into a two-sided card. White and nude designs print cleanest at home."}
-      </p>
+      {printing && (
+        <p className="text-center text-xs text-muted-foreground">
+          {isAr
+            ? "لأي طابعة: وجه واحد من A4 يُطوى ويُلصق ويُقص، فتطلع بطاقة بوجهين. التصاميم البيضاء والبيج أوضح على الطابعات المنزلية."
+            : "For any printer: one side of A4, folded, glued and cut into a two-sided card. White and nude designs print cleanest at home."}
+        </p>
+      )}
     </div>
   );
 }
