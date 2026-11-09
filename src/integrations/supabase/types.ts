@@ -7335,6 +7335,7 @@ export type Database = {
           po_id: string;
           recorded_by: string | null;
           request_id: string;
+          supplier_payment_id: string;
           void_reason: string | null;
           voided_at: string | null;
           voided_by: string | null;
@@ -7349,6 +7350,7 @@ export type Database = {
           po_id: string;
           recorded_by?: string | null;
           request_id: string;
+          supplier_payment_id: string;
           void_reason?: string | null;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -7363,6 +7365,7 @@ export type Database = {
           po_id?: string;
           recorded_by?: string | null;
           request_id?: string;
+          supplier_payment_id?: string;
           void_reason?: string | null;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -7380,6 +7383,13 @@ export type Database = {
             columns: ["po_id"];
             isOneToOne: false;
             referencedRelation: "purchase_orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_order_payments_supplier_payment_id_fkey";
+            columns: ["supplier_payment_id"];
+            isOneToOne: false;
+            referencedRelation: "supplier_payments";
             referencedColumns: ["id"];
           },
         ];
@@ -9018,6 +9028,72 @@ export type Database = {
             columns: ["category_id"];
             isOneToOne: false;
             referencedRelation: "categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      supplier_payments: {
+        Row: {
+          amount: number;
+          brand_id: string;
+          created_at: string;
+          id: string;
+          method: string | null;
+          note: string | null;
+          paid_on: string;
+          recorded_by: string | null;
+          reference: string | null;
+          request_id: string;
+          vendor_id: string;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+        };
+        Insert: {
+          amount: number;
+          brand_id: string;
+          created_at?: string;
+          id?: string;
+          method?: string | null;
+          note?: string | null;
+          paid_on?: string;
+          recorded_by?: string | null;
+          reference?: string | null;
+          request_id: string;
+          vendor_id: string;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Update: {
+          amount?: number;
+          brand_id?: string;
+          created_at?: string;
+          id?: string;
+          method?: string | null;
+          note?: string | null;
+          paid_on?: string;
+          recorded_by?: string | null;
+          reference?: string | null;
+          request_id?: string;
+          vendor_id?: string;
+          void_reason?: string | null;
+          voided_at?: string | null;
+          voided_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "supplier_payments_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "supplier_payments_vendor_id_fkey";
+            columns: ["vendor_id"];
+            isOneToOne: false;
+            referencedRelation: "vendors";
             referencedColumns: ["id"];
           },
         ];
@@ -11728,6 +11804,19 @@ export type Database = {
             };
             Returns: undefined;
           };
+      record_supplier_account_payment: {
+        Args: {
+          p_allocations: Json;
+          p_amount: number;
+          p_method: string;
+          p_note: string;
+          p_paid_on: string;
+          p_reference: string;
+          p_request_id: string;
+          p_vendor_id: string;
+        };
+        Returns: string;
+      };
       record_supplier_payment: {
         Args: {
           p_amount: number;
@@ -12687,6 +12776,23 @@ export type Database = {
         };
         Returns: string;
       };
+      supplier_account_rebalance: {
+        Args: { p_vendor_id: string };
+        Returns: undefined;
+      };
+      supplier_payment_record_internal: {
+        Args: {
+          p_allocations: Json;
+          p_amount: number;
+          p_method: string;
+          p_note: string;
+          p_paid_on: string;
+          p_reference: string;
+          p_request_id: string;
+          p_vendor_id: string;
+        };
+        Returns: string;
+      };
       sync_incubator_inventory_prices: {
         Args: { p_incubator_id?: string };
         Returns: number;
@@ -12804,6 +12910,10 @@ export type Database = {
         };
       };
       void_incubator_payment: {
+        Args: { p_payment_id: string; p_reason: string };
+        Returns: undefined;
+      };
+      void_supplier_account_payment: {
         Args: { p_payment_id: string; p_reason: string };
         Returns: undefined;
       };

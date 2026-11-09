@@ -13,69 +13,15 @@ import type {
  * `purchase_order_payments` naming it. Recorded and taken back by the database, which spreads
  * each payment and keeps the rest as the supplier's credit. Staff who see the store's finances
  * only (the row policies and the functions' own checks).
- *
- * `supplier_payments` and the two functions are not in the generated types until they are
- * regenerated after the migration is applied, so this file names their shapes itself.
  */
-
-type Row = {
-  id: string;
-  vendor_id: string;
-  amount: number | string;
-  paid_on: string;
-  method: PaymentMethod | null;
-  reference: string | null;
-  note: string | null;
-  created_at: string;
-  voided_at: string | null;
-  void_reason: string | null;
-  purchase_order_payments:
-    | {
-        po_id: string;
-        amount: number | string;
-        voided_at: string | null;
-        purchase_orders: { po_number: string } | null;
-      }[]
-    | null;
-};
-
-type Untyped = {
-  from: (table: string) => {
-    select: (
-      columns: string,
-      options: { count: "exact" },
-    ) => {
-      eq: (
-        column: string,
-        value: string,
-      ) => {
-        order: (column: string) => {
-          order: (column: string) => {
-            order: (column: string) => {
-              range: (
-                from: number,
-                to: number,
-              ) => PromiseLike<{ data: Row[] | null; error: unknown; count: number | null }>;
-            };
-          };
-        };
-      };
-    };
-  };
-  rpc: (
-    name: string,
-    args: Record<string, unknown>,
-  ) => PromiseLike<{ data: unknown; error: unknown }>;
-};
-const db = supabase as unknown as Untyped;
 
 const PAYMENT_COLUMNS =
   "id, vendor_id, amount, paid_on, method, reference, note, created_at, voided_at, void_reason, purchase_order_payments(po_id, amount, voided_at, purchase_orders(po_number))";
 
 /** Every payment to the store's suppliers, the ones taken back included, oldest first. */
 export async function fetchSupplierAccountPayments(brandId: string): Promise<AccountPayment[]> {
-  const rows = await readAll<Row>((from, to) =>
-    db
+  const rows = await readAll((from, to) =>
+    supabase
       .from("supplier_payments")
       .select(PAYMENT_COLUMNS, { count: "exact" })
       .eq("brand_id", brandId)
@@ -89,7 +35,7 @@ export async function fetchSupplierAccountPayments(brandId: string): Promise<Acc
     vendor_id: row.vendor_id,
     amount: Number(row.amount) || 0,
     paid_on: row.paid_on,
-    method: row.method,
+    method: (row.method as PaymentMethod | null) ?? null,
     reference: row.reference,
     note: row.note,
     created_at: row.created_at,
@@ -128,16 +74,15 @@ export async function recordSupplierAccountPayment(payment: {
   allocations: { poId: string; amount: number }[];
   requestId: string;
 }): Promise<string> {
-  const { data, error } = await db.rpc("record_supplier_account_payment", {
+  const { data, error } = await supabase.rpc("record_supplier_account_payment", {
     p_vendor_id: payment.vendorId,
     p_amount: payment.amount,
     p_paid_on: payment.paidOn,
     p_method: payment.method,
-    p_reference: payment.reference?.trim() || null,
-    p_note: payment.note?.trim() || null,
-    p_allocations: payment.allocations.length
-      ? payment.allocations.map((a) => ({ po_id: a.poId, amount: a.amount }))
-      : null,
+    // Empty text is kept as nothing, and no orders chosen means the oldest first.
+    p_reference: payment.reference?.trim() ?? "",
+    p_note: payment.note?.trim() ?? "",
+    p_allocations: payment.allocations.map((a) => ({ po_id: a.poId, amount: a.amount })),
     p_request_id: payment.requestId,
   });
   if (error) throw error;
@@ -146,7 +91,7 @@ export async function recordSupplierAccountPayment(payment: {
 
 /** Takes a whole payment back: it stays on record with the reason, and counts nowhere. */
 export async function voidSupplierAccountPayment(paymentId: string, reason: string) {
-  const { error } = await db.rpc("void_supplier_account_payment", {
+  const { error } = await supabase.rpc("void_supplier_account_payment", {
     p_payment_id: paymentId,
     p_reason: reason.trim(),
   });
