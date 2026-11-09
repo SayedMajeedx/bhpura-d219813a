@@ -45,29 +45,34 @@ export type SupplierBalance = {
   name: string;
   phone: string | null;
   owed: number;
+  /** What the store's payments hold with them beyond their orders (spent on the next order). */
+  credit: number;
   openOrders: number;
   lateOrders: number;
 };
 
 /**
- * Each supplier the store owes money or awaits goods from, most owed first. A draft is not an
- * order yet and counts for nothing.
+ * Each supplier the store owes money or awaits goods from, or holds credit with, most owed
+ * first. A draft is not an order yet and counts for nothing.
  */
 export function supplierBalances(
   orders: readonly SupplierOrder[],
   today: string,
+  credits: ReadonlyMap<string, number> = new Map(),
 ): SupplierBalance[] {
   const map = new Map<string, SupplierBalance>();
   for (const order of orders) {
     if (order.status === "draft") continue;
     const owed = paymentOf(order).owed;
     const open = isOpen(order);
-    if (owed === 0 && !open) continue;
+    const credit = credits.get(order.vendor_id) ?? 0;
+    if (owed === 0 && !open && credit === 0) continue;
     const row = map.get(order.vendor_id) ?? {
       vendorId: order.vendor_id,
       name: order.vendor_name,
       phone: order.vendor_phone,
       owed: 0,
+      credit,
       openOrders: 0,
       lateOrders: 0,
     };
@@ -77,7 +82,11 @@ export function supplierBalances(
     map.set(order.vendor_id, row);
   }
   return [...map.values()].sort(
-    (a, b) => b.owed - a.owed || b.lateOrders - a.lateOrders || a.name.localeCompare(b.name),
+    (a, b) =>
+      b.owed - a.owed ||
+      b.credit - a.credit ||
+      b.lateOrders - a.lateOrders ||
+      a.name.localeCompare(b.name),
   );
 }
 

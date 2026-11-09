@@ -15,16 +15,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDate, formatMoney } from "@/lib/format";
+import { invalidateSupplierOrders } from "@/lib/data/supplier-orders";
 import {
-  invalidateSupplierOrders,
-  supplierOrderQueries,
-  voidSupplierPayment,
-  type SupplierPayment,
-} from "@/lib/data/supplier-orders";
+  supplierAccountQueries,
+  voidSupplierAccountPayment,
+} from "@/lib/data/supplier-orders/account";
 import { paymentOf, type SupplierOrder } from "../lib/order-state";
+import { methodLabel, paymentsOnOrder, type AccountPayment } from "../lib/supplier-account";
 import { supplierOrderError } from "../lib/errors";
 
-/** What was paid to the supplier for an order, one payment a line; a payment can be taken back. */
+/**
+ * What was paid to the supplier on this order: each payment with its day, how it was paid and
+ * its reference, what it put on this order and the other orders it paid. A payment is taken back
+ * whole (it may have paid other orders too, and the dialog says which).
+ */
 export function PaymentsCard({
   brandId,
   order,
@@ -40,9 +44,11 @@ export function PaymentsCard({
   const uid = useId();
   const qc = useQueryClient();
   const pay = paymentOf(order);
-  const paymentsQ = useQuery(supplierOrderQueries.payments(brandId, order.id));
-  const payments = paymentsQ.data ?? [];
-  const [undoing, setUndoing] = useState<SupplierPayment | null>(null);
+  const paymentsQ = useQuery(supplierAccountQueries.payments(brandId));
+  const rows = paymentsOnOrder(paymentsQ.data ?? [], order.id);
+  const [undoing, setUndoing] = useState<{ payment: AccountPayment; others: string[] } | null>(
+    null,
+  );
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const money = (n: number) => formatMoney(n, currency, lang);
@@ -52,7 +58,7 @@ export function PaymentsCard({
     if (!undoing || !reason.trim()) return;
     setBusy(true);
     try {
-      await voidSupplierPayment(undoing.id, reason);
+      await voidSupplierAccountPayment(undoing.payment.id, reason);
       await invalidateSupplierOrders(qc, brandId);
       toast.success(isAr ? "أُلغيت الدفعة" : "Payment taken back");
       setUndoing(null);
@@ -88,33 +94,37 @@ export function PaymentsCard({
           </dd>
         </div>
       </dl>
-      {pay.credit > 0 && (
-        <p className="rounded-lg bg-warning-subtle p-2 text-xs text-warning">
-          {isAr
-            ? `دفعت ${money(pay.credit)} أكثر من قيمة الطلبية: هذا المبلغ لك عند المورد.`
-            : `You paid ${money(pay.credit)} more than the order's value: the supplier holds it for you.`}
-        </p>
-      )}
 
-      {payments.length > 0 && (
+      {rows.length > 0 && (
         <ul className="divide-y divide-border-subtle border-t border-border-subtle text-sm">
-          {payments.map((payment) => {
+          {rows.map(({ payment, here, others }) => {
             const voided = Boolean(payment.voided_at);
             return (
               <li key={payment.id} className="flex min-w-0 items-center gap-3 py-2">
                 <div className="min-w-0 flex-1">
                   <p className={voided ? "text-muted-foreground line-through" : "font-semibold"}>
-                    <span className="tabular-nums">{money(payment.amount)}</span>
+                    <span className="tabular-nums">{money(here)}</span>
                     <span className="ms-2 text-xs font-normal text-muted-foreground">
-                      {formatDate(payment.paid_on, locale)}
+                      {formatDate(payment.paid_on, locale)} · {methodLabel(payment.method, lang)}
                     </span>
                   </p>
-                  {payment.note && (
+                  {here !== payment.amount && (
+                    <p className="text-xs text-muted-foreground">
+                      {isAr
+                        ? `من دفعة ${money(payment.amount)}`
+                        : `Of a payment of ${money(payment.amount)}`}
+                      {others.length > 0 &&
+                        (isAr
+                          ? ` دفعت أيضاً ${others.join("، ")}`
+                          : `, which also paid ${others.join(", ")}`)}
+                    </p>
+                  )}
+                  {(payment.reference || payment.note) && (
                     <p
                       dir="auto"
                       className="text-page-start break-words text-xs text-muted-foreground"
                     >
-                      {payment.note}
+                      {[payment.reference, payment.note].filter(Boolean).join(" · ")}
                     </p>
                   )}
                   {voided && (
@@ -132,7 +142,7 @@ export function PaymentsCard({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setUndoing(payment)}
+                    onClick={() => setUndoing({ payment, others })}
                     className="shrink-0 gap-1 text-muted-foreground"
                     aria-label={
                       isAr
@@ -153,11 +163,19 @@ export function PaymentsCard({
       <Dialog open={undoing !== null} onOpenChange={(next) => !next && setUndoing(null)}>
         <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-sm gap-3">
           <DialogHeader>
-            <DialogTitle>{isAr ? "إلغاء الدفعة؟" : "Take this payment back?"}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle>
               {isAr
-                ? "تبقى في السجل مع السبب، ولا تُحسب من المدفوع."
-                : "It stays on record with the reason, and no longer counts as paid."}
+                ? `إلغاء دفعة ${undoing ? money(undoing.payment.amount) : ""}؟`
+                : `Take back the payment of ${undoing ? money(undoing.payment.amount) : ""}?`}
+            </DialogTitle>
+            <DialogDescription>
+              {undoing && undoing.others.length > 0
+                ? isAr
+                  ? `هذه الدفعة دفعت أيضاً ${undoing.others.join("، ")}، فتُلغى منها كلها. تبقى في السجل مع السبب، ولا تُحسب من المدفوع.`
+                  : `This payment also paid ${undoing.others.join(", ")}, so it is taken back from all of them. It stays on record with the reason, and no longer counts as paid.`
+                : isAr
+                  ? "تبقى في السجل مع السبب، ولا تُحسب من المدفوع."
+                  : "It stays on record with the reason, and no longer counts as paid."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">
@@ -167,9 +185,7 @@ export function PaymentsCard({
               value={reason}
               maxLength={300}
               onChange={(e) => setReason(e.target.value)}
-              placeholder={
-                isAr ? "مثال: سُجّلت على الطلبية الخطأ" : "e.g. Recorded on the wrong order"
-              }
+              placeholder={isAr ? "مثال: المبلغ خطأ" : "e.g. Wrong amount"}
               autoFocus
             />
           </div>

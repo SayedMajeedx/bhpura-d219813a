@@ -15,6 +15,8 @@ import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { supplierOrderQueries } from "@/lib/data/supplier-orders";
+import { supplierAccountQueries } from "@/lib/data/supplier-orders/account";
+import { supplierCredits } from "../lib/supplier-account";
 import {
   localToday,
   ordersLabel,
@@ -71,7 +73,12 @@ export function SupplierOrdersPage() {
         : sortOrders(ordersInTab(orders, tab), today),
     [orders, tab, today],
   );
-  const balances = useMemo(() => supplierBalances(orders, today), [orders, today]);
+  const paymentsQ = useQuery(supplierAccountQueries.payments(brand.id));
+  const payments = useMemo(() => paymentsQ.data ?? [], [paymentsQ.data]);
+  const balances = useMemo(
+    () => supplierBalances(orders, today, supplierCredits(payments)),
+    [orders, today, payments],
+  );
 
   const tabs: Array<{ id: PageTab; label: string; count: number }> = [
     {
@@ -213,7 +220,14 @@ export function SupplierOrdersPage() {
               lang={lang}
             />
           ) : tab === "suppliers" ? (
-            <SupplierBalancesList balances={balances} currency={currency} lang={lang} />
+            <SupplierBalancesList
+              brandId={brand.id}
+              orders={orders}
+              payments={payments}
+              today={today}
+              currency={currency}
+              lang={lang}
+            />
           ) : shown.length === 0 ? (
             <Card className="p-6 text-center text-sm text-muted-foreground">
               {tab === "open"

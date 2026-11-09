@@ -1,4 +1,5 @@
 import { moneyFractionDigits } from "@/lib/format";
+import { methodLabel, type PaymentMethod } from "@/features/supplier-orders/lib/supplier-account";
 import type { ComposedOverviewRow } from "@/lib/reporting-compose";
 import { giftCardSheet, type GiftCardReport } from "./gift-card-report";
 import { productMargins, marginsSheet, type MarginRow } from "./margins";
@@ -465,21 +466,30 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
   const suppliersSheet: XSheet = {
     name: w(PACK_SHEETS.suppliers),
     rtl: isAr,
-    widths: [12, 14, 26, 14, 34],
+    widths: [12, 22, 26, 14, 16, 18, 34],
     rows: [
       ...top(PACK_SHEETS.suppliers),
       [
         head(isAr ? "التاريخ" : "Date"),
-        head(isAr ? "الطلبية" : "Order"),
+        head(isAr ? "الطلبيات المدفوعة" : "Orders paid"),
         head(isAr ? "المورد" : "Supplier"),
         head(isAr ? "المدفوع" : "Paid"),
+        head(isAr ? "الطريقة" : "Method"),
+        head(isAr ? "المرجع" : "Reference"),
         head(isAr ? "ملاحظة" : "Note"),
       ],
+      // One row a payment: a payment covering several orders names them, and one that is still
+      // the supplier's credit names none.
       ...input.detail.supplier_payments.map((r): XCell[] => [
         day(r.paid_on),
-        { value: str(r.po_number), text: true },
+        {
+          value: str(r.po_number) || (isAr ? "رصيد عند المورد" : "Credit with the supplier"),
+          text: true,
+        },
         { value: str(r.supplier) },
         m(r.amount),
+        { value: methodLabel((str(r.method) as PaymentMethod | null) ?? null, isAr ? "ar" : "en") },
+        { value: str(r.reference), text: true },
         { value: str(r.note) },
       ]),
       [],
