@@ -9,6 +9,7 @@ import {
   orderReference,
   orderStep,
   orderTimeline,
+  orderTotal,
   ordersInFilter,
   pageViewSearch,
   readPageView,
@@ -49,6 +50,36 @@ describe("what an order needs", () => {
     expect(orderStep(whatsapp("b"))).toBe("send_code");
     expect(orderStep(order("c"))).toBeNull();
     expect(orderStep(order("d", { code_sent_at: "x", delivery_channel: "whatsapp" }))).toBeNull();
+  });
+
+  it("asks to print a paid card the store prints, then to deliver it, then nothing", () => {
+    const printed = (over: Partial<GiftCardPurchase> = {}) =>
+      order("p", {
+        amount: 25,
+        print_by_store: true,
+        print_fee: 2.5,
+        printed_at: null,
+        print_delivered_at: null,
+        ...over,
+      } as Partial<GiftCardPurchase>);
+    expect(orderStep(printed())).toBe("print_card");
+    expect(orderStep(printed({ printed_at: "2026-11-02T09:00:00Z" }))).toBe("deliver_card");
+    expect(
+      orderStep(
+        printed({ printed_at: "2026-11-02T09:00:00Z", print_delivered_at: "2026-11-02T15:00:00Z" }),
+      ),
+    ).toBeNull();
+    // Not before it is paid, and a code to send on WhatsApp comes first.
+    expect(orderStep(printed({ status: "pending", payment_method: "card" }))).toBeNull();
+    expect(orderStep(printed({ delivery_channel: "whatsapp" }))).toBe("send_code");
+    expect(orderGroup(printed())).toBe("todo");
+    expect(orderTotal(printed())).toBe(27.5);
+    expect(orderTotal(order("q", { amount: 50 }))).toBe(50);
+    expect(
+      orderTimeline(
+        printed({ printed_at: "2026-11-02T09:00:00Z", print_delivered_at: "2026-11-02T15:00:00Z" }),
+      ).map((m) => m.key),
+    ).toEqual(["placed", "paid", "printed", "delivered"]);
   });
 
   it("puts each order in one group", () => {

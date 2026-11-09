@@ -48,6 +48,7 @@ describe("the report overview", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect([...calls].sort()).toEqual(
       [
+        "rpc_reporting_gift_card_services",
         "rpc_reporting_incubator_sales",
         "rpc_reporting_order_cogs",
         "rpc_reporting_overview",

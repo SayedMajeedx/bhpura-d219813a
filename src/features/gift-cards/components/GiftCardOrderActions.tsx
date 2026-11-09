@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageCircle, Receipt } from "lucide-react";
+import { Check, MessageCircle, Receipt, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,10 +15,13 @@ import {
   cancelGiftCardPurchase,
   invalidateGiftCardOnline,
   markGiftCardPurchaseSent,
+  setGiftCardPrintStep,
   type GiftCardPurchase,
 } from "@/lib/data/gift-cards";
 import { getGiftCardPurchaseReceiptUrl } from "@/lib/gift-card-purchase.functions";
 import { giftCardError, giftCardMessage } from "../lib/gift-cards";
+import { orderTotal, printStep } from "../lib/card-orders";
+import { PrintOrderCardButton } from "./PrintCardDialog";
 
 /** The code of a paid order sent by a person on WhatsApp, in the buyer's language. */
 export function SendCodeButton({
@@ -83,6 +86,73 @@ export function SendCodeButton({
   );
 }
 
+/**
+ * A paid card the store prints: print it (on the design the buyer chose), then record it printed,
+ * then delivered. Recording asks nothing back: pressing again changes nothing.
+ */
+export function PrintStepActions({
+  purchase,
+  lang,
+}: {
+  purchase: GiftCardPurchase;
+  lang: "ar" | "en";
+}) {
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const brand = useBrand();
+  const [busy, setBusy] = useState(false);
+  const step = printStep(purchase);
+  if (!step) return null;
+  const record = async (next: "printed" | "delivered") => {
+    setBusy(true);
+    try {
+      await setGiftCardPrintStep(purchase.id, next);
+      await invalidateGiftCardOnline(qc, brand.id);
+      toast.success(
+        next === "printed"
+          ? isAr
+            ? "سُجّلت البطاقة مطبوعة"
+            : "Recorded as printed"
+          : isAr
+            ? "سُجّلت البطاقة واصلة"
+            : "Recorded as delivered",
+      );
+    } catch (error) {
+      toast.error(giftCardError(error, lang));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="flex flex-wrap gap-2">
+      <PrintOrderCardButton purchase={purchase} lang={lang} />
+      {step === "print_card" ? (
+        <Button
+          type="button"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => record("printed")}
+          disabled={busy}
+        >
+          <Check className="size-4" aria-hidden="true" />
+          {isAr ? "تمت الطباعة" : "Printed"}
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="sm"
+          className="gap-1.5"
+          onClick={() => record("delivered")}
+          disabled={busy}
+        >
+          <Truck className="size-4" aria-hidden="true" />
+          {isAr ? "تم التوصيل" : "Delivered"}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 /** A transfer's receipt, in a new tab: a short-lived private link, asked for when pressed. */
 export function ReceiptButton({
   purchase,
@@ -122,7 +192,8 @@ export function TransferActions({
   const [busy, setBusy] = useState(false);
   const [reason, setReason] = useState("");
   const [declining, setDeclining] = useState(false);
-  const amount = formatMoney(Number(purchase.amount), purchase.currency, lang);
+  // What the transfer should show: the card's value, plus the printing fee when the store prints it.
+  const amount = formatMoney(orderTotal(purchase), purchase.currency, lang);
 
   const approve = async () => {
     const ok = await confirmDialog({

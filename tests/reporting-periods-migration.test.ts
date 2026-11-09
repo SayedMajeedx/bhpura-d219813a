@@ -1,6 +1,12 @@
 import { PGlite } from "@electric-sql/pglite";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import migration from "../supabase/migrations/20261021150000_reporting_periods.sql?raw";
+import inSales from "../supabase/migrations/20261126100000_gift_card_print_fee_in_sales.sql?raw";
+
+/** The function as migration 20261126100000 redefines it (the rest of that file is gift cards'). */
+const periodsWithServices = inSales.slice(
+  inSales.indexOf("CREATE OR REPLACE FUNCTION public.rpc_reporting_periods("),
+);
 
 // The monthly statement's one request (migration 20261021150000): for each period it asks the
 // overview's own five report functions and returns their answers as they are, in order. The five
@@ -25,6 +31,8 @@ const STAND_INS = `
     RETURNS jsonb LANGUAGE sql AS $$
       SELECT jsonb_build_object('summary', jsonb_build_array(jsonb_build_object('fn','incubator','interval',i)),
                                 'timeseries', '[]'::jsonb) $$;
+  CREATE FUNCTION public.rpc_reporting_gift_card_services(a timestamptz, b timestamptz, s text)
+    RETURNS jsonb LANGUAGE sql AS $$ SELECT jsonb_build_array(jsonb_build_object('fn','services','from',a,'to',b,'slug',s)) $$;
 `;
 
 const periods = (list: Array<[string, string]>) =>
@@ -41,6 +49,26 @@ beforeAll(async () => {
   db = new PGlite();
   await db.exec(STAND_INS);
   await db.exec(migration);
+});
+
+describe("with gift card printing (migration 20261126100000)", () => {
+  it("also asks each period's printing sales, for the same bounds and store", async () => {
+    const fresh = new PGlite();
+    await fresh.exec(STAND_INS);
+    await fresh.exec(migration);
+    await fresh.exec(periodsWithServices);
+    const [period] = (
+      await fresh.query<{ r: Array<Record<string, unknown>> }>(
+        "SELECT public.rpc_reporting_periods($1::jsonb, 'Asia/Bahrain', false, 'pura') AS r",
+        [periods([["2026-11-01T00:00:00+03:00", "2026-11-30T23:59:59.999+03:00"]])],
+      )
+    ).rows[0].r;
+    const services = (period.services as Array<Record<string, unknown>>)[0];
+    expect(services).toMatchObject({ fn: "services", slug: "pura" });
+    expect(Date.parse(String(services.from))).toBe(Date.parse("2026-11-01T00:00:00+03:00"));
+    expect(period).toHaveProperty("overview");
+    expect(period).toHaveProperty("incubator_summary");
+  });
 });
 
 describe("several periods in one request", () => {

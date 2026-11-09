@@ -23,6 +23,19 @@ export function amountsFromText(text: string): { amounts: number[]; invalid: boo
 
 export const amountsText = (amounts: readonly number[]) => amounts.join(", ");
 
+/** The printing fee as typed ("2.5", "٢٫٥"): 0 to 1000 to the fils, or null when it is not one. */
+export function printFeeFromText(text: string): number | null {
+  const western = text
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[٫,]/g, ".");
+  if (western === "") return 0;
+  if (!/^\d+(\.\d+)?$/.test(western)) return null;
+  const fee = Number(western);
+  if (!Number.isFinite(fee) || fee < 0 || fee > 1000) return null;
+  return Math.round(fee * 1000) / 1000;
+}
+
 /** Transfers still waiting for the store to check them, the oldest first. */
 export function waitingTransfers(purchases: readonly GiftCardPurchase[]): GiftCardPurchase[] {
   return purchases

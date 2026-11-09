@@ -3,8 +3,18 @@
  * what a charge's answer means for its purchase. The charge route, the redirect and the webhook
  * all decide with these rules, so the amount charged, the amount checked and the card issued
  * always agree. A card is issued only for a charge Tap says was captured, for this purchase and
- * this store, of the purchase's own amount in its currency.
+ * this store, of what the purchase costs in its currency (its value plus the store's printing fee,
+ * `purchaseTotal`).
  */
+
+/** What a purchase costs the buyer: the card's value, plus the fee when the store prints it. */
+export function purchaseTotal(purchase: {
+  amount: number | string;
+  print_fee?: number | string | null;
+}): number {
+  const fee = Number(purchase.print_fee ?? 0);
+  return Math.round((Number(purchase.amount) + (Number.isFinite(fee) ? fee : 0)) * 1000) / 1000;
+}
 
 export type GiftCardCharge = {
   status?: string | null;

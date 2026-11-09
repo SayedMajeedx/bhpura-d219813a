@@ -6,6 +6,10 @@
  *
  * And the one reading of profit: net sales after returns, less the cost of goods after returns,
  * is gross profit; less running costs, payment fees and partner commissions, operating profit.
+ *
+ * Services the store sells outside an order count in its sales too: printing and delivering a
+ * gift card (`rpc_reporting_gift_card_services`, migration 20261126100000), net of its VAT, on the
+ * day it was paid. They have no cost of goods; their VAT joins what was collected.
  */
 
 type Row = Record<string, unknown>;
@@ -19,6 +23,8 @@ export type OverviewPieces = {
   cogs: unknown;
   fees: unknown;
   incubatorSummary: unknown;
+  /** Gift card printing and delivery, by currency (absent before migration 20261126100000). */
+  services?: unknown;
 };
 
 /** A period's figures, one row per currency the store sold in. */
@@ -48,6 +54,10 @@ export type ComposedOverviewRow = Row & {
   incubator_sales: number;
   incubator_receivables: number;
   incubator_collected: number;
+  /** Printing and delivering gift cards: net of VAT, its VAT, and how many. */
+  service_sales: number;
+  service_vat: number;
+  service_count: number;
   expenses: number;
 };
 
@@ -56,7 +66,8 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
   const incubatorRows = rows(pieces.incubatorSummary);
   const refundRows = rows(pieces.returns);
   const cogsRows = rows(pieces.cogs);
-  for (const extra of [incubatorRows, refundRows, cogsRows]) {
+  const serviceRows = rows(pieces.services);
+  for (const extra of [incubatorRows, refundRows, cogsRows, serviceRows]) {
     for (const row of extra) {
       if (!baseRows.some((base) => base.currency === row.currency)) {
         baseRows.push({ currency: row.currency });
@@ -67,6 +78,7 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
   const incubatorByCurrency = byCurrency(incubatorRows);
   const refundsByCurrency = byCurrency(refundRows);
   const cogsByCurrency = byCurrency(cogsRows);
+  const servicesByCurrency = byCurrency(serviceRows);
   const feesByCurrency = new Map(
     rows(pieces.fees).map((row) => [row.currency, num(row.processing_fees)]),
   );
@@ -76,16 +88,20 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
     const refunds = refundsByCurrency.get(row.currency) ?? {};
     const orderCogs = cogsByCurrency.get(row.currency) ?? {};
     const processingFees = feesByCurrency.get(row.currency) ?? 0;
+    const services = servicesByCurrency.get(row.currency) ?? {};
+    const serviceSales = num(services.service_sales);
+    const serviceGross = num(services.service_gross);
+    const serviceVat = num(services.service_vat);
     const manualExpenses = num(row.expenses);
     const incubatorCommissions = num(consignment.commission_amount);
-    const paidOrderValue = num(row.paid_order_value) + num(consignment.gross_amount);
-    const netMerchandise = num(row.net_merch_sales) + num(consignment.gross_amount);
+    const paidOrderValue = num(row.paid_order_value) + num(consignment.gross_amount) + serviceGross;
+    const netMerchandise = num(row.net_merch_sales) + num(consignment.gross_amount) + serviceSales;
     const storeCogs = num(orderCogs.known_cogs ?? row.known_cogs);
     return {
       ...row,
       currency: String(row.currency ?? ""),
       paid_order_value: paidOrderValue,
-      gross_merch_sales: num(row.gross_merch_sales) + num(consignment.gross_amount),
+      gross_merch_sales: num(row.gross_merch_sales) + num(consignment.gross_amount) + serviceSales,
       discounts: num(row.discounts),
       net_merch_sales: netMerchandise,
       refunded_total: num(refunds.refunded_total ?? row.refunded_total),
@@ -94,10 +110,10 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
       net_merchandise_after_returns: netMerchandise - num(refunds.merchandise_deduction),
       paid_order_count: num(row.paid_order_count) + num(consignment.sale_count),
       shipping_collected: num(row.shipping_collected),
-      vat_collected: num(row.vat_collected),
+      vat_collected: num(row.vat_collected) + serviceVat,
       // What was paid on the period's sales: by customers on store orders, by partners on theirs.
       // What partners still owe is incubator_receivables; owed_by_customers is store orders only.
-      collected: num(row.collected) + num(consignment.collected),
+      collected: num(row.collected) + num(consignment.collected) + serviceGross,
       owed_by_customers: num(row.owed_by_customers),
       product_cogs: num(orderCogs.product_cogs),
       packaging_cogs: num(orderCogs.packaging_cogs),
@@ -118,6 +134,9 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
       incubator_sales: num(consignment.gross_amount),
       incubator_receivables: num(consignment.receivables),
       incubator_collected: num(consignment.collected),
+      service_sales: serviceSales,
+      service_vat: serviceVat,
+      service_count: num(services.service_count),
       expenses: manualExpenses + processingFees + incubatorCommissions,
     };
   });

@@ -13,17 +13,20 @@ import { startGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { BenefitTransferDetails } from "@/features/checkout/components/BenefitTransferDetails";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
 import { DEFAULT_DESIGN, type CardDesign } from "@/features/gift-card-design/lib/design";
 import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
 import { useStorefrontCardKit } from "../hooks/use-storefront-card-kit";
+import { Choice } from "./BuyChoice";
+import { PrintSection } from "./PrintSection";
 import {
   buyMethods,
   buyProblems,
+  buyTotal,
   emptyBuyForm,
   purchaseFailure,
   validityLine,
+  wantsPrint,
   type BuyDelivery,
   type BuyForm,
   type BuyMethod,
@@ -32,8 +35,9 @@ import {
 /**
  * Buying a gift card: one of the store's amounts, who it is for and a line for them, who buys it,
  * and paying by card (to the gateway) or by BenefitPay transfer with its receipt. A card is money
- * the store holds: no VAT, no delivery, nothing to ship. Its code shows on the purchase's own
- * page once the payment is in.
+ * the store holds: no VAT. Its code shows on the purchase's own page once the payment is in.
+ * A card on paper is printed by the store and delivered, for the store's own fee on top of the
+ * card's value (never printed by the buyer: the owner's decision of 2026-11-08).
  */
 export function GiftCardShopPage() {
   const { brand, lang, t } = useStorefront();
@@ -91,6 +95,8 @@ function BuyForm({
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
   const problems = buyProblems({ ...form, hasReceipt: Boolean(receipt) }, offer);
+  const printing = wantsPrint(form, offer);
+  const total = buyTotal(form, offer);
   const money = (n: number) => formatPrice(n, offer.currency, lang);
   const set = (key: keyof BuyForm) => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
@@ -106,7 +112,10 @@ function BuyForm({
     }),
     [form.amount, form.recipient, form.message, offer.validMonths],
   );
-  const cardDesign = useMemo(() => ({ ...design, from: from.trim() || null }), [design, from]);
+  const cardDesign = useMemo(
+    () => ({ ...design, from: from.trim() || null, print: printing }),
+    [design, from, printing],
+  );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -130,6 +139,9 @@ function BuyForm({
             delivery: form.delivery,
             lang,
             design: cardDesign,
+            ...(printing
+              ? { print: { address: form.printAddress.trim(), phone: form.printPhone.trim() } }
+              : {}),
           },
           receiptId,
           // Signed in: the card is kept in the shopper's account too (the server checks it).
@@ -193,13 +205,6 @@ function BuyForm({
           primary={lang}
           lang={lang}
         />
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={design.print}
-            onCheckedChange={(checked) => setDesign((d) => ({ ...d, print: checked === true }))}
-          />
-          {t("سأطبعها أيضًا (على ورق A6 أو A4)", "I will print it too (on A6 or A4 paper)")}
-        </label>
       </section>
 
       <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
@@ -234,6 +239,17 @@ function BuyForm({
         )}
         {validity && <p className="text-xs text-muted-foreground">{validity}</p>}
       </section>
+
+      {offer.print && (
+        <PrintSection
+          form={form}
+          setForm={setForm}
+          fee={money(offer.printFee)}
+          freePrint={offer.printFee === 0}
+          problem={problem}
+          t={t}
+        />
+      )}
 
       <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
         <h2 className="text-sm font-semibold">{t("لمن البطاقة", "Who it is for")}</h2>
@@ -408,8 +424,8 @@ function BuyForm({
 
       <Button type="submit" className="min-h-12 w-full text-base" disabled={busy}>
         {busy && <Loader2 className="me-2 size-4 animate-spin" aria-hidden="true" />}
-        {form.amount !== null
-          ? t(`شراء البطاقة · ${money(form.amount)}`, `Buy the card · ${money(form.amount)}`)
+        {total !== null
+          ? t(`شراء البطاقة · ${money(total)}`, `Buy the card · ${money(total)}`)
           : t("شراء البطاقة", "Buy the card")}
       </Button>
       <p className="text-center text-xs text-muted-foreground">
@@ -422,42 +438,13 @@ function BuyForm({
               "يظهر رمز البطاقة فور إتمام الدفع، ويصلك كما اخترت.",
               "The card's code shows as soon as you pay, and reaches you as you chose.",
             )}
+        {printing &&
+          ` ${t(
+            "ويطبع المتجر البطاقة ويوصلها إلى العنوان الذي كتبته.",
+            "The store prints the card and delivers it to the address you wrote.",
+          )}`}
       </p>
     </form>
-  );
-}
-
-/** One choice of a row of choices (a payment method, how the code arrives). */
-function Choice({
-  icon: Icon,
-  label,
-  chosen,
-  onChoose,
-  centred = false,
-}: {
-  icon: typeof CreditCard;
-  label: string;
-  chosen: boolean;
-  onChoose: () => void;
-  centred?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      role="radio"
-      aria-checked={chosen}
-      onClick={onChoose}
-      className={cn(
-        "flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-medium transition-colors",
-        centred && "justify-center",
-        chosen
-          ? "border-primary bg-primary/10"
-          : "border-border bg-background hover:border-primary",
-      )}
-    >
-      <Icon className="size-4 shrink-0" aria-hidden="true" />
-      {label}
-    </button>
   );
 }
 

@@ -22,11 +22,18 @@ import {
   ORDER_STEP_WORDS,
   emailState,
   orderReference,
+  orderTotal,
   orderStep,
   orderTimeline,
   paymentWords,
 } from "../lib/card-orders";
-import { ReceiptButton, SendCodeButton, TransferActions } from "./GiftCardOrderActions";
+import {
+  PrintStepActions,
+  ReceiptButton,
+  SendCodeButton,
+  TransferActions,
+} from "./GiftCardOrderActions";
+import { PrintOrderCardButton } from "./PrintCardDialog";
 
 const when = (value: string, lang: "ar" | "en") =>
   new Date(value).toLocaleString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB", {
@@ -84,6 +91,8 @@ export function GiftCardOrderSheet({
   const card = purchase.gift_cards;
   const amount = formatMoney(Number(purchase.amount), purchase.currency, lang);
   const chat = whatsappChatUrl(purchase.buyer_phone);
+  const printChat = whatsappChatUrl(purchase.print_phone);
+  const fee = Number(purchase.print_fee ?? 0);
   const emailed = purchase.delivery_channel === "email";
   const emailNow = record.data
     ? EMAIL_STATE_WORDS[emailState(record.data.paidEmail, record.data.hasMailbox)][lang]
@@ -119,8 +128,10 @@ export function GiftCardOrderSheet({
                   {purchase.receipt_key && <ReceiptButton purchase={purchase} lang={lang} />}
                   <TransferActions purchase={purchase} lang={lang} />
                 </>
-              ) : (
+              ) : step === "send_code" ? (
                 <SendCodeButton purchase={purchase} lang={lang} />
+              ) : (
+                <PrintStepActions purchase={purchase} lang={lang} />
               )}
             </section>
           )}
@@ -194,6 +205,19 @@ export function GiftCardOrderSheet({
               {paymentWords(purchase.payment_method, lang)}
             </Row>
             <Row label={isAr ? "الحالة" : "Status"}>{purchaseWords(purchase)[lang]}</Row>
+            {purchase.print_by_store && (
+              <>
+                <Row label={isAr ? "قيمة البطاقة" : "Card value"}>{amount}</Row>
+                <Row label={isAr ? "الطباعة والتوصيل" : "Printing and delivery"}>
+                  {formatMoney(fee, purchase.currency, lang)}
+                </Row>
+                <Row label={isAr ? "المدفوع" : "Paid"}>
+                  <span className="font-semibold">
+                    {formatMoney(orderTotal(purchase), purchase.currency, lang)}
+                  </span>
+                </Row>
+              </>
+            )}
             {purchase.gateway_reference && (
               <Row label={isAr ? "مرجع الدفع" : "Payment reference"}>
                 <span className="font-mono text-xs" dir="ltr">
@@ -237,6 +261,59 @@ export function GiftCardOrderSheet({
               </div>
             )}
           </Block>
+
+          {purchase.print_by_store && (
+            <Block title={isAr ? "الطباعة والتوصيل" : "Printing and delivery"}>
+              <p className="text-sm break-words text-page-start" dir="auto">
+                {purchase.print_address}
+              </p>
+              {purchase.print_phone && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <a
+                    href={`tel:${purchase.print_phone}`}
+                    className="inline-flex min-h-6 items-center gap-1 underline underline-offset-2"
+                    dir="ltr"
+                  >
+                    <Phone className="size-3.5" aria-hidden="true" />
+                    {purchase.print_phone}
+                  </a>
+                  {printChat && (
+                    <a
+                      href={printChat}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-6 items-center gap-1 underline underline-offset-2"
+                    >
+                      <MessageCircle className="size-3.5" aria-hidden="true" />
+                      {isAr ? "واتساب" : "WhatsApp"}
+                    </a>
+                  )}
+                </div>
+              )}
+              <Row label={isAr ? "الحالة" : "Status"}>
+                {purchase.print_delivered_at
+                  ? isAr
+                    ? "وصلت"
+                    : "Delivered"
+                  : purchase.printed_at
+                    ? isAr
+                      ? "طُبعت، بانتظار التوصيل"
+                      : "Printed, to deliver"
+                    : purchase.status === "paid"
+                      ? isAr
+                        ? "لم تُطبع بعد"
+                        : "Not printed yet"
+                      : isAr
+                        ? "بعد الدفع"
+                        : "Once paid"}
+              </Row>
+              {purchase.status === "paid" && step !== "print_card" && step !== "deliver_card" && (
+                <div className="pt-1">
+                  <PrintOrderCardButton purchase={purchase} lang={lang} />
+                </div>
+              )}
+            </Block>
+          )}
 
           {card && (
             <Block title={isAr ? "البطاقة" : "The card"}>

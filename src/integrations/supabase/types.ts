@@ -3671,11 +3671,21 @@ export type Database = {
           message: string | null;
           paid_at: string | null;
           payment_method: string;
+          print_address: string | null;
+          print_by_store: boolean;
+          print_delivered_at: string | null;
+          print_delivered_by: string | null;
+          print_fee: number;
+          print_phone: string | null;
+          print_tax_rate: number;
+          printed_at: string | null;
+          printed_by: string | null;
           receipt_key: string | null;
           recipient_name: string | null;
           settled_by: string | null;
           status: string;
           token: string;
+          total_due: number | null;
         };
         Insert: {
           amount: number;
@@ -3700,11 +3710,21 @@ export type Database = {
           message?: string | null;
           paid_at?: string | null;
           payment_method: string;
+          print_address?: string | null;
+          print_by_store?: boolean;
+          print_delivered_at?: string | null;
+          print_delivered_by?: string | null;
+          print_fee?: number;
+          print_phone?: string | null;
+          print_tax_rate?: number;
+          printed_at?: string | null;
+          printed_by?: string | null;
           receipt_key?: string | null;
           recipient_name?: string | null;
           settled_by?: string | null;
           status?: string;
           token?: string;
+          total_due?: number | null;
         };
         Update: {
           amount?: number;
@@ -3729,11 +3749,21 @@ export type Database = {
           message?: string | null;
           paid_at?: string | null;
           payment_method?: string;
+          print_address?: string | null;
+          print_by_store?: boolean;
+          print_delivered_at?: string | null;
+          print_delivered_by?: string | null;
+          print_fee?: number;
+          print_phone?: string | null;
+          print_tax_rate?: number;
+          printed_at?: string | null;
+          printed_by?: string | null;
           receipt_key?: string | null;
           recipient_name?: string | null;
           settled_by?: string | null;
           status?: string;
           token?: string;
+          total_due?: number | null;
         };
         Relationships: [
           {
@@ -3757,6 +3787,8 @@ export type Database = {
           amounts: number[];
           brand_id: string;
           card_designs: Json;
+          print_enabled: boolean;
+          print_fee: number;
           sell_online: boolean;
           updated_at: string;
           updated_by: string | null;
@@ -3766,6 +3798,8 @@ export type Database = {
           amounts?: number[];
           brand_id: string;
           card_designs?: Json;
+          print_enabled?: boolean;
+          print_fee?: number;
           sell_online?: boolean;
           updated_at?: string;
           updated_by?: string | null;
@@ -3775,6 +3809,8 @@ export type Database = {
           amounts?: number[];
           brand_id?: string;
           card_designs?: Json;
+          print_enabled?: boolean;
+          print_fee?: number;
           sell_online?: boolean;
           updated_at?: string;
           updated_by?: string | null;
@@ -12093,6 +12129,14 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpc_reporting_gift_card_services: {
+        Args: {
+          p_brand_slug?: string;
+          p_end_date: string;
+          p_start_date: string;
+        };
+        Returns: Json;
+      };
       rpc_reporting_gift_cards: {
         Args: { p_brand_slug?: string; p_periods: Json };
         Returns: Json;
@@ -12393,6 +12437,30 @@ export type Database = {
         Args: { p_brand_id: string; p_designs: Json };
         Returns: Json;
       };
+      set_gift_card_print: {
+        Args: { p_brand_id: string; p_enabled: boolean; p_fee: number };
+        Returns: {
+          amounts: number[];
+          brand_id: string;
+          card_designs: Json;
+          print_enabled: boolean;
+          print_fee: number;
+          sell_online: boolean;
+          updated_at: string;
+          updated_by: string | null;
+          valid_months: number | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_card_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      set_gift_card_print_step: {
+        Args: { p_purchase_id: string; p_step: string };
+        Returns: Json;
+      };
       set_gift_card_settings: {
         Args: {
           p_amounts: number[];
@@ -12404,6 +12472,8 @@ export type Database = {
           amounts: number[];
           brand_id: string;
           card_designs: Json;
+          print_enabled: boolean;
+          print_fee: number;
           sell_online: boolean;
           updated_at: string;
           updated_by: string | null;

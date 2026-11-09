@@ -220,7 +220,9 @@ export function reconcile(
   digits: number,
 ) {
   const { netSales, costOfGoods } = overviewProfit(statement);
-  const netSalesDiff = totals.netSales - netSales;
+  // Services sold outside orders (printing gift cards) are in the statement's sales, never a
+  // product's: the products are checked against the rest.
+  const netSalesDiff = totals.netSales - (netSales - Number(statement?.service_sales ?? 0));
   const costDiff = totals.cost - costOfGoods;
   // The database keeps full precision; the statement's own figures are rounded to the fils.
   const tolerance = 10 ** -digits;

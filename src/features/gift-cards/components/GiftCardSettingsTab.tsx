@@ -19,6 +19,7 @@ import {
 import { giftCardError } from "../lib/gift-cards";
 import { VALIDITY_CHOICES, amountsFromText, amountsText } from "../lib/online-sales";
 import { CardDesignsSection } from "./CardDesignsSection";
+import { PrintSettingsCard } from "./PrintSettingsCard";
 
 /** How the store sells its cards, for staff who may change settings: the offer, and the designs. */
 export function GiftCardSettingsTab({ lang }: { lang: "ar" | "en" }) {
@@ -31,6 +32,14 @@ export function GiftCardSettingsTab({ lang }: { lang: "ar" | "en" }) {
           key={settingsQ.data?.updated_at ?? "new"}
           brandId={brand.id}
           slug={brand.slug}
+          lang={lang}
+          initial={settingsQ.data}
+        />
+      )}
+      {settingsQ.isSuccess && (
+        <PrintSettingsCard
+          key={`print-${settingsQ.data?.updated_at ?? "new"}`}
+          brandId={brand.id}
           lang={lang}
           initial={settingsQ.data}
         />

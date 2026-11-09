@@ -93,6 +93,25 @@ describe("a period's figures, put together once", () => {
     });
   });
 
+  it("counts printing gift cards in sales, net of its VAT, with its VAT collected", () => {
+    const [plain] = composeOverviewRows(pieces());
+    const [row] = composeOverviewRows({
+      ...pieces(),
+      services: [
+        { currency: "BHD", service_gross: 11, service_sales: 10, service_vat: 1, service_count: 3 },
+      ],
+    });
+    expect(row.net_merch_sales).toBe(plain.net_merch_sales + 10);
+    expect(row.gross_merch_sales).toBe(plain.gross_merch_sales + 10);
+    expect(row.net_merchandise_after_returns).toBe(plain.net_merchandise_after_returns + 10);
+    expect(row.vat_collected).toBe(plain.vat_collected + 1);
+    expect(row.collected).toBe(plain.collected + 11);
+    expect(row).toMatchObject({ service_sales: 10, service_vat: 1, service_count: 3 });
+    // A service has no cost of goods: it all reaches the profit.
+    expect(row.known_cogs_after_returns).toBe(plain.known_cogs_after_returns);
+    expect(overviewProfit(row).operatingProfit).toBe(overviewProfit(plain).operatingProfit + 10);
+  });
+
   it("keeps a currency that only partner shops or returns sold in", () => {
     const rows = composeOverviewRows({
       overview: [],

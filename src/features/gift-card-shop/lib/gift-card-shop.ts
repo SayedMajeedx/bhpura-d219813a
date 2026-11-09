@@ -23,6 +23,10 @@ export type BuyForm = {
   message: string;
   /** A transfer's receipt is chosen. */
   hasReceipt: boolean;
+  /** The store prints the card and delivers it (only when it offers to). */
+  print: boolean;
+  printAddress: string;
+  printPhone: string;
 };
 
 export const emptyBuyForm = (): BuyForm => ({
@@ -35,6 +39,9 @@ export const emptyBuyForm = (): BuyForm => ({
   recipient: "",
   message: "",
   hasReceipt: false,
+  print: false,
+  printAddress: "",
+  printPhone: "",
 });
 
 /** The methods a shopper can pay a card with here: the store's card and BenefitPay. */
@@ -45,7 +52,16 @@ export function buyMethods(offer: Pick<GiftCardOffer, "card" | "benefit">): BuyM
   ];
 }
 
-export type BuyProblem = "amount" | "method" | "delivery" | "name" | "phone" | "email" | "receipt";
+export type BuyProblem =
+  | "amount"
+  | "method"
+  | "delivery"
+  | "name"
+  | "phone"
+  | "email"
+  | "receipt"
+  | "print_address"
+  | "print_phone";
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -64,7 +80,32 @@ export function buyProblems(form: BuyForm, offer: GiftCardOffer): BuyProblem[] {
     problems.push("email");
   }
   if (form.method === "benefit" && !form.hasReceipt) problems.push("receipt");
+  if (wantsPrint(form, offer)) {
+    if (form.printAddress.trim().length < 3) problems.push("print_address");
+    if (form.printPhone.replace(/D/g, "").length < 6) problems.push("print_phone");
+  }
   return problems;
+}
+
+/** The store prints this card: the buyer asked and the store prints (the database checks both). */
+export function wantsPrint(
+  form: Pick<BuyForm, "print">,
+  offer: Pick<GiftCardOffer, "print">,
+): boolean {
+  return form.print && offer.print;
+}
+
+/**
+ * What the buyer pays: the card's value, plus the store's fee when it prints and delivers it.
+ * The card holds its value only; the database writes the same sum (`total_due`).
+ */
+export function buyTotal(
+  form: Pick<BuyForm, "amount" | "print">,
+  offer: Pick<GiftCardOffer, "print" | "printFee">,
+): number | null {
+  if (form.amount === null) return null;
+  const fee = wantsPrint(form, offer) ? offer.printFee : 0;
+  return Math.round((form.amount + fee) * 1000) / 1000;
 }
 
 /** "Valid for 12 months from purchase", or nothing for a card with no end date. */
@@ -111,6 +152,18 @@ const FAILURES: Record<string, { ar: string; en: string }> = {
   GIFT_CARD_EMAIL_INVALID: {
     ar: "البريد غير صحيح.",
     en: "That email address is not valid.",
+  },
+  GIFT_CARD_PRINT_NOT_OFFERED: {
+    ar: "المتجر لا يطبع البطاقات الآن. اشترها رقمية.",
+    en: "The store is not printing cards right now. Buy it as a digital card.",
+  },
+  GIFT_CARD_PRINT_ADDRESS_REQUIRED: {
+    ar: "اكتب عنوان توصيل البطاقة المطبوعة.",
+    en: "Write where to deliver the printed card.",
+  },
+  GIFT_CARD_PRINT_PHONE_REQUIRED: {
+    ar: "اكتب رقمًا نتواصل معه عند توصيل البطاقة.",
+    en: "Write a number to call when the card is delivered.",
   },
   GIFT_CARD_TRIES: {
     ar: "محاولات كثيرة. حاول مرة أخرى بعد قليل.",
@@ -180,6 +233,39 @@ export function recipientMessage(
     ...(input.expiry ? [`Valid until ${input.expiry}.`] : []),
     `Use it when you order at ${input.storeLink}`,
   ].join("\n");
+}
+
+/**
+ * A card the store prints, said on the purchase's page: where it goes until it is printed, then
+ * that it is on its way, then that it arrived. Null for a digital card.
+ */
+export function printLine(
+  view: {
+    printByStore: boolean;
+    printAddress: string | null;
+    printedAt: string | null;
+    printDeliveredAt: string | null;
+    status: string;
+  },
+  lang: "ar" | "en",
+): string | null {
+  if (!view.printByStore) return null;
+  if (view.printDeliveredAt) {
+    return lang === "ar" ? "وصلت البطاقة المطبوعة." : "The printed card was delivered.";
+  }
+  if (view.printedAt) {
+    return lang === "ar"
+      ? "طبع المتجر البطاقة، وهي في الطريق إليك."
+      : "The store printed the card, and it is on its way.";
+  }
+  const to = view.printAddress ?? "";
+  return lang === "ar"
+    ? view.status === "paid"
+      ? `يطبع المتجر البطاقة ويوصلها إلى: ${to}`
+      : `بعد الدفع يطبع المتجر البطاقة ويوصلها إلى: ${to}`
+    : view.status === "paid"
+      ? `The store prints the card and delivers it to: ${to}`
+      : `Once paid, the store prints the card and delivers it to: ${to}`;
 }
 
 /** Where the code goes, said on the purchase's page. */

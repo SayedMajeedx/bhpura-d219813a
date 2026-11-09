@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buyMethods,
   buyProblems,
+  buyTotal,
   emptyBuyForm,
+  printLine,
   purchaseFailure,
   purchaseState,
   recipientMessage,
@@ -92,7 +94,10 @@ const OFFER = {
   validMonths: 12,
   card: true,
   benefit: true,
+  print: false,
+  printFee: 0,
 };
+const PRINTS = { ...OFFER, print: true, printFee: 2.5 };
 const wrap = (node: React.ReactNode) =>
   render(<QueryClientProvider client={new QueryClient()}>{node}</QueryClientProvider>);
 
@@ -193,7 +198,103 @@ describe("the rules", () => {
   });
 });
 
+describe("a card the store prints", () => {
+  const form = {
+    ...emptyBuyForm(),
+    amount: 25,
+    method: "card" as const,
+    delivery: "email" as const,
+    name: "Sara",
+    email: "sara@mail.com",
+  };
+
+  it("costs the card's value plus the store's fee, only when the store prints", () => {
+    expect(buyTotal({ amount: 25, print: true }, PRINTS)).toBe(27.5);
+    expect(buyTotal({ amount: 25, print: false }, PRINTS)).toBe(25);
+    // Asked of a store that does not print, it is the card's value only.
+    expect(buyTotal({ amount: 25, print: true }, OFFER)).toBe(25);
+    expect(buyTotal({ amount: null, print: true }, PRINTS)).toBeNull();
+  });
+
+  it("needs where to deliver and a number there", () => {
+    expect(buyProblems({ ...form, print: true }, PRINTS)).toEqual(["print_address", "print_phone"]);
+    expect(
+      buyProblems(
+        { ...form, print: true, printAddress: "Adliya, block 338", printPhone: "39001122" },
+        PRINTS,
+      ),
+    ).toEqual([]);
+    expect(buyProblems({ ...form, print: true }, OFFER)).toEqual([]);
+  });
+
+  it("says where it goes, then that it is on its way, then that it arrived", () => {
+    const view = {
+      printByStore: true,
+      printAddress: "Adliya",
+      printedAt: null,
+      printDeliveredAt: null,
+      status: "pending",
+    };
+    expect(printLine(view, "en")).toBe(
+      "Once paid, the store prints the card and delivers it to: Adliya",
+    );
+    expect(printLine({ ...view, status: "paid" }, "ar")).toBe(
+      "يطبع المتجر البطاقة ويوصلها إلى: Adliya",
+    );
+    expect(printLine({ ...view, status: "paid", printedAt: "x" }, "en")).toMatch(/on its way/);
+    expect(printLine({ ...view, printDeliveredAt: "x" }, "en")).toBe(
+      "The printed card was delivered.",
+    );
+    expect(printLine({ ...view, printByStore: false }, "en")).toBeNull();
+  });
+});
+
 describe("the shop page", () => {
+  it("offers a printed card for the store's fee, and sends where to deliver it", async () => {
+    stubs.offer = PRINTS;
+    stubs.start.mockResolvedValue({ ok: true, id: "p9", token: "tok", brandId: "b1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ redirectUrl: "https://tap.test/pay" }))),
+    );
+    vi.stubGlobal("location", { href: "" });
+    wrap(<GiftCardShopPage />);
+    fireEvent.click(await screen.findByRole("radio", { name: "BHD 25.000" }));
+    // Digital is the default; the printed card names its fee.
+    expect(screen.getByRole("radio", { name: "Digital" })).toHaveAttribute("aria-checked", "true");
+    fireEvent.click(screen.getByRole("radio", { name: "We print and deliver it · + BHD 2.500" }));
+    expect(screen.getByRole("button", { name: "Buy the card · BHD 27.500" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Email" }));
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "sara@mail.com" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Card" }));
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    expect(await screen.findByText("Write the delivery address.")).toBeInTheDocument();
+    expect(stubs.start).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Delivery address"), {
+      target: { value: "Adliya, block 338, road 3803, house 12" },
+    });
+    fireEvent.change(screen.getByLabelText("Phone number at the address"), {
+      target: { value: "39001122" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    await waitFor(() => expect(stubs.start).toHaveBeenCalled());
+    const buyer = stubs.start.mock.calls[0][0].data.buyer;
+    expect(buyer.print).toEqual({
+      address: "Adliya, block 338, road 3803, house 12",
+      phone: "39001122",
+    });
+    // The card holds its value: the amount sent is the card's, the database adds the fee.
+    expect(stubs.start.mock.calls[0][0].data.amount).toBe(25);
+  });
+
+  it("offers no printing when the store does not print, and the buyer prints nothing", async () => {
+    wrap(<GiftCardShopPage />);
+    await screen.findByRole("radio", { name: "BHD 25.000" });
+    expect(screen.queryByRole("radio", { name: "Digital" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/I will print it/)).not.toBeInTheDocument();
+  });
+
   it("sends a card payment to the gateway with the purchase it started", async () => {
     stubs.start.mockResolvedValue({ ok: true, id: "p1", token: "tok", brandId: "b1" });
     const fetchMock = vi.fn(
@@ -285,13 +386,21 @@ describe("the purchase's page", () => {
       brandId: "b1",
       code: "ABCD-EFGH-JKMN",
       expiresOn: "2027-10-31",
+      total: 50,
+      printByStore: false,
+      printFee: 0,
+      printAddress: null,
+      printedAt: null,
+      printDeliveredAt: null,
     };
     wrap(<GiftCardPurchasePage purchaseId="p1" token={"t".repeat(64)} paymentFailed={false} />);
     // The code is on the card's back and set out under it.
     expect((await screen.findAllByText("ABCD-EFGH-JKMN")).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByRole("img", { name: "Front of the card" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Turn the card over/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Print on A4 to cut out/ })).toBeInTheDocument();
+    // The buyer keeps the card's picture; printing is the store's alone.
+    expect(screen.getByRole("button", { name: /Save the card/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Print/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Send on WhatsApp/ }).getAttribute("href")).toContain(
       encodeURIComponent("ABCD-EFGH-JKMN"),
     );
@@ -308,8 +417,41 @@ describe("the purchase's page", () => {
       brandId: "b1",
       code: null,
       expiresOn: null,
+      total: 25,
+      printByStore: false,
+      printFee: 0,
+      printAddress: null,
+      printedAt: null,
+      printDeliveredAt: null,
     };
     wrap(<GiftCardPurchasePage purchaseId="p2" token={"t".repeat(64)} paymentFailed={false} />);
     expect(await screen.findByText("We have your request")).toBeInTheDocument();
+  });
+
+  it("asks for the card's value plus the printing fee, and says where the card goes", async () => {
+    stubs.view = {
+      status: "pending",
+      method: "benefit",
+      amount: 25,
+      currency: "BHD",
+      recipientName: null,
+      message: null,
+      brandId: "b1",
+      code: null,
+      expiresOn: null,
+      total: 27.5,
+      printByStore: true,
+      printFee: 2.5,
+      printAddress: "Adliya, block 338",
+      printedAt: null,
+      printDeliveredAt: null,
+    };
+    wrap(<GiftCardPurchasePage purchaseId="p3" token={"t".repeat(64)} paymentFailed={false} />);
+    expect(await screen.findByText(/checking your BHD 27\.500 transfer/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Once paid, the store prints the card and delivers it to: Adliya, block 338",
+      ),
+    ).toBeInTheDocument();
   });
 });
