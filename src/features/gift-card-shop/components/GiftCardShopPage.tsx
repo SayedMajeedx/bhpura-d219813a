@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { CreditCard, Gift, Landmark, Loader2, Mail, MessageCircle } from "lucide-react";
@@ -13,6 +13,8 @@ import { startGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { BenefitTransferDetails } from "@/features/checkout/components/BenefitTransferDetails";
 import { cn } from "@/lib/utils";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { giftCardPixelPayload } from "@/lib/ad-events/gift-card-events";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
 import { DEFAULT_DESIGN, type CardDesign } from "@/features/gift-card-design/lib/design";
 import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
@@ -98,6 +100,16 @@ function BuyForm({
   const printing = wantsPrint(form, offer);
   const total = buyTotal(form, offer);
   const money = (n: number) => formatPrice(n, offer.currency, lang);
+  // The ad platforms hear of a card as of any product: viewed, checkout begun, bought.
+  const pixelPayload = (purchaseId?: string) =>
+    giftCardPixelPayload({ purchaseId, currency: offer.currency, value: total ?? 0 });
+  useEffect(() => {
+    void trackStorefrontEvent(
+      "view_item",
+      giftCardPixelPayload({ currency: offer.currency, value: 0 }),
+      "gift-cards",
+    );
+  }, [offer.currency]);
   const set = (key: keyof BuyForm) => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
   const validity = validityLine(offer.validMonths, lang);
@@ -122,6 +134,7 @@ function BuyForm({
     setShown(true);
     if (problems.length > 0 || form.amount === null || !form.method || !form.delivery) return;
     setBusy(true);
+    void trackStorefrontEvent("begin_checkout", pixelPayload());
     try {
       const receiptId =
         form.method === "benefit" && receipt ? await uploadBenefitReceipt(brand.id, receipt) : null;
@@ -152,6 +165,11 @@ function BuyForm({
         toast.error(purchaseFailure(started.reason, lang));
         return;
       }
+      const purchaseTracked = trackStorefrontEvent(
+        "purchase",
+        pixelPayload(started.id),
+        `gift-card:${started.id}`,
+      );
       if (form.method === "card") {
         const response = await fetch("/api/public/gift-cards/charge", {
           method: "POST",
@@ -164,6 +182,8 @@ function BuyForm({
         });
         const reply = await response.json<{ redirectUrl?: string }>();
         if (response.ok && reply.redirectUrl) {
+          // Leaving the store: give the purchase's send a moment, as checkout does.
+          await Promise.race([purchaseTracked, new Promise((done) => setTimeout(done, 1500))]);
           window.location.href = reply.redirectUrl;
           return;
         }

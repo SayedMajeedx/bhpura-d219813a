@@ -79,6 +79,9 @@ const designs = vi.hoisted(() => ({
 }));
 vi.mock("../src/lib/data/gift-cards/designs", () => designs);
 vi.mock("@/lib/data/gift-cards/designs", () => designs);
+const analytics = vi.hoisted(() => ({ trackStorefrontEvent: vi.fn(async () => undefined) }));
+vi.mock("../src/lib/storefront-analytics", () => analytics);
+vi.mock("@/lib/storefront-analytics", () => analytics);
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: {} }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 
@@ -286,6 +289,14 @@ describe("the shop page", () => {
     });
     // The card holds its value: the amount sent is the card's, the database adds the fee.
     expect(stubs.start.mock.calls[0][0].data.amount).toBe(25);
+    // The ad platforms hear what the buyer pays: the value and the printing fee.
+    await waitFor(() =>
+      expect(analytics.trackStorefrontEvent).toHaveBeenCalledWith(
+        "purchase",
+        expect.objectContaining({ gift_card_purchase_id: "p9", value: 27.5, currency: "BHD" }),
+        "gift-card:p9",
+      ),
+    );
   });
 
   it("offers no printing when the store does not print, and the buyer prints nothing", async () => {
@@ -332,6 +343,21 @@ describe("the shop page", () => {
       brandId: "b1",
       token: "tok",
     });
+    // Viewed, checkout begun, bought: each told to the ad platforms, the purchase before leaving.
+    const events = analytics.trackStorefrontEvent.mock.calls.map((call) => call[0]);
+    // The first press was refused (no email): checkout begins only on a press that goes through.
+    expect(events).toEqual(["view_item", "begin_checkout", "purchase"]);
+    expect(analytics.trackStorefrontEvent).toHaveBeenLastCalledWith(
+      "purchase",
+      expect.objectContaining({
+        transaction_id: "p1",
+        gift_card_purchase_id: "p1",
+        value: 50,
+        items: [expect.objectContaining({ item_id: "gift-card", quantity: 1 })],
+      }),
+      "gift-card:p1",
+    );
+    await waitFor(() => expect(location.href).toBe("https://tap.test/pay"));
   });
 
   it("asks for a transfer's receipt, then uploads it and opens the purchase's page", async () => {

@@ -20,6 +20,7 @@ import {
   type SendResult,
   type Visit,
 } from "@/lib/ad-events/shared";
+import { giftCardPurchaseEvent, type GiftCardPurchaseRow } from "@/lib/ad-events/gift-card-events";
 
 /**
  * The store's server sends its ad platforms (Meta, TikTok, Snapchat) the storefront's events,
@@ -212,6 +213,35 @@ export const sendAdPurchase = createServerFn({ method: "POST" })
         })),
       },
     });
+  });
+
+const GIFT_CARD_PURCHASE_COLUMNS =
+  "id, brand_id, created_at, status, currency, amount, total_due, buyer_name, buyer_email, buyer_phone";
+
+/** A gift card bought on the storefront, sent from the purchase the database wrote. */
+export const sendAdGiftCardPurchase = createServerFn({ method: "POST" })
+  .validator((data: unknown) =>
+    z.object({ purchaseId: z.string().uuid(), ...visitFields }).parse(data),
+  )
+  .handler(async ({ data }): Promise<AdAnswer> => {
+    if (!allowTry(`ad-purchase:${clientIp()}`, Date.now(), 30)) return { skipped: "too_many" };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("gift_card_purchases")
+      .select(GIFT_CARD_PURCHASE_COLUMNS)
+      .eq("id", data.purchaseId)
+      .maybeSingle();
+    const purchase = row as GiftCardPurchaseRow | null;
+    if (!purchase) return { skipped: "not_found" };
+    const event = giftCardPurchaseEvent(purchase, {
+      now: Date.now(),
+      visit: visitOf(data),
+      pageUrl: data.pageUrl,
+    });
+    if (!event) return { skipped: "not_found" };
+    const setup = await storeSetup(purchase.brand_id);
+    if (!setup.length) return { skipped: "off" };
+    return sendToAll(setup, event);
   });
 
 /** A product viewed, added to the bag, or checkout begun, as the storefront saw it. */

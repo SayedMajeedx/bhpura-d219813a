@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const ads = vi.hoisted(() => ({
   sendAdPurchase: vi.fn(async () => ({ meta: { sent: true, received: 1 } })),
   sendAdBrowsingEvent: vi.fn(async () => ({ meta: { sent: true, received: 1 } })),
+  sendAdGiftCardPurchase: vi.fn(async () => ({ meta: { sent: true, received: 1 } })),
   testAdPlatform: vi.fn(async () => ({ sent: true, received: 1 })),
 }));
 vi.mock("../src/lib/ad-events.functions", () => ads);
@@ -89,6 +90,21 @@ describe("one event id for the pixel and the server", () => {
     expect(ads.sendAdPurchase).toHaveBeenCalledWith({
       data: expect.objectContaining({ orderId: "o-77" }),
     });
+  });
+
+  it("sends a gift card's purchase to the server as a card purchase, not an order", async () => {
+    configure(true);
+    await trackStorefrontEvent("purchase", {
+      transaction_id: "gc-5",
+      gift_card_purchase_id: "gc-5",
+      value: 32,
+      currency: "BHD",
+    });
+    expect(fbq.mock.calls[0][4]).toEqual({ eventID: "purchase:gc-5" });
+    expect(ads.sendAdGiftCardPurchase).toHaveBeenCalledWith({
+      data: expect.objectContaining({ purchaseId: "gc-5" }),
+    });
+    expect(ads.sendAdPurchase).not.toHaveBeenCalled();
   });
 
   it("sends the ad's click id kept from the landing page", async () => {
