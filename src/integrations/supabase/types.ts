@@ -3677,6 +3677,7 @@ export type Database = {
           print_delivered_by: string | null;
           print_fee: number;
           print_phone: string | null;
+          print_tax_rate: number;
           printed_at: string | null;
           printed_by: string | null;
           receipt_key: string | null;
@@ -3715,6 +3716,7 @@ export type Database = {
           print_delivered_by?: string | null;
           print_fee?: number;
           print_phone?: string | null;
+          print_tax_rate?: number;
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
@@ -3753,6 +3755,7 @@ export type Database = {
           print_delivered_by?: string | null;
           print_fee?: number;
           print_phone?: string | null;
+          print_tax_rate?: number;
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
@@ -12127,7 +12130,11 @@ export type Database = {
         Returns: Json;
       };
       rpc_reporting_gift_card_services: {
-        Args: { p_brand_slug?: string; p_end_date: string; p_start_date: string };
+        Args: {
+          p_brand_slug?: string;
+          p_end_date: string;
+          p_start_date: string;
+        };
         Returns: Json;
       };
       rpc_reporting_gift_cards: {
