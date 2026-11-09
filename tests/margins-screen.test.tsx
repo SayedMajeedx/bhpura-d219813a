@@ -111,6 +111,16 @@ describe("the margin rules", () => {
     });
   });
 
+  it("check the products against the statement's sales less the services it sold", () => {
+    const withPrinting = {
+      ...(stubs.statement[0] as object),
+      net_merchandise_after_returns:
+        Number((stubs.statement[0] as Record<string, unknown>).net_merchandise_after_returns) + 9,
+      service_sales: 9,
+    };
+    expect(reconcile({ netSales: 154, cost: 66 }, withPrinting, 3)).toMatchObject({ ok: true });
+  });
+
   it("write every figure to Excel, deductions negative, with the total", () => {
     const sheet = marginsSheet({
       lines,

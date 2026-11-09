@@ -44,40 +44,59 @@ export async function fetchReportingOverview(
     p_start_date: range.from.toISOString(),
     p_end_date: range.to.toISOString(),
   };
-  const [overviewResponse, incubator, refundsResponse, cogsResponse, feeRows] = await Promise.all([
-    (supabase as any).rpc("rpc_reporting_overview", {
-      ...period,
-      p_tz: tz,
-      p_include_historical: includeHistorical,
-      p_brand_slug: brandSlug || null,
-    }),
-    fetchIncubatorReporting(range, tz, brandSlug),
-    (supabase as any).rpc("rpc_reporting_processed_returns", {
-      ...period,
-      p_tz: tz,
-      p_brand_slug: brandSlug || null,
-    }),
-    (supabase as any).rpc("rpc_reporting_order_cogs", {
-      ...period,
-      p_include_historical: includeHistorical,
-      p_brand_slug: brandSlug || null,
-    }),
-    // Fees are a soft part: a failure reads as none, as before.
-    Promise.resolve(
-      (supabase as any).rpc("rpc_reporting_processing_fees", {
+  const [overviewResponse, incubator, refundsResponse, cogsResponse, feeRows, serviceRows] =
+    await Promise.all([
+      (supabase as any).rpc("rpc_reporting_overview", {
+        ...period,
+        p_tz: tz,
+        p_include_historical: includeHistorical,
+        p_brand_slug: brandSlug || null,
+      }),
+      fetchIncubatorReporting(range, tz, brandSlug),
+      (supabase as any).rpc("rpc_reporting_processed_returns", {
+        ...period,
+        p_tz: tz,
+        p_brand_slug: brandSlug || null,
+      }),
+      (supabase as any).rpc("rpc_reporting_order_cogs", {
         ...period,
         p_include_historical: includeHistorical,
         p_brand_slug: brandSlug || null,
       }),
-    ).then(
-      ({ data: res, error: feeError }: { data: unknown; error: unknown }) =>
-        !feeError && Array.isArray(res) ? res : [],
-      (e: unknown) => {
-        console.warn("rpc_reporting_processing_fees soft error:", e);
-        return [];
-      },
-    ),
-  ]);
+      // Fees are a soft part: a failure reads as none, as before.
+      Promise.resolve(
+        (supabase as any).rpc("rpc_reporting_processing_fees", {
+          ...period,
+          p_include_historical: includeHistorical,
+          p_brand_slug: brandSlug || null,
+        }),
+      ).then(
+        ({ data: res, error: feeError }: { data: unknown; error: unknown }) =>
+          !feeError && Array.isArray(res) ? res : [],
+        (e: unknown) => {
+          console.warn("rpc_reporting_processing_fees soft error:", e);
+          return [];
+        },
+      ),
+      // Gift card printing, a service sold outside orders: none until its function exists.
+      Promise.resolve(
+        supabase.rpc("rpc_reporting_gift_card_services", {
+          ...period,
+          ...(brandSlug ? { p_brand_slug: brandSlug } : {}),
+        }),
+      ).then(
+        ({
+          data: res,
+          error: serviceError,
+        }: {
+          data: unknown;
+          error: { code?: string } | null;
+        }) => {
+          if (serviceError && serviceError.code !== "PGRST202") throw serviceError;
+          return Array.isArray(res) ? res : [];
+        },
+      ),
+    ]);
   const { data, error } = overviewResponse;
   if (error) {
     // Some early reporting deployments shipped the sales RPC before the overview
@@ -144,6 +163,7 @@ export async function fetchReportingOverview(
     cogs: cogsResponse.data,
     fees: feeRows,
     incubatorSummary: incubator.summary,
+    services: serviceRows,
   });
 }
 
@@ -172,6 +192,7 @@ export async function fetchReportingPeriods(
       cogs: period.cogs,
       fees: period.fees,
       incubatorSummary: period.incubator_summary,
+      services: period.services,
     }),
   );
 }

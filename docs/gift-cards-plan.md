@@ -107,8 +107,8 @@ The owner's decision: a buyer no longer prints a card themselves. A shopper choo
 - **The store's offer:** printing on or off, and its fee in the store's currency (0 to 1000, 0 for free), on the Gift cards page's Settings tab.
 - **The purchase:** where to deliver and a number there; the fee as it was when bought; what the shopper pays is the card's value plus the fee, charged by card or checked against the transfer. **The card holds its value only.**
 - **The store's side:** the order asks to print the card (on the design the buyer chose), then to deliver it; each press is recorded with who and when, and the buyer's page says it is on its way, then that it arrived.
-- **In the reports and emails** (migration 20261125100000): the fee is the store's income for a service, not money held on a card. The statement and the month pack show it as its own line, counted on the day the purchase was paid, outside the cards' balance and outside sales. The buyer's emails say where the card goes and what was paid, and the store's email and alert name the total and the address.
-- **Still to decide:** whether the fee should also count in the statement's sales and operating profit (with VAT for a store with a VAT number).
+- **In the emails** (migration 20261125100000): the buyer's emails say where the card goes and what was paid, and the store's email and alert name the total and the address.
+- **In sales** (the owner's decision of 2026-11-09, migration 20261126100000): the fee is the store's income for a service, not money held on a card, so it counts in net sales and operating profit on the day the purchase was paid, net of its VAT, with the VAT in what was collected. The fee the store writes is what the shopper pays: for a store that charges VAT the VAT is inside it, at the rate kept on the purchase. The gift cards section of the statement and the month pack repeat what buyers paid for it, outside the cards' balance.
 
 ## Order of work
 

@@ -187,6 +187,59 @@ describe("where the fee is read", () => {
   });
 });
 
+describe("the fee in the store's sales", () => {
+  it("keeps the store's VAT rate on the purchase, and the report gives the fee net of it", async () => {
+    await db.query(
+      "UPDATE public.business_settings SET default_tax_rate = 10 WHERE brand_id = $1",
+      [BRAND],
+    );
+    await as("authenticated", "SELECT public.set_gift_card_print($1, true, 2.2)", [BRAND]);
+    const id = ((await buy({ print: PRINT })).rows[0].r as { id: string }).id;
+    expect(Number((await purchase(id)).print_tax_rate)).toBe(10);
+    // A digital card keeps no rate.
+    const digital = ((await buy({})).rows[0].r as { id: string }).id;
+    expect(Number((await purchase(digital)).print_tax_rate)).toBe(0);
+    // A later change of rate never moves a purchase already made.
+    await db.query("UPDATE public.business_settings SET default_tax_rate = 0 WHERE brand_id = $1", [
+      BRAND,
+    ]);
+    expect(Number((await purchase(id)).print_tax_rate)).toBe(10);
+
+    await as("service_role", "SELECT public.settle_gift_card_purchase($1, 'chg_vat', NULL)", [id]);
+    await db.exec("SET test.perms = 'manage_orders,manage_settings,view_financials'");
+    const read = await as(
+      "authenticated",
+      "SELECT public.rpc_reporting_gift_card_services(now() - interval '1 minute', now() + interval '1 minute') AS r",
+    );
+    expect(read.error).toBeNull();
+    const fees = await db.query<{ gross: string; net: string; n: string }>(
+      `SELECT sum(print_fee) AS gross, sum(print_fee * 100 / (100 + print_tax_rate)) AS net, count(*) AS n
+         FROM public.gift_card_purchases
+        WHERE status = 'paid' AND print_by_store AND paid_at > now() - interval '1 minute'`,
+    );
+    const [bhd] = read.rows[0].r as Record<string, number>[];
+    expect(bhd.currency).toBe("BHD");
+    expect(Number(bhd.service_gross)).toBeCloseTo(Number(fees.rows[0].gross), 6);
+    expect(Number(bhd.service_sales)).toBeCloseTo(Number(fees.rows[0].net), 6);
+    expect(Number(bhd.service_vat)).toBeCloseTo(
+      Number(fees.rows[0].gross) - Number(fees.rows[0].net),
+      6,
+    );
+    // This purchase's own part: 2.2 with 10% inside it is 2 and 0.2.
+    expect((2.2 * 100) / 110).toBeCloseTo(2, 9);
+    await db.exec("SET test.perms = 'manage_orders,manage_settings'");
+    expect(
+      (
+        await as(
+          "authenticated",
+          "SELECT public.rpc_reporting_gift_card_services(now() - interval '1 day', now())",
+        )
+      ).error,
+    ).toMatch(/view_financials/);
+    await as("authenticated", "SELECT public.set_gift_card_print($1, true, 2.5)", [BRAND]);
+  });
+});
+
 describe("recording the printing", () => {
   const paidPrinted = async () => {
     const id = ((await buy({ print: PRINT })).rows[0].r as { id: string }).id;

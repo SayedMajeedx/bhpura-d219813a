@@ -12126,6 +12126,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      rpc_reporting_gift_card_services: {
+        Args: { p_brand_slug?: string; p_end_date: string; p_start_date: string };
+        Returns: Json;
+      };
       rpc_reporting_gift_cards: {
         Args: { p_brand_slug?: string; p_periods: Json };
         Returns: Json;

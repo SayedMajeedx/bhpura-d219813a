@@ -13,8 +13,9 @@ import { COUNT_FORMAT, moneyFormat, type XCell, type XSheet } from "./workbook";
  * of now, what active cards hold.
  *
  * The store's fee for printing and delivering a card (migration 20261125100000) is its income for
- * a service, never money held on a card: it is its own line, counted on the day the purchase was
- * paid, and it is not in the statement's sales.
+ * a service, never money held on a card: it counts in the statement's sales, net of its VAT
+ * (`rpc_reporting_gift_card_services`, migration 20261126100000), and this line repeats what
+ * the buyers paid for it, on the day the purchase was paid.
  */
 
 export type GiftCardPeriod = {
@@ -126,8 +127,8 @@ const SPECS: Spec[] = [
   {
     key: "gift_cards_print_fees",
     label: {
-      en: "Printing and delivery fees (store income, not on cards or in sales)",
-      ar: "رسوم الطباعة والتوصيل (دخل للمتجر، ليست في البطاقات ولا المبيعات)",
+      en: "Printing and delivery fees paid (in sales above, not on cards)",
+      ar: "رسوم الطباعة والتوصيل المدفوعة (ضمن المبيعات أعلاه، ليست في البطاقات)",
     },
     value: (p) => p.printFees,
     optional: true,

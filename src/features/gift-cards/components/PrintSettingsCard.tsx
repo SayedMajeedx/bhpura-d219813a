@@ -83,8 +83,8 @@ export function PrintSettingsCard({
               ? "اكتب رقمًا من 0 إلى 1000."
               : "Write a number from 0 to 1000."
             : isAr
-              ? "لا تُضاف إلى رصيد البطاقة. 0 تعني طباعة وتوصيل مجانًا."
-              : "Never added to the card's balance. 0 means printing and delivery are free."}
+              ? "ما يدفعه المشتري، وفيه الضريبة إن كان المتجر يحتسبها. تُحسب في المبيعات ولا تُضاف إلى رصيد البطاقة. 0 تعني مجانًا."
+              : "What the shopper pays, VAT included when the store charges it. It counts in sales and is never added to the card's balance. 0 means free."}
         </p>
       </div>
       <div className="flex justify-end">
