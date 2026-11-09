@@ -14,6 +14,9 @@ const stubs = vi.hoisted(() => ({
   payments: [] as unknown[],
   recordSupplierPayment: vi.fn(async () => "pay-1"),
   voidSupplierPayment: vi.fn(async () => undefined),
+  accountPayments: [] as unknown[],
+  recordSupplierAccountPayment: vi.fn(async () => "pay-9"),
+  voidSupplierAccountPayment: vi.fn(async () => undefined),
   permissions: ["manage_inventory", "view_financials"],
   receiveSupplierOrder: vi.fn(async () => ({ status: "partially_received", repeated: false })),
   invalidateAfterReceipt: vi.fn(async () => undefined),
@@ -115,6 +118,13 @@ const mocks: Record<string, unknown> = {
     setSupplierOrderStatus: vi.fn(),
     deleteSupplierOrder: vi.fn(),
   },
+  "data/supplier-account": {
+    supplierAccountQueries: {
+      payments: () => options("account-payments", () => stubs.accountPayments),
+    },
+    recordSupplierAccountPayment: stubs.recordSupplierAccountPayment,
+    voidSupplierAccountPayment: stubs.voidSupplierAccountPayment,
+  },
   "data/catalog": {
     catalogQueries: {
       products: () => options("products", () => products),
@@ -153,6 +163,8 @@ const mocks: Record<string, unknown> = {
 };
 vi.mock("../src/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
 vi.mock("@/lib/data/supplier-orders", () => mocks["data/supplier-orders"]);
+vi.mock("../src/lib/data/supplier-orders/account", () => mocks["data/supplier-account"]);
+vi.mock("@/lib/data/supplier-orders/account", () => mocks["data/supplier-account"]);
 vi.mock("../src/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("@/lib/data/catalog", () => mocks["data/catalog"]);
 vi.mock("../src/lib/data/accounting", () => mocks["data/accounting"]);
@@ -248,6 +260,8 @@ beforeEach(() => {
   stubs.permissions = ["manage_inventory", "view_financials"];
   stubs.receipts = [];
   stubs.payments = [];
+  stubs.accountPayments = [];
+  stubs.orders = [];
 });
 
 describe("the list", () => {
@@ -373,55 +387,87 @@ const { SupplierOrdersDashboardLine } =
   await import("../src/features/supplier-orders/components/SupplierOrdersDashboardLine");
 
 describe("paying a supplier", () => {
-  it("records a payment with its day, once per press, never past what is owed", async () => {
+  it("records one payment with its day, method and reference, this order first, the rest as credit", async () => {
     stubs.order = tailorOrder();
     wrap(<SupplierOrderPage orderId="po1" />);
     fireEvent.click(await screen.findByRole("button", { name: /Record payment/ }));
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText(/You owe BHD 160\.000 of BHD 210\.000/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/You owe this supplier BHD\s160\.000/)).toBeInTheDocument();
     const save = within(dialog).getByRole("button", { name: "Record payment" });
-    fireEvent.change(within(dialog).getByLabelText(/Amount paid/), { target: { value: "161" } });
+    fireEvent.change(within(dialog).getByLabelText(/Amount paid/), { target: { value: "170" } });
+    // How it was paid is asked every time.
     expect(save).toBeDisabled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "All of it" }));
-    fireEvent.change(within(dialog).getByLabelText("Note"), { target: { value: "Cash" } });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "BenefitPay" }));
+    fireEvent.change(within(dialog).getByLabelText(/Reference/), { target: { value: "BP-77" } });
+    // This order takes what it owes; the rest waits for the supplier's next order.
+    expect(
+      within(dialog).getByText(/BHD\s10\.000 stays as your credit with the supplier/),
+    ).toBeInTheDocument();
     fireEvent.click(save);
-    await waitFor(() => expect(stubs.recordSupplierPayment).toHaveBeenCalledTimes(1));
-    const [orderId, payment] = stubs.recordSupplierPayment.mock.calls[0] as unknown as [
-      string,
-      { amount: number; paidOn: string; requestId: string; note: string },
+    await waitFor(() => expect(stubs.recordSupplierAccountPayment).toHaveBeenCalledTimes(1));
+    const [payment] = stubs.recordSupplierAccountPayment.mock.calls[0] as unknown as [
+      {
+        vendorId: string;
+        amount: number;
+        paidOn: string;
+        method: string;
+        reference: string;
+        allocations: { poId: string; amount: number }[];
+        requestId: string;
+      },
     ];
-    expect(orderId).toBe("po1");
-    expect(payment).toMatchObject({ amount: 160, note: "Cash" });
+    expect(payment).toMatchObject({
+      vendorId: "tailor",
+      amount: 170,
+      method: "benefit",
+      reference: "BP-77",
+      allocations: [{ poId: "po1", amount: 160 }],
+    });
     expect(payment.paidOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(payment.requestId).toMatch(/^[0-9a-f-]{36}$/);
   });
 
-  it("takes a payment back only with a reason, and shows what was taken back", async () => {
+  it("takes a whole payment back only with a reason, saying the other orders it paid", async () => {
     stubs.order = tailorOrder();
-    stubs.payments = [
+    stubs.accountPayments = [
       {
         id: "pay-1",
-        amount: 50,
-        paid_on: "2026-10-12",
-        note: "Deposit",
-        created_at: "",
+        vendor_id: "tailor",
+        amount: 114,
+        paid_on: "2026-11-09",
+        method: "benefit",
+        reference: null,
+        note: "One transfer",
+        created_at: "2026-11-09T10:00:00Z",
         voided_at: null,
         void_reason: null,
+        applied: [
+          { po_id: "po1", po_number: "PO-0001", amount: 50, voided: false },
+          { po_id: "po2", po_number: "PO-0002", amount: 64, voided: false },
+        ],
       },
       {
         id: "pay-0",
+        vendor_id: "tailor",
         amount: 20,
         paid_on: "2026-10-11",
+        method: null,
+        reference: null,
         note: null,
-        created_at: "",
+        created_at: "2026-10-11T10:00:00Z",
         voided_at: "2026-10-11T10:00:00Z",
         void_reason: "Wrong order",
+        applied: [{ po_id: "po1", po_number: "PO-0001", amount: 20, voided: true }],
       },
     ];
     wrap(<SupplierOrderPage orderId="po1" />);
     expect(await screen.findByText(/Taken back: Wrong order/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: /Take back the payment of BHD\s50\.000/ }));
+    expect(
+      screen.getByText(/Of a payment of BHD\s114\.000, which also paid PO-0002/),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Take back the payment of BHD\s114\.000/ }));
     const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/also paid PO-0002/)).toBeInTheDocument();
     const confirm = within(dialog).getByRole("button", { name: "Take it back" });
     expect(confirm).toBeDisabled();
     fireEvent.change(within(dialog).getByLabelText("Reason"), {
@@ -429,7 +475,7 @@ describe("paying a supplier", () => {
     });
     fireEvent.click(confirm);
     await waitFor(() =>
-      expect(stubs.voidSupplierPayment).toHaveBeenCalledWith("pay-1", "Recorded twice"),
+      expect(stubs.voidSupplierAccountPayment).toHaveBeenCalledWith("pay-1", "Recorded twice"),
     );
   });
 });
@@ -442,6 +488,34 @@ describe("a late order and what is owed", () => {
     const href = ask.getAttribute("href") ?? "";
     expect(href.startsWith("https://wa.me/97339950016?text=")).toBe(true);
     expect(decodeURIComponent(href.split("text=")[1])).toContain("PO-0001 (10 pieces to come)");
+  });
+
+  it("pays a supplier from the list, and shows each payment with its day and method", async () => {
+    stubs.orders = [tailorOrder()];
+    stubs.accountPayments = [
+      {
+        id: "pay-1",
+        vendor_id: "tailor",
+        amount: 60,
+        paid_on: "2026-11-09",
+        method: "cash",
+        reference: null,
+        note: null,
+        created_at: "2026-11-09T10:00:00Z",
+        voided_at: null,
+        void_reason: null,
+        applied: [{ po_id: "po1", po_number: "PO-0001", amount: 50, voided: false }],
+      },
+    ];
+    wrap(<SupplierOrdersPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Suppliers/ }));
+    expect(await screen.findByText(/Credit BHD\s10\.000/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Payments \(1\)/ }));
+    expect(screen.getByText(/Cash/)).toBeInTheDocument();
+    expect(screen.getByText(/Paid PO-0001 · Credit BHD\s10\.000/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Record payment/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Payment to Umm Ali/)).toBeInTheDocument();
   });
 
   it("lists each supplier with what is owed", async () => {

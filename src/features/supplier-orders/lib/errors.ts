@@ -144,6 +144,21 @@ export const WORDS: Array<[code: string, ar: string, en: string]> = [
   ["ORDER_NOT_FOUND", "لم يعد طلب الزبون موجوداً.", "The customer's order no longer exists."],
   ["INVALID_QUANTITY", "اكتب عدداً صحيحاً من القطع.", "Type a whole number of pieces."],
   ["NOTHING_TO_RECEIVE", "اكتب كم قطعة وصلت.", "Type how many pieces arrived."],
+  [
+    "INVALID_PAYMENT_METHOD",
+    "اختر طريقة الدفع: نقداً، بنفت باي، تحويل بنكي أو بطاقة.",
+    "Choose how it was paid: cash, BenefitPay, bank transfer or card.",
+  ],
+  [
+    "ALLOCATIONS_MORE_THAN_PAYMENT",
+    "ما وزّعته على الطلبيات أكثر من مبلغ الدفعة.",
+    "What you spread on the orders is more than the payment.",
+  ],
+  [
+    "INVALID_ALLOCATIONS",
+    "تعذر توزيع الدفعة على الطلبيات. حدّث الصفحة وأعد المحاولة.",
+    "The payment could not be spread on the orders. Refresh the page and try again.",
+  ],
   ["NOT_AUTHORIZED", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],
   ["row-level security", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],
   ["permission denied", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],

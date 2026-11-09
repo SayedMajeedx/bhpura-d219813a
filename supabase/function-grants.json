@@ -890,6 +890,16 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, and manage_orders or view_financials); it returns the store's suppliers, their language, phone and open orders' numbers and due days, never an amount"
+    },
+    "record_supplier_account_payment(p_vendor_id uuid, p_amount numeric, p_paid_on date, p_method text, p_reference text, p_note text, p_allocations jsonb, p_request_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who see the finances of the supplier's store: checked inside (can_access_brand, has_permission); each order part at most what it owes and never past the payment; one request id writes once"
+    },
+    "void_supplier_account_payment(p_payment_id uuid, p_reason text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who see the finances of the payment's store: checked inside (can_access_brand, has_permission); the payment and what it paid stay on record with who and why"
     }
   }
 }

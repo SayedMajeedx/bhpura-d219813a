@@ -58,7 +58,7 @@ import { usePhoneBottomBar } from "../hooks/use-phone-bottom-bar";
 import { SupplierOrderEditor } from "./SupplierOrderEditor";
 import { SupplierOrderView } from "./SupplierOrderView";
 import { ReceiveDialog } from "./ReceiveDialog";
-import { PaymentDialog } from "./PaymentDialog";
+import { OrderSupplierPayment } from "./OrderSupplierPayment";
 import { SupplierMessageDialog } from "./SupplierMessageDialog";
 import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
 import { sheetLanguageFor } from "@/features/orders/lib/job-sheet";
@@ -398,7 +398,7 @@ export function SupplierOrderPage({
             catalog={catalog}
             lang={lang}
           />
-          <PaymentDialog
+          <OrderSupplierPayment
             open={paying}
             onOpenChange={setPaying}
             brandId={brand.id}

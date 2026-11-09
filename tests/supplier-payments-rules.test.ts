@@ -97,6 +97,7 @@ describe("what is owed to each supplier", () => {
         name: "Silk house",
         phone: null,
         owed: 300,
+        credit: 0,
         openOrders: 0,
         lateOrders: 0,
       },
@@ -105,9 +106,29 @@ describe("what is owed to each supplier", () => {
         name: "Umm Ali",
         phone: "39950016",
         owed: 210,
+        credit: 0,
         openOrders: 2,
         lateOrders: 1,
       },
+    ]);
+  });
+  it("lists a supplier the store holds credit with, even with nothing owed or on its way", () => {
+    const balances = supplierBalances(
+      [
+        order({
+          id: "po5",
+          vendor_id: "settled",
+          vendor_name: "Settled tailor",
+          status: "received",
+          total_amount: 80,
+          paid_amount: 80,
+        }),
+      ],
+      TODAY,
+      new Map([["settled", 12]]),
+    );
+    expect(balances).toEqual([
+      expect.objectContaining({ vendorId: "settled", owed: 0, credit: 12, openOrders: 0 }),
     ]);
   });
 });
