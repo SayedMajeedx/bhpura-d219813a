@@ -46,6 +46,26 @@ describe("the statement's gift card lines", () => {
     });
   });
 
+  it("give the store's printing fees a line of their own, outside what cards hold", () => {
+    const printed = readGiftCardReport({
+      periods: [
+        { sold: 25, held_at_end: 25, print_fees: 2, print_count: 1 },
+        { print_fees: 4, print_count: 2, held_at_end: 25 },
+      ],
+    }).periods;
+    const lines = giftCardStatementLines(printed);
+    expect(lines.find((l) => l.key === "gift_cards_print_fees")).toMatchObject({
+      values: [2, 4],
+      total: 6,
+    });
+    // What cards hold is the cards' own: the fees never add to it.
+    expect(lines.find((l) => l.key === "gift_cards_held")!.total).toBe(25);
+    // A store that prints nothing has no such line.
+    expect(giftCardStatementLines(report.periods).map((l) => l.key)).not.toContain(
+      "gift_cards_print_fees",
+    );
+  });
+
   it("compare with the same months a year earlier", () => {
     const prior = readGiftCardReport({ periods: [{ sold: 30, held_at_end: 30 }, {}] }).periods;
     const sold = giftCardStatementLines(report.periods, prior).find(

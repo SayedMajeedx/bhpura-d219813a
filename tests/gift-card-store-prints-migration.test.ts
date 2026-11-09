@@ -138,6 +138,55 @@ describe("a purchase the store prints", () => {
   });
 });
 
+describe("where the fee is read", () => {
+  it("the report gives each period's printing fees apart from what cards hold", async () => {
+    await db.exec("SET test.perms = 'manage_orders,manage_settings,view_financials'");
+    const periods = JSON.stringify([
+      { from: "2000-01-01T00:00:00Z", to: "2100-01-01T00:00:00Z" },
+      { from: "2000-01-01T00:00:00Z", to: "2000-02-01T00:00:00Z" },
+    ]);
+    const read = await as(
+      "authenticated",
+      "SELECT public.rpc_reporting_gift_cards($1::jsonb) AS r",
+      [periods],
+    );
+    expect(read.error).toBeNull();
+    const [all, none] = (read.rows[0].r as { periods: Record<string, number>[] }).periods;
+    const paid = await db.query<{ fees: string; n: string }>(
+      "SELECT sum(print_fee) AS fees, count(*) AS n FROM public.gift_card_purchases WHERE status = 'paid' AND print_by_store",
+    );
+    expect(Number(all.print_fees)).toBe(Number(paid.rows[0].fees));
+    expect(Number(all.print_count)).toBe(Number(paid.rows[0].n));
+    expect(Number(all.print_count)).toBeGreaterThan(0);
+    // The cards hold their value only: what was issued is the purchases' amounts.
+    const issued = await db.query<{ s: string }>(
+      "SELECT sum(amount) AS s FROM public.gift_card_purchases WHERE status = 'paid'",
+    );
+    expect(Number(all.held_at_end)).toBe(Number(issued.rows[0].s));
+    expect(Number(none.print_fees)).toBe(0);
+    await staff();
+  });
+
+  it("the emails and the store's alert are given what the buyer paid and where it goes", async () => {
+    const id = ((await buy({ print: PRINT })).rows[0].r as { id: string }).id;
+    const claimed = (
+      await as("service_role", "SELECT public.claim_gift_card_purchase_events(50) AS r")
+    ).rows[0].r as Record<string, unknown>[];
+    expect(claimed.find((e) => e.purchase_id === id)).toMatchObject({
+      print_by_store: true,
+      print_fee: 2.5,
+      print_address: PRINT.address,
+    });
+    // A card payment alerts the store once it is paid, with what was paid.
+    await as("service_role", "SELECT public.settle_gift_card_purchase($1, 'chg_x', NULL)", [id]);
+    const push = await db.query<{ body: string }>(
+      "SELECT body FROM public.push_notification_events WHERE entity_id = $1",
+      [id],
+    );
+    expect(push.rows[0].body).toBe("Sara — 27.500 BHD · مطبوعة");
+  });
+});
+
 describe("recording the printing", () => {
   const paidPrinted = async () => {
     const id = ((await buy({ print: PRINT })).rows[0].r as { id: string }).id;

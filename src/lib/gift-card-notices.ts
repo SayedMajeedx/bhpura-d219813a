@@ -37,6 +37,11 @@ export type NoticeEvent = {
   token: string;
   code: string | null;
   expires_on: string | null;
+  /** The store prints the card and delivers it, for its fee (absent before migration 20261125100000). */
+  print_by_store?: boolean;
+  print_fee?: number | null;
+  print_address?: string | null;
+  print_phone?: string | null;
 };
 
 export type Email = { subject: string; html: string; text: string };
@@ -55,6 +60,30 @@ const amountOf = (e: NoticeEvent, lang: "ar" | "en") =>
     /\u00a0|\u202f/g,
     " ",
   );
+
+/** What the buyer paid: the card's value, plus the printing fee when the store prints it. */
+const paidOf = (e: NoticeEvent, lang: "ar" | "en") =>
+  amountOf(
+    { ...e, amount: Number(e.amount) + (e.print_by_store ? Number(e.print_fee ?? 0) : 0) },
+    lang,
+  );
+
+/** For a card the store prints: where it goes and what the buyer paid for it, in their words. */
+function printLines(e: NoticeEvent, lang: "ar" | "en"): string[] {
+  if (!e.print_by_store) return [];
+  const fee = amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, lang);
+  const paid = paidOf(e, lang);
+  const to = e.print_address ?? "";
+  return lang === "ar"
+    ? [
+        esc(`يطبع المتجر البطاقة ويوصلها إلى: ${to}`),
+        esc(`رسوم الطباعة والتوصيل ${fee}، والمجموع ${paid}.`),
+      ]
+    : [
+        esc(`The store prints the card and delivers it to: ${to}`),
+        esc(`Printing and delivery ${fee}, ${paid} in all.`),
+      ];
+}
 
 const dayOf = (day: string | null, lang: "ar" | "en") =>
   day
@@ -100,6 +129,7 @@ export function customerNotice(e: NoticeEvent): (Email & { to: string }) | null 
           esc(hello),
           esc(`وصلنا طلب بطاقة هدية بقيمة ${amount} من ${e.store_name}، مع إيصال التحويل.`),
           esc("يتحقق المتجر من التحويل، ثم نرسل لك رمز البطاقة على هذا البريد."),
+          ...printLines(e, "ar"),
         ]
       : [
           esc(hello),
@@ -109,6 +139,7 @@ export function customerNotice(e: NoticeEvent): (Email & { to: string }) | null 
           esc(
             "The store is checking the transfer; we will email you the card's code once it is approved.",
           ),
+          ...printLines(e, "en"),
         ];
     return {
       to: e.buyer_email,
@@ -133,6 +164,7 @@ export function customerNotice(e: NoticeEvent): (Email & { to: string }) | null 
           `${esc("رمز البطاقة:")}<br>${codeBlock(e.code)}`,
           ...(expiry ? [esc(`صالحة حتى ${expiry}.`)] : []),
           esc("يُكتب الرمز عند الدفع في المتجر، ويُستخدم رصيدها على أكثر من طلب حتى ينفد."),
+          ...printLines(e, "ar"),
         ]
       : [
           esc(hello),
@@ -144,6 +176,7 @@ export function customerNotice(e: NoticeEvent): (Email & { to: string }) | null 
           esc(
             "The code is typed at the store's checkout; its balance can pay several orders until it runs out.",
           ),
+          ...printLines(e, "en"),
         ];
     return {
       to: e.buyer_email,
@@ -186,6 +219,8 @@ export function adminNotice(e: NoticeEvent): Email | null {
   if (!transferToCheck && !soldOnline) return null;
   const amount = amountOf(e, "en");
   const amountAr = amountOf(e, "ar");
+  const paid = paidOf(e, "en");
+  const paidAr = paidOf(e, "ar");
   const deliveryEn =
     e.delivery_channel === "email"
       ? `By email to ${e.buyer_email} (sent automatically)`
@@ -199,6 +234,19 @@ export function adminNotice(e: NoticeEvent): Email | null {
     : "بيعت بطاقة هدية على المتجر · Gift card sold on the store";
   const rows: Array<[string, string]> = [
     ["المبلغ · Amount", `${amountAr} · ${amount}`],
+    ...(e.print_by_store
+      ? ([
+          [
+            "طباعة وتوصيل · Printing and delivery",
+            `${amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, "ar")} · ${amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, "en")}`,
+          ],
+          ["المدفوع · Paid", `${paidAr} · ${paid}`],
+          [
+            "التوصيل إلى · Deliver to",
+            `${e.print_address ?? ""}${e.print_phone ? ` · ${e.print_phone}` : ""}`,
+          ],
+        ] as Array<[string, string]>)
+      : []),
     ["المشتري · Buyer", e.buyer_name],
     ...(e.buyer_phone ? ([["الهاتف · Phone", e.buyer_phone]] as Array<[string, string]>) : []),
     ...(e.buyer_email ? ([["البريد · Email", e.buyer_email]] as Array<[string, string]>) : []),
@@ -225,7 +273,7 @@ export function adminNotice(e: NoticeEvent): Email | null {
       )
     : esc("صدرت البطاقة · The card was issued.");
   return {
-    subject: `[Gift card] ${transferToCheck ? "Transfer to check" : "Sold online"} ${amount} - ${e.store_name}`,
+    subject: `[Gift card] ${transferToCheck ? "Transfer to check" : "Sold online"} ${paid}${e.print_by_store ? " (printed)" : ""} - ${e.store_name}`,
     html: page("ar", title, [note, table], { href: link, label: "بطاقات الهدايا · Gift cards" }),
     text: [title, ...rows.map(([label, value]) => `${label}: ${value}`), link].join("\n"),
   };

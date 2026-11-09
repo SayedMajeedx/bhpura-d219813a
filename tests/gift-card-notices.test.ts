@@ -106,6 +106,28 @@ describe("the store's emails", () => {
     expect(sold.text).toContain("By email to sara@example.com (sent automatically)");
   });
 
+  it("say what was paid for a card the store prints, and where to deliver it", () => {
+    const printed = event({
+      event: "placed",
+      payment_method: "benefit",
+      amount: 25,
+      code: null,
+      print_by_store: true,
+      print_fee: 2,
+      print_address: "Seef, block 428",
+      print_phone: "+97336000000",
+    });
+    const store = adminNotice(printed)!;
+    expect(store.subject).toBe("[Gift card] Transfer to check BHD 27.000 (printed) - Pura Line");
+    expect(store.text).toContain("Seef, block 428 · +97336000000");
+    expect(store.text).toMatch(/Printing and delivery: .*BHD 2\.000/);
+    const buyer = customerNotice(printed)!;
+    expect(buyer.text).toContain("The store prints the card and delivers it to: Seef, block 428");
+    expect(buyer.text).toContain("Printing and delivery BHD 2.000, BHD 27.000 in all.");
+    // A digital card says none of it.
+    expect(customerNotice(event())!.text).not.toContain("Printing");
+  });
+
   it("stay quiet for what staff did themselves, and for a card payment not finished", () => {
     expect(adminNotice(event({ payment_method: "benefit" }))).toBeNull();
     expect(adminNotice(event({ event: "placed" }))).toBeNull();

@@ -11,6 +11,10 @@ import { COUNT_FORMAT, moneyFormat, type XCell, type XSheet } from "./workbook";
  * period what was sold (and how it was paid) and given, what was spent net of what released
  * orders gave back, what was written off, and what the cards held at the period's end; and, as
  * of now, what active cards hold.
+ *
+ * The store's fee for printing and delivering a card (migration 20261125100000) is its income for
+ * a service, never money held on a card: it is its own line, counted on the day the purchase was
+ * paid, and it is not in the statement's sales.
  */
 
 export type GiftCardPeriod = {
@@ -25,6 +29,9 @@ export type GiftCardPeriod = {
   spent: number;
   writtenOff: number;
   heldAtEnd: number;
+  /** The store's fees for printing and delivering cards, and how many it printed. */
+  printFees: number;
+  printCount: number;
 };
 
 export type GiftCardReport = {
@@ -51,6 +58,8 @@ export function readGiftCardReport(raw: unknown): GiftCardReport {
       spent: num(p.spent),
       writtenOff: num(p.written_off),
       heldAtEnd: num(p.held_at_end),
+      printFees: num(p.print_fees),
+      printCount: num(p.print_count),
     })),
     now: {
       held: num(now.held),
@@ -63,7 +72,8 @@ export function readGiftCardReport(raw: unknown): GiftCardReport {
 /** Whether a store has ever had a card in these periods (no section otherwise). */
 export function hasGiftCards(periods: readonly GiftCardPeriod[]): boolean {
   return periods.some(
-    (p) => p.sold || p.given || p.spent || p.writtenOff || Math.abs(p.heldAtEnd) > 0.0005,
+    (p) =>
+      p.sold || p.given || p.spent || p.writtenOff || p.printFees || Math.abs(p.heldAtEnd) > 0.0005,
   );
 }
 
@@ -112,6 +122,15 @@ const SPECS: Spec[] = [
     label: { en: "Held on cards at the month's end", ar: "المحفوظ في البطاقات آخر الشهر" },
     value: (p) => p.heldAtEnd,
     balance: true,
+  },
+  {
+    key: "gift_cards_print_fees",
+    label: {
+      en: "Printing and delivery fees (store income, not on cards or in sales)",
+      ar: "رسوم الطباعة والتوصيل (دخل للمتجر، ليست في البطاقات ولا المبيعات)",
+    },
+    value: (p) => p.printFees,
+    optional: true,
   },
 ];
 
@@ -214,6 +233,13 @@ export function giftCardSheet(input: {
       row(SPECS[2].label[lang], (p) => p.spent),
       row(SPECS[3].label[lang], (p) => p.writtenOff),
       row(SPECS[4].label[lang], (p) => p.heldAtEnd),
+      row(SPECS[5].label[lang], (p) => p.printFees),
+      [
+        { value: isAr ? "عدد البطاقات المطبوعة" : "Cards printed", indent: 1 },
+        { value: now.printCount, format: COUNT_FORMAT, bold: true },
+        { value: before.printCount, format: COUNT_FORMAT },
+        { value: yearAgo.printCount, format: COUNT_FORMAT },
+      ],
       [],
       [{ value: isAr ? `اليوم (${today})` : `Today (${today})`, bold: true }],
       [
@@ -244,5 +270,7 @@ function emptyPeriod(): GiftCardPeriod {
     spent: 0,
     writtenOff: 0,
     heldAtEnd: 0,
+    printFees: 0,
+    printCount: 0,
   };
 }

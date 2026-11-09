@@ -3684,7 +3684,7 @@ export type Database = {
           settled_by: string | null;
           status: string;
           token: string;
-          total_due: number;
+          total_due: number | null;
         };
         Insert: {
           amount: number;
@@ -3722,6 +3722,7 @@ export type Database = {
           settled_by?: string | null;
           status?: string;
           token?: string;
+          total_due?: number | null;
         };
         Update: {
           amount?: number;
@@ -3759,6 +3760,7 @@ export type Database = {
           settled_by?: string | null;
           status?: string;
           token?: string;
+          total_due?: number | null;
         };
         Relationships: [
           {
