@@ -1,6 +1,10 @@
 import { stepToSend, visitSource } from "@/lib/funnel";
 import { recordFunnelStep } from "@/lib/data/storefront-funnel";
-import { sendAdBrowsingEvent, sendAdPurchase } from "@/lib/ad-events.functions";
+import {
+  sendAdBrowsingEvent,
+  sendAdGiftCardPurchase,
+  sendAdPurchase,
+} from "@/lib/ad-events.functions";
 import { metaPayload, readCookie } from "@/lib/ad-events/meta-browser";
 import { landingClicks, snapPixelCall, tiktokPixelCall } from "@/lib/ad-events/pixel-calls";
 import { purchaseEventId } from "@/lib/ad-events/shared";
@@ -147,7 +151,14 @@ function sendToServer(
   const cookies = visitCookies();
   const meta = metaPayload(payload);
   let sending: Promise<unknown> | null = null;
-  if (event === "purchase" && typeof payload.transaction_id === "string" && payload.transaction_id)
+  const giftCardPurchase = payload.gift_card_purchase_id;
+  if (event === "purchase" && typeof giftCardPurchase === "string" && giftCardPurchase)
+    sending = sendAdGiftCardPurchase({ data: { purchaseId: giftCardPurchase, ...cookies } });
+  else if (
+    event === "purchase" &&
+    typeof payload.transaction_id === "string" &&
+    payload.transaction_id
+  )
     sending = sendAdPurchase({ data: { orderId: payload.transaction_id, ...cookies } });
   else if (event === "view_item" || event === "add_to_cart" || event === "begin_checkout")
     sending = sendAdBrowsingEvent({
