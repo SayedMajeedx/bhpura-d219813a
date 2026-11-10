@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { cardContact } from "@/features/gift-card-design/lib/contact";
 import { useQuery } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
@@ -17,10 +18,14 @@ export function useAdminCardKit() {
         store_vertical?: string | null;
         currency?: string | null;
         logo_url?: string | null;
+        phone?: string | null;
+        whatsapp_number?: string | null;
+        socials?: unknown;
       }
     | null
     | undefined;
   const colours = useMemo(() => storeColoursFrom(settings, brand), [settings, brand]);
+  const contact = useMemo(() => cardContact(settings), [settings]);
   return useCardKit({
     brandId: brand.id,
     slug: brand.slug,
@@ -30,5 +35,6 @@ export function useAdminCardKit() {
     colours,
     vertical: settings?.store_vertical ?? null,
     currency: settings?.currency ?? null,
+    contact,
   });
 }

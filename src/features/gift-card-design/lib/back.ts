@@ -3,6 +3,7 @@ import { formatMoney } from "@/lib/format";
 import { designParts, palette, type CardDesign } from "./design";
 import { BLEED, cardSize, type Align, type Shape } from "./geometry";
 import { placedMark, spendLine, storeNameIn, type CardContent } from "./content";
+import { messageBack } from "./message-card";
 import {
   CARD_FONTS,
   alignX,
@@ -199,6 +200,7 @@ export function cardBack(
   colours: StoreColours,
   measure: Measure,
 ): Shape[] {
+  if (content.purpose === "message") return messageBack(design, content, colours, measure);
   const { tone } = designParts(design.design);
   const pal = palette(tone, colours);
   const { w, h } = cardSize(design.orientation);

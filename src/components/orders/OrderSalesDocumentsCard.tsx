@@ -34,6 +34,7 @@ import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { MorphText } from "@/components/motion/MorphText";
 import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
+import { GiftMessageCardBlock } from "@/features/gift-cards/components/GiftMessageCard";
 import { useOrderWorkshop } from "@/features/orders/hooks/use-job-sheet-language";
 import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
 import { whereSentence } from "@/features/supplier-orders/lib/after-send";
@@ -234,6 +235,13 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
           lang={lang}
         />
       )}
+
+      {/* A gift order's message card, in the store's gift card designs, to print and fold. */}
+      <GiftMessageCardBlock
+        notes={order?.notes}
+        invoiceNumber={order?.invoice_number}
+        lang={lang}
+      />
 
       {/* The workshop's job sheet: only for an order with a made-to-order piece */}
       {onPrintJobSheet && (
