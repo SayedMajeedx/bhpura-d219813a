@@ -17,6 +17,7 @@ const stubs = vi.hoisted(() => ({
   accountPayments: [] as unknown[],
   recordSupplierAccountPayment: vi.fn(async () => "pay-9"),
   voidSupplierAccountPayment: vi.fn(async () => undefined),
+  downloadWorkbook: vi.fn(async () => undefined),
   permissions: ["manage_inventory", "view_financials"],
   receiveSupplierOrder: vi.fn(async () => ({ status: "partially_received", repeated: false })),
   invalidateAfterReceipt: vi.fn(async () => undefined),
@@ -202,6 +203,14 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => stubs.navigate,
 }));
 vi.mock("sonner", () => ({ toast: stubs.toast }));
+vi.mock("../src/features/finance-reports/lib/workbook", async (original) => ({
+  ...(await original<object>()),
+  downloadWorkbook: stubs.downloadWorkbook,
+}));
+vi.mock("@/features/finance-reports/lib/workbook", async (original) => ({
+  ...(await original<object>()),
+  downloadWorkbook: stubs.downloadWorkbook,
+}));
 
 const { SupplierOrdersPage } =
   await import("../src/features/supplier-orders/components/SupplierOrdersPage");
@@ -518,6 +527,64 @@ describe("a late order and what is owed", () => {
     expect(within(dialog).getByText(/Payment to Umm Ali/)).toBeInTheDocument();
   });
 
+  it("opens a supplier's statement, for one owed or settled, as Excel and as a printed page", async () => {
+    stubs.orders = [
+      tailorOrder({ vendor_phone: "39950016" }),
+      tailorOrder({
+        id: "po2",
+        po_number: "PO-0002",
+        vendor_id: "silk",
+        vendor_name: "Silk house",
+        paid_amount: 210,
+        status: "received",
+      }),
+    ];
+    stubs.accountPayments = [
+      {
+        id: "pay-1",
+        vendor_id: "tailor",
+        amount: 50,
+        paid_on: "2026-10-12",
+        method: "cash",
+        reference: null,
+        note: null,
+        created_at: "2026-10-12T10:00:00Z",
+        voided_at: null,
+        void_reason: null,
+        applied: [{ po_id: "po1", po_number: "PO-0001", amount: 50, voided: false }],
+      },
+    ];
+    const printed = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() } };
+    vi.stubGlobal(
+      "open",
+      vi.fn(() => printed),
+    );
+    wrap(<SupplierOrdersPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Suppliers/ }));
+    // A supplier with nothing open keeps a way to their statement.
+    expect(screen.getByRole("button", { name: "Silk house" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Statement" }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("radio", { name: "All time" }));
+    expect(within(dialog).getByText("Order PO-0001")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Cash · Paid PO-0001/)).toBeInTheDocument();
+    expect(within(dialog).getAllByText(/You owe BHD\s160\.000/).length).toBeGreaterThan(0);
+    fireEvent.click(within(dialog).getByRole("button", { name: /Excel/ }));
+    await waitFor(() => expect(stubs.downloadWorkbook).toHaveBeenCalledTimes(1));
+    const [sheets, file] = stubs.downloadWorkbook.mock.calls[0] as unknown as [
+      Array<{ name: string }>,
+      string,
+    ];
+    expect(sheets[0].name).toBe("Supplier statement");
+    expect(file).toBe("pura-supplier-statement-umm-ali-all-time.xlsx");
+    fireEvent.click(within(dialog).getByRole("button", { name: /Print or PDF/ }));
+    expect(printed.document.write).toHaveBeenCalledWith(expect.stringContaining("Umm Ali"));
+    expect(
+      within(dialog).getByRole("link", { name: /Send the summary on WhatsApp/ }),
+    ).toHaveAttribute("href", expect.stringContaining("https://wa.me/97339950016?text="));
+    vi.unstubAllGlobals();
+  });
+
   it("lists each supplier with what is owed", async () => {
     stubs.orders = [
       tailorOrder({ vendor_phone: "39950016" }),
@@ -533,7 +600,9 @@ describe("a late order and what is owed", () => {
     fireEvent.click(await screen.findByRole("tab", { name: /Suppliers/ }));
     expect(screen.getByText("Umm Ali")).toBeInTheDocument();
     expect(screen.getByText("1 order awaiting delivery")).toBeInTheDocument();
-    expect(screen.queryByText("Silk house")).toBeNull();
+    // A settled supplier is not listed as owed: only a way to their statement remains.
+    expect(screen.getAllByText("Silk house")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Silk house" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Chat with Umm Ali on WhatsApp" })).toHaveAttribute(
       "href",
       "https://wa.me/97339950016",

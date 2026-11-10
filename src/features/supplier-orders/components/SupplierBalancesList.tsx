@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, MessageCircle, Wallet } from "lucide-react";
+import { ChevronDown, FileText, MessageCircle, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { useBrand } from "@/lib/brand-context";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { cn } from "@/lib/utils";
 import { supplierBalances } from "../lib/payments";
@@ -15,11 +16,13 @@ import {
   type AccountPayment,
 } from "../lib/supplier-account";
 import { SupplierPaymentDialog } from "./SupplierPaymentDialog";
+import { SupplierStatementDialog } from "./SupplierStatementDialog";
 
 /**
  * Each supplier the store owes money, awaits goods from or holds credit with, most owed first:
- * a payment to them in one press, spread over their orders, and every payment made to them with
- * its day, how it was paid and the orders it paid.
+ * a payment to them in one press, spread over their orders, every payment made to them with its
+ * day, how it was paid and the orders it paid, and their statement of account; a supplier with
+ * nothing open keeps a way to their statement.
  */
 export function SupplierBalancesList({
   brandId,
@@ -45,20 +48,42 @@ export function SupplierBalancesList({
   );
   const [paying, setPaying] = useState<{ id: string; name: string } | null>(null);
   const [opened, setOpened] = useState<string | null>(null);
+  const [statementFor, setStatementFor] = useState<{
+    id: string;
+    name: string;
+    phone: string | null;
+  } | null>(null);
+  const brand = useBrand() as { slug: string; name_ar?: string | null; name_en?: string | null };
+  const store =
+    (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || brand.slug;
+  // Suppliers with orders but nothing owed, on its way or held: their statement stays a tap away.
+  const settled = useMemo(() => {
+    const listed = new Set(balances.map((b) => b.vendorId));
+    const seen = new Map<string, { id: string; name: string; phone: string | null }>();
+    for (const order of orders) {
+      if (order.status === "draft" || listed.has(order.vendor_id)) continue;
+      if (!seen.has(order.vendor_id)) {
+        seen.set(order.vendor_id, {
+          id: order.vendor_id,
+          name: order.vendor_name,
+          phone: order.vendor_phone,
+        });
+      }
+    }
+    return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name));
+  }, [balances, orders]);
   const money = (n: number) => formatMoney(n, currency, lang);
   const locale = isAr ? "ar-BH" : "en-BH";
 
-  if (balances.length === 0) {
-    return (
-      <Card className="p-6 text-center text-sm text-muted-foreground">
-        {isAr
-          ? "لا شيء عليك لأي مورد، ولا شيء بانتظار الوصول."
-          : "You owe no supplier anything, and nothing is on its way."}
-      </Card>
-    );
-  }
   return (
     <>
+      {balances.length === 0 && (
+        <Card className="p-6 text-center text-sm text-muted-foreground">
+          {isAr
+            ? "لا شيء عليك لأي مورد، ولا شيء بانتظار الوصول."
+            : "You owe no supplier anything, and nothing is on its way."}
+        </Card>
+      )}
       <ul className="space-y-2">
         {balances.map((supplier) => {
           const chat = whatsappChatUrl(supplier.phone);
@@ -136,6 +161,22 @@ export function SupplierBalancesList({
                     <Wallet className="h-4 w-4" aria-hidden="true" />
                     {isAr ? "تسجيل دفعة" : "Record payment"}
                   </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="gap-1.5"
+                    onClick={() =>
+                      setStatementFor({
+                        id: supplier.vendorId,
+                        name: supplier.name,
+                        phone: supplier.phone,
+                      })
+                    }
+                  >
+                    <FileText className="h-4 w-4" aria-hidden="true" />
+                    {isAr ? "كشف الحساب" : "Statement"}
+                  </Button>
                   {theirs.length > 0 && (
                     <Button
                       type="button"
@@ -174,6 +215,39 @@ export function SupplierBalancesList({
           );
         })}
       </ul>
+      {settled.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {isAr ? "كشف حساب مورد آخر:" : "Another supplier's statement:"}
+          </span>
+          {settled.map((s) => (
+            <Button
+              key={s.id}
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setStatementFor(s)}
+            >
+              <FileText className="h-4 w-4" aria-hidden="true" />
+              <span dir="auto">{s.name}</span>
+            </Button>
+          ))}
+        </div>
+      )}
+      {statementFor && (
+        <SupplierStatementDialog
+          open
+          onOpenChange={(next) => !next && setStatementFor(null)}
+          supplier={statementFor}
+          orders={orders}
+          payments={payments}
+          store={store}
+          slug={brand.slug}
+          currency={currency}
+          lang={lang}
+        />
+      )}
       {paying && (
         <SupplierPaymentDialog
           open
