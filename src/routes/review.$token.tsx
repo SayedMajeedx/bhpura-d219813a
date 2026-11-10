@@ -17,8 +17,20 @@ import { cn } from "@/lib/utils";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
 import { rewardOffer } from "@/lib/review-reward";
 import { orderNumberLabel } from "@/lib/order-number";
+import { isReviewToken, reviewHead } from "@/lib/review-head";
+import { getReviewLinkHead } from "@/lib/review-link.functions";
 
-export const Route = createFileRoute("/review/$token")({ component: ReviewPage });
+export const Route = createFileRoute("/review/$token")({
+  // The store's name and picture read on the server, for the link's preview (`reviewHead`); the
+  // page itself reads its review in the browser.
+  ssr: "data-only",
+  loader: async ({ params }) =>
+    isReviewToken(params.token)
+      ? await getReviewLinkHead({ data: { token: params.token } }).catch(() => null)
+      : null,
+  head: ({ loaderData }) => reviewHead(loaderData),
+  component: ReviewPage,
+});
 
 type PublicReview = {
   state: "ready" | "completed";

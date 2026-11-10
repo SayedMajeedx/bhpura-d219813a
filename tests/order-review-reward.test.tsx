@@ -98,12 +98,18 @@ describe("post-purchase review reward", () => {
     ];
     const open = vi.spyOn(window, "open").mockReturnValue({} as Window);
     try {
-      withQuery(<ReviewRequestQueue brandId="b1" brandName="Pura" isAr={false} />);
+      withQuery(
+        <ReviewRequestQueue brandId="b1" brandName="Pura" store={{ slug: "pura" }} isAr={false} />,
+      );
       fireEvent.click(await screen.findByRole("button", { name: "Open WhatsApp" }));
       await waitFor(() =>
         expect(reviews.updateReviewRequestStatus).toHaveBeenCalledWith("r1", "whatsapp_opened"),
       );
       expect(open.mock.calls[0][0]).toContain("https://wa.me/97339001122");
+      // The link is on the store's own address, as its invoice is.
+      expect(decodeURIComponent(String(open.mock.calls[0][0]))).toContain(
+        "https://pura.boutq.store/review/t1",
+      );
       expect(reviews.updateReviewRequestStatus).not.toHaveBeenCalledWith("r1", "sent");
       fireEvent.click(screen.getByRole("button", { name: "Mark sent" }));
       await waitFor(() =>
