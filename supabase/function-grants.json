@@ -900,6 +900,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who see the finances of the payment's store: checked inside (can_access_brand, has_permission); the payment and what it paid stay on record with who and why"
+    },
+    "record_supplier_adjustment(p_vendor_id uuid, p_amount numeric, p_on date, p_kind text, p_reason text, p_allocations jsonb, p_request_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff who see the finances of the supplier's store: checked inside (can_access_brand, has_permission); a known kind and a reason; each order part at most what it owes; one request id writes once"
     }
   }
 }
