@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   accountPaymentProblem,
+  entryLabel,
+  isPayment,
+  kindLabel,
   methodLabel,
   owedOrders,
   paymentCredit,
+  pendingPrices,
   paymentsOnOrder,
   spreadPayment,
   supplierCredits,
@@ -37,6 +41,7 @@ const payment = (over: Partial<AccountPayment>): AccountPayment => ({
   vendor_id: "tailor",
   amount: 0,
   paid_on: "2026-11-09",
+  kind: "payment",
   method: "benefit",
   reference: null,
   note: null,
@@ -170,6 +175,16 @@ describe("what stops a payment", () => {
     // More than all that is owed is fine: the rest is credit.
     expect(accountPaymentProblem({ ...ok, amount: "500" })).toBeNull();
   });
+
+  it("asks an adjustment for its reason, never for a method", () => {
+    const adjustment = { ...ok, method: null, kind: "discount" as const };
+    expect(accountPaymentProblem(adjustment)).toBe("reason");
+    expect(accountPaymentProblem({ ...adjustment, reason: "  " })).toBe("reason");
+    expect(accountPaymentProblem({ ...adjustment, reason: "5 off the bill" })).toBeNull();
+    expect(
+      accountPaymentProblem({ ...adjustment, kind: "write_off", reason: "Rounding" }),
+    ).toBeNull();
+  });
 });
 
 describe("what the payments hold", () => {
@@ -216,5 +231,30 @@ describe("what the payments hold", () => {
     expect(methodLabel("bank", "en")).toBe("Bank transfer");
     expect(methodLabel("benefit", "ar")).toBe("بنفت باي");
     expect(methodLabel(null, "en")).toBe("Method not recorded");
+  });
+});
+
+describe("adjustments and prices still to add", () => {
+  it("names an entry by its method when paid, by what it is otherwise", () => {
+    expect(entryLabel({ kind: "payment", method: "cash" }, "en")).toBe("Cash");
+    expect(entryLabel({ kind: "discount", method: null }, "ar")).toBe("خصم من المورد");
+    expect(entryLabel({ kind: "write_off", method: null }, "en")).toBe("Written off");
+    expect(kindLabel("payment", "ar")).toBe("دفعة");
+    expect([isPayment({ kind: "payment" }), isPayment({ kind: "discount" })]).toEqual([
+      true,
+      false,
+    ]);
+  });
+
+  it("counts a supplier's pieces waiting for a price, on orders that count", () => {
+    const line = (price_pending: boolean) =>
+      ({ price_pending }) as unknown as SupplierOrder["items"][number];
+    const list = [
+      order({ id: "1", items: [line(true), line(false), line(true)] }),
+      order({ id: "2", status: "draft", items: [line(true)] }),
+      order({ id: "3", status: "cancelled", items: [line(true)] }),
+      order({ id: "4", vendor_id: "other", items: [line(true)] }),
+    ];
+    expect(pendingPrices(list, "tailor")).toBe(2);
   });
 });

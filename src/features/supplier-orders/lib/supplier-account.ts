@@ -1,5 +1,5 @@
 import { roundCost } from "./landed-cost";
-import { paymentOf, type SupplierOrder } from "./order-state";
+import { paymentOf, pricesToAdd, type SupplierOrder } from "./order-state";
 
 /**
  * A supplier's account (migration `20261127100000`): a payment is the supplier's, with its day,
@@ -24,6 +24,44 @@ export function methodLabel(method: PaymentMethod | null, lang: "ar" | "en"): st
   return METHOD_WORDS[method][lang];
 }
 
+/** What an entry on a supplier's account is: money paid, or an adjustment that moved none. */
+export type EntryKind = "payment" | "discount" | "write_off";
+export const ENTRY_KINDS: readonly EntryKind[] = ["payment", "discount", "write_off"];
+
+const KIND_WORDS: Record<Exclude<EntryKind, "payment">, { ar: string; en: string }> = {
+  discount: { ar: "خصم من المورد", en: "Discount from the supplier" },
+  write_off: { ar: "مبلغ مشطوب", en: "Written off" },
+};
+
+/** An entry kind in the reader's words ("Payment" for a payment). */
+export function kindLabel(kind: EntryKind, lang: "ar" | "en"): string {
+  if (kind === "payment") return lang === "ar" ? "دفعة" : "Payment";
+  return KIND_WORDS[kind][lang];
+}
+
+/** How an entry reads on a list: a payment by its method, an adjustment by what it is. */
+export function entryLabel(
+  entry: { kind?: EntryKind | null; method: PaymentMethod | null },
+  lang: "ar" | "en",
+): string {
+  const kind = entry.kind ?? "payment";
+  return kind === "payment" ? methodLabel(entry.method, lang) : kindLabel(kind, lang);
+}
+
+/** Whether an entry is money paid (an adjustment is not). */
+export const isPayment = (entry: { kind?: EntryKind | null }) =>
+  (entry.kind ?? "payment") === "payment";
+
+/**
+ * The supplier's pieces still waiting for a price, on orders that count: what they owe is not
+ * known yet, so the balance shown is short by them.
+ */
+export function pendingPrices(orders: readonly SupplierOrder[], vendorId: string): number {
+  return orders
+    .filter((o) => o.vendor_id === vendorId && o.status !== "draft")
+    .reduce((sum, o) => sum + pricesToAdd(o), 0);
+}
+
 export type AppliedPart = { po_id: string; po_number: string; amount: number; voided: boolean };
 
 export type AccountPayment = {
@@ -31,6 +69,8 @@ export type AccountPayment = {
   vendor_id: string;
   amount: number;
   paid_on: string;
+  /** A payment, or an adjustment (a discount from the supplier, an amount written off). */
+  kind: EntryKind;
   method: PaymentMethod | null;
   reference: string | null;
   note: string | null;
@@ -150,7 +190,7 @@ export function spreadPayment(
   };
 }
 
-export type AccountPaymentProblem = "amount" | "date" | "method" | "chosen" | null;
+export type AccountPaymentProblem = "amount" | "date" | "method" | "reason" | "chosen" | null;
 
 /** What stops a payment, before the database says it. */
 export function accountPaymentProblem({
@@ -160,7 +200,12 @@ export function accountPaymentProblem({
   chosen,
   owed,
   today,
+  kind = "payment",
+  reason = "",
 }: {
+  /** A payment asks how it was paid; an adjustment asks why. */
+  kind?: EntryKind;
+  reason?: string;
   amount: string;
   paidOn: string;
   method: PaymentMethod | null;
@@ -174,7 +219,8 @@ export function accountPaymentProblem({
     return "amount";
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(paidOn) || paidOn > today) return "date";
-  if (!method) return "method";
+  if (kind === "payment" && !method) return "method";
+  if (kind !== "payment" && !reason.trim()) return "reason";
   let given = 0;
   for (const [id, part] of Object.entries(chosen)) {
     if (!part) continue;

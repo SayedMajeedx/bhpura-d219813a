@@ -38,6 +38,7 @@ const payment = (over: Partial<AccountPayment>): AccountPayment => ({
   vendor_id: "tailor",
   amount: 0,
   paid_on: "2026-11-09",
+  kind: "payment",
   method: "benefit",
   reference: null,
   note: null,
@@ -206,5 +207,60 @@ describe("the statement's files", () => {
       "Balance now: BHD 17.000 in our favour",
       "Please check it against yours. Thank you.",
     ]);
+  });
+});
+
+describe("adjustments on the statement", () => {
+  const withDiscount = [
+    ...payments,
+    payment({
+      id: "d1",
+      amount: 5,
+      paid_on: "2026-11-06",
+      kind: "discount",
+      method: null,
+      note: "Late delivery",
+      created_at: "2026-11-06T09:00:00",
+      applied: [{ po_id: "c", po_number: "PO-0003", amount: 5, voided: false }],
+    }),
+  ];
+  const s = buildSupplierStatement({
+    supplier,
+    orders,
+    payments: withDiscount,
+    range: { from: "2026-11-01", to: "2026-11-30" },
+    lang: "en",
+  });
+
+  it("lowers the balance on its day in a column of its own, never as paid", () => {
+    expect(s.lines.map((l) => [l.title, l.paid, l.adjusted, l.balance])).toEqual([
+      ["Order PO-0002", 0, 0, 79],
+      ["Order PO-0003", 0, 0, 97],
+      ["Discount from the supplier", 0, 5, 92],
+      ["Payment", 114, 0, -22],
+    ]);
+    expect(s.lines[2]).toMatchObject({ kind: "adjustment", detail: "Late delivery · On PO-0003" });
+    expect([s.paid, s.adjusted, s.closing]).toEqual([114, 5, -22]);
+  });
+
+  it("gets its own column in the sheet and the page, and a line in the message", () => {
+    const sheet = statementSheet(s, { lang: "en", store: "Pura", digits: 3 });
+    expect(sheet.rows[5].map((c) => c?.value)).toEqual([
+      "Date",
+      "Entry",
+      "Details",
+      "Orders (owed)",
+      "Paid",
+      "Discount or write-off",
+      "Balance",
+    ]);
+    expect(sheet.rows[9].map((c) => (c ? c.value : null)).slice(3)).toEqual([null, null, 5, 92]);
+    expect(sheet.rows[11].slice(3).map((c) => c?.value)).toEqual([35, 114, 5, -22]);
+    expect(statementHtml(s, { lang: "en", store: "Pura", money, today: "x" })).toContain(
+      "<th>Discount or write-off</th>",
+    );
+    expect(statementMessage(s, { lang: "en", store: "Pura", money })).toContain(
+      "Discounts and adjustments: BHD 5.000",
+    );
   });
 });

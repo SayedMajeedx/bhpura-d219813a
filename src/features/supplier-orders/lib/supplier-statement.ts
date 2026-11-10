@@ -1,6 +1,12 @@
 import { roundCost } from "./landed-cost";
 import { paymentOf, type SupplierOrder } from "./order-state";
-import { methodLabel, type AccountPayment, type PaymentMethod } from "./supplier-account";
+import {
+  isPayment,
+  kindLabel,
+  methodLabel,
+  type AccountPayment,
+  type PaymentMethod,
+} from "./supplier-account";
 
 /**
  * A supplier's statement of account: what was ordered from them and what was paid to them, in
@@ -8,7 +14,8 @@ import { methodLabel, type AccountPayment, type PaymentMethod } from "./supplier
  * before the period. A positive balance is what the store owes the supplier; a negative one is
  * the store's credit with them. An order counts from the day it was made, at its value today (a
  * draft and a cancelled order count for nothing); a payment counts on the day it was paid, and
- * one taken back counts nowhere. Pure: the dialog draws it, the files and the message read it.
+ * one taken back counts nowhere. An adjustment (a discount from the supplier, an amount written
+ * off) lowers the balance on its day like a payment, in a column of its own: it was not paid. Pure: the dialog draws it, the files and the message read it.
  */
 
 type Lang = "ar" | "en";
@@ -65,6 +72,7 @@ const WORDS = {
     order: (n: string) => `طلبية ${n}`,
     payment: "دفعة",
     paid: (orders: string[]) => `دفعت ${orders.join("، ")}`,
+    on: (orders: string[]) => `على ${orders.join("، ")}`,
     credit: "رصيد عند المورد",
   },
   en: {
@@ -80,6 +88,7 @@ const WORDS = {
     order: (n: string) => `Order ${n}`,
     payment: "Payment",
     paid: (orders: string[]) => `Paid ${orders.join(", ")}`,
+    on: (orders: string[]) => `On ${orders.join(", ")}`,
     credit: "Credit with the supplier",
   },
 } as const;
@@ -95,16 +104,17 @@ export function rangeText(range: StatementRange, lang: Lang): string {
 
 export type StatementLine = {
   date: string;
-  kind: "order" | "payment";
-  /** "Order PO-0003" or "Payment". */
+  kind: "order" | "payment" | "adjustment";
+  /** "Order PO-0003", "Payment", or what the adjustment is ("Discount from the supplier"). */
   title: string;
   /** A payment's method, the orders it paid, its reference and note. */
   detail: string;
   method: PaymentMethod | null;
   reference: string | null;
-  /** What the line adds to what is owed (an order) and takes off it (a payment). */
+  /** What the line adds to what is owed (an order) and takes off it (a payment, an adjustment). */
   ordered: number;
   paid: number;
+  adjusted: number;
   balance: number;
 };
 
@@ -115,6 +125,8 @@ export type SupplierStatement = {
   lines: StatementLine[];
   ordered: number;
   paid: number;
+  /** Discounts from the supplier and amounts written off: lowered what is owed, not paid. */
+  adjusted: number;
   closing: number;
 };
 
@@ -151,6 +163,7 @@ export function buildSupplierStatement(input: {
       reference: null,
       ordered: total,
       paid: 0,
+      adjusted: 0,
     });
   }
   for (const payment of input.payments) {
@@ -158,25 +171,31 @@ export function buildSupplierStatement(input: {
     const orders = [
       ...new Set(payment.applied.filter((a) => !a.voided && a.po_number).map((a) => a.po_number)),
     ];
-    const detail = [
-      methodLabel(payment.method, lang),
-      orders.length ? words.paid(orders) : words.credit,
-      payment.reference,
-      payment.note,
-    ]
+    const paidMoney = isPayment(payment);
+    const detail = (
+      paidMoney
+        ? [
+            methodLabel(payment.method, lang),
+            orders.length ? words.paid(orders) : words.credit,
+            payment.reference,
+            payment.note,
+          ]
+        : [payment.note, orders.length ? words.on(orders) : words.credit]
+    )
       .filter(Boolean)
       .join(" · ");
     entries.push({
       date: payment.paid_on,
       at: payment.created_at,
       order: 1,
-      kind: "payment",
-      title: words.payment,
+      kind: paidMoney ? "payment" : "adjustment",
+      title: paidMoney ? words.payment : kindLabel(payment.kind, lang),
       detail,
-      method: payment.method,
-      reference: payment.reference,
+      method: paidMoney ? payment.method : null,
+      reference: paidMoney ? payment.reference : null,
       ordered: 0,
-      paid: payment.amount,
+      paid: paidMoney ? payment.amount : 0,
+      adjusted: paidMoney ? 0 : payment.amount,
     });
   }
 
@@ -185,21 +204,34 @@ export function buildSupplierStatement(input: {
   );
   let opening = 0;
   for (const entry of entries) {
-    if (before(entry.date, range)) opening = roundCost(opening + entry.ordered - entry.paid);
+    if (before(entry.date, range)) {
+      opening = roundCost(opening + entry.ordered - entry.paid - entry.adjusted);
+    }
   }
   let balance = opening;
   let ordered = 0;
   let paid = 0;
+  let adjusted = 0;
   const lines: StatementLine[] = [];
   for (const entry of entries) {
     if (!within(entry.date, range)) continue;
-    balance = roundCost(balance + entry.ordered - entry.paid);
+    balance = roundCost(balance + entry.ordered - entry.paid - entry.adjusted);
     ordered = roundCost(ordered + entry.ordered);
     paid = roundCost(paid + entry.paid);
+    adjusted = roundCost(adjusted + entry.adjusted);
     const { at: _at, order: _order, ...line } = entry;
     lines.push({ ...line, balance });
   }
-  return { supplier: supplier.name, range, opening, lines, ordered, paid, closing: balance };
+  return {
+    supplier: supplier.name,
+    range,
+    opening,
+    lines,
+    ordered,
+    paid,
+    adjusted,
+    closing: balance,
+  };
 }
 
 /** A balance in words: what the store owes, or its credit with the supplier. */
@@ -232,6 +264,7 @@ export function statementMessage(
       `الرصيد السابق: ${owes(statement.opening)}`,
       `الطلبيات: ${money(statement.ordered)}`,
       `المدفوع: ${money(statement.paid)}`,
+      ...(statement.adjusted > 0 ? [`الخصومات والتسويات: ${money(statement.adjusted)}`] : []),
       `الرصيد الآن: ${owes(statement.closing)}`,
       "نرجو مطابقته معنا، وشكراً لكم.",
     ].join("\n");
@@ -242,6 +275,7 @@ export function statementMessage(
     `Balance before: ${owes(statement.opening)}`,
     `Orders: ${money(statement.ordered)}`,
     `Paid: ${money(statement.paid)}`,
+    ...(statement.adjusted > 0 ? [`Discounts and adjustments: ${money(statement.adjusted)}`] : []),
     `Balance now: ${owes(statement.closing)}`,
     "Please check it against yours. Thank you.",
   ].join("\n");

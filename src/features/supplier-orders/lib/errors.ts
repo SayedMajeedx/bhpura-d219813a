@@ -159,6 +159,12 @@ export const WORDS: Array<[code: string, ar: string, en: string]> = [
     "تعذر توزيع الدفعة على الطلبيات. حدّث الصفحة وأعد المحاولة.",
     "The payment could not be spread on the orders. Refresh the page and try again.",
   ],
+  [
+    "INVALID_ADJUSTMENT_KIND",
+    "اختر نوع التسوية: خصم من المورد أو شطب مبلغ.",
+    "Choose the adjustment: a discount from the supplier or an amount written off.",
+  ],
+  ["ADJUSTMENT_REASON_REQUIRED", "اكتب سبب التسوية.", "Type the reason for the adjustment."],
   ["NOT_AUTHORIZED", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],
   ["row-level security", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],
   ["permission denied", "ليست لديك صلاحية لهذا.", "You do not have permission for this."],

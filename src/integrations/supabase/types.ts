@@ -9038,6 +9038,7 @@ export type Database = {
           brand_id: string;
           created_at: string;
           id: string;
+          kind: string;
           method: string | null;
           note: string | null;
           paid_on: string;
@@ -9054,6 +9055,7 @@ export type Database = {
           brand_id: string;
           created_at?: string;
           id?: string;
+          kind?: string;
           method?: string | null;
           note?: string | null;
           paid_on?: string;
@@ -9070,6 +9072,7 @@ export type Database = {
           brand_id?: string;
           created_at?: string;
           id?: string;
+          kind?: string;
           method?: string | null;
           note?: string | null;
           paid_on?: string;
@@ -11812,6 +11815,18 @@ export type Database = {
           p_note: string;
           p_paid_on: string;
           p_reference: string;
+          p_request_id: string;
+          p_vendor_id: string;
+        };
+        Returns: string;
+      };
+      record_supplier_adjustment: {
+        Args: {
+          p_allocations: Json;
+          p_amount: number;
+          p_kind: string;
+          p_on: string;
+          p_reason: string;
           p_request_id: string;
           p_vendor_id: string;
         };

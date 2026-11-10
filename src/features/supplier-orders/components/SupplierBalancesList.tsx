@@ -7,11 +7,13 @@ import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { useBrand } from "@/lib/brand-context";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { cn } from "@/lib/utils";
+import { countOf } from "@/lib/arabic-count";
 import { supplierBalances } from "../lib/payments";
 import { ordersLabel, type SupplierOrder } from "../lib/order-state";
 import {
-  methodLabel,
+  entryLabel,
   paymentCredit,
+  pendingPrices,
   supplierCredits,
   type AccountPayment,
 } from "../lib/supplier-account";
@@ -92,6 +94,7 @@ export function SupplierBalancesList({
             .slice()
             .reverse();
           const open = opened === supplier.vendorId;
+          const waiting = pendingPrices(orders, supplier.vendorId);
           return (
             <li key={supplier.vendorId}>
               <Card className="space-y-2 p-3 sm:p-4">
@@ -106,6 +109,13 @@ export function SupplierBalancesList({
                         : isAr
                           ? "وصل كل ما طلبته منه"
                           : "Everything ordered has arrived"}
+                      {waiting > 0 && (
+                        <span className="ms-1 font-semibold text-warning">
+                          {isAr
+                            ? `· ${countOf(waiting, "piece", lang)} بلا سعر`
+                            : `· ${countOf(waiting, "piece", lang)} with no price`}
+                        </span>
+                      )}
                       {supplier.lateOrders > 0 && (
                         <span className="ms-1 font-semibold text-warning">
                           {isAr
@@ -288,7 +298,7 @@ function PaymentRow({
       <p className={voided ? "text-muted-foreground line-through" : "font-semibold"}>
         <span className="tabular-nums">{money(payment.amount)}</span>
         <span className="ms-2 text-xs font-normal text-muted-foreground">
-          {formatDate(payment.paid_on, locale)} · {methodLabel(payment.method, lang)}
+          {formatDate(payment.paid_on, locale)} · {entryLabel(payment, lang)}
         </span>
       </p>
       {!voided && (paid.length > 0 || credit > 0) && (

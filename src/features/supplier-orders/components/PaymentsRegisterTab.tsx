@@ -9,7 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { formatMoney, moneyFractionDigits } from "@/lib/format";
 import { downloadWorkbook, workbookFileName } from "@/features/finance-reports/lib/workbook";
 import type { SupplierOrder } from "../lib/order-state";
-import { PAYMENT_METHODS, methodLabel, type AccountPayment } from "../lib/supplier-account";
+import {
+  PAYMENT_METHODS,
+  isPayment,
+  methodLabel,
+  type AccountPayment,
+} from "../lib/supplier-account";
 import {
   STATEMENT_PRESETS,
   presetLabel,
@@ -65,12 +70,12 @@ export function PaymentsRegisterTab({
   }, [orders]);
   const suppliers = useMemo(
     () =>
-      [...new Set(payments.map((p) => p.vendor_id))]
+      [...new Set(payments.filter(isPayment).map((p) => p.vendor_id))]
         .map((id) => ({ id, name: names.get(id) ?? id }))
         .sort((a, b) => a.name.localeCompare(b.name)),
     [payments, names],
   );
-  const someUnrecorded = payments.some((p) => p.method === null);
+  const someUnrecorded = payments.some((p) => isPayment(p) && p.method === null);
   const unknown = isAr ? "مورد" : "Supplier";
   const rows = useMemo(
     () => registerRows(payments, names, { range, vendorId, method, showTakenBack }, unknown),

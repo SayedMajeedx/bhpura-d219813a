@@ -15,6 +15,7 @@ const payment = (over: Partial<AccountPayment>): AccountPayment => ({
   vendor_id: "tailor",
   amount: 0,
   paid_on: "2026-11-09",
+  kind: "payment",
   method: "benefit",
   reference: null,
   note: null,
@@ -65,6 +66,18 @@ describe("the payments register", () => {
       ["p2", "Umm Ali", [], 50],
       ["p3", "Silk house", [], 30],
     ]);
+  });
+
+  it("leaves out adjustments: they moved no money", () => {
+    const withDiscount = [
+      ...payments,
+      payment({ id: "d1", amount: 5, kind: "discount", method: null, note: "5 off" }),
+    ];
+    const rows = registerRows(withDiscount, names, november, "Supplier");
+    expect(rows.map((r) => r.payment.id)).toEqual(["p1", "p2", "p3"]);
+    expect(registerRows(withDiscount, names, { ...november, method: "none" }, "Supplier")).toEqual(
+      [],
+    );
   });
 
   it("chooses by supplier and by method, and shows a payment taken back only when asked", () => {
