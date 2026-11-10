@@ -30,6 +30,14 @@ export const FRAME_INSET = 5.5;
 const INSIDE = FRAME_INSET + 6.5;
 const LINE = 1.55;
 
+/** How large the message may be set, by the staff's choice: automatic fills the room. */
+export type MessageSize = "small" | "auto" | "large";
+export const MESSAGE_SIZES: readonly MessageSize[] = ["small", "auto", "large"];
+/** The largest size (mm) each choice sets the message at; the room can always ask for less. */
+const MESSAGE_MAX: Record<MessageSize, number> = { small: 6.5, auto: 11, large: 15 };
+/** The smallest size the message is set at before it is cut short. */
+const MESSAGE_MIN = 3.4;
+
 const WORDS = {
   to: { ar: "إلى", en: "To" },
   from: { ar: "من", en: "From" },
@@ -60,8 +68,36 @@ function framed(w: number, h: number, pal: Palette): Shape[] {
 }
 
 /**
- * The message as large as the room lets it be (down to a size still easy to read), every line
- * within the width and within the room; past that it is cut with an ellipsis.
+ * Lines of even length: the same number of lines as the widest wrap gives, at the narrowest width
+ * that still holds them, so a short message reads as two or three balanced lines (as written on a
+ * card by hand), never one long line over a short last word.
+ */
+export function balancedLines(
+  text: string,
+  font: ReturnType<typeof display>,
+  width: number,
+  measure: Measure,
+): string[] {
+  const lines = wrap(text, font, width, measure);
+  if (lines.length < 2) return lines;
+  const fits = (w: number) => {
+    const tried = wrap(text, font, w, measure);
+    return tried.length === lines.length && tried.every((line) => measure(line, font) <= w);
+  };
+  let lo = width * 0.3;
+  let hi = width;
+  for (let i = 0; i < 16; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  return wrap(text, font, hi, measure);
+}
+
+/**
+ * The message as large as the room lets it be, up to the chosen size's largest (`MESSAGE_MAX`)
+ * and down to a size still easy to read, in balanced lines, every line within the width and
+ * within the room; past that it is cut with an ellipsis.
  */
 export function messageFit(
   message: string,
@@ -69,17 +105,18 @@ export function messageFit(
   width: number,
   font: (size: number) => ReturnType<typeof display>,
   measure: Measure,
+  max = 6.2,
 ) {
-  for (let size = 6.2; size >= 3.4; size -= 0.2) {
+  for (let size = max; size >= MESSAGE_MIN; size -= 0.2) {
     const f = font(size);
     const lines = wrap(message, f, width, measure);
     const height = (lines.length - 1) * size * LINE + size;
     if (height <= room && lines.every((line) => measure(line, f) <= width)) {
-      return { font: f, lines };
+      return { font: f, lines: balancedLines(message, f, width, measure) };
     }
   }
-  const f = font(3.4);
-  const fits = Math.max(1, Math.floor((room - 3.4) / (3.4 * LINE)) + 1);
+  const f = font(MESSAGE_MIN);
+  const fits = Math.max(1, Math.floor((room - MESSAGE_MIN) / (MESSAGE_MIN * LINE)) + 1);
   return { font: f, lines: clampLines(wrap(message, f, width, measure), fits) };
 }
 
@@ -180,11 +217,20 @@ export function messageBack(
   const from = design.from?.trim();
   let floor = h - INSIDE;
   if (from) {
-    shapes.push(oneLine(from, display(main, 4.2, content.fonts), cx, floor, "center", pal.ink));
-    shapes.push(
-      oneLine(pair("from", main, second), label(main, 2.1), cx, floor - 6.2, "center", pal.soft),
+    const fromName = messageFit(
+      from,
+      8,
+      width,
+      (s) => display(main, s, content.fonts),
+      measure,
+      5.6,
     );
-    floor -= 14;
+    shapes.push(oneLine(fromName.lines[0] ?? "", fromName.font, cx, floor, "center", pal.ink));
+    const labelY = floor - fromName.font.size * 1.25 - 1.2;
+    shapes.push(
+      oneLine(pair("from", main, second), label(main, 2.1), cx, labelY, "center", pal.soft),
+    );
+    floor = labelY - 8;
   }
 
   const message = content.message?.trim();
@@ -196,6 +242,7 @@ export function messageBack(
       width,
       (s) => display(main, s, content.fonts),
       measure,
+      MESSAGE_MAX[content.messageSize ?? "auto"],
     );
     const lh = fitted.font.size * LINE;
     // Centred in the room left between the name and the sender.

@@ -1,5 +1,6 @@
 import type { VerticalKind } from "./design";
 import type { CardContact } from "./contact";
+import type { MessageSize } from "./message-card";
 import type { Align, Shape } from "./geometry";
 import {
   cardFontFamily,
@@ -61,6 +62,8 @@ export type CardContent = {
   purpose?: CardPurpose;
   /** The store's number and Instagram, which a gift message card's front prints. */
   contact?: CardContact;
+  /** How large a gift message card's message is set (automatic fills its room). */
+  messageSize?: MessageSize;
 };
 
 export type CardPurpose = "gift_card" | "message";
@@ -226,6 +229,7 @@ export type CardDetails = {
   message: string | null;
   expiresOn: string | null;
   purpose?: CardPurpose;
+  messageSize?: MessageSize;
 };
 
 /** A card's content from the store's kit, the design's photo and the card's own details. */
