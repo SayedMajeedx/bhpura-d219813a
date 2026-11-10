@@ -12,17 +12,25 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { countOf } from "@/lib/arabic-count";
 import { formatMoney } from "@/lib/format";
 import { invalidateSupplierOrders } from "@/lib/data/supplier-orders";
-import { recordSupplierAccountPayment } from "@/lib/data/supplier-orders/account";
+import {
+  recordSupplierAccountPayment,
+  recordSupplierAdjustment,
+} from "@/lib/data/supplier-orders/account";
 import { roundCost } from "../lib/landed-cost";
 import { localToday, type SupplierOrder } from "../lib/order-state";
 import {
+  ENTRY_KINDS,
   PAYMENT_METHODS,
   accountPaymentProblem,
+  kindLabel,
   methodLabel,
   owedOrders,
+  pendingPrices,
   spreadPayment,
+  type EntryKind,
   type PaymentMethod,
 } from "../lib/supplier-account";
 import { supplierOrderError } from "../lib/errors";
@@ -31,6 +39,8 @@ import { supplierOrderError } from "../lib/errors";
  * A payment to a supplier, as it happened: one amount on one day, by one means, spread on the
  * orders the store chooses or on the oldest that owe, the rest kept as the supplier's credit.
  * Opened from the suppliers' list, or from an order (which is then chosen first).
+ * The same dialog records an adjustment (a discount from the supplier, an amount written off):
+ * it lowers what is owed the same way, with a reason and no method, as no money moved.
  */
 export function SupplierPaymentDialog({
   open,
@@ -64,6 +74,7 @@ export function SupplierPaymentDialog({
   const owedTotal = roundCost(owed.reduce((sum, o) => sum + o.owed, 0));
   const first = owed.find((o) => o.id === firstOrderId) ?? null;
 
+  const [kind, setKind] = useState<EntryKind>("payment");
   const [amount, setAmount] = useState("");
   const [paidOn, setPaidOn] = useState(today);
   const [method, setMethod] = useState<PaymentMethod | null>(null);
@@ -92,10 +103,22 @@ export function SupplierPaymentDialog({
     }
     return parts;
   }, [choosing, owed, typedParts, first, value]);
-  const problem = accountPaymentProblem({ amount, paidOn, method, chosen, owed, today });
+  const isAdjustment = kind !== "payment";
+  const problem = accountPaymentProblem({
+    kind,
+    reason: note,
+    amount,
+    paidOn,
+    method,
+    chosen,
+    owed,
+    today,
+  });
+  const waiting = pendingPrices(orders, vendor.id);
   const spread = spreadPayment(Number.isFinite(value) ? value : 0, owed, chosen);
 
   const reset = () => {
+    setKind("payment");
     setAmount("");
     setPaidOn(localToday());
     setMethod(null);
@@ -107,23 +130,44 @@ export function SupplierPaymentDialog({
   };
 
   const save = async () => {
-    if (problem || !method) return;
+    if (problem || (kind === "payment" && !method)) return;
+    const allocations = Object.entries(chosen)
+      .filter(([, part]) => part > 0)
+      .map(([poId, part]) => ({ poId, amount: part }));
     setSaving(true);
     try {
-      await recordSupplierAccountPayment({
-        vendorId: vendor.id,
-        amount: value,
-        paidOn,
-        method,
-        reference: reference || null,
-        note: note || null,
-        allocations: Object.entries(chosen)
-          .filter(([, part]) => part > 0)
-          .map(([poId, part]) => ({ poId, amount: part })),
-        requestId,
-      });
+      if (kind === "payment" && method) {
+        await recordSupplierAccountPayment({
+          vendorId: vendor.id,
+          amount: value,
+          paidOn,
+          method,
+          reference: reference || null,
+          note: note || null,
+          allocations,
+          requestId,
+        });
+      } else if (kind !== "payment") {
+        await recordSupplierAdjustment({
+          vendorId: vendor.id,
+          amount: value,
+          on: paidOn,
+          kind,
+          reason: note.trim(),
+          allocations,
+          requestId,
+        });
+      }
       await invalidateSupplierOrders(qc, brandId);
-      toast.success(isAr ? "سُجّلت الدفعة" : "Payment recorded");
+      toast.success(
+        isAdjustment
+          ? isAr
+            ? "سُجّلت التسوية"
+            : "Adjustment recorded"
+          : isAr
+            ? "سُجّلت الدفعة"
+            : "Payment recorded",
+      );
       reset();
       onOpenChange(false);
     } catch (error) {
@@ -148,7 +192,11 @@ export function SupplierPaymentDialog({
       >
         <DialogHeader>
           <DialogTitle dir="auto" className="text-page-start break-words">
-            {isAr ? `دفعة لـ ${vendor.name}` : `Payment to ${vendor.name}`}
+            {isAdjustment
+              ? `${kindLabel(kind, lang)} · ${vendor.name}`
+              : isAr
+                ? `دفعة لـ ${vendor.name}`
+                : `Payment to ${vendor.name}`}
           </DialogTitle>
           <DialogDescription>
             {owedTotal > 0
@@ -165,9 +213,49 @@ export function SupplierPaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {waiting > 0 && <PricesWaitingNote count={waiting} lang={lang} />}
+
+        <div
+          role="radiogroup"
+          aria-label={isAr ? "نوع القيد" : "Kind of entry"}
+          className="flex flex-wrap gap-2"
+        >
+          {ENTRY_KINDS.map((k) => (
+            <Button
+              key={k}
+              type="button"
+              size="sm"
+              variant={kind === k ? "default" : "outline"}
+              role="radio"
+              aria-checked={kind === k}
+              onClick={() => setKind(k)}
+              className="rounded-full"
+            >
+              {kindLabel(k, lang)}
+            </Button>
+          ))}
+        </div>
+        {isAdjustment && (
+          <p className="text-xs text-muted-foreground">
+            {kind === "discount"
+              ? isAr
+                ? "خصم اتفقت عليه مع المورد: ينقص ما عليك له كما تنقصه الدفعة، ولا يُحسب مدفوعاً."
+                : "A discount agreed with the supplier: it lowers what you owe as a payment does, and is not counted as paid."
+              : isAr
+                ? "مبلغ لن يُدفع (فرق صغير، أو اتفاق على إسقاطه): ينقص ما عليك، ولا يُحسب مدفوعاً."
+                : "An amount that will not be paid (a small difference, or one agreed to be dropped): it lowers what you owe, and is not counted as paid."}
+          </p>
+        )}
+
         <div className="space-y-1">
           <Label htmlFor={`${uid}-amount`}>
-            {isAr ? `المبلغ المدفوع (${moneyLabel})` : `Amount paid (${moneyLabel})`}
+            {isAdjustment
+              ? isAr
+                ? `المبلغ (${moneyLabel})`
+                : `Amount (${moneyLabel})`
+              : isAr
+                ? `المبلغ المدفوع (${moneyLabel})`
+                : `Amount paid (${moneyLabel})`}
           </Label>
           <div className="flex min-w-0 gap-2">
             <Input
@@ -194,9 +282,11 @@ export function SupplierPaymentDialog({
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className={isAdjustment ? "space-y-1" : "grid grid-cols-2 gap-2"}>
           <div className="min-w-0 space-y-1">
-            <Label htmlFor={`${uid}-date`}>{isAr ? "تاريخ الدفع" : "Paid on"}</Label>
+            <Label htmlFor={`${uid}-date`}>
+              {isAdjustment ? (isAr ? "التاريخ" : "Date") : isAr ? "تاريخ الدفع" : "Paid on"}
+            </Label>
             <Input
               id={`${uid}-date`}
               type="date"
@@ -206,18 +296,20 @@ export function SupplierPaymentDialog({
               aria-invalid={problem === "date" || undefined}
             />
           </div>
-          <div className="min-w-0 space-y-1">
-            <Label htmlFor={`${uid}-ref`}>
-              {isAr ? "رقم المرجع (اختياري)" : "Reference (optional)"}
-            </Label>
-            <Input
-              id={`${uid}-ref`}
-              value={reference}
-              maxLength={100}
-              onChange={(e) => setReference(e.target.value)}
-              dir="auto"
-            />
-          </div>
+          {!isAdjustment && (
+            <div className="min-w-0 space-y-1">
+              <Label htmlFor={`${uid}-ref`}>
+                {isAr ? "رقم المرجع (اختياري)" : "Reference (optional)"}
+              </Label>
+              <Input
+                id={`${uid}-ref`}
+                value={reference}
+                maxLength={100}
+                onChange={(e) => setReference(e.target.value)}
+                dir="auto"
+              />
+            </div>
+          )}
         </div>
         {problem === "date" && (
           <p className="text-xs text-destructive">
@@ -227,41 +319,55 @@ export function SupplierPaymentDialog({
           </p>
         )}
 
-        <fieldset className="space-y-1">
-          <legend className="text-sm font-medium">{isAr ? "طريقة الدفع" : "Paid by"}</legend>
-          <div role="radiogroup" className="flex flex-wrap gap-2">
-            {PAYMENT_METHODS.map((m) => (
-              <Button
-                key={m}
-                type="button"
-                size="sm"
-                variant={method === m ? "default" : "outline"}
-                role="radio"
-                aria-checked={method === m}
-                onClick={() => setMethod(m)}
-                className="rounded-full"
-              >
-                {methodLabel(m, lang)}
-              </Button>
-            ))}
-          </div>
-        </fieldset>
+        {!isAdjustment && (
+          <fieldset className="space-y-1">
+            <legend className="text-sm font-medium">{isAr ? "طريقة الدفع" : "Paid by"}</legend>
+            <div role="radiogroup" className="flex flex-wrap gap-2">
+              {PAYMENT_METHODS.map((m) => (
+                <Button
+                  key={m}
+                  type="button"
+                  size="sm"
+                  variant={method === m ? "default" : "outline"}
+                  role="radio"
+                  aria-checked={method === m}
+                  onClick={() => setMethod(m)}
+                  className="rounded-full"
+                >
+                  {methodLabel(m, lang)}
+                </Button>
+              ))}
+            </div>
+          </fieldset>
+        )}
 
         <div className="space-y-1">
-          <Label htmlFor={`${uid}-note`}>{isAr ? "ملاحظة" : "Note"}</Label>
+          <Label htmlFor={`${uid}-note`}>
+            {isAdjustment ? (isAr ? "السبب" : "Reason") : isAr ? "ملاحظة" : "Note"}
+          </Label>
           <Input
             id={`${uid}-note`}
             value={note}
             maxLength={300}
             onChange={(e) => setNote(e.target.value)}
+            aria-invalid={(isAdjustment && typed && problem === "reason") || undefined}
             dir="auto"
           />
+          {isAdjustment && typed && problem === "reason" && (
+            <p className="text-xs text-destructive">
+              {isAr ? "اكتب سبب التسوية." : "Type the reason for the adjustment."}
+            </p>
+          )}
         </div>
 
         {owed.length > 0 && (
           <fieldset className="space-y-2 rounded-lg border border-border p-3">
             <legend className="px-1 text-sm font-medium">
-              {isAr ? "على أي طلبيات؟" : "Which orders does it pay?"}
+              {isAr
+                ? "على أي طلبيات؟"
+                : isAdjustment
+                  ? "Which orders does it go on?"
+                  : "Which orders does it pay?"}
             </legend>
             <div role="radiogroup" className="flex flex-wrap gap-2">
               {[
@@ -337,10 +443,27 @@ export function SupplierPaymentDialog({
             {isAr ? "إلغاء" : "Cancel"}
           </Button>
           <Button type="button" onClick={save} disabled={Boolean(problem) || saving}>
-            {isAr ? "تسجيل الدفعة" : "Record payment"}
+            {isAdjustment
+              ? isAr
+                ? "تسجيل التسوية"
+                : "Record adjustment"
+              : isAr
+                ? "تسجيل الدفعة"
+                : "Record payment"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The supplier's pieces still waiting for a price: what is owed is short by them. */
+export function PricesWaitingNote({ count, lang }: { count: number; lang: "ar" | "en" }) {
+  return (
+    <p className="rounded-lg border border-warning/40 bg-warning/10 p-2 text-xs">
+      {lang === "ar"
+        ? `بانتظار السعر: ${countOf(count, "piece", lang)}، فالرصيد غير مكتمل حتى يُضاف.`
+        : `Waiting for a price: ${countOf(count, "piece", lang)}, so the balance is short until added.`}
+    </p>
   );
 }

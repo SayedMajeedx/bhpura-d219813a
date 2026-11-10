@@ -21,7 +21,7 @@ import {
   voidSupplierAccountPayment,
 } from "@/lib/data/supplier-orders/account";
 import { paymentOf, type SupplierOrder } from "../lib/order-state";
-import { methodLabel, paymentsOnOrder, type AccountPayment } from "../lib/supplier-account";
+import { entryLabel, paymentsOnOrder, type AccountPayment } from "../lib/supplier-account";
 import { supplierOrderError } from "../lib/errors";
 
 /**
@@ -105,7 +105,7 @@ export function PaymentsCard({
                   <p className={voided ? "text-muted-foreground line-through" : "font-semibold"}>
                     <span className="tabular-nums">{money(here)}</span>
                     <span className="ms-2 text-xs font-normal text-muted-foreground">
-                      {formatDate(payment.paid_on, locale)} · {methodLabel(payment.method, lang)}
+                      {formatDate(payment.paid_on, locale)} · {entryLabel(payment, lang)}
                     </span>
                   </p>
                   {here !== payment.amount && (

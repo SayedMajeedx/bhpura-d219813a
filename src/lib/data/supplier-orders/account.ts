@@ -4,6 +4,7 @@ import { readAll } from "../read-all";
 import { supplierOrderKeys } from "./index";
 import type {
   AccountPayment,
+  EntryKind,
   PaymentMethod,
 } from "@/features/supplier-orders/lib/supplier-account";
 
@@ -16,7 +17,7 @@ import type {
  */
 
 const PAYMENT_COLUMNS =
-  "id, vendor_id, amount, paid_on, method, reference, note, created_at, voided_at, void_reason, purchase_order_payments(po_id, amount, voided_at, purchase_orders(po_number))";
+  "id, vendor_id, amount, paid_on, kind, method, reference, note, created_at, voided_at, void_reason, purchase_order_payments(po_id, amount, voided_at, purchase_orders(po_number))";
 
 /** Every payment to the store's suppliers, the ones taken back included, oldest first. */
 export async function fetchSupplierAccountPayments(brandId: string): Promise<AccountPayment[]> {
@@ -35,6 +36,7 @@ export async function fetchSupplierAccountPayments(brandId: string): Promise<Acc
     vendor_id: row.vendor_id,
     amount: Number(row.amount) || 0,
     paid_on: row.paid_on,
+    kind: (row.kind as EntryKind | null) ?? "payment",
     method: (row.method as PaymentMethod | null) ?? null,
     reference: row.reference,
     note: row.note,
@@ -96,4 +98,30 @@ export async function voidSupplierAccountPayment(paymentId: string, reason: stri
     p_reason: reason.trim(),
   });
   if (error) throw error;
+}
+
+/**
+ * An adjustment to a supplier's account: a discount they gave or an amount written off, with
+ * its reason, spread on the orders as a payment is. It moves no money. `requestId` is one press.
+ */
+export async function recordSupplierAdjustment(adjustment: {
+  vendorId: string;
+  amount: number;
+  on: string;
+  kind: Exclude<EntryKind, "payment">;
+  reason: string;
+  allocations: { poId: string; amount: number }[];
+  requestId: string;
+}): Promise<string> {
+  const { data, error } = await supabase.rpc("record_supplier_adjustment", {
+    p_vendor_id: adjustment.vendorId,
+    p_amount: adjustment.amount,
+    p_on: adjustment.on,
+    p_kind: adjustment.kind,
+    p_reason: adjustment.reason.trim(),
+    p_allocations: adjustment.allocations.map((a) => ({ po_id: a.poId, amount: a.amount })),
+    p_request_id: adjustment.requestId,
+  });
+  if (error) throw error;
+  return data as string;
 }

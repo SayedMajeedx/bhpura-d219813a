@@ -2,6 +2,7 @@ import { moneyFormat, type XCell, type XSheet } from "@/features/finance-reports
 import { roundCost } from "./landed-cost";
 import {
   PAYMENT_METHODS,
+  isPayment,
   methodLabel,
   paymentCredit,
   type AccountPayment,
@@ -13,7 +14,9 @@ import { rangeText, type StatementRange } from "./supplier-statement";
  * Every payment to the store's suppliers in one list: chosen by period, supplier and method,
  * each with the day it was paid, who it went to, how, its reference, the orders it paid and the
  * credit it still holds; with the period's totals by method and by supplier, and the same as an
- * Excel sheet. A payment taken back counts in no total and is shown only when asked. Pure.
+ * Excel sheet. A payment taken back counts in no total and is shown only when asked. An
+ * adjustment (a discount from the supplier, an amount written off) moved no money, so it is not
+ * here: the supplier's statement lists it. Pure.
  */
 
 type Lang = "ar" | "en";
@@ -53,6 +56,7 @@ export function registerRows(
   unknownSupplier: string,
 ): RegisterRow[] {
   return payments
+    .filter(isPayment)
     .filter((p) => inRange(p.paid_on, filter.range))
     .filter((p) => filter.vendorId === "all" || p.vendor_id === filter.vendorId)
     .filter(

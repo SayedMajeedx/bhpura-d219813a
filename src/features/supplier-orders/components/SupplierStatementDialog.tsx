@@ -17,7 +17,8 @@ import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { cn } from "@/lib/utils";
 import { downloadWorkbook, workbookFileName } from "@/features/finance-reports/lib/workbook";
 import type { SupplierOrder } from "../lib/order-state";
-import type { AccountPayment } from "../lib/supplier-account";
+import { pendingPrices, type AccountPayment } from "../lib/supplier-account";
+import { PricesWaitingNote } from "./SupplierPaymentDialog";
 import {
   STATEMENT_PRESETS,
   balanceWords,
@@ -70,6 +71,7 @@ export function SupplierStatementDialog({
     () => buildSupplierStatement({ supplier, orders, payments, range, lang }),
     [supplier, orders, payments, range, lang],
   );
+  const waiting = pendingPrices(orders, supplier.id);
   const chat = whatsappChatUrl(supplier.phone);
   const message = statementMessage(statement, { lang, store, money });
 
@@ -168,6 +170,8 @@ export function SupplierStatementDialog({
           </div>
         )}
 
+        {waiting > 0 && <PricesWaitingNote count={waiting} lang={lang} />}
+
         <dl className="grid grid-cols-2 gap-2 rounded-lg border border-border p-3 text-sm sm:grid-cols-4">
           {[
             [
@@ -176,6 +180,9 @@ export function SupplierStatementDialog({
             ],
             [isAr ? "طلبيات الفترة" : "Orders", money(statement.ordered)],
             [isAr ? "المدفوع في الفترة" : "Paid", money(statement.paid)],
+            ...(statement.adjusted > 0
+              ? [[isAr ? "خصومات وتسويات" : "Discounts and adjustments", money(statement.adjusted)]]
+              : []),
             [
               isAr ? "الرصيد في آخرها" : "Balance at the end",
               balanceWords(statement.closing, money, lang),
@@ -212,7 +219,9 @@ export function SupplierStatementDialog({
                 </div>
                 <div className="shrink-0 text-end tabular-nums">
                   <p className={line.kind === "order" ? "text-warning" : "text-success"}>
-                    {line.kind === "order" ? `+${money(line.ordered)}` : `−${money(line.paid)}`}
+                    {line.kind === "order"
+                      ? `+${money(line.ordered)}`
+                      : `−${money(line.paid || line.adjusted)}`}
                   </p>
                   <p className="text-xs text-muted-foreground">{money(line.balance)}</p>
                 </div>

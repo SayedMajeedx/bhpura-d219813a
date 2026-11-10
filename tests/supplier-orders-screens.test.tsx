@@ -16,6 +16,7 @@ const stubs = vi.hoisted(() => ({
   voidSupplierPayment: vi.fn(async () => undefined),
   accountPayments: [] as unknown[],
   recordSupplierAccountPayment: vi.fn(async () => "pay-9"),
+  recordSupplierAdjustment: vi.fn(async () => "adj-1"),
   voidSupplierAccountPayment: vi.fn(async () => undefined),
   downloadWorkbook: vi.fn(async () => undefined),
   permissions: ["manage_inventory", "view_financials"],
@@ -124,6 +125,7 @@ const mocks: Record<string, unknown> = {
       payments: () => options("account-payments", () => stubs.accountPayments),
     },
     recordSupplierAccountPayment: stubs.recordSupplierAccountPayment,
+    recordSupplierAdjustment: stubs.recordSupplierAdjustment,
     voidSupplierAccountPayment: stubs.voidSupplierAccountPayment,
   },
   "data/catalog": {
@@ -434,6 +436,41 @@ describe("paying a supplier", () => {
     });
     expect(payment.paidOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(payment.requestId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
+  it("records a discount from the supplier with its reason and no method, warning of pieces with no price", async () => {
+    stubs.order = tailorOrder({
+      items: [
+        ...tailorOrder().items,
+        line({ id: "piece", variant_id: null, quantity: 1, line_total: 0, price_pending: true }),
+      ],
+    });
+    wrap(<SupplierOrderPage orderId="po1" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Record payment/ }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Waiting for a price: 1 piece/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("radio", { name: "Discount from the supplier" }));
+    expect(within(dialog).queryByRole("radio", { name: "BenefitPay" })).toBeNull();
+    expect(within(dialog).queryByLabelText(/Reference/)).toBeNull();
+    fireEvent.change(within(dialog).getByLabelText(/^Amount/), { target: { value: "15" } });
+    const save = within(dialog).getByRole("button", { name: "Record adjustment" });
+    // An adjustment says why.
+    expect(save).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText("Reason"), {
+      target: { value: "Late delivery" },
+    });
+    fireEvent.click(save);
+    await waitFor(() => expect(stubs.recordSupplierAdjustment).toHaveBeenCalledTimes(1));
+    expect(stubs.recordSupplierAccountPayment).not.toHaveBeenCalled();
+    expect(stubs.recordSupplierAdjustment.mock.calls[0]).toMatchObject([
+      {
+        vendorId: "tailor",
+        amount: 15,
+        kind: "discount",
+        reason: "Late delivery",
+        allocations: [{ poId: "po1", amount: 15 }],
+      },
+    ]);
   });
 
   it("takes a whole payment back only with a reason, saying the other orders it paid", async () => {

@@ -4,7 +4,8 @@ import { balanceWords, rangeText, type SupplierStatement } from "./supplier-stat
 /**
  * A supplier's statement as files: an Excel sheet (real numbers in the currency's own decimals,
  * negatives in parentheses, right to left for an Arabic reader) and an A4 page that prints
- * itself (saved as a PDF from the print window). Pure: the dialog downloads and opens them.
+ * itself (saved as a PDF from the print window). Discounts from the supplier and amounts written
+ * off get a column of their own, only when the period has one. Pure: the dialog downloads and opens them.
  */
 
 type Lang = "ar" | "en";
@@ -21,6 +22,7 @@ const WORDS = {
     detail: "التفاصيل",
     ordered: "طلبيات (عليك)",
     paid: "مدفوع (لك)",
+    adjusted: "خصم أو شطب (لك)",
     balance: "الرصيد",
     opening: "الرصيد السابق",
     totals: "مجموع الفترة",
@@ -39,6 +41,7 @@ const WORDS = {
     detail: "Details",
     ordered: "Orders (owed)",
     paid: "Paid",
+    adjusted: "Discount or write-off",
     balance: "Balance",
     opening: "Balance before",
     totals: "Period totals",
@@ -62,10 +65,14 @@ export function statementSheet(
   });
   const text = (value: string | null, extra: Partial<NonNullable<XCell>> = {}): XCell =>
     value ? { value, ...extra } : null;
+  const adj = statement.adjusted > 0;
+  // The adjustments' column, only when the period has one.
+  const withAdj = (cells: XCell[], adjusted: XCell): XCell[] =>
+    adj ? [...cells.slice(0, 5), adjusted, ...cells.slice(5)] : cells;
   return {
     name: words.title,
     rtl: options.lang === "ar",
-    widths: [12, 20, 46, 16, 16, 16],
+    widths: adj ? [12, 20, 46, 16, 16, 16, 16] : [12, 20, 46, 16, 16, 16],
     stickyRows: 6,
     rows: [
       [text(words.title, { bold: true })],
@@ -73,38 +80,52 @@ export function statementSheet(
       [text(words.supplier), text(statement.supplier)],
       [text(words.period), text(rangeText(statement.range, options.lang))],
       [],
-      [
-        text(words.date, { heading: true }),
-        text(words.entry, { heading: true }),
-        text(words.detail, { heading: true }),
-        text(words.ordered, { heading: true }),
-        text(words.paid, { heading: true }),
-        text(words.balance, { heading: true }),
-      ],
-      [
+      withAdj(
+        [
+          text(words.date, { heading: true }),
+          text(words.entry, { heading: true }),
+          text(words.detail, { heading: true }),
+          text(words.ordered, { heading: true }),
+          text(words.paid, { heading: true }),
+          text(words.balance, { heading: true }),
+        ],
+        text(words.adjusted, { heading: true }),
+      ),
+      withAdj(
+        [
+          null,
+          text(words.opening, { bold: true }),
+          null,
+          null,
+          null,
+          m(statement.opening, { bold: true }),
+        ],
         null,
-        text(words.opening, { bold: true }),
-        null,
-        null,
-        null,
-        m(statement.opening, { bold: true }),
-      ],
-      ...statement.lines.map((line): XCell[] => [
-        { value: line.date, text: true },
-        text(line.title, { text: true }),
-        text(line.detail),
-        line.ordered ? m(line.ordered) : null,
-        line.paid ? m(line.paid) : null,
-        m(line.balance),
-      ]),
-      [
-        null,
-        text(words.totals, { total: true }),
-        { value: "", total: true },
-        m(statement.ordered, { total: true }),
-        m(statement.paid, { total: true }),
-        m(statement.closing, { total: true }),
-      ],
+      ),
+      ...statement.lines.map((line): XCell[] =>
+        withAdj(
+          [
+            { value: line.date, text: true },
+            text(line.title, { text: true }),
+            text(line.detail),
+            line.ordered ? m(line.ordered) : null,
+            line.paid ? m(line.paid) : null,
+            m(line.balance),
+          ],
+          line.adjusted ? m(line.adjusted) : null,
+        ),
+      ),
+      withAdj(
+        [
+          null,
+          text(words.totals, { total: true }),
+          { value: "", total: true },
+          m(statement.ordered, { total: true }),
+          m(statement.paid, { total: true }),
+          m(statement.closing, { total: true }),
+        ],
+        m(statement.adjusted, { total: true }),
+      ),
       [],
       [text(words.note)],
     ],
@@ -129,10 +150,13 @@ export function statementHtml(
   const e = escapeHtml;
   const isRTL = lang === "ar";
   const num = (value: number | null) => `<td class="num">${value ? e(money(value)) : ""}</td>`;
+  const adj = statement.adjusted > 0;
+  const adjCell = (value: number | null) => (adj ? num(value) : "");
+  const columns = adj ? 6 : 5;
   const rows = statement.lines
     .map(
       (line) =>
-        `<tr><td class="day">${e(line.date)}</td><td><b>${e(line.title)}</b>${line.detail ? `<div class="muted">${e(line.detail)}</div>` : ""}</td>${num(line.ordered)}${num(line.paid)}<td class="num">${e(money(line.balance))}</td></tr>`,
+        `<tr><td class="day">${e(line.date)}</td><td><b>${e(line.title)}</b>${line.detail ? `<div class="muted">${e(line.detail)}</div>` : ""}</td>${num(line.ordered)}${num(line.paid)}${adjCell(line.adjusted)}<td class="num">${e(money(line.balance))}</td></tr>`,
     )
     .join("");
   return `<!DOCTYPE html>
@@ -171,11 +195,11 @@ export function statementHtml(
     </div>
   </div>
   <table>
-    <thead><tr><th>${e(words.date)}</th><th>${e(words.entry)}</th><th>${e(words.ordered)}</th><th>${e(words.paid)}</th><th>${e(words.balance)}</th></tr></thead>
+    <thead><tr><th>${e(words.date)}</th><th>${e(words.entry)}</th><th>${e(words.ordered)}</th><th>${e(words.paid)}</th>${adj ? `<th>${e(words.adjusted)}</th>` : ""}<th>${e(words.balance)}</th></tr></thead>
     <tbody>
-      <tr class="strong"><td></td><td>${e(words.opening)}</td><td></td><td></td><td class="num">${e(money(statement.opening))}</td></tr>
-      ${rows || `<tr><td colspan="5" class="muted">${e(words.empty)}</td></tr>`}
-      <tr class="strong"><td></td><td>${e(words.totals)}</td>${num(statement.ordered)}${num(statement.paid)}<td class="num">${e(money(statement.closing))}</td></tr>
+      <tr class="strong"><td></td><td>${e(words.opening)}</td><td></td><td></td>${adj ? "<td></td>" : ""}<td class="num">${e(money(statement.opening))}</td></tr>
+      ${rows || `<tr><td colspan="${columns}" class="muted">${e(words.empty)}</td></tr>`}
+      <tr class="strong"><td></td><td>${e(words.totals)}</td>${num(statement.ordered)}${num(statement.paid)}${adjCell(statement.adjusted)}<td class="num">${e(money(statement.closing))}</td></tr>
     </tbody>
   </table>
   <div class="closing"><span>${e(words.closing)}</span><b>${e(balanceWords(statement.closing, money, lang))}</b></div>
