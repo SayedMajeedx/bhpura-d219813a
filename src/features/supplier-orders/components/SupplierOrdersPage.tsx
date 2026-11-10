@@ -27,6 +27,7 @@ import {
 } from "../lib/order-state";
 import { SupplierOrderCard } from "./SupplierOrderCard";
 import { SupplierBalancesList } from "./SupplierBalancesList";
+import { PaymentsRegisterTab } from "./PaymentsRegisterTab";
 import { PiecesToMakeTab } from "./PiecesToMakeTab";
 import { ReorderTab } from "./ReorderTab";
 import { useReorderSuggestions } from "../hooks/use-reorder";
@@ -41,7 +42,7 @@ import { cn } from "@/lib/utils";
  * Supplier orders: what was ordered from a supplier (a tailor, a workshop, a wholesaler), what has arrived, and what is
  * still owed. Receiving an order adds its pieces to the stock and sets their cost.
  */
-type PageTab = SupplierOrdersTab | "suppliers" | "pieces" | "reorder";
+type PageTab = SupplierOrdersTab | "suppliers" | "payments" | "pieces" | "reorder";
 
 export function SupplierOrdersPage() {
   const { lang: rawLang } = useI18n();
@@ -68,7 +69,7 @@ export function SupplierOrdersPage() {
   const summary = useMemo(() => ordersSummary(orders, today), [orders, today]);
   const shown = useMemo(
     () =>
-      tab === "suppliers" || tab === "pieces" || tab === "reorder"
+      tab === "suppliers" || tab === "payments" || tab === "pieces" || tab === "reorder"
         ? []
         : sortOrders(ordersInTab(orders, tab), today),
     [orders, tab, today],
@@ -107,7 +108,15 @@ export function SupplierOrdersPage() {
     { id: "done", label: isAr ? "منتهية" : "Done", count: ordersInTab(orders, "done").length },
     { id: "all", label: isAr ? "الكل" : "All", count: orders.length },
     { id: "suppliers", label: isAr ? "الموردون" : "Suppliers", count: balances.length },
+    {
+      id: "payments",
+      label: isAr ? "الدفعات" : "Payments",
+      count: payments.filter((p) => !p.voided_at).length,
+    },
   ];
+  const named = brand as { slug: string; name_ar?: string | null; name_en?: string | null };
+  const store =
+    (isAr ? named.name_ar || named.name_en : named.name_en || named.name_ar) || brand.slug;
 
   const newOrder = () =>
     navigate({ to: "/admin/b/$slug/supplier-orders/$id", params: { slug: brand.slug, id: "new" } });
@@ -217,6 +226,15 @@ export function SupplierOrdersPage() {
               lines={reorder.lines}
               catalog={reorder.catalog}
               isLoading={reorder.isLoading}
+              lang={lang}
+            />
+          ) : tab === "payments" ? (
+            <PaymentsRegisterTab
+              orders={orders}
+              payments={payments}
+              store={store}
+              slug={brand.slug}
+              currency={currency}
               lang={lang}
             />
           ) : tab === "suppliers" ? (
