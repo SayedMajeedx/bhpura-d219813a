@@ -53,7 +53,14 @@ export type CardContent = {
   kind: VerticalKind;
   /** The buyer's page language, which leads a card set in both. */
   primary: "ar" | "en";
+  /**
+   * A gift card (the default), or a gift message card tucked into a gift order: the same designs,
+   * holding no money (its back is `messageBack`, its front's label says so).
+   */
+  purpose?: CardPurpose;
 };
+
+export type CardPurpose = "gift_card" | "message";
 
 export function storeNameIn(content: CardContent, lang: "ar" | "en"): string {
   const { ar, en } = content.storeName;
@@ -215,6 +222,7 @@ export type CardDetails = {
   to: string | null;
   message: string | null;
   expiresOn: string | null;
+  purpose?: CardPurpose;
 };
 
 /** A card's content from the store's kit, the design's photo and the card's own details. */

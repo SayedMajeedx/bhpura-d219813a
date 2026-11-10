@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import type { GiftCard, GiftCardPurchase } from "@/lib/data/gift-cards";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
@@ -17,7 +18,15 @@ import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
 
 /** What the print dialog draws: the card's own value, code and names, and the design to start on. */
-type PrintSource = { id: string; code: string; details: CardDetails; initial: CardDesign };
+type PrintSource = {
+  id: string;
+  code: string;
+  details: CardDetails;
+  initial: CardDesign;
+  /** The dialog's title and the saved file's name, when not a gift card's. */
+  title?: string;
+  fileName?: string;
+};
 
 /**
  * A card printed in the store, to hand over in an envelope or send as a picture: the same designs
@@ -84,7 +93,7 @@ export function PrintOrderCardButton({
   );
 }
 
-function PrintButton({
+export function PrintButton({
   lang,
   label,
   source,
@@ -125,6 +134,10 @@ function PrintCardDialog({
   const isAr = lang === "ar";
   const kit = useAdminCardKit();
   const [design, setDesign] = useState<CardDesign>(source.initial);
+  // A gift message card's words can be written or put right before printing; a gift card's are
+  // its own record.
+  const [details, setDetails] = useState<CardDetails>(source.details);
+  const editable = source.details.purpose === "message";
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent
@@ -132,17 +145,44 @@ function PrintCardDialog({
         className="max-h-[92vh] overflow-y-auto sm:max-w-xl"
       >
         <DialogHeader>
-          <DialogTitle>{isAr ? "بطاقة للطباعة" : "Card to print"}</DialogTitle>
+          <DialogTitle>{source.title ?? (isAr ? "بطاقة للطباعة" : "Card to print")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <GiftCardDesigner
             kit={kit}
             value={design}
             onChange={setDesign}
-            details={source.details}
+            details={details}
             primary={lang}
             lang={lang}
           />
+          {editable && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor={`print-to-${source.id}`}>{isAr ? "إلى" : "To"}</Label>
+                <Input
+                  id={`print-to-${source.id}`}
+                  value={details.to ?? ""}
+                  onChange={(e) => setDetails((d) => ({ ...d, to: e.target.value || null }))}
+                  maxLength={80}
+                  dir="auto"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor={`print-message-${source.id}`}>
+                  {isAr ? "رسالة الإهداء" : "Gift message"}
+                </Label>
+                <Textarea
+                  id={`print-message-${source.id}`}
+                  value={details.message ?? ""}
+                  onChange={(e) => setDetails((d) => ({ ...d, message: e.target.value || null }))}
+                  maxLength={400}
+                  rows={3}
+                  dir="auto"
+                />
+              </div>
+            </>
+          )}
           <div className="space-y-1.5">
             <Label htmlFor={`print-from-${source.id}`}>
               {isAr ? "من (على ظهر البطاقة)" : "From (on the back)"}
@@ -157,10 +197,10 @@ function PrintCardDialog({
           <CardKeepActions
             kit={kit}
             design={design}
-            details={source.details}
+            details={details}
             primary={lang}
             lang={lang}
-            fileName={`gift-card-${source.code}`}
+            fileName={source.fileName ?? `gift-card-${source.code}`}
             printing
           />
         </div>

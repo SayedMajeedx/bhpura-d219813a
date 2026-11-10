@@ -1,4 +1,5 @@
 import { getCountryByCode, type ShippingZone } from "@/lib/shipping";
+import { giftOrderNote } from "@/lib/gift-order-note";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
 import type {
   AppliedPromo,
@@ -114,9 +115,7 @@ export function placeStorefrontOrderArgs({
     })),
     p_payment_method: method,
     p_notes: (() => {
-      const giftNote = isGift
-        ? `🎁 [طلب إهداء / Gift Order]\nالمستلم: ${giftRecipient || "غير محدد"}\nرسالة الإهداء: ${giftMessage || "بدون رسالة"}`
-        : "";
+      const giftNote = isGift ? giftOrderNote(giftRecipient, giftMessage) : "";
       const userNote = form.notes?.trim() || "";
       return [giftNote, userNote].filter(Boolean).join("\n\n") || undefined;
     })(),
