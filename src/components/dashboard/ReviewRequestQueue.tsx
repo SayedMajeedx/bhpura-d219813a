@@ -3,6 +3,7 @@ import { Gift, MessageCircle, Star, CheckCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
 import { reviewRequestMessage, rewardOffer } from "@/lib/review-reward";
+import { reviewAddress } from "@/lib/platform-host";
 import { useReviewReward } from "@/hooks/use-review-reward";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,10 +29,13 @@ type ReviewRequest = {
 export function ReviewRequestQueue({
   brandId,
   brandName,
+  store,
   isAr,
 }: {
   brandId: string;
   brandName: string;
+  /** The store's address, for the review link (`reviewAddress`). */
+  store: { slug: string; custom_domain?: string | null };
   isAr: boolean;
 }) {
   const orderNo = useOrderNumber(brandId);
@@ -63,7 +67,7 @@ export function ReviewRequestQueue({
       );
       return;
     }
-    const reviewUrl = `${window.location.origin}/review/${request.review_url_token}`;
+    const reviewUrl = reviewAddress(store, request.review_url_token);
     const message = reviewRequestMessage({
       lang,
       customerName: request.customer_name,

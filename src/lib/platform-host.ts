@@ -27,6 +27,18 @@ export function invoiceAddress(
   return `${storefrontOrigin(store)}/invoice/${token}`;
 }
 
+/**
+ * The address of an order's review page, on the store's own address like its invoice
+ * (`invoiceAddress`): the customer reads the store's name in the link, and its preview shows the
+ * store's picture (`reviewHead`). It was built from the admin's own address, `boutq.store`.
+ */
+export function reviewAddress(
+  store: { slug: string; custom_domain?: string | null },
+  token: string,
+): string {
+  return `${storefrontOrigin(store)}/review/${token}`;
+}
+
 /** A store's admin address: `https://boutq.store/admin/b/pura`. */
 export function adminAddress(slug: string): string {
   return `${PLATFORM_ORIGIN}/admin/b/${slug}`;

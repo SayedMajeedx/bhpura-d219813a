@@ -293,6 +293,7 @@ function Dashboard() {
       <ReviewRequestQueue
         brandId={brandId}
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        store={brand}
         isAr={isAr}
       />
 
