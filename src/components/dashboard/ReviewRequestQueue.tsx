@@ -112,8 +112,8 @@ export function ReviewRequestQueue({
             </CardTitle>
             <CardDescription>
               {isAr
-                ? "مرّت 3 أيام على اكتمال هذه الطلبات."
-                : "These orders were completed 3 days ago."}
+                ? "طلبات اكتملت: أرسل رابط التقييم متى ما ناسبك."
+                : "Completed orders: send the review link whenever it suits you."}
             </CardDescription>
           </div>
           <Badge variant="secondary">{requestQ.data.length}</Badge>
