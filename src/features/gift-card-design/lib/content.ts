@@ -1,4 +1,5 @@
 import type { VerticalKind } from "./design";
+import type { CardContact } from "./contact";
 import type { Align, Shape } from "./geometry";
 import {
   cardFontFamily,
@@ -58,6 +59,8 @@ export type CardContent = {
    * holding no money (its back is `messageBack`, its front's label says so).
    */
   purpose?: CardPurpose;
+  /** The store's number and Instagram, which a gift message card's front prints. */
+  contact?: CardContact;
 };
 
 export type CardPurpose = "gift_card" | "message";
@@ -236,6 +239,7 @@ export function cardContent(
     currency: string;
     storeLink: string;
     kind: VerticalKind;
+    contact?: CardContact;
   },
   photo: string | null,
   details: CardDetails,
@@ -253,6 +257,7 @@ export function cardContent(
     currency: kit.currency,
     storeLink: kit.storeLink,
     kind: kit.kind,
+    contact: kit.contact,
     primary,
     ...details,
   };

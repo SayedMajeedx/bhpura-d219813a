@@ -12,6 +12,7 @@ import { cardSize, type Shape } from "../src/features/gift-card-design/lib/geome
 import { foldSheet } from "../src/features/gift-card-design/lib/print";
 import { roughMeasure } from "../src/features/gift-card-design/lib/type";
 import { giftOrderNote, readGiftOrderNote } from "../src/lib/gift-order-note";
+import { cardContact, instagramHandle } from "../src/features/gift-card-design/lib/contact";
 import { clashes, placed } from "./helpers/card-layout";
 
 // A gift order's message card (the owner's report of 2026-11-10): the shopper's words for the
@@ -50,6 +51,7 @@ const content = (mark: LogoInfo | null, message = MESSAGE): CardContent => ({
   kind: "fashion",
   primary: "ar",
   purpose: "message",
+  contact: { phone: "+973 3995 0016", instagram: "@puraline.bh" },
 });
 const texts = (shapes: Shape[]) =>
   shapes.flatMap((s) => (s.kind === "text" ? [s.text] : [])).join(" | ");
@@ -85,7 +87,7 @@ describe("a gift message card", () => {
     expect(back).toContain("اللبس");
     expect(back).not.toMatch(/بطاقة هدية|Gift card|رمز|القيمة|صالحة|••••/);
     const front = texts(cardFront(design, content(null), COLOURS, roughMeasure));
-    expect(front).not.toMatch(/بطاقة هدية|Gift card/);
+    expect(front).not.toMatch(/بطاقة هدية|Gift card|اللبس/);
   });
 
   it("keeps its words inside the card, clear of the logo and of each other, on every design", () => {
@@ -119,10 +121,61 @@ describe("a gift message card", () => {
     expect(found.slice(0, 5)).toEqual([]);
   });
 
+  it("carries the store's mark large on the front, with its number and Instagram", () => {
+    const front = cardFront({ ...DEFAULT_DESIGN }, content(logo(1.7)), COLOURS, roughMeasure);
+    const mark = front.find((s) => s.kind === "logo");
+    expect(mark && mark.kind === "logo" ? mark.w : 0).toBeGreaterThan(45);
+    expect(texts(front).split(" | ").sort()).toEqual(["+973 3995 0016", "@puraline.bh"]);
+    // Without a contact the front is the mark alone.
+    const bare = cardFront(
+      { ...DEFAULT_DESIGN },
+      { ...content(logo(1.7)), contact: { phone: null, instagram: null } },
+      COLOURS,
+      roughMeasure,
+    );
+    expect(texts(bare)).toBe("");
+  });
+
+  it("keeps the front's words inside the frame and clear of the mark, on every design", () => {
+    const found: string[] = [];
+    for (const id of ALL_DESIGNS) {
+      for (const orientation of ["portrait", "landscape"] as const) {
+        for (const mark of [null, logo(3), logo(1.7), logo(1)]) {
+          const design: CardDesign = { ...DEFAULT_DESIGN, design: id, orientation };
+          const { w, h } = cardSize(orientation);
+          const boxes = placed(
+            cardFront(design, content(mark), COLOURS, roughMeasure),
+            roughMeasure,
+          );
+          const clash = clashes(boxes, 2, 0.3)[0];
+          const outside = boxes.find((b) => b.x0 < 6 || b.x1 > w - 6 || b.y0 < 6 || b.y1 > h - 6);
+          if (clash || outside) found.push(`${id} ${orientation}: ${clash ?? outside?.label}`);
+        }
+      }
+    }
+    expect(found.slice(0, 5)).toEqual([]);
+  });
+
   it("prints on one A4 sheet to fold, as a gift card does", () => {
     const sheet = foldSheet(cardSize("portrait"));
     expect(sheet.fold).toBe(148.5);
     expect(sheet.back.y).toBeGreaterThan(sheet.fold);
+  });
+});
+
+describe("the store's contact on the card", () => {
+  it("is its number as people write it and its Instagram handle", () => {
+    expect(
+      cardContact({
+        phone: "+97339950016",
+        socials: [
+          { name: "Instagram", url: "https://www.instagram.com/puraline.bh" },
+          { name: "TikTok", url: "https://www.tiktok.com/@puraline.bh" },
+        ],
+      }),
+    ).toEqual({ phone: "+973 3995 0016", instagram: "@puraline.bh" });
+    expect(cardContact({ whatsapp_number: "97339950016", socials: null }).instagram).toBeNull();
+    expect(instagramHandle({ instagram: "https://instagram.com/pura_line/" })).toBe("@pura_line");
   });
 });
 

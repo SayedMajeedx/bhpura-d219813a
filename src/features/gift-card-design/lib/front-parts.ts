@@ -129,11 +129,7 @@ export function ornamentAt(
 
 export function giftLabel(ctx: Ctx, x: number, y: number, align: Align, color: string): Shape {
   const { main, second } = ctx.langs;
-  // A gift message card holds no money, so it never calls itself a gift card.
-  const words =
-    ctx.content.purpose === "message"
-      ? { ar: "إهداء", en: "With love" }
-      : { ar: "بطاقة هدية", en: "Gift card" };
+  const words = { ar: "بطاقة هدية", en: "Gift card" };
   const text = second ? `${words[main]} · ${words[second]}` : words[main];
   return oneLine(text, label(main, 2.1), x, y, align, color);
 }

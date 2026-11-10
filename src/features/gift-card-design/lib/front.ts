@@ -1,4 +1,5 @@
 import type { StoreColours } from "@/features/content-studio/lib/studio-styles";
+import { messageFront } from "./message-card";
 import { cardOccasion, type Ornament } from "./occasions";
 import { designParts, palette, type CardDesign } from "./design";
 import {
@@ -483,6 +484,7 @@ export function cardFront(
   colours: StoreColours,
   measure: Measure,
 ): Shape[] {
+  if (content.purpose === "message") return messageFront(design, content, colours, measure);
   const { composition, tone } = designParts(design.design);
   const { w, h } = cardSize(design.orientation);
   const occasion = cardOccasion(design.occasion);

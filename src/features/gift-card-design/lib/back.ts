@@ -3,7 +3,7 @@ import { formatMoney } from "@/lib/format";
 import { designParts, palette, type CardDesign } from "./design";
 import { BLEED, cardSize, type Align, type Shape } from "./geometry";
 import { placedMark, spendLine, storeNameIn, type CardContent } from "./content";
-import { messageBack } from "./message-back";
+import { messageBack } from "./message-card";
 import {
   CARD_FONTS,
   alignX,

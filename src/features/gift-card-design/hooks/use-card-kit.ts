@@ -13,6 +13,7 @@ import {
 } from "../lib/design";
 import { inspectLogo, loadCardFonts, photoUsable } from "../lib/canvas";
 import type { CardFontFiles, LogoInfo } from "../lib/content";
+import type { CardContact } from "../lib/contact";
 
 /**
  * Everything a store's cards are drawn with, read once for a page: its colours, names, logo (when
@@ -33,6 +34,8 @@ export type CardKit = {
   kind: VerticalKind;
   storeLink: string;
   currency: string;
+  /** The store's number and Instagram (a gift message card's front prints them). */
+  contact?: CardContact;
   /** The faces are loaded: until then a card is drawn with the fallback faces. */
   ready: boolean;
 };
@@ -46,6 +49,7 @@ export type CardKitInput = {
   colours: StoreColours;
   vertical: string | null | undefined;
   currency: string | null | undefined;
+  contact?: CardContact;
 };
 
 export function useCardKit(input: CardKitInput): CardKit {
@@ -86,7 +90,7 @@ export function useCardKit(input: CardKitInput): CardKit {
     };
   }, [storePhotos]);
 
-  const { colours, slug, nameAr, nameEn, vertical, currency } = input;
+  const { colours, slug, nameAr, nameEn, vertical, currency, contact } = input;
   return useMemo(
     () => ({
       colours,
@@ -99,6 +103,7 @@ export function useCardKit(input: CardKitInput): CardKit {
       kind: verticalKind(vertical ? verticalLineage(vertical as StoreVertical) : []),
       storeLink: storeAddress(slug).replace(/^https?:\/\//, ""),
       currency: (currency || "BHD").toUpperCase(),
+      contact,
       ready: loadedFonts === fontKey,
     }),
     [
@@ -111,6 +116,7 @@ export function useCardKit(input: CardKitInput): CardKit {
       vertical,
       slug,
       currency,
+      contact,
       fontAr,
       fontEn,
       loadedFonts,
