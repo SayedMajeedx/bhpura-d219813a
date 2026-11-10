@@ -97,21 +97,28 @@ describe("a gift message card", () => {
         for (const language of ["ar", "en", "both"] as const) {
           for (const mark of [null, logo(3), logo(1)]) {
             for (const message of [MESSAGE, MESSAGE.repeat(4), "مبروك"]) {
-              const design: CardDesign = {
-                ...DEFAULT_DESIGN,
-                design: id,
-                orientation,
-                language,
-                occasion: "gift",
-                from: "مريم",
-              };
-              const { w, h } = cardSize(orientation);
-              const back = cardBack(design, content(mark, message), COLOURS, roughMeasure);
-              const boxes = placed(back, roughMeasure);
-              const clash = clashes(boxes, 2, 0.3)[0];
-              const outside = boxes.find((b) => b.x0 < 0 || b.x1 > w || b.y0 < 0 || b.y1 > h);
-              if (clash || outside) {
-                found.push(`${id} ${orientation} ${language}: ${clash ?? outside?.label}`);
+              for (const messageSize of ["small", "auto", "large"] as const) {
+                const design: CardDesign = {
+                  ...DEFAULT_DESIGN,
+                  design: id,
+                  orientation,
+                  language,
+                  occasion: "gift",
+                  from: "مريم",
+                };
+                const { w, h } = cardSize(orientation);
+                const back = cardBack(
+                  design,
+                  { ...content(mark, message), messageSize },
+                  COLOURS,
+                  roughMeasure,
+                );
+                const boxes = placed(back, roughMeasure);
+                const clash = clashes(boxes, 2, 0.3)[0];
+                const outside = boxes.find((b) => b.x0 < 0 || b.x1 > w || b.y0 < 0 || b.y1 > h);
+                if (clash || outside) {
+                  found.push(`${id} ${orientation} ${language}: ${clash ?? outside?.label}`);
+                }
               }
             }
           }
@@ -154,6 +161,34 @@ describe("a gift message card", () => {
       }
     }
     expect(found.slice(0, 5)).toEqual([]);
+  });
+
+  it("fills its room: a short message set large, in balanced lines, smaller or larger by choice", () => {
+    const message = "اللبس من لبّاسه، وما تلوق إلا عليج";
+    const design: CardDesign = { ...DEFAULT_DESIGN, orientation: "landscape", from: "Eman" };
+    const sizeOf = (messageSize: "small" | "auto" | "large") => {
+      const back = cardBack(
+        design,
+        { ...content(null, message), to: null, messageSize },
+        COLOURS,
+        roughMeasure,
+      );
+      const lines = back.filter(
+        (s): s is Extract<Shape, { kind: "text" }> =>
+          s.kind === "text" && /اللبس|عليج|تلوق/.test(s.text),
+      );
+      return { size: lines[0]?.font.size ?? 0, lines: lines.map((l) => l.text) };
+    };
+    const auto = sizeOf("auto");
+    // It once sat as one thin line in the middle of an empty card.
+    expect(auto.size).toBeGreaterThan(8);
+    expect(auto.lines.length).toBeGreaterThanOrEqual(2);
+    const [first, last] = [auto.lines[0], auto.lines[auto.lines.length - 1]];
+    expect(Math.abs(first.length - last.length)).toBeLessThanOrEqual(
+      Math.max(first.length, last.length) / 2,
+    );
+    expect(sizeOf("small").size).toBeLessThan(auto.size);
+    expect(sizeOf("large").size).toBeGreaterThanOrEqual(auto.size);
   });
 
   it("prints on one A4 sheet to fold, as a gift card does", () => {

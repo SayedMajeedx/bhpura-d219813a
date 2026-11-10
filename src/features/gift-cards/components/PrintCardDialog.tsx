@@ -16,6 +16,13 @@ import {
 } from "@/features/gift-card-design/lib/design";
 import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
+import { MESSAGE_SIZES, type MessageSize } from "@/features/gift-card-design/lib/message-card";
+
+const SIZE_WORDS: Record<MessageSize, { ar: string; en: string }> = {
+  small: { ar: "أصغر", en: "Smaller" },
+  auto: { ar: "تلقائي", en: "Automatic" },
+  large: { ar: "أكبر", en: "Larger" },
+};
 
 /** What the print dialog draws: the card's own value, code and names, and the design to start on. */
 type PrintSource = {
@@ -180,6 +187,32 @@ function PrintCardDialog({
                   rows={3}
                   dir="auto"
                 />
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium">{isAr ? "حجم خط الرسالة" : "Message size"}</p>
+                <div
+                  role="radiogroup"
+                  aria-label={isAr ? "حجم خط الرسالة" : "Message size"}
+                  className="flex flex-wrap gap-2"
+                >
+                  {MESSAGE_SIZES.map((size) => {
+                    const on = (details.messageSize ?? "auto") === size;
+                    return (
+                      <Button
+                        key={size}
+                        type="button"
+                        size="sm"
+                        variant={on ? "default" : "outline"}
+                        role="radio"
+                        aria-checked={on}
+                        className="rounded-full"
+                        onClick={() => setDetails((d) => ({ ...d, messageSize: size }))}
+                      >
+                        {SIZE_WORDS[size][lang]}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
             </>
           )}
