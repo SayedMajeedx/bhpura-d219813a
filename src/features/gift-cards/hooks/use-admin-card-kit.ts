@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { storeCardFonts } from "@/features/gift-card-design/lib/card-fonts";
+import { resolveStorefrontTypography, type StorefrontFontSettings } from "@/lib/typography";
 import { cardContact } from "@/features/gift-card-design/lib/contact";
 import { useQuery } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
@@ -11,7 +13,7 @@ export function useAdminCardKit() {
   const brand = useBrand();
   const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
   const settings = settingsQ.data as
-    | {
+    | ({
         storefront_accent_color?: string | null;
         storefront_background_color?: string | null;
         storefront_text_color?: string | null;
@@ -21,11 +23,20 @@ export function useAdminCardKit() {
         phone?: string | null;
         whatsapp_number?: string | null;
         socials?: unknown;
-      }
+      } & StorefrontFontSettings)
     | null
     | undefined;
   const colours = useMemo(() => storeColoursFrom(settings, brand), [settings, brand]);
   const contact = useMemo(() => cardContact(settings), [settings]);
+  // The store's own heading fonts, which a gift message card is set in.
+  const storeFonts = useMemo(
+    () =>
+      storeCardFonts(
+        resolveStorefrontTypography(settings),
+        typeof window === "undefined" ? null : window.location.origin,
+      ),
+    [settings],
+  );
   return useCardKit({
     brandId: brand.id,
     slug: brand.slug,
@@ -36,5 +47,6 @@ export function useAdminCardKit() {
     vertical: settings?.store_vertical ?? null,
     currency: settings?.currency ?? null,
     contact,
+    storeFonts,
   });
 }

@@ -1,4 +1,5 @@
 import type { VerticalKind } from "./design";
+import { cardFontFiles } from "./card-fonts";
 import type { CardContact } from "./contact";
 import type { MessageSize } from "./message-card";
 import type { Align, Shape } from "./geometry";
@@ -239,6 +240,8 @@ export function cardContent(
     logo: LogoInfo | null;
     logoScale?: number;
     fonts?: CardFontFiles;
+    /** The store's own heading fonts (a gift message card is set in them, `cardFontFiles`). */
+    storeFonts?: CardFontFiles;
     photos: string[];
     currency: string;
     storeLink: string;
@@ -249,13 +252,14 @@ export function cardContent(
   details: CardDetails,
   primary: "ar" | "en",
 ): CardContent {
+  const files = cardFontFiles(kit, details.purpose);
   return {
     storeName: kit.storeName,
     logo: kit.logo,
     logoScale: kit.logoScale ?? 1,
     fonts: {
-      ar: kit.fonts?.ar ? cardFontFamily("ar", kit.fonts.ar) : null,
-      en: kit.fonts?.en ? cardFontFamily("en", kit.fonts.en) : null,
+      ar: files.ar ? cardFontFamily("ar", files.ar) : null,
+      en: files.en ? cardFontFamily("en", files.en) : null,
     },
     photo: photo && kit.photos.includes(photo) ? photo : (kit.photos[0] ?? null),
     currency: kit.currency,

@@ -1,7 +1,18 @@
 import { Gift } from "lucide-react";
 import { readGiftOrderNote } from "@/lib/gift-order-note";
 import { DEFAULT_DESIGN } from "@/features/gift-card-design/lib/design";
+import { isArabic } from "@/features/gift-card-design/lib/type";
 import { PrintButton } from "./PrintCardDialog";
+
+/** The card's language: the message's (or the recipient's name's), else the screen's. */
+export function cardLanguage(
+  gift: { recipient: string | null; message: string | null },
+  lang: "ar" | "en",
+): "ar" | "en" {
+  const text = gift.message || gift.recipient;
+  if (!text) return lang;
+  return isArabic(text) ? "ar" : "en";
+}
 
 /**
  * A gift order's message card: the shopper's words for the person receiving it, in the same
@@ -63,7 +74,13 @@ export function GiftMessageCardBlock({
             expiresOn: null,
             purpose: "message",
           },
-          initial: { ...DEFAULT_DESIGN, occasion: "gift", language: lang, from: null },
+          // The card speaks the message's language, whatever the screen's.
+          initial: {
+            ...DEFAULT_DESIGN,
+            occasion: "gift",
+            language: cardLanguage(gift, lang),
+            from: null,
+          },
         })}
       />
     </div>
