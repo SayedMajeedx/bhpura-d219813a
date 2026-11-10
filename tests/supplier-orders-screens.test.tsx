@@ -585,6 +585,55 @@ describe("a late order and what is owed", () => {
     vi.unstubAllGlobals();
   });
 
+  it("lists every payment to the suppliers, filters them and downloads them as Excel", async () => {
+    stubs.orders = [tailorOrder()];
+    stubs.accountPayments = [
+      {
+        id: "pay-1",
+        vendor_id: "tailor",
+        amount: 50,
+        paid_on: "2026-10-12",
+        method: "cash",
+        reference: "R-1",
+        note: null,
+        created_at: "2026-10-12T10:00:00Z",
+        voided_at: null,
+        void_reason: null,
+        applied: [{ po_id: "po1", po_number: "PO-0001", amount: 50, voided: false }],
+      },
+      {
+        id: "pay-2",
+        vendor_id: "tailor",
+        amount: 20,
+        paid_on: "2026-10-13",
+        method: "bank",
+        reference: null,
+        note: null,
+        created_at: "2026-10-13T10:00:00Z",
+        voided_at: "2026-10-13T11:00:00Z",
+        void_reason: "Twice",
+        applied: [],
+      },
+    ];
+    wrap(<SupplierOrdersPage />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Payments/ }));
+    fireEvent.click(screen.getByRole("radio", { name: "All time" }));
+    expect(screen.getByText(/Cash · Paid PO-0001 · R-1/)).toBeInTheDocument();
+    expect(screen.getByText("Payments: 1")).toBeInTheDocument();
+    // A payment taken back shows only when asked, and counts in no total.
+    expect(screen.queryByText(/Taken back: Twice/)).toBeNull();
+    fireEvent.click(screen.getByRole("switch", { name: "Show payments taken back" }));
+    expect(screen.getByText(/Taken back: Twice/)).toBeInTheDocument();
+    expect(screen.getByText("Payments: 1")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Bank transfer" }));
+    expect(screen.getByText("Payments: 0")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "All methods" }));
+    fireEvent.click(screen.getByRole("button", { name: /Excel/ }));
+    await waitFor(() => expect(stubs.downloadWorkbook).toHaveBeenCalledTimes(1));
+    const [, file] = stubs.downloadWorkbook.mock.calls[0] as unknown as [unknown, string];
+    expect(file).toBe("pura-supplier-payments-all-time.xlsx");
+  });
+
   it("lists each supplier with what is owed", async () => {
     stubs.orders = [
       tailorOrder({ vendor_phone: "39950016" }),
