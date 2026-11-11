@@ -6,6 +6,7 @@ import {
   body,
   clampLines,
   display,
+  isArabic,
   label,
   languages,
   oneLine,
@@ -42,6 +43,9 @@ const WORDS = {
   to: { ar: "إلى", en: "To" },
   from: { ar: "من", en: "From" },
 };
+
+/** The language a line is written in, whatever the card's labels are set in. */
+const scriptOf = (text: string): "ar" | "en" => (isArabic(text) ? "ar" : "en");
 
 function pair(key: keyof typeof WORDS, main: "ar" | "en", second: "ar" | "en" | null): string {
   return second ? `${WORDS[key][main]} · ${WORDS[key][second]}` : WORDS[key][main];
@@ -192,7 +196,7 @@ export function messageBack(
   const mark = placedMark(
     { ...content, logoScale: 1 },
     main,
-    { x: cx - 11, y: INSIDE - 1, w: 22, h: 6 },
+    { x: cx - 18, y: INSIDE - 1.5, w: 36, h: 11 },
     "center",
     pal.ink,
     measure,
@@ -207,7 +211,7 @@ export function messageBack(
   const to = content.to?.trim();
   if (to) {
     shapes.push(oneLine(pair("to", main, second), label(main, 2.1), cx, top, "center", pal.soft));
-    const name = messageFit(to, 8, width, (s) => display(main, s, content.fonts), measure);
+    const name = messageFit(to, 8, width, (s) => display(scriptOf(to), s, content.fonts), measure);
     top += name.font.size * 1.3 + 1;
     shapes.push(oneLine(name.lines[0] ?? "", name.font, cx, top, "center", pal.ink));
     top += 6;
@@ -221,7 +225,7 @@ export function messageBack(
       from,
       8,
       width,
-      (s) => display(main, s, content.fonts),
+      (s) => display(scriptOf(from), s, content.fonts),
       measure,
       5.6,
     );
@@ -240,7 +244,7 @@ export function messageBack(
       message,
       room,
       width,
-      (s) => display(main, s, content.fonts),
+      (s) => display(scriptOf(message), s, content.fonts),
       measure,
       MESSAGE_MAX[content.messageSize ?? "auto"],
     );
