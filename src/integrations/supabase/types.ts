@@ -3826,36 +3826,6 @@ export type Database = {
           },
         ];
       };
-      gift_order_settings: {
-        Row: {
-          brand_id: string;
-          card_enabled: boolean;
-          card_price: number;
-          enabled: boolean;
-          prepaid_only: boolean;
-          updated_at: string;
-          updated_by: string | null;
-        };
-        Insert: {
-          brand_id: string;
-          card_enabled?: boolean;
-          card_price?: number;
-          enabled?: boolean;
-          prepaid_only?: boolean;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Update: {
-          brand_id?: string;
-          card_enabled?: boolean;
-          card_price?: number;
-          enabled?: boolean;
-          prepaid_only?: boolean;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
-        Relationships: [];
-      };
       gift_cards: {
         Row: {
           balance: number;
@@ -3933,6 +3903,44 @@ export type Database = {
             columns: ["source_order_id"];
             isOneToOne: false;
             referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      gift_order_settings: {
+        Row: {
+          brand_id: string;
+          card_enabled: boolean;
+          card_price: number;
+          enabled: boolean;
+          prepaid_only: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          card_enabled?: boolean;
+          card_price?: number;
+          enabled?: boolean;
+          prepaid_only?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          card_enabled?: boolean;
+          card_price?: number;
+          enabled?: boolean;
+          prepaid_only?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_order_settings_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
             referencedColumns: ["id"];
           },
         ];
@@ -10411,6 +10419,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_order_gift: {
+        Args: { p_gift: Json; p_order_id: string };
+        Returns: number;
+      };
       apply_store_offers: {
         Args: { p_country: string; p_fulfillment: string; p_order_id: string };
         Returns: Json;
@@ -11338,6 +11350,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      gift_order_options: { Args: { p_brand_id: string }; Returns: Json };
       has_permission: { Args: { p_permission: string }; Returns: boolean };
       has_storefront_membership: {
         Args: { p_brand_slug: string };
@@ -12605,16 +12618,6 @@ export type Database = {
         Args: { p_brand_id: string; p_template_id: string };
         Returns: undefined;
       };
-      set_gift_order_settings: {
-        Args: {
-          p_brand_id: string;
-          p_card_enabled: boolean;
-          p_card_price: number;
-          p_enabled: boolean;
-          p_prepaid_only: boolean;
-        };
-        Returns: Json;
-      };
       set_gift_card_designs: {
         Args: { p_brand_id: string; p_designs: Json };
         Returns: Json;
@@ -12664,6 +12667,30 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "gift_card_settings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      set_gift_order_settings: {
+        Args: {
+          p_brand_id: string;
+          p_card_enabled: boolean;
+          p_card_price: number;
+          p_enabled: boolean;
+          p_prepaid_only: boolean;
+        };
+        Returns: {
+          brand_id: string;
+          card_enabled: boolean;
+          card_price: number;
+          enabled: boolean;
+          prepaid_only: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_order_settings";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -12781,12 +12808,12 @@ export type Database = {
           visits: number;
         }[];
       };
-      storefront_gift_order_options: { Args: { p_slug: string }; Returns: Json };
       storefront_gift_card_designs: {
         Args: { p_brand_id: string };
         Returns: Json;
       };
       storefront_gift_card_offer: { Args: { p_slug: string }; Returns: Json };
+      storefront_gift_order_options: { Args: { p_slug: string }; Returns: Json };
       storefront_line_customizations: {
         Args: {
           p_brand_id: string;
