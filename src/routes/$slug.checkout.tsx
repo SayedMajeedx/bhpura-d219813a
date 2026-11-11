@@ -25,7 +25,7 @@ import { orderTotals, storeTaxRule } from "@/lib/order-tax";
 import { bookingOfCart } from "@/lib/bookings/cart";
 import { bookingDepositSplit, depositTerms, upfrontSplit } from "@/lib/bookings/deposit";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
-import { advanceLinesOfCart } from "@/features/checkout/lib/advance-cart-lines";
+import { advanceLinesOfCart, giftAdvanceLines } from "@/features/checkout/lib/advance-cart-lines";
 import { cartEstimateKinds } from "@/lib/delivery-estimate";
 import { usePaymentReturnError } from "@/features/checkout/hooks/use-payment-return-error";
 import { useCheckoutForm } from "@/features/checkout/hooks/use-checkout-form";
@@ -54,6 +54,8 @@ import { MobileCartPeek } from "@/features/checkout/components/MobileCartPeek";
 import { MobileCheckoutBar } from "@/features/checkout/components/MobileCheckoutBar";
 import { GiftCardBox, GiftCardLines } from "@/features/checkout/components/GiftCardBox";
 import { useCheckoutGiftCard } from "@/features/checkout/hooks/use-checkout-gift-card";
+import { useCheckoutGift } from "@/features/checkout/hooks/use-checkout-gift";
+import { GiftOrderFields } from "@/features/checkout/components/GiftOrderFields";
 import { advanceAfterGiftCard, giftCardPay } from "@/features/checkout/lib/gift-card-pay";
 import { AccountExistsDialog } from "@/features/checkout/components/AccountExistsDialog";
 import { AppointmentDetailsCard } from "@/features/checkout/components/AppointmentDetailsCard";
@@ -290,11 +292,21 @@ function Checkout() {
   // A member whose loyalty tier has free shipping pays none (so does the order).
   const shipping = freeShipping || offers?.free_delivery ? 0 : deliveryFee;
 
+  // A gift order by the store's settings: its message card joins the subtotal at the store's
+  // price, after the discounts (a code and the offers never reach it).
+  const gift = useCheckoutGift({
+    slug: brand.slug,
+    isGift,
+    recipient: giftRecipient,
+    message: giftMessage,
+    enabled: !appointment && !isCatalogMode(settings),
+  });
+
   // What the order will charge, tax included (the order builder's own rule: orderTotals).
   const taxRule = storeTaxRule(settings);
   const totals = orderTotals(
     {
-      subtotal: cartTotal + Number(appointment?.optionsTotal ?? 0),
+      subtotal: cartTotal + Number(appointment?.optionsTotal ?? 0) + gift.fee,
       discount: promoDiscount + offerDiscount + bookingDiscount,
       shipping,
       loyaltyDiscount,
@@ -333,9 +345,13 @@ function Checkout() {
             ? "BH"
             : selectedCountryCode
           : null,
-      lines: advanceLinesOfCart(cart, madeToOrderIds, categoryById),
+      lines: [
+        ...advanceLinesOfCart(cart, madeToOrderIds, categoryById),
+        ...giftAdvanceLines(gift.fee),
+      ],
     }),
     [
+      gift.fee,
       grandTotal,
       shipping,
       appointment,
@@ -380,12 +396,14 @@ function Checkout() {
   // Where it applies, cash on delivery is not offered: the order is completed by paying the
   // advance or the booking's deposit by card or BenefitPay (the database refuses cod too).
   const availableMethods = useMemo(
-    () => methodsUnderAdvance(allMethods, advance.applies),
-    [allMethods, advance.applies],
+    () => methodsUnderAdvance(allMethods, advance.applies || gift.prepaid),
+    [allMethods, advance.applies, gift.prepaid],
   );
+  // A gift order the store asks to be paid first leaves cash on delivery out too.
+  const noCash = advance.applies || gift.prepaid;
   useEffect(() => {
-    if (advance.applies && method === "cod") setMethod(availableMethods[0]?.id ?? "");
-  }, [advance.applies, method, availableMethods, setMethod]);
+    if (noCash && method === "cod") setMethod(availableMethods[0]?.id ?? "");
+  }, [noCash, method, availableMethods, setMethod]);
 
   // A gift card is a payment: the total stays, the card pays toward what is asked now first.
   const giftCard = useCheckoutGiftCard(brand, currency);
@@ -434,6 +452,7 @@ function Checkout() {
     isGift,
     giftRecipient,
     giftMessage,
+    gift: gift.payload,
     fulfillment,
     selectedDestination,
     selectedCountryCode,
@@ -530,15 +549,23 @@ function Checkout() {
             checkRegisteredAccount={checkRegisteredAccount}
             form={form}
             fulfillment={fulfillment}
-            giftMessage={giftMessage}
-            giftRecipient={giftRecipient}
-            isGift={isGift}
+            giftFields={
+              <GiftOrderFields
+                gift={gift}
+                isGift={isGift}
+                setIsGift={setIsGift}
+                recipient={giftRecipient}
+                setRecipient={setGiftRecipient}
+                message={giftMessage}
+                setMessage={setGiftMessage}
+                currency={currency}
+                lang={lang}
+                t={t}
+              />
+            }
             saveToProfile={saveToProfile}
             session={session}
             setForm={setForm}
-            setGiftMessage={setGiftMessage}
-            setGiftRecipient={setGiftRecipient}
-            setIsGift={setIsGift}
             setSaveToProfile={setSaveToProfile}
             setWhatsappOrderUpdates={setWhatsappOrderUpdates}
             t={t}
@@ -651,6 +678,7 @@ function Checkout() {
           brand={brand}
           cart={cart}
           cartTotal={cartTotal}
+          giftFee={gift.fee}
           checkingPromo={checkingPromo}
           currency={currency}
           estimatedDeliveryLines={estimatedDeliveryLines}

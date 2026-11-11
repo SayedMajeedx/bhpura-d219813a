@@ -19,3 +19,11 @@ export function advanceLinesOfCart(
     category: categoryById.get(item.product_id) ?? null,
   }));
 }
+
+/**
+ * A gift order's message card as the advance rules see it: a ready-made line of no product, as
+ * the database writes it (`apply_order_gift`). None when the card is free or not chosen.
+ */
+export function giftAdvanceLines(fee: number): AdvanceLine[] {
+  return fee > 0 ? [{ amount: fee, madeToOrder: false, productId: null, category: null }] : [];
+}

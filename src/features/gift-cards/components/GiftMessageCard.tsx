@@ -1,6 +1,6 @@
 import { Gift } from "lucide-react";
-import { readGiftOrderNote } from "@/lib/gift-order-note";
-import { DEFAULT_DESIGN } from "@/features/gift-card-design/lib/design";
+import { orderGift } from "@/lib/gift-order";
+import { DEFAULT_DESIGN, isDesignId } from "@/features/gift-card-design/lib/design";
 import { isArabic } from "@/features/gift-card-design/lib/type";
 import { PrintButton } from "./PrintCardDialog";
 
@@ -18,21 +18,32 @@ export function cardLanguage(
  * A gift order's message card: the shopper's words for the person receiving it, in the same
  * designs as the store's gift cards but holding no money (`purpose: "message"`), printed to fold,
  * glue and cut like a gift card (`foldSheet`), on A6, or saved as a picture. Shown on the order
- * page only when the order is a gift (`readGiftOrderNote`).
+ * page only when the order is a gift (`orderGift`: the order's own details, else what an older
+ * checkout wrote in its notes), in the colour the shopper chose and with who it is from.
  */
 export function GiftMessageCardBlock({
+  gift: own,
   notes,
   invoiceNumber,
   lang,
 }: {
+  /** The order's own gift details (`orders.gift`). */
+  gift?: unknown;
   notes: string | null | undefined;
   invoiceNumber: number | null | undefined;
   lang: "ar" | "en";
 }) {
-  const gift = readGiftOrderNote(notes);
+  const gift = orderGift({ gift: own, notes });
   if (!gift) return null;
   const isAr = lang === "ar";
   const ref = invoiceNumber ?? "order";
+  // Who it is for and who it is from, as far as the shopper said.
+  const names = [
+    gift.recipient ? `${isAr ? "إلى" : "To"} ${gift.recipient}` : null,
+    gift.from ? `${isAr ? "من" : "From"} ${gift.from}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <div className="mb-4 flex flex-col gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex min-w-0 items-start gap-3">
@@ -41,12 +52,18 @@ export function GiftMessageCardBlock({
         </span>
         <div className="min-w-0">
           <div className="text-sm font-bold text-foreground">
-            {isAr ? "بطاقة الإهداء" : "Gift message card"}
+            {gift.card
+              ? isAr
+                ? "بطاقة الإهداء"
+                : "Gift message card"
+              : isAr
+                ? "طلب هدية بلا بطاقة"
+                : "A gift order with no card"}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {gift.recipient ? `${isAr ? "إلى" : "To"} ${gift.recipient}` : null}
-            {gift.recipient && gift.message ? " · " : null}
-            {gift.message ? (
+            {names}
+            {gift.card && names && gift.message ? " · " : null}
+            {!gift.card ? null : gift.message ? (
               <span dir="auto" className="line-clamp-2 break-words">
                 {gift.message}
               </span>
@@ -78,8 +95,10 @@ export function GiftMessageCardBlock({
           initial: {
             ...DEFAULT_DESIGN,
             occasion: "gift",
+            // The colour the shopper chose at checkout, when they chose one.
+            ...(isDesignId(gift.design) ? { design: gift.design } : {}),
             language: cardLanguage(gift, lang),
-            from: null,
+            from: gift.from,
           },
         })}
       />

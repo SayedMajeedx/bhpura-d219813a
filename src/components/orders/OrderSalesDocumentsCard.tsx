@@ -238,6 +238,7 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
 
       {/* A gift order's message card, in the store's gift card designs, to print and fold. */}
       <GiftMessageCardBlock
+        gift={order?.gift}
         notes={order?.notes}
         invoiceNumber={order?.invoice_number}
         lang={lang}

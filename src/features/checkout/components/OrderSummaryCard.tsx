@@ -45,6 +45,7 @@ export function OrderSummaryCard({
   brand,
   cart,
   cartTotal,
+  giftFee = 0,
   checkingPromo,
   currency,
   estimatedDeliveryLines,
@@ -97,6 +98,8 @@ export function OrderSummaryCard({
   brand: Storefront["brand"];
   cart: Storefront["cart"];
   cartTotal: number;
+  /** What a gift order's message card adds (the store's price; none when free). */
+  giftFee?: number;
   checkingPromo: ReturnType<typeof usePromoCode>["checkingPromo"];
   currency: Storefront["currency"];
   estimatedDeliveryLines: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryLines"];
@@ -270,6 +273,12 @@ export function OrderSummaryCard({
           <span className="text-muted-foreground">{t("المجموع الفرعي", "Subtotal")}</span>
           <span>{formatPrice(cartTotal, currency, lang)}</span>
         </div>
+        {giftFee > 0 && (
+          <div className="flex justify-between gap-3">
+            <span className="text-muted-foreground">{t("بطاقة إهداء", "Gift message card")}</span>
+            <span>{formatPrice(giftFee, currency, lang)}</span>
+          </div>
+        )}
         {appointment && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">{t("موعدك", "Your appointment")}</span>

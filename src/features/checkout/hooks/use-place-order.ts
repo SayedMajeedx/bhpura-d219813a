@@ -5,6 +5,7 @@ import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
 import { redeemGiftCardAtCheckout } from "@/lib/gift-card-checkout.functions";
+import type { GiftOrderPayload } from "@/lib/gift-order";
 import { markCartRecoveredOnOrder } from "@/lib/abandoned-carts.functions";
 import type { ShippingZone } from "@/lib/shipping";
 import type {
@@ -42,6 +43,7 @@ export function usePlaceOrder({
   isGift,
   giftRecipient,
   giftMessage,
+  gift = null,
   fulfillment,
   selectedDestination,
   selectedCountryCode,
@@ -80,6 +82,8 @@ export function usePlaceOrder({
   isGift: boolean;
   giftRecipient: string;
   giftMessage: string;
+  /** The gift order as the order builder takes it (`giftPayload`). */
+  gift?: GiftOrderPayload | null;
   fulfillment: Fulfillment;
   selectedDestination: string;
   selectedCountryCode: string;
@@ -168,6 +172,7 @@ export function usePlaceOrder({
             isGift,
             giftRecipient,
             giftMessage,
+            gift,
             fulfillment,
             branchId,
             partnerId,

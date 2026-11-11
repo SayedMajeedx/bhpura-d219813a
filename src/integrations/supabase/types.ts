@@ -3826,6 +3826,36 @@ export type Database = {
           },
         ];
       };
+      gift_order_settings: {
+        Row: {
+          brand_id: string;
+          card_enabled: boolean;
+          card_price: number;
+          enabled: boolean;
+          prepaid_only: boolean;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          card_enabled?: boolean;
+          card_price?: number;
+          enabled?: boolean;
+          prepaid_only?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          card_enabled?: boolean;
+          card_price?: number;
+          enabled?: boolean;
+          prepaid_only?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       gift_cards: {
         Row: {
           balance: number;
@@ -6048,6 +6078,7 @@ export type Database = {
           discount: number;
           fulfillment_method: string;
           fulfillment_status: string;
+          gift: Json | null;
           gift_card_paid: number;
           id: string;
           idempotency_key: string | null;
@@ -6136,6 +6167,7 @@ export type Database = {
           discount?: number;
           fulfillment_method?: string;
           fulfillment_status?: string;
+          gift?: Json | null;
           gift_card_paid?: number;
           id?: string;
           idempotency_key?: string | null;
@@ -6224,6 +6256,7 @@ export type Database = {
           discount?: number;
           fulfillment_method?: string;
           fulfillment_status?: string;
+          gift?: Json | null;
           gift_card_paid?: number;
           id?: string;
           idempotency_key?: string | null;
@@ -12572,6 +12605,16 @@ export type Database = {
         Args: { p_brand_id: string; p_template_id: string };
         Returns: undefined;
       };
+      set_gift_order_settings: {
+        Args: {
+          p_brand_id: string;
+          p_card_enabled: boolean;
+          p_card_price: number;
+          p_enabled: boolean;
+          p_prepaid_only: boolean;
+        };
+        Returns: Json;
+      };
       set_gift_card_designs: {
         Args: { p_brand_id: string; p_designs: Json };
         Returns: Json;
@@ -12738,6 +12781,7 @@ export type Database = {
           visits: number;
         }[];
       };
+      storefront_gift_order_options: { Args: { p_slug: string }; Returns: Json };
       storefront_gift_card_designs: {
         Args: { p_brand_id: string };
         Returns: Json;
