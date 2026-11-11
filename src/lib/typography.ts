@@ -311,46 +311,34 @@ export function selfHostedFontPreloads(
     options.reduce((best, w) => (Math.abs(w - weight) < Math.abs(best - weight) ? w : best));
   const fileFor = (source: FontSource | undefined, weight: number): string | null => {
     if (!source || source.url) return null;
-    if (source.family === "Tajawal") {
-      return `/fonts/tajawal/tajawal-${nearest(weight, [400, 500, 700])}-${language === "ar" ? "arabic" : "latin"}.woff2`;
+    switch (source.family) {
+      case "Tajawal":
+        return `/fonts/tajawal/tajawal-${nearest(weight, [400, 500, 700])}-${language === "ar" ? "arabic" : "latin"}.woff2`;
+      case "Inter":
+        return "/fonts/inter.woff2";
+      case "Readex Pro":
+        return "/fonts/variable/readex-pro-hexp-wght.woff2";
+      case "Plus Jakarta Sans":
+        return "/fonts/variable/plus-jakarta-sans-wght.woff2";
+      case "Cormorant Garamond":
+        return "/fonts/english-font.woff2";
+      case "29LT Zarid Display":
+        return "/fonts/zariddisplay.woff2";
+      case "29LT Bukra":
+        return "/fonts/bukramed.woff2";
+      case "29LT Kaff":
+        return "/fonts/kafflight.woff2";
+      case "29LT Azer":
+        return "/fonts/azerextralight.woff2";
+      default:
+        return null;
     }
-    return bundledFontFile(source.family, language);
   };
   const files = [
     fileFor(config.body?.[language], Number(config.bodyWeight) || 400),
     fileFor(config.display?.[language], Number(config.headingWeight) || 600),
   ].filter((f): f is string => Boolean(f));
   return Array.from(new Set(files));
-}
-
-/**
- * The platform's own file for a font it hosts (`public/fonts`), or null for any other (a Google
- * font, a system one, an uploaded file, which has its own address). Tajawal comes in one file per
- * script, at its regular weight here.
- */
-export function bundledFontFile(family: string, language: TypographyLanguage): string | null {
-  switch (family) {
-    case "Tajawal":
-      return `/fonts/tajawal/tajawal-400-${language === "ar" ? "arabic" : "latin"}.woff2`;
-    case "Inter":
-      return "/fonts/inter.woff2";
-    case "Readex Pro":
-      return "/fonts/variable/readex-pro-hexp-wght.woff2";
-    case "Plus Jakarta Sans":
-      return "/fonts/variable/plus-jakarta-sans-wght.woff2";
-    case "Cormorant Garamond":
-      return "/fonts/english-font.woff2";
-    case "29LT Zarid Display":
-      return "/fonts/zariddisplay.woff2";
-    case "29LT Bukra":
-      return "/fonts/bukramed.woff2";
-    case "29LT Kaff":
-      return "/fonts/kafflight.woff2";
-    case "29LT Azer":
-      return "/fonts/azerextralight.woff2";
-    default:
-      return null;
-  }
 }
 
 export const defaultStorefrontTypography = (): TypographyConfig => ({

@@ -36,8 +36,6 @@ export type CardKit = {
   currency: string;
   /** The store's number and Instagram (a gift message card's front prints them). */
   contact?: CardContact;
-  /** The store's own heading fonts, which a gift message card is set in. */
-  storeFonts?: CardFontFiles;
   /** The faces are loaded: until then a card is drawn with the fallback faces. */
   ready: boolean;
 };
@@ -52,7 +50,6 @@ export type CardKitInput = {
   vertical: string | null | undefined;
   currency: string | null | undefined;
   contact?: CardContact;
-  storeFonts?: CardFontFiles;
 };
 
 export function useCardKit(input: CardKitInput): CardKit {
@@ -62,21 +59,16 @@ export function useCardKit(input: CardKitInput): CardKit {
   const [photos, setPhotos] = useState<string[]>([]);
   const fontAr = designsQ.data?.fonts?.ar?.url ?? null;
   const fontEn = designsQ.data?.fonts?.en?.url ?? null;
-  const storeAr = input.storeFonts?.ar ?? null;
-  const storeEn = input.storeFonts?.en ?? null;
-  const fontKey = `${fontAr ?? ""}|${fontEn ?? ""}|${storeAr ?? ""}|${storeEn ?? ""}`;
+  const fontKey = `${fontAr ?? ""}|${fontEn ?? ""}`;
 
   // The card is measured in its faces: drawn again once they (and the store's own) have loaded.
   useEffect(() => {
     let live = true;
-    void Promise.all([
-      loadCardFonts({ ar: fontAr, en: fontEn }),
-      storeAr || storeEn ? loadCardFonts({ ar: storeAr, en: storeEn }) : null,
-    ]).finally(() => live && setLoadedFonts(fontKey));
+    void loadCardFonts({ ar: fontAr, en: fontEn }).finally(() => live && setLoadedFonts(fontKey));
     return () => {
       live = false;
     };
-  }, [fontAr, fontEn, storeAr, storeEn, fontKey]);
+  }, [fontAr, fontEn, fontKey]);
 
   useEffect(() => {
     let live = true;
@@ -112,7 +104,6 @@ export function useCardKit(input: CardKitInput): CardKit {
       storeLink: storeAddress(slug).replace(/^https?:\/\//, ""),
       currency: (currency || "BHD").toUpperCase(),
       contact,
-      storeFonts: storeAr || storeEn ? { ar: storeAr, en: storeEn } : undefined,
       ready: loadedFonts === fontKey,
     }),
     [
@@ -126,8 +117,6 @@ export function useCardKit(input: CardKitInput): CardKit {
       slug,
       currency,
       contact,
-      storeAr,
-      storeEn,
       fontAr,
       fontEn,
       loadedFonts,

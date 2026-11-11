@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { cardFontFiles } from "../lib/card-fonts";
 import { Download, Loader2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -40,7 +39,7 @@ export function CardKeepActions({
   const [saving, setSaving] = useState(false);
 
   const faces = async () => {
-    await loadCardFonts(cardFontFiles(kit, details.purpose));
+    await loadCardFonts(kit.fonts);
     const measure = pageMeasure();
     const content = cardContent(kit, design.photo, details, primary);
     return {
@@ -55,20 +54,12 @@ export function CardKeepActions({
     try {
       const { front, back, size } = await faces();
       const files = [
-        new File(
-          [await cardPng(front, size, cardFontFiles(kit, details.purpose))],
-          `${fileName}-front.png`,
-          {
-            type: "image/png",
-          },
-        ),
-        new File(
-          [await cardPng(back, size, cardFontFiles(kit, details.purpose))],
-          `${fileName}-back.png`,
-          {
-            type: "image/png",
-          },
-        ),
+        new File([await cardPng(front, size, kit.fonts)], `${fileName}-front.png`, {
+          type: "image/png",
+        }),
+        new File([await cardPng(back, size, kit.fonts)], `${fileName}-back.png`, {
+          type: "image/png",
+        }),
       ];
       if (navigator.canShare?.({ files })) {
         await navigator.share({ files }).catch(() => undefined);
@@ -111,7 +102,7 @@ export function CardKeepActions({
         format,
         lang,
         origin: window.location.origin,
-        fonts: cardFontFiles(kit, details.purpose),
+        fonts: kit.fonts,
       }),
     );
     sheet.document.close();
