@@ -214,34 +214,6 @@ export const MOVE_WORDS: Record<string, { ar: string; en: string }> = {
   voided: { ar: "أُلغيت", en: "Voided" },
 };
 
-/**
- * The message a person sends with a card (WhatsApp): who it is for, what it holds, its code, how
- * long it lasts and where to use it. Nothing is sent by itself.
- */
-export function giftCardMessage(
-  card: Pick<GiftCard, "code" | "recipient_name" | "expires_on">,
-  words: { amount: string; storeName: string; storeLink: string; expiry: string | null },
-  lang: "ar" | "en",
-): string {
-  const name = card.recipient_name?.trim();
-  if (lang === "ar") {
-    return [
-      name ? `مرحبًا ${name}،` : "مرحبًا،",
-      `إليك بطاقة هدية من ${words.storeName} بقيمة ${words.amount}.`,
-      `رمز البطاقة: ${card.code}`,
-      ...(words.expiry ? [`صالحة حتى ${words.expiry}.`] : []),
-      `تُستخدم عند الطلب من ${words.storeLink}`,
-    ].join("\n");
-  }
-  return [
-    name ? `Hello ${name},` : "Hello,",
-    `Here is a ${words.amount} gift card from ${words.storeName}.`,
-    `Card code: ${card.code}`,
-    ...(words.expiry ? [`Valid until ${words.expiry}.`] : []),
-    `Use it when you order at ${words.storeLink}`,
-  ].join("\n");
-}
-
 const RELEASED = new Set([
   "draft",
   "cancelled",

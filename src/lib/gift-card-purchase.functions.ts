@@ -111,6 +111,8 @@ export type PurchaseView = {
   deliveryTo: string | null;
   /** Only once paid. */
   code: string | null;
+  /** The card’s own link for the person it is for (`giftAddress`); only once paid. */
+  giftToken: string | null;
   expiresOn: string | null;
   /** The design the buyer chose (null for a purchase made before cards had designs). */
   design: StoredCardDesign | null;
@@ -144,7 +146,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin
       .from("gift_card_purchases")
       .select(
-        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, print_by_store, print_fee, print_address, printed_at, print_delivered_at, gift_cards(code, expires_on)",
+        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, print_by_store, print_fee, print_address, printed_at, print_delivered_at, gift_cards(code, expires_on, share_token)",
       )
       .eq("id", data.purchaseId)
       .eq("token", data.token)
@@ -167,7 +169,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       print_address: string | null;
       printed_at: string | null;
       print_delivered_at: string | null;
-      gift_cards: { code: string; expires_on: string | null } | null;
+      gift_cards: { code: string; expires_on: string | null; share_token: string } | null;
     };
     const printFee = purchase.print_by_store ? Number(purchase.print_fee ?? 0) : 0;
     const paid = purchase.status === "paid";
@@ -183,6 +185,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       deliveryTo:
         purchase.delivery_channel === "email" ? purchase.buyer_email : purchase.buyer_phone,
       code: paid ? (purchase.gift_cards?.code ?? null) : null,
+      giftToken: paid ? (purchase.gift_cards?.share_token ?? null) : null,
       expiresOn: paid ? (purchase.gift_cards?.expires_on ?? null) : null,
       design: purchase.design ?? null,
       printByStore: purchase.print_by_store === true,

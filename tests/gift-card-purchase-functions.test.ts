@@ -138,7 +138,10 @@ describe("a purchase's page", () => {
     recipient_name: "Noor",
     message: null,
     brand_id: "b1",
-    gift_cards: status === "paid" ? { code: "ABCD-EFGH-JKMN", expires_on: "2027-10-31" } : null,
+    gift_cards:
+      status === "paid"
+        ? { code: "ABCD-EFGH-JKMN", expires_on: "2027-10-31", share_token: "ab".repeat(32) }
+        : null,
   });
 
   it("is read by its id and its token", async () => {
@@ -147,8 +150,11 @@ describe("a purchase's page", () => {
       data: { purchaseId: PURCHASE, token: TOKEN },
     })) as {
       code: string;
+      giftToken: string;
     };
     expect(view.code).toBe("ABCD-EFGH-JKMN");
+    // The buyer's page is given the card's gift link to pass on.
+    expect(view.giftToken).toBe("ab".repeat(32));
     expect(fake.queries[0].filters).toEqual(
       expect.arrayContaining([
         ["id", PURCHASE],

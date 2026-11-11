@@ -82,7 +82,7 @@ export function buyProblems(form: BuyForm, offer: GiftCardOffer): BuyProblem[] {
   if (form.method === "benefit" && !form.hasReceipt) problems.push("receipt");
   if (wantsPrint(form, offer)) {
     if (form.printAddress.trim().length < 3) problems.push("print_address");
-    if (form.printPhone.replace(/D/g, "").length < 6) problems.push("print_phone");
+    if (form.printPhone.replace(/\D/g, "").length < 6) problems.push("print_phone");
   }
   return problems;
 }
@@ -195,44 +195,6 @@ export function purchaseState(
   if (view.status === "cancelled" || view.status === "expired") return "over";
   if (view.method === "benefit") return "checking_transfer";
   return paymentFailed ? "failed" : "payment_unfinished";
-}
-
-/**
- * The message the buyer sends the person the card is for (on WhatsApp, by their own hand): who
- * it is for, the buyer's own words, the amount, the code, its end date and where to use it.
- */
-export function recipientMessage(
-  input: {
-    recipient: string | null;
-    message: string | null;
-    amount: string;
-    code: string;
-    expiry: string | null;
-    storeName: string;
-    storeLink: string;
-  },
-  lang: "ar" | "en",
-): string {
-  const name = input.recipient?.trim();
-  const own = input.message?.trim();
-  if (lang === "ar") {
-    return [
-      name ? `مرحبًا ${name}،` : "مرحبًا،",
-      ...(own ? [own] : []),
-      `إليك بطاقة هدية من ${input.storeName} بقيمة ${input.amount}.`,
-      `رمز البطاقة: ${input.code}`,
-      ...(input.expiry ? [`صالحة حتى ${input.expiry}.`] : []),
-      `تُستخدم عند الطلب من ${input.storeLink}`,
-    ].join("\n");
-  }
-  return [
-    name ? `Hello ${name},` : "Hello,",
-    ...(own ? [own] : []),
-    `Here is a ${input.amount} gift card from ${input.storeName}.`,
-    `Card code: ${input.code}`,
-    ...(input.expiry ? [`Valid until ${input.expiry}.`] : []),
-    `Use it when you order at ${input.storeLink}`,
-  ].join("\n");
 }
 
 /**

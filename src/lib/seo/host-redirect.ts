@@ -34,6 +34,7 @@ const PRIVATE_PAGES = new Set([
   "account",
   "auth",
   "auth-confirmed",
+  "gift",
   "gift-card",
   "thank-you",
   "track-order",

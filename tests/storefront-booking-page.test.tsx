@@ -326,6 +326,13 @@ const renderWithQuery = (ui: React.ReactElement) =>
   );
 
 /** The start time in its two taps: the part of the day, then the time in the list that opens. */
+/** The area, found by typing in its picker as a shopper does (`RegionPicker`). */
+function pickArea(typed: string, name: RegExp) {
+  fireEvent.click(screen.getByLabelText("Area"));
+  fireEvent.change(screen.getByLabelText("Search for the area"), { target: { value: typed } });
+  fireEvent.click(screen.getByRole("option", { name }));
+}
+
 async function pickStart(period: string, time: string) {
   fireEvent.click(await screen.findByRole("button", { name: new RegExp(`^${period}`) }));
   fireEvent.click(await screen.findByRole("button", { name: time }));
@@ -353,7 +360,7 @@ describe("booking from the storefront", () => {
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "3900 1122" } });
-    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
+    pickArea("Juff", /Juffair/);
     const send = screen.getByRole("button", { name: "Send booking request" });
     expect(send).toBeEnabled();
     fireEvent.click(send);
@@ -677,7 +684,7 @@ describe("a service's add-ons in the booking flow", () => {
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
-    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
+    pickArea("Juff", /Juffair/);
     fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
     await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
     expect(state.requestBooking).toHaveBeenCalledWith(
@@ -704,7 +711,7 @@ describe("a service's add-ons in the booking flow", () => {
     await pickStart("Evening", "6:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
     fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "39001122" } });
-    fireEvent.change(screen.getByLabelText("Area"), { target: { value: "juffair" } });
+    pickArea("Juff", /Juffair/);
     fireEvent.click(screen.getByRole("button", { name: "Send booking request" }));
     await waitFor(() => expect(state.requestBooking).toHaveBeenCalledTimes(1));
     const sent = (
