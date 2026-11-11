@@ -3841,6 +3841,7 @@ export type Database = {
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
+          share_token: string;
           source_order_id: string | null;
           status: string;
           void_reason: string | null;
@@ -3861,6 +3862,7 @@ export type Database = {
           paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
+          share_token?: string;
           source_order_id?: string | null;
           status?: string;
           void_reason?: string | null;
@@ -3881,6 +3883,7 @@ export type Database = {
           paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
+          share_token?: string;
           source_order_id?: string | null;
           status?: string;
           void_reason?: string | null;
@@ -11270,6 +11273,7 @@ export type Database = {
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
+          share_token: string;
           source_order_id: string | null;
           status: string;
           void_reason: string | null;
@@ -11369,6 +11373,7 @@ export type Database = {
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
+          share_token: string;
           source_order_id: string | null;
           status: string;
           void_reason: string | null;
@@ -11982,6 +11987,36 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "bookings";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      reset_gift_card_share_link: {
+        Args: { p_card_id: string };
+        Returns: {
+          balance: number;
+          brand_id: string;
+          code: string;
+          currency: string;
+          expires_on: string | null;
+          id: string;
+          initial_amount: number;
+          issued_at: string;
+          issued_by: string | null;
+          note: string | null;
+          paid_with: string | null;
+          purchaser_name: string | null;
+          recipient_name: string | null;
+          share_token: string;
+          source_order_id: string | null;
+          status: string;
+          void_reason: string | null;
+          voided_at: string | null;
+          voided_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_cards";
           isOneToOne: true;
           isSetofReturn: false;
         };
@@ -12911,6 +12946,7 @@ export type Database = {
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
+          share_token: string;
           source_order_id: string | null;
           status: string;
           void_reason: string | null;

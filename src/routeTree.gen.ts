@@ -38,6 +38,7 @@ import { Route as InvoiceIdRouteImport } from './routes/invoice.$id'
 import { Route as PlatformFilenameRouteImport } from './routes/platform.$filename'
 import { Route as ReviewTokenRouteImport } from './routes/review.$token'
 import { Route as SlugGiftCardPurchaseIdRouteImport } from './routes/$slug.gift-card.$purchaseId'
+import { Route as SlugGiftTokenRouteImport } from './routes/$slug.gift.$token'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
 import { Route as SlugProductSplatRouteImport } from './routes/$slug.product.$'
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
@@ -256,6 +257,11 @@ const ReviewTokenRoute = ReviewTokenRouteImport.update({
 const SlugGiftCardPurchaseIdRoute = SlugGiftCardPurchaseIdRouteImport.update({
   id: '/gift-card/$purchaseId',
   path: '/gift-card/$purchaseId',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugGiftTokenRoute = SlugGiftTokenRouteImport.update({
+  id: '/gift/$token',
+  path: '/gift/$token',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugPageIdxRoute = SlugPageIdxRouteImport.update({
@@ -723,6 +729,7 @@ export interface FileRoutesByFullPath {
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
+  '/$slug/gift/$token': typeof SlugGiftTokenRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -825,6 +832,7 @@ export interface FileRoutesByTo {
   '/review/$token': typeof ReviewTokenRoute
   '/$slug': typeof SlugIndexRoute
   '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
+  '/$slug/gift/$token': typeof SlugGiftTokenRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -930,6 +938,7 @@ export interface FileRoutesById {
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/gift-card/$purchaseId': typeof SlugGiftCardPurchaseIdRoute
+  '/$slug/gift/$token': typeof SlugGiftTokenRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -1036,6 +1045,7 @@ export interface FileRouteTypes {
     | '/review/$token'
     | '/$slug/'
     | '/$slug/gift-card/$purchaseId'
+    | '/$slug/gift/$token'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1138,6 +1148,7 @@ export interface FileRouteTypes {
     | '/review/$token'
     | '/$slug'
     | '/$slug/gift-card/$purchaseId'
+    | '/$slug/gift/$token'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1242,6 +1253,7 @@ export interface FileRouteTypes {
     | '/review/$token'
     | '/$slug/'
     | '/$slug/gift-card/$purchaseId'
+    | '/$slug/gift/$token'
     | '/$slug/page/$idx'
     | '/$slug/product/$'
     | '/$slug/product/$id'
@@ -1550,6 +1562,13 @@ declare module '@tanstack/react-router' {
       path: '/gift-card/$purchaseId'
       fullPath: '/$slug/gift-card/$purchaseId'
       preLoaderRoute: typeof SlugGiftCardPurchaseIdRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/gift/$token': {
+      id: '/$slug/gift/$token'
+      path: '/gift/$token'
+      fullPath: '/$slug/gift/$token'
+      preLoaderRoute: typeof SlugGiftTokenRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/page/$idx': {
@@ -2088,6 +2107,7 @@ interface SlugRouteRouteChildren {
   SlugWishlistRoute: typeof SlugWishlistRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugGiftCardPurchaseIdRoute: typeof SlugGiftCardPurchaseIdRoute
+  SlugGiftTokenRoute: typeof SlugGiftTokenRoute
   SlugPageIdxRoute: typeof SlugPageIdxRoute
   SlugProductSplatRoute: typeof SlugProductSplatRoute
   SlugProductIdRoute: typeof SlugProductIdRoute
@@ -2109,6 +2129,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugWishlistRoute: SlugWishlistRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugGiftCardPurchaseIdRoute: SlugGiftCardPurchaseIdRoute,
+  SlugGiftTokenRoute: SlugGiftTokenRoute,
   SlugPageIdxRoute: SlugPageIdxRoute,
   SlugProductSplatRoute: SlugProductSplatRoute,
   SlugProductIdRoute: SlugProductIdRoute,

@@ -13,7 +13,7 @@ export type GiftCard = Tables<"gift_cards">;
 export type GiftCardMove = Tables<"gift_card_movements">;
 
 export const GIFT_CARD_SELECT =
-  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason, paid_with";
+  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason, paid_with, share_token";
 export const GIFT_CARD_MOVE_SELECT =
   "id, gift_card_id, brand_id, kind, amount, order_id, created_by, created_at, note";
 
@@ -101,6 +101,13 @@ export async function voidGiftCard(cardId: string, reason: string): Promise<Gift
     p_card_id: cardId,
     p_reason: reason,
   });
+  if (error) throw error;
+  return data as GiftCard;
+}
+
+/** A new gift link for a card whose first went to the wrong person; the old one stops answering. */
+export async function resetGiftCardShareLink(cardId: string): Promise<GiftCard> {
+  const { data, error } = await supabase.rpc("reset_gift_card_share_link", { p_card_id: cardId });
   if (error) throw error;
   return data as GiftCard;
 }

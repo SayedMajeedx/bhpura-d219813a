@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useBrand } from "@/lib/brand-context";
 import { formatMoney } from "@/lib/format";
-import { storeAddress } from "@/lib/platform-host";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import {
   approveGiftCardPurchase,
@@ -19,11 +18,12 @@ import {
   type GiftCardPurchase,
 } from "@/lib/data/gift-cards";
 import { getGiftCardPurchaseReceiptUrl } from "@/lib/gift-card-purchase.functions";
-import { giftCardError, giftCardMessage } from "../lib/gift-cards";
+import { giftCardError } from "../lib/gift-cards";
+import { giftAddress, giftLinkForBuyerMessage } from "@/lib/gift-link";
 import { orderTotal, printStep } from "../lib/card-orders";
 import { PrintOrderCardButton } from "./PrintCardDialog";
 
-/** The code of a paid order sent by a person on WhatsApp, in the buyer's language. */
+/** A paid order's gift link sent by a person on WhatsApp, in the buyer's language; never the code. */
 export function SendCodeButton({
   purchase,
   lang,
@@ -35,23 +35,17 @@ export function SendCodeButton({
   const qc = useQueryClient();
   const brand = useBrand();
   const card = purchase.gift_cards;
-  if (!card?.code) return null;
+  if (!card?.code || !card.share_token) return null;
   const buyerLang = purchase.lang === "en" ? "en" : "ar";
   const storeName =
     (buyerLang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
-  const expiry = card.expires_on
-    ? new Date(`${card.expires_on}T12:00:00`).toLocaleDateString(
-        buyerLang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
-        { day: "numeric", month: "short", year: "numeric" },
-      )
-    : null;
-  const message = giftCardMessage(
-    { code: card.code, recipient_name: purchase.recipient_name, expires_on: card.expires_on },
+  const message = giftLinkForBuyerMessage(
     {
+      buyer: purchase.buyer_name,
+      recipient: purchase.recipient_name,
       amount: formatMoney(Number(purchase.amount), purchase.currency, buyerLang),
       storeName,
-      storeLink: storeAddress(brand.slug),
-      expiry,
+      link: giftAddress(brand.slug, card.share_token ?? ""),
     },
     buyerLang,
   );

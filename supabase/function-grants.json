@@ -526,6 +526,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "reset_gift_card_share_link(p_card_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders) before giving a card a new gift link"
+    },
     "rpc_adjust_variant_stock(p_variant_id uuid, p_location text, p_mode text, p_value integer, p_reason text, p_note text)": {
       "anon": false,
       "authenticated": true,

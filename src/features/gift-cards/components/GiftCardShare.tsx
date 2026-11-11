@@ -1,14 +1,25 @@
 import { useState } from "react";
-import { Check, Copy, MessageCircle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Copy, Link2, MessageCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { formatMoney } from "@/lib/format";
-import { storeAddress } from "@/lib/platform-host";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useBrand } from "@/lib/brand-context";
-import type { GiftCard, GiftCardPurchase } from "@/lib/data/gift-cards";
-import { giftCardMessage } from "../lib/gift-cards";
+import {
+  invalidateGiftCards,
+  resetGiftCardShareLink,
+  type GiftCard,
+  type GiftCardPurchase,
+} from "@/lib/data/gift-cards";
+import { giftAddress, giftLinkMessage } from "@/lib/gift-link";
+import { giftCardError } from "../lib/gift-cards";
 import { PrintCardButton } from "./PrintCardDialog";
 
-/** A card's code to copy, and the message a person sends with it on WhatsApp. */
+/**
+ * A card to hand over: its gift link (the page the person it is for opens: the card in its design
+ * and its code on a tap) to copy or send on WhatsApp by a person, and its code for staff to read.
+ * The message carries the link and never the code.
+ */
 export function GiftCardShare({
   card,
   purchase,
@@ -21,36 +32,51 @@ export function GiftCardShare({
 }) {
   const isAr = lang === "ar";
   const brand = useBrand();
-  const [copied, setCopied] = useState(false);
+  const qc = useQueryClient();
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
+  const [token, setToken] = useState(card.share_token);
+  const [renewing, setRenewing] = useState(false);
   const storeName = (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
-  const expiry = card.expires_on
-    ? new Date(`${card.expires_on}T12:00:00`).toLocaleDateString(
-        isAr ? "ar-BH-u-nu-latn" : "en-GB",
-        {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        },
-      )
-    : null;
-  const message = giftCardMessage(
-    card,
+  const link = giftAddress(brand.slug, token);
+  const message = giftLinkMessage(
     {
-      amount: formatMoney(Number(card.balance), card.currency, lang),
+      recipient: purchase?.recipient_name ?? card.recipient_name,
+      message: purchase?.message ?? null,
       storeName,
-      storeLink: storeAddress(brand.slug),
-      expiry,
+      link,
     },
     lang,
   );
 
-  const copy = async () => {
+  const copy = async (what: "code" | "link") => {
     try {
-      await navigator.clipboard.writeText(card.code);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
+      await navigator.clipboard.writeText(what === "code" ? card.code : link);
+      setCopied(what);
+      window.setTimeout(() => setCopied(null), 1500);
     } catch {
       // Clipboard unavailable: the code stays on screen to copy by hand.
+    }
+  };
+
+  const renew = async () => {
+    const sure = await confirmDialog({
+      title: isAr ? "إنشاء رابط إهداء جديد؟" : "Make a new gift link?",
+      description: isAr
+        ? "يتوقف الرابط القديم عن العمل. البطاقة ورمزها ورصيدها تبقى كما هي."
+        : "The old link stops working. The card, its code and its balance stay as they are.",
+      confirmLabel: isAr ? "رابط جديد" : "New link",
+    });
+    if (!sure) return;
+    setRenewing(true);
+    try {
+      const next = await resetGiftCardShareLink(card.id);
+      setToken(next.share_token);
+      await invalidateGiftCards(qc, brand.id);
+      toast.success(isAr ? "أُنشئ رابط جديد" : "A new link was made");
+    } catch (error) {
+      toast.error(giftCardError(error, lang));
+    } finally {
+      setRenewing(false);
     }
   };
 
@@ -65,26 +91,63 @@ export function GiftCardShare({
           variant="outline"
           size="sm"
           className="gap-1.5"
-          onClick={copy}
+          onClick={() => copy("code")}
           aria-label={isAr ? `نسخ الرمز ${card.code}` : `Copy the code ${card.code}`}
         >
-          {copied ? (
+          {copied === "code" ? (
             <Check className="size-4" aria-hidden />
           ) : (
             <Copy className="size-4" aria-hidden />
           )}
-          {copied ? (isAr ? "نُسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
+          {copied === "code" ? (isAr ? "نُسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
         </Button>
       </div>
-      <Button asChild variant="outline" className="w-full gap-2">
-        <a
-          href={`https://wa.me/?text=${encodeURIComponent(message)}`}
-          target="_blank"
-          rel="noreferrer"
+      <p className="text-xs text-muted-foreground">
+        {isAr
+          ? "رابط الإهداء يفتح البطاقة بتصميمها لمن أُهديت له، والرمز يظهر داخله. الرسالة لا تحمل الرمز."
+          : "The gift link opens the card in its design for the person it is for, with the code inside. The message does not carry the code."}
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Button asChild className="min-w-0 gap-2">
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <MessageCircle className="size-4 shrink-0" aria-hidden />
+            {isAr ? "إرسال رابط الإهداء على واتساب" : "Send the gift link on WhatsApp"}
+          </a>
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="min-w-0 gap-2"
+          onClick={() => copy("link")}
         >
-          <MessageCircle className="size-4" aria-hidden />
-          {isAr ? "إرسال البطاقة على واتساب" : "Send the card on WhatsApp"}
-        </a>
+          {copied === "link" ? (
+            <Check className="size-4 shrink-0" aria-hidden />
+          ) : (
+            <Link2 className="size-4 shrink-0" aria-hidden />
+          )}
+          {copied === "link"
+            ? isAr
+              ? "نُسخ الرابط"
+              : "Link copied"
+            : isAr
+              ? "نسخ رابط الإهداء"
+              : "Copy the gift link"}
+        </Button>
+      </div>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="gap-1.5 text-muted-foreground"
+        onClick={renew}
+        disabled={renewing}
+      >
+        <RefreshCw className="size-3.5" aria-hidden />
+        {isAr ? "أُرسل لشخص خطأ؟ أنشئ رابطًا جديدًا" : "Sent to the wrong person? Make a new link"}
       </Button>
       <PrintCardButton card={card} purchase={purchase} lang={lang} />
     </div>

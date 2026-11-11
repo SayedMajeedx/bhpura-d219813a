@@ -120,6 +120,7 @@ const card = (overrides: Record<string, unknown> = {}) => ({
   voided_by: null,
   voided_at: null,
   void_reason: null,
+  share_token: "ab".repeat(32),
   ...overrides,
 });
 
@@ -185,24 +186,11 @@ describe("a card's rules", () => {
     expect(rules.orderGiftCardOffer({ total: 80, status: "cancelled" })).toBeNull();
   });
 
-  it("word the database's refusals, and write the card's message for a person to send", () => {
+  it("word the database's refusals", () => {
     expect(rules.giftCardError(new Error("GIFT_CARD_EXPIRED"), "en")).toBe(
       "This gift card has expired.",
     );
     expect(rules.giftCardError(new Error("boom"), "ar")).toBe("تعذّر إتمام العملية.");
-    const message = rules.giftCardMessage(
-      card() as never,
-      {
-        amount: "BHD 30.000",
-        storeName: "Pura Line",
-        storeLink: "https://pura.boutq.store/pura",
-        expiry: null,
-      },
-      "ar",
-    );
-    expect(message).toContain("مرحبًا Sara،");
-    expect(message).toContain("رمز البطاقة: ABCD-EFGH-JKMN");
-    expect(message).not.toContain("صالحة حتى");
   });
 });
 
@@ -253,7 +241,7 @@ describe("the gift cards page", () => {
       expect.objectContaining({ amount: 25, paidWith: "cash" }),
     );
     expect(
-      screen.getByRole("link", { name: /Send the card on WhatsApp/ }).getAttribute("href"),
+      screen.getByRole("link", { name: /Send the gift link on WhatsApp/ }).getAttribute("href"),
     ).toContain("wa.me");
   });
 });
@@ -473,7 +461,7 @@ describe("selling cards on the store", () => {
         buyer_email: null,
         delivery_channel: "whatsapp",
         lang: "ar",
-        gift_cards: { code: "WXYZ-2345-6789", expires_on: null },
+        gift_cards: { code: "WXYZ-2345-6789", expires_on: null, share_token: "ef".repeat(32) },
       },
       {
         ...paid,
@@ -492,8 +480,12 @@ describe("selling cards on the store", () => {
     const send = await screen.findByRole("link", { name: /Send the code on WhatsApp/ });
     const href = send.getAttribute("href") ?? "";
     expect(href.startsWith("https://wa.me/97339001122?text=")).toBe(true);
-    expect(decodeURIComponent(href)).toContain("WXYZ-2345-6789");
-    expect(decodeURIComponent(href)).toContain("بطاقة هدية");
+    // The buyer is sent the card's gift link to pass on, never its code.
+    expect(decodeURIComponent(href)).toContain(
+      `https://pura.boutq.store/pura/gift/${"ef".repeat(32)}`,
+    );
+    expect(decodeURIComponent(href)).not.toContain("WXYZ-2345-6789");
+    expect(decodeURIComponent(href)).toContain("بطاقة الهدية من بيورا لاين جاهزة");
     fireEvent.click(send);
     await waitFor(() => expect(data.markGiftCardPurchaseSent).toHaveBeenCalledWith("pu2"));
   });

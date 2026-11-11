@@ -10,9 +10,9 @@ import {
   printLine,
   purchaseFailure,
   purchaseState,
-  recipientMessage,
   validityLine,
 } from "../src/features/gift-card-shop/lib/gift-card-shop";
+import { giftLinkMessage } from "../src/lib/gift-link";
 import {
   amountsFromText,
   purchaseWords,
@@ -57,6 +57,9 @@ const fns = {
 };
 vi.mock("../src/lib/gift-card-purchase.functions", () => fns);
 vi.mock("@/lib/gift-card-purchase.functions", () => fns);
+const linkFns = { resetGiftLink: vi.fn(async () => ({ giftToken: "cd".repeat(32) })) };
+vi.mock("../src/lib/gift-link.functions", () => linkFns);
+vi.mock("@/lib/gift-link.functions", () => linkFns);
 const receipt = { uploadBenefitReceipt: stubs.upload };
 vi.mock("../src/lib/benefit-receipt", () => receipt);
 vi.mock("@/lib/benefit-receipt", () => receipt);
@@ -159,26 +162,21 @@ describe("the rules", () => {
     expect(purchaseState({ status: "expired", method: "card", code: null }, false)).toBe("over");
   });
 
-  it("write the message for the person the card is for, with the buyer's own words", () => {
-    const message = recipientMessage(
+  it("write the message for the person the card is for: the buyer's words and the link, no code", () => {
+    const message = giftLinkMessage(
       {
         recipient: "Noor",
         message: "Eid Mubarak!",
-        amount: "BHD 50.000",
-        code: "ABCD-EFGH-JKMN",
-        expiry: "31 Oct 2027",
         storeName: "Pura Line",
-        storeLink: "https://pura.boutq.store/pura",
+        link: "https://pura.boutq.store/pura/gift/abc",
       },
       "en",
     );
     expect(message.split("\n")).toEqual([
       "Hello Noor,",
       "Eid Mubarak!",
-      "Here is a BHD 50.000 gift card from Pura Line.",
-      "Card code: ABCD-EFGH-JKMN",
-      "Valid until 31 Oct 2027.",
-      "Use it when you order at https://pura.boutq.store/pura",
+      "You have a gift card from Pura Line. Open it here:",
+      "https://pura.boutq.store/pura/gift/abc",
     ]);
   });
 
@@ -411,6 +409,7 @@ describe("the purchase's page", () => {
       message: null,
       brandId: "b1",
       code: "ABCD-EFGH-JKMN",
+      giftToken: "ab".repeat(32),
       expiresOn: "2027-10-31",
       total: 50,
       printByStore: false,
@@ -427,9 +426,13 @@ describe("the purchase's page", () => {
     // The buyer keeps the card's picture; printing is the store's alone.
     expect(screen.getByRole("button", { name: /Save the card/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Print/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Send on WhatsApp/ }).getAttribute("href")).toContain(
-      encodeURIComponent("ABCD-EFGH-JKMN"),
+    // What is sent is the card's gift link, never its code.
+    const sent = decodeURIComponent(
+      screen.getByRole("link", { name: /Send as a gift on WhatsApp/ }).getAttribute("href") ?? "",
     );
+    expect(sent).toContain(`https://pura.boutq.store/pura/gift/${"ab".repeat(32)}`);
+    expect(sent).not.toContain("ABCD-EFGH-JKMN");
+    expect(screen.getByRole("button", { name: "Copy the gift link" })).toBeInTheDocument();
   });
 
   it("shows no code while a transfer is being checked", async () => {

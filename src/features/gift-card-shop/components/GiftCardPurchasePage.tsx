@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, Clock, Copy, Gift, MessageCircle, Printer, XCircle } from "lucide-react";
+import { Check, Clock, Copy, Gift, Link2, Printer, RefreshCw, Send, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
-import { storeAddress } from "@/lib/platform-host";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { giftAddress, giftLinkMessage } from "@/lib/gift-link";
+import { resetGiftLink } from "@/lib/gift-link.functions";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
-import { deliveryLine, printLine, purchaseState, recipientMessage } from "../lib/gift-card-shop";
+import { deliveryLine, printLine, purchaseState } from "../lib/gift-card-shop";
 import { GiftCardPreview } from "@/features/gift-card-design/components/GiftCardPreview";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
 import { readDesign } from "@/features/gift-card-design/lib/design";
@@ -36,6 +38,9 @@ export function GiftCardPurchasePage({
   });
   const [copied, setCopied] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  // A new gift link the buyer asked for here, until the page reads the purchase again.
+  const [renewed, setRenewed] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
   const kit = useStorefrontCardKit();
   const view = query.data;
 
@@ -95,18 +100,14 @@ export function GiftCardPurchasePage({
   if (state === "ready" && view.code) {
     const storeName =
       (lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
-    const message = recipientMessage(
-      {
-        recipient: view.recipientName,
-        message: view.message,
-        amount: money,
-        code: view.code,
-        expiry,
-        storeName,
-        storeLink: storeAddress(brand.slug),
-      },
-      lang,
-    );
+    const giftToken = renewed ?? view.giftToken;
+    const giftLink = giftToken ? giftAddress(brand.slug, giftToken) : null;
+    const message = giftLink
+      ? giftLinkMessage(
+          { recipient: view.recipientName, message: view.message, storeName, link: giftLink },
+          lang,
+        )
+      : "";
     const copy = async () => {
       try {
         await navigator.clipboard.writeText(view.code ?? "");
@@ -115,6 +116,28 @@ export function GiftCardPurchasePage({
       } catch {
         // The code stays on screen to copy by hand.
       }
+    };
+    const copyLink = async () => {
+      try {
+        await navigator.clipboard.writeText(giftLink ?? "");
+        setLinkCopied(true);
+        window.setTimeout(() => setLinkCopied(false), 1500);
+      } catch {
+        // The WhatsApp button still carries the link.
+      }
+    };
+    const renew = async () => {
+      const sure = await confirmDialog({
+        title: t("إنشاء رابط إهداء جديد؟", "Make a new gift link?"),
+        description: t(
+          "يتوقف الرابط القديم عن العمل. البطاقة ورمزها ورصيدها تبقى كما هي.",
+          "The old link stops working. The card, its code and its balance stay as they are.",
+        ),
+        confirmLabel: t("رابط جديد", "New link"),
+      });
+      if (!sure) return;
+      const reply = await resetGiftLink({ data: { purchaseId, token } }).catch(() => null);
+      if (reply) setRenewed(reply.giftToken);
     };
     return (
       <div className="mx-auto w-full max-w-lg space-y-5 px-4 py-8 sm:py-12">
@@ -128,7 +151,47 @@ export function GiftCardPurchasePage({
           </p>
         </div>
         <GiftCardPreview kit={kit} design={design} details={details} primary={lang} lang={lang} />
-        <div className="space-y-1 text-center">
+        {giftLink && (
+          <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Button asChild className="min-h-11 min-w-0 gap-2">
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Send className="size-4 shrink-0" aria-hidden />
+                  {t("أرسلها كهدية على واتساب", "Send as a gift on WhatsApp")}
+                </a>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 min-w-0 gap-2"
+                onClick={copyLink}
+              >
+                {linkCopied ? (
+                  <Check className="size-4 shrink-0" aria-hidden />
+                ) : (
+                  <Link2 className="size-4 shrink-0" aria-hidden />
+                )}
+                {linkCopied
+                  ? t("نُسخ الرابط", "Link copied")
+                  : t("نسخ رابط الإهداء", "Copy the gift link")}
+              </Button>
+            </div>
+            <p className="text-center text-xs text-muted-foreground">
+              {t(
+                "رابط الإهداء يفتح البطاقة بتصميمها مع رمزها، ولا يظهر فيه شيء عن الدفع أو بياناتك.",
+                "The gift link opens the card in its design with its code, and shows nothing of the payment or your details.",
+              )}
+            </p>
+          </div>
+        )}
+        <div className="space-y-2 rounded-xl border border-border px-4 py-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            {t("رمز البطاقة، إن أردتها لنفسك", "The card's code, if it is for you")}
+          </p>
           <p className="font-mono text-lg font-bold tracking-wider" dir="ltr">
             {view.code}
           </p>
@@ -136,17 +199,13 @@ export function GiftCardPurchasePage({
             {money}
             {expiry ? ` · ${t(`صالحة حتى ${expiry}`, `Valid until ${expiry}`)}` : ""}
           </p>
-        </div>
-        <CardKeepActions
-          kit={kit}
-          design={design}
-          details={details}
-          primary={lang}
-          lang={lang}
-          fileName={`${storeName || "gift"}-card`.replace(/\s+/g, "-").toLowerCase()}
-        />
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button type="button" variant="outline" className="min-h-11 gap-2" onClick={copy}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="min-h-11 gap-2"
+            onClick={copy}
+          >
             {copied ? (
               <Check className="size-4" aria-hidden />
             ) : (
@@ -154,17 +213,27 @@ export function GiftCardPurchasePage({
             )}
             {copied ? t("نُسخ", "Copied") : t("نسخ الرمز", "Copy the code")}
           </Button>
-          <Button asChild className="min-h-11 gap-2">
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(message)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <MessageCircle className="size-4" aria-hidden />
-              {t("إرسال على واتساب", "Send on WhatsApp")}
-            </a>
-          </Button>
         </div>
+        <CardKeepActions
+          kit={kit}
+          design={design}
+          details={details}
+          primary={lang}
+          lang={lang}
+          fileName={`${storeName || "gift"}-card`.replace(/s+/g, "-").toLowerCase()}
+        />
+        {giftLink && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="mx-auto flex min-h-11 gap-1.5 text-muted-foreground"
+            onClick={renew}
+          >
+            <RefreshCw className="size-3.5" aria-hidden />
+            {t("أُرسل لشخص خطأ؟ أنشئ رابطًا جديدًا", "Sent to the wrong person? Make a new link")}
+          </Button>
+        )}
         {printed && <PrintNote text={printed} />}
         <p className="text-center text-xs text-muted-foreground">
           {deliveryLine(view, lang)}{" "}
