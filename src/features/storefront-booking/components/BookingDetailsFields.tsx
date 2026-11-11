@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { BAHRAIN_REGIONS, regionsInOrder } from "@/lib/bahrain-regions";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
 /** Step 4: who is booking, where it happens, and the services' questions. */
@@ -58,7 +58,7 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
           }}
         >
           <option value="">{isAr ? "اختر المنطقة" : "Choose an area"}</option>
-          {BAHRAIN_REGIONS.map((region) => (
+          {regionsInOrder(isAr ? "ar" : "en").map((region) => (
             <option key={region.value} value={region.value}>
               {isAr ? region.ar : region.en}
             </option>

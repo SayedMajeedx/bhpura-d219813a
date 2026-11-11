@@ -1,5 +1,5 @@
 import { formatPrice } from "@/lib/storefront-context";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { regionsInOrder } from "@/lib/bahrain-regions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -344,7 +344,7 @@ export function DeliveryAddressCard({
                   <SelectValue placeholder={t("اختر المنطقة", "Select region")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {BAHRAIN_REGIONS.map((r) => (
+                  {regionsInOrder(lang === "ar" ? "ar" : "en").map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       {lang === "ar" ? r.ar : r.en}
                     </SelectItem>
