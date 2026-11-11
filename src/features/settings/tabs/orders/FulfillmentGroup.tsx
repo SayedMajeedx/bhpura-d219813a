@@ -21,6 +21,7 @@ import { DeliveryShopperPreview } from "@/features/settings/tabs/orders/Delivery
 import { DeliveryScheduleCard } from "@/features/settings/tabs/orders/DeliveryScheduleCard";
 import { OpeningHoursCard } from "@/features/settings/tabs/orders/OpeningHoursCard";
 import { AlterationsSettingCard } from "@/features/settings/tabs/orders/AlterationsSettingCard";
+import { GiftOrdersSettingCard } from "@/features/settings/tabs/orders/GiftOrdersSettingCard";
 import { MadeToOrderEstimateField } from "@/features/settings/tabs/orders/MadeToOrderEstimateField";
 import type { DeliveryInfoSettings } from "@/lib/delivery-info";
 
@@ -684,6 +685,7 @@ export function FulfillmentGroup({ madeToOrder = false }: { madeToOrder?: boolea
         {(bs.delivery_enabled || bs.pickup_enabled) && <DeliveryScheduleCard />}
         <OpeningHoursCard />
         <AlterationsSettingCard lang={isAr ? "ar" : "en"} />
+        <GiftOrdersSettingCard lang={isAr ? "ar" : "en"} />
       </div>
     </div>
   );

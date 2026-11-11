@@ -1,5 +1,6 @@
 import { getCountryByCode, type ShippingZone } from "@/lib/shipping";
 import { giftOrderNote } from "@/lib/gift-order-note";
+import { giftRefusal, type GiftOrderPayload } from "@/lib/gift-order";
 import { bookingErrorMessage } from "@/lib/bookings/errors";
 import type {
   AppliedPromo,
@@ -29,6 +30,7 @@ export function placeStorefrontOrderArgs({
   isGift,
   giftRecipient,
   giftMessage,
+  gift = null,
   fulfillment,
   branchId,
   partnerId = "",
@@ -55,6 +57,8 @@ export function placeStorefrontOrderArgs({
   isGift: boolean;
   giftRecipient: string;
   giftMessage: string;
+  /** What `giftPayload` made of the shopper's gift choice; null when the order is not a gift. */
+  gift?: GiftOrderPayload | null;
   fulfillment: Fulfillment;
   branchId: string;
   /** A partner's shop to collect at: the database takes the pieces from it (migration 20261014130000). */
@@ -74,6 +78,8 @@ export function placeStorefrontOrderArgs({
   return {
     p_brand_slug: brand.slug,
     p_customer: {
+      // A gift order's details, for the store's settings to price and hold (`apply_order_gift`).
+      ...(gift ? { gift } : {}),
       ...(payInFull ? { pay_in_full: true } : {}),
       ...(requestedTime?.date
         ? { requested_date: requestedTime.date, requested_slot: requestedTime.slot ?? null }
@@ -237,6 +243,11 @@ export function placeOrderFailure(
         "المتجر مغلق الآن ولا يستقبل طلبات. حاول في ساعات العمل.",
         "The store is closed to orders now. Please order during its opening hours.",
       ),
+      clearPromo: false,
+    };
+  } else if (giftRefusal(msg, "en")) {
+    return {
+      message: t(giftRefusal(msg, "ar") ?? "", giftRefusal(msg, "en") ?? ""),
       clearPromo: false,
     };
   } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {

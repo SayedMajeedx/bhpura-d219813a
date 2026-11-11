@@ -706,6 +706,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) and cleans what is saved"
     },
+    "set_gift_order_settings(p_brand_id uuid, p_enabled boolean, p_card_enabled boolean, p_card_price numeric, p_prepaid_only boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) before saving the store's gift order settings"
+    },
     "set_gift_card_print(p_brand_id uuid, p_enabled boolean, p_fee numeric)": {
       "anon": false,
       "authenticated": true,
@@ -770,6 +775,11 @@
       "anon": true,
       "authenticated": true,
       "reason": "What a gift card is drawn with for an active store: designs turned off, its signature card and its products' public photos"
+    },
+    "storefront_gift_order_options(p_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront checkout: whether an active store takes gift orders, its gift message card's price and whether gifts are paid first; no shopper's data"
     },
     "storefront_gift_card_offer(p_slug text)": {
       "anon": true,
