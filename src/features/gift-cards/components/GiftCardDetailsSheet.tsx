@@ -18,6 +18,7 @@ import {
   invalidateGiftCards,
   voidGiftCard,
   type GiftCard,
+  type GiftCardPurchase,
 } from "@/lib/data/gift-cards";
 import { localToday } from "@/features/supplier-orders/lib/order-state";
 import {
@@ -38,8 +39,11 @@ export function GiftCardDetailsSheet({
   lang,
   onClose,
   onOpenOrder,
+  purchase,
 }: {
   card: GiftCard | null;
+  /** The storefront purchase that bought this card, when one did. */
+  purchase?: GiftCardPurchase | null;
   brandId: string;
   slug: string;
   lang: "ar" | "en";
@@ -117,7 +121,7 @@ export function GiftCardDetailsSheet({
             </Button>
           )}
 
-          {state === "active" && <GiftCardShare card={card} lang={lang} />}
+          {state === "active" && <GiftCardShare card={card} purchase={purchase} lang={lang} />}
 
           <section className="space-y-2">
             <h3 className="text-sm font-semibold">{isAr ? "الحركات" : "Moves"}</h3>
