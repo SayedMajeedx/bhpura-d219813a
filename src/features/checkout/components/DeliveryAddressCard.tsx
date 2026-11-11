@@ -1,5 +1,5 @@
 import { formatPrice } from "@/lib/storefront-context";
-import { regionsInOrder } from "@/lib/bahrain-regions";
+import { RegionPicker } from "@/components/region-picker";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -332,25 +332,17 @@ export function DeliveryAddressCard({
             </div>
             <div>
               <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
-              <Select
-                name="region"
+              <RegionPicker
+                id="checkout-region"
                 value={form.region}
-                onValueChange={(v) => {
+                onChange={(v) => {
                   setSelectedAddressId("manual");
                   setForm({ ...form, region: v });
                 }}
-              >
-                <SelectTrigger id="checkout-region" className="h-11">
-                  <SelectValue placeholder={t("اختر المنطقة", "Select region")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {regionsInOrder(lang === "ar" ? "ar" : "en").map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {lang === "ar" ? r.ar : r.en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                lang={lang === "ar" ? "ar" : "en"}
+                placeholder={t("اختر المنطقة", "Select region")}
+                className="h-11"
+              />
             </div>
             <div>
               <Label htmlFor="checkout-block">{t("المجمع", "Block")} *</Label>

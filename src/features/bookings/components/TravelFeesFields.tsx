@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { regionsInOrder } from "@/lib/bahrain-regions";
+import { matchRegions } from "@/lib/bahrain-regions";
 
 /** Travel fees as typed: "" = none (the default applies to an area left empty). */
 export type TravelFeeDraft = { defaultFee: string; byArea: Record<string, string> };
@@ -56,6 +56,8 @@ export function TravelFeesFields({
   onChange: (draft: TravelFeeDraft) => void;
 }) {
   const [open, setOpen] = useState(Object.keys(draft.byArea).length > 0);
+  const [query, setQuery] = useState("");
+  const areas = matchRegions(query, isAr ? "ar" : "en");
   return (
     <fieldset className="space-y-2">
       <legend className="text-xs font-semibold text-foreground">
@@ -89,8 +91,29 @@ export function TravelFeesFields({
         {isAr ? "رسوم مختلفة لمناطق محددة" : "Different fees for some areas"}
       </Button>
       {open && (
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground start-2.5"
+            aria-hidden
+          />
+          <Input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={isAr ? "ابحث عن منطقة..." : "Find an area..."}
+            aria-label={isAr ? "ابحث عن منطقة" : "Find an area"}
+            className="h-8 ps-8 text-xs"
+          />
+        </div>
+      )}
+      {open && (
         <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border p-2">
-          {regionsInOrder(isAr ? "ar" : "en").map((region) => (
+          {areas.length === 0 && (
+            <p className="col-span-2 py-3 text-center text-xs text-muted-foreground">
+              {isAr ? "لا توجد منطقة بهذا الاسم" : "No area by that name"}
+            </p>
+          )}
+          {areas.map((region) => (
             <div key={region.value} className="space-y-0.5">
               <Label htmlFor={`travel-fee-${region.value}`} className="text-xs">
                 {isAr ? region.ar : region.en}

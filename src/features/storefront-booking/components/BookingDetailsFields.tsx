@@ -1,7 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BAHRAIN_REGIONS, regionsInOrder } from "@/lib/bahrain-regions";
+import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { RegionPicker } from "@/components/region-picker";
 import type { BookingFlow } from "@/features/storefront-booking/hooks/use-booking-flow";
 
 /** Step 4: who is booking, where it happens, and the services' questions. */
@@ -45,25 +46,20 @@ export function BookingDetailsFields({ flow }: { flow: BookingFlow }) {
       </p>
       <div className="space-y-1.5">
         <Label htmlFor="booking-area">{isAr ? "المنطقة" : "Area"}</Label>
-        <select
+        <RegionPicker
           id="booking-area"
-          className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={areaCode}
-          onChange={(event) => {
-            const region = BAHRAIN_REGIONS.find((r) => r.value === event.target.value);
+          onChange={(value) => {
+            const region = BAHRAIN_REGIONS.find((r) => r.value === value);
             flow.update({
               areaCode: region?.value ?? "",
               area: region ? (isAr ? region.ar : region.en) : "",
             });
           }}
-        >
-          <option value="">{isAr ? "اختر المنطقة" : "Choose an area"}</option>
-          {regionsInOrder(isAr ? "ar" : "en").map((region) => (
-            <option key={region.value} value={region.value}>
-              {isAr ? region.ar : region.en}
-            </option>
-          ))}
-        </select>
+          lang={isAr ? "ar" : "en"}
+          placeholder={isAr ? "اختر المنطقة" : "Choose an area"}
+          className="h-10"
+        />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="booking-venue">{isAr ? "اسم القاعة أو العنوان" : "Venue or address"}</Label>

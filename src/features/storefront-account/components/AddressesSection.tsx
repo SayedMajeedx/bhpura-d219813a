@@ -14,17 +14,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, MapPin } from "lucide-react";
-import { regionsInOrder } from "@/lib/bahrain-regions";
+import { RegionPicker } from "@/components/region-picker";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import type { Customer, Address } from "@/features/storefront-account/lib/account-shared";
 import { emptyAddress } from "@/features/storefront-account/lib/empty-address";
@@ -220,22 +213,14 @@ export function AddressesSection({
               <Label htmlFor="address-region" className="text-xs font-semibold">
                 {t("المنطقة", "Region")}
               </Label>
-              <Select
-                name="address-region"
+              <RegionPicker
+                id="address-region"
                 value={form.region}
-                onValueChange={(v) => setForm({ ...form, region: v })}
-              >
-                <SelectTrigger id="address-region" className="h-11 text-xs mt-1.5">
-                  <SelectValue placeholder={t("اختر المنطقة", "Choose region")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {regionsInOrder(isAr ? "ar" : "en").map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      {isAr ? r.ar : r.en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(v) => setForm({ ...form, region: v })}
+                lang={isAr ? "ar" : "en"}
+                placeholder={t("اختر المنطقة", "Choose region")}
+                className="mt-1.5 h-11 text-xs"
+              />
             </div>
             <div>
               <Label htmlFor="address-block" className="text-xs font-semibold">

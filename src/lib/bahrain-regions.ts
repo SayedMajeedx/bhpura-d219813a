@@ -127,6 +127,77 @@ export function regionsInOrder(lang: "en" | "ar") {
   return [...BAHRAIN_REGIONS].sort((a, b) => collator.compare(a[lang], b[lang]));
 }
 
+/** Other ways people write an area, found by a search as well as its own names. */
+const OTHER_NAMES: Record<string, string[]> = {
+  duraz: ["Diraz", "Daraz"],
+  galali: ["Qalali"],
+  north_city: ["Salman City", "Madinat Salman", "المدينة الشمالية"],
+  sadad: ["Saddad"],
+  jidhafs: ["Jidd Hafs", "Jedhafs"],
+  juffair: ["Jufair"],
+  hoora: ["Hura"],
+  mahooz: ["Mahuz"],
+  isa_town: ["Madinat Isa"],
+  hamad_town: ["Madinat Hamad"],
+  zayed_town: ["Madinat Zayed"],
+  khalifa_town: ["Madinat Khalifa"],
+  aali: ["Aali", "Ali"],
+  busaiteen: ["Busaitin"],
+  riffa: ["Rifa"],
+  riffa_east: ["Riffa East", "Rifa East"],
+  riffa_west: ["Riffa West", "Rifa West"],
+  um_al_hassam: ["Um Al Hassam", "Umm Alhassam"],
+  diyar: ["Diyar"],
+  karrana: ["Karana"],
+  dumistan: ["Damistan"],
+};
+
+/**
+ * A name as a search compares it: no diacritics or tatweel, an alef in any form as one, a closing
+ * ta marbuta as ha and alef maqsura as ya, no "al" / "ال" before a word, no apostrophes, hyphens
+ * or case. So "سنابس" finds السنابس, "Aali" finds A'ali and "al hidd" finds Hidd.
+ */
+export function regionSearchForm(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[ً-ٰٟـ]/g, "")
+    .replace(/[اأإآٱ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/['’`ʼ]/g, "")
+    .replace(/[-_.,]/g, " ")
+    .split(/\s+/)
+    .map((word) => word.replace(/^ال(?=..)/, "").replace(/^al(?=.)/, ""))
+    .filter((word) => word && word !== "al")
+    .join(" ");
+}
+
+/**
+ * The areas a typed search finds, in either language and by other common spellings: names that
+ * start with it first, then a word that does, then any that hold it; each group in the reader's
+ * alphabetical order. An empty search gives every area.
+ */
+export function matchRegions(query: string, lang: "en" | "ar") {
+  const ordered = regionsInOrder(lang);
+  const q = regionSearchForm(query);
+  if (!q) return ordered;
+  const tight = q.replace(/ /g, "");
+  const rankOf = (region: (typeof BAHRAIN_REGIONS)[number]) => {
+    const names = [region.ar, region.en, ...(OTHER_NAMES[region.value] ?? [])].map(
+      regionSearchForm,
+    );
+    if (names.some((n) => n.startsWith(q))) return 0;
+    if (names.some((n) => n.split(" ").some((w) => w.startsWith(q)))) return 1;
+    if (names.some((n) => n.includes(q) || n.replace(/ /g, "").includes(tight))) return 2;
+    return -1;
+  };
+  return ordered
+    .map((region) => ({ region, rank: rankOf(region) }))
+    .filter((r) => r.rank >= 0)
+    .sort((a, b) => a.rank - b.rank)
+    .map((r) => r.region);
+}
+
 export function regionLabel(value: string | null | undefined, lang: "en" | "ar") {
   if (!value) return "";
   const found = BAHRAIN_REGIONS.find((r) => r.value === value);
