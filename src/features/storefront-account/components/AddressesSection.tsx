@@ -24,7 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, MapPin } from "lucide-react";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { regionsInOrder } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import type { Customer, Address } from "@/features/storefront-account/lib/account-shared";
 import { emptyAddress } from "@/features/storefront-account/lib/empty-address";
@@ -229,7 +229,7 @@ export function AddressesSection({
                   <SelectValue placeholder={t("اختر المنطقة", "Choose region")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {BAHRAIN_REGIONS.map((r) => (
+                  {regionsInOrder(isAr ? "ar" : "en").map((r) => (
                     <SelectItem key={r.value} value={r.value}>
                       {isAr ? r.ar : r.en}
                     </SelectItem>

@@ -3,7 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { regionsInOrder } from "@/lib/bahrain-regions";
 
 /** Travel fees as typed: "" = none (the default applies to an area left empty). */
 export type TravelFeeDraft = { defaultFee: string; byArea: Record<string, string> };
@@ -90,7 +90,7 @@ export function TravelFeesFields({
       </Button>
       {open && (
         <div className="grid max-h-56 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border p-2">
-          {BAHRAIN_REGIONS.map((region) => (
+          {regionsInOrder(isAr ? "ar" : "en").map((region) => (
             <div key={region.value} className="space-y-0.5">
               <Label htmlFor={`travel-fee-${region.value}`} className="text-xs">
                 {isAr ? region.ar : region.en}

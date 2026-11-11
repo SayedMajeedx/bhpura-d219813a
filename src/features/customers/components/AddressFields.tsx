@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useT } from "@/lib/i18n";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { regionsInOrder } from "@/lib/bahrain-regions";
 
 export function AddressFields({
   value,
@@ -57,7 +57,7 @@ export function AddressFields({
             <SelectValue placeholder={t("customers.regionPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            {BAHRAIN_REGIONS.map((r) => (
+            {regionsInOrder(lang === "ar" ? "ar" : "en").map((r) => (
               <SelectItem key={r.value} value={r.value}>
                 {lang === "ar" ? r.ar : r.en}
               </SelectItem>

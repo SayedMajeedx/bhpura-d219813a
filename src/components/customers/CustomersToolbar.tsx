@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
-import { BAHRAIN_REGIONS } from "@/lib/bahrain-regions";
+import { regionsInOrder } from "@/lib/bahrain-regions";
 
 interface CustomersToolbarProps {
   lang: "en" | "ar";
@@ -109,7 +109,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
                 </SelectTrigger>
                 <SelectContent align={isAr ? "start" : "end"} className="text-xs">
                   <SelectItem value="all">{isAr ? "كل المناطق" : "All Regions"}</SelectItem>
-                  {BAHRAIN_REGIONS.map((region) => (
+                  {regionsInOrder(isAr ? "ar" : "en").map((region) => (
                     <SelectItem key={region.value} value={region.value}>
                       {isAr ? region.ar : region.en}
                     </SelectItem>
@@ -159,7 +159,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
                   </SelectTrigger>
                   <SelectContent align={isAr ? "start" : "end"} className="text-xs">
                     <SelectItem value="all">{isAr ? "كل المناطق" : "All Regions"}</SelectItem>
-                    {BAHRAIN_REGIONS.map((region) => (
+                    {regionsInOrder(isAr ? "ar" : "en").map((region) => (
                       <SelectItem key={region.value} value={region.value}>
                         {isAr ? region.ar : region.en}
                       </SelectItem>
