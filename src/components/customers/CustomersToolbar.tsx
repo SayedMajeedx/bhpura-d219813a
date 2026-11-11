@@ -2,17 +2,10 @@ import React, { useEffect, useRef } from "react";
 import { Search, X, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
-import { regionsInOrder } from "@/lib/bahrain-regions";
+import { RegionPicker } from "@/components/region-picker";
 
 interface CustomersToolbarProps {
   lang: "en" | "ar";
@@ -100,22 +93,14 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
               <label className="text-xs font-medium text-muted-foreground">
                 {isAr ? "المنطقة" : "Region"}
               </label>
-              <Select value={regionFilter} onValueChange={onRegionChange}>
-                <SelectTrigger className="h-8 text-xs bg-muted/30 border-border-subtle">
-                  <div className="flex items-center gap-1.5 truncate">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <SelectValue />
-                  </div>
-                </SelectTrigger>
-                <SelectContent align={isAr ? "start" : "end"} className="text-xs">
-                  <SelectItem value="all">{isAr ? "كل المناطق" : "All Regions"}</SelectItem>
-                  {regionsInOrder(isAr ? "ar" : "en").map((region) => (
-                    <SelectItem key={region.value} value={region.value}>
-                      {isAr ? region.ar : region.en}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <RegionPicker
+                value={regionFilter}
+                onChange={onRegionChange}
+                lang={isAr ? "ar" : "en"}
+                allLabel={isAr ? "كل المناطق" : "All Regions"}
+                icon={<MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                className="h-8 text-xs bg-muted/30 border-border-subtle"
+              />
             </div>
           </PopoverContent>
         </Popover>
@@ -150,22 +135,14 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
                 <label className="text-xs font-medium text-muted-foreground">
                   {isAr ? "المنطقة" : "Region"}
                 </label>
-                <Select value={regionFilter} onValueChange={onRegionChange}>
-                  <SelectTrigger className="h-9 text-xs bg-muted/30 border-border-subtle">
-                    <div className="flex items-center gap-1.5 truncate">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <SelectValue />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent align={isAr ? "start" : "end"} className="text-xs">
-                    <SelectItem value="all">{isAr ? "كل المناطق" : "All Regions"}</SelectItem>
-                    {regionsInOrder(isAr ? "ar" : "en").map((region) => (
-                      <SelectItem key={region.value} value={region.value}>
-                        {isAr ? region.ar : region.en}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <RegionPicker
+                  value={regionFilter}
+                  onChange={onRegionChange}
+                  lang={isAr ? "ar" : "en"}
+                  allLabel={isAr ? "كل المناطق" : "All Regions"}
+                  icon={<MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                  className="h-9 text-xs bg-muted/30 border-border-subtle"
+                />
               </div>
             </div>
           </SheetContent>

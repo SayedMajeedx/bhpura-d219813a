@@ -1,14 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useId } from "react";
 import { useT } from "@/lib/i18n";
-import { regionsInOrder } from "@/lib/bahrain-regions";
+import { RegionPicker } from "@/components/region-picker";
 
 export function AddressFields({
   value,
@@ -36,6 +30,7 @@ export function AddressFields({
   showLabel?: boolean;
 }) {
   const t = useT();
+  const regionId = useId();
   return (
     <div className="space-y-4">
       {showLabel && (
@@ -49,21 +44,16 @@ export function AddressFields({
         </div>
       )}
       <div>
-        <Label>
+        <Label htmlFor={regionId}>
           {t("customers.region")} <span className="text-destructive">*</span>
         </Label>
-        <Select value={value.region} onValueChange={(v) => onChange({ ...value, region: v })}>
-          <SelectTrigger className="text-start">
-            <SelectValue placeholder={t("customers.regionPlaceholder")} />
-          </SelectTrigger>
-          <SelectContent>
-            {regionsInOrder(lang === "ar" ? "ar" : "en").map((r) => (
-              <SelectItem key={r.value} value={r.value}>
-                {lang === "ar" ? r.ar : r.en}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <RegionPicker
+          id={regionId}
+          value={value.region}
+          onChange={(v) => onChange({ ...value, region: v })}
+          lang={lang === "ar" ? "ar" : "en"}
+          placeholder={t("customers.regionPlaceholder")}
+        />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
