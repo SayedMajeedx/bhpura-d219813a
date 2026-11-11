@@ -194,6 +194,7 @@ export function GiftCardsPage() {
         slug={brand.slug}
         lang={lang}
         onClose={() => setCardId(null)}
+        purchase={orderOfCard}
         onOpenOrder={
           orderOfCard
             ? () => {

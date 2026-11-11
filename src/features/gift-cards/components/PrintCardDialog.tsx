@@ -9,12 +9,8 @@ import type { GiftCard, GiftCardPurchase } from "@/lib/data/gift-cards";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
 import type { CardDetails } from "@/features/gift-card-design/lib/content";
-import {
-  DEFAULT_DESIGN,
-  readDesign,
-  type CardDesign,
-} from "@/features/gift-card-design/lib/design";
-import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
+import type { CardDesign } from "@/features/gift-card-design/lib/design";
+import { cardPrintStart } from "../lib/card-print";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
 import { MESSAGE_SIZES, type MessageSize } from "@/features/gift-card-design/lib/message-card";
 
@@ -37,31 +33,24 @@ type PrintSource = {
 
 /**
  * A card printed in the store, to hand over in an envelope or send as a picture: the same designs
- * the storefront offers, with the card's own value, code and names.
+ * the storefront offers, with the card's own value and code. A card bought on the storefront opens
+ * on what its buyer chose (`purchase`: the design, who it is from, the message).
  */
-export function PrintCardButton({ card, lang }: { card: GiftCard; lang: "ar" | "en" }) {
+export function PrintCardButton({
+  card,
+  purchase,
+  lang,
+}: {
+  card: GiftCard;
+  purchase?: GiftCardPurchase | null;
+  lang: "ar" | "en";
+}) {
   return (
     <PrintButton
       lang={lang}
       wide
       label={lang === "ar" ? "طباعة البطاقة أو حفظها" : "Print or save the card"}
-      source={() => ({
-        id: card.id,
-        code: card.code,
-        details: {
-          amount: Number(card.balance),
-          code: card.code,
-          to: card.recipient_name,
-          message: card.note,
-          expiresOn: card.expires_on,
-        },
-        initial: {
-          ...DEFAULT_DESIGN,
-          occasion: occasionsInOrder(new Date(), card.currency)[0].id,
-          language: lang,
-          from: card.purchaser_name ?? null,
-        },
-      })}
+      source={() => ({ id: card.id, code: card.code, ...cardPrintStart(card, purchase, lang) })}
     />
   );
 }
@@ -84,18 +73,22 @@ export function PrintOrderCardButton({
     <PrintButton
       lang={lang}
       label={lang === "ar" ? "طباعة البطاقة" : "Print the card"}
-      source={() => ({
-        id: purchase.id,
-        code,
-        details: {
-          amount: Number(purchase.amount),
-          code,
-          to: purchase.recipient_name,
-          message: purchase.message,
-          expiresOn: card.expires_on,
-        },
-        initial: readDesign(purchase.design, purchase.lang === "en" ? "en" : "ar"),
-      })}
+      source={() => {
+        const start = cardPrintStart(
+          {
+            code,
+            balance: purchase.amount,
+            currency: purchase.currency,
+            expires_on: card.expires_on,
+            recipient_name: purchase.recipient_name,
+            purchaser_name: null,
+            note: null,
+          },
+          purchase,
+          lang,
+        );
+        return { id: purchase.id, code, ...start };
+      }}
     />
   );
 }
