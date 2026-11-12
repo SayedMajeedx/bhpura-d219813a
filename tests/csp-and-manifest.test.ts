@@ -38,6 +38,25 @@ describe("CSP security headers and Manifest assets", () => {
     expect(connectSrc).toContain("https://*.facebook.com");
   });
 
+  it("lets every ad pixel the storefront loads load and send (the audit of 2026-11-12)", () => {
+    // The TikTok and Snapchat pixels (2026-11-08) were left out of the policy: a store that
+    // turned one on had its script refused by the browser, with nothing on screen to say so.
+    const content = fs.readFileSync(path.resolve(process.cwd(), "src/server.ts"), "utf-8");
+    const csp = content.match(/"Content-Security-Policy":\s*\n?\s*"([^"]+)"/)![1];
+    const scriptSrc = csp.match(/script-src\s+([^;]+);/)![1];
+    const connectSrc = csp.match(/connect-src\s+([^;]+);/)![1];
+    const pixels = fs.readFileSync(
+      path.resolve(process.cwd(), "src/lib/ad-events/pixel-scripts.ts"),
+      "utf-8",
+    );
+    const hosts = [...pixels.matchAll(/https:\/\/([a-z0-9.-]+)\//g)].map((m) => m[1]);
+    expect(hosts).toEqual(expect.arrayContaining(["analytics.tiktok.com", "sc-static.net"]));
+    for (const host of new Set(hosts)) expect(scriptSrc).toContain(`https://${host}`);
+    // Where they send their events.
+    expect(connectSrc).toContain("https://analytics.tiktok.com");
+    expect(connectSrc).toContain("https://*.snapchat.com");
+  });
+
   it("lets a store's uploaded font load from the media host", () => {
     // A font uploaded in the typography settings lives on media.boutq.store; the policy allowed
     // only Google's fonts, so Pura's chosen admin font was blocked and never shown.

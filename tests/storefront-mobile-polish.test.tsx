@@ -105,6 +105,20 @@ describe("checkout on a phone", () => {
     location.pathname = "/pura";
   });
 
+  it("steps the WhatsApp button away on a phone while the shopper scrolls down", () => {
+    // The audit of 2026-11-12: held in the corner it sat over the grid's names and prices.
+    const shown = render(<WhatsAppFab />);
+    const link = () => shown.container.querySelector("a")!;
+    expect(link().className).not.toContain("opacity-0");
+    shown.rerender(<WhatsAppFab tucked />);
+    expect(link().className).toContain("opacity-0");
+    expect(link().className).toContain("pointer-events-none");
+    // A laptop keeps it, and the keyboard can still reach it.
+    expect(link().className).toContain("md:opacity-100");
+    expect(link().className).toContain("focus-visible:opacity-100");
+    shown.unmount();
+  });
+
   const line = (id: string, name: string, price: number, qty: number, size: string | null) =>
     ({
       cart_line_id: id,

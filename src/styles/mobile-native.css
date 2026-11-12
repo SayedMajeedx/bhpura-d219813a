@@ -81,6 +81,37 @@
 }
 
 /*
+ * The storefront's buttons take a finger's 44px the same way (the audit of 2026-11-12: the
+ * announcement's close, the product page's "Size guide" and its other pieces' chips, the gift
+ * card's occasions and its "Flip" were 26-32px on a phone). Buttons and button roles only: a link
+ * there is often a card whose badges are placed against the card, which `position: relative` on
+ * the link would move.
+ */
+@media (pointer: coarse) {
+  .storefront-shell
+    :is(
+      button,
+      [role="button"],
+      [role="tab"],
+      [role="switch"],
+      [role="checkbox"],
+      [role="radio"]
+    ):not([class*="after:"], [class*="absolute"], [class*="fixed"], [class*="sticky"]) {
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 44px);
+      height: max(100%, 44px);
+      translate: -50% -50%;
+    }
+  }
+}
+
+/*
  * A field a finger opens is 44px tall too: the admin's searches, selects and inputs were 36px
  * (32px in a dialog). On a touch screen a field, a native select and a dropdown's trigger in the
  * admin are at least 44px; a mouse keeps the design's height. A button in the same row as a

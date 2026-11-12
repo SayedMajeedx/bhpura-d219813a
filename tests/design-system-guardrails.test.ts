@@ -447,6 +447,20 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     expect(touch).toMatch(/width: max\(100%, 44px\);\s*height: max\(100%, 44px\);/);
   });
 
+  it("gives a storefront button a finger's 44px on a touch screen, links left alone", () => {
+    // The audit of 2026-11-12: the announcement's close, "Size guide", the product page's other
+    // pieces and the gift card's occasions were 26-32px on a phone.
+    const rules = read("src/styles/mobile-native.css");
+    const touch = rules.slice(
+      rules.indexOf("The storefront's buttons take a finger's 44px"),
+      rules.indexOf("A field a finger opens"),
+    );
+    expect(touch).toContain(".storefront-shell");
+    expect(touch).not.toMatch(/a\[class/);
+    expect(touch).toMatch(/:not\([^)]*\[class\*="absolute"\]/);
+    expect(touch).toMatch(/width: max\(100%, 44px\);\s*height: max\(100%, 44px\);/);
+  });
+
   it("makes an admin field, and a button in its row, 44px tall on a touch screen", () => {
     // The admin's searches, selects and inputs were 36px on a phone (32px in a dialog); the
     // filter button beside a search stayed 36px once the search grew, so the row was uneven.
