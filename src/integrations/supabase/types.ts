@@ -3963,6 +3963,48 @@ export type Database = {
           },
         ];
       };
+      gift_item_costs: {
+        Row: {
+          addon_id: string | null;
+          brand_id: string;
+          cost: number;
+          id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          addon_id?: string | null;
+          brand_id: string;
+          cost: number;
+          id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          addon_id?: string | null;
+          brand_id?: string;
+          cost?: number;
+          id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_item_costs_addon_id_fkey";
+            columns: ["addon_id"];
+            isOneToOne: false;
+            referencedRelation: "gift_addons";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "gift_item_costs_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       gift_order_settings: {
         Row: {
           brand_id: string;
@@ -5746,6 +5788,7 @@ export type Database = {
           customization_total: number;
           customizations: Json;
           description: string;
+          gift_line: string | null;
           id: string;
           line_total: number;
           location: string;
@@ -5770,6 +5813,7 @@ export type Database = {
           customization_total?: number;
           customizations?: Json;
           description: string;
+          gift_line?: string | null;
           id?: string;
           line_total?: number;
           location?: string;
@@ -5794,6 +5838,7 @@ export type Database = {
           customization_total?: number;
           customizations?: Json;
           description?: string;
+          gift_line?: string | null;
           id?: string;
           line_total?: number;
           location?: string;
@@ -11407,6 +11452,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      gift_item_cost: {
+        Args: { p_addon_id: string; p_brand_id: string };
+        Returns: number;
+      };
       gift_order_options: { Args: { p_brand_id: string }; Returns: Json };
       has_permission: { Args: { p_permission: string }; Returns: boolean };
       has_storefront_membership: {
@@ -12762,6 +12811,10 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      set_gift_item_cost: {
+        Args: { p_addon_id: string; p_brand_id: string; p_cost: number };
+        Returns: undefined;
       };
       set_gift_order_settings: {
         Args: {

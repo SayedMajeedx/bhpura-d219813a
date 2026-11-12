@@ -39,6 +39,7 @@ import { useOrderNumber } from "@/hooks/use-order-number";
 import { orderDeletable } from "@/lib/order-deletion";
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { OrderAlterationBadge } from "@/features/orders/components/OrderAlterationBadge";
+import { OrderGiftBadge } from "@/features/orders/components/OrderGiftBadge";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -213,6 +214,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                       lang={isAr ? "ar" : "en"}
                       className="mt-1"
                     />
+                    <OrderGiftBadge order={order} lang={isAr ? "ar" : "en"} className="mt-1" />
                   </td>
 
                   {/* Customer / PII Snapshot */}

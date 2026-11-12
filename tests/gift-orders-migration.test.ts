@@ -4,6 +4,7 @@ import offers from "../supabase/migrations/20261027100000_store_offers.sql?raw";
 import language from "../supabase/migrations/20261109100000_order_email_language.sql?raw";
 import migration from "../supabase/migrations/20261202100000_gift_orders.sql?raw";
 import addonsMigration from "../supabase/migrations/20261203100000_gift_addons.sql?raw";
+import staffSide from "../supabase/migrations/20261204100000_gift_staff_side.sql?raw";
 
 // A gift order by the store's own settings (migration 20261202100000), run in a real Postgres
 // with the live order builder (place_storefront_order as 20261109100000 left it, its core stubbed
@@ -174,6 +175,16 @@ beforeAll(async () => {
   await db.exec(language);
   await db.exec(migration);
   await db.exec(addonsMigration);
+  // Step three's tables: a line's cost, and who may see the store's costs (as the test says).
+  await db.exec(`
+    ALTER TABLE public.order_items ADD COLUMN unit_cost numeric(14,3);
+    CREATE FUNCTION public.can_view_brand_costs(uuid) RETURNS boolean LANGUAGE sql STABLE AS
+      $$ SELECT coalesce(current_setting('test.finance', true), 'yes') = 'yes' $$;
+    CREATE FUNCTION public.order_counts_as_sold(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+    CREATE FUNCTION public.reporting_counts_order(text, boolean) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;
+    CREATE FUNCTION public.reporting_brand_id(text) RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;
+  `);
+  await db.exec(staffSide);
 });
 
 const staff = (sql: string, params: unknown[] = []) => db.query(sql, params);
@@ -525,5 +536,63 @@ describe("the store's add-ons", () => {
               has_function_privilege('anon', 'public.storefront_gift_addons(text)', 'EXECUTE') AS read`,
     );
     expect(visitor.rows[0]).toEqual({ save: false, read: true });
+  });
+});
+
+// Step three (migration 20261204100000): each gift line says what it is and carries the store's
+// cost, which only staff who see the finances read or set.
+describe("a gift line's kind and cost", () => {
+  const giftLines = async (id: string) =>
+    (
+      await db.query<Record<string, unknown>>(
+        `SELECT name_en, gift_line, unit_cost::float AS unit_cost
+           FROM public.order_items WHERE order_id = $1 AND product_id IS NULL ORDER BY gift_line`,
+        [id],
+      )
+    ).rows;
+  const setCost = (addon: string | null, cost: number | null) =>
+    db.query("SELECT public.set_gift_item_cost($1, $2, $3)", [BRAND, addon, cost]);
+
+  it("marks the card and each add-on, at the cost the store set when it was sold", async () => {
+    await settings(true, true, 1.5, false);
+    const rose = await addon({ price: 12 });
+    await setCost(null, 0.4);
+    await setCost(rose, 7);
+    const gift = await place({ card: true, addons: [{ id: rose, quantity: 2 }] });
+    expect(await giftLines(gift.id)).toEqual([
+      { name_en: "Flower bouquet", gift_line: "addon", unit_cost: 7 },
+      { name_en: "Gift message card", gift_line: "card", unit_cost: 0.4 },
+    ]);
+    // A later change of cost leaves the lines already sold as they were.
+    await setCost(rose, 9);
+    expect((await giftLines(gift.id))[0].unit_cost).toBe(7);
+    // With no cost set, a line carries none (the margins count it as missing).
+    await setCost(null, null);
+    const later = await place({ card: true });
+    expect(await giftLines(later.id)).toEqual([
+      { name_en: "Gift message card", gift_line: "card", unit_cost: null },
+    ]);
+    await settings(true, true, 0, false);
+  });
+
+  it("keeps the costs for staff who see the finances", async () => {
+    const rose = await addon();
+    await db.exec("SET test.finance = 'no'");
+    await expect(setCost(rose, 3)).rejects.toThrow(/FORBIDDEN/);
+    await db.exec("SET test.finance = 'yes'");
+    await expect(setCost(rose, -1)).rejects.toThrow(/GIFT_COST_INVALID/);
+    await expect(setCost("00000000-0000-4000-8000-00000000dead", 3)).rejects.toThrow(
+      /GIFT_ADDON_NOT_FOUND/,
+    );
+    const { rows } = await db.query<Record<string, boolean>>(
+      `SELECT has_function_privilege('anon', 'public.set_gift_item_cost(uuid, uuid, numeric)', 'EXECUTE') AS set_by_visitor,
+              has_function_privilege('authenticated', 'public.gift_item_cost(uuid, uuid)', 'EXECUTE') AS read_by_staff,
+              has_table_privilege('anon', 'public.gift_item_costs', 'SELECT') AS read_by_visitor`,
+    );
+    expect(rows[0]).toEqual({
+      set_by_visitor: false,
+      read_by_staff: false,
+      read_by_visitor: false,
+    });
   });
 });

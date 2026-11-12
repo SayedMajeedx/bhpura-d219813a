@@ -196,6 +196,10 @@ const REFUSALS: Record<string, { ar: string; en: string }> = {
     ar: "لم نجد هذه الإضافة. حدّث الصفحة.",
     en: "This add-on was not found. Refresh the page.",
   },
+  GIFT_COST_INVALID: {
+    ar: "اكتب تكلفة من 0 إلى 10000.",
+    en: "Write a cost from 0 to 10,000.",
+  },
   FORBIDDEN: {
     ar: "لا تملك صلاحية تغيير الإعدادات.",
     en: "You may not change the settings.",

@@ -56,6 +56,7 @@ export type MarginSort = "profit" | "margin" | "sales" | "units";
 export const MARGIN_WORDS = {
   unlinked: { en: "Not linked to a product", ar: "غير مرتبطة بمنتج" },
   alterations: { en: "Alterations", ar: "التعديلات" },
+  gifts: { en: "Gift services", ar: "خدمات الهدايا" },
   noCategory: { en: "No category", ar: "بلا قسم" },
 };
 
@@ -119,9 +120,9 @@ function withShares(lines: Array<Omit<MarginLine, "share">>): MarginLine[] {
   }));
 }
 
-/** A line with no product: an alteration's charge, or a line not linked to one. */
+/** A line with no product: an alteration's charge, a gift's card or add-on, or one not linked. */
 const noProductKey = (row: MarginRow) =>
-  row.line_kind === "alteration" ? "alterations" : "unlinked";
+  row.line_kind === "alteration" ? "alterations" : row.line_kind === "gift" ? "gifts" : "unlinked";
 
 const productName = (row: MarginRow, lang: "ar" | "en") =>
   row.product_id
@@ -164,7 +165,7 @@ export function categoryMargins(rows: MarginRow[], currency: string, lang: "ar" 
     [...byCategory.entries()].map(([key, group]) => ({
       ...line(
         key,
-        key === "unlinked" || key === "alterations"
+        key === "unlinked" || key === "alterations" || key === "gifts"
           ? MARGIN_WORDS[key][lang]
           : categoryName(group[0], lang),
         null,

@@ -16,6 +16,7 @@ import {
 } from "@/lib/data/gift-orders";
 import { giftPriceFromText, giftRefusal, type GiftOrderOptions } from "@/lib/gift-order";
 import { GiftAddonsEditor } from "./GiftAddonsEditor";
+import { GiftCostField } from "./GiftCostField";
 
 /**
  * Gift orders, by the store's decision (`gift_order_settings`, the owner's request of 2026-11-11):
@@ -140,6 +141,7 @@ function Fields({
                     ? "يُضاف إلى إجمالي الطلب إذا اختار العميل البطاقة، ولا تخصم منه الأكواد ولا العروض. 0 يعني مجانًا."
                     : "Added to the order's total when the customer takes the card; codes and offers take nothing off it. 0 means free."}
               </p>
+              <GiftCostField brandId={brandId} addonId={null} lang={lang} />
             </div>
           )}
 

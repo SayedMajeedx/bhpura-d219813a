@@ -44,6 +44,12 @@ const data = vi.hoisted(() => ({
       queryFn: async () => [],
       enabled,
     }),
+    // Step three's costs: none read in these tests (tests/gift-staff-side.test.tsx has them).
+    costs: (brandId: string) => ({
+      queryKey: ["gift-costs", brandId],
+      queryFn: async () => ({ card: null, addons: {} }),
+      enabled: false,
+    }),
     storeAddons: (brandId: string) => ({
       queryKey: ["gift-store-addons", brandId],
       queryFn: async () => [],
@@ -54,6 +60,8 @@ const data = vi.hoisted(() => ({
   saveGiftAddon: vi.fn(async () => undefined),
   archiveGiftAddon: vi.fn(async () => undefined),
   invalidateGiftAddons: vi.fn(async () => undefined),
+  setGiftItemCost: vi.fn(async () => undefined),
+  invalidateGiftCosts: vi.fn(async () => undefined),
 }));
 vi.mock("../src/lib/data/gift-orders", () => data);
 vi.mock("@/lib/data/gift-orders", () => data);

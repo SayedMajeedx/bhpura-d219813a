@@ -21,6 +21,7 @@ export const giftOrderKeys = {
   settings: (brandId: string) => [...giftOrderKeys.all(brandId), "settings"] as const,
   addons: (slug: string) => [...giftOrderKeys.all(slug), "addons"] as const,
   storeAddons: (brandId: string) => [...giftOrderKeys.all(brandId), "store-addons"] as const,
+  costs: (brandId: string) => [...giftOrderKeys.all(brandId), "costs"] as const,
 };
 
 /** What the store offers a gift order, for its checkout. */
@@ -94,9 +95,9 @@ export type GiftAddonInput = {
   sortOrder: number;
 };
 
-/** Adds an add-on (no id) or changes one; staff who may change settings. */
-export async function saveGiftAddon(brandId: string, input: GiftAddonInput) {
-  const { error } = await supabase.rpc("save_gift_addon", {
+/** Adds an add-on (no id) or changes one; staff who may change settings. Answers its id. */
+export async function saveGiftAddon(brandId: string, input: GiftAddonInput): Promise<string> {
+  const { data, error } = await supabase.rpc("save_gift_addon", {
     p_brand_id: brandId,
     p_name_ar: input.nameAr,
     p_name_en: input.nameEn,
@@ -110,11 +111,46 @@ export async function saveGiftAddon(brandId: string, input: GiftAddonInput) {
     ...(input.id ? { p_id: input.id } : {}),
   });
   if (error) throw error;
+  return String((data as { id?: string } | null)?.id ?? input.id ?? "");
 }
 
 /** Removes an add-on from the store (archived: orders that hold it keep its name). */
 export async function archiveGiftAddon(id: string) {
   const { error } = await supabase.rpc("archive_gift_addon", { p_id: id });
+  if (error) throw error;
+}
+
+/** What the card and each add-on cost the store: only staff who see the finances read any. */
+export type GiftCosts = { card: number | null; addons: Readonly<Record<string, number>> };
+
+export async function fetchGiftCosts(brandId: string): Promise<GiftCosts> {
+  const { data, error } = await supabase
+    .from("gift_item_costs")
+    .select("addon_id, cost")
+    .eq("brand_id", brandId)
+    .limit(200);
+  if (error) throw error;
+  const addons: Record<string, number> = {};
+  let card: number | null = null;
+  for (const row of data ?? []) {
+    if (row.addon_id) addons[row.addon_id] = Number(row.cost);
+    else card = Number(row.cost);
+  }
+  return { card, addons };
+}
+
+/** Sets the card's cost (no add-on) or an add-on's; no cost removes it. Finance staff only. */
+export async function setGiftItemCost(
+  brandId: string,
+  addonId: string | null,
+  cost: number | null,
+) {
+  // The function takes null for the card and null to remove a cost: both are sent, never left out.
+  const args = { p_brand_id: brandId, p_addon_id: addonId, p_cost: cost };
+  const { error } = await supabase.rpc(
+    "set_gift_item_cost",
+    args as unknown as { p_brand_id: string; p_addon_id: string; p_cost: number },
+  );
   if (error) throw error;
 }
 
@@ -132,6 +168,12 @@ export const giftOrderQueries = {
       queryFn: () => fetchStorefrontGiftAddons(slug),
       enabled: Boolean(slug) && enabled,
       staleTime: 60_000,
+    }),
+  costs: (brandId: string, enabled: boolean) =>
+    queryOptions({
+      queryKey: giftOrderKeys.costs(brandId),
+      queryFn: () => fetchGiftCosts(brandId),
+      enabled: Boolean(brandId) && enabled,
     }),
   storeAddons: (brandId: string) =>
     queryOptions({
@@ -153,4 +195,8 @@ export function invalidateGiftOrderSettings(qc: QueryClient, brandId: string) {
 
 export function invalidateGiftAddons(qc: QueryClient, brandId: string) {
   return qc.invalidateQueries({ queryKey: giftOrderKeys.storeAddons(brandId) });
+}
+
+export function invalidateGiftCosts(qc: QueryClient, brandId: string) {
+  return qc.invalidateQueries({ queryKey: giftOrderKeys.costs(brandId) });
 }
