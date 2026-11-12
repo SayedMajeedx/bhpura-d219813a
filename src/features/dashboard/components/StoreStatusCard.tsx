@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, PauseCircle, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
 import { invalidateStoreStatus, setOrdersPause, storeStatusQueries } from "@/lib/data/store-status";
 import { arNoun } from "@/lib/arabic-count";
 import { momentLabel, orderIntake, readHours } from "@/lib/opening-hours";
@@ -31,7 +32,8 @@ export function StoreStatusCard({
 }) {
   const qc = useQueryClient();
   const lang = isAr ? "ar" : "en";
-  const status = useQuery(storeStatusQueries.detail(brandId)).data;
+  const statusQ = useQuery(storeStatusQueries.detail(brandId));
+  const status = statusQ.data;
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 30_000);
@@ -55,6 +57,14 @@ export function StoreStatusCard({
     onError: (error) =>
       toast.error(getFriendlyErrorMessage(error) || (isAr ? "تعذر الحفظ." : "Could not save.")),
   });
+  if (statusQ.isPending) {
+    return (
+      <CardPlaceholder
+        label={isAr ? "جارٍ تحميل حالة المتجر" : "Loading the store's status"}
+        className="min-h-[7.5rem] sm:min-h-14"
+      />
+    );
+  }
   if (!status) return null;
 
   const intake = orderIntake(status, now);

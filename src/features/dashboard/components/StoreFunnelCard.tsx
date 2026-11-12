@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { storefrontFunnelQueries } from "@/lib/data/storefront-funnel";
+import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
 import { conversionRate, funnelStages, type FunnelStage, type VisitSource } from "@/lib/funnel";
 
 /** The last 30 days, as the dashboard's other figures read them (from midnight 29 days ago). */
@@ -53,10 +54,20 @@ export function StoreFunnelCard({
   isServices?: boolean;
 }) {
   const period = useMemo(() => last30Days(new Date()), []);
-  const { data } = useQuery(storefrontFunnelQueries.period(brandId, period.from, period.to));
+  const { data, isPending } = useQuery(
+    storefrontFunnelQueries.period(brandId, period.from, period.to),
+  );
   const { data: sources } = useQuery(
     storefrontFunnelQueries.sources(brandId, period.from, period.to),
   );
+  if (isPending) {
+    return (
+      <CardPlaceholder
+        label={isAr ? "جارٍ تحميل الزيارات" : "Loading visits"}
+        className="min-h-24 sm:min-h-20"
+      />
+    );
+  }
   if (!data) return null;
 
   const stages = funnelStages(data);
