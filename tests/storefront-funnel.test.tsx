@@ -140,6 +140,24 @@ describe("the card's sources", () => {
     await show(true);
     expect(screen.queryByText("من وين جاءت الزيارات")).toBeNull();
   });
+
+  it("holds the card's place while its figures come, so the dashboard does not jump", async () => {
+    // The admin audit of 2026-11-12: drawn only once loaded, it pushed the page down (0.13).
+    data.counts = { visits: 10, product_views: 5, carts: 2, checkouts: 1, orders: 1 };
+    let answer: (value: unknown) => void = () => undefined;
+    const slow = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    slow.setQueryDefaults(["storefront-funnel"], {
+      queryFn: () => new Promise((resolve) => (answer = resolve)),
+    });
+    render(
+      <QueryClientProvider client={slow}>
+        <StoreFunnelCard brandId="b2" isAr={false} />
+      </QueryClientProvider>,
+    );
+    const placeholder = screen.getByRole("status", { name: "Loading visits" });
+    expect(placeholder.className).toContain("min-h-24");
+    answer(data.counts);
+  });
 });
 
 describe("the storefront", () => {
