@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appliedOfferName,
+  areasText,
   appliedOffersOf,
   discountSources,
   freeDeliveryNudge,
@@ -243,5 +244,71 @@ describe("the offer form", () => {
       offerState({ is_active: true, starts_at: null, ends_at: "2026-10-01T00:00:00Z" }, now),
     ).toBe("ended");
     expect(offerState({ is_active: false, starts_at: null, ends_at: null }, now)).toBe("off");
+  });
+});
+
+describe("free delivery for chosen areas", () => {
+  const areas = offer({
+    kind: "free_delivery",
+    min_subtotal: null,
+    regions: ["sadad", "dumistan", "hamad_town"],
+  });
+
+  it("reads as the areas it is for, in each language", () => {
+    expect(offerTerms(areas, "en", money)).toBe("Free delivery to Sadad, Dumistan and Hamad Town");
+    expect(offerTerms(areas, "ar", money)).toBe("توصيل مجاني إلى صدد ودمستان ومدينة حمد");
+    expect(offerTerms({ ...areas, min_subtotal: 20 }, "en", money)).toBe(
+      "Free delivery to Sadad, Dumistan and Hamad Town on orders of 20.000 BHD or more",
+    );
+  });
+
+  it("names seven areas and counts the rest", () => {
+    const many = Array.from(
+      { length: 10 },
+      (_, i) =>
+        [
+          "sadad",
+          "dumistan",
+          "malikiya",
+          "shahrakan",
+          "karzakan",
+          "dar_kulaib",
+          "hamad_town",
+          "manama",
+          "riffa",
+          "isa_town",
+        ][i],
+    );
+    expect(areasText(many, "en")).toBe(
+      "Sadad, Dumistan, Malikiya, Shahrakan, Karzakan, Dar Kulaib, Hamad Town and 3 more areas",
+    );
+    expect(areasText(many, "ar")).toMatch(/ و3 مناطق أخرى$/);
+  });
+
+  it("is never the cart's nudge, which does not know the area", () => {
+    expect(freeDeliveryNudge([areas], [{ price: 50, qty: 1 }])).toBeNull();
+  });
+
+  it("saves its areas once, for deliveries in Bahrain, and opens with them", () => {
+    const form = {
+      ...emptyOfferForm("free_delivery"),
+      for_areas: true,
+      local_only: false,
+      regions: ["sadad", "sadad", "karzakan"],
+    };
+    expect(rowFromForm(form)).toMatchObject({ regions: ["sadad", "karzakan"], local_only: true });
+    expect(offerFormProblem({ ...form, regions: [] }, false)).toBe(
+      "Choose the areas free delivery is for.",
+    );
+    expect(rowFromForm({ ...form, for_areas: false }).regions).toEqual([]);
+    const opened = formFromRow({
+      ...rowFromForm(form),
+      id: "o",
+      brand_id: "b",
+      created_at: "",
+      updated_at: "",
+    } as StoreOfferRow);
+    expect(opened).toMatchObject({ for_areas: true, regions: ["sadad", "karzakan"] });
+    expect(draftOffer(form).regions).toEqual(["sadad", "karzakan"]);
   });
 });

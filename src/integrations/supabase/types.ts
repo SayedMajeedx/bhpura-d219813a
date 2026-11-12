@@ -9043,6 +9043,7 @@ export type Database = {
           name_ar: string;
           name_en: string;
           product_ids: string[];
+          regions: string[];
           starts_at: string | null;
           updated_at: string;
         };
@@ -9070,6 +9071,7 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           product_ids?: string[];
+          regions?: string[];
           starts_at?: string | null;
           updated_at?: string;
         };
@@ -9097,6 +9099,7 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           product_ids?: string[];
+          regions?: string[];
           starts_at?: string | null;
           updated_at?: string;
         };
@@ -12891,6 +12894,10 @@ export type Database = {
         Args: { p_lines: Json; p_offer: Json };
         Returns: number;
       };
+      store_offers_for_area: {
+        Args: { p_country: string; p_offers: Json; p_region: string };
+        Returns: Json;
+      };
       store_offers_live: {
         Args: { p_at?: string; p_brand_id: string };
         Returns: Json;
@@ -12994,6 +13001,7 @@ export type Database = {
           p_fulfillment?: string;
           p_items: Json;
           p_promo_code?: string;
+          p_region?: string;
         };
         Returns: Json;
       };

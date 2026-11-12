@@ -7,7 +7,7 @@ import type { AppliedPromo, Storefront } from "@/features/checkout/types";
 /**
  * What the store's automatic offers give this cart, as the order builder will give it
  * (`storefront_offers_preview` runs the builder's own rule on the cart's lines): the offer's
- * discount, the code's (none when an offer beat it), and free delivery. Not asked for a booking
+ * discount, the code's (none when an offer beat it), and free delivery (to the chosen area too). Not asked for a booking
  * (its own offers apply) or a catalog store (no checkout); null until the store answers.
  */
 export function useCheckoutOffers({
@@ -16,6 +16,7 @@ export function useCheckoutOffers({
   appliedPromo,
   fulfillment,
   country,
+  region = null,
   enabled,
 }: {
   brand: Pick<Storefront["brand"], "slug">;
@@ -23,6 +24,8 @@ export function useCheckoutOffers({
   appliedPromo: AppliedPromo | null;
   fulfillment: string;
   country: string | null;
+  /** The area chosen for a delivery in Bahrain, for the store's area offers. */
+  region?: string | null;
   enabled: boolean;
 }): OffersOutcome | null {
   const args = useMemo<OffersPreviewArgs>(
@@ -37,8 +40,9 @@ export function useCheckoutOffers({
       promoCode: appliedPromo?.code ?? null,
       fulfillment,
       country: fulfillment === "delivery" ? country : null,
+      region: fulfillment === "delivery" && (country ?? "BH") === "BH" ? region || null : null,
     }),
-    [cart, appliedPromo?.code, fulfillment, country],
+    [cart, appliedPromo?.code, fulfillment, country, region],
   );
   // Only a store with live offers is asked about a cart.
   const live = useQuery(offersQueries.live(brand.slug, enabled)).data ?? [];

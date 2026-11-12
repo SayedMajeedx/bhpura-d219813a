@@ -4,7 +4,7 @@ import type { Json, Tables, TablesInsert, TablesUpdate } from "@/integrations/su
 import type { OffersOutcome, StoreOffer } from "@/lib/offers";
 
 /**
- * A store's automatic offers (store_offers; migration 20261027100000): the Discounts page's list
+ * A store's automatic offers (store_offers; migrations 20261027100000, 20261205100000 for areas): the Discounts page's list
  * and writes (staff who may change settings), the store's combining rule, and what the
  * storefront reads: the live offers' terms and, at checkout, what a cart would get. The order
  * builder applies the same rule to every storefront order.
@@ -26,7 +26,7 @@ export type StoreOfferPatch = TablesUpdate<"store_offers">;
 export type OffersCombine = "best" | "code_first" | "together";
 
 const COLUMNS =
-  "id, brand_id, kind, name_ar, name_en, is_active, starts_at, ends_at, min_subtotal, min_items, product_ids, category_slugs, exclude_sale_items, discount_type, discount_value, max_discount, buy_quantity, get_quantity, get_product_ids, get_category_slugs, get_percent, max_sets, local_only, created_at, updated_at" as const;
+  "id, brand_id, kind, name_ar, name_en, is_active, starts_at, ends_at, min_subtotal, min_items, product_ids, category_slugs, exclude_sale_items, discount_type, discount_value, max_discount, buy_quantity, get_quantity, get_product_ids, get_category_slugs, get_percent, max_sets, local_only, regions, created_at, updated_at" as const;
 
 /** The store's offers, oldest first (the order the database tries them in), switched-off ones too. */
 export async function fetchStoreOffers(brandId: string): Promise<StoreOfferRow[]> {
@@ -107,6 +107,8 @@ export interface OffersPreviewArgs {
   promoCode: string | null;
   fulfillment: string;
   country: string | null;
+  /** The area of Bahrain the delivery goes to (`bahrain-regions` value), for area offers. */
+  region?: string | null;
 }
 
 /** What a cart would get from the store's offers, against the code typed (the builder's rule). */
@@ -117,6 +119,7 @@ export async function previewOffers(slug: string, args: OffersPreviewArgs): Prom
     p_promo_code: args.promoCode ?? undefined,
     p_fulfillment: args.fulfillment,
     p_country: args.country ?? undefined,
+    p_region: args.region ?? undefined,
   });
   if (error) throw error;
   const out = (data ?? {}) as Record<string, unknown>;
