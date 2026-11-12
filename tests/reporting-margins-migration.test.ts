@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import soldMigration from "../supabase/migrations/20261021140000_reports_count_what_is_sold.sql?raw";
 import migration from "../supabase/migrations/20261021160000_reporting_margins.sql?raw";
 import alterationsMigration from "../supabase/migrations/20261117100000_order_alterations.sql?raw";
+import giftStaffMigration from "../supabase/migrations/20261204100000_gift_staff_side.sql?raw";
 import {
   marginRows,
   productMargins,
@@ -213,5 +214,43 @@ describe("an alteration's charge (migration 20261117100000)", () => {
     expect(marginTotals(lines).netSales).toBeCloseTo(169, 6);
     expect(productMargins(altered, "BHD", "ar").some((l) => l.name === "التعديلات")).toBe(true);
     expect(categoryMargins(altered, "BHD", "en").map((l) => l.name)).toContain("Alterations");
+  });
+});
+
+describe("a gift's card and add-ons (migration 20261204100000)", () => {
+  let gifted: ReturnType<typeof marginRows>;
+
+  beforeAll(async () => {
+    const other = new PGlite();
+    await other.exec(SCHEMA);
+    await other.exec("CREATE TABLE order_alterations (id text PRIMARY KEY, charge_item_id text)");
+    await other.exec("ALTER TABLE order_items ADD COLUMN gift_line text");
+    await other.exec(functionOf(soldMigration, "order_counts_as_sold"));
+    await other.exec(functionOf(soldMigration, "reporting_counts_order"));
+    await other.exec(functionOf(giftStaffMigration, "rpc_reporting_margins"));
+    await other.exec(DATA);
+    // A gift: a 1.500 card that cost 0.400 and two 12.000 bouquets that cost 7.000 each.
+    await other.exec(`
+      INSERT INTO orders (id, brand_id, status, fulfillment_status, subtotal, discount, total)
+        VALUES ('o7', '${BRAND}', 'completed', 'DELIVERED', 25.5, 0, 25.5);
+      INSERT INTO order_items (id, order_id, brand_id, product_id, quantity, unit_cost, line_total,
+        packaging_cost_snapshot, gift_line) VALUES
+        ('o7-c', 'o7', '${BRAND}', NULL, 1, 0.4, 1.5, 0, 'card'),
+        ('o7-r', 'o7', '${BRAND}', NULL, 2, 7, 24, 0, 'addon');
+    `);
+    const { rows: result } = await other.query<{ r: unknown }>(
+      "SELECT public.rpc_reporting_margins('2026-10-01T00:00:00+03:00', '2026-10-31T23:59:59.999+03:00', false, 'pura') AS r",
+    );
+    gifted = marginRows(result[0].r);
+  });
+
+  it("is its own row, apart from the lines not linked to a product, and adds up as before", () => {
+    const lines = productMargins(gifted, "BHD", "en");
+    const named = (name: string) => lines.find((l) => l.name === name);
+    expect(named("Gift services")).toMatchObject({ netSales: 25.5, cost: 14.4, grossProfit: 11.1 });
+    expect(named("Not linked to a product")).toMatchObject({ netSales: 10, cost: 4 });
+    expect(marginTotals(lines).netSales).toBeCloseTo(189.5, 6);
+    expect(productMargins(gifted, "BHD", "ar").some((l) => l.name === "خدمات الهدايا")).toBe(true);
+    expect(categoryMargins(gifted, "BHD", "en").map((l) => l.name)).toContain("Gift services");
   });
 });

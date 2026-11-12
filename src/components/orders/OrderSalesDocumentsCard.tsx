@@ -35,6 +35,7 @@ import { IconSwap } from "@/components/motion/IconSwap";
 import { MorphText } from "@/components/motion/MorphText";
 import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
 import { GiftMessageCardBlock } from "@/features/gift-cards/components/GiftMessageCard";
+import { GiftReceiptButton } from "@/features/orders/components/GiftReceiptButton";
 import { useOrderWorkshop } from "@/features/orders/hooks/use-job-sheet-language";
 import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
 import { whereSentence } from "@/features/supplier-orders/lib/after-send";
@@ -241,6 +242,14 @@ export const OrderSalesDocumentsCard: React.FC<OrderSalesDocumentsCardProps> = (
         gift={order?.gift}
         notes={order?.notes}
         invoiceNumber={order?.invoice_number}
+        lang={lang}
+      />
+      <GiftReceiptButton
+        order={order}
+        items={items}
+        storeName={resolvedBrandName}
+        logoUrl={resolvedLogoUrl}
+        settings={settings}
         lang={lang}
       />
 

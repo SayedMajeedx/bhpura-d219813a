@@ -12,6 +12,7 @@ import { OrderAppointmentLine } from "@/components/orders/OrderAppointmentLine";
 import { orderCardWhen, orderIsSettled, orderItemsLine } from "@/features/orders/lib/order-card";
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { OrderAlterationBadge } from "@/features/orders/components/OrderAlterationBadge";
+import { OrderGiftBadge } from "@/features/orders/components/OrderGiftBadge";
 import { useOrderNumber } from "@/hooks/use-order-number";
 
 interface OrderMobileCardProps {
@@ -149,6 +150,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
 
       <OrderWaitingBadge order={order} lang={isAr ? "ar" : "en"} />
       <OrderAlterationBadge order={order} lang={isAr ? "ar" : "en"} />
+      <OrderGiftBadge order={order} lang={isAr ? "ar" : "en"} />
       <OrderAppointmentLine order={order} isAr={isAr} />
 
       {/* Primary Action Button Bar: only when there is a next step */}

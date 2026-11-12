@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { orderCardWhen, orderItemsLine } from "@/features/orders/lib/order-card";
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { OrderAlterationBadge } from "@/features/orders/components/OrderAlterationBadge";
+import { OrderGiftBadge } from "@/features/orders/components/OrderGiftBadge";
 import { boardColumns, canDrop, type BoardColumn } from "@/features/orders/lib/order-board";
 import { useOrderNumber } from "@/hooks/use-order-number";
 import { useBoardFlip } from "@/features/orders/hooks/use-board-flip";
@@ -28,6 +29,9 @@ type BoardCard = Parameters<typeof canDrop>[0] &
     currency?: string | null;
     order_items?: Parameters<typeof orderItemsLine>[0];
     alterations?: ReadonlyArray<{ status: string }> | null;
+    /** A gift order's details (`OrderGiftBadge`), and the notes an older one kept them in. */
+    gift?: unknown;
+    notes?: string | null;
   };
 
 export function OrdersBoard<T extends BoardCard>({
@@ -160,6 +164,7 @@ export function OrdersBoard<T extends BoardCard>({
                     productionStages={madeToOrder}
                   />
                   <OrderAlterationBadge order={order} lang={isAr ? "ar" : "en"} />
+                  <OrderGiftBadge order={order} lang={isAr ? "ar" : "en"} />
                   {items && (
                     <p
                       className="line-clamp-2 break-words text-xs text-muted-foreground"

@@ -105,6 +105,18 @@ export function addonPriceFromText(value: string): number | null {
   return Math.round(amount * 1000) / 1000;
 }
 
+/** A cost as typed (finance staff): a number from 0 to 10,000, empty for none, or "invalid". */
+export function giftCostFromText(value: string): number | null | "invalid" {
+  const cleaned = value
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace("٫", ".");
+  if (cleaned === "") return null;
+  const amount = Number(cleaned);
+  if (!Number.isFinite(amount) || amount < 0 || amount > 10000) return "invalid";
+  return Math.round(amount * 1000) / 1000;
+}
+
 /** An add-on as an order's gift details name it (`orders.gift.addons`). */
 export type OrderGiftAddon = { nameAr: string; nameEn: string; quantity: number };
 

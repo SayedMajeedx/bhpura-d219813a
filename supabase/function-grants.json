@@ -716,6 +716,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) and cleans what is saved"
     },
+    "set_gift_item_cost(p_brand_id uuid, p_addon_id uuid, p_cost numeric)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and can_view_brand_costs) before setting what a gift card or add-on costs the store"
+    },
     "set_gift_order_settings(p_brand_id uuid, p_enabled boolean, p_card_enabled boolean, p_card_price numeric, p_prepaid_only boolean)": {
       "anon": false,
       "authenticated": true,

@@ -27,6 +27,7 @@ import {
 } from "@/lib/data/gift-orders";
 import { addonName, addonPriceFromText, type GiftAddonRow } from "@/lib/gift-addons";
 import { giftRefusal } from "@/lib/gift-order";
+import { GiftCostField } from "./GiftCostField";
 
 /**
  * What a shopper may add to a gift order (a flower bouquet, chocolates), the store's own list
@@ -307,6 +308,7 @@ function AddonDialog({
                   : "Write a price above 0 and up to 10,000."}
               </p>
             )}
+            {addon && <GiftCostField brandId={brandId} addonId={addon.id} lang={lang} />}
           </div>
         </div>
         <DialogFooter>
