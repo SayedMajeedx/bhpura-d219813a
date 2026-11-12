@@ -2,12 +2,15 @@ import { Printer, Smartphone } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { GiftAddon } from "@/lib/gift-addons";
+import { GiftAddonsPicker } from "@/features/checkout/components/GiftAddonsPicker";
 import type { BuyForm } from "../lib/gift-card-shop";
 import { Choice } from "./BuyChoice";
 
 /**
  * Digital, or printed by the store and delivered for its fee: the store's printing offer, with
- * where to deliver the card and a number there once printed is chosen.
+ * where to deliver the card and a number there once printed is chosen, and the store's gift
+ * add-ons (a bouquet, chocolates) to go with it, as a gift order offers them.
  */
 export function PrintSection({
   form,
@@ -15,6 +18,9 @@ export function PrintSection({
   fee,
   freePrint,
   problem,
+  addons,
+  currency,
+  lang,
   t,
 }: {
   form: BuyForm;
@@ -22,8 +28,19 @@ export function PrintSection({
   fee: string;
   freePrint: boolean;
   problem: (key: "print_address" | "print_phone") => boolean;
+  /** The store's gift add-ons a printed card may go with (none: nothing is drawn). */
+  addons: readonly GiftAddon[];
+  currency: string;
+  lang: "ar" | "en";
   t: (ar: string, en: string) => string;
 }) {
+  const toggleAddon = (id: string) =>
+    setForm((current) => {
+      const next = { ...current.addons };
+      if ((next[id] ?? 0) > 0) delete next[id];
+      else next[id] = 1;
+      return { ...current, addons: next };
+    });
   const set = (key: "printAddress" | "printPhone") => (event: { target: { value: string } }) =>
     setForm((current) => ({ ...current, [key]: event.target.value }));
   return (
@@ -104,6 +121,12 @@ export function PrintSection({
               </p>
             )}
           </div>
+          <GiftAddonsPicker
+            gift={{ addons: [...addons], chosen: form.addons, toggleAddon }}
+            currency={currency}
+            lang={lang}
+            t={t}
+          />
         </div>
       )}
     </section>

@@ -17,7 +17,7 @@ import {
   saveGiftCardSettings,
 } from "@/lib/data/gift-cards";
 import { giftCardError } from "../lib/gift-cards";
-import { VALIDITY_CHOICES, amountsFromText, amountsText } from "../lib/online-sales";
+import { VALIDITY_CHOICES, rangeFromText, rangeText, type RangeProblem } from "../lib/online-sales";
 import { CardDesignsSection } from "./CardDesignsSection";
 import { PrintSettingsCard } from "./PrintSettingsCard";
 
@@ -58,26 +58,33 @@ function SettingsCard({
   brandId: string;
   slug: string;
   lang: "ar" | "en";
-  initial: { sell_online: boolean; amounts: number[]; valid_months: number | null } | null;
+  initial: {
+    sell_online: boolean;
+    amounts: number[];
+    min_amount?: number | null;
+    max_amount?: number | null;
+    valid_months: number | null;
+  } | null;
 }) {
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const moneyLabel = useMoneyLabel(lang);
   const [sellOnline, setSellOnline] = useState(initial?.sell_online ?? false);
-  const [amounts, setAmounts] = useState(amountsText(initial?.amounts ?? []));
+  const [range, setRange] = useState(() => rangeText(initial));
   const [validMonths, setValidMonths] = useState<number | null>(initial?.valid_months ?? 12);
   const [saving, setSaving] = useState(false);
-  const parsed = amountsFromText(amounts);
-  const needsAmounts = sellOnline && parsed.amounts.length === 0;
+  const parsed = rangeFromText(range.min, range.max);
+  const rangeProblem: RangeProblem | null = parsed.problem;
   const link = `${storeAddress(slug)}/gift-cards`;
 
   const save = async () => {
-    if (parsed.invalid || needsAmounts) return;
+    if (parsed.problem !== null) return;
     setSaving(true);
     try {
       await saveGiftCardSettings(brandId, {
         sellOnline,
-        amounts: parsed.amounts,
+        minAmount: parsed.min,
+        maxAmount: parsed.max,
         validMonths,
       });
       await invalidateGiftCardOnline(qc, brandId);
@@ -97,38 +104,46 @@ function SettingsCard({
         </Label>
         <Switch id="gift-sell-online" checked={sellOnline} onCheckedChange={setSellOnline} />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="gift-amounts" className="text-xs">
-          {isAr ? `القيم المعروضة (${moneyLabel})` : `Amounts offered (${moneyLabel})`}
-        </Label>
-        <Input
-          id="gift-amounts"
-          value={amounts}
-          onChange={(e) => setAmounts(e.target.value)}
-          placeholder="25, 50, 100"
-          dir="ltr"
-          aria-invalid={parsed.invalid || needsAmounts}
-        />
-        <p
-          className={
-            parsed.invalid || needsAmounts
-              ? "text-xs text-destructive"
-              : "text-xs text-muted-foreground"
-          }
-        >
-          {parsed.invalid
-            ? isAr
-              ? "حتى 8 قيم أكبر من صفر، تفصلها فاصلة."
-              : "Up to 8 amounts above zero, separated by commas."
-            : needsAmounts
-              ? isAr
-                ? "اكتب قيمة واحدة على الأقل."
-                : "Write at least one amount."
-              : isAr
-                ? "يختار المتسوّق منها؛ لا ضريبة على البطاقة، وتُحسب المبيعة حين تُستخدم."
-                : "Shoppers pick one; no VAT on a card, and the sale counts when it is spent."}
+      <fieldset className="space-y-1.5">
+        <legend className="text-xs font-medium">
+          {isAr ? `قيمة البطاقة (${moneyLabel})` : `Card amount (${moneyLabel})`}
+        </legend>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label htmlFor="gift-min-amount" className="text-xs text-muted-foreground">
+              {isAr ? "أقل قيمة" : "Least"}
+            </Label>
+            <Input
+              id="gift-min-amount"
+              value={range.min}
+              onChange={(e) => setRange((r) => ({ ...r, min: e.target.value }))}
+              inputMode="numeric"
+              dir="ltr"
+              aria-invalid={rangeProblem !== null}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="gift-max-amount" className="text-xs text-muted-foreground">
+              {isAr ? "أعلى قيمة" : "Most"}
+            </Label>
+            <Input
+              id="gift-max-amount"
+              value={range.max}
+              onChange={(e) => setRange((r) => ({ ...r, max: e.target.value }))}
+              inputMode="numeric"
+              dir="ltr"
+              aria-invalid={rangeProblem !== null}
+            />
+          </div>
+        </div>
+        <p className={rangeProblem ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+          {rangeProblem
+            ? RANGE_WORDS[rangeProblem][lang]
+            : isAr
+              ? "يختار المتسوّق أي قيمة بينهما بشريط أو بكتابتها؛ لا ضريبة على البطاقة، وتُحسب المبيعة حين تُستخدم."
+              : "Shoppers choose any whole amount between them, on a slider or by typing it; no VAT on a card, and the sale counts when it is spent."}
         </p>
-      </div>
+      </fieldset>
       <div className="space-y-1.5">
         <Label htmlFor="gift-validity" className="text-xs">
           {isAr ? "صلاحية البطاقة" : "A card lasts"}
@@ -161,15 +176,20 @@ function SettingsCard({
           {link.replace(/^https?:\/\//, "")}
           <ExternalLink className="size-3" aria-hidden="true" />
         </a>
-        <Button
-          type="button"
-          size="sm"
-          onClick={save}
-          disabled={saving || parsed.invalid || needsAmounts}
-        >
+        <Button type="button" size="sm" onClick={save} disabled={saving || rangeProblem !== null}>
           {isAr ? "حفظ" : "Save"}
         </Button>
       </div>
     </Card>
   );
 }
+
+const RANGE_WORDS: Record<RangeProblem, { ar: string; en: string }> = {
+  missing: { ar: "اكتب أقل قيمة وأعلى قيمة.", en: "Write the least and the most amount." },
+  whole: { ar: "اكتب القيمتين أرقامًا صحيحة.", en: "Write both as whole numbers." },
+  order: {
+    ar: "أقل قيمة من 1، ولا تزيد على أعلى قيمة.",
+    en: "The least is 1 or more, and not above the most.",
+  },
+  too_high: { ar: "أعلى قيمة حتى 100,000.", en: "The most is up to 100,000." },
+};

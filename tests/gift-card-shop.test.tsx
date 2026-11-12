@@ -14,7 +14,8 @@ import {
 } from "../src/features/gift-card-shop/lib/gift-card-shop";
 import { giftLinkMessage } from "../src/lib/gift-link";
 import {
-  amountsFromText,
+  rangeFromText,
+  rangeText,
   purchaseWords,
   waitingTransfers,
 } from "../src/features/gift-cards/lib/online-sales";
@@ -50,6 +51,28 @@ const online = vi.hoisted(() => ({
   },
 }));
 vi.mock("../src/lib/data/gift-cards/online", () => online);
+const ROSES = "00000000-0000-4000-8000-0000000000a1";
+const giftOrders = vi.hoisted(() => ({
+  giftOrderQueries: {
+    addons: (_slug: string, enabled = true) => ({
+      queryKey: ["addons"],
+      enabled,
+      queryFn: async () => [
+        {
+          id: "00000000-0000-4000-8000-0000000000a1",
+          nameAr: "ورد",
+          nameEn: "Roses",
+          descriptionAr: null,
+          descriptionEn: null,
+          imageUrl: null,
+          price: 12,
+        },
+      ],
+    }),
+  },
+}));
+vi.mock("../src/lib/data/gift-orders", () => giftOrders);
+vi.mock("@/lib/data/gift-orders", () => giftOrders);
 vi.mock("@/lib/data/gift-cards/online", () => online);
 const fns = {
   startGiftCardPurchase: stubs.start,
@@ -96,6 +119,8 @@ const { GiftCardPurchasePage } =
 const OFFER = {
   brandId: "b1",
   amounts: [25, 50],
+  minAmount: 5,
+  maxAmount: 100,
   currency: "BHD",
   validMonths: 12,
   card: true,
@@ -126,7 +151,11 @@ describe("the rules", () => {
     expect(buyProblems(form, OFFER)).toEqual(["receipt"]);
     expect(buyProblems({ ...form, delivery: "" }, OFFER)).toEqual(["delivery", "receipt"]);
     expect(buyProblems({ ...form, hasReceipt: true }, OFFER)).toEqual([]);
-    expect(buyProblems({ ...form, amount: 30, hasReceipt: true }, OFFER)).toEqual(["amount"]);
+    // Any whole amount in the store's range; none outside it, none with fils.
+    expect(buyProblems({ ...form, amount: 30, hasReceipt: true }, OFFER)).toEqual([]);
+    expect(buyProblems({ ...form, amount: 101, hasReceipt: true }, OFFER)).toEqual(["amount"]);
+    expect(buyProblems({ ...form, amount: 4, hasReceipt: true }, OFFER)).toEqual(["amount"]);
+    expect(buyProblems({ ...form, amount: 7.5, hasReceipt: true }, OFFER)).toEqual(["amount"]);
     expect(
       buyProblems({ ...form, method: "card", phone: "12" }, { ...OFFER, card: false }),
     ).toEqual(["method", "phone"]);
@@ -180,10 +209,18 @@ describe("the rules", () => {
     ]);
   });
 
-  it("read the store's amounts as typed, and put the oldest transfer first", () => {
-    expect(amountsFromText("50, 25 ٢٥، 100")).toEqual({ amounts: [25, 50, 100], invalid: false });
-    expect(amountsFromText("25, -5").invalid).toBe(true);
-    expect(amountsFromText("1,2,3,4,5,6,7,8,9").invalid).toBe(true);
+  it("read the store's range as typed, and put the oldest transfer first", () => {
+    expect(rangeFromText("٥", "40")).toEqual({ min: 5, max: 40, problem: null });
+    expect(rangeFromText("5.5", "40").problem).toBe("whole");
+    expect(rangeFromText("50", "40").problem).toBe("order");
+    expect(rangeFromText("", "40").problem).toBe("missing");
+    expect(rangeFromText("5", "200000").problem).toBe("too_high");
+    // A store saved before the range opens on its list's least and most.
+    expect(rangeText({ amounts: [10.5, 25, 60.75] })).toEqual({ min: "11", max: "60" });
+    expect(rangeText({ min_amount: 5, max_amount: 40, amounts: [] })).toEqual({
+      min: "5",
+      max: "40",
+    });
     const p = (id: string, created_at: string, over = {}) =>
       ({ id, created_at, status: "pending", payment_method: "benefit", ...over }) as never;
     expect(
@@ -260,7 +297,9 @@ describe("the shop page", () => {
     );
     vi.stubGlobal("location", { href: "" });
     wrap(<GiftCardShopPage />);
-    fireEvent.click(await screen.findByRole("radio", { name: "BHD 25.000" }));
+    fireEvent.change(await screen.findByLabelText("Or type the amount"), {
+      target: { value: "25" },
+    });
     // Digital is the default; the printed card names its fee.
     expect(screen.getByRole("radio", { name: "Digital" })).toHaveAttribute("aria-checked", "true");
     fireEvent.click(screen.getByRole("radio", { name: "We print and deliver it · + BHD 2.500" }));
@@ -284,6 +323,7 @@ describe("the shop page", () => {
     expect(buyer.print).toEqual({
       address: "Adliya, block 338, road 3803, house 12",
       phone: "39001122",
+      addons: [],
     });
     // The card holds its value: the amount sent is the card's, the database adds the fee.
     expect(stubs.start.mock.calls[0][0].data.amount).toBe(25);
@@ -299,7 +339,7 @@ describe("the shop page", () => {
 
   it("offers no printing when the store does not print, and the buyer prints nothing", async () => {
     wrap(<GiftCardShopPage />);
-    await screen.findByRole("radio", { name: "BHD 25.000" });
+    await screen.findByLabelText("Or type the amount");
     expect(screen.queryByRole("radio", { name: "Digital" })).not.toBeInTheDocument();
     expect(screen.queryByText(/I will print it/)).not.toBeInTheDocument();
   });
@@ -313,7 +353,9 @@ describe("the shop page", () => {
     const location = { href: "" };
     vi.stubGlobal("location", location);
     wrap(<GiftCardShopPage />);
-    fireEvent.click(await screen.findByRole("radio", { name: "BHD 50.000" }));
+    fireEvent.change(await screen.findByLabelText("Or type the amount"), {
+      target: { value: "50" },
+    });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
     fireEvent.click(screen.getByRole("radio", { name: "Email" }));
     fireEvent.click(screen.getByRole("radio", { name: "Card" }));
@@ -361,7 +403,9 @@ describe("the shop page", () => {
   it("asks for a transfer's receipt, then uploads it and opens the purchase's page", async () => {
     stubs.start.mockResolvedValue({ ok: true, id: "p2", token: "tok2", brandId: "b1" });
     const { container } = wrap(<GiftCardShopPage />);
-    fireEvent.click(await screen.findByRole("radio", { name: "BHD 25.000" }));
+    fireEvent.change(await screen.findByLabelText("Or type the amount"), {
+      target: { value: "25" },
+    });
     fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
     fireEvent.click(screen.getByRole("radio", { name: "WhatsApp" }));
     fireEvent.change(screen.getByLabelText("Phone number (WhatsApp)"), {
@@ -482,5 +526,78 @@ describe("the purchase's page", () => {
         "Once paid, the store prints the card and delivers it to: Adliya, block 338",
       ),
     ).toBeInTheDocument();
+  });
+});
+
+describe("the amount slider and the add-ons", () => {
+  it("moves the slider with the keyboard, follows a typed amount, and refuses one outside", async () => {
+    wrap(<GiftCardShopPage />);
+    const slider = await screen.findByRole("slider", { name: "Card amount" });
+    const field = screen.getByLabelText("Or type the amount");
+    // A new card starts a third of the way, on a round amount.
+    expect(slider).toHaveAttribute("aria-valuenow", "40");
+    expect(field).toHaveValue("40");
+    fireEvent.keyDown(slider, { key: "ArrowRight" });
+    expect(slider).toHaveAttribute("aria-valuenow", "41");
+    expect(field).toHaveValue("41");
+    fireEvent.change(field, { target: { value: "75" } });
+    expect(slider).toHaveAttribute("aria-valuenow", "75");
+    expect(screen.getByRole("button", { name: "Buy the card · BHD 75.000" })).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: "150" } });
+    expect(screen.getByText("Choose an amount from BHD 5.000 to BHD 100.000.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Buy the card" })).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: "12.5" } });
+    expect(screen.getByText(/Write a whole number/)).toBeInTheDocument();
+  });
+
+  it("offers the store's add-ons with a printed card, adds them to the total and sends ids only", async () => {
+    stubs.offer = PRINTS;
+    stubs.start.mockResolvedValue({ ok: true, id: "p7", token: "tok", brandId: "b1" });
+    stubs.navigate.mockResolvedValue(undefined);
+    wrap(<GiftCardShopPage />);
+    fireEvent.change(await screen.findByLabelText("Or type the amount"), {
+      target: { value: "20" },
+    });
+    expect(screen.queryByRole("button", { name: /Add Roses/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "We print and deliver it · + BHD 2.500" }));
+    fireEvent.click(await screen.findByRole("button", { name: /Add Roses to the gift/ }));
+    expect(screen.getByRole("button", { name: "Buy the card · BHD 34.500" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Delivery address"), {
+      target: { value: "Sadad, block 1, road 2, house 3" },
+    });
+    fireEvent.change(screen.getByLabelText("Phone number at the address"), {
+      target: { value: "39001122" },
+    });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
+    fireEvent.click(screen.getByRole("radio", { name: "WhatsApp" }));
+    fireEvent.change(screen.getByLabelText("Phone number (WhatsApp)"), {
+      target: { value: "39001122" },
+    });
+    fireEvent.click(screen.getByRole("radio", { name: "BenefitPay (transfer)" }));
+    const file = new File(["x"], "receipt.png", { type: "image/png" });
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    await waitFor(() => expect(stubs.start).toHaveBeenCalled());
+    expect(stubs.start.mock.calls[0][0].data.buyer.print.addons).toEqual([
+      { id: ROSES, quantity: 1 },
+    ]);
+    expect(stubs.start.mock.calls[0][0].data.amount).toBe(20);
+  });
+
+  it("says the same total as the database: the card, the fee and the add-ons", () => {
+    const roses = {
+      id: ROSES,
+      nameAr: "ورد",
+      nameEn: "Roses",
+      descriptionAr: null,
+      descriptionEn: null,
+      imageUrl: null,
+      price: 12,
+    };
+    const form = { amount: 20, print: true, addons: { [ROSES]: 2 } };
+    expect(buyTotal(form, PRINTS, [roses])).toBe(46.5);
+    // Add-ons go only with a card the store prints.
+    expect(buyTotal({ ...form, print: false }, PRINTS, [roses])).toBe(20);
   });
 });

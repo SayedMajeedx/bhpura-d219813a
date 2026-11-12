@@ -26,6 +26,8 @@ import {
   orderStep,
   orderTimeline,
   paymentWords,
+  addonsLine,
+  purchaseAddons,
 } from "../lib/card-orders";
 import {
   PrintStepActions,
@@ -93,6 +95,8 @@ export function GiftCardOrderSheet({
   const chat = whatsappChatUrl(purchase.buyer_phone);
   const printChat = whatsappChatUrl(purchase.print_phone);
   const fee = Number(purchase.print_fee ?? 0);
+  const extras = purchaseAddons(purchase, lang);
+  const extrasTotal = Number((purchase as { addons_total?: number | null }).addons_total ?? 0);
   const emailed = purchase.delivery_channel === "email";
   const emailNow = record.data
     ? EMAIL_STATE_WORDS[emailState(record.data.paidEmail, record.data.hasMailbox)][lang]
@@ -211,6 +215,11 @@ export function GiftCardOrderSheet({
                 <Row label={isAr ? "الطباعة والتوصيل" : "Printing and delivery"}>
                   {formatMoney(fee, purchase.currency, lang)}
                 </Row>
+                {extras.length > 0 && (
+                  <Row label={isAr ? "الإضافات" : "Add-ons"}>
+                    {formatMoney(extrasTotal, purchase.currency, lang)}
+                  </Row>
+                )}
                 <Row label={isAr ? "المدفوع" : "Paid"}>
                   <span className="font-semibold">
                     {formatMoney(orderTotal(purchase), purchase.currency, lang)}
@@ -267,6 +276,12 @@ export function GiftCardOrderSheet({
               <p className="text-sm break-words text-page-start" dir="auto">
                 {purchase.print_address}
               </p>
+              {extras.length > 0 && (
+                <p className="text-sm break-words text-page-start">
+                  <span className="font-medium">{isAr ? "جهّز معها: " : "Prepare with it: "}</span>
+                  <span dir="auto">{addonsLine(extras, lang)}</span>
+                </p>
+              )}
               {purchase.print_phone && (
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                   <a

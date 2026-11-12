@@ -42,6 +42,9 @@ export type NoticeEvent = {
   print_fee?: number | null;
   print_address?: string | null;
   print_phone?: string | null;
+  /** The gift add-ons with a printed card, as sold (absent before migration 20261206100000). */
+  addons?: Array<{ name_ar?: string; name_en?: string; quantity?: number }> | null;
+  addons_total?: number | null;
 };
 
 export type Email = { subject: string; html: string; text: string };
@@ -61,12 +64,29 @@ const amountOf = (e: NoticeEvent, lang: "ar" | "en") =>
     " ",
   );
 
-/** What the buyer paid: the card's value, plus the printing fee when the store prints it. */
+/** What the buyer paid: the card's value, plus the fee and add-ons when the store prints it. */
 const paidOf = (e: NoticeEvent, lang: "ar" | "en") =>
   amountOf(
-    { ...e, amount: Number(e.amount) + (e.print_by_store ? Number(e.print_fee ?? 0) : 0) },
+    {
+      ...e,
+      amount:
+        Number(e.amount) +
+        (e.print_by_store ? Number(e.print_fee ?? 0) + Number(e.addons_total ?? 0) : 0),
+    },
     lang,
   );
+
+/** The add-ons with a printed card, in the reader's words: "Roses × 2, Chocolate". */
+function addonsOf(e: NoticeEvent, lang: "ar" | "en"): string | null {
+  const lines = (e.addons ?? [])
+    .map((a) => {
+      const name = (lang === "ar" ? a.name_ar || a.name_en : a.name_en || a.name_ar) ?? "";
+      const qty = Number(a.quantity ?? 1);
+      return name ? (qty > 1 ? `${name} × ${qty}` : name) : "";
+    })
+    .filter(Boolean);
+  return lines.length > 0 ? lines.join(lang === "ar" ? "، " : ", ") : null;
+}
 
 /** For a card the store prints: where it goes and what the buyer paid for it, in their words. */
 function printLines(e: NoticeEvent, lang: "ar" | "en"): string[] {
@@ -74,13 +94,16 @@ function printLines(e: NoticeEvent, lang: "ar" | "en"): string[] {
   const fee = amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, lang);
   const paid = paidOf(e, lang);
   const to = e.print_address ?? "";
+  const extras = addonsOf(e, lang);
   return lang === "ar"
     ? [
         esc(`يطبع المتجر البطاقة ويوصلها إلى: ${to}`),
+        ...(extras ? [esc(`ومعها: ${extras}`)] : []),
         esc(`رسوم الطباعة والتوصيل ${fee}، والمجموع ${paid}.`),
       ]
     : [
         esc(`The store prints the card and delivers it to: ${to}`),
+        ...(extras ? [esc(`With: ${extras}`)] : []),
         esc(`Printing and delivery ${fee}, ${paid} in all.`),
       ];
 }
@@ -240,6 +263,14 @@ export function adminNotice(e: NoticeEvent): Email | null {
             "طباعة وتوصيل · Printing and delivery",
             `${amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, "ar")} · ${amountOf({ ...e, amount: Number(e.print_fee ?? 0) }, "en")}`,
           ],
+          ...(addonsOf(e, "en")
+            ? ([
+                [
+                  "ومعها · With",
+                  `${addonsOf(e, "ar")} · ${addonsOf(e, "en")} (${amountOf({ ...e, amount: Number(e.addons_total ?? 0) }, "en")})`,
+                ],
+              ] as Array<[string, string]>)
+            : []),
           ["المدفوع · Paid", `${paidAr} · ${paid}`],
           [
             "التوصيل إلى · Deliver to",

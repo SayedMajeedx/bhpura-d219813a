@@ -3705,6 +3705,8 @@ export type Database = {
       };
       gift_card_purchases: {
         Row: {
+          addons: Json;
+          addons_total: number;
           amount: number;
           brand_id: string;
           buyer_email: string | null;
@@ -3744,6 +3746,8 @@ export type Database = {
           total_due: number | null;
         };
         Insert: {
+          addons?: Json;
+          addons_total?: number;
           amount: number;
           brand_id: string;
           buyer_email?: string | null;
@@ -3783,6 +3787,8 @@ export type Database = {
           total_due?: number | null;
         };
         Update: {
+          addons?: Json;
+          addons_total?: number;
           amount?: number;
           brand_id?: string;
           buyer_email?: string | null;
@@ -3843,6 +3849,8 @@ export type Database = {
           amounts: number[];
           brand_id: string;
           card_designs: Json;
+          max_amount: number | null;
+          min_amount: number | null;
           print_enabled: boolean;
           print_fee: number;
           sell_online: boolean;
@@ -3854,6 +3862,8 @@ export type Database = {
           amounts?: number[];
           brand_id: string;
           card_designs?: Json;
+          max_amount?: number | null;
+          min_amount?: number | null;
           print_enabled?: boolean;
           print_fee?: number;
           sell_online?: boolean;
@@ -3865,6 +3875,8 @@ export type Database = {
           amounts?: number[];
           brand_id?: string;
           card_designs?: Json;
+          max_amount?: number | null;
+          min_amount?: number | null;
           print_enabled?: boolean;
           print_fee?: number;
           sell_online?: boolean;
@@ -12772,6 +12784,8 @@ export type Database = {
           amounts: number[];
           brand_id: string;
           card_designs: Json;
+          max_amount: number | null;
+          min_amount: number | null;
           print_enabled: boolean;
           print_fee: number;
           sell_online: boolean;
@@ -12794,6 +12808,8 @@ export type Database = {
         Args: {
           p_amounts: number[];
           p_brand_id: string;
+          p_max_amount?: number;
+          p_min_amount?: number;
           p_sell_online: boolean;
           p_valid_months?: number;
         };
@@ -12801,6 +12817,8 @@ export type Database = {
           amounts: number[];
           brand_id: string;
           card_designs: Json;
+          max_amount: number | null;
+          min_amount: number | null;
           print_enabled: boolean;
           print_fee: number;
           sell_online: boolean;

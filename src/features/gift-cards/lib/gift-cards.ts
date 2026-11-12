@@ -177,6 +177,10 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
     ar: "اكتب قيمة واحدة على الأقل للبيع على المتجر.",
     en: "Write at least one amount to sell on the store.",
   },
+  GIFT_CARD_RANGE_INVALID: {
+    ar: "اكتب أقل قيمة وأعلى قيمة بأرقام صحيحة، والأقل لا تزيد على الأعلى.",
+    en: "Write the least and the most as whole numbers, the least not above the most.",
+  },
   PURCHASE_NOT_PENDING: {
     ar: "هذا الشراء لم يعد بانتظار التحقق.",
     en: "This purchase is no longer waiting to be checked.",

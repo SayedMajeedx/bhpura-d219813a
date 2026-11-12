@@ -17,7 +17,8 @@ export function GiftAddonsPicker({
   lang,
   t,
 }: {
-  gift: CheckoutGift;
+  /** The store's add-ons, what was chosen and how one is ticked (checkout's gift, a printed card). */
+  gift: Pick<CheckoutGift, "addons" | "chosen" | "toggleAddon">;
   currency: string;
   lang: Storefront["lang"];
   t: Storefront["t"];
