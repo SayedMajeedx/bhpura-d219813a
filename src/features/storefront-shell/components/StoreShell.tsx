@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useRouter } from "@tanstack/react-router";
 import { useAutoHideHeader } from "@/features/storefront-shell/hooks/use-auto-hide-header";
+import { useScrollToTop } from "@/features/storefront-shell/hooks/use-scroll-to-top";
 import { StoreStatusBanner } from "@/features/storefront-shell/components/StoreStatusBanner";
 import React, { useEffect, useRef, useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
@@ -46,6 +47,8 @@ export function StoreShell() {
   }, []);
   // Out of view on a scroll down, back for a moment on a scroll up, always at the top of the page.
   const headerHidden = useAutoHideHeader(headerRef);
+  // Every page a shopper opens shows from its top, on a phone too.
+  useScrollToTop();
 
   useEffect(() => {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
