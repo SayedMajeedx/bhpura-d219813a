@@ -14,6 +14,7 @@ import {
 import { useBrand } from "@/lib/brand-context";
 import { getStorefrontUrl } from "@/lib/storefront-url";
 import { checklistCopy } from "@/features/dashboard/lib/checklist-copy";
+import { productsOnStore } from "@/features/dashboard/lib/checklist-view";
 
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import type { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
@@ -166,7 +167,9 @@ export function OnboardingChecklist({
             </div>
             <h4 className="font-bold text-sm text-foreground">{text(copy.addTitle)}</h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              {step1Done ? text(copy.addDone(productsQ.data?.length ?? 1)) : text(copy.addPending)}
+              {step1Done
+                ? text(copy.addDone(productsOnStore(productsQ.data)))
+                : text(copy.addPending)}
             </p>
           </div>
           <Button

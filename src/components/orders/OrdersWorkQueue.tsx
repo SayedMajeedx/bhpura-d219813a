@@ -40,6 +40,7 @@ import { orderDeletable } from "@/lib/order-deletion";
 import { OrderWaitingBadge } from "@/features/orders/components/OrderWaitingBadge";
 import { OrderAlterationBadge } from "@/features/orders/components/OrderAlterationBadge";
 import { OrderGiftBadge } from "@/features/orders/components/OrderGiftBadge";
+import { orderIsSettled } from "@/features/orders/lib/order-card";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
@@ -337,9 +338,20 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     )}
                   </td>
 
-                  {/* Primary Next Action */}
+                  {/* Primary Next Action: a dash once nothing is left to do, as the status column
+                      already says delivered or cancelled (the admin audit of 2026-11-12: the two
+                      columns read the same, so the orders needing a step did not stand out). */}
                   <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
-                    {renderPrimaryAction(order)}
+                    {orderIsSettled(order) ? (
+                      <span
+                        className="text-muted-foreground"
+                        aria-label={lang === "ar" ? "لا خطوة تالية" : "No next step"}
+                      >
+                        —
+                      </span>
+                    ) : (
+                      renderPrimaryAction(order)
+                    )}
                   </td>
 
                   {/* Secondary Actions Menu */}

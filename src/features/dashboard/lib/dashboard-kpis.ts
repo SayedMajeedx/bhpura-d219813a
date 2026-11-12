@@ -108,7 +108,7 @@ export function primaryKpisFor({
                     ? "متوسط قيمة الطلب"
                     : "Average Order Value (AOV)",
                 value: formatMoney(financials.aovCurrent, currency, locale),
-                subValue: `${isServices ? (isAr ? "إجمالي الحجوزات" : "Total Bookings") : isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
+                subValue: `${isServices ? (isAr ? "إجمالي الحجوزات" : "Total Bookings") : isAr ? "طلبات المتجر" : "Store orders"}: ${financials.storeOrdersCurrent}`,
                 deltaPct: financials.aovDeltaPct,
                 icon: Wallet,
                 color: "text-sky-500",

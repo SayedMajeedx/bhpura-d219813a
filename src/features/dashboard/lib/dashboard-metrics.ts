@@ -233,8 +233,13 @@ export function dashboardFinancials({
   const ordersDeltaPct =
     ordersPrior > 0 ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100 : null;
 
-  const aovCurrent = ordersCurrent > 0 ? revenueWithIncubators / ordersCurrent : 0;
-  const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
+  // The average order is the store's own orders: a partner shop's sale is a piece sold through
+  // it, not an order of the store's, and mixed in it read 17.062 under "orders: 13" for a store
+  // with 8 orders of its own (the admin audit of 2026-11-12).
+  const storeOrdersCurrent = current30Orders.length;
+  const storeRevenuePrior = prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+  const aovCurrent = storeOrdersCurrent > 0 ? orderRevenue / storeOrdersCurrent : 0;
+  const aovPrior = prior30Orders.length > 0 ? storeRevenuePrior / prior30Orders.length : 0;
   const aovDeltaPct = aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
 
   // 30-Day Daily Sales Time Series Chart Data
@@ -284,6 +289,7 @@ export function dashboardFinancials({
     revenueDeltaPct,
     ordersCurrent,
     ordersDeltaPct,
+    storeOrdersCurrent,
     aovCurrent,
     aovDeltaPct,
     dailyChartSeries,
