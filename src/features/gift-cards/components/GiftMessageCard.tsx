@@ -73,6 +73,18 @@ export function GiftMessageCardBlock({
               "The customer wrote no message: add one on the card before printing."
             )}
           </p>
+          {/* What to prepare with the gift (a bouquet), as the shopper added it. */}
+          {gift.addons.length > 0 && (
+            <p className="mt-1 text-xs font-medium break-words text-foreground" dir="auto">
+              {isAr ? "مع: " : "With: "}
+              {gift.addons
+                .map((addon) => {
+                  const name = isAr ? addon.nameAr : addon.nameEn;
+                  return addon.quantity > 1 ? `${name} × ${addon.quantity}` : name;
+                })
+                .join(isAr ? "، " : ", ")}
+            </p>
+          )}
         </div>
       </div>
       <PrintButton

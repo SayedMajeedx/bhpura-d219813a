@@ -15,6 +15,7 @@ import {
   saveGiftOrderSettings,
 } from "@/lib/data/gift-orders";
 import { giftPriceFromText, giftRefusal, type GiftOrderOptions } from "@/lib/gift-order";
+import { GiftAddonsEditor } from "./GiftAddonsEditor";
 
 /**
  * Gift orders, by the store's decision (`gift_order_settings`, the owner's request of 2026-11-11):
@@ -27,7 +28,13 @@ export function GiftOrdersSettingCard({ lang }: { lang: "ar" | "en" }) {
   const saved = useQuery(giftOrderQueries.settings(brand.id)).data;
   if (!saved) return null;
   // Keyed by what is saved, so a save elsewhere is shown and the fields start from it.
-  return <Fields key={JSON.stringify(saved)} saved={saved} brandId={brand.id} lang={lang} />;
+  return (
+    <>
+      <Fields key={JSON.stringify(saved)} saved={saved} brandId={brand.id} lang={lang} />
+      {/* What a shopper may add to a gift (a bouquet), while the store takes gift orders. */}
+      {saved.enabled && <GiftAddonsEditor brandId={brand.id} lang={lang} />}
+    </>
+  );
 }
 
 function Fields({

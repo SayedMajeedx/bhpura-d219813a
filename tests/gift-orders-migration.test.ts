@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import offers from "../supabase/migrations/20261027100000_store_offers.sql?raw";
 import language from "../supabase/migrations/20261109100000_order_email_language.sql?raw";
 import migration from "../supabase/migrations/20261202100000_gift_orders.sql?raw";
+import addonsMigration from "../supabase/migrations/20261203100000_gift_addons.sql?raw";
 
 // A gift order by the store's own settings (migration 20261202100000), run in a real Postgres
 // with the live order builder (place_storefront_order as 20261109100000 left it, its core stubbed
@@ -172,6 +173,7 @@ beforeAll(async () => {
   await db.exec(offers);
   await db.exec(language);
   await db.exec(migration);
+  await db.exec(addonsMigration);
 });
 
 const staff = (sql: string, params: unknown[] = []) => db.query(sql, params);
@@ -372,5 +374,156 @@ describe("the store's switches", () => {
       );
       expect(rows[0]).toEqual({ anon: false, user: false });
     }
+  });
+});
+
+// Step two (migration 20261203100000): the store's add-ons, a bouquet among them, each priced by
+// the store and written as its own line of a gift order; a code never reaches them.
+const addon = async (
+  fields: Partial<{
+    id: string | null;
+    name_ar: string;
+    name_en: string;
+    price: number;
+    available: boolean;
+    brand: string;
+  }> = {},
+) => {
+  const { rows } = await db.query<{ id: string }>(
+    "SELECT (public.save_gift_addon($1, $3, $4, NULL, NULL, $5, $6, $7, 0, $2)).id AS id",
+    [
+      fields.brand ?? BRAND,
+      fields.id ?? null,
+      fields.name_ar ?? "باقة ورد",
+      fields.name_en ?? "Flower bouquet",
+      "https://media.boutq.store/brands/b1/product/rose.jpg",
+      fields.price ?? 12,
+      fields.available ?? true,
+    ],
+  );
+  return rows[0].id;
+};
+
+const shown = async (slug = "store") =>
+  (
+    await db.query<{ r: Array<Record<string, unknown>> }>(
+      "SELECT public.storefront_gift_addons($1) AS r",
+      [slug],
+    )
+  ).rows[0].r;
+
+describe("the store's add-ons", () => {
+  it("are shown to a visitor while available, by the store's price and words", async () => {
+    await settings(true, true, 0, false);
+    const rose = await addon();
+    const hidden = await addon({ name_en: "Chocolates", name_ar: "شوكولاتة", available: false });
+    const list = await shown();
+    expect(list.map((a) => a.id)).toContain(rose);
+    expect(list.map((a) => a.id)).not.toContain(hidden);
+    expect(list.find((a) => a.id === rose)).toMatchObject({
+      name_ar: "باقة ورد",
+      name_en: "Flower bouquet",
+      price: 12,
+      image_url: "https://media.boutq.store/brands/b1/product/rose.jpg",
+    });
+    // None while the store takes no gift orders.
+    await settings(false, true, 0, false);
+    expect(await shown()).toEqual([]);
+    await settings(true, true, 0, false);
+  });
+
+  it("are a line each of a gift order at the store's price, taxed, and named on the gift", async () => {
+    const rose = await addon({ price: 12 });
+    const plain = await place(null);
+    const gift = await place({ recipient: "Noor", addons: [{ id: rose, quantity: 2, price: 0 }] });
+    expect(gift.error).toBeNull();
+    const lines = await db.query<Record<string, unknown>>(
+      `SELECT name_en, name_ar, quantity, unit_price::float AS unit_price,
+              line_total::float AS line_total, product_id, variant_id
+         FROM public.order_items WHERE order_id = $1 AND product_id IS NULL`,
+      [gift.id],
+    );
+    expect(lines.rows).toEqual([
+      {
+        name_en: "Flower bouquet",
+        name_ar: "باقة ورد",
+        quantity: 2,
+        unit_price: 12,
+        line_total: 24,
+        product_id: null,
+        variant_id: null,
+      },
+    ]);
+    const order = await orderOf(gift.id);
+    expect(order.subtotal).toBe(49);
+    // 10% VAT on the bouquets as on the piece.
+    expect(gift.total).toBeCloseTo(plain.total + 26.4, 3);
+    expect((order.gift as Record<string, unknown>).addons).toEqual([
+      { id: rose, name_ar: "باقة ورد", name_en: "Flower bouquet", quantity: 2, price: 12 },
+    ]);
+  });
+
+  it("add to a priced card, and a code takes nothing off either", async () => {
+    await settings(true, true, 1.5, false);
+    const rose = await addon({ price: 10 });
+    const coded = await place(null, { promo: "OFF5" });
+    const gift = await place({ card: true, addons: [{ id: rose }] }, { promo: "OFF5" });
+    const [a, b] = [await orderOf(coded.id), await orderOf(gift.id)];
+    expect(b.discount).toBe(a.discount);
+    expect(b.subtotal).toBe((a.subtotal as number) + 11.5);
+    await settings(true, true, 0, false);
+  });
+
+  it("refuse one that is off, archived, another store's, unknown, or too many", async () => {
+    const off = await addon({ available: false });
+    const gone = await addon();
+    await db.query("SELECT public.archive_gift_addon($1)", [gone]);
+    const foreign = await addon({ brand: OTHER });
+    const rose = await addon();
+    for (const addons of [
+      [{ id: off }],
+      [{ id: gone }],
+      [{ id: foreign }],
+      [{ id: "00000000-0000-4000-8000-00000000dead" }],
+      [{ id: "not-an-id" }],
+      [{ id: rose, quantity: 11 }],
+      [{ id: rose, quantity: 0 }],
+    ]) {
+      expect((await place({ recipient: "Noor", addons })).error).toMatch(/GIFT_ADDON_UNAVAILABLE/);
+    }
+    // An archived one is no longer shown, and its row stays for the orders that hold it.
+    expect((await shown()).map((a) => a.id)).not.toContain(gone);
+    const kept = await db.query(
+      "SELECT archived_at IS NOT NULL AS archived FROM public.gift_addons WHERE id = $1",
+      [gone],
+    );
+    expect(kept.rows[0]).toEqual({ archived: true });
+  });
+
+  it("are changed and removed by settings staff only, within bounds", async () => {
+    const rose = await addon({ price: 12 });
+    await addon({ id: rose, price: 14, name_en: "Large bouquet" });
+    const row = await db.query<{ price: number; name_en: string; name_ar: string }>(
+      "SELECT price::float AS price, name_en, name_ar FROM public.gift_addons WHERE id = $1",
+      [rose],
+    );
+    expect(row.rows[0]).toEqual({ price: 14, name_en: "Large bouquet", name_ar: "باقة ورد" });
+    await expect(addon({ price: 0 })).rejects.toThrow(/GIFT_ADDON_PRICE_INVALID/);
+    await expect(addon({ name_ar: " ", name_en: "" })).rejects.toThrow(/GIFT_ADDON_NAME_REQUIRED/);
+    await db.exec(
+      "CREATE OR REPLACE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$",
+    );
+    await expect(addon()).rejects.toThrow(/FORBIDDEN/);
+    await expect(db.query("SELECT public.archive_gift_addon($1)", [rose])).rejects.toThrow(
+      /GIFT_ADDON_NOT_FOUND/,
+    );
+    await db.exec(
+      "CREATE OR REPLACE FUNCTION public.has_permission(text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$",
+    );
+    const visitor = await db.query<{ save: boolean; read: boolean }>(
+      `SELECT has_function_privilege('anon', 'public.save_gift_addon(uuid, text, text, text, text, text, numeric, boolean, integer, uuid)', 'EXECUTE') AS save,
+              has_function_privilege('anon', 'public.storefront_gift_addons(text)', 'EXECUTE') AS read`,
+    );
+    expect(visitor.rows[0]).toEqual({ save: false, read: true });
   });
 });
