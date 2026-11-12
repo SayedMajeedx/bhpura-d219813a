@@ -215,7 +215,10 @@ function BuyForm({
   const problem = (key: (typeof problems)[number]) => shown && problems.includes(key);
 
   return (
-    <form onSubmit={submit} className="mx-auto w-full max-w-xl space-y-6 px-4 py-8 sm:py-12">
+    <form
+      onSubmit={submit}
+      className="mx-auto w-full max-w-xl space-y-6 px-4 py-8 sm:py-12 lg:max-w-6xl"
+    >
       <div className="space-y-2 text-center">
         <Gift className="mx-auto size-8 text-primary" aria-hidden="true" />
         <h1 className="font-display text-2xl sm:text-3xl">{t("بطاقة هدية", "Gift card")}</h1>
@@ -227,241 +230,251 @@ function BuyForm({
         </p>
       </div>
 
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold">{t("اختر البطاقة", "Choose the card")}</h2>
-        <GiftCardDesigner
-          kit={kit}
-          value={cardDesign}
-          onChange={(next) => setDesign(next)}
-          details={previewDetails}
-          primary={lang}
-          lang={lang}
-        />
-      </section>
-
-      <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
-        <p id="gift-amount-label" className="text-sm font-semibold">
-          {t("القيمة", "Amount")}
-        </p>
-        <GiftAmountPicker
-          offer={offer}
-          amount={form.amount}
-          onChange={(amount) => setForm((current) => ({ ...current, amount }))}
-          money={money}
-          invalid={problem("amount")}
-          lang={lang}
-          t={t}
-        />
-        {validity && <p className="text-xs text-muted-foreground">{validity}</p>}
-      </section>
-
-      {offer.print && (
-        <PrintSection
-          form={form}
-          setForm={setForm}
-          fee={money(offer.printFee)}
-          freePrint={offer.printFee === 0}
-          problem={problem}
-          addons={addons}
-          currency={offer.currency}
-          lang={lang}
-          t={t}
-        />
-      )}
-
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold">{t("لمن البطاقة", "Who it is for")}</h2>
-        <div className="space-y-1.5">
-          <Label htmlFor="gift-recipient">{t("الاسم (اختياري)", "Name (optional)")}</Label>
-          <Input
-            id="gift-recipient"
-            value={form.recipient}
-            onChange={set("recipient")}
-            maxLength={120}
+      {/* On a laptop the card sits beside the form and stays in view while it is filled in; on a
+          phone they follow each other. One narrow column in a wide page read as unfinished. */}
+      <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8 lg:space-y-0">
+        <section className="space-y-3 rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-[calc(var(--sf-header-offset,0px)+1rem)]">
+          <h2 className="text-sm font-semibold">{t("اختر البطاقة", "Choose the card")}</h2>
+          <GiftCardDesigner
+            kit={kit}
+            value={cardDesign}
+            onChange={(next) => setDesign(next)}
+            details={previewDetails}
+            primary={lang}
+            lang={lang}
           />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="gift-from">
-            {t("من (كما يُكتب على البطاقة، اختياري)", "From (as written on the card, optional)")}
-          </Label>
-          <Input
-            id="gift-from"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            maxLength={80}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="gift-message">
-            {t("رسالة لهم (اختياري)", "A note for them (optional)")}
-          </Label>
-          <Textarea
-            id="gift-message"
-            value={form.message}
-            onChange={set("message")}
-            maxLength={300}
-            rows={2}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
-        <h2 className="text-sm font-semibold">{t("بياناتك", "Your details")}</h2>
-        <div className="space-y-1.5">
-          <Label htmlFor="gift-buyer-name">{t("الاسم", "Name")}</Label>
-          <Input
-            id="gift-buyer-name"
-            value={form.name}
-            onChange={set("name")}
-            autoComplete="name"
-            maxLength={120}
-            aria-invalid={problem("name")}
-          />
-          {problem("name") && (
-            <p className="text-xs text-destructive">{t("اكتب اسمك.", "Write your name.")}</p>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <p id="gift-delivery-label" className="text-sm font-medium">
-            {t("أرسلوا لي رمز البطاقة على", "Send me the card's code by")}
-          </p>
-          <div
-            role="radiogroup"
-            aria-labelledby="gift-delivery-label"
-            className="grid grid-cols-2 gap-2"
-          >
-            {(["whatsapp", "email"] as BuyDelivery[]).map((delivery) => (
-              <DeliveryChoice
-                key={delivery}
-                delivery={delivery}
-                chosen={form.delivery === delivery}
-                onChoose={() => setForm((current) => ({ ...current, delivery }))}
-                t={t}
-              />
-            ))}
-          </div>
-          {problem("delivery") && (
-            <p className="text-xs text-destructive">
-              {t("اختر كيف يصلك الرمز.", "Choose how the code reaches you.")}
+        </section>
+        <div className="space-y-6">
+          <section className="space-y-2 rounded-2xl border border-border bg-card p-5">
+            <p id="gift-amount-label" className="text-sm font-semibold">
+              {t("القيمة", "Amount")}
             </p>
-          )}
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="gift-buyer-phone">
-              {form.delivery === "whatsapp"
-                ? t("رقم الهاتف (واتساب)", "Phone number (WhatsApp)")
-                : t("رقم الهاتف (اختياري)", "Phone number (optional)")}
-            </Label>
-            <Input
-              id="gift-buyer-phone"
-              value={form.phone}
-              onChange={set("phone")}
-              inputMode="tel"
-              autoComplete="tel"
-              dir="ltr"
-              maxLength={32}
-              aria-invalid={problem("phone")}
-            />
-            {problem("phone") && (
-              <p className="text-xs text-destructive">
-                {t("اكتب رقم هاتف صحيحًا.", "Write a valid phone number.")}
-              </p>
-            )}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="gift-buyer-email">
-              {form.delivery === "email"
-                ? t("البريد الإلكتروني", "Email")
-                : t("البريد (اختياري)", "Email (optional)")}
-            </Label>
-            <Input
-              id="gift-buyer-email"
-              type="email"
-              value={form.email}
-              onChange={set("email")}
-              autoComplete="email"
-              dir="ltr"
-              maxLength={200}
-              aria-invalid={problem("email")}
-            />
-            {problem("email") && (
-              <p className="text-xs text-destructive">
-                {t("اكتب بريدًا صحيحًا.", "Write a valid email address.")}
-              </p>
-            )}
-          </div>
-        </div>
-        {session && (
-          <p className="text-xs text-muted-foreground">
-            {t(
-              "ستجد البطاقة ورمزها في حسابك أيضًا.",
-              "You will also find the card and its code in your account.",
-            )}
-          </p>
-        )}
-      </section>
-
-      <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
-        <p id="gift-method-label" className="text-sm font-semibold">
-          {t("طريقة الدفع", "Payment")}
-        </p>
-        <div
-          role="radiogroup"
-          aria-labelledby="gift-method-label"
-          className="grid gap-2 sm:grid-cols-2"
-        >
-          {methods.map((method) => (
-            <MethodChoice
-              key={method}
-              method={method}
-              chosen={form.method === method}
-              onChoose={() => setForm((current) => ({ ...current, method }))}
+            <GiftAmountPicker
+              offer={offer}
+              amount={form.amount}
+              onChange={(amount) => setForm((current) => ({ ...current, amount }))}
+              money={money}
+              invalid={problem("amount")}
+              lang={lang}
               t={t}
             />
-          ))}
-        </div>
-        {problem("method") && (
-          <p className="text-xs text-destructive">{t("اختر طريقة الدفع.", "Choose how to pay.")}</p>
-        )}
-        {form.method === "benefit" && (
-          <BenefitTransferDetails
-            brand={brand}
-            settings={settings}
-            receipt={receipt}
-            setReceipt={setReceipt}
-            t={t}
-          />
-        )}
-        {problem("receipt") && (
-          <p className="text-xs text-destructive">
-            {t("أرفق صورة إيصال التحويل.", "Attach the transfer receipt.")}
-          </p>
-        )}
-      </section>
+            {validity && <p className="text-xs text-muted-foreground">{validity}</p>}
+          </section>
 
-      <Button type="submit" className="min-h-12 w-full text-base" disabled={busy}>
-        {busy && <Loader2 className="me-2 size-4 animate-spin" aria-hidden="true" />}
-        {total !== null
-          ? t(`شراء البطاقة · ${money(total)}`, `Buy the card · ${money(total)}`)
-          : t("شراء البطاقة", "Buy the card")}
-      </Button>
-      <p className="text-center text-xs text-muted-foreground">
-        {form.method === "benefit"
-          ? t(
-              "يصلك رمز البطاقة بعد أن يتحقق المتجر من التحويل.",
-              "You get the card's code once the store checks the transfer.",
-            )
-          : t(
-              "يظهر رمز البطاقة فور إتمام الدفع، ويصلك كما اخترت.",
-              "The card's code shows as soon as you pay, and reaches you as you chose.",
+          {offer.print && (
+            <PrintSection
+              form={form}
+              setForm={setForm}
+              fee={money(offer.printFee)}
+              freePrint={offer.printFee === 0}
+              problem={problem}
+              addons={addons}
+              currency={offer.currency}
+              lang={lang}
+              t={t}
+            />
+          )}
+
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <h2 className="text-sm font-semibold">{t("لمن البطاقة", "Who it is for")}</h2>
+            <div className="space-y-1.5">
+              <Label htmlFor="gift-recipient">{t("الاسم (اختياري)", "Name (optional)")}</Label>
+              <Input
+                id="gift-recipient"
+                value={form.recipient}
+                onChange={set("recipient")}
+                maxLength={120}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="gift-from">
+                {t(
+                  "من (كما يُكتب على البطاقة، اختياري)",
+                  "From (as written on the card, optional)",
+                )}
+              </Label>
+              <Input
+                id="gift-from"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+                maxLength={80}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="gift-message">
+                {t("رسالة لهم (اختياري)", "A note for them (optional)")}
+              </Label>
+              <Textarea
+                id="gift-message"
+                value={form.message}
+                onChange={set("message")}
+                maxLength={300}
+                rows={2}
+              />
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <h2 className="text-sm font-semibold">{t("بياناتك", "Your details")}</h2>
+            <div className="space-y-1.5">
+              <Label htmlFor="gift-buyer-name">{t("الاسم", "Name")}</Label>
+              <Input
+                id="gift-buyer-name"
+                value={form.name}
+                onChange={set("name")}
+                autoComplete="name"
+                maxLength={120}
+                aria-invalid={problem("name")}
+              />
+              {problem("name") && (
+                <p className="text-xs text-destructive">{t("اكتب اسمك.", "Write your name.")}</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <p id="gift-delivery-label" className="text-sm font-medium">
+                {t("أرسلوا لي رمز البطاقة على", "Send me the card's code by")}
+              </p>
+              <div
+                role="radiogroup"
+                aria-labelledby="gift-delivery-label"
+                className="grid grid-cols-2 gap-2"
+              >
+                {(["whatsapp", "email"] as BuyDelivery[]).map((delivery) => (
+                  <DeliveryChoice
+                    key={delivery}
+                    delivery={delivery}
+                    chosen={form.delivery === delivery}
+                    onChoose={() => setForm((current) => ({ ...current, delivery }))}
+                    t={t}
+                  />
+                ))}
+              </div>
+              {problem("delivery") && (
+                <p className="text-xs text-destructive">
+                  {t("اختر كيف يصلك الرمز.", "Choose how the code reaches you.")}
+                </p>
+              )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="gift-buyer-phone">
+                  {form.delivery === "whatsapp"
+                    ? t("رقم الهاتف (واتساب)", "Phone number (WhatsApp)")
+                    : t("رقم الهاتف (اختياري)", "Phone number (optional)")}
+                </Label>
+                <Input
+                  id="gift-buyer-phone"
+                  value={form.phone}
+                  onChange={set("phone")}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  dir="ltr"
+                  maxLength={32}
+                  aria-invalid={problem("phone")}
+                />
+                {problem("phone") && (
+                  <p className="text-xs text-destructive">
+                    {t("اكتب رقم هاتف صحيحًا.", "Write a valid phone number.")}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="gift-buyer-email">
+                  {form.delivery === "email"
+                    ? t("البريد الإلكتروني", "Email")
+                    : t("البريد (اختياري)", "Email (optional)")}
+                </Label>
+                <Input
+                  id="gift-buyer-email"
+                  type="email"
+                  value={form.email}
+                  onChange={set("email")}
+                  autoComplete="email"
+                  dir="ltr"
+                  maxLength={200}
+                  aria-invalid={problem("email")}
+                />
+                {problem("email") && (
+                  <p className="text-xs text-destructive">
+                    {t("اكتب بريدًا صحيحًا.", "Write a valid email address.")}
+                  </p>
+                )}
+              </div>
+            </div>
+            {session && (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "ستجد البطاقة ورمزها في حسابك أيضًا.",
+                  "You will also find the card and its code in your account.",
+                )}
+              </p>
             )}
-        {printing &&
-          ` ${t(
-            "ويطبع المتجر البطاقة ويوصلها إلى العنوان الذي كتبته.",
-            "The store prints the card and delivers it to the address you wrote.",
-          )}`}
-      </p>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-border bg-card p-5">
+            <p id="gift-method-label" className="text-sm font-semibold">
+              {t("طريقة الدفع", "Payment")}
+            </p>
+            <div
+              role="radiogroup"
+              aria-labelledby="gift-method-label"
+              className="grid gap-2 sm:grid-cols-2"
+            >
+              {methods.map((method) => (
+                <MethodChoice
+                  key={method}
+                  method={method}
+                  chosen={form.method === method}
+                  onChoose={() => setForm((current) => ({ ...current, method }))}
+                  t={t}
+                />
+              ))}
+            </div>
+            {problem("method") && (
+              <p className="text-xs text-destructive">
+                {t("اختر طريقة الدفع.", "Choose how to pay.")}
+              </p>
+            )}
+            {form.method === "benefit" && (
+              <BenefitTransferDetails
+                brand={brand}
+                settings={settings}
+                receipt={receipt}
+                setReceipt={setReceipt}
+                t={t}
+              />
+            )}
+            {problem("receipt") && (
+              <p className="text-xs text-destructive">
+                {t("أرفق صورة إيصال التحويل.", "Attach the transfer receipt.")}
+              </p>
+            )}
+          </section>
+
+          <Button type="submit" className="min-h-12 w-full text-base" disabled={busy}>
+            {busy && <Loader2 className="me-2 size-4 animate-spin" aria-hidden="true" />}
+            {total !== null
+              ? t(`شراء البطاقة · ${money(total)}`, `Buy the card · ${money(total)}`)
+              : t("شراء البطاقة", "Buy the card")}
+          </Button>
+          <p className="text-center text-xs text-muted-foreground">
+            {form.method === "benefit"
+              ? t(
+                  "يصلك رمز البطاقة بعد أن يتحقق المتجر من التحويل.",
+                  "You get the card's code once the store checks the transfer.",
+                )
+              : t(
+                  "يظهر رمز البطاقة فور إتمام الدفع، ويصلك كما اخترت.",
+                  "The card's code shows as soon as you pay, and reaches you as you chose.",
+                )}
+            {printing &&
+              ` ${t(
+                "ويطبع المتجر البطاقة ويوصلها إلى العنوان الذي كتبته.",
+                "The store prints the card and delivers it to the address you wrote.",
+              )}`}
+          </p>
+        </div>
+      </div>
     </form>
   );
 }

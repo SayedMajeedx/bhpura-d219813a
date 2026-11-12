@@ -138,12 +138,19 @@ export function StoreShell() {
           </>
         )}
       </div>
-      <main id="store-main" tabIndex={-1} className="flex-1 focus:outline-none">
+      {/* At least the first screen under the header: while a page draws its loading state the
+          footer (about 700px on a phone) would fill the screen and then be pushed down, which
+          read as the page jumping (the audit of 2026-11-12: gift cards 0.59, account 0.81). */}
+      <main
+        id="store-main"
+        tabIndex={-1}
+        className="min-h-[calc(100svh-var(--sf-header-h,0px))] flex-1 focus:outline-none"
+      >
         <Outlet />
       </main>
       {/* Checkout keeps the shopper on the form: no footer to wander off through. */}
       {!isCheckout && <StorefrontFooter />}
-      <WhatsAppFab />
+      <WhatsAppFab tucked={headerHidden} />
       {/* Inside the shell on purpose: the consent banner used to render outside
           this element and inherited the admin font stack, which pulled ~229 KB
           of fonts (Readex Pro + Zarid Display) that nothing else on the

@@ -8,9 +8,11 @@ import { useBottomBarClaimed } from "@/lib/bottom-bar-store";
 /**
  * The floating WhatsApp button, raised above a page's own bar at the foot of the
  * screen (a menu's basket), left to the buy bar on a phone's product page, and
- * left out at checkout.
+ * left out at checkout. On a phone it steps away while the shopper scrolls down (`tucked`, when the
+ * header does): held in the corner it sat over the names and prices of the grid's last row (the
+ * audit of 2026-11-12). It comes back with the header, on a scroll up or at the top.
  */
-export function WhatsAppFab() {
+export function WhatsAppFab({ tucked = false }: { tucked?: boolean } = {}) {
   const { settings, lang, brand } = useStorefront();
   const { pathname } = useLocation();
   // Not read from `window` while rendering: the server has none, and an
@@ -46,12 +48,16 @@ export function WhatsAppFab() {
         hasStickyBottom
           ? "bottom-[calc(88px+env(safe-area-inset-bottom,0px))] md:bottom-6"
           : "bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:bottom-6"
-      } ${productPage ? "hidden md:grid" : "grid"} end-4 md:end-5 h-12 w-12 md:h-14 md:w-14 rounded-full place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
+      } ${productPage ? "hidden md:grid" : "grid"} ${
+        tucked
+          ? "pointer-events-none translate-y-[calc(100%+2rem)] opacity-0 focus-visible:pointer-events-auto focus-visible:translate-y-0 focus-visible:opacity-100 md:pointer-events-auto md:translate-y-0 md:opacity-100"
+          : ""
+      } end-4 md:end-5 h-12 w-12 md:h-14 md:w-14 rounded-full place-items-center shadow-lg hover:scale-110 active:scale-95 touch-manipulation`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",
         transition:
-          "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
+          "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), scale 0.4s cubic-bezier(0.25, 1, 0.5, 1), translate var(--motion-fast) var(--motion-ease-smooth), opacity var(--motion-fast) var(--motion-ease-smooth), bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
         willChange: "transform",
       }}
     >

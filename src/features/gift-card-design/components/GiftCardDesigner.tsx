@@ -89,7 +89,8 @@ export function GiftCardDesigner({
               aria-checked={value.occasion === occasion.id}
               variant={value.occasion === occasion.id ? "default" : "outline"}
               size="sm"
-              className="shrink-0 snap-start rounded-full"
+              // A sideways row clips a button's wider tap area, so on a finger the chip is 44px itself.
+              className="shrink-0 snap-start rounded-full pointer-coarse:h-11"
               onClick={() => pickOccasion(occasion.id)}
             >
               {occasion.name[lang]}
