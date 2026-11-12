@@ -395,19 +395,24 @@ describe("a gift card order", () => {
 });
 
 describe("selling cards on the store", () => {
-  it("saves the store's offer: on, its amounts as typed and how long a card lasts", async () => {
+  it("saves the store's offer: on, its least and most amount and how long a card lasts", async () => {
     profile.allowed = true;
     data.settings = null;
     data.purchases = [];
     wrap(<GiftCardsPage />);
     fireEvent.click(screen.getByRole("tab", { name: "Settings" }));
     fireEvent.click(await screen.findByRole("switch", { name: "Sell gift cards on the store" }));
-    fireEvent.change(screen.getByLabelText(/Amounts offered/), { target: { value: "50, 25" } });
+    fireEvent.change(screen.getByLabelText("Least"), { target: { value: "50" } });
+    fireEvent.change(screen.getByLabelText("Most"), { target: { value: "40" } });
+    expect(screen.getByText("The least is 1 or more, and not above the most.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText("Least"), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() =>
       expect(data.saveGiftCardSettings).toHaveBeenCalledWith("b1", {
         sellOnline: true,
-        amounts: [25, 50],
+        minAmount: 5,
+        maxAmount: 40,
         validMonths: 12,
       }),
     );

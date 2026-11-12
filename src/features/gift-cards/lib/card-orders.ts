@@ -49,8 +49,46 @@ export const ORDER_STEP_WORDS: Record<OrderStep, { ar: string; en: string }> = {
 };
 
 /** What the buyer paid: the card's value, plus the store's fee when it prints the card. */
-export function orderTotal(purchase: Pick<GiftCardPurchase, "amount" | "print_fee">): number {
-  return Math.round((Number(purchase.amount) + Number(purchase.print_fee ?? 0)) * 1000) / 1000;
+/** The gift add-ons a printed card goes with, as sold: "Roses × 2" in the reader's language. */
+export function purchaseAddons(
+  purchase: { addons?: unknown },
+  lang: "ar" | "en",
+): Array<{ name: string; quantity: number; price: number }> {
+  if (!Array.isArray(purchase.addons)) return [];
+  return purchase.addons
+    .map((raw) => {
+      const a = (raw ?? {}) as Record<string, unknown>;
+      const ar = typeof a.name_ar === "string" ? a.name_ar : "";
+      const en = typeof a.name_en === "string" ? a.name_en : "";
+      return {
+        name: (lang === "ar" ? ar || en : en || ar).trim(),
+        quantity: Math.max(1, Number(a.quantity) || 1),
+        price: Number(a.price) || 0,
+      };
+    })
+    .filter((a) => a.name !== "");
+}
+
+/** "Roses × 2, Chocolate": what to prepare with the card. */
+export const addonsLine = (
+  addons: ReadonlyArray<{ name: string; quantity: number }>,
+  lang: "ar" | "en",
+) =>
+  addons
+    .map((a) => (a.quantity > 1 ? `${a.name} × ${a.quantity}` : a.name))
+    .join(lang === "ar" ? "، " : ", ");
+
+export function orderTotal(
+  purchase: Pick<GiftCardPurchase, "amount" | "print_fee"> & { addons_total?: number | null },
+): number {
+  return (
+    Math.round(
+      (Number(purchase.amount) +
+        Number(purchase.print_fee ?? 0) +
+        Number(purchase.addons_total ?? 0)) *
+        1000,
+    ) / 1000
+  );
 }
 
 export function orderGroup(purchase: GiftCardPurchase): OrderGroup {

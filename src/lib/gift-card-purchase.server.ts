@@ -27,6 +27,7 @@ export type PurchaseRow = {
   amount: number;
   /** The store's fee for printing and delivering the card (0 for a digital card). */
   print_fee: number;
+  addons_total: number;
   currency: string;
   status: string;
   payment_method: string;
@@ -35,7 +36,7 @@ export type PurchaseRow = {
 };
 
 export const PURCHASE_COLUMNS =
-  "id, brand_id, amount, print_fee, currency, status, payment_method, gateway_reference, token";
+  "id, brand_id, amount, print_fee, addons_total, currency, status, payment_method, gateway_reference, token";
 
 export async function tapKey(admin: Admin, brandId: string): Promise<string | null> {
   const { data, error } = await (admin.rpc as unknown as Rpc)("get_integration_credential_secret", {

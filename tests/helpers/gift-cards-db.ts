@@ -12,6 +12,7 @@ import storePrints from "../../supabase/migrations/20261124100000_gift_card_stor
 import printFees from "../../supabase/migrations/20261125100000_gift_card_print_fee_reports_and_emails.sql?raw";
 import printInSales from "../../supabase/migrations/20261126100000_gift_card_print_fee_in_sales.sql?raw";
 import giftLink from "../../supabase/migrations/20261201100000_gift_card_gift_link.sql?raw";
+import rangeAndAddons from "../../supabase/migrations/20261206100000_gift_card_amount_range_and_addons.sql?raw";
 
 /**
  * A real Postgres (PGlite) with the gift cards' four migrations and the live payment state
@@ -99,6 +100,12 @@ export const GIFT_CARD_SCHEMA = `
     media jsonb NOT NULL DEFAULT '[]'::jsonb, is_active boolean NOT NULL DEFAULT true,
     created_at timestamptz NOT NULL DEFAULT now()
   );
+  -- The store's gift add-ons, with the columns a purchase reads (migration 20261203100000).
+  CREATE TABLE public.gift_addons (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), brand_id uuid NOT NULL,
+    name_ar text NOT NULL, name_en text NOT NULL, price numeric(12, 3) NOT NULL,
+    is_available boolean NOT NULL DEFAULT true, archived_at timestamptz
+  );
 `;
 
 export async function giftCardDb(): Promise<PGlite> {
@@ -118,6 +125,7 @@ export async function giftCardDb(): Promise<PGlite> {
     printFees,
     printInSales,
     giftLink,
+    rangeAndAddons,
   ]) {
     await db.exec(step);
   }

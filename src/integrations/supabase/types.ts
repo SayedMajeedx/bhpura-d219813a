@@ -3706,6 +3706,8 @@ export type Database = {
       gift_card_purchases: {
         Row: {
           amount: number;
+          addons: Json;
+          addons_total: number;
           brand_id: string;
           buyer_email: string | null;
           buyer_name: string;
@@ -3745,6 +3747,8 @@ export type Database = {
         };
         Insert: {
           amount: number;
+          addons: Json;
+          addons_total: number;
           brand_id: string;
           buyer_email?: string | null;
           buyer_name: string;
@@ -3784,6 +3788,8 @@ export type Database = {
         };
         Update: {
           amount?: number;
+          addons?: Json;
+          addons_total?: number;
           brand_id?: string;
           buyer_email?: string | null;
           buyer_name?: string;
@@ -3841,6 +3847,8 @@ export type Database = {
       gift_card_settings: {
         Row: {
           amounts: number[];
+          max_amount: number | null;
+          min_amount: number | null;
           brand_id: string;
           card_designs: Json;
           print_enabled: boolean;
@@ -3852,6 +3860,8 @@ export type Database = {
         };
         Insert: {
           amounts?: number[];
+          max_amount?: number | null;
+          min_amount?: number | null;
           brand_id: string;
           card_designs?: Json;
           print_enabled?: boolean;
@@ -3863,6 +3873,8 @@ export type Database = {
         };
         Update: {
           amounts?: number[];
+          max_amount?: number | null;
+          min_amount?: number | null;
           brand_id?: string;
           card_designs?: Json;
           print_enabled?: boolean;
@@ -12794,6 +12806,8 @@ export type Database = {
         Args: {
           p_amounts: number[];
           p_brand_id: string;
+          p_max_amount?: number;
+          p_min_amount?: number;
           p_sell_online: boolean;
           p_valid_months?: number;
         };

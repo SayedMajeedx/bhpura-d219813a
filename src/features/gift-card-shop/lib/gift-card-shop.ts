@@ -1,5 +1,6 @@
 import type { GiftCardOffer } from "@/lib/data/gift-cards/online";
 import { countOf } from "@/lib/arabic-count";
+import { addonsTotal, type ChosenAddons, type GiftAddon } from "@/lib/gift-addons";
 
 /**
  * Buying a gift card on the storefront (step four of docs/gift-cards-plan.md): what a purchase
@@ -27,6 +28,8 @@ export type BuyForm = {
   print: boolean;
   printAddress: string;
   printPhone: string;
+  /** The store's gift add-ons chosen with a card it prints: id and how many. */
+  addons: ChosenAddons;
 };
 
 export const emptyBuyForm = (): BuyForm => ({
@@ -42,7 +45,41 @@ export const emptyBuyForm = (): BuyForm => ({
   print: false,
   printAddress: "",
   printPhone: "",
+  addons: {},
 });
+
+/** An amount the store sells: a whole number from its least to its most. */
+export function amountInRange(
+  amount: number | null,
+  offer: Pick<GiftCardOffer, "minAmount" | "maxAmount">,
+): boolean {
+  return (
+    amount !== null &&
+    Number.isInteger(amount) &&
+    amount >= offer.minAmount &&
+    amount <= offer.maxAmount
+  );
+}
+
+/** The amount typed in the field ("25", "٢٥"), or null while it is not a number. */
+export function typedAmount(text: string): number | null {
+  const western = text
+    .trim()
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[٫,]/g, ".");
+  if (!/^\d+(\.\d+)?$/.test(western)) return null;
+  const n = Number(western);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Where a new card starts on the slider: about a third of the way, on a round amount. */
+export function startAmount(offer: Pick<GiftCardOffer, "minAmount" | "maxAmount">): number {
+  const { minAmount: lo, maxAmount: hi } = offer;
+  const third = lo + (hi - lo) / 3;
+  const step = hi - lo >= 50 ? 10 : 5;
+  const round = Math.round(third / step) * step;
+  return Math.min(hi, Math.max(lo, round));
+}
 
 /** The methods a shopper can pay a card with here: the store's card and BenefitPay. */
 export function buyMethods(offer: Pick<GiftCardOffer, "card" | "benefit">): BuyMethod[] {
@@ -67,7 +104,7 @@ const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export function buyProblems(form: BuyForm, offer: GiftCardOffer): BuyProblem[] {
   const problems: BuyProblem[] = [];
-  if (form.amount === null || !offer.amounts.includes(form.amount)) problems.push("amount");
+  if (!amountInRange(form.amount, offer)) problems.push("amount");
   if (!form.method || !buyMethods(offer).includes(form.method)) problems.push("method");
   if (!form.delivery) problems.push("delivery");
   if (!form.name.trim()) problems.push("name");
@@ -96,16 +133,20 @@ export function wantsPrint(
 }
 
 /**
- * What the buyer pays: the card's value, plus the store's fee when it prints and delivers it.
- * The card holds its value only; the database writes the same sum (`total_due`).
+ * What the buyer pays: the card's value, plus the store's fee and the chosen add-ons when it
+ * prints and delivers it. The card holds its value only; the database writes the same sum
+ * (`total_due`), pricing the add-ons from the store's own rows.
  */
 export function buyTotal(
-  form: Pick<BuyForm, "amount" | "print">,
+  form: Pick<BuyForm, "amount" | "print"> & { addons?: ChosenAddons },
   offer: Pick<GiftCardOffer, "print" | "printFee">,
+  addons: readonly GiftAddon[] = [],
 ): number | null {
   if (form.amount === null) return null;
-  const fee = wantsPrint(form, offer) ? offer.printFee : 0;
-  return Math.round((form.amount + fee) * 1000) / 1000;
+  const printing = wantsPrint(form, offer);
+  const fee = printing ? offer.printFee : 0;
+  const extras = printing ? addonsTotal(form.addons ?? {}, addons) : 0;
+  return Math.round((form.amount + fee + extras) * 1000) / 1000;
 }
 
 /** "Valid for 12 months from purchase", or nothing for a card with no end date. */
@@ -124,6 +165,10 @@ const FAILURES: Record<string, { ar: string; en: string }> = {
   GIFT_CARD_AMOUNT_NOT_OFFERED: {
     ar: "هذه القيمة لم تعد متاحة. اختر قيمة أخرى.",
     en: "That amount is no longer offered. Choose another.",
+  },
+  GIFT_ADDON_UNAVAILABLE: {
+    ar: "إحدى الإضافات لم تعد متاحة. راجع الإضافات وحاول مرة أخرى.",
+    en: "One of the add-ons is no longer offered. Check the add-ons and try again.",
   },
   PAYMENT_METHOD_DISABLED: {
     ar: "طريقة الدفع هذه غير متاحة الآن.",

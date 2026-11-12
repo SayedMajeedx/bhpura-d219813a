@@ -50,6 +50,11 @@ const START = z.object({
       .object({
         address: z.string().trim().min(3).max(400),
         phone: z.string().trim().min(6).max(32),
+        /** The store's gift add-ons with it: ids and how many, priced by the database. */
+        addons: z
+          .array(z.object({ id: z.string().uuid(), quantity: z.number().int().min(1).max(10) }))
+          .max(20)
+          .optional(),
       })
       .optional(),
   }),

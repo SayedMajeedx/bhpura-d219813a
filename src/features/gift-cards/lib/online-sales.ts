@@ -1,27 +1,52 @@
 import type { GiftCardPurchase } from "@/lib/data/gift-cards/online";
 
 /**
- * Selling cards online, on the store's side (step four of docs/gift-cards-plan.md): the amounts
- * typed as one line, the purchases staff act on first, and how a purchase reads.
+ * Selling cards online, on the store's side (step four of docs/gift-cards-plan.md): the range of
+ * amounts a buyer chooses from, the purchases staff act on first, and how a purchase reads.
  */
 
-/** "25, 50 100" → [25, 50, 100]: positive, at most 8, no repeats, smallest first. */
-export function amountsFromText(text: string): { amounts: number[]; invalid: boolean } {
-  const parts = text
-    .split(/[\s,،؛;]+/)
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const numbers = parts.map((part) =>
-    Number(part.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))),
-  );
-  const invalid = numbers.some((n) => !Number.isFinite(n) || n <= 0 || n > 100_000);
-  const amounts = [...new Set(numbers.filter((n) => Number.isFinite(n) && n > 0 && n <= 100_000))]
-    .map((n) => Math.round(n * 1000) / 1000)
-    .sort((a, b) => a - b);
-  return { amounts, invalid: invalid || amounts.length > 8 };
+const westernDigits = (text: string) =>
+  text.trim().replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+
+export type RangeProblem = "missing" | "whole" | "order" | "too_high";
+
+/**
+ * The least and most amount a buyer may choose, as typed ("5", "٤٠"): whole numbers from 1 to
+ * 100,000, the least not above the most (the database's `gift_card_settings_range_check`).
+ */
+export function rangeFromText(
+  minText: string,
+  maxText: string,
+): { min: number; max: number; problem: null } | { problem: RangeProblem } {
+  const lo = westernDigits(minText);
+  const hi = westernDigits(maxText);
+  if (!lo || !hi) return { problem: "missing" };
+  if (!/^\d+$/.test(lo) || !/^\d+$/.test(hi)) return { problem: "whole" };
+  const min = Number(lo);
+  const max = Number(hi);
+  if (min < 1 || min > max) return { problem: "order" };
+  if (max > 100_000) return { problem: "too_high" };
+  return { min, max, problem: null };
 }
 
-export const amountsText = (amounts: readonly number[]) => amounts.join(", ");
+/** A saved store's range, as its fields open: its own, else its old list's least and most. */
+export function rangeText(
+  settings: {
+    min_amount?: number | null;
+    max_amount?: number | null;
+    amounts?: readonly number[] | null;
+  } | null,
+): { min: string; max: string } {
+  if (settings?.min_amount != null && settings.max_amount != null) {
+    return { min: String(Number(settings.min_amount)), max: String(Number(settings.max_amount)) };
+  }
+  const amounts = (settings?.amounts ?? []).map(Number).filter((n) => n > 0);
+  if (amounts.length === 0) return { min: "5", max: "100" };
+  return {
+    min: String(Math.max(1, Math.ceil(Math.min(...amounts)))),
+    max: String(Math.floor(Math.max(...amounts))),
+  };
+}
 
 /** The printing fee as typed ("2.5", "٢٫٥"): 0 to 1000 to the fils, or null when it is not one. */
 export function printFeeFromText(text: string): number | null {

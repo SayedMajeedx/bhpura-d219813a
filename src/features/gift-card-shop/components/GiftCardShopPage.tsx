@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { giftCardOnlineQueries, type GiftCardOffer } from "@/lib/data/gift-cards/online";
+import { giftOrderQueries } from "@/lib/data/gift-orders";
+import { addonsPayload } from "@/lib/gift-addons";
 import { startGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { BenefitTransferDetails } from "@/features/checkout/components/BenefitTransferDetails";
-import { cn } from "@/lib/utils";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { giftCardPixelPayload } from "@/lib/ad-events/gift-card-events";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
@@ -21,12 +22,14 @@ import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
 import { useStorefrontCardKit } from "../hooks/use-storefront-card-kit";
 import { Choice } from "./BuyChoice";
 import { PrintSection } from "./PrintSection";
+import { GiftAmountPicker } from "./GiftAmountPicker";
 import {
   buyMethods,
   buyProblems,
   buyTotal,
   emptyBuyForm,
   purchaseFailure,
+  startAmount,
   validityLine,
   wantsPrint,
   type BuyDelivery,
@@ -35,7 +38,7 @@ import {
 } from "../lib/gift-card-shop";
 
 /**
- * Buying a gift card: one of the store's amounts, who it is for and a line for them, who buys it,
+ * Buying a gift card: an amount in the store's range (a slider, or typed), who it is for and a line for them, who buys it,
  * and paying by card (to the gateway) or by BenefitPay transfer with its receipt. A card is money
  * the store holds: no VAT. Its code shows on the purchase's own page once the payment is in.
  * A card on paper is printed by the store and delivered, for the store's own fee on top of the
@@ -83,6 +86,7 @@ function BuyForm({
   const methods = buyMethods(offer);
   const [form, setForm] = useState<BuyForm>(() => ({
     ...emptyBuyForm(),
+    amount: startAmount(offer),
     method: methods.length === 1 ? methods[0] : "",
     email: session?.user?.email ?? "",
   }));
@@ -98,7 +102,9 @@ function BuyForm({
   const [busy, setBusy] = useState(false);
   const problems = buyProblems({ ...form, hasReceipt: Boolean(receipt) }, offer);
   const printing = wantsPrint(form, offer);
-  const total = buyTotal(form, offer);
+  // The store's gift add-ons, offered with a card it prints and delivers.
+  const addons = useQuery(giftOrderQueries.addons(brand.slug, offer.print)).data ?? [];
+  const total = buyTotal(form, offer, addons);
   const money = (n: number) => formatPrice(n, offer.currency, lang);
   // The ad platforms hear of a card as of any product: viewed, checkout begun, bought.
   const pixelPayload = (purchaseId?: string) =>
@@ -153,7 +159,13 @@ function BuyForm({
             lang,
             design: cardDesign,
             ...(printing
-              ? { print: { address: form.printAddress.trim(), phone: form.printPhone.trim() } }
+              ? {
+                  print: {
+                    address: form.printAddress.trim(),
+                    phone: form.printPhone.trim(),
+                    addons: addonsPayload(form.addons, addons),
+                  },
+                }
               : {}),
           },
           receiptId,
@@ -231,32 +243,15 @@ function BuyForm({
         <p id="gift-amount-label" className="text-sm font-semibold">
           {t("القيمة", "Amount")}
         </p>
-        <div
-          role="radiogroup"
-          aria-labelledby="gift-amount-label"
-          className="grid grid-cols-2 gap-2 sm:grid-cols-3"
-        >
-          {offer.amounts.map((amount) => (
-            <button
-              key={amount}
-              type="button"
-              role="radio"
-              aria-checked={form.amount === amount}
-              onClick={() => setForm((current) => ({ ...current, amount }))}
-              className={cn(
-                "min-h-14 rounded-xl border px-3 text-base font-semibold tabular-nums transition-colors",
-                form.amount === amount
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:border-primary",
-              )}
-            >
-              {money(amount)}
-            </button>
-          ))}
-        </div>
-        {problem("amount") && (
-          <p className="text-xs text-destructive">{t("اختر قيمة البطاقة.", "Choose an amount.")}</p>
-        )}
+        <GiftAmountPicker
+          offer={offer}
+          amount={form.amount}
+          onChange={(amount) => setForm((current) => ({ ...current, amount }))}
+          money={money}
+          invalid={problem("amount")}
+          lang={lang}
+          t={t}
+        />
         {validity && <p className="text-xs text-muted-foreground">{validity}</p>}
       </section>
 
@@ -267,6 +262,9 @@ function BuyForm({
           fee={money(offer.printFee)}
           freePrint={offer.printFee === 0}
           problem={problem}
+          addons={addons}
+          currency={offer.currency}
+          lang={lang}
           t={t}
         />
       )}

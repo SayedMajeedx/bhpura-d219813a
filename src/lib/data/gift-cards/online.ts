@@ -12,6 +12,9 @@ import type { Tables } from "@/integrations/supabase/types";
 export type GiftCardOffer = {
   brandId: string;
   amounts: number[];
+  /** The least and most a buyer may choose, in whole units (migration 20261206100000). */
+  minAmount: number;
+  maxAmount: number;
   currency: string;
   validMonths: number | null;
   card: boolean;
@@ -27,10 +30,13 @@ export function readOffer(raw: unknown): GiftCardOffer | null {
   const amounts = Array.isArray(offer.amounts)
     ? offer.amounts.map(Number).filter((n) => n > 0)
     : [];
-  if (amounts.length === 0) return null;
+  const range = offerRange(offer.min_amount, offer.max_amount, amounts);
+  if (!range) return null;
   return {
     brandId: String(offer.brand_id ?? ""),
     amounts,
+    minAmount: range.min,
+    maxAmount: range.max,
     currency: String(offer.currency ?? "BHD"),
     validMonths: offer.valid_months == null ? null : Number(offer.valid_months),
     card: offer.card === true,
@@ -38,6 +44,33 @@ export function readOffer(raw: unknown): GiftCardOffer | null {
     print: offer.print === true,
     printFee: Math.max(0, Number(offer.print_fee) || 0),
   };
+}
+
+/**
+ * The store's range: its own least and most, else (a store not saved since the range) its list's
+ * least and most in whole units, as the migration turned every list into a range.
+ */
+export function offerRange(
+  min: unknown,
+  max: unknown,
+  amounts: readonly number[],
+): { min: number; max: number } | null {
+  const lo = Number(min);
+  const hi = Number(max);
+  if (
+    min != null &&
+    max != null &&
+    Number.isFinite(lo) &&
+    Number.isFinite(hi) &&
+    lo >= 1 &&
+    lo <= hi
+  ) {
+    return { min: lo, max: hi };
+  }
+  if (amounts.length === 0) return null;
+  const least = Math.max(1, Math.ceil(Math.min(...amounts)));
+  const most = Math.floor(Math.max(...amounts));
+  return least <= most ? { min: least, max: most } : null;
 }
 
 export async function fetchGiftCardOffer(slug: string): Promise<GiftCardOffer | null> {
@@ -60,13 +93,13 @@ export type GiftCardPurchase = Omit<Tables<"gift_card_purchases">, "token"> & {
 };
 
 export const PURCHASE_SELECT =
-  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, total_due, gift_cards(code, expires_on, balance, status, share_token)";
+  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, addons, addons_total, total_due, gift_cards(code, expires_on, balance, status, share_token)";
 
 export async function fetchGiftCardSettings(brandId: string): Promise<GiftCardSettings | null> {
   const { data, error } = await supabase
     .from("gift_card_settings")
     .select(
-      "brand_id, sell_online, amounts, valid_months, print_enabled, print_fee, updated_at, updated_by",
+      "brand_id, sell_online, amounts, min_amount, max_amount, valid_months, print_enabled, print_fee, updated_at, updated_by",
     )
     .eq("brand_id", brandId)
     .maybeSingle();
@@ -155,12 +188,15 @@ export const giftCardOnlineQueries = {
 
 export async function saveGiftCardSettings(
   brandId: string,
-  input: { sellOnline: boolean; amounts: number[]; validMonths: number | null },
+  input: { sellOnline: boolean; minAmount: number; maxAmount: number; validMonths: number | null },
 ) {
   const { data, error } = await supabase.rpc("set_gift_card_settings", {
     p_brand_id: brandId,
     p_sell_online: input.sellOnline,
-    p_amounts: input.amounts,
+    // The range is the store's amounts now; the list is left empty.
+    p_amounts: [],
+    p_min_amount: input.minAmount,
+    p_max_amount: input.maxAmount,
     ...(input.validMonths ? { p_valid_months: input.validMonths } : {}),
   });
   if (error) throw error;
