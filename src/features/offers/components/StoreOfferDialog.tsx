@@ -13,10 +13,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { formatMoney } from "@/lib/format";
 import { offerTerms, type OfferKind } from "@/lib/offers";
 import { cn } from "@/lib/utils";
+import { OfferAreasField } from "@/features/offers/components/OfferAreasField";
 import {
   OfferScopeFields,
   type ScopeCategory,
@@ -58,8 +58,8 @@ const KINDS: Array<{
     icon: Truck,
     ar: "توصيل مجاني",
     en: "Free delivery",
-    hintAr: "فوق مبلغ تختاره",
-    hintEn: "Over an amount you choose",
+    hintAr: "فوق مبلغ أو لمناطق تختارها",
+    hintEn: "Over an amount, or to areas you choose",
   },
 ];
 
@@ -338,21 +338,7 @@ export function StoreOfferDialog({
           )}
 
           {form.kind === "free_delivery" && (
-            <div className="flex items-start justify-between gap-3 rounded-xl border border-border p-3">
-              <Label htmlFor={field("local")} className="min-w-0 text-sm font-normal">
-                <span className="block font-medium">
-                  {isAr ? "للتوصيل المحلي فقط" : "Local deliveries only"}
-                </span>
-                <span className="block text-xs text-muted-foreground">
-                  {isAr ? "الشحن إلى الخارج يبقى برسومه." : "Shipping abroad keeps its fee."}
-                </span>
-              </Label>
-              <Switch
-                id={field("local")}
-                checked={form.local_only}
-                onCheckedChange={(checked) => patch({ local_only: checked })}
-              />
-            </div>
+            <OfferAreasField form={form} patch={patch} isAr={isAr} />
           )}
 
           <OfferScopeFields

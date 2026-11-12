@@ -816,7 +816,7 @@
       "authenticated": true,
       "reason": "A signed-in shopper's own gift card purchases (buyer_user_id = auth.uid()); nothing of anyone else's"
     },
-    "storefront_offers_preview(p_brand_slug text, p_items jsonb, p_promo_code text, p_fulfillment text, p_country text)": {
+    "storefront_offers_preview(p_brand_slug text, p_items jsonb, p_promo_code text, p_fulfillment text, p_country text, p_region text)": {
       "anon": true,
       "authenticated": true,
       "reason": "Checkout read by design: what a cart would get from an active store's offers (the order builder applies the same rule to the real order); reads only the store's own variants, at most 100 lines, writes nothing, and prices a code through validate_promo_code as the checkout already may"

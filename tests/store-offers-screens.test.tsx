@@ -228,3 +228,48 @@ describe("what a shopper sees", () => {
     expect(await screen.findByText(/Add .*4\.000.* more for free local delivery/)).toBeTruthy();
   });
 });
+
+describe("free delivery for chosen areas", () => {
+  it("chooses the areas by name and saves them, for deliveries in Bahrain", async () => {
+    state.offers = [];
+    withQuery(<StoreOffersSection brandId="b1" isAr={false} />);
+    fireEvent.click(await screen.findByRole("button", { name: /New offer/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: /Free delivery/ }));
+    fireEvent.click(within(dialog).getByRole("switch", { name: /Only for chosen areas/ }));
+    expect(within(dialog).getByText("Choose the areas free delivery is for.")).toBeTruthy();
+    for (const area of ["Sadad", "Dumistan"]) {
+      fireEvent.click(within(dialog).getByRole("combobox"));
+      fireEvent.click(await screen.findByRole("option", { name: new RegExp(`^${area}`) }));
+    }
+    expect(
+      within(dialog).getByText(/Shoppers read: Free delivery to Sadad and Dumistan$/),
+    ).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Remove Dumistan" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save offer" }));
+    await waitFor(() =>
+      expect(state.create).toHaveBeenCalledWith(
+        "b1",
+        expect.objectContaining({
+          kind: "free_delivery",
+          regions: ["sadad"],
+          local_only: true,
+          min_subtotal: null,
+        }),
+      ),
+    );
+  }, 20_000);
+
+  it("names the areas on the product page, and the cart promises it to no one", async () => {
+    state.storefront = shop({ cart: [{ price: 40, qty: 1 }] });
+    state.live = [
+      live({ kind: "free_delivery", min_subtotal: null, regions: ["sadad", "hamad_town"] }),
+    ];
+    const product = { id: "p1", category: null, product_variants: [] } as unknown as ProductProp;
+    withQuery(<ProductOffers product={product} />);
+    expect(await screen.findByText("Free delivery to Sadad and Hamad Town")).toBeTruthy();
+    const { container } = withQuery(<FreeDeliveryNudge />);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(container.textContent).toBe("");
+  });
+});

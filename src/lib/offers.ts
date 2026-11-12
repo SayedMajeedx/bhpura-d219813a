@@ -1,8 +1,9 @@
 import { arNounOblique, countOf } from "@/lib/arabic-count";
+import { regionLabel } from "@/lib/bahrain-regions";
 
 /**
  * A store's automatic offers as a shopper reads them (`storefront_active_offers`): a discount with
- * no code, buy X get Y, and free delivery over an amount. What an order actually gets is the
+ * no code, buy X get Y, and free delivery over an amount or to chosen areas. What an order actually gets is the
  * database's (`store_offers_outcome`, applied by the order builder and previewed for checkout by
  * `storefront_offers_preview`); this file only says which offers reach a product, how an offer
  * reads, and how far a cart is from free delivery.
@@ -31,6 +32,8 @@ export interface StoreOffer {
   get_percent: number | null;
   max_sets: number | null;
   local_only: boolean;
+  /** The areas of Bahrain a free-delivery offer is for (`bahrain-regions` values); none = all. */
+  regions?: string[] | null;
 }
 
 /** An offer an order got (`orders.applied_offers`, and the preview's `applied`). */
@@ -135,6 +138,9 @@ export function offerTerms(offer: StoreOffer, lang: Lang, money: Money): string 
   let head: string;
   if (offer.kind === "buy_x_get_y") {
     head = buyGetTerms(offer, lang);
+  } else if (offer.kind === "free_delivery" && forAreas(offer)) {
+    const areas = areasText(offer.regions ?? [], lang);
+    head = lang === "ar" ? `توصيل مجاني إلى ${areas}` : `Free delivery to ${areas}`;
   } else if (offer.kind === "free_delivery") {
     head =
       lang === "ar"
@@ -156,6 +162,29 @@ export function offerTerms(offer: StoreOffer, lang: Lang, money: Money): string 
     }
   }
   return condition ? `${head} ${condition}` : head;
+}
+
+/** Whether a free-delivery offer is only for the areas it names. */
+export const forAreas = (offer: Pick<StoreOffer, "regions">) => (offer.regions ?? []).length > 0;
+
+/** How many areas an offer's terms name before "and N more areas". */
+const AREAS_NAMED = 8;
+
+/**
+ * The areas in the reader's words: "Sadad, Dumistan and Hamad Town" / "صدد ودمستان ومدينة حمد";
+ * past eight, the first seven and "and 5 more areas" / "و5 مناطق أخرى".
+ */
+export function areasText(regions: readonly string[], lang: Lang): string {
+  const named = regions.map((r) => regionLabel(r, lang)).filter(Boolean);
+  const shown = named.length > AREAS_NAMED ? named.slice(0, AREAS_NAMED - 1) : named;
+  const rest = named.length - shown.length;
+  const parts =
+    rest > 0
+      ? [...shown, lang === "ar" ? `${countOf(rest, "area", "ar")} أخرى` : `${rest} more areas`]
+      : shown;
+  if (lang === "ar") return parts.join(" و");
+  if (parts.length < 2) return parts.join("");
+  return `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -215,7 +244,11 @@ export function freeDeliveryNudge(
   cart: readonly CartLine[],
 ): FreeDeliveryNudge | null {
   const simple = offers.filter(
-    (offer) => offer.kind === "free_delivery" && storeWide(offer) && (offer.min_items ?? 0) <= 1,
+    (offer) =>
+      offer.kind === "free_delivery" &&
+      storeWide(offer) &&
+      !forAreas(offer) &&
+      (offer.min_items ?? 0) <= 1,
   );
   if (simple.length === 0 || cart.length === 0) return null;
   let best: FreeDeliveryNudge | null = null;

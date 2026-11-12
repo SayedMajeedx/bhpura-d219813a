@@ -31,6 +31,9 @@ export interface OfferForm {
   get_percent: string;
   max_sets: string;
   local_only: boolean;
+  /** Free delivery: whether it is only for chosen areas, and which (`bahrain-regions` values). */
+  for_areas: boolean;
+  regions: string[];
 }
 
 /** A new offer of each kind, with the values most stores start from. */
@@ -58,6 +61,8 @@ export function emptyOfferForm(kind: OfferKind): OfferForm {
     get_percent: "100",
     max_sets: "",
     local_only: true,
+    for_areas: false,
+    regions: [],
   };
 }
 
@@ -104,6 +109,8 @@ export function formFromRow(row: StoreOfferRow): OfferForm {
     get_percent: text(row.get_percent) || "100",
     max_sets: text(row.max_sets),
     local_only: row.local_only,
+    for_areas: (row.regions ?? []).length > 0,
+    regions: row.regions ?? [],
   };
 }
 
@@ -143,6 +150,12 @@ export function offerFormProblem(form: OfferForm, isAr: boolean): string | null 
   const ends = moment(form.ends_at);
   if (starts && ends && ends <= starts)
     return say("ينتهي العرض قبل أن يبدأ.", "The offer ends before it starts.");
+
+  if (form.kind === "free_delivery" && form.for_areas && form.regions.length === 0)
+    return say(
+      "اختر المناطق التي يصلها التوصيل المجاني.",
+      "Choose the areas free delivery is for.",
+    );
 
   if (form.kind === "discount") {
     if (!positive(form.discount_value))
@@ -203,7 +216,12 @@ export function rowFromForm(form: OfferForm): NewStoreOffer {
     get_percent: null,
     max_sets: null,
     local_only: form.local_only,
+    regions: [],
   };
+  if (form.kind === "free_delivery" && form.for_areas) {
+    // An area offer is for deliveries inside Bahrain: its areas are Bahrain's.
+    return { ...base, local_only: true, regions: [...new Set(form.regions)] };
+  }
   if (form.kind === "discount") {
     return {
       ...base,
@@ -262,6 +280,7 @@ export function asStoreOffer(row: StoreOfferRow): StoreOffer {
     get_percent: row.get_percent,
     max_sets: row.max_sets,
     local_only: row.local_only,
+    regions: row.regions ?? [],
   };
 }
 

@@ -237,6 +237,7 @@ function Checkout() {
     appliedPromo,
     fulfillment,
     country: selectedDestination === "BH" ? "BH" : selectedCountryCode,
+    region: form.region,
     enabled: !appointment && !isCatalogMode(settings),
   });
   // Whether the store takes the order now: busy, or closed by its hours (a booking only waits
