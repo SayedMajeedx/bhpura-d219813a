@@ -137,7 +137,6 @@ describe("the add-ons' rules", () => {
       message: "",
       from: "",
       withCard: false,
-      tone: "brand" as const,
     };
     expect(giftPayload(choice, OPTIONS, [{ id: ROSE.id, quantity: 1 }])).toEqual({
       recipient: "Noor",
