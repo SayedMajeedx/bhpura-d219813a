@@ -54,7 +54,7 @@ import { MobileCartPeek } from "@/features/checkout/components/MobileCartPeek";
 import { MobileCheckoutBar } from "@/features/checkout/components/MobileCheckoutBar";
 import { GiftCardBox, GiftCardLines } from "@/features/checkout/components/GiftCardBox";
 import { useCheckoutGiftCard } from "@/features/checkout/hooks/use-checkout-gift-card";
-import { useCheckoutGift } from "@/features/checkout/hooks/use-checkout-gift";
+import { giftSummaryLines, useCheckoutGift } from "@/features/checkout/hooks/use-checkout-gift";
 import { GiftOrderFields } from "@/features/checkout/components/GiftOrderFields";
 import { advanceAfterGiftCard, giftCardPay } from "@/features/checkout/lib/gift-card-pay";
 import { AccountExistsDialog } from "@/features/checkout/components/AccountExistsDialog";
@@ -678,7 +678,7 @@ function Checkout() {
           brand={brand}
           cart={cart}
           cartTotal={cartTotal}
-          giftFee={gift.fee}
+          giftLines={giftSummaryLines(gift, lang)}
           checkingPromo={checkingPromo}
           currency={currency}
           estimatedDeliveryLines={estimatedDeliveryLines}

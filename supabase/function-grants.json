@@ -36,6 +36,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
+    "archive_gift_addon(p_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) before archiving one of the store's gift add-ons"
+    },
     "assign_order_courier(p_order_id uuid, p_courier_id uuid)": {
       "anon": false,
       "authenticated": true,
@@ -681,6 +686,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "save_gift_addon(p_brand_id uuid, p_name_ar text, p_name_en text, p_description_ar text, p_description_en text, p_image_url text, p_price numeric, p_is_available boolean, p_sort_order integer, p_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_settings) before saving a gift add-on of the store"
+    },
     "save_integration_credential(p_id uuid, p_brand_id uuid, p_provider text, p_base_url text, p_api_key text, p_webhook_secret text, p_is_active boolean, p_notes text)": {
       "anon": false,
       "authenticated": true,
@@ -770,6 +780,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
+    },
+    "storefront_gift_addons(p_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront checkout: an active store's available gift add-ons (names, picture, price) while it takes gift orders; no shopper's data"
     },
     "storefront_gift_card_designs(p_brand_id uuid)": {
       "anon": true,

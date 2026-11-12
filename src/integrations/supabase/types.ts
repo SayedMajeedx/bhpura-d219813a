@@ -3526,6 +3526,62 @@ export type Database = {
           },
         ];
       };
+      gift_addons: {
+        Row: {
+          archived_at: string | null;
+          brand_id: string;
+          created_at: string;
+          description_ar: string | null;
+          description_en: string | null;
+          id: string;
+          image_url: string | null;
+          is_available: boolean;
+          name_ar: string;
+          name_en: string;
+          price: number;
+          sort_order: number;
+          updated_at: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          brand_id: string;
+          created_at?: string;
+          description_ar?: string | null;
+          description_en?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_available?: boolean;
+          name_ar: string;
+          name_en: string;
+          price: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          brand_id?: string;
+          created_at?: string;
+          description_ar?: string | null;
+          description_en?: string | null;
+          id?: string;
+          image_url?: string | null;
+          is_available?: boolean;
+          name_ar?: string;
+          name_en?: string;
+          price?: number;
+          sort_order?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "gift_addons_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       gift_card_movements: {
         Row: {
           amount: number;
@@ -10441,6 +10497,7 @@ export type Database = {
         Args: { p_purchase_id: string };
         Returns: Json;
       };
+      archive_gift_addon: { Args: { p_id: string }; Returns: undefined };
       assert_booking_items_notice: {
         Args: { p_brand_id: string; p_items: Json; p_starts_at: string };
         Returns: undefined;
@@ -12468,6 +12525,41 @@ export type Database = {
         Args: { p_brand_slug: string; p_recovery_token: string };
         Returns: Json;
       };
+      save_gift_addon: {
+        Args: {
+          p_brand_id: string;
+          p_description_ar: string;
+          p_description_en: string;
+          p_id?: string;
+          p_image_url: string;
+          p_is_available: boolean;
+          p_name_ar: string;
+          p_name_en: string;
+          p_price: number;
+          p_sort_order: number;
+        };
+        Returns: {
+          archived_at: string | null;
+          brand_id: string;
+          created_at: string;
+          description_ar: string | null;
+          description_en: string | null;
+          id: string;
+          image_url: string | null;
+          is_available: boolean;
+          name_ar: string;
+          name_en: string;
+          price: number;
+          sort_order: number;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "gift_addons";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       save_instagram_token: {
         Args: {
           p_access_token: string;
@@ -12808,6 +12900,7 @@ export type Database = {
           visits: number;
         }[];
       };
+      storefront_gift_addons: { Args: { p_slug: string }; Returns: Json };
       storefront_gift_card_designs: {
         Args: { p_brand_id: string };
         Returns: Json;

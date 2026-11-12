@@ -12,11 +12,13 @@ import { DEFAULT_DESIGN } from "@/features/gift-card-design/lib/design";
 import { isArabic } from "@/features/gift-card-design/lib/type";
 import { useStorefrontCardKit } from "@/features/gift-card-shop/hooks/use-storefront-card-kit";
 import type { CheckoutGift } from "@/features/checkout/hooks/use-checkout-gift";
+import { GiftAddonsPicker } from "@/features/checkout/components/GiftAddonsPicker";
 
 /**
  * "Send this order as a gift", by the store's settings: who it is for, and the gift message card
  * when the store offers one, at its price (free at 0), with the shopper's words, who it is from
- * and the card's tone, drawn as it will be printed. The card's price joins the order's total.
+ * and the card's tone, drawn as it will be printed, and the store's add-ons (a bouquet). Their
+ * prices join the order's total.
  */
 export function GiftOrderFields({
   gift,
@@ -70,6 +72,8 @@ export function GiftOrderFields({
               className="mt-1 h-11 bg-background"
             />
           </div>
+
+          <GiftAddonsPicker gift={gift} currency={currency} lang={lang} t={t} />
 
           {options.card && (
             <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-border bg-background p-3 select-none">

@@ -38,9 +38,22 @@ const data = vi.hoisted(() => ({
       queryKey: ["gift-settings", brandId],
       queryFn: async () => stubs.settings,
     }),
+    // Step two's add-ons: none in these tests (tests/gift-addons.test.tsx has them).
+    addons: (slug: string, enabled = true) => ({
+      queryKey: ["gift-addons", slug],
+      queryFn: async () => [],
+      enabled,
+    }),
+    storeAddons: (brandId: string) => ({
+      queryKey: ["gift-store-addons", brandId],
+      queryFn: async () => [],
+    }),
   },
   saveGiftOrderSettings: (...args: unknown[]) => stubs.save(...(args as [])),
   invalidateGiftOrderSettings: vi.fn(async () => undefined),
+  saveGiftAddon: vi.fn(async () => undefined),
+  archiveGiftAddon: vi.fn(async () => undefined),
+  invalidateGiftAddons: vi.fn(async () => undefined),
 }));
 vi.mock("../src/lib/data/gift-orders", () => data);
 vi.mock("@/lib/data/gift-orders", () => data);
@@ -194,6 +207,7 @@ describe("the gift order's rules", () => {
       card: true,
       cardPrice: 1.5,
       design: "type:cream",
+      addons: [],
     });
     expect(orderGift({ gift: null, notes: giftOrderNote("Noor", "Eid Mubarak") })).toEqual({
       recipient: "Noor",
@@ -202,6 +216,7 @@ describe("the gift order's rules", () => {
       card: true,
       cardPrice: 0,
       design: null,
+      addons: [],
     });
     expect(orderGift({ gift: null, notes: "Leave it at the door" })).toBeNull();
   });

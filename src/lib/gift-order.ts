@@ -1,4 +1,5 @@
 import { readGiftOrderNote } from "@/lib/gift-order-note";
+import { readOrderGiftAddons, type OrderGiftAddon } from "@/lib/gift-addons";
 
 /**
  * A gift order by the store's own settings (migration 20261202100000): whether the store takes
@@ -87,6 +88,8 @@ export type GiftOrderPayload = {
   card: boolean;
   message?: string | null;
   design?: string;
+  /** The add-ons chosen (`addonsPayload`): ids and quantities, never a price. */
+  addons?: Array<{ id: string; quantity: number }>;
 };
 
 /**
@@ -96,6 +99,7 @@ export type GiftOrderPayload = {
 export function giftPayload(
   choice: GiftChoice,
   options: GiftOrderOptions,
+  addons: Array<{ id: string; quantity: number }> = [],
 ): GiftOrderPayload | null {
   if (!choice.isGift || !options.enabled) return null;
   const card = giftHasCard(choice, options);
@@ -106,6 +110,7 @@ export function giftPayload(
     ...(card
       ? { message: choice.message.trim() || null, design: giftCardDesign(choice.tone) }
       : {}),
+    ...(addons.length > 0 ? { addons } : {}),
   };
 }
 
@@ -119,6 +124,8 @@ export type OrderGift = {
   cardPrice: number;
   /** The card design the shopper chose, when they chose one. */
   design: string | null;
+  /** What was added to the gift (a bouquet), to prepare with it. */
+  addons: OrderGiftAddon[];
 };
 
 const text = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : null);
@@ -139,11 +146,12 @@ export function orderGift(order: { gift?: unknown; notes?: string | null }): Ord
       card: value.card === true,
       cardPrice: Number.isFinite(price) && price > 0 ? price : 0,
       design: text(value.design),
+      addons: readOrderGiftAddons(value.addons),
     };
   }
   const noted = readGiftOrderNote(order.notes);
   if (!noted) return null;
-  return { ...noted, from: null, card: true, cardPrice: 0, design: null };
+  return { ...noted, from: null, card: true, cardPrice: 0, design: null, addons: [] };
 }
 
 /** The price field of the settings: a number from 0 to 1000, or null when it is not one. */
@@ -171,6 +179,22 @@ const REFUSALS: Record<string, { ar: string; en: string }> = {
   GIFT_CARD_PRICE_INVALID: {
     ar: "اكتب سعرًا من 0 إلى 1000.",
     en: "Write a price from 0 to 1000.",
+  },
+  GIFT_ADDON_UNAVAILABLE: {
+    ar: "إحدى إضافات الهدية لم تعد متاحة. أزلها وأعد المحاولة.",
+    en: "One of the gift's add-ons is no longer available. Remove it and try again.",
+  },
+  GIFT_ADDON_PRICE_INVALID: {
+    ar: "اكتب سعرًا أكبر من صفر وحتى 10000.",
+    en: "Write a price above 0 and up to 10,000.",
+  },
+  GIFT_ADDON_NAME_REQUIRED: {
+    ar: "اكتب اسم الإضافة.",
+    en: "Write the add-on's name.",
+  },
+  GIFT_ADDON_NOT_FOUND: {
+    ar: "لم نجد هذه الإضافة. حدّث الصفحة.",
+    en: "This add-on was not found. Refresh the page.",
   },
   FORBIDDEN: {
     ar: "لا تملك صلاحية تغيير الإعدادات.",
