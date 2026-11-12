@@ -41,19 +41,11 @@ export function readGiftOptions(raw: unknown): GiftOrderOptions {
   };
 }
 
-/** The tones a gift message card is printed in (the gift cards' own, `TONES`). */
-export const GIFT_CARD_TONES = ["brand", "cream", "white", "black"] as const;
-export type GiftCardTone = (typeof GIFT_CARD_TONES)[number];
-
-export const GIFT_TONE_WORDS: Record<GiftCardTone, { ar: string; en: string }> = {
-  brand: { ar: "لون المتجر", en: "Store colour" },
-  cream: { ar: "كريمي", en: "Cream" },
-  white: { ar: "فاتح", en: "Light" },
-  black: { ar: "أسود", en: "Black" },
-};
-
-/** The design id the card is drawn with: a message card reads its tone only. */
-export const giftCardDesign = (tone: GiftCardTone) => `signature:${tone}` as const;
+/**
+ * The one look of a gift message card: the store's colour on white in the signature card's gold
+ * frame (the owner's decision of 2026-11-12: the shopper does not choose a colour).
+ */
+export const GIFT_MESSAGE_CARD_DESIGN = "signature:brand";
 
 /** What the shopper chose for a gift order at checkout. */
 export type GiftChoice = {
@@ -62,7 +54,6 @@ export type GiftChoice = {
   message: string;
   from: string;
   withCard: boolean;
-  tone: GiftCardTone;
 };
 
 /** Whether this order carries the card: a gift, the store offers one, the shopper kept it. */
@@ -107,9 +98,7 @@ export function giftPayload(
     recipient: choice.recipient.trim() || null,
     from: choice.from.trim() || null,
     card,
-    ...(card
-      ? { message: choice.message.trim() || null, design: giftCardDesign(choice.tone) }
-      : {}),
+    ...(card ? { message: choice.message.trim() || null, design: GIFT_MESSAGE_CARD_DESIGN } : {}),
     ...(addons.length > 0 ? { addons } : {}),
   };
 }

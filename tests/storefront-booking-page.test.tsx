@@ -4,6 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_BOOKING_RULES, type BookingRules } from "../src/lib/bookings/rules";
 
+// Each test walks the booking flow step by step (about 2 s alone); under the full suite's load
+// a few ran past the 5 s default, so the file gives them the time a long flow needs.
+vi.setConfig({ testTimeout: 15_000 });
+
 // The storefront booking page, rendered with the store and its data faked:
 // the store's rules, a month with a booked and a closed day, two services.
 
@@ -359,7 +363,9 @@ describe("booking from the storefront", () => {
     await pickStart("Evening", "6:00 PM");
     expect(screen.getByText(/Until/)).toHaveTextContent("Until 10:00 PM");
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: "Sara" } });
-    fireEvent.change(screen.getByLabelText("WhatsApp number"), { target: { value: "3900 1122" } });
+    fireEvent.change(screen.getByLabelText("WhatsApp number"), {
+      target: { value: "3900 1122" },
+    });
     pickArea("Juff", /Juffair/);
     const send = screen.getByRole("button", { name: "Send booking request" });
     expect(send).toBeEnabled();

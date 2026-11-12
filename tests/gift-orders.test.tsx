@@ -123,7 +123,6 @@ const choice = (overrides: Partial<GiftChoice> = {}): GiftChoice => ({
   message: " Eid Mubarak ",
   from: " Sara ",
   withCard: true,
-  tone: "cream",
   ...overrides,
 });
 
@@ -166,7 +165,7 @@ describe("the gift order's rules", () => {
       from: "Sara",
       card: true,
       message: "Eid Mubarak",
-      design: "signature:cream",
+      design: "signature:brand",
     });
     // Without the card there is no message to print.
     expect(giftPayload(choice({ withCard: false }), PRICED)).toEqual({
@@ -308,18 +307,15 @@ describe("the checkout's gift fields", () => {
     );
   }
 
-  it("show the card with the store's price, the message, who it is from and the card's colour", async () => {
+  it("show the card with the store's price, the message and who it is from, in one look", async () => {
     render(<Fields start />, { wrapper });
     expect(await screen.findByText("+ BHD 1.500")).toBeInTheDocument();
     expect(screen.getByLabelText("Recipient's name (optional)")).toBeInTheDocument();
     expect(screen.getByLabelText("The card's message")).toBeInTheDocument();
     expect(screen.getByLabelText("From (optional)")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Store colour" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
-    fireEvent.click(screen.getByRole("radio", { name: "Cream" }));
-    expect(screen.getByRole("radio", { name: "Cream" })).toHaveAttribute("aria-checked", "true");
+    // The shopper chooses no colour: the card has one look (the owner's decision of 2026-11-12).
+    expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
+    expect(screen.queryByText("The card's colour")).not.toBeInTheDocument();
     // The card is drawn as it will be printed.
     expect(screen.getByRole("img", { name: "Front of the card" })).toBeInTheDocument();
     expect(screen.getByTestId("fee")).toHaveTextContent("1.5");

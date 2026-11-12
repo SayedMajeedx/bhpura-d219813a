@@ -8,18 +8,12 @@ import {
   chosenAddonLines,
   type ChosenAddons,
 } from "@/lib/gift-addons";
-import {
-  DEFAULT_GIFT_OPTIONS,
-  giftCardFee,
-  giftHasCard,
-  giftPayload,
-  type GiftCardTone,
-} from "@/lib/gift-order";
+import { DEFAULT_GIFT_OPTIONS, giftCardFee, giftHasCard, giftPayload } from "@/lib/gift-order";
 
 /**
  * The checkout's gift order: what the store offers (`storefront_gift_order_options` and its
  * add-ons, `storefront_gift_addons`), what the shopper chose beside the recipient and the message
- * the form already holds (the message card, its tone, who it is from, the add-ons), what they add
+ * the form already holds (the message card, who it is from, the add-ons), what they add
  * to the order and what goes to the order builder. The database prices the card and the add-ons
  * and holds the store's switches; this is the checkout's reading.
  */
@@ -39,10 +33,9 @@ export function useCheckoutGift({
 }) {
   const options = useQuery(giftOrderQueries.storefront(slug, enabled)).data ?? DEFAULT_GIFT_OPTIONS;
   const [withCard, setWithCard] = useState(true);
-  const [tone, setTone] = useState<GiftCardTone>("brand");
   const [from, setFrom] = useState("");
   const offered = enabled && options.enabled;
-  const choice = { isGift: isGift && offered, recipient, message, from, withCard, tone };
+  const choice = { isGift: isGift && offered, recipient, message, from, withCard };
   // The store's add-ons, read once the shopper makes the order a gift.
   const addons = useQuery(giftOrderQueries.addons(slug, offered && isGift)).data ?? [];
   const [chosen, setChosen] = useState<ChosenAddons>({});
@@ -58,8 +51,6 @@ export function useCheckoutGift({
     offered,
     withCard,
     setWithCard,
-    tone,
-    setTone,
     from,
     setFrom,
     /** This order carries the message card. */

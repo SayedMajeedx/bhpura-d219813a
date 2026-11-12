@@ -244,10 +244,15 @@ describe("the bookings page", () => {
     state.areaFees = { hidd: 12 };
     await renderPage();
     await openSetup("Booking rules");
-    fireEvent.change(await screen.findByLabelText(/Default fee/), { target: { value: "5" } });
-    // The saved area fee shows the list already open.
+    // The saved area fee shows the list already open. An area is found by typing, as a merchant
+    // does: the list holds every area of Bahrain, and looking a field up by its label among all
+    // of them made this test time out in the full suite.
+    const search = await screen.findByRole("searchbox", { name: "Find an area" });
+    fireEvent.change(search, { target: { value: "Juff" } });
     fireEvent.change(screen.getByLabelText("Juffair"), { target: { value: "3" } });
+    fireEvent.change(search, { target: { value: "Hidd" } });
     fireEvent.change(screen.getByLabelText("Hidd"), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/Default fee/), { target: { value: "5" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     await waitFor(() => expect(state.saveBookingAreaFees).toHaveBeenCalledTimes(1));
     expect(state.saveBookingSettings).toHaveBeenCalledWith(

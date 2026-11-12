@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/lib/storefront-context";
 import type { Storefront } from "@/features/checkout/types";
 import { cn } from "@/lib/utils";
-import { GIFT_CARD_TONES, GIFT_TONE_WORDS, giftCardDesign } from "@/lib/gift-order";
+import { GIFT_MESSAGE_CARD_DESIGN } from "@/lib/gift-order";
 import { GiftCardPreview } from "@/features/gift-card-design/components/GiftCardPreview";
 import { DEFAULT_DESIGN } from "@/features/gift-card-design/lib/design";
 import { isArabic } from "@/features/gift-card-design/lib/type";
@@ -16,8 +16,8 @@ import { GiftAddonsPicker } from "@/features/checkout/components/GiftAddonsPicke
 
 /**
  * "Send this order as a gift", by the store's settings: who it is for, and the gift message card
- * when the store offers one, at its price (free at 0), with the shopper's words, who it is from
- * and the card's tone, drawn as it will be printed, and the store's add-ons (a bouquet). Their
+ * when the store offers one, at its price (free at 0), with the shopper's words and who it is
+ * from, drawn in its one look as it will be printed, and the store's add-ons (a bouquet). Their
  * prices join the order's total.
  */
 export function GiftOrderFields({
@@ -128,34 +128,6 @@ export function GiftOrderFields({
                   className="mt-1 h-11 bg-background"
                 />
               </div>
-              <div>
-                <p className="text-xs font-medium" id="gift-tone-label">
-                  {t("لون البطاقة", "The card's colour")}
-                </p>
-                <div
-                  role="radiogroup"
-                  aria-labelledby="gift-tone-label"
-                  className="mt-1 flex flex-wrap gap-2"
-                >
-                  {GIFT_CARD_TONES.map((tone) => (
-                    <button
-                      key={tone}
-                      type="button"
-                      role="radio"
-                      aria-checked={gift.tone === tone}
-                      onClick={() => gift.setTone(tone)}
-                      className={cn(
-                        "min-h-11 rounded-full border px-4 text-xs font-medium transition-colors",
-                        gift.tone === tone
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border bg-background text-foreground",
-                      )}
-                    >
-                      {GIFT_TONE_WORDS[tone][lang]}
-                    </button>
-                  ))}
-                </div>
-              </div>
               <GiftCardLook gift={gift} recipient={recipient} message={message} lang={lang} />
             </div>
           )}
@@ -187,7 +159,7 @@ function GiftCardLook({
       design={{
         ...DEFAULT_DESIGN,
         occasion: "gift",
-        design: giftCardDesign(gift.tone),
+        design: GIFT_MESSAGE_CARD_DESIGN,
         language: cardLang,
         from: gift.from.trim() || null,
       }}
