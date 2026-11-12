@@ -740,7 +740,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           t={t}
         />
 
-        <div className="md:col-span-7 w-full min-w-0 overflow-hidden">
+        <div className="md:col-span-7 w-full min-w-0 overflow-x-clip">
           <ProductTitleAndPrice
             currency={currency}
             discountPercent={discountPercent}
