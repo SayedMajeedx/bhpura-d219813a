@@ -14,7 +14,8 @@ vi.mock("@/integrations/supabase/client", () => client);
 vi.mock("../src/components/barcode-scanner", () => ({ BarcodeScanner: () => null }));
 vi.mock("@/components/barcode-scanner", () => ({ BarcodeScanner: () => null }));
 
-const { checklistView } = await import("../src/features/dashboard/lib/checklist-view");
+const { checklistView, productsOnStore, shareStepDone } =
+  await import("../src/features/dashboard/lib/checklist-view");
 const { OnboardingChecklistLine } =
   await import("../src/features/dashboard/components/OnboardingChecklistLine");
 const { normalizePhoneForWhatsApp, whatsappChatUrl } = await import("../src/lib/whatsapp-phone");
@@ -27,7 +28,8 @@ describe("the launch checklist on the dashboard", () => {
     expect(checklistView({ completed: 0, dismissed: false })).toBe("full");
     expect(checklistView({ completed: 1, dismissed: false })).toBe("full");
     expect(checklistView({ completed: 2, dismissed: false })).toBe("line");
-    expect(checklistView({ completed: 3, dismissed: false })).toBe("line");
+    // A store that has done all three is launched: the checklist steps aside.
+    expect(checklistView({ completed: 3, dismissed: false })).toBe("hidden");
     expect(checklistView({ completed: 1, dismissed: true })).toBe("hidden");
   });
 
@@ -187,5 +189,26 @@ describe("an order's lines", () => {
     expect(screen.getByRole("button", { name: /Search Products/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Scan Barcode/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /orderDetail.addLine/ })).toBeInTheDocument();
+  });
+});
+
+describe("the launch checklist's figures (the admin audit of 2026-11-12)", () => {
+  it("counts the products on the store, never the hidden or archived ones", () => {
+    // Pura's read "24 products ready to sell" with 19 on the store.
+    expect(
+      productsOnStore([
+        { is_active: true },
+        { is_active: true, archived_at: null },
+        { is_active: false },
+        { is_active: true, archived_at: "2026-11-03T00:00:00Z" },
+      ]),
+    ).toBe(2);
+    expect(productsOnStore(undefined)).toBe(0);
+  });
+
+  it("takes the store as shared once it has real sales", () => {
+    expect(shareStepDone({ marked: false, hasRealSales: true })).toBe(true);
+    expect(shareStepDone({ marked: true, hasRealSales: false })).toBe(true);
+    expect(shareStepDone({ marked: false, hasRealSales: false })).toBe(false);
   });
 });

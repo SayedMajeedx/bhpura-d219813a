@@ -99,6 +99,20 @@ describe("dashboardFinancials", () => {
     expect(f.dailyChartSeries.reduce((sum, day) => sum + day.sales, 0)).toBe(150);
   });
 
+  it("averages the store's own orders, never a partner shop's sales (the audit of 2026-11-12)", () => {
+    // Pura's read 17.062 under "orders: 13": 221.800 over its 8 orders and 5 partner pieces.
+    const f = dashboardFinancials(
+      financialsInput({
+        incubatorSaleRows: [
+          { sold_at: daysAgo(3), gross_amount: 100, quantity: 4 },
+        ] as FinancialsInput["incubatorSaleRows"],
+      }),
+    );
+    expect(f.ordersCurrent).toBe(6);
+    expect(f.storeOrdersCurrent).toBe(2);
+    expect(f.aovCurrent).toBe(75);
+  });
+
   it("uses the Reports accounting row so both screens agree", () => {
     const f = dashboardFinancials(
       financialsInput({

@@ -1,4 +1,4 @@
-import { checklistView } from "@/features/dashboard/lib/checklist-view";
+import { checklistView, shareStepDone } from "@/features/dashboard/lib/checklist-view";
 import { OnboardingChecklistLine } from "@/features/dashboard/components/OnboardingChecklistLine";
 import { StoreFunnelCard } from "@/features/dashboard/components/StoreFunnelCard";
 import { StoreStatusCard } from "@/features/dashboard/components/StoreStatusCard";
@@ -211,7 +211,7 @@ function Dashboard() {
   const hasProducts = (productsQ.data?.length ?? 0) > 0;
 
   const step1Done = hasProducts;
-  const step2Done = isPreviewed;
+  const step2Done = shareStepDone({ marked: isPreviewed, hasRealSales });
   const step3Done = hasRealSales || isManualSaleCompleted;
 
   const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
