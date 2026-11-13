@@ -37,7 +37,7 @@ vi.mock("@/lib/gift-card-checkout.functions", () => giftCards);
 const carts = { markCartRecoveredOnOrder: vi.fn(async () => null) };
 vi.mock("../src/lib/abandoned-carts.functions", () => carts);
 vi.mock("@/lib/abandoned-carts.functions", () => carts);
-const analytics = { trackStorefrontEvent: vi.fn() };
+const analytics = { trackStorefrontEvent: vi.fn(), recordCheckoutProgress: vi.fn() };
 vi.mock("../src/lib/storefront-analytics", () => analytics);
 vi.mock("@/lib/storefront-analytics", () => analytics);
 const receipt = { uploadBenefitReceipt: vi.fn() };

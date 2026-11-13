@@ -106,6 +106,39 @@ export function visitSource({
   return "other";
 }
 
+/**
+ * A campaign word as the database keeps it (`storefront_campaign_word`): lower case, letters,
+ * digits and dashes, 40 at most, or null.
+ */
+export function campaignWord(value: string | null | undefined): string | null {
+  const word = (value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return /^[a-z0-9][a-z0-9_-]{0,39}$/.test(word) ? word : null;
+}
+
+/** The platforms a store tags a post's link for, as `utm_source` words `visitSource` knows. */
+export const LINK_PLATFORMS = ["instagram", "tiktok", "snapchat", "whatsapp", "facebook"] as const;
+export type LinkPlatform = (typeof LINK_PLATFORMS)[number];
+
+/**
+ * A page's address tagged for one post: where it was shared and the campaign's word, so the
+ * dashboard shows that post's visits and orders (`?utm_source=instagram&utm_campaign=final-call`).
+ * No campaign word, no campaign tag.
+ */
+export function campaignLink(address: string, platform: LinkPlatform, campaign: string): string {
+  const url = new URL(address);
+  url.searchParams.set("utm_source", platform);
+  const word = campaignWord(campaign);
+  if (word) url.searchParams.set("utm_campaign", word);
+  return url.toString();
+}
+
+export type CampaignCounts = { campaign: string; visits: number; orders: number };
+
 /** A share as a percentage with one decimal, or null with nothing to divide by. */
 export function share(part: number, whole: number): number | null {
   if (!(whole > 0)) return null;

@@ -940,6 +940,31 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who see the finances of the supplier's store: checked inside (can_access_brand, has_permission); a known kind and a reason; each order part at most what it owes; one request id writes once"
+    },
+    "record_storefront_step(p_slug text, p_session uuid, p_step integer, p_source text, p_campaign text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront visit steps with their source and campaign word: checks the store, the step, the source word, cleans the campaign word and keeps a daily bound inside; keeps no personal data"
+    },
+    "record_checkout_step(p_slug text, p_session uuid, p_step integer, p_problem text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Storefront checkout progress: checks the store, the part and the problem code, and keeps a daily bound inside; keeps no personal data"
+    },
+    "storefront_checkout_progress(p_brand_id uuid, p_from timestamp with time zone, p_to timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
+    },
+    "storefront_checkout_problems(p_brand_id uuid, p_from timestamp with time zone, p_to timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
+    },
+    "storefront_funnel_campaigns(p_brand_id uuid, p_from timestamp with time zone, p_to timestamp with time zone)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand)"
     }
   }
 }

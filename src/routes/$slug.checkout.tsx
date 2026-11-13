@@ -40,6 +40,7 @@ import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers
 import { useOrderIntake } from "@/features/storefront-shell/hooks/use-order-intake";
 import { intakeSentence, intakeTakesOrders } from "@/lib/opening-hours";
 import { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
+import { useCheckoutProgress } from "@/features/checkout/hooks/use-checkout-progress";
 import { checkoutQueries } from "@/lib/data/checkout";
 import { PaymentFailedCard } from "@/features/checkout/components/PaymentFailedCard";
 import { BookingHoldBanner } from "@/features/storefront-booking/components/BookingHoldBanner";
@@ -435,6 +436,28 @@ function Checkout() {
     appointment: Boolean(appointment),
     t,
   });
+
+  // Where checkout loses people: how far the shopper got and what stood in the way.
+  useCheckoutProgress(
+    {
+      form,
+      fulfillment,
+      acceptedTerms,
+      selectedDestination,
+      method,
+      benefitReceipt,
+      branches,
+      branchId,
+      partnerId,
+      digitalChannel,
+      digitalContact,
+      appointment: Boolean(appointment),
+      receiptRequired: !giftPay?.coversNow,
+      t,
+    },
+    Boolean(deliveryTime.requested?.missing),
+    cart.length > 0,
+  );
 
   const { submitting, submit } = usePlaceOrder({
     brand,

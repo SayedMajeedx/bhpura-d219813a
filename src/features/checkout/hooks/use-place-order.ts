@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
-import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { recordCheckoutProgress, trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { problemFromFailure } from "@/lib/checkout-progress";
 import { redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
 import { redeemGiftCardAtCheckout } from "@/lib/gift-card-checkout.functions";
 import type { GiftOrderPayload } from "@/lib/gift-order";
@@ -15,7 +16,7 @@ import type {
   PaymentMethod,
   Storefront,
 } from "@/features/checkout/types";
-import { checkoutFormError } from "@/features/checkout/lib/checkout-validation";
+import { checkoutFormProblem } from "@/features/checkout/lib/checkout-validation";
 import { placeOrderFailure, placeStorefrontOrderArgs } from "@/features/checkout/lib/place-order";
 import { placeStorefrontOrder, recordOrderWhatsappOptIn } from "@/lib/data/checkout";
 import { bookingOfCart } from "@/lib/bookings/cart";
@@ -119,7 +120,7 @@ export function usePlaceOrder({
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const submit = async () => {
-    const formError = checkoutFormError({
+    const formProblem = checkoutFormProblem({
       form,
       fulfillment,
       acceptedTerms,
@@ -135,8 +136,13 @@ export function usePlaceOrder({
       receiptRequired: !giftCardCoversNow,
       t,
     });
-    if (formError) {
-      toast.error(formError);
+    // "Place order" pressed: the store's checkout report counts what stopped it, if anything.
+    recordCheckoutProgress(
+      4,
+      formProblem?.code ?? (requestedTime?.missing ? "delivery_time" : null),
+    );
+    if (formProblem) {
+      toast.error(formProblem.message);
       return;
     }
     if (requestedTime?.missing) {
@@ -351,6 +357,7 @@ export function usePlaceOrder({
       });
     } catch (e: any) {
       const failure = placeOrderFailure(String(e?.message ?? e), t);
+      recordCheckoutProgress(4, problemFromFailure(String(e?.message ?? e)));
       if (failure.clearPromo) setAppliedPromo(null);
       toast.error(failure.message);
     } finally {

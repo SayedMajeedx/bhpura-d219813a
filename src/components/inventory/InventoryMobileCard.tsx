@@ -16,8 +16,10 @@ import {
   Copy,
   ExternalLink,
   Share2,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CampaignLinkDialog } from "@/components/admin/CampaignLinkDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -100,6 +102,8 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
     }
   };
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // The product whose link for a post is open (`CampaignLinkDialog`).
+  const [linkFor, setLinkFor] = useState<{ id: string } | null>(null);
   const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
   // The marks the desktop row shows: a phone used to see the stock badge and nothing else.
   const attentionReasons = productAttentionReasons(product, {
@@ -211,6 +215,10 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                     {isAr ? "مشاركة الرابط" : "Share Link"}
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => setLinkFor(product)}>
+                  <Link2 className="h-3.5 w-3.5 me-2 text-primary" />
+                  {isAr ? "رابط لمنشور" : "Link for a post"}
+                </DropdownMenuItem>
                 {onDuplicate && (
                   <DropdownMenuItem onClick={() => onDuplicate(product)}>
                     <Copy className="h-3.5 w-3.5 me-2 text-primary" />
@@ -267,6 +275,12 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <CampaignLinkDialog
+        open={Boolean(linkFor)}
+        onOpenChange={(open) => !open && setLinkFor(null)}
+        path={linkFor ? `product/${linkFor.id}` : ""}
+        isAr={isAr}
+      />
     </>
   );
 };

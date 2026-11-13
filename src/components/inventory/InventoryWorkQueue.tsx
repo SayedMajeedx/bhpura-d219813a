@@ -18,8 +18,10 @@ import {
   Copy,
   ExternalLink,
   Share2,
+  Link2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CampaignLinkDialog } from "@/components/admin/CampaignLinkDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -111,6 +113,8 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   );
   const expandedProducts = controlledExpandedProducts ?? internalExpandedProducts;
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+  // The product whose link for a post is open (`CampaignLinkDialog`).
+  const [linkFor, setLinkFor] = useState<{ id: string } | null>(null);
   const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
 
   const resolveCategoryName = (catVal: string | null | undefined) => {
@@ -412,6 +416,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                                 {isAr ? "مشاركة الرابط" : "Share Link"}
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem onClick={() => setLinkFor(product)}>
+                              <Link2 className="h-3.5 w-3.5 me-2 text-primary" />
+                              {isAr ? "رابط لمنشور" : "Link for a post"}
+                            </DropdownMenuItem>
                             {onDuplicate && (
                               <DropdownMenuItem onClick={() => onDuplicate(product)}>
                                 <Copy className="h-3.5 w-3.5 me-2 text-primary" />
@@ -493,6 +501,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <CampaignLinkDialog
+        open={Boolean(linkFor)}
+        onOpenChange={(open) => !open && setLinkFor(null)}
+        path={linkFor ? `product/${linkFor.id}` : ""}
+        isAr={isAr}
+      />
     </>
   );
 };

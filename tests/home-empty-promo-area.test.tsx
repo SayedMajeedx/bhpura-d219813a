@@ -102,3 +102,21 @@ describe("the Home page settings", () => {
     expect(startedPromoCards({ home_promo_cards: [{ href: "/x", image_url: "a.jpg" }] })).toBe(0);
   });
 });
+
+describe("on a phone", () => {
+  it("lays two cards or more in one sideways row, the next card peeking, and one card whole", () => {
+    // Stacked, Pura's two banners took 400px of a phone and the first product fell below the
+    // first screen (2026-11-13).
+    storefront.settings = {
+      home_promo_cards: [{ image_url: "a.jpg" }, { image_url: "b.jpg" }],
+    };
+    const { getByTestId, getAllByRole, unmount } = render(<PromoCards />);
+    expect(getByTestId("promo-cards").className).toMatch(/\bflex\b.*snap-x/);
+    expect(getByTestId("promo-cards").className).toContain("sm:grid");
+    for (const card of getAllByRole("link")) expect(card.className).toContain("w-[86%]");
+    unmount();
+    storefront.settings = { home_promo_cards: [{ image_url: "a.jpg" }] };
+    const one = render(<PromoCards />);
+    expect(one.getByTestId("promo-cards").className).not.toContain("snap-x");
+  });
+});
