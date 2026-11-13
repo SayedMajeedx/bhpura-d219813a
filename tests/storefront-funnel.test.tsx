@@ -135,6 +135,17 @@ describe("the card's sources", () => {
     expect(screen.getByText("Direct")).toBeInTheDocument();
   });
 
+  it("sit under their headings in Arabic, the numbers' cells following the page", async () => {
+    // A cell written left to right put its number on the far side from its heading on an
+    // Arabic page (the owner's report of 2026-11-13); only the digits read left to right.
+    data.sources = [{ source: "instagram", visits: 527, orders: 1 }];
+    await show(true);
+    const visits = (await screen.findByText("527")).closest("td") as HTMLElement;
+    expect(visits).not.toHaveAttribute("dir");
+    expect(visits.className).toContain("text-end");
+    expect(screen.getByRole("columnheader", { name: "زيارات" }).className).toContain("text-end");
+  });
+
   it("are left out until a visit has a source", async () => {
     data.sources = [];
     await show(true);

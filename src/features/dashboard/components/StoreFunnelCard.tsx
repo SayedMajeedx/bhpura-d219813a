@@ -155,11 +155,11 @@ export function StoreFunnelCard({
                 <td className="py-1 text-muted-foreground">
                   {isAr ? SOURCE_WORDS[row.source].ar : SOURCE_WORDS[row.source].en}
                 </td>
-                <td className="py-1 text-end font-mono tabular-nums" dir="ltr">
-                  {row.visits.toLocaleString("en-US")}
+                <td className="py-1 text-end font-mono tabular-nums">
+                  <bdi dir="ltr">{row.visits.toLocaleString("en-US")}</bdi>
                 </td>
-                <td className="py-1 text-end font-mono tabular-nums" dir="ltr">
-                  {row.orders.toLocaleString("en-US")}
+                <td className="py-1 text-end font-mono tabular-nums">
+                  <bdi dir="ltr">{row.orders.toLocaleString("en-US")}</bdi>
                 </td>
               </tr>
             ))}
