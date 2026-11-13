@@ -6,6 +6,8 @@ import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
 /**
  * The home page promo cards (image, title and link), the first image loaded eagerly. A card with a
  * title or a line under it is shaded behind them; a card that is only its picture is drawn as it is.
+ * On a phone two cards or more are one sideways row, the next card peeking: stacked, Pura's two
+ * cards took 400px and pushed its first product below the first screen (2026-11-13).
  */
 export function PromoCards() {
   const { settings, lang } = useStorefront();
@@ -13,7 +15,14 @@ export function PromoCards() {
   const firstImageIndex = cards.findIndex((card) => Boolean(card.image_url));
   if (!cards.length) return null;
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+    <div
+      data-testid="promo-cards"
+      className={
+        cards.length > 1
+          ? "-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
+          : "grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"
+      }
+    >
       {cards.map((card, index) => {
         const title =
           lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
@@ -26,7 +35,9 @@ export function PromoCards() {
             key={index}
             href={card.href || "#products"}
             aria-label={title || subtitle ? undefined : lang === "ar" ? "عرض خاص" : "Special offer"}
-            className="group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm"
+            className={`group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm ${
+              cards.length > 1 ? "w-[86%] shrink-0 snap-start sm:w-auto" : ""
+            }`}
             style={{
               backgroundColor: card.background_color || "#f4f4f4",
               color: card.text_color || "#ffffff",

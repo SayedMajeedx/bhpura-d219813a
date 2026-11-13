@@ -220,7 +220,7 @@ function StoreHome() {
         activeCat,
       }) && (
         <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-8">
             <PromoCards />
             {!activeCat && <MerchandisingSection kind="new" products={newest} />}
           </div>
@@ -237,7 +237,7 @@ function StoreHome() {
         <div
           ref={productsSectionRef}
           id="products-section"
-          className="mx-auto max-w-7xl scroll-mt-20 px-4 pt-8 sm:px-6 sm:pt-12"
+          className="mx-auto max-w-7xl scroll-mt-20 px-4 pt-5 sm:px-6 sm:pt-12"
         >
           <SectionHeading
             title={activeCat ? undefined : null}

@@ -22,6 +22,14 @@ vi.mock("../src/lib/data/storefront-funnel", () => ({
       queryKey: ["storefront-funnel", "sources", brandId, from, to],
       queryFn: async () => data.sources,
     }),
+    checkout: (brandId: string) => ({
+      queryKey: ["storefront-funnel", "checkout", brandId],
+      queryFn: async () => null,
+    }),
+    campaigns: (brandId: string) => ({
+      queryKey: ["storefront-funnel", "campaigns", brandId],
+      queryFn: async () => [],
+    }),
   },
 }));
 vi.mock("@/lib/data/storefront-funnel", () => ({
@@ -34,6 +42,14 @@ vi.mock("@/lib/data/storefront-funnel", () => ({
     sources: (brandId: string, from: string, to: string) => ({
       queryKey: ["storefront-funnel", "sources", brandId, from, to],
       queryFn: async () => data.sources,
+    }),
+    checkout: (brandId: string) => ({
+      queryKey: ["storefront-funnel", "checkout", brandId],
+      queryFn: async () => null,
+    }),
+    campaigns: (brandId: string) => ({
+      queryKey: ["storefront-funnel", "campaigns", brandId],
+      queryFn: async () => [],
     }),
   },
 }));

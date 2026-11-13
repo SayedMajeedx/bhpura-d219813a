@@ -3,6 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { storefrontFunnelQueries } from "@/lib/data/storefront-funnel";
 import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
+import {
+  CampaignCounts,
+  CheckoutStops,
+  CountsTable,
+} from "@/features/dashboard/components/FunnelDetails";
+import { CampaignLinkButton } from "@/components/admin/CampaignLinkDialog";
 import { conversionRate, funnelStages, type FunnelStage, type VisitSource } from "@/lib/funnel";
 
 /** The last 30 days, as the dashboard's other figures read them (from midnight 29 days ago). */
@@ -132,40 +138,25 @@ export function StoreFunnelCard({
       )}
 
       {sources && sources.length > 0 ? (
-        <table className="w-full text-xs">
-          <caption className="pb-1.5 text-start text-xs font-medium text-foreground">
-            {isAr ? "من وين جاءت الزيارات" : "Where visits came from"}
-          </caption>
-          <thead className="text-muted-foreground">
-            <tr>
-              <th scope="col" className="pb-1 text-start font-normal">
-                {isAr ? "المصدر" : "Source"}
-              </th>
-              <th scope="col" className="pb-1 text-end font-normal">
-                {isAr ? "زيارات" : "Visits"}
-              </th>
-              <th scope="col" className="pb-1 text-end font-normal">
-                {isAr ? "طلبات" : "Orders"}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sources.map((row) => (
-              <tr key={row.source} className="border-t border-border">
-                <td className="py-1 text-muted-foreground">
-                  {isAr ? SOURCE_WORDS[row.source].ar : SOURCE_WORDS[row.source].en}
-                </td>
-                <td className="py-1 text-end font-mono tabular-nums">
-                  <bdi dir="ltr">{row.visits.toLocaleString("en-US")}</bdi>
-                </td>
-                <td className="py-1 text-end font-mono tabular-nums">
-                  <bdi dir="ltr">{row.orders.toLocaleString("en-US")}</bdi>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <CountsTable
+          caption={isAr ? "من وين جاءت الزيارات" : "Where visits came from"}
+          heads={[
+            isAr ? "المصدر" : "Source",
+            isAr ? "زيارات" : "Visits",
+            isAr ? "طلبات" : "Orders",
+          ]}
+          rows={sources.map((row) => ({
+            key: row.source,
+            name: isAr ? SOURCE_WORDS[row.source].ar : SOURCE_WORDS[row.source].en,
+            counts: [row.visits, row.orders],
+          }))}
+        />
       ) : null}
+      <CampaignCounts brandId={brandId} from={period.from} to={period.to} isAr={isAr} />
+      <CheckoutStops brandId={brandId} from={period.from} to={period.to} isAr={isAr} />
+      <div className="flex justify-end">
+        <CampaignLinkButton isAr={isAr} />
+      </div>
     </section>
   );
 }

@@ -1,5 +1,5 @@
-import { stepToSend, visitSource } from "@/lib/funnel";
-import { recordFunnelStep } from "@/lib/data/storefront-funnel";
+import { campaignWord, stepToSend, visitSource } from "@/lib/funnel";
+import { recordCheckoutStep, recordFunnelStep } from "@/lib/data/storefront-funnel";
 import {
   sendAdBrowsingEvent,
   sendAdGiftCardPurchase,
@@ -63,21 +63,35 @@ let funnel: { slug: string; allowed: boolean } | null = null;
 
 export function setFunnelRecording(next: { slug: string; allowed: boolean } | null) {
   funnel = next;
+  if (next && heldCheckout) {
+    const held = heldCheckout;
+    heldCheckout = null;
+    recordCheckoutProgress(held.part, held.problem);
+  }
+}
+
+/** Checkout's progress from before the funnel was set up (a page's effects run first). */
+let heldCheckout: { part: number; problem: string | null } | null = null;
+
+/** This tab's visit id for the store, made on its first step. */
+function visitId(slug: string): string {
+  const visitKey = `boutq-visit:${slug}`;
+  let visit = sessionStorage.getItem(visitKey);
+  if (!visit) {
+    visit = crypto.randomUUID();
+    sessionStorage.setItem(visitKey, visit);
+  }
+  return visit;
 }
 
 function recordFunnel(event: StorefrontEvent) {
   if (!funnel?.allowed) return;
   const { slug } = funnel;
   try {
-    const visitKey = `boutq-visit:${slug}`;
     const stepKey = `boutq-visit-step:${slug}`;
     const step = stepToSend(event, Number(sessionStorage.getItem(stepKey) ?? 0));
     if (!step) return;
-    let visit = sessionStorage.getItem(visitKey);
-    if (!visit) {
-      visit = crypto.randomUUID();
-      sessionStorage.setItem(visitKey, visit);
-    }
+    const visit = visitId(slug);
     sessionStorage.setItem(stepKey, String(step));
     // Read once, as the visit starts: later pages of the store are not where it came from.
     const sourceKey = `boutq-visit-source:${slug}`;
@@ -90,12 +104,38 @@ function recordFunnel(event: StorefrontEvent) {
         host: window.location.hostname,
       });
       sessionStorage.setItem(sourceKey, source);
+      // The campaign word the store tagged its link with (`?utm_campaign=final-call`), if any.
+      sessionStorage.setItem(
+        `boutq-visit-campaign:${slug}`,
+        campaignWord(new URLSearchParams(window.location.search).get("utm_campaign")) ?? "",
+      );
     }
-    void recordFunnelStep(slug, visit, step, source).catch(() => {
+    const campaign = sessionStorage.getItem(`boutq-visit-campaign:${slug}`) || null;
+    void recordFunnelStep(slug, visit, step, source, campaign).catch(() => {
       // A step that could not be sent is not counted; the page goes on.
     });
   } catch {
     // Storage unavailable (a private window): this visit is not counted.
+  }
+}
+
+/**
+ * How far into checkout this visit went and what stands in its way (`src/lib/checkout-progress.ts`),
+ * under the funnel's own consent and visit id. Never fails the page.
+ */
+export function recordCheckoutProgress(part: number, problem: string | null) {
+  if (!funnel) {
+    heldCheckout = { part: Math.max(part, heldCheckout?.part ?? 0), problem };
+    return;
+  }
+  if (!funnel.allowed) return;
+  const { slug } = funnel;
+  try {
+    void recordCheckoutStep(slug, visitId(slug), part, problem).catch(() => {
+      // Not recorded; checkout goes on.
+    });
+  } catch {
+    // Storage unavailable: this visit is not counted.
   }
 }
 

@@ -44,23 +44,8 @@ export function CustomerDetailsCard({
     <Card className="p-5 space-y-4">
       <h2 className="font-display text-xl">{t("بيانات العميل", "Customer details")}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <Label htmlFor="checkout-name">
-            {t("الاسم الكامل", "Full name")}
-            <span className="text-destructive font-bold ms-1" aria-hidden="true">
-              *
-            </span>
-          </Label>
-          <Input
-            id="checkout-name"
-            name="name"
-            required
-            autoComplete="name"
-            className="h-11"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-          />
-        </div>
+        {/* The phone first: it is how the store reaches a shopper, and once typed an unfinished
+            order can still be followed up (the cart keeps it as soon as it is typed). */}
         <div>
           <Label htmlFor="checkout-phone">
             {t("رقم الهاتف", "Phone")}
@@ -81,6 +66,23 @@ export function CustomerDetailsCard({
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             onBlur={(e) => checkRegisteredAccount("phone", e.target.value)}
+          />
+        </div>
+        <div>
+          <Label htmlFor="checkout-name">
+            {t("الاسم الكامل", "Full name")}
+            <span className="text-destructive font-bold ms-1" aria-hidden="true">
+              *
+            </span>
+          </Label>
+          <Input
+            id="checkout-name"
+            name="name"
+            required
+            autoComplete="name"
+            className="h-11"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
         </div>
         <div className="sm:col-span-2">

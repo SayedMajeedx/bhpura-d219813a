@@ -9128,6 +9128,9 @@ export type Database = {
       storefront_sessions: {
         Row: {
           brand_id: string;
+          campaign: string | null;
+          checkout_problem: string | null;
+          checkout_step: number | null;
           first_seen: string;
           last_seen: string;
           reached: number;
@@ -9136,6 +9139,9 @@ export type Database = {
         };
         Insert: {
           brand_id: string;
+          campaign?: string | null;
+          checkout_problem?: string | null;
+          checkout_step?: number | null;
           first_seen?: string;
           last_seen?: string;
           reached?: number;
@@ -9144,6 +9150,9 @@ export type Database = {
         };
         Update: {
           brand_id?: string;
+          campaign?: string | null;
+          checkout_problem?: string | null;
+          checkout_step?: number | null;
           first_seen?: string;
           last_seen?: string;
           reached?: number;
@@ -11916,6 +11925,15 @@ export type Database = {
             };
             Returns: boolean;
           };
+      record_checkout_step: {
+        Args: {
+          p_problem: string | null;
+          p_session: string;
+          p_slug: string;
+          p_step: number;
+        };
+        Returns: undefined;
+      };
       record_cash_account_entry: {
         Args: {
           p_account_type: string;
@@ -11972,6 +11990,16 @@ export type Database = {
           }
         | {
             Args: {
+              p_session: string;
+              p_slug: string;
+              p_source: string;
+              p_step: number;
+            };
+            Returns: undefined;
+          }
+        | {
+            Args: {
+              p_campaign: string | null;
               p_session: string;
               p_slug: string;
               p_source: string;
@@ -12960,6 +12988,24 @@ export type Database = {
         };
         Returns: number;
       };
+      storefront_checkout_problems: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          problem: string;
+          visits: number;
+        }[];
+      };
+      storefront_checkout_progress: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          contact: number;
+          delivery: number;
+          opened: number;
+          ordered: number;
+          pressed: number;
+          ready: number;
+        }[];
+      };
       storefront_funnel: {
         Args: { p_brand_id: string; p_from: string; p_to: string };
         Returns: {
@@ -12967,6 +13013,14 @@ export type Database = {
           checkouts: number;
           orders: number;
           product_views: number;
+          visits: number;
+        }[];
+      };
+      storefront_funnel_campaigns: {
+        Args: { p_brand_id: string; p_from: string; p_to: string };
+        Returns: {
+          campaign: string;
+          orders: number;
           visits: number;
         }[];
       };
