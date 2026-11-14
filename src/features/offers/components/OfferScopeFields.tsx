@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { withShown, type PartnerChoice } from "@/features/offers/lib/partner-pick";
 
 export type ScopeProduct = { id: string; name: string };
 export type ScopeCategory = { slug: string; name: string };
@@ -24,6 +25,8 @@ export function OfferScopeFields({
   productIds,
   categorySlugs,
   allowAll = true,
+  partners = [],
+  onPickPartner,
   onChange,
 }: {
   isAr: boolean;
@@ -33,6 +36,10 @@ export function OfferScopeFields({
   productIds: string[];
   categorySlugs: string[];
   allowAll?: boolean;
+  /** The partner shops holding a piece now: the products list can be narrowed to one's. */
+  partners?: PartnerChoice[];
+  /** Products were chosen from a partner shop's (its pieces are ready-made). */
+  onPickPartner?: () => void;
   onChange: (next: { product_ids: string[]; category_slugs: string[] }) => void;
 }) {
   const id = useId();
@@ -40,14 +47,21 @@ export function OfferScopeFields({
     !allowAll || productIds.length > 0 || categorySlugs.length > 0,
   );
   const [search, setSearch] = useState("");
+  const [partnerId, setPartnerId] = useState<string | null>(null);
+  const partner = partners.find((p) => p.id === partnerId) ?? null;
   const shown = useMemo(() => {
     const term = search.trim().toLowerCase();
-    const list = term ? products.filter((p) => p.name.toLowerCase().includes(term)) : products;
+    const held = partner ? new Set(partner.productIds) : null;
+    const list = products.filter(
+      (p) => (!held || held.has(p.id)) && (!term || p.name.toLowerCase().includes(term)),
+    );
     // The chosen ones first, so a long catalogue never hides what the offer already names.
     return [...list].sort(
       (a, b) => Number(productIds.includes(b.id)) - Number(productIds.includes(a.id)),
     );
-  }, [products, productIds, search]);
+  }, [products, productIds, search, partner]);
+  const shownIds = shown.map((p) => p.id);
+  const allShownChosen = shownIds.length > 0 && shownIds.every((pid) => productIds.includes(pid));
 
   return (
     <fieldset className="space-y-2 rounded-xl border border-border p-3">
@@ -114,6 +128,37 @@ export function OfferScopeFields({
             <Label htmlFor={`${id}-search`} className="text-xs font-medium">
               {isAr ? "المنتجات" : "Products"}
             </Label>
+            {partners.length > 0 && (
+              <div
+                role="group"
+                aria-label={isAr ? "عرض المنتجات" : "Show products"}
+                className="flex flex-wrap gap-1.5"
+              >
+                {[null, ...partners].map((choice) => (
+                  <Button
+                    key={choice?.id ?? "all"}
+                    type="button"
+                    size="sm"
+                    variant="chip"
+                    aria-pressed={partnerId === (choice?.id ?? null)}
+                    className={cn(
+                      "border border-border",
+                      partnerId === (choice?.id ?? null) &&
+                        "border-primary bg-primary/10 text-foreground",
+                    )}
+                    onClick={() => setPartnerId(choice?.id ?? null)}
+                  >
+                    {choice
+                      ? isAr
+                        ? `عند ${choice.name} (${choice.productIds.length})`
+                        : `At ${choice.name} (${choice.productIds.length})`
+                      : isAr
+                        ? "كل المنتجات"
+                        : "All products"}
+                  </Button>
+                ))}
+              </div>
+            )}
             <Input
               id={`${id}-search`}
               value={search}
@@ -121,6 +166,29 @@ export function OfferScopeFields({
               placeholder={isAr ? "ابحث عن منتج" : "Search products"}
               className="h-9"
             />
+            {(partner || search.trim()) && shownIds.length > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-8 px-2 text-xs"
+                onClick={() => {
+                  onChange({
+                    product_ids: withShown(productIds, shownIds, !allShownChosen),
+                    category_slugs: categorySlugs,
+                  });
+                  if (partner && !allShownChosen) onPickPartner?.();
+                }}
+              >
+                {allShownChosen
+                  ? isAr
+                    ? "إلغاء اختيار المعروض"
+                    : "Deselect those shown"
+                  : isAr
+                    ? `اختر المعروض (${shownIds.length})`
+                    : `Select those shown (${shownIds.length})`}
+              </Button>
+            )}
             <div className="grid max-h-40 gap-1.5 overflow-auto">
               {shown.map((product) => (
                 <Label

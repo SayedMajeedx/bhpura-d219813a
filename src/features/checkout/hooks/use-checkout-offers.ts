@@ -36,6 +36,9 @@ export function useCheckoutOffers({
           variant_id: item.variant_id as string,
           quantity: item.qty,
           line_total: Number((item.price * item.qty).toFixed(3)),
+          // A ready size of a made-to-order piece: an offer on ready pieces reaches it, as the
+          // order builder will write it (`placeStorefrontOrderArgs` sends the same).
+          ...(item.tailored === false ? { tailored: false } : {}),
         })),
       promoCode: appliedPromo?.code ?? null,
       fulfillment,

@@ -70,6 +70,7 @@ export function ProductMobileBuyBar({
     ? offeredShownPrice(offers, product, {
         ...priceShown,
         isRange: priceShown.min !== priceShown.max,
+        madeToOrder: Boolean(product.is_made_to_order) && isTailoringActive,
       })
     : null;
   const shownLabel = !offered

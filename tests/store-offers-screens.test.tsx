@@ -60,6 +60,16 @@ const categoryData = async (importOriginal: () => Promise<object>) => ({
     }),
   },
 });
+// The Discounts page reads the partner shops to choose products by (tests/offer-pieces.test.tsx).
+const incubatorData = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  incubatorsQueries: {
+    active: () => ({ queryKey: ["partners"], queryFn: async () => [] }),
+    inventory: () => ({ queryKey: ["partner-stock"], queryFn: async () => [] }),
+  },
+});
+vi.mock("../src/lib/data/incubators", (io) => incubatorData(io));
+vi.mock("@/lib/data/incubators", (io) => incubatorData(io));
 vi.mock("../src/lib/data/categories", (io) => categoryData(io));
 vi.mock("@/lib/data/categories", (io) => categoryData(io));
 vi.mock("../src/hooks/use-store-currency", () => ({ useStoreCurrency: () => "BHD" }));

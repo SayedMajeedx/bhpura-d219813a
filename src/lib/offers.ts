@@ -34,7 +34,14 @@ export interface StoreOffer {
   local_only: boolean;
   /** The areas of Bahrain a free-delivery offer is for (`bahrain-regions` values); none = all. */
   regions?: string[] | null;
+  /**
+   * Which pieces it is for (migration 20261208100000): every piece ("any"); ready pieces (in stock, or a
+   * made-to-order product's ready size); or pieces made to the customer's order. Absent, every piece.
+   */
+  pieces?: OfferPieces | null;
 }
+
+export type OfferPieces = "any" | "ready" | "made_to_order";
 
 /** An offer an order got (`orders.applied_offers`, and the preview's `applied`). */
 export interface AppliedOffer {
@@ -67,13 +74,17 @@ export const storeWide = (offer: Pick<StoreOffer, "product_ids" | "category_slug
 /**
  * Whether an offer reaches a product, as `store_offer_reaches` reads a line: a product it names,
  * a product in a category it names, or any product when it names none; a piece on sale is left
- * out when the offer says so.
+ * out when the offer says so, and a ready piece or one made to order when the offer is for the
+ * other kind. `madeToOrder` unknown (a product's page listing its offers before a piece is
+ * chosen) is not held against it.
  */
 export function offerReaches(
   offer: StoreOffer,
-  product: { id: string; category?: string | null; onSale?: boolean },
+  product: { id: string; category?: string | null; onSale?: boolean; madeToOrder?: boolean | null },
 ): boolean {
   if (offer.exclude_sale_items && product.onSale) return false;
+  if (offer.pieces === "ready" && product.madeToOrder === true) return false;
+  if (offer.pieces === "made_to_order" && product.madeToOrder === false) return false;
   if (storeWide(offer)) return true;
   return (
     (offer.product_ids ?? []).includes(product.id) ||
@@ -161,7 +172,17 @@ export function offerTerms(offer: StoreOffer, lang: Lang, money: Money): string 
           : ` (up to ${money(offer.max_discount)})`;
     }
   }
-  return condition ? `${head} ${condition}` : head;
+  const pieces = piecesTerms(offer, lang);
+  return [head, pieces, condition].filter(Boolean).join(" ");
+}
+
+/** "on ready-made pieces" / "على القطع الجاهزة": said only when an offer is for one kind. */
+export function piecesTerms(offer: Pick<StoreOffer, "pieces">, lang: Lang): string {
+  if (offer.pieces === "ready") return lang === "ar" ? "على القطع الجاهزة" : "on ready-made pieces";
+  if (offer.pieces === "made_to_order") {
+    return lang === "ar" ? "على القطع المفصّلة حسب الطلب" : "on made-to-order pieces";
+  }
+  return "";
 }
 
 /** Whether a free-delivery offer is only for the areas it names. */

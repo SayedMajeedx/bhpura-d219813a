@@ -1,4 +1,5 @@
 import { offerReaches, type StoreOffer } from "@/lib/offers";
+import { readyUnitsOf } from "@/lib/product-availability";
 import {
   buyableVariants,
   cardPrice,
@@ -58,11 +59,24 @@ export type OfferedCardPrice = CardPrice & {
 
 type OfferedProduct = PricedProduct & { id: string; category?: string | null };
 
-/** The best price-lowering offer for a piece: the one that saves most (the order takes it too). */
+/**
+ * Whether a piece of this variant is made to the customer's order, as the order builder will
+ * write its line: a made-to-order product's size with no ready piece. A size with a ready piece
+ * is sold ready, as quick add and the bundle add it (`tailored: false`).
+ */
+export function pieceMadeToOrder(product: OfferedProduct, variant: PricedVariant): boolean {
+  return Boolean(product.is_made_to_order) && readyUnitsOf([variant]) === 0;
+}
+
+/**
+ * The best price-lowering offer for a piece: the one that saves most, which is the one the order
+ * gives that piece (migration 20261208100000: each piece its best offer).
+ */
 function bestPiece(
   offers: readonly StoreOffer[],
   product: OfferedProduct,
   variant: PricedVariant,
+  madeToOrder: boolean,
 ): { saving: number; offer: StoreOffer | null } {
   const price = sellingPrice(variant, product);
   let best = { saving: 0, offer: null as StoreOffer | null };
@@ -73,6 +87,7 @@ function bestPiece(
         id: product.id,
         category: product.category ?? null,
         onSale: variantDiscounted(variant, product),
+        madeToOrder,
       })
     ) {
       continue;
@@ -83,14 +98,19 @@ function bestPiece(
   return best;
 }
 
-/** What a piece of this variant costs after the store's offers (its price when none lowers it). */
+/**
+ * What a piece of this variant costs after the store's offers (its price when none lowers it).
+ * `madeToOrder` is the shopper's choice where there is one (the product page's tailoring);
+ * otherwise the piece is read as the order will write it (`pieceMadeToOrder`).
+ */
 export function offeredPiecePrice(
   offers: readonly StoreOffer[],
   product: OfferedProduct,
   variant: PricedVariant,
+  madeToOrder: boolean = pieceMadeToOrder(product, variant),
 ): { price: number; was: number | null; offer: StoreOffer | null } {
   const price = sellingPrice(variant, product);
-  const { saving, offer } = bestPiece(offers, product, variant);
+  const { saving, offer } = bestPiece(offers, product, variant, madeToOrder);
   if (saving <= 0)
     return {
       price,
@@ -168,7 +188,15 @@ export function offeredCardPrice(
 export function offeredShownPrice(
   offers: readonly StoreOffer[] | null | undefined,
   product: OfferedProduct,
-  shown: { price: number; was: number; min: number; max: number; isRange: boolean },
+  shown: {
+    price: number;
+    was: number;
+    min: number;
+    max: number;
+    isRange: boolean;
+    /** The piece is being made to the customer's order (unknown: every offer may reach it). */
+    madeToOrder?: boolean | null;
+  },
 ): {
   price: number;
   min: number;
@@ -181,7 +209,12 @@ export function offeredShownPrice(
   const lowering = (offers ?? []).filter(
     (offer) =>
       lowersThePrice(offer) &&
-      offerReaches(offer, { id: product.id, category: product.category ?? null, onSale }),
+      offerReaches(offer, {
+        id: product.id,
+        category: product.category ?? null,
+        onSale,
+        madeToOrder: shown.madeToOrder,
+      }),
   );
   if (lowering.length === 0 || shown.price <= 0) return null;
   const at = (price: number) =>

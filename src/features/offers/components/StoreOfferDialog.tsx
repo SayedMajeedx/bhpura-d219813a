@@ -22,6 +22,8 @@ import {
   type ScopeCategory,
   type ScopeProduct,
 } from "@/features/offers/components/OfferScopeFields";
+import { OfferPiecesField } from "@/features/offers/components/OfferPiecesField";
+import type { PartnerChoice } from "@/features/offers/lib/partner-pick";
 import {
   draftOffer,
   emptyOfferForm,
@@ -73,6 +75,8 @@ export function StoreOfferDialog({
   currency,
   products,
   categories,
+  partners = [],
+  hasMadeToOrder = false,
   saving,
   onSave,
 }: {
@@ -84,6 +88,10 @@ export function StoreOfferDialog({
   currency: string;
   products: ScopeProduct[];
   categories: ScopeCategory[];
+  /** The partner shops holding a piece now, to choose products by. */
+  partners?: PartnerChoice[];
+  /** The store sells made-to-order pieces: an offer can be for ready or made-to-order ones. */
+  hasMadeToOrder?: boolean;
   saving: boolean;
   onSave: (form: OfferForm) => void;
 }) {
@@ -356,10 +364,23 @@ export function StoreOfferDialog({
             categories={categories}
             productIds={form.product_ids}
             categorySlugs={form.category_slugs}
+            partners={partners}
+            // A partner shop holds ready pieces: an offer on them is for ready pieces, unless the
+            // merchant already chose otherwise.
+            onPickPartner={() => {
+              if (hasMadeToOrder && form.pieces === "any") patch({ pieces: "ready" });
+            }}
             onChange={(next) =>
               patch({ product_ids: next.product_ids, category_slugs: next.category_slugs })
             }
           />
+          {hasMadeToOrder && form.kind !== "free_delivery" && (
+            <OfferPiecesField
+              isAr={isAr}
+              value={form.pieces}
+              onChange={(pieces) => patch({ pieces })}
+            />
+          )}
           <Label className="flex items-center gap-2 text-sm font-normal">
             <Checkbox
               checked={form.exclude_sale_items}
