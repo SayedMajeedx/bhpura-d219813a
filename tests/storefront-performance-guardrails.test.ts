@@ -143,6 +143,26 @@ describe("storefront performance guardrails", () => {
     expect(fontsCss).toContain("U+0600-06FF");
   });
 
+  it("serves Readex Pro split per script, so a page downloads only the scripts it shows", () => {
+    // PageSpeed, 2026-11-14: one 121 KB file for Arabic, Latin and the accented letters; an
+    // Arabic page now takes the Arabic and Latin files (83 KB). The whole file stays for print.
+    const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
+    const faces = fontsCss
+      .split("@font-face")
+      .filter((face) => face.includes('font-family: "Readex Pro"'));
+    expect(faces).toHaveLength(3);
+    for (const subset of ["arabic", "latin", "latin-ext"]) {
+      const file = `/fonts/variable/readex-pro-${subset}.woff2`;
+      const bytes = readFileSync(resolve(process.cwd(), `public${file}`));
+      expect(bytes.subarray(0, 4).toString("ascii")).toBe("wOF2");
+      const face = faces.find((f) => f.includes(file));
+      expect(face).toContain("unicode-range:");
+      // Both axes stay: the weight and the store's HEXP setting (typography settings).
+      expect(face).toContain("font-weight: 160 700");
+    }
+    expect(fontsCss).not.toContain("readex-pro-hexp-wght.woff2");
+  });
+
   it("never loads fonts through a render-blocking third-party chain", () => {
     const fontsCss = readFileSync(resolve(process.cwd(), "src/fonts.css"), "utf8");
     expect(fontsCss).not.toMatch(/@import\s+url\(/);
