@@ -116,9 +116,26 @@ describe("storefront surfaces use the store's option axes", () => {
 
     fashionStore();
     render(<ColorDots variants={fashionVariants} />);
-    const group = screen.getByRole("group");
-    expect(within(group).getByLabelText("Black")).toBeInTheDocument();
-    expect(within(group).getByLabelText("Beige")).toBeInTheDocument();
+    const group = screen.getByRole("group", { name: "Available colours" });
+    // Each dot is a picture of its colour: a name on a plain span is not read everywhere, and
+    // PageSpeed failed the store's cards for it (2026-11-14).
+    expect(within(group).getByRole("img", { name: "Black" })).toBeInTheDocument();
+    expect(within(group).getByRole("img", { name: "Beige" })).toBeInTheDocument();
+  });
+
+  it("colour dots: the colours past the first few are counted in the shopper's language", () => {
+    fashionStore();
+    const many = ["Black", "Beige", "Navy", "Brown", "Purple", "Red", "Blue"].map((color) => ({
+      color,
+    }));
+    const english = render(<ColorDots variants={many} maxVisible={5} />);
+    expect(screen.getByRole("img", { name: "2 more colours" })).toHaveTextContent("+2");
+    english.unmount();
+
+    store.lang = "ar";
+    render(<ColorDots variants={many} maxVisible={5} />);
+    expect(screen.getByRole("group", { name: "الألوان المتاحة" })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "ولونان غيرها" })).toHaveTextContent("+2");
   });
 
   it("category filters: headings follow the store, roasts are text chips", () => {

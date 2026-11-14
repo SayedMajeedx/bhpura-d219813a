@@ -14,7 +14,10 @@ import { ACTIVE_TAB_ATTRIBUTES, ACTIVE_TAB_SELECTORS, PILL_LOOK, pillBox } from 
  * draws itself, as before.
  *
  * The first position, and any after a resize, is written without a transition, so the pill
- * never flies in from the corner.
+ * never flies in from the corner. The transition comes back two frames later, once the browser
+ * has drawn the pill where it is, rather than by reading the layout at once (`offsetWidth`):
+ * that read, and reading the tab's look again on every resize, laid the store's home page out
+ * four times while it started, 139 ms on a phone (PageSpeed, 2026-11-14).
  */
 export function TabsPill({ className, as = "span" }: { className?: string; as?: "span" | "li" }) {
   const ref = useRef<HTMLElement>(null);
@@ -24,7 +27,24 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
     const bar = pill?.parentElement;
     if (!pill || !bar) return;
 
-    const place = (instant: boolean) => {
+    let settling: number | null = null;
+    const stopSettling = () => {
+      if (settling !== null) cancelFrame(settling);
+      settling = null;
+    };
+    // Lets the transition back once the instant position has been drawn: a frame's callbacks run
+    // before it is styled, so the first frame draws the instant position and the second lets go.
+    const settleLater = () => {
+      stopSettling();
+      settling = nextFrame(() => {
+        settling = nextFrame(() => {
+          settling = null;
+          delete pill.dataset.instant;
+        });
+      });
+    };
+
+    const place = (instant: boolean, restyle = true) => {
       const tab = ACTIVE_TAB_SELECTORS.map((s) => bar.querySelector<HTMLElement>(s)).find(Boolean);
       if (!tab || tab === pill) {
         pill.dataset.ready = "false";
@@ -42,24 +62,25 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
       );
       const first = pill.dataset.ready !== "true";
       if (instant || first) pill.dataset.instant = "true";
-      // Read the tab's look with its own background back on (no paint happens in between).
-      pill.dataset.ready = "false";
-      const look = getComputedStyle(tab);
-      for (const key of PILL_LOOK) pill.style[key] = look[key];
+      // The tab's look is read when the pill first lands and when the choice or a class changes;
+      // a resize or a change of direction moves the pill only.
+      if (restyle || first) {
+        // Read the tab's look with its own background back on (no paint happens in between).
+        pill.dataset.ready = "false";
+        const look = getComputedStyle(tab);
+        for (const key of PILL_LOOK) pill.style[key] = look[key];
+      }
       pill.style.transform = `translate(${box.x}px, ${box.y}px)`;
       pill.style.width = `${box.width}px`;
       pill.style.height = `${box.height}px`;
       pill.dataset.ready = "true";
-      if (instant || first) {
-        void pill.offsetWidth;
-        delete pill.dataset.instant;
-      }
+      if (instant || first) settleLater();
     };
 
     place(true);
     // A tab that changes size (a font arriving, a count growing) moves the pill at once.
     const resizes =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => place(true));
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => place(true, false));
     const watchSizes = () => {
       if (!resizes) return;
       resizes.disconnect();
@@ -89,7 +110,7 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
     // neither watcher above hears it, and the pill stayed on the side its tab had left (the
     // product page's sizing toggle drew its fill under the other choice). The direction is set
     // on an element above the bar (the page, the store's shell), so every one of them is watched.
-    const directions = new MutationObserver(() => place(true));
+    const directions = new MutationObserver(() => place(true, false));
     for (let node = bar.parentElement; node; node = node.parentElement) {
       directions.observe(node, { attributes: true, attributeFilter: ["dir"] });
     }
@@ -97,6 +118,7 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
       changes.disconnect();
       resizes?.disconnect();
       directions.disconnect();
+      stopSettling();
     };
   }, []);
 
@@ -109,4 +131,16 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
       className={cn("t-tabs-pill", className)}
     />
   );
+}
+
+const hasFrames = () =>
+  typeof requestAnimationFrame === "function" && typeof cancelAnimationFrame === "function";
+
+function nextFrame(callback: () => void): number {
+  return hasFrames() ? requestAnimationFrame(callback) : window.setTimeout(callback, 16);
+}
+
+function cancelFrame(id: number) {
+  if (hasFrames()) cancelAnimationFrame(id);
+  else window.clearTimeout(id);
 }

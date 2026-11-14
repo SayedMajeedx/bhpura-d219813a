@@ -31,13 +31,16 @@ const homeSource = () =>
     .join("\n");
 
 describe("storefront performance guardrails", () => {
-  it("prioritizes the actual first promo image LCP candidate", () => {
+  it("loads the first promo picture eagerly, leaving the top priority to the hero", () => {
+    // At "high", React preloaded the first card beside the hero and they shared a phone's
+    // bandwidth (PageSpeed, 2026-11-14). Its width is `promoCardSizes`, run by
+    // tests/home-empty-promo-area.test.tsx.
     const home = homeSource();
 
-    expect(home).toContain("firstImageIndex");
-    expect(home).toContain('fetchPriority={index === firstImageIndex ? "high" : "auto"}');
     expect(home).toContain('loading={index === firstImageIndex ? "eager" : "lazy"}');
-    expect(home).toContain('sizes="(min-width: 640px) 50vw, 100vw"');
+    expect(home).not.toContain('fetchPriority={index === firstImageIndex ? "high"');
+    expect(home).toContain("sizes={sizes}");
+    expect(home).toContain("promoCardSizes(cards.length)");
   });
 
   it("does not eagerly prioritize every hero carousel slide", () => {

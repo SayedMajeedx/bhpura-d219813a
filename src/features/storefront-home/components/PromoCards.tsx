@@ -2,18 +2,33 @@ import { useStorefront } from "@/lib/storefront-context";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { StorefrontLink } from "@/features/storefront-home/components/StorefrontLink";
 import { promoCardsToShow } from "@/features/storefront-home/lib/home-products";
+import { promoCardLabel, promoCardSizes } from "@/features/storefront-home/lib/promo-cards";
+import { storefrontModules } from "@/lib/storefront-modules";
+import { isServicesProfile } from "@/lib/store-profile";
 
 /**
  * The home page promo cards (image, title and link), the first image loaded eagerly. A card with a
  * title or a line under it is shaded behind them; a card that is only its picture is drawn as it is.
  * On a phone two cards or more are one sideways row, the next card peeking: stacked, Pura's two
  * cards took 400px and pushed its first product below the first screen (2026-11-13).
+ *
+ * Only the hero asks for the network first: the first card's picture is eager but at the browser's
+ * own priority, as at "high" React preloaded it beside the hero and the two shared the phone's
+ * bandwidth (PageSpeed, 2026-11-14). Its `sizes` is the card's real width (`promoCardSizes`).
  */
 export function PromoCards() {
-  const { settings, lang } = useStorefront();
+  const { settings, lang, brand, addons, initialCategories } = useStorefront();
   const cards = promoCardsToShow(settings.home_promo_cards);
   const firstImageIndex = cards.findIndex((card) => Boolean(card.image_url));
   if (!cards.length) return null;
+  const sizes = promoCardSizes(cards.length);
+  // The categories the store's page arrived with: a card's name is in the HTML that is sent.
+  const labelOptions = {
+    lang,
+    slug: brand?.slug ?? "",
+    categories: initialCategories ?? [],
+    servicesStore: isServicesProfile(storefrontModules(settings, addons)),
+  };
   return (
     <div
       data-testid="promo-cards"
@@ -34,7 +49,10 @@ export function PromoCards() {
           <StorefrontLink
             key={index}
             href={card.href || "#products"}
-            aria-label={title || subtitle ? undefined : lang === "ar" ? "عرض خاص" : "Special offer"}
+            aria-label={promoCardLabel(
+              { href: card.href, hasWords: Boolean(title || subtitle) },
+              labelOptions,
+            )}
             className={`group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm ${
               cards.length > 1 ? "w-[86%] shrink-0 snap-start sm:w-auto" : ""
             }`}
@@ -47,12 +65,11 @@ export function PromoCards() {
               <ResponsiveImage
                 src={card.image_url}
                 preset="hero"
-                sizes="(min-width: 640px) 50vw, 100vw"
+                sizes={sizes}
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-(--motion-very-slow) group-hover:scale-105"
-                fetchPriority={index === firstImageIndex ? "high" : "auto"}
                 loading={index === firstImageIndex ? "eager" : "lazy"}
-                decoding={index === firstImageIndex ? "sync" : "async"}
+                decoding="async"
               />
             )}
             {/* The shade is there for the card's own words, from the side they start on. A card

@@ -3,6 +3,7 @@ import { resolveColorHex, extractUniqueVariantColors } from "@/lib/color-names";
 import { resolveVariantAxis, type ProductVariantLabels } from "@/lib/addons/addon-registry";
 import { isColorSwatchAxis, useStoreAxisDefaults } from "@/lib/variant-axes";
 import { useStorefront } from "@/lib/storefront-context";
+import { countOf } from "@/lib/arabic-count";
 
 interface ColorDotsProps {
   variants?: Array<{ color?: string | null }>;
@@ -47,11 +48,15 @@ export function ColorDots({
 
   const visible = colors.slice(0, maxVisible);
   const remaining = colors.length - maxVisible;
+  const reader = lang === "ar" ? "ar" : "en";
 
+  // A dot that is not a button is a picture of its colour (`role="img"`): a name on a plain span
+  // is not read by every screen reader, and PageSpeed failed the store's cards for it
+  // (2026-11-14). The group and the "+3" are named in the shopper's language.
   return (
     <div
       role="group"
-      aria-label="خيارات الألوان المتاحة / Available color options"
+      aria-label={reader === "ar" ? "الألوان المتاحة" : "Available colours"}
       className={`flex items-center gap-1.5 flex-wrap ${className}`}
     >
       {visible.map((c) => {
@@ -82,6 +87,7 @@ export function ColorDots({
         return (
           <span
             key={c.name}
+            role="img"
             title={c.name}
             aria-label={c.name}
             className="h-3 w-3 rounded-full border border-border shadow-xs inline-block"
@@ -92,8 +98,13 @@ export function ColorDots({
 
       {remaining > 0 && (
         <span
+          role="img"
           className="text-xs font-medium text-muted-foreground select-none leading-none px-0.5"
-          aria-label={`+${remaining} ألوان إضافية`}
+          aria-label={
+            reader === "ar"
+              ? `و${countOf(remaining, "color", "ar")} غيرها`
+              : `${remaining} more ${remaining === 1 ? "colour" : "colours"}`
+          }
         >
           +{remaining}
         </span>

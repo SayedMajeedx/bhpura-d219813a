@@ -101,6 +101,14 @@ describe("the columns footer and the Pages & Policies screen", () => {
     expect(screen.getAllByText("Returns").length).toBeGreaterThan(0);
   });
 
+  it("heads its columns at the level of the page's sections", () => {
+    // An h4 under the page's h2 sections skipped a level (PageSpeed, 2026-11-14).
+    render(<FooterV2 />, { wrapper: queryWrapper });
+    expect(screen.getByRole("heading", { level: 2, name: "The House" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Support" })).toBeInTheDocument();
+    expect(screen.queryAllByRole("heading", { level: 4 })).toHaveLength(0);
+  });
+
   it("leaves the company column out when no page is in it", () => {
     state.settings.pages = [
       { slug: "returns", title_en: "Returns", title_ar: null, group: "help" },
