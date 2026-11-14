@@ -244,7 +244,7 @@ export async function signInWithStressData(
         expires_at: Math.floor(Date.now() / 1000) + 3600,
       };
       try {
-        window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+        window.localStorage.setItem("sb-uzspbrctbviihiqwgysn-auth-token", JSON.stringify(session));
         window.localStorage.setItem("lang", lang);
         // "Keep me signed in": without it the app signs a fresh browser session out.
         window.localStorage.setItem("boutq.auth.rememberMe", "1");

@@ -5,7 +5,7 @@ const buildId = event?.client_payload?.build_id;
 const buildToken = event?.client_payload?.build_token;
 const api =
   process.env.WHITE_LABEL_BUILD_API ||
-  "https://ikciahnuqhemvnyfvbyp.supabase.co/functions/v1/white-label-build-api";
+  "https://uzspbrctbviihiqwgysn.supabase.co/functions/v1/white-label-build-api";
 if (!buildId || !buildToken) throw new Error("Build callback environment is incomplete");
 let upload = null;
 try {

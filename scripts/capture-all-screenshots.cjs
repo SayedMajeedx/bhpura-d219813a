@@ -11,8 +11,8 @@ async function main() {
   }
 
   const sb = createClient(
-    "https://ikciahnuqhemvnyfvbyp.supabase.co",
-    "sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy",
+    "https://uzspbrctbviihiqwgysn.supabase.co",
+    "sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03",
   );
   const { data: authData, error } = await sb.auth.signInWithPassword({
     email: "majeed@hotmail.it",
@@ -69,7 +69,7 @@ async function main() {
           ({ session, lang }) => {
             try {
               window.localStorage.setItem(
-                "sb-ikciahnuqhemvnyfvbyp-auth-token",
+                "sb-uzspbrctbviihiqwgysn-auth-token",
                 JSON.stringify(session),
               );
               window.localStorage.setItem("lang", lang);
