@@ -30,7 +30,8 @@ import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { CustomizationsSection } from "@/features/inventory/components/CustomizationsSection";
 
 import { ProductsSection } from "@/features/inventory/components/ProductsSection";
-import { INVENTORY_VIEW_PARAMS, inventoryViewFromSearch } from "@/features/inventory/lib/list-view";
+import { inventoryViewFromSearch } from "@/features/inventory/lib/list-view";
+import { INVENTORY_VIEW_PARAMS } from "@/features/inventory/lib/list-view-params";
 import { productCardRatio } from "@/lib/brand-templates/design-presets";
 import { lowStockLevel } from "@/lib/inventory-health";
 import { shouldShowPrices } from "@/lib/storefront-mode";

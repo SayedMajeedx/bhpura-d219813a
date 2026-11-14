@@ -52,6 +52,28 @@ describe("storefront performance guardrails", () => {
     expect(hero).not.toContain('fetchPriority="high"');
   });
 
+  it("loads another kind of store's home, and the open cart, only when they are drawn", () => {
+    // PageSpeed, 2026-11-14: a shop's first scripts carried the services home (bookings, rentals,
+    // packages, the gallery), the menu home and the cart drawer's contents, before its hero.
+    const route = read("src/routes/$slug.index.tsx");
+    expect(route).not.toMatch(/^import \{ ServicesHome \}/m);
+    expect(route).not.toMatch(/^import \{ MenuHome \}/m);
+    expect(route).toContain('import("@/features/services-home/components/ServicesHome")');
+    expect(route).toContain('import("@/features/storefront-home/components/MenuHome")');
+
+    const drawer = read("src/components/storefront/StorefrontCartDrawer.tsx");
+    expect(drawer).toContain('import("@/components/storefront/CartDrawerBody")');
+    expect(drawer).not.toContain("useCheckoutOffers");
+  });
+
+  it("keeps a route's search check free of its page's rules", () => {
+    // Every route's search check is in the first script every page loads; the inventory's
+    // brought the list's rules (stock, attention, product facts) to every shopper.
+    const route = read("src/routes/_authenticated/admin.b.$slug.inventory.tsx");
+    expect(route).toContain('from "@/features/inventory/lib/list-view-params"');
+    expect(read("src/features/inventory/lib/list-view-params.ts")).not.toMatch(/^import /m);
+  });
+
   it("keeps admin-only chart and PDF libraries out of forced shared chunks", () => {
     const config = read("vite.config.ts");
     expect(config).not.toContain('return "vendor-pdf"');
