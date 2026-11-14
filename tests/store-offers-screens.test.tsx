@@ -209,6 +209,57 @@ describe("what a shopper sees", () => {
     expect(screen.queryByText(/10% off/)).toBeNull();
   });
 
+  it("dims an offer on ready pieces while the piece is being made, with a way to a ready size", async () => {
+    // The owner's decision of 2026-11-14: shown as if it applied, it promised tailoring 20% off.
+    state.storefront = shop();
+    state.live = [
+      live({
+        id: "w",
+        discount_value: 20,
+        min_subtotal: null,
+        pieces: "ready",
+        terms_en: "White Friday | 20%",
+      }),
+    ];
+    const product = {
+      id: "p1",
+      category: "abayas",
+      product_variants: [],
+    } as unknown as ProductProp;
+    const chooseReady = vi.fn();
+    const { rerender } = withQuery(
+      <ProductOffers product={product} madeToOrder onChooseReady={chooseReady} />,
+    );
+    const line = (await screen.findByText("White Friday | 20%")).closest("li")!;
+    expect(line.getAttribute("data-applies")).toBe("false");
+    expect(within(line).getByText(/On ready sizes only/)).toBeTruthy();
+    fireEvent.click(within(line).getByRole("button", { name: "Choose a ready size" }));
+    expect(chooseReady).toHaveBeenCalledTimes(1);
+    // On a ready size it applies, and the store's own words still say what it is for.
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <ProductOffers product={product} madeToOrder={false} onChooseReady={chooseReady} />
+      </QueryClientProvider>,
+    );
+    const ready = (await screen.findByText("White Friday | 20%")).closest("li")!;
+    expect(ready.getAttribute("data-applies")).toBe("true");
+    expect(within(ready).getByText(/on ready-made pieces/)).toBeTruthy();
+    expect(within(ready).queryByRole("button")).toBeNull();
+  });
+
+  it("offers no switch where the product has no ready size", async () => {
+    state.storefront = shop();
+    state.live = [live({ id: "w", min_subtotal: null, pieces: "ready" })];
+    const product = {
+      id: "p1",
+      category: "abayas",
+      product_variants: [],
+    } as unknown as ProductProp;
+    withQuery(<ProductOffers product={product} madeToOrder />);
+    expect(await screen.findByText(/On ready sizes only/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Choose a ready size" })).toBeNull();
+  });
+
   it("says nothing in a catalog store", async () => {
     state.storefront = shop({ settings: { storefront_mode: "catalog" } });
     state.live = [live({})];

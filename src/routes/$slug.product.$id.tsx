@@ -94,6 +94,7 @@ import {
 import { rendersOnServer } from "@/features/product-page/lib/render-side";
 import { openCartDrawer } from "@/lib/cart-drawer";
 import { isMeasurementField } from "@/features/product-page/lib/quick-add";
+import { chooseReadySize } from "@/features/product-page/lib/size-mode";
 import { SocialProofBadge } from "@/features/product-page/components/SocialProofBadge";
 import { ProductPagePending } from "@/features/product-page/components/ProductPagePending";
 import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/RecentlyViewed";
@@ -487,6 +488,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   // Derived flags + effect run before any early return so hook order is stable.
   const isMadeToOrder = Boolean(product?.is_made_to_order) && !madeToOrder.closed;
   const hasCustomFields = customFields.length > 0;
+  const chooseReady = () =>
+    chooseReadySize({ setSizeMode, setErrorMsg, setCfValues, setMeasurementsApplied });
   const { hasReadySizes, showSizeModeToggle, isTailoringActive, tailoredOnly } = tailoringState({
     isMadeToOrder,
     offeredSizes: uniqueSizes,
@@ -749,6 +752,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             isWishlisted={isWishlisted}
             lang={lang}
             madeForShopper={Boolean(product.is_made_to_order) && isTailoringActive}
+            onChooseReady={showSizeModeToggle ? chooseReady : undefined}
             originalPrice={originalPrice}
             priceLabel={priceLabel}
             priceRange={priceRange}
