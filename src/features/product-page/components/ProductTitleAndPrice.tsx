@@ -64,6 +64,8 @@ export function ProductTitleAndPrice({
     min: priceRange?.min ?? displayPrice,
     max: priceRange?.max ?? displayPrice,
     isRange: Boolean(priceRange && priceRange.min !== priceRange.max),
+    // An offer on ready pieces is not this price while the piece is being made, and the reverse.
+    madeToOrder: madeForShopper,
   });
   const shownLabel = !offered
     ? priceLabel

@@ -9054,6 +9054,7 @@ export type Database = {
           min_subtotal: number | null;
           name_ar: string;
           name_en: string;
+          pieces: string;
           product_ids: string[];
           regions: string[];
           starts_at: string | null;
@@ -9082,6 +9083,7 @@ export type Database = {
           min_subtotal?: number | null;
           name_ar?: string;
           name_en?: string;
+          pieces?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;
@@ -9110,6 +9112,7 @@ export type Database = {
           min_subtotal?: number | null;
           name_ar?: string;
           name_en?: string;
+          pieces?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;

@@ -1,5 +1,5 @@
 import type { NewStoreOffer, StoreOfferRow } from "@/lib/data/offers";
-import type { OfferKind, StoreOffer } from "@/lib/offers";
+import type { OfferKind, OfferPieces, StoreOffer } from "@/lib/offers";
 
 /**
  * One offer's form on the Discounts page, and the row it saves (store_offers). Amounts are typed
@@ -19,6 +19,8 @@ export interface OfferForm {
   product_ids: string[];
   category_slugs: string[];
   exclude_sale_items: boolean;
+  /** Which pieces it is for (every piece, ready pieces, or pieces made to the customer's order). */
+  pieces: OfferPieces;
   discount_type: "percentage" | "fixed";
   discount_value: string;
   max_discount: string;
@@ -50,6 +52,7 @@ export function emptyOfferForm(kind: OfferKind): OfferForm {
     product_ids: [],
     category_slugs: [],
     exclude_sale_items: false,
+    pieces: "any",
     discount_type: "percentage",
     discount_value: kind === "discount" ? "10" : "",
     max_discount: "",
@@ -67,6 +70,10 @@ export function emptyOfferForm(kind: OfferKind): OfferForm {
 }
 
 const text = (n: number | null | undefined) => (n == null ? "" : String(Number(n)));
+
+/** A stored kind of piece, read safely (an offer saved before it was asked is for any piece). */
+export const piecesOf = (value: string | null | undefined): OfferPieces =>
+  value === "ready" || value === "made_to_order" ? value : "any";
 
 /** `2026-10-31T20:00` in the reader's own clock, from a stored moment. */
 export function localInput(iso: string | null | undefined): string {
@@ -98,6 +105,7 @@ export function formFromRow(row: StoreOfferRow): OfferForm {
     product_ids: row.product_ids,
     category_slugs: row.category_slugs,
     exclude_sale_items: row.exclude_sale_items,
+    pieces: piecesOf(row.pieces),
     discount_type: row.discount_type === "fixed" ? "fixed" : "percentage",
     discount_value: text(row.discount_value),
     max_discount: text(row.max_discount),
@@ -206,6 +214,8 @@ export function rowFromForm(form: OfferForm): NewStoreOffer {
     product_ids: form.product_ids,
     category_slugs: form.category_slugs,
     exclude_sale_items: form.exclude_sale_items,
+    // Free delivery is for the order, not for a kind of piece.
+    pieces: form.kind === "free_delivery" ? "any" : form.pieces,
     discount_type: null,
     discount_value: null,
     max_discount: null,
@@ -270,6 +280,7 @@ export function asStoreOffer(row: StoreOfferRow): StoreOffer {
     product_ids: row.product_ids,
     category_slugs: row.category_slugs,
     exclude_sale_items: row.exclude_sale_items,
+    pieces: piecesOf(row.pieces),
     discount_type: (row.discount_type as StoreOffer["discount_type"]) ?? null,
     discount_value: row.discount_value,
     max_discount: row.max_discount,

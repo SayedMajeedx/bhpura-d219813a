@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { catalogQueries } from "@/lib/data/catalog";
 import { categoriesQueries } from "@/lib/data/categories";
+import { incubatorsQueries } from "@/lib/data/incubators";
+import { partnersHolding, type PartnerStockRow } from "@/features/offers/lib/partner-pick";
 import {
   createStoreOffer,
   deleteStoreOffer,
@@ -65,6 +67,18 @@ export function StoreOffersSection({ brandId, isAr }: { brandId: string; isAr: b
   const combine = useQuery(offersQueries.combine(brandId)).data ?? "best";
   const productRows = useQuery(catalogQueries.products(brandId)).data;
   const categoryRows = useQuery(categoriesQueries.active(brandId)).data;
+  const partnerRows = useQuery(incubatorsQueries.active(brandId)).data;
+  const partnerStock = useQuery(incubatorsQueries.inventory(brandId)).data;
+  // The partner shops holding a piece now, to choose an offer's products by.
+  const partners = useMemo(
+    () =>
+      partnersHolding(
+        (partnerRows ?? []).map((p) => ({ id: p.id, name: p.name })),
+        (partnerStock ?? []) as PartnerStockRow[],
+      ),
+    [partnerRows, partnerStock],
+  );
+  const hasMadeToOrder = (productRows ?? []).some((p) => p.is_made_to_order);
   const products = useMemo(
     () =>
       (productRows ?? []).map((p) => ({
@@ -268,6 +282,8 @@ export function StoreOffersSection({ brandId, isAr }: { brandId: string; isAr: b
           currency={currency}
           products={products}
           categories={categories}
+          partners={partners}
+          hasMadeToOrder={hasMadeToOrder}
           saving={save.isPending}
           onSave={(form) => save.mutate({ row: editing.row, form })}
         />
