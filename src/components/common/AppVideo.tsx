@@ -122,6 +122,12 @@ export function AppVideo({
 
   const canMountVideo = isIntersecting && videoAllowed;
 
+  // A hero video's poster is the picture drawn under it, already fetched at the width it shows.
+  // The video takes no `poster` of its own (it was the original file, fetched again at full size
+  // when the video mounted: PageSpeed, 2026-11-14) and stays clear until its first frame, so no
+  // browser paints an empty video over the picture. A video with controls keeps its own poster.
+  const heroPosterUnder = isHero && Boolean(poster);
+
   useEffect(() => {
     if (isIntersecting || isHero) return;
     const el = containerRef.current;
@@ -227,7 +233,7 @@ export function AppVideo({
           key={src || "app-video"}
           ref={videoRef}
           {...(!hasSources && src ? { src } : {})}
-          poster={videoPoster ?? undefined}
+          poster={heroPosterUnder ? undefined : (videoPoster ?? undefined)}
           autoPlay={shouldAutoPlay}
           muted={shouldMute}
           loop={shouldLoop}
@@ -241,7 +247,9 @@ export function AppVideo({
           onPlaying={handleFrameReady}
           onTimeUpdate={handleFrameReady}
           onCanPlay={handleFrameReady}
-          className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
+          className={`relative z-10 ${
+            heroPosterUnder && !isVideoPlaying ? "opacity-0" : ""
+          } ${className ?? "h-full w-full object-cover"}`}
           {...props}
         >
           {resolvedWebm && <source src={resolvedWebm} type="video/webm" />}

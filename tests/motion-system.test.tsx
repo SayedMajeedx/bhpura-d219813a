@@ -234,6 +234,41 @@ describe("tabs sliding: where the pill sits", () => {
     shell.remove();
   });
 
+  it("lets its transition back two frames after landing, without reading the layout at once", () => {
+    // Reading `offsetWidth` to commit the instant position laid the store's home page out again
+    // while it started, 139 ms on a phone with the rest (PageSpeed, 2026-11-14).
+    const frames: FrameRequestCallback[] = [];
+    vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal("cancelAnimationFrame", () => {});
+    const offsetWidth = vi.spyOn(HTMLElement.prototype, "offsetWidth", "get");
+    try {
+      const { container } = render(
+        <div className="t-tabs">
+          <TabsPill />
+          <button type="button" className="t-tab" aria-pressed={true}>
+            S
+          </button>
+        </div>,
+      );
+      const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
+      expect(pill.dataset.ready).toBe("true");
+      expect(pill.dataset.instant).toBe("true");
+      expect(offsetWidth).not.toHaveBeenCalled();
+      // The first frame draws the pill where it landed, with no transition...
+      frames.shift()!(0);
+      expect(pill.dataset.instant).toBe("true");
+      // ...and the next lets the transition back for the moves that follow.
+      frames.shift()!(16);
+      expect(pill.dataset.instant).toBeUndefined();
+    } finally {
+      offsetWidth.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("hides the pill while nothing is chosen", () => {
     const { container } = render(
       <div className="t-tabs">

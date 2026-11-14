@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppVideo, preferPosterOnly } from "../src/components/common/AppVideo";
 
@@ -113,5 +113,30 @@ describe("AppVideo hero deferral", () => {
   it("does not defer non-hero videos", () => {
     const { container } = render(<AppVideo variant="content" src={VIDEO} poster={POSTER} />);
     expect(container.querySelector("video")).not.toBeNull();
+  });
+
+  // PageSpeed, 2026-11-14: the hero video's own poster was the original file, fetched again at
+  // full size (over a second on Pura's phone run) when the video mounted over the same picture.
+  it("draws a hero video over its poster picture, never fetching the poster again", () => {
+    const { container } = render(<AppVideo variant="hero" src={VIDEO} poster={POSTER} active />);
+    act(() => {
+      readyState = "complete";
+      window.dispatchEvent(new Event("load"));
+      vi.advanceTimersByTime(400);
+    });
+    const video = container.querySelector("video")!;
+    expect(video.hasAttribute("poster")).toBe(false);
+    // Clear until its first frame, so no browser paints an empty video over the picture.
+    expect(video.className).toContain("opacity-0");
+    Object.defineProperty(video, "readyState", { configurable: true, value: 4 });
+    fireEvent.playing(video);
+    expect(video.className).not.toContain("opacity-0");
+  });
+
+  it("keeps the poster of a video with controls, which shows it before it is played", () => {
+    const { container } = render(<AppVideo variant="content" src={VIDEO} poster={POSTER} />);
+    const video = container.querySelector("video")!;
+    expect(video.getAttribute("poster")).toBe(POSTER);
+    expect(video.className).not.toContain("opacity-0");
   });
 });

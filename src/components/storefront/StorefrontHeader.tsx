@@ -47,7 +47,8 @@ function StoreHeader() {
                 alt={displayName}
                 width={130}
                 height={40}
-                fetchPriority="high"
+                // Eager, and still preloaded by React, at the browser's own priority: only the
+                // hero's picture asks for the network first (PageSpeed, 2026-11-14).
                 decoding="async"
                 className="shrink-0 object-contain"
                 style={{
@@ -119,7 +120,6 @@ function StoreHeader() {
                 alt={displayName}
                 width={165}
                 height={55}
-                fetchPriority="high"
                 decoding="async"
                 className="shrink-0 object-contain"
                 style={{

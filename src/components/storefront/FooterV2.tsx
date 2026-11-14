@@ -172,13 +172,19 @@ export function FooterV2() {
     </>
   );
 
+  // The page's sections are headed h2, so the footer's columns are level-2 headings too: an h4
+  // under an h2 skipped a level, which screen readers' heading lists (and PageSpeed, 2026-11-14)
+  // read as a gap. Not an <h2>: the storefront sets every h1-h3 in the store's heading font with
+  // !important, and these small labels are in its text font.
   const columnHeading = (title: string) => (
-    <h4
+    <p
+      role="heading"
+      aria-level={2}
       className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-current/10 pb-2"
       style={FG}
     >
       {title}
-    </h4>
+    </p>
   );
 
   const accordion = (key: SectionKey, title: string, links: React.ReactNode) => (

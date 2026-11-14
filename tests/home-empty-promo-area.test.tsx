@@ -120,3 +120,80 @@ describe("on a phone", () => {
     expect(one.getByTestId("promo-cards").className).not.toContain("snap-x");
   });
 });
+
+// PageSpeed, 2026-11-14 (Pura's phone run): the first card's picture was preloaded at the hero's
+// own top priority, fetched at 960px for a card drawn 568px wide, and the two designed banners
+// were both read as "Special offer" though they lead to different pages.
+const { promoCardLabel, promoCardSizes } =
+  await import("../src/features/storefront-home/lib/promo-cards");
+
+describe("what the promo cards ask of the network", () => {
+  it("leave the top priority to the hero, and fetch the card's own width", () => {
+    storefront.settings = {
+      home_promo_cards: [{ image_url: "https://media.boutq.store/a.jpg" }, { image_url: "b.jpg" }],
+    };
+    const { container, unmount } = render(<PromoCards />);
+    const [first, second] = Array.from(container.querySelectorAll("img"));
+    expect(first.getAttribute("loading")).toBe("eager");
+    expect(first.getAttribute("fetchpriority")).not.toBe("high");
+    expect(first.getAttribute("decoding")).toBe("async");
+    expect(second.getAttribute("loading")).toBe("lazy");
+    expect(first.getAttribute("sizes")).toBe(promoCardSizes(2));
+    unmount();
+  });
+
+  it("say how wide a card is drawn: 86% of a phone in a row, the whole phone alone, half above", () => {
+    expect(promoCardSizes(2)).toBe("(min-width: 1280px) 616px, (min-width: 640px) 50vw, 86vw");
+    expect(promoCardSizes(1)).toBe("(min-width: 1280px) 616px, (min-width: 640px) 50vw, 100vw");
+  });
+});
+
+describe("a promo card's name, when its words are in its picture", () => {
+  const categories = [{ slug: "abayas", name_ar: "عبايات", name_en: "Abayas" }];
+  const options = { lang: "ar" as const, slug: "pura", categories };
+
+  it("is where it leads, in the shopper's language", () => {
+    const name = (href: string, lang: "ar" | "en" = "ar") =>
+      promoCardLabel({ href, hasWords: false }, { ...options, lang });
+    expect(name("/pura/all")).toBe("كل المنتجات");
+    expect(name("/pura/gift-cards")).toBe("بطاقات الهدايا");
+    expect(name("/pura/gift-cards", "en")).toBe("Gift cards");
+    expect(name("https://pura.boutq.store/pura/abayas")).toBe("عبايات");
+    expect(name("/pura/abayas", "en")).toBe("Abayas");
+    expect(name("#products")).toBe("المنتجات");
+    expect(name("")).toBe("المنتجات");
+    // Another site's page, or a page it does not know, keeps the word it had.
+    expect(name("https://instagram.com/pura")).toBe("عرض خاص");
+    expect(name("/pura/somewhere-else", "en")).toBe("Special offer");
+  });
+
+  it("is a services store's own word for the whole listing", () => {
+    const label = promoCardLabel(
+      { href: "/aurora/all", hasWords: false },
+      { lang: "en", slug: "aurora", servicesStore: true },
+    );
+    expect(label).toBe("All services");
+  });
+
+  it("is left to the card's own words when it has them", () => {
+    expect(promoCardLabel({ href: "/pura/all", hasWords: true }, options)).toBeUndefined();
+  });
+
+  it("differs for Pura's two banners on the page", () => {
+    Object.assign(storefront, { brand: { slug: "pura" }, initialCategories: categories });
+    storefront.lang = "ar";
+    storefront.settings = {
+      home_promo_cards: [
+        { image_url: "a.jpg", href: "/pura/all" },
+        { image_url: "b.jpg", href: "/pura/gift-cards" },
+      ],
+    };
+    const { getAllByRole, unmount } = render(<PromoCards />);
+    expect(getAllByRole("link").map((link) => link.getAttribute("aria-label"))).toEqual([
+      "كل المنتجات",
+      "بطاقات الهدايا",
+    ]);
+    unmount();
+    storefront.lang = "en";
+  });
+});
