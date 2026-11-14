@@ -317,7 +317,9 @@ export function selfHostedFontPreloads(
       case "Inter":
         return "/fonts/inter.woff2";
       case "Readex Pro":
-        return "/fonts/variable/readex-pro-hexp-wght.woff2";
+        // The page's own script's file (fonts.css splits it): the whole one was preloaded
+        // beside the file the page asked for.
+        return `/fonts/variable/readex-pro-${language === "ar" ? "arabic" : "latin"}.woff2`;
       case "Plus Jakarta Sans":
         return "/fonts/variable/plus-jakarta-sans-wght.woff2";
       case "Cormorant Garamond":

@@ -117,6 +117,21 @@ describe("typography management", () => {
     expect(selfHostedFontPreloads(null, "ar")).toEqual([]);
   });
 
+  it("preloads Readex Pro's file for the page's own script, never the whole font", () => {
+    const readex = { family: "Readex Pro" };
+    const config = {
+      ...defaultStorefrontTypography(),
+      body: { ar: readex, en: readex },
+      display: { ar: readex, en: readex },
+    } as ReturnType<typeof defaultStorefrontTypography>;
+    expect(selfHostedFontPreloads(config, "ar")).toEqual([
+      "/fonts/variable/readex-pro-arabic.woff2",
+    ]);
+    expect(selfHostedFontPreloads(config, "en")).toEqual([
+      "/fonts/variable/readex-pro-latin.woff2",
+    ]);
+  });
+
   it("promotes legacy uploads to selectable custom font sources", () => {
     const defaults = defaultStorefrontTypography();
     defaults.body.en = {
