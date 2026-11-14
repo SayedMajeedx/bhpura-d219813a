@@ -102,7 +102,25 @@ describe("brand owner provisioning contract", () => {
     expect(payload).not.toHaveProperty("trial_ends_at");
   });
 
+  it("refuses to provision when the build names no Supabase project", async () => {
+    // It once fell back to an address written in the code, of a project from before Tokyo.
+    vi.stubEnv("VITE_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(provisionBrandWithOwner(provisionPayloadFrom(wizardData()))).rejects.toThrow(
+        "VITE_SUPABASE_URL",
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
+    }
+  });
+
   it("provisions through the user-management function as the signed-in super admin", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://project-ref.supabase.co/");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
@@ -118,7 +136,9 @@ describe("brand owner provisioning contract", () => {
         trial_days: 7,
       });
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+      expect(new URL(url).origin).toBe("https://project-ref.supabase.co");
       expect(new URL(url).pathname).toBe("/functions/v1/user-management");
+      expect((init.headers as Record<string, string>).apikey).toBe("sb_publishable_test");
       expect(new URL(url).searchParams.get("action")).toBe("provision-brand");
       expect(init.method).toBe("POST");
       expect((init.headers as Record<string, string>).Authorization).toBe("Bearer jwt-1");
@@ -130,6 +150,7 @@ describe("brand owner provisioning contract", () => {
       await expect(provisionBrandWithOwner(payload)).rejects.toThrow("SLUG_TAKEN");
     } finally {
       fetchSpy.mockRestore();
+      vi.unstubAllEnvs();
     }
   });
 
