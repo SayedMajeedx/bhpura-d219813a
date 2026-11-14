@@ -1,38 +1,18 @@
-import React, { useEffect, useId, useState } from "react";
+import React, { Suspense, lazy, useEffect, useId, useState } from "react";
 import { listenForCartOpen, triggerShown } from "@/lib/cart-drawer";
-import { useNavigate } from "@tanstack/react-router";
-import {
-  useIsServicesStore,
-  useStorefront,
-  formatPrice,
-  pickName,
-  readableOn,
-} from "@/lib/storefront-context";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { OsEmptyState } from "@/components/os/os-empty-state";
-import { ShareCartModal } from "@/components/storefront/ShareCartModal";
-import { FreeDeliveryNudge } from "@/components/storefront/FreeDeliveryNudge";
-import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
-import { cloudflareImageUrl } from "@/lib/media-delivery";
+import { useStorefront } from "@/lib/storefront-context";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { isCatalogMode } from "@/lib/storefront-mode";
-import { displayVariantParts } from "@/lib/variant-sku-utils";
-import { formatCustomFieldsList } from "@/lib/addons/custom-fields";
-import { ShoppingBag, Minus, Plus, Trash2, Gift, Share2, Paperclip } from "lucide-react";
-import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
-import { appliedOfferName } from "@/lib/offers";
-import { bookingOfCart } from "@/lib/bookings/cart";
-import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
-import { SoftText } from "@/components/motion/SoftText";
-import { useLeavingRows } from "@/components/motion/use-leaving-rows";
+
+// The drawer's contents load when it first opens, or once the page is idle so the first tap opens
+// at once: on every page they were in the first scripts, before the hero (PageSpeed, 2026-11-14).
+const loadBody = () => import("@/components/storefront/CartDrawerBody");
+const CartDrawerBody = lazy(loadBody);
 
 export function CartDrawer({ children }: { children: React.ReactNode }) {
-  const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
-    useStorefront();
+  const { lang, settings } = useStorefront();
 
   const [open, setOpen] = useState(false);
-  const [shareOpen, setShareOpen] = useState(false);
   // "Add to cart" opens this drawer when its button is the one on screen (`cart-drawer.ts`).
   const triggerId = useId();
   useEffect(
@@ -45,76 +25,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
       }),
     [triggerId],
   );
-  // A line taken out folds away before it leaves the list (transitions.dev's card resize).
-  const { isLeaving, leave } = useLeavingRows();
-  const takeOut = (lineId: string) => leave(lineId, () => removeFromCart(lineId));
-  const servicesStore = useIsServicesStore();
-  // The store's offers on this cart, as the database works them out at checkout (the same
-  // preview): named, with what they take off, and the total after them. A booking's cart has its
-  // own discount (apply_booking_discount).
-  const offers = useCheckoutOffers({
-    brand,
-    cart,
-    appliedPromo: null,
-    fulfillment: "delivery",
-    country: null,
-    enabled: !isCatalogMode(settings) && !bookingOfCart(cart) && cart.length > 0,
-  });
-  const offerLines = (offers?.applied ?? []).filter(
-    (offer) => offer.kind !== "free_delivery" && offer.amount > 0,
-  );
-  const offerOff = Math.min(offers?.offer_discount ?? 0, cartTotal);
-  const totalAfterOffers = Math.max(cartTotal - offerOff, 0);
-  const [isGift, setIsGift] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("boutq_gift_details");
-      return saved ? JSON.parse(saved).is_gift === true : false;
-    } catch {
-      return false;
-    }
-  });
-  const [recipientName, setRecipientName] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("boutq_gift_details");
-      return saved ? JSON.parse(saved).recipient_name || "" : "";
-    } catch {
-      return "";
-    }
-  });
-  const [giftMessage, setGiftMessage] = useState(() => {
-    try {
-      const saved = sessionStorage.getItem("boutq_gift_details");
-      return saved ? JSON.parse(saved).gift_message || "" : "";
-    } catch {
-      return "";
-    }
-  });
-
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(
-        "boutq_gift_details",
-        JSON.stringify({
-          is_gift: isGift,
-          recipient_name: recipientName,
-          gift_message: giftMessage,
-        }),
-      );
-    } catch {
-      // sessionStorage can be unavailable (private mode, quota) — gift details just won't persist.
-    }
-  }, [isGift, recipientName, giftMessage]);
-
-  const navigate = useNavigate();
-  const drawerCheckoutBg =
-    settings.cart_drawer_checkout_bg ??
-    settings.btn_checkout_bg ??
-    settings.btn_primary_bg ??
-    settings.primary_color;
-  const drawerCheckoutFg =
-    settings.cart_drawer_checkout_fg ??
-    settings.btn_checkout_fg ??
-    readableOn(drawerCheckoutBg, "#ffffff");
+  useEffect(() => preloadWhenIdle(loadBody), []);
   if (isCatalogMode(settings)) {
     return null;
   }
@@ -130,281 +41,33 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
         className={`w-full sm:max-w-md flex flex-col ${lang === "ar" ? "[&>button]:left-auto [&>button]:right-4" : ""}`}
       >
         {open && (
-          <>
-            <SheetHeader
-              className={`${lang === "ar" ? "text-end sm:text-end pe-14" : "text-start sm:text-start pe-14"}`}
-            >
-              <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
-            </SheetHeader>
-
-            <div className="flex-1 overflow-auto py-4 space-y-3">
-              {cart.length === 0 ? (
-                <div className="py-8">
-                  <OsEmptyState
-                    compact
-                    icon={ShoppingBag}
-                    title={t("السلة فارغة", "Your cart is empty")}
-                    description={t(
-                      "لم تقم بإضافة أية منتجات بعد.",
-                      "You haven't added any products yet.",
-                    )}
-                  />
-                </div>
-              ) : (
-                cart.map((item, index) => {
-                  const displayName = pickName(lang, {
-                    name: item.name,
-                    name_ar: item.name_ar,
-                    name_en: item.name_en,
-                  });
-                  return (
-                    <div
-                      key={item.cart_line_id}
-                      // Lines rise in as the drawer opens (and a new one as it is added); a line
-                      // taken out slides away and its space closes.
-                      className="t-collapse t-rise-in"
-                      style={{ "--i": index } as React.CSSProperties}
-                      data-leaving={isLeaving(item.cart_line_id) ? "true" : "false"}
-                    >
-                      <div className="flex gap-3 border rounded-lg p-2 items-center">
-                        {item.image ? (
-                          <img
-                            src={cloudflareImageUrl(item.image, 160)}
-                            alt={displayName}
-                            width={64}
-                            height={64}
-                            loading="lazy"
-                            decoding="async"
-                            className="h-16 w-16 rounded object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="h-16 w-16 rounded bg-muted shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div
-                            dir="auto"
-                            className="font-medium line-clamp-2 break-words text-page-start"
-                          >
-                            {displayName}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {displayVariantParts(
-                              {
-                                size: item.size,
-                                size_unit: item.size_unit,
-                                color: item.color,
-                                fabric: item.fabric,
-                              },
-                              lang,
-                            ).join(" · ")}
-                          </div>
-                          {(() => {
-                            const formattedFields = formatCustomFieldsList(
-                              item.custom_fields,
-                              lang,
-                            );
-                            if (formattedFields.length === 0) return null;
-                            return (
-                              <div className="mt-1.5 space-y-1 rounded-md bg-secondary/30 p-2 text-xs border border-border-subtle">
-                                {formattedFields.map((field) => (
-                                  <div
-                                    key={field.key}
-                                    className="flex items-center justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
-                                  >
-                                    <span className="text-muted-foreground font-medium">
-                                      {field.label}:
-                                    </span>
-                                    {field.isLink ? (
-                                      <a
-                                        href={field.value}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-primary hover:underline font-medium inline-flex items-center gap-0.5"
-                                      >
-                                        <Paperclip className="h-3 w-3" aria-hidden="true" />
-                                        {lang === "ar" ? "عرض الملف" : "View File"}
-                                      </a>
-                                    ) : (
-                                      <span className="font-semibold text-foreground" dir="auto">
-                                        {field.value}
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })()}
-                          <div
-                            className="text-sm font-semibold mt-1"
-                            style={{ color: settings.primary_color }}
-                          >
-                            <span className="flex flex-col items-end">
-                              <SoftText
-                                align="end"
-                                value={formatPrice(item.price * item.qty, currency, lang)}
-                              />
-                              {Number(item.original_price || 0) > item.price && (
-                                <span className="text-xs text-muted-foreground line-through">
-                                  {formatPrice(
-                                    Number(item.original_price) * item.qty,
-                                    currency,
-                                    lang,
-                                  )}
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-1 shrink-0">
-                          <div className="flex items-center border rounded overflow-hidden">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-11 w-11 rounded-none"
-                              onClick={() =>
-                                item.qty <= 1
-                                  ? takeOut(item.cart_line_id)
-                                  : updateQty(item.cart_line_id, item.qty - 1)
-                              }
-                              aria-label={t(
-                                `تقليل كمية ${displayName}`,
-                                `Decrease ${displayName} quantity`,
-                              )}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <AnimatedNumber
-                              value={String(item.qty)}
-                              className="px-2 text-sm min-w-[24px] text-center font-medium"
-                            />
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-11 w-11 rounded-none"
-                              disabled={item.qty >= item.max_stock}
-                              onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
-                              aria-label={t(
-                                `زيادة كمية ${displayName}`,
-                                `Increase ${displayName} quantity`,
-                              )}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="flex min-h-11 items-center gap-1 px-2 text-xs text-destructive hover:text-destructive"
-                            onClick={() => takeOut(item.cart_line_id)}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            {t("حذف", "Remove")}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <div className="border-t pt-4 space-y-3">
-                {/* 🎁 Gift Option Box: a booking is not a gift parcel, so services stores have none. */}
-                {!servicesStore && (
-                  <div className="rounded-xl border bg-muted/20 p-3 space-y-2">
-                    <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={isGift}
-                        onChange={(e) => setIsGift(e.target.checked)}
-                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
-                      />
-                      <Gift className="h-4 w-4 text-primary" />
-                      <span>{t("هل هذا الطلب إهداء؟", "Is this order a gift?")}</span>
-                    </label>
-                    {isGift && (
-                      <div className="space-y-2 pt-1 border-t border-border-subtle">
-                        <Input
-                          type="text"
-                          placeholder={t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}
-                          value={recipientName}
-                          onChange={(e) => setRecipientName(e.target.value)}
-                          className="h-9 text-xs rounded-lg bg-background"
-                        />
-                        <textarea
-                          placeholder={t(
-                            "رسالة الإهداء لكتابتها على الكرت...",
-                            "Gift message to write on card...",
-                          )}
-                          value={giftMessage}
-                          onChange={(e) => setGiftMessage(e.target.value)}
-                          className="w-full h-16 p-2 text-xs rounded-lg border bg-background text-foreground resize-none focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!servicesStore && <FreeDeliveryNudge />}
-                {offerLines.map((offer) => (
-                  <div
-                    key={offer.id}
-                    className="flex justify-between text-sm font-medium text-success"
-                  >
-                    <span>{appliedOfferName(offer, lang)}</span>
-                    <span dir="ltr">− {formatPrice(offer.amount, currency, lang)}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>{t("الإجمالي", "Total")}</span>
-                  <span
-                    className="flex flex-col items-end"
-                    style={{ color: settings.primary_color }}
-                  >
-                    <SoftText align="end" value={formatPrice(totalAfterOffers, currency, lang)} />
-                    {offerOff > 0 && (
-                      <span className="text-xs font-normal text-muted-foreground line-through">
-                        {formatPrice(cartTotal, currency, lang)}
-                      </span>
-                    )}
-                    <ApproxPrice amount={totalAfterOffers} />
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-12 rounded-xl gap-2 border-border font-medium"
-                    onClick={() => setShareOpen(true)}
-                  >
-                    <Share2 className="h-4 w-4 text-primary" />
-                    <span>{t("مشاركة السلة", "Share cart")}</span>
-                  </Button>
-                  <Button
-                    className="h-12 rounded-xl"
-                    style={{
-                      backgroundColor: drawerCheckoutBg,
-                      color: drawerCheckoutFg,
-                      borderColor: drawerCheckoutBg,
-                    }}
-                    onClick={() => {
-                      setOpen(false);
-                      navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
-                    }}
-                  >
-                    {t("إتمام الشراء", "Checkout")}
-                  </Button>
-                </div>
-                <ShareCartModal open={shareOpen} onOpenChange={setShareOpen} />
-              </div>
-            )}
-          </>
+          <Suspense fallback={null}>
+            <CartDrawerBody onClose={() => setOpen(false)} />
+          </Suspense>
         )}
       </SheetContent>
     </Sheet>
   );
+}
+
+/** Fetches the drawer's script after the page has loaded, in an idle moment. */
+function preloadWhenIdle(load: () => Promise<unknown>): () => void {
+  let cancelled = false;
+  let timer: number | undefined;
+  const run = () => {
+    if (cancelled) return;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
+    const go = () => {
+      if (!cancelled) load().catch(() => {});
+    };
+    if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(go);
+    else timer = window.setTimeout(go, 1500);
+  };
+  if (document.readyState === "complete") run();
+  else window.addEventListener("load", run, { once: true });
+  return () => {
+    cancelled = true;
+    window.removeEventListener("load", run);
+    if (timer !== undefined) window.clearTimeout(timer);
+  };
 }

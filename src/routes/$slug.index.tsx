@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, useStoreModules } from "@/lib/storefront-context";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCallback, useMemo, useRef, useEffect, useLayoutEffect } from "react";
+import { Suspense, lazy, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { BrandStorySection } from "@/components/storefront/BrandStorySection";
@@ -26,8 +26,6 @@ import {
 import { HeroBanner } from "@/features/storefront-home/components/HeroBanner";
 import { Categories } from "@/features/storefront-home/components/Categories";
 import { BookingInvite } from "@/features/storefront-booking/components/BookingEntryPoints";
-import { ServicesHome } from "@/features/services-home/components/ServicesHome";
-import { MenuHome } from "@/features/storefront-home/components/MenuHome";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import {
   PRODUCT_PHOTO_CLASS,
@@ -35,6 +33,19 @@ import {
   storefrontHomeLayout,
 } from "@/lib/brand-templates/design-presets";
 import { isServicesStore } from "@/features/services-home/lib/services-home";
+
+// A services store's home and a menu store's home are other stores' pages: a shop's first load
+// carried their code (bookings, rentals, packages, the gallery, the menu's basket) before its hero
+// (PageSpeed, 2026-11-14). They load when a store draws them; on the server they are rendered into
+// the page as before, and the browser waits for their script to bring them to life.
+const ServicesHome = lazy(() =>
+  import("@/features/services-home/components/ServicesHome").then((m) => ({
+    default: m.ServicesHome,
+  })),
+);
+const MenuHome = lazy(() =>
+  import("@/features/storefront-home/components/MenuHome").then((m) => ({ default: m.MenuHome })),
+);
 import { flipSnapshot, playFlip, type FlipSnapshot } from "@/lib/motion/flip";
 
 export const Route = createFileRoute("/$slug/")({
@@ -165,12 +176,20 @@ function StoreHome() {
 
   // A store that only sells services gets its services page instead of a product shop.
   if (!isLoading && isServicesStore(modules.bookings, products ?? [])) {
-    return <ServicesHome products={products ?? []} />;
+    return (
+      <Suspense fallback={null}>
+        <ServicesHome products={products ?? []} />
+      </Suspense>
+    );
   }
   // A store that sells by quick order (a bakery, a roastery) gets its menu; a catalog store has
   // no basket to fill, so it keeps the shop's home.
   if (!isLoading && storefrontHomeLayout(settings) === "menu" && !isCatalogMode(settings)) {
-    return <MenuHome products={products ?? []} categories={categories ?? []} />;
+    return (
+      <Suspense fallback={null}>
+        <MenuHome products={products ?? []} categories={categories ?? []} />
+      </Suspense>
+    );
   }
 
   // Loading state with premium skeleton carousels/grids

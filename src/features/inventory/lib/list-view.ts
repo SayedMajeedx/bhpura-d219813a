@@ -1,4 +1,5 @@
 import { isAttentionKey, type AttentionKey } from "@/features/inventory/lib/attention";
+import { INVENTORY_VIEW_PARAMS } from "@/features/inventory/lib/list-view-params";
 import {
   INVENTORY_SORTS,
   inventoryScopeFromFilter,
@@ -38,17 +39,7 @@ export const DEFAULT_INVENTORY_VIEW: InventoryView = {
   layout: "list",
 };
 
-/** The address parameters the list owns. `filter` is the older name a dashboard link uses. */
-export const INVENTORY_VIEW_PARAMS = [
-  "q",
-  "scope",
-  "filter",
-  "category",
-  "issue",
-  "sort",
-  "page",
-  "view",
-] as const;
+export { INVENTORY_VIEW_PARAMS };
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 
