@@ -9,6 +9,8 @@ import type { LookbookEntry } from "@/features/content-studio/lib/lookbook";
 import { formatAmount } from "@/features/content-studio/lib/batch";
 import { formatDuration } from "@/lib/bookings/format";
 import { offerEnds } from "@/lib/offers";
+import { displayPhone } from "@/lib/invoice-display";
+import { postName } from "@/features/content-studio/lib/post-name";
 
 /**
  * An image ready to draw on a canvas: loaded with CORS, so exports are not
@@ -75,6 +77,8 @@ export function useTemplateScene({
   instagram,
   phone,
   productName,
+  productKind = null,
+  cta = null,
   headline,
   body,
   showPrice,
@@ -105,6 +109,10 @@ export function useTemplateScene({
   instagram: string | null;
   phone: string | null | undefined;
   productName: string;
+  /** What the piece is ("عباية"), from its catalogue name. */
+  productKind?: string | null;
+  /** The post's ask ("اطلبوا من الرابط في البايو"). */
+  cta?: string | null;
   headline: string;
   body: string;
   showPrice: boolean;
@@ -170,10 +178,13 @@ export function useTemplateScene({
         logoTint,
         displayFamilies,
         handle: instagram,
-        contact: phone || null,
+        // As a reader takes it in ("+973 3995 0016"), never the stored digits.
+        contact: phone ? displayPhone(phone) || null : null,
         palette: paletteFor(style),
       },
       productName,
+      productKind,
+      cta,
       headline,
       body,
       price: priceAmount ? `${priceAmount} ${currencySymbol}` : null,
@@ -204,7 +215,8 @@ export function useTemplateScene({
         : null,
       collection: collection
         ? collection.map((entry, index) => ({
-            name: entry.name,
+            // A sentence's name ("عباية وتر"), never a catalogue line with its divider.
+            name: postName(entry.name).label,
             price:
               showPrice && entry.price ? `${formatAmount(entry.price)} ${currencySymbol}` : null,
             media: collectionImages[index] ?? null,
@@ -237,6 +249,8 @@ export function useTemplateScene({
       phone,
       style,
       productName,
+      productKind,
+      cta,
       headline,
       body,
       priceAmount,

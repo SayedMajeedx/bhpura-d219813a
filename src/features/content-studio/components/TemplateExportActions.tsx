@@ -1,4 +1,12 @@
-import { ChevronDown, GalleryHorizontal, Image as ImageIcon, Layers, Video, X } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  GalleryHorizontal,
+  Image as ImageIcon,
+  Layers,
+  Video,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -7,10 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
-import { BatchExportDialog } from "@/features/content-studio/components/BatchExportDialog";
 
 /**
- * Export buttons for an animated template: the MP4 (with progress and a
+ * Export buttons for a template (shown in the header and, on a phone, under the preview; the
+ * batch dialog is mounted once by the page): the MP4 (with progress and a
  * cancel) and a still PNG. Where the browser cannot encode video, the PNG.
  */
 export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
@@ -28,6 +36,8 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
     stillAt,
     batchable,
     setBatchOpen,
+    isCurrentVideo,
+    downloadOriginalVideo,
   } = studio;
   const disabled = templateExporting || productsQ.isLoading;
   const hasSlides = Boolean(activeTemplate?.slideTimes);
@@ -48,7 +58,6 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
             {batchLabel}
           </Button>
         )}
-        <BatchExportDialog studio={studio} />
         {hasSlides && (
           <Button
             variant="outline"
@@ -167,6 +176,22 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
               </div>
             </DropdownMenuItem>
           )}
+          {isCurrentVideo && (
+            <DropdownMenuItem
+              onClick={() => void downloadOriginalVideo()}
+              className="gap-2.5 cursor-pointer py-2"
+            >
+              <Download className="size-4 text-muted-foreground shrink-0" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-xs">
+                  {isAr ? "الفيديو الأصلي" : "Original video"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {isAr ? "كما رُفع، بدون التصميم" : "As uploaded, without the design"}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          )}
           {batchable && (
             <DropdownMenuItem
               onClick={() => setBatchOpen(true)}
@@ -183,7 +208,6 @@ export function TemplateExportActions({ studio }: { studio: ContentStudio }) {
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <BatchExportDialog studio={studio} />
     </div>
   );
 }

@@ -19,6 +19,8 @@ export type Product = {
   is_active?: boolean | null;
   /** A piece made after it is ordered (Made for You suggests these). */
   is_made_to_order?: boolean | null;
+  /** When it was added: a new piece is today's suggestion for a reveal. */
+  created_at?: string | null;
 };
 
 export const FORMATS = CREATIVE_FORMATS;

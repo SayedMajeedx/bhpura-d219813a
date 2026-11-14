@@ -113,7 +113,8 @@ export function drawBrandMark(
     align,
     onPhoto,
     ink,
-    height = 48,
+    // 56 at size 1 (it was 48: a store's mark read faint and small on every post).
+    height = 56,
     maxWidth = 420,
   }: {
     x: number;
@@ -156,7 +157,7 @@ export function drawBrandMark(
     return w;
   }
   ctx.fillStyle = color ?? ink;
-  ctx.font = font(44 * u * scale, STUDIO_FONTS.displayLatin, 600, "italic");
+  ctx.font = font(50 * u * scale, STUDIO_FONTS.displayLatin, 600, "italic");
   ctx.direction = textDirection(brand.name);
   ctx.textAlign = align;
   ctx.textBaseline = "middle";

@@ -312,9 +312,9 @@ describe("the brand mark", () => {
       ink: "#fbf1ec",
     });
     const draw = calls.find(([name]) => name === "drawImage");
-    // 48 px tall at size 1, so 72 px at 150%; 4:1 logo → 288 px wide.
-    expect(draw?.[1].slice(1)).toEqual([80, 164, 288, 72]);
-    expect(width).toBe(288);
+    // 56 px tall at size 1, so 84 px at 150%; 4:1 logo → 336 px wide.
+    expect(draw?.[1].slice(1)).toEqual([80, 158, 336, 84]);
+    expect(width).toBe(336);
   });
 
   it("centres a masthead logo, allowing it wider than a corner mark", () => {

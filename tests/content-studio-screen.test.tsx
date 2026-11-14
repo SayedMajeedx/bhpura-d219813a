@@ -8,15 +8,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 vi.setConfig({ testTimeout: 30_000 });
 
 // The content studio as merchants use it: the copy fills from the chosen
-// product, the PNG exports at the chosen format's size, the caption follows
-// the chosen variant, a product video switches to the video exports, and the
-// style and edition label reach the stage. Written before the studio was split
-// into src/features/content-studio, and kept to prove the split changed nothing.
+// product, the post exports at the chosen format's size, the caption follows
+// the chosen variant, a product video offers its original, and the style
+// reaches the post. Every template, Classic included, draws on the engine
+// (Classic was an HTML stage until 2026-11-14), so the post is read from the
+// scene a still is exported with.
 
 const exporting = vi.hoisted(() => ({
-  html2canvas: vi.fn(async () => ({
-    toBlob: (done: (blob: Blob) => void) => done(new Blob(["png"], { type: "image/png" })),
-  })),
   deliverCreativeFile: vi.fn(async () => "downloaded" as const),
   exportTemplateMp4: vi.fn(async () => new Blob(["mp4"], { type: "video/mp4" })),
   exportTemplatePng: vi.fn(async () => new Blob(["png"], { type: "image/png" })),
@@ -36,7 +34,6 @@ const engineExport = async (importOriginal: () => Promise<object>) => ({
 });
 vi.mock("../src/features/content-studio/engine/export", (io) => engineExport(io));
 vi.mock("@/features/content-studio/engine/export", (io) => engineExport(io));
-vi.mock("html2canvas-pro", () => ({ default: exporting.html2canvas }));
 const creativeExport = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   deliverCreativeFile: exporting.deliverCreativeFile,
@@ -267,6 +264,8 @@ const clipboard = { writeText: vi.fn(async () => undefined) };
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.setItem("lang", "en");
+  // The studio remembers the last template and size on this device: each test starts afresh.
+  localStorage.removeItem("studio-last:b1");
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
 });
 
@@ -279,38 +278,64 @@ const renderStudio = async () => {
     </QueryClientProvider>,
   );
   await waitFor(() => expect(screen.getByLabelText("Headline")).toHaveValue("Silk Abaya"));
-  return document.querySelector<HTMLElement>("#studio-preview .isolate")!;
+};
+type StillScene = {
+  width: number;
+  height: number;
+  headline: string;
+  productName: string;
+  productKind: string | null;
+  cta: string | null;
+  price: string | null;
+  originalPrice: string | null;
+  brand: {
+    handle: string | null;
+    contact: string | null;
+    palette: { ground: string; ink: string };
+  };
+};
+/** The post as it would be exported now: the still's scene (every template draws on the engine). */
+const stillScene = async (): Promise<StillScene> => {
+  const before = exporting.exportTemplatePng.mock.calls.length;
+  const options = await screen.findByRole("button", { name: "Download options" });
+  await waitFor(() => expect(options).toBeEnabled());
+  openSelect(options);
+  fireEvent.click(await screen.findByRole("menuitem", { name: /Still image/ }));
+  await waitFor(() =>
+    expect(exporting.exportTemplatePng.mock.calls.length).toBeGreaterThan(before),
+  );
+  const [{ scene }] = exporting.exportTemplatePng.mock.lastCall as unknown as [
+    { scene: StillScene },
+  ];
+  return scene;
 };
 const openSelect = (trigger: HTMLElement) =>
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false, pointerType: "mouse" });
 
 describe("the content studio", () => {
-  it("fills the copy from the first product and shows it on the stage", async () => {
-    const stage = await renderStudio();
-    expect(within(stage).getByRole("heading", { name: "Silk Abaya" })).toBeInTheDocument();
+  it("fills the copy from the first product and draws it on the post", async () => {
+    await renderStudio();
     expect(screen.getByLabelText("Body copy")).toHaveValue("Flowing silk crepe for evenings.");
-    expect(within(stage).getByText("42.000 BHD")).toBeInTheDocument();
-    expect(within(stage).getByText("@pura.bh")).toBeInTheDocument();
+    const scene = await stillScene();
+    expect(scene).toMatchObject({ headline: "Silk Abaya", price: "42.000 BHD" });
+    // The phone as a reader takes it in, and the post asks what to do.
+    expect(scene.brand).toMatchObject({ handle: "@pura.bh", contact: "+973 3300 0000" });
+    expect(scene.cta).toBe("Order from the link in bio");
   });
 
-  it("shows the chosen variant's price on the stage (bug #34)", async () => {
-    const stage = await renderStudio();
+  it("prices the post by the chosen variant (bug #34)", async () => {
+    await renderStudio();
     openSelect(screen.getByRole("combobox", { name: "Product Variant" }));
     fireEvent.click(await screen.findByRole("option", { name: /M · Black/ }));
-    expect(await within(stage).findByText("39.000 BHD")).toBeInTheDocument();
-    expect(within(stage).queryByText("42.000 BHD")).not.toBeInTheDocument();
+    expect((await stillScene()).price).toBe("39.000 BHD");
   });
 
-  it("exports a PNG at the chosen format's size and name", async () => {
+  it("exports Classic at the chosen format's size and name", async () => {
     await renderStudio();
     fireEvent.click(screen.getByRole("button", { name: /Square/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Download PNG" }));
-    await waitFor(() => expect(exporting.deliverCreativeFile).toHaveBeenCalledTimes(1));
-    expect(exporting.html2canvas).toHaveBeenCalledWith(
-      expect.any(HTMLElement),
-      expect.objectContaining({ scale: 1080 / 570, useCORS: true }),
-    );
-    expect(exporting.deliverCreativeFile).toHaveBeenCalledWith(
+    expect(await stillScene()).toMatchObject({ width: 1080, height: 1080 });
+    await waitFor(() => expect(exporting.deliverCreativeFile).toHaveBeenCalled());
+    expect(exporting.deliverCreativeFile).toHaveBeenLastCalledWith(
       expect.any(Blob),
       "pura-silk-abaya-square.png",
       "image/png",
@@ -332,31 +357,28 @@ describe("the content studio", () => {
     expect(caption).not.toContain("✨");
   });
 
-  it("offers the video exports once the product video is picked", async () => {
+  it("offers the product's own video once it is picked", async () => {
     await renderStudio();
-    expect(screen.getByRole("button", { name: "Download PNG" })).toBeInTheDocument();
+    openSelect(await screen.findByRole("button", { name: "Download options" }));
+    expect(await screen.findByRole("menuitem", { name: /Still image/ })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: /Original video/ })).not.toBeInTheDocument();
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
     fireEvent.click(screen.getByTitle("Video 2"));
-    expect(await screen.findByRole("button", { name: "Download Video (MP4)" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Download options" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Download PNG" })).not.toBeInTheDocument();
+    openSelect(await screen.findByRole("button", { name: "Download options" }));
+    expect(await screen.findByRole("menuitem", { name: /Original video/ })).toBeInTheDocument();
   });
 
   it("opens in the store's own colours, with the studio's looks a click away", async () => {
-    const stage = await renderStudio();
+    await renderStudio();
     // A white storefront becomes a soft tint of the store's teal, inked in the teal itself.
-    expect(stage).toHaveStyle({ background: "#edf1f2", color: "#1f4e5f" });
+    expect((await stillScene()).brand.palette).toMatchObject({
+      ground: "#edf1f2",
+      ink: "#1f4e5f",
+    });
     fireEvent.click(screen.getByRole("button", { name: /Store · bold/ }));
-    expect(stage).toHaveStyle({ background: "#1f4e5f" });
-    fireEvent.click(screen.getByRole("button", { name: /Editorial/ }));
-    expect(stage).toHaveStyle({ background: "#f4eee9" });
-  });
-
-  it("applies the visual style and the edition label to the stage", async () => {
-    const stage = await renderStudio();
+    expect((await stillScene()).brand.palette.ground).toBe("#1f4e5f");
     fireEvent.click(screen.getByRole("button", { name: /Maison/ }));
-    expect(stage).toHaveStyle({ background: "#330a0a" });
-    fireEvent.change(screen.getByLabelText("Edition label"), { target: { value: "Eid Edit" } });
-    expect(within(stage).getByText("Eid Edit")).toBeInTheDocument();
+    expect((await stillScene()).brand.palette.ground).toBe("#330a0a");
   });
 
   it("switches to the second product and refills the copy", async () => {
@@ -501,13 +523,12 @@ describe("the content studio", () => {
 
   it("shows only the controls a template uses, with the logo's size and colour", async () => {
     await renderStudio();
-    expect(screen.getByText("Product photo framing")).toBeInTheDocument();
-    expect(screen.getByText("Header & Branding Bar")).toBeInTheDocument();
+    // Every template, Classic too, draws the store's mark at the size and colour chosen here.
+    expect(screen.getByText("Brand mark")).toBeInTheDocument();
+    expect(screen.queryByText("Product photo framing")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("radio", { name: /Atelier Reveal/ }));
     expect(await screen.findByText("Brand mark")).toBeInTheDocument();
-    expect(screen.queryByText("Product photo framing")).not.toBeInTheDocument();
-    expect(screen.queryByText("Header & Branding Bar")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Headline")).toBeInTheDocument();
     expect(screen.getByLabelText("Body copy")).toBeInTheDocument();
 
@@ -524,9 +545,6 @@ describe("the content studio", () => {
     ];
     expect(scene.brand).toMatchObject({ logoScale: 1.6, logoTint: "white" });
     expect(scene.body).toBe("Flowing silk crepe for evenings.");
-
-    fireEvent.click(screen.getByRole("radio", { name: /Classic/ }));
-    expect(await screen.findByText("Header & Branding Bar")).toBeInTheDocument();
   });
 
   it("exports Editorial Cover with this month as its issue line", async () => {

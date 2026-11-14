@@ -77,22 +77,56 @@ export function defaultDeadline(today: Date): string {
 }
 
 /**
- * How a post names its last day: the weekday ("Thursday" / "الخميس") and the
- * date ("16 October" / "16 أكتوبر"), read on the reader's calendar. Null for
- * a day that is not one.
+ * The hour an offer ends, as a person says it ("3:40 العصر", "3:40 pm"), or null when it ends with
+ * the day (at midnight, or a minute before): then the day says it all.
+ */
+export function endHour(moment: Date, lang: "ar" | "en"): string | null {
+  const h = moment.getHours();
+  const m = moment.getMinutes();
+  if ((h === 0 && m === 0) || (h === 23 && m >= 59)) return null;
+  const clock = `${h % 12 || 12}:${String(m).padStart(2, "0")}`;
+  if (lang === "en") return `${clock} ${h < 12 ? "am" : "pm"}`;
+  const part = h < 12 ? "الصبح" : h < 15 ? "الظهر" : h < 18 ? "العصر" : "الليل";
+  return `${clock} ${part}`;
+}
+
+/**
+ * How a post names its last day: today and tomorrow by those words, else the
+ * weekday ("Thursday" / "الخميس"), and under it the hour it ends when the
+ * offer has one ("الساعة 3:40 العصر"), else the date ("16 October" / "16
+ * أكتوبر"), read on the reader's calendar. A post that said "ends Saturday" on
+ * the Saturday read like a week away. Null for a day that is not one.
  */
 export function deadlineParts(
   day: string,
   lang: "ar" | "en",
+  { now = new Date(), endsAt = null }: { now?: Date; endsAt?: string | null } = {},
 ): { day: string; date: string } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
   if (!match) return null;
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
   if (Number.isNaN(date.getTime())) return null;
   const locale = lang === "ar" ? "ar" : "en-GB";
+  const ar = lang === "ar";
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const daysAway = Math.round((date.getTime() - today.getTime()) / 86_400_000);
+  const name =
+    daysAway === 0
+      ? ar
+        ? "اليوم"
+        : "Today"
+      : daysAway === 1
+        ? ar
+          ? "بكرة"
+          : "Tomorrow"
+        : new Intl.DateTimeFormat(locale, { weekday: "long" }).format(date);
+  const ends = endsAt ? new Date(endsAt) : null;
+  const sameDay = ends && !Number.isNaN(ends.getTime()) && localDay(ends) === day;
+  const hour = sameDay ? endHour(ends, lang) : null;
+  const dateWords = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(date);
   return {
-    day: new Intl.DateTimeFormat(locale, { weekday: "long" }).format(date),
-    date: new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(date),
+    day: name,
+    date: hour ? (ar ? `الساعة ${hour}` : `at ${hour}`) : dateWords,
   };
 }
 

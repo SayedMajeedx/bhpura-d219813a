@@ -1,16 +1,28 @@
-import { Sliders } from "lucide-react";
+import { AlertTriangle, Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import { TemplatePlayer } from "@/features/content-studio/components/TemplatePlayer";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
 
 /**
- * The live preview of an animated template (see TemplatePlayer), with the
- * output size and length, and a way back to the controls on small screens.
+ * The live preview (see TemplatePlayer), with the output size and length, what to check before
+ * sharing, and on a phone the export and the caption right under it.
  */
 export function TemplatePreview({ studio }: { studio: ContentStudio }) {
-  const { isAr, format, activeTemplate, buildScene, photo, isCurrentVideo, setStillAt } = studio;
+  const {
+    isAr,
+    format,
+    activeTemplate,
+    buildScene,
+    photo,
+    isCurrentVideo,
+    setStillAt,
+    checks,
+    copiedCaption,
+    handleCopyCaption,
+  } = studio;
   const { width: outW, height: outH } = FORMATS[format];
   const duration = activeTemplate?.duration ?? 1;
 
@@ -35,18 +47,6 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
             </span>
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            document.getElementById("studio-controls")?.scrollIntoView({ behavior: "smooth" })
-          }
-          className="xl:hidden h-8 px-2.5 gap-1.5 text-xs font-semibold rounded-xl"
-        >
-          <Sliders className="size-3.5" />
-          <span>{isAr ? "التعديل" : "Edit"}</span>
-        </Button>
       </div>
 
       {activeTemplate && (
@@ -62,6 +62,43 @@ export function TemplatePreview({ studio }: { studio: ContentStudio }) {
           frameClassName="rounded-[22px] shadow-2xl"
           onPausedAt={setStillAt}
         />
+      )}
+
+      {checks.length > 0 && (
+        <ul
+          aria-label={isAr ? "قبل النشر" : "Before you post"}
+          className="mx-auto mt-3 max-w-[570px] space-y-1.5"
+        >
+          {checks.map((check) => (
+            <li
+              key={check.key}
+              className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-foreground"
+            >
+              <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-warning" aria-hidden="true" />
+              <span className="min-w-0 break-words">{check.text}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Below a wide screen the post is saved or shared right under it, with its caption. */}
+      {!studio.wide && (
+        <div className="mx-auto mt-3 flex max-w-[570px] flex-wrap items-center justify-center gap-2">
+          <TemplateExportActions studio={studio} />
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCopyCaption}
+            className="h-10 gap-2 rounded-xl text-xs font-semibold"
+          >
+            {copiedCaption ? (
+              <Check className="size-4 text-success" aria-hidden="true" />
+            ) : (
+              <Copy className="size-4 text-primary" aria-hidden="true" />
+            )}
+            {isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}
+          </Button>
+        </div>
       )}
     </div>
   );

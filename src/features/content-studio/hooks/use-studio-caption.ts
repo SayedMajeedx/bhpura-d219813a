@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { realSize } from "@/lib/default-variant";
 import type { Product } from "@/features/content-studio/lib/studio-content";
+import type { Sale } from "@/features/content-studio/lib/sale-price";
+import { postName } from "@/features/content-studio/lib/post-name";
 import type { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
 import {
   readCaptionVoice,
@@ -21,6 +23,8 @@ export function useStudioCaption({
   variantsQ,
   currencySymbol,
   effectivePrice,
+  sale = null,
+  saleEnds = null,
   making,
   brandId,
   isAr,
@@ -33,6 +37,10 @@ export function useStudioCaption({
   variantsQ: ReturnType<typeof useStudioProduct>["variantsQ"];
   currencySymbol: string;
   effectivePrice: number | null;
+  /** The offer's price on the chosen piece, as the post shows it (null: none). */
+  sale?: Sale | null;
+  /** When that offer ends, in the reader's words. */
+  saleEnds?: string | null;
   making: string | null | undefined;
   brandId: string;
   isAr: boolean;
@@ -72,15 +80,21 @@ export function useStudioCaption({
           .map((v) => String(v.size).trim()),
       ),
     );
+    const full = isAr ? selected.name_ar || selected.name : selected.name_en || selected.name;
+    const named = postName(full);
     return studioCaption({
       headline,
+      // The headline left as the post's short name: the caption says the piece in full.
+      name: named.kind && headline.trim() === named.name ? named.label : null,
       body,
       description: selectedDescription,
       occasion: selected.occasion,
       madeToOrder: Boolean(selected.is_made_to_order),
       making,
       sizes,
-      price: effectivePrice,
+      price: sale?.price ?? effectivePrice,
+      was: sale ? sale.original : null,
+      saleEnds: sale ? saleEnds : null,
       currency: currencySymbol,
       lang: isAr ? "ar" : "en",
       voice,
@@ -93,6 +107,8 @@ export function useStudioCaption({
     variantsQ.data,
     currencySymbol,
     effectivePrice,
+    sale,
+    saleEnds,
     making,
     isAr,
     voice,
