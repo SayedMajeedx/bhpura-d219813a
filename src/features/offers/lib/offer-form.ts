@@ -21,6 +21,9 @@ export interface OfferForm {
   exclude_sale_items: boolean;
   /** Which pieces it is for (every piece, ready pieces, or pieces made to the customer's order). */
   pieces: OfferPieces;
+  /** The store's own words for shoppers (empty: the system's). */
+  terms_ar: string;
+  terms_en: string;
   discount_type: "percentage" | "fixed";
   discount_value: string;
   max_discount: string;
@@ -53,6 +56,8 @@ export function emptyOfferForm(kind: OfferKind): OfferForm {
     category_slugs: [],
     exclude_sale_items: false,
     pieces: "any",
+    terms_ar: "",
+    terms_en: "",
     discount_type: "percentage",
     discount_value: kind === "discount" ? "10" : "",
     max_discount: "",
@@ -70,6 +75,9 @@ export function emptyOfferForm(kind: OfferKind): OfferForm {
 }
 
 const text = (n: number | null | undefined) => (n == null ? "" : String(Number(n)));
+
+/** The longest own wording the table keeps (store_offers.terms_ar / terms_en). */
+export const OWN_WORDING_MAX = 140;
 
 /** A stored kind of piece, read safely (an offer saved before it was asked is for any piece). */
 export const piecesOf = (value: string | null | undefined): OfferPieces =>
@@ -106,6 +114,8 @@ export function formFromRow(row: StoreOfferRow): OfferForm {
     category_slugs: row.category_slugs,
     exclude_sale_items: row.exclude_sale_items,
     pieces: piecesOf(row.pieces),
+    terms_ar: row.terms_ar ?? "",
+    terms_en: row.terms_en ?? "",
     discount_type: row.discount_type === "fixed" ? "fixed" : "percentage",
     discount_value: text(row.discount_value),
     max_discount: text(row.max_discount),
@@ -216,6 +226,8 @@ export function rowFromForm(form: OfferForm): NewStoreOffer {
     exclude_sale_items: form.exclude_sale_items,
     // Free delivery is for the order, not for a kind of piece.
     pieces: form.kind === "free_delivery" ? "any" : form.pieces,
+    terms_ar: form.terms_ar.trim().slice(0, OWN_WORDING_MAX),
+    terms_en: form.terms_en.trim().slice(0, OWN_WORDING_MAX),
     discount_type: null,
     discount_value: null,
     max_discount: null,
@@ -281,6 +293,8 @@ export function asStoreOffer(row: StoreOfferRow): StoreOffer {
     category_slugs: row.category_slugs,
     exclude_sale_items: row.exclude_sale_items,
     pieces: piecesOf(row.pieces),
+    terms_ar: row.terms_ar ?? "",
+    terms_en: row.terms_en ?? "",
     discount_type: (row.discount_type as StoreOffer["discount_type"]) ?? null,
     discount_value: row.discount_value,
     max_discount: row.max_discount,

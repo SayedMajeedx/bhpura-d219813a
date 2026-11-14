@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import storeOffers from "../supabase/migrations/20261027100000_store_offers.sql?raw";
 import area from "../supabase/migrations/20261205100000_free_delivery_by_area.sql?raw";
 import migration from "../supabase/migrations/20261208100000_offers_by_kind_of_piece.sql?raw";
+import wording from "../supabase/migrations/20261209100000_offer_own_wording.sql?raw";
 
 // Offers by the kind of piece, and each piece's best offer (migration 20261208100000), in a real
 // Postgres over the offers engine (20261027100000, 20261205100000): an offer on ready pieces never
@@ -119,6 +120,7 @@ beforeAll(async () => {
   await db.exec(storeOffers);
   await db.exec(area);
   await db.exec(migration);
+  await db.exec(wording);
 });
 
 type Offer = Record<string, unknown>;
@@ -326,5 +328,20 @@ describe("the order builder's step and the checkout's preview", () => {
       "SELECT public.storefront_active_offers('store') AS r",
     );
     expect(r.rows[0].r[0].pieces).toBe("ready");
+  });
+});
+
+describe("an offer's own wording (20261209100000)", () => {
+  it("is what a visitor reads, empty until written, and kept short", async () => {
+    await setOffers([{ ...partner, terms_en: "Dar Lulwa week: 30% off the abayas on the shelf" }]);
+    const r = await db.query<{ r: Array<{ terms_ar: string; terms_en: string; pieces: string }> }>(
+      "SELECT public.storefront_active_offers('store') AS r",
+    );
+    expect(r.rows[0].r[0]).toMatchObject({
+      terms_ar: "",
+      terms_en: "Dar Lulwa week: 30% off the abayas on the shelf",
+      pieces: "ready",
+    });
+    await expect(setOffers([{ ...partner, terms_ar: "x".repeat(141) }])).rejects.toThrow();
   });
 });

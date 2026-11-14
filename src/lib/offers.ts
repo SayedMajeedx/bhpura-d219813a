@@ -39,6 +39,9 @@ export interface StoreOffer {
    * made-to-order product's ready size); or pieces made to the customer's order. Absent, every piece.
    */
   pieces?: OfferPieces | null;
+  /** The store's own words for shoppers in each language (empty: the system's, `offerTerms`). */
+  terms_ar?: string | null;
+  terms_en?: string | null;
 }
 
 export type OfferPieces = "any" | "ready" | "made_to_order";
@@ -174,6 +177,16 @@ export function offerTerms(offer: StoreOffer, lang: Lang, money: Money): string 
   }
   const pieces = piecesTerms(offer, lang);
   return [head, pieces, condition].filter(Boolean).join(" ");
+}
+
+/**
+ * What a shopper reads about an offer in their language: the store's own words when it wrote
+ * them in that language (migration 20261209100000), else the system's from its terms. Never the
+ * other language's words, which would sit wrong on the page.
+ */
+export function offerWording(offer: StoreOffer, lang: Lang, money: Money): string {
+  const own = (lang === "ar" ? offer.terms_ar : offer.terms_en)?.trim();
+  return own || offerTerms(offer, lang, money);
 }
 
 /** "on ready-made pieces" / "على القطع الجاهزة": said only when an offer is for one kind. */

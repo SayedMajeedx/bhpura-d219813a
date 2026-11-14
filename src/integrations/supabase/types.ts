@@ -9055,6 +9055,8 @@ export type Database = {
           name_ar: string;
           name_en: string;
           pieces: string;
+          terms_ar: string;
+          terms_en: string;
           product_ids: string[];
           regions: string[];
           starts_at: string | null;
@@ -9084,6 +9086,8 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           pieces?: string;
+          terms_ar?: string;
+          terms_en?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;
@@ -9113,6 +9117,8 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           pieces?: string;
+          terms_ar?: string;
+          terms_en?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;

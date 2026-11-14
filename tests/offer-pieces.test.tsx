@@ -82,7 +82,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const { StoreOffersSection } = await import("../src/features/offers/components/StoreOffersSection");
 const { partnersHolding, withShown } = await import("../src/features/offers/lib/partner-pick");
-const { offerReaches, offerTerms } = await import("../src/lib/offers");
+const { offerReaches, offerTerms, offerWording } = await import("../src/lib/offers");
 const { offeredCardPrice, offeredShownPrice, pieceMadeToOrder } =
   await import("../src/lib/offer-price");
 const { formFromRow, rowFromForm, emptyOfferForm } =
@@ -207,6 +207,38 @@ describe("choosing products by the partner shop that holds them", () => {
       expect(state.create).toHaveBeenCalledWith(
         "b1",
         expect.objectContaining({ kind: "discount", product_ids: ["athar"], pieces: "ready" }),
+      ),
+    );
+  });
+});
+
+describe("an offer in the store's own words", () => {
+  it("is read in each language when written there, never in the other's", () => {
+    const own = offer({ pieces: "ready", terms_en: "  Dar Lulwa week  " });
+    expect(offerWording(own, "en", money)).toBe("Dar Lulwa week");
+    expect(offerWording(own, "ar", money)).toBe("خصم 30% على القطع الجاهزة");
+    expect(offerWording(offer(), "en", money)).toBe("30% off");
+  });
+
+  it("is written in the dialog beside the offer's terms, and saved trimmed", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <StoreOffersSection brandId="b1" isAr={false} />
+      </QueryClientProvider>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: /New offer/ }));
+    const dialog = await screen.findByRole("dialog");
+    const english = within(dialog).getByLabelText("English");
+    // The system's words are the placeholder until the store writes its own.
+    expect(english.getAttribute("placeholder")).toBe("10% off");
+    fireEvent.change(english, { target: { value: " Dar Lulwa week " } });
+    expect(within(dialog).getByText(/Shoppers read: Dar Lulwa week/)).toBeTruthy();
+    expect(within(dialog).getByText("The offer's terms: 10% off")).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save offer" }));
+    await waitFor(() =>
+      expect(state.create).toHaveBeenLastCalledWith(
+        "b1",
+        expect.objectContaining({ terms_en: "Dar Lulwa week", terms_ar: "" }),
       ),
     );
   });

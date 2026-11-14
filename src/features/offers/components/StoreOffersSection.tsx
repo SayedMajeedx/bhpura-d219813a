@@ -23,7 +23,7 @@ import {
 import { formatMoney } from "@/lib/format";
 import { assignableCategories } from "@/lib/smart-categories";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
-import { appliedOfferName, offerEnds, offerTerms } from "@/lib/offers";
+import { appliedOfferName, offerEnds, offerWording } from "@/lib/offers";
 import { getFriendlyErrorMessage, cn } from "@/lib/utils";
 import { StoreOfferDialog } from "@/features/offers/components/StoreOfferDialog";
 import {
@@ -194,7 +194,7 @@ export function StoreOffersSection({ brandId, isAr }: { brandId: string; isAr: b
                     {nameOf(row)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {offerTerms(asStoreOffer(row), lang, money)}
+                    {offerWording(asStoreOffer(row), lang, money)}
                     {ends ? ` · ${ends}` : ""}
                   </p>
                 </div>
