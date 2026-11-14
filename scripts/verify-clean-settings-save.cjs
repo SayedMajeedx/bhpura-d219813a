@@ -2,8 +2,8 @@ const { chromium } = require("playwright");
 const { createClient } = require("@supabase/supabase-js");
 const path = require("path");
 
-const SUPABASE_URL = "https://ikciahnuqhemvnyfvbyp.supabase.co";
-const SUPABASE_KEY = "sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy";
+const SUPABASE_URL = "https://uzspbrctbviihiqwgysn.supabase.co";
+const SUPABASE_KEY = "sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03";
 
 async function main() {
   const sb = createClient(SUPABASE_URL, SUPABASE_KEY);

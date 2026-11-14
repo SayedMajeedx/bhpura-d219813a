@@ -87,8 +87,8 @@ jobs:
         # server boot (createSupabaseClient throws otherwise) rather than
         # timing out before a single test can run.
         env:
-          VITE_SUPABASE_URL: https://ikciahnuqhemvnyfvbyp.supabase.co
-          VITE_SUPABASE_ANON_KEY: sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy
+          VITE_SUPABASE_URL: https://uzspbrctbviihiqwgysn.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03
         run: npx playwright test
 
       - name: Upload Playwright report artifact on failure

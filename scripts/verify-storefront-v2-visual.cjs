@@ -3,8 +3,8 @@ const path = require("path");
 const fs = require("fs");
 const { createClient } = require("@supabase/supabase-js");
 
-const SUPABASE_URL = "https://ikciahnuqhemvnyfvbyp.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy";
+const SUPABASE_URL = "https://uzspbrctbviihiqwgysn.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03";
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const BREAKPOINTS = [

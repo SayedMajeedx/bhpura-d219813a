@@ -8,7 +8,7 @@ test.describe("Brand Wizard Provisioning Suite", () => {
         access_token: "mock-token",
         user: { id: "mock-user-id", email: "admin@boutq.test" },
       };
-      localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+      localStorage.setItem("sb-uzspbrctbviihiqwgysn-auth-token", JSON.stringify(session));
       // A signed-in person who kept their session ("Keep me logged in"): without it the
       // app signs a fresh browser out on load (src/lib/session-persistence.ts).
       window.localStorage.setItem("boutq.auth.rememberMe", "1");

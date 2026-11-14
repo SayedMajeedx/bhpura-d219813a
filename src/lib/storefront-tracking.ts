@@ -17,7 +17,7 @@ export async function trackProductEngagement(
   const baseUrl =
     import.meta.env.VITE_SUPABASE_URL ||
     import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "https://ikciahnuqhemvnyfvbyp.supabase.co";
+    "https://uzspbrctbviihiqwgysn.supabase.co";
 
   const url = `${baseUrl.replace(/\/+$/, "")}/rest/v1/rpc/record_storefront_product_engagement`;
 
@@ -26,7 +26,7 @@ export async function trackProductEngagement(
     import.meta.env.VITE_SUPABASE_ANON_KEY ||
     import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
     import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "sb_publishable_mZLaZzhuKAqvgwpsZmRslQ_YahrHqxy";
+    "sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03";
 
   const payload = JSON.stringify({
     p_brand_slug: brandSlug,

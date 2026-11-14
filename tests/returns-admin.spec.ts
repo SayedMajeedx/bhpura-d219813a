@@ -97,7 +97,7 @@ async function mockAdmin(page: Page, returnRequests: string[]) {
       expires_at: Math.floor(Date.now() / 1000) + 3600,
     };
     try {
-      window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+      window.localStorage.setItem("sb-uzspbrctbviihiqwgysn-auth-token", JSON.stringify(session));
       // A user who chose "Keep me logged in". Without it the root layout
       // treats this fresh browser as a closed session and signs out at a
       // random point of the load (src/lib/session-persistence.ts), which made
