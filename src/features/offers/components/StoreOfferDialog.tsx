@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
-import { offerTerms, type OfferKind } from "@/lib/offers";
+import { type OfferKind } from "@/lib/offers";
 import { cn } from "@/lib/utils";
 import { OfferAreasField } from "@/features/offers/components/OfferAreasField";
 import {
@@ -23,13 +23,9 @@ import {
   type ScopeProduct,
 } from "@/features/offers/components/OfferScopeFields";
 import { OfferPiecesField } from "@/features/offers/components/OfferPiecesField";
+import { OfferWordingField } from "@/features/offers/components/OfferWordingField";
 import type { PartnerChoice } from "@/features/offers/lib/partner-pick";
-import {
-  draftOffer,
-  emptyOfferForm,
-  offerFormProblem,
-  type OfferForm,
-} from "@/features/offers/lib/offer-form";
+import { emptyOfferForm, offerFormProblem, type OfferForm } from "@/features/offers/lib/offer-form";
 
 const KINDS: Array<{
   kind: OfferKind;
@@ -104,7 +100,6 @@ export function StoreOfferDialog({
   const lang = isAr ? "ar" : "en";
   const money = (n: number) => formatMoney(n, currency, lang);
   const problem = offerFormProblem(form, isAr);
-  const terms = problem ? null : offerTerms(draftOffer(form), lang, money);
   const field = (name: string) => `${id}-${name}`;
 
   return (
@@ -444,15 +439,13 @@ export function StoreOfferDialog({
             </div>
           </div>
 
-          <div
-            className={cn(
-              "rounded-xl px-3 py-2 text-sm",
-              problem ? "bg-destructive/10 text-destructive" : "bg-muted/60",
-            )}
-            role="status"
-          >
-            {problem ?? (isAr ? `يرى العميل: ${terms}` : `Shoppers read: ${terms}`)}
-          </div>
+          <OfferWordingField
+            form={form}
+            patch={patch}
+            isAr={isAr}
+            money={money}
+            problem={problem}
+          />
 
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

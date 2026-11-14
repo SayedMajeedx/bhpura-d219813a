@@ -26,7 +26,7 @@ export type StoreOfferPatch = TablesUpdate<"store_offers">;
 export type OffersCombine = "best" | "code_first" | "together";
 
 const COLUMNS =
-  "id, brand_id, kind, name_ar, name_en, is_active, starts_at, ends_at, min_subtotal, min_items, product_ids, category_slugs, exclude_sale_items, discount_type, discount_value, max_discount, buy_quantity, get_quantity, get_product_ids, get_category_slugs, get_percent, max_sets, local_only, regions, pieces, created_at, updated_at" as const;
+  "id, brand_id, kind, name_ar, name_en, is_active, starts_at, ends_at, min_subtotal, min_items, product_ids, category_slugs, exclude_sale_items, discount_type, discount_value, max_discount, buy_quantity, get_quantity, get_product_ids, get_category_slugs, get_percent, max_sets, local_only, regions, pieces, terms_ar, terms_en, created_at, updated_at" as const;
 
 /** The store's offers, oldest first (the order the database tries them in), switched-off ones too. */
 export async function fetchStoreOffers(brandId: string): Promise<StoreOfferRow[]> {

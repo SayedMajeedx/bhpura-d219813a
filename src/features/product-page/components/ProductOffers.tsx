@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Gift, Percent, Truck } from "lucide-react";
 import { offersQueries } from "@/lib/data/offers";
-import { offerCountdown, offersForProduct, offerTerms, type StoreOffer } from "@/lib/offers";
+import { offerCountdown, offersForProduct, offerWording, type StoreOffer } from "@/lib/offers";
 import { productOnSale } from "@/lib/product-price";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode, shouldShowPrices } from "@/lib/storefront-mode";
@@ -49,7 +49,7 @@ export function ProductOffers({ product }: { product: Product }) {
               aria-hidden
             />
             <span className="min-w-0">
-              <span className="font-medium">{offerTerms(offer, lang, money)}</span>
+              <span className="font-medium">{offerWording(offer, lang, money)}</span>
               {ends && <span className="text-muted-foreground"> · {ends}</span>}
             </span>
           </li>
