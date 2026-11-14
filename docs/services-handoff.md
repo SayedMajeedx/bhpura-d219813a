@@ -34,7 +34,7 @@ apply and this file adds to them.
   app, reviewing PRs on GitHub (`SayedMajeedx/bhpura-d219813a`). Production
   runs on **Cloudflare Workers** (not Vercel: ignore Vercel checks; "green" is
   GitHub Actions plus "Workers Builds: bhpura-d219813a"). Supabase project
-  `ikciahnuqhemvnyfvbyp`.
+  `uzspbrctbviihiqwgysn` (Mumbai, since 2026-11-14).
 - Their loop: they ask for something (often with screenshots of their own live
   store, `aurora.boutq.store/aurora`), you build it, show the migration
   `--dry-run`, they run `npx supabase db push --linked` and say "applied", you

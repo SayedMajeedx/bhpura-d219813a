@@ -82,7 +82,9 @@ Measured with `node scripts/maintainability-metrics.mjs`:
 ## 3. Owner rules (non-negotiable)
 
 1. **Production database is read-only for you.** The Supabase CLI is linked to
-   production (`ikciahnuqhemvnyfvbyp`). `npx supabase db query --linked "<select>"`
+   production, the Mumbai project `uzspbrctbviihiqwgysn` since 2026-11-14 (the
+   Tokyo project `ikciahnuqhemvnyfvbyp` is kept paused as the way back, then
+   deleted: never point anything at it). `npx supabase db query --linked "<select>"`
    for read-only checks is fine and encouraged. Anything that writes
    (`db push`, `migration repair`, INSERT/UPDATE/DELETE/DDL, Edge Function
    deploys) needs the owner's explicit approval, and in practice **the owner runs

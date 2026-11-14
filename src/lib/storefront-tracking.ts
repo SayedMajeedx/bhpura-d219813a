@@ -1,4 +1,5 @@
 import { publicSupabase } from "@/integrations/supabase/client";
+import { supabaseProjectUrl, supabasePublicKey } from "@/lib/supabase-project";
 
 export type ProductEngagementEvent = "view" | "click" | "inquiry";
 
@@ -14,49 +15,31 @@ export async function trackProductEngagement(
 ): Promise<void> {
   if (typeof window === "undefined" || !brandSlug || !productId) return;
 
-  const baseUrl =
-    import.meta.env.VITE_SUPABASE_URL ||
-    import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-    "https://uzspbrctbviihiqwgysn.supabase.co";
-
-  const url = `${baseUrl.replace(/\/+$/, "")}/rest/v1/rpc/record_storefront_product_engagement`;
-
-  const key =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    import.meta.env.VITE_SUPABASE_ANON_KEY ||
-    import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    "sb_publishable_FgTn9G2b7f8nhGwkEkA7ZQ_Doa5DT03";
-
-  const payload = JSON.stringify({
-    p_brand_slug: brandSlug,
-    p_product_id: productId,
-    p_event: event,
-  });
+  // The project as the build was given it; no address or key is written here (they once
+  // were, and had to be changed by hand when the database moved).
+  const base = supabaseProjectUrl();
+  const key = supabasePublicKey();
+  const args = { p_brand_slug: brandSlug, p_product_id: productId, p_event: event };
 
   try {
-    if (typeof fetch === "function") {
-      await fetch(url, {
+    if (base && key && typeof fetch === "function") {
+      await fetch(`${base}/rest/v1/rpc/record_storefront_product_engagement`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           apikey: key,
         },
-        body: payload,
+        body: JSON.stringify(args),
         keepalive: true,
       });
       return;
     }
   } catch {
-    // Fall back to publicSupabase RPC if direct fetch encounters an error
-    try {
-      await (publicSupabase.rpc as any)("record_storefront_product_engagement", {
-        p_brand_slug: brandSlug,
-        p_product_id: productId,
-        p_event: event,
-      });
-    } catch {
-      // Best-effort tracking: avoid throwing to user interface
-    }
+    // The direct request failed: try once more through the client below.
+  }
+  try {
+    await (publicSupabase.rpc as any)("record_storefront_product_engagement", args);
+  } catch {
+    // Best-effort tracking: avoid throwing to user interface
   }
 }

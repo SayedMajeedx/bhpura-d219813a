@@ -1,9 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-
-const SUPABASE_PROJECT_URL =
-  import.meta.env.VITE_SUPABASE_URL || "https://ovwomttfevxldvjhreoi.supabase.co";
-const SUPABASE_PUBLIC_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
-const USER_MANAGEMENT_URL = `${SUPABASE_PROJECT_URL}/functions/v1/user-management`;
+import { edgeFunctionUrl, supabasePublicKey } from "@/lib/supabase-project";
 
 export interface ProvisionBrandPayload {
   slug: string;
@@ -39,15 +35,19 @@ export async function provisionBrandWithOwner(
   } = await supabase.auth.getSession();
   if (!session) throw new Error("No active session");
 
-  const url = new URL(USER_MANAGEMENT_URL);
+  // The build's own project: it once fell back to a project from before Tokyo.
+  const endpoint = edgeFunctionUrl("user-management");
+  if (!endpoint) throw new Error("This build has no Supabase address (VITE_SUPABASE_URL).");
+  const url = new URL(endpoint);
   url.searchParams.set("action", "provision-brand");
+  const publicKey = supabasePublicKey();
 
   const response = await fetch(url.toString(), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${session.access_token}`,
-      ...(SUPABASE_PUBLIC_KEY ? { apikey: SUPABASE_PUBLIC_KEY } : {}),
+      ...(publicKey ? { apikey: publicKey } : {}),
     },
     body: JSON.stringify(payload),
   });
