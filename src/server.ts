@@ -12,6 +12,8 @@ import {
   runObservedTask,
 } from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
+import { serveMediaWithEdgeCache } from "./lib/media-edge-cache";
+import { serveStorePageWithEdgeCache, storePageCacheKey } from "./lib/storefront-page-cache";
 import { storeHostRedirectResponse } from "./lib/seo/host-redirect";
 import { wholeDocument } from "./lib/whole-document";
 import { isHeartbeatMinute, scheduledWork } from "./lib/system-health";
@@ -287,29 +289,42 @@ export default {
         url.pathname.startsWith("/app-builds/") ||
         url.pathname.startsWith("/mobile-releases/")
       ) {
-        return await handleR2MediaRequest(request, env);
+        // Kept at the edge after the first request (media-edge-cache.ts).
+        return await serveMediaWithEdgeCache(
+          request,
+          (asked) => handleR2MediaRequest(asked, env),
+          ctx,
+        );
       }
 
-      const response = await wholeDocument({
-        request,
-        first: await handler.fetch(request),
-        render: async () => handler.fetch(request),
-        givenUp: () =>
-          new Response(renderErrorPage(), {
-            status: 503,
-            headers: { "content-type": "text/html; charset=utf-8", "Retry-After": "1" },
-          }),
-        onIncomplete: (attempt) =>
-          logOperationalEvent("warn", "document_incomplete", {
-            correlationId,
-            path: url.pathname,
-            attempt,
-          }),
-      });
-      return withPerformanceCacheHeaders(
-        request,
-        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), correlationId),
-      );
+      const renderPage = async () => {
+        const drawn = await wholeDocument({
+          request,
+          first: await handler.fetch(request),
+          render: async () => handler.fetch(request),
+          givenUp: () =>
+            new Response(renderErrorPage(), {
+              status: 503,
+              headers: { "content-type": "text/html; charset=utf-8", "Retry-After": "1" },
+            }),
+          onIncomplete: (attempt) =>
+            logOperationalEvent("warn", "document_incomplete", {
+              correlationId,
+              path: url.pathname,
+              attempt,
+            }),
+        });
+        return normalizeCatastrophicSsrResponse(drawn);
+      };
+      // A store's public pages are kept briefly at the edge (storefront-page-cache.ts).
+      const pageKey =
+        (env as { STOREFRONT_PAGE_CACHE?: string }).STOREFRONT_PAGE_CACHE === "off"
+          ? null
+          : storePageCacheKey(request);
+      const response = pageKey
+        ? await serveStorePageWithEdgeCache(pageKey, renderPage, ctx)
+        : await renderPage();
+      return withPerformanceCacheHeaders(request, withSecurityHeaders(response, correlationId));
     } catch (error) {
       logOperationalEvent("error", "request_failed", {
         correlationId,
