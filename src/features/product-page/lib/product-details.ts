@@ -1,5 +1,6 @@
 import { occasionLabel } from "@/lib/product-occasion";
 import { factLines, factSet, type FactLayout } from "@/lib/product-facts";
+import { translateOptionValue } from "@/lib/variant-i18n";
 
 /**
  * The product page's details section (`ProductAccordion`): what this product is (its own fields,
@@ -38,7 +39,12 @@ export function productDetailLines({
 }): DetailLine[] {
   const lines: DetailLine[] = [];
   const fabric = (fabricType ?? "").trim();
-  if (fabric) lines.push({ key: "fabric_type", label: fabricLabel, value: fabric });
+  // In the page's language, as the option pickers name a variant's fabric: a store writes it
+  // once, and an English page printed "ميني مت و حرير هندي" as written.
+  if (fabric) {
+    const value = translateOptionValue(fabric, lang) || fabric;
+    lines.push({ key: "fabric_type", label: fabricLabel, value });
+  }
   const suits = occasionLabel(occasion, lang);
   if (suits) {
     lines.push({ key: "occasion", label: lang === "ar" ? "المناسبة" : "Occasion", value: suits });
