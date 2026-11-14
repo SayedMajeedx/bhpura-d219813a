@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { offersQueries } from "@/lib/data/offers";
 import { useBrand } from "@/lib/brand-context";
@@ -17,9 +17,6 @@ import {
 } from "@/features/content-studio/lib/studio-styles";
 import { useStudioProduct } from "@/features/content-studio/hooks/use-studio-product";
 import { useStudioCopy } from "@/features/content-studio/hooks/use-studio-copy";
-import { useHeaderLayout } from "@/features/content-studio/hooks/use-header-layout";
-import { usePreviewScale } from "@/features/content-studio/hooks/use-preview-scale";
-import { useCreativeExport } from "@/features/content-studio/hooks/use-creative-export";
 import { useStudioCaption } from "@/features/content-studio/hooks/use-studio-caption";
 import { useTemplateScene } from "@/features/content-studio/hooks/use-template-scene";
 import { useTemplateExport } from "@/features/content-studio/hooks/use-template-export";
@@ -39,9 +36,19 @@ import {
   type DraftSettings,
 } from "@/features/content-studio/lib/drafts";
 import { firstImage } from "@/features/content-studio/lib/studio-content";
-import { ENGINE_TEMPLATES } from "@/features/content-studio/templates";
 import type { ContentDraft } from "@/lib/data/content-drafts";
-import { templateById, type TemplateId } from "@/features/content-studio/templates";
+import {
+  knownTemplateId,
+  templateById,
+  type TemplateId,
+} from "@/features/content-studio/templates";
+import { postName } from "@/features/content-studio/lib/post-name";
+import { postCallToAction } from "@/features/content-studio/lib/studio-caption";
+import { useRemembered } from "@/features/content-studio/hooks/use-remembered";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { offerEnds } from "@/lib/offers";
+import { todayPosts } from "@/features/content-studio/lib/today";
+import { shareChecks } from "@/features/content-studio/lib/share-checks";
 import { studioOfferedSale } from "@/features/content-studio/lib/sale-price";
 import { optionRun } from "@/features/content-studio/lib/option-run";
 import { reelShotUrls } from "@/features/content-studio/lib/reel-shots";
@@ -61,15 +68,23 @@ export function useContentStudio(slug: string) {
   const brandSlugClean = brand.slug || slug || "brand";
   const defaultEditionLabel = `The ${brandNameEn} Edit`;
 
-  const stageRef = useRef<HTMLDivElement>(null);
-  const stageViewportRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const { previewScale } = usePreviewScale(stageViewportRef);
-  const [format, setFormat] = useState<keyof typeof FORMATS>("story");
+  // What this device last made here (template, size), so the studio opens where the merchant left it.
+  const remembered = useRemembered(brand.id);
+  const [format, setFormatState] = useState<keyof typeof FORMATS>(remembered.format ?? "story");
+  const setFormat = (next: keyof typeof FORMATS) => {
+    setFormatState(next);
+    remembered.save({ format: next });
+  };
   const [theme, setTheme] = useState<StyleKey>(DEFAULT_STYLE);
   const [showPrice, setShowPrice] = useState(true);
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
-  const [templateId, setTemplateId] = useState<TemplateId>("classic");
+  const [templateId, setTemplateIdState] = useState<TemplateId>(() =>
+    knownTemplateId(remembered.templateId),
+  );
+  const setTemplateId = (next: TemplateId) => {
+    setTemplateIdState(next);
+    remembered.save({ templateId: next });
+  };
   const activeTemplate = templateById(templateId);
   // The logo on animated templates: its size and colour.
   const [logoScale, setLogoScale] = useState(1);
@@ -109,25 +124,14 @@ export function useContentStudio(slug: string) {
   const headlineIsAr = containsArabic(headline);
   const bodyIsAr = containsArabic(body);
   const fallbackLineName = `${brandNameEn.toUpperCase()} LINE`;
-  const productName = selected
+  const fullName = selected
     ? isAr
       ? selected.name_ar || selected.name
       : selected.name_en || selected.name
     : fallbackLineName;
-
-  const creativeExport = useCreativeExport({
-    stageRef,
-    videoRef,
-    photo: product.photo,
-    isCurrentVideo: product.isCurrentVideo,
-    brandSlugClean,
-    selected,
-    format,
-    palette,
-    headline,
-    businessName,
-    isAr,
-  });
+  // "عباية | وتر": the piece's name large, its kind small above it, never the divider.
+  const named = postName(fullName);
+  const productName = named.name;
   const { productVariants, activeVariant } = product;
   // The store's live automatic offers (a discount with no code) are part of the price it shows:
   // the post says what the shopper pays and when the offer ends, as the storefront does.
@@ -226,6 +230,30 @@ export function useContentStudio(slug: string) {
     ],
   );
   const storeFonts = useStoreFonts(settingsQ.data, headlineFont === "store");
+  const caption = useStudioCaption({
+    selected,
+    headline,
+    body,
+    selectedDescription: product.selectedDescription,
+    variantsQ: product.variantsQ,
+    currencySymbol,
+    // A post that hides its price has a caption that does too.
+    effectivePrice: showPrice ? product.effectivePrice : null,
+    // The price the post shows: the offer's, while one is on (the caption once said the full price).
+    sale: showPrice ? sale : null,
+    saleEnds: sale ? offerEnds({ ends_at: offered.endsAt }, isAr ? "ar" : "en") : null,
+    making: isAr
+      ? settingsQ.data?.delivery_estimate_tailored_ar
+      : settingsQ.data?.delivery_estimate_tailored_en,
+    brandId: brand.id,
+    isAr,
+    override: occasion.occasionCaptionText,
+  });
+  // What the post asks a viewer to do, in the store's voice; a greeting, a teaser and the
+  // ordering steps say it their own way.
+  const ownAsk =
+    templateId === "occasion-pack" || templateId === "coming-soon" || templateId === "how-to-order";
+  const cta = ownAsk ? null : postCallToAction(caption.captionVoice, isAr ? "ar" : "en");
   const { buildScene, photoReady } = useTemplateScene({
     format,
     isAr,
@@ -238,6 +266,8 @@ export function useContentStudio(slug: string) {
     instagram,
     phone,
     productName,
+    productKind: named.kind,
+    cta,
     headline,
     body,
     showPrice,
@@ -333,10 +363,7 @@ export function useContentStudio(slug: string) {
       const draftProduct = product.products.find((item) => item.id === draft.product_id);
       const next = draftProduct ?? selected;
       const productChanges = Boolean(draftProduct) && draftProduct?.id !== selected?.id;
-      const knownTemplate =
-        draft.template_id === "classic" ||
-        ENGINE_TEMPLATES.some((template) => template.id === draft.template_id);
-      setTemplateId(knownTemplate ? (draft.template_id as TemplateId) : "classic");
+      setTemplateId(knownTemplateId(draft.template_id));
       setFormat(readDraftFormat(draft.format));
       setTheme(saved.theme);
       setShowPrice(saved.showPrice);
@@ -358,34 +385,48 @@ export function useContentStudio(slug: string) {
       if (saved.occasion) occasion.restoreOccasion(saved.occasion);
     },
   });
-  const header = useHeaderLayout({ exporting: creativeExport.exporting, stageRef });
-  const caption = useStudioCaption({
-    selected,
-    headline,
-    body,
-    selectedDescription: product.selectedDescription,
-    variantsQ: product.variantsQ,
-    currencySymbol,
-    effectivePrice: product.effectivePrice,
-    making: isAr
-      ? settingsQ.data?.delivery_estimate_tailored_ar
-      : settingsQ.data?.delivery_estimate_tailored_en,
-    brandId: brand.id,
-    isAr,
-    override: occasion.occasionCaptionText,
+
+  // What is worth posting today (an offer ending, an offer on, a new piece), and picking one.
+  const allProducts = product.products;
+  const today = useMemo(
+    () =>
+      todayPosts({
+        offers: liveOffers,
+        products: allProducts,
+        now: new Date(),
+        lang: isAr ? "ar" : "en",
+      }),
+    [liveOffers, allProducts, isAr],
+  );
+  const pickTodayPost = (post: (typeof today)[number]) => {
+    setTemplateId(post.templateId);
+    product.setProductId(post.productId);
+  };
+  const checks = shareChecks({
+    templateId,
+    saleEndsAt: offered.endsAt,
+    hasSale: Boolean(sale && showPrice),
+    hasPhoto: Boolean(product.photo),
+    deadlineBacked: moments.deadlineBacked,
+    now: new Date(),
+    lang: isAr ? "ar" : "en",
   });
+
+  // A wide screen keeps the post beside the controls, its export in the header; a narrower one
+  // has them under the post. Drawn in one place only, never hidden in the other.
+  const wide = useMediaQuery("(min-width: 1280px)");
 
   return {
     slug,
+    wide,
+    today,
+    pickTodayPost,
+    checks,
     brand,
     storeProfile,
     isAr,
     brandNameEn,
     brandSlugClean,
-    stageRef,
-    stageViewportRef,
-    videoRef,
-    previewScale,
     format,
     setFormat,
     theme,
@@ -407,6 +448,7 @@ export function useContentStudio(slug: string) {
     bodyIsAr,
     fallbackLineName,
     productName,
+    productKind: named.kind,
     defaultEditionLabel,
     templateId,
     setTemplateId,
@@ -434,8 +476,6 @@ export function useContentStudio(slug: string) {
     ...drafts,
     ...product,
     ...copy,
-    ...creativeExport,
-    ...header,
     ...caption,
   };
 }

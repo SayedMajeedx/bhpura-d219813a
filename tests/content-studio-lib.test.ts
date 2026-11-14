@@ -201,7 +201,10 @@ describe("optionRun", () => {
 
 describe("templatesForStore", () => {
   const order = (vertical: unknown) =>
-    templatesForStore(ENGINE_TEMPLATES, vertical).map((t) => `${t.id}${t.suggested ? "*" : ""}`);
+    templatesForStore(
+      ENGINE_TEMPLATES.filter((t) => t.id !== "classic"),
+      vertical,
+    ).map((t) => `${t.id}${t.suggested ? "*" : ""}`);
 
   it("puts an abaya store's templates first and suggests the top three", () => {
     expect(order("abayas")).toEqual([
@@ -228,7 +231,8 @@ describe("templatesForStore", () => {
   it("gives a roastery its own set, and keeps every template for every store", () => {
     const coffee = order("coffee");
     expect(coffee.slice(0, 3)).toEqual(["menu-board*", "bold-poster*", "swatch-run*"]);
-    expect(coffee).toHaveLength(ENGINE_TEMPLATES.length);
+    // Every template but Classic, which the picker keeps first for every store.
+    expect(coffee).toHaveLength(ENGINE_TEMPLATES.length - 1);
   });
 
   it("treats an unknown store type as a general store", () => {

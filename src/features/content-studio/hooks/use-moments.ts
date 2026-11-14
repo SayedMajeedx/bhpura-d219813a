@@ -78,7 +78,8 @@ export function useMoments({
   }, [offerId, offerEndsAt]);
   const deadline = useMemo<SceneData["deadline"]>(() => {
     if (!lastChance) return null;
-    const parts = deadlineParts(deadlineDay, lang);
+    // The offer's own end, when the post's day is still its day: its hour is said too.
+    const parts = deadlineParts(deadlineDay, lang, { endsAt: promo ? null : offerEndsAt });
     if (!parts) return null;
     const offerLine =
       liveOffer && liveOffer.discount_type === "percentage"
@@ -93,7 +94,7 @@ export function useMoments({
       code: promo?.code ?? null,
       offer: promo ? promoOffer(promo, lang, currencySymbol) : offerLine,
     };
-  }, [lastChance, deadlineDay, lang, promo, currencySymbol, liveOffer]);
+  }, [lastChance, deadlineDay, lang, promo, currencySymbol, liveOffer, offerEndsAt]);
 
   // Back in Stock: the options on the shelf, and who asked.
   const leadsQ = useQuery({
@@ -144,6 +145,8 @@ export function useMoments({
     promos,
     promoId,
     choosePromo,
+    // The post's day is a live offer's or a chosen code's own (else the merchant typed one).
+    deadlineBacked: Boolean(promo) || Boolean(offerEndsAt && localDay(offerEndsAt) === deadlineDay),
     deadline,
     asked,
     showAsked,

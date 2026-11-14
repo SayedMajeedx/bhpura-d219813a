@@ -1,3 +1,4 @@
+import { displayPhone } from "@/lib/invoice-display";
 import { readyEstimate, tailoredEstimate, type EstimateSettings } from "@/lib/delivery-estimate";
 import { getCountryByCode, type ShippingZone } from "@/lib/shipping";
 import { formatAmount } from "@/features/content-studio/lib/batch";
@@ -160,7 +161,8 @@ export function howToOrderSteps(
   const words = WORDS[lang];
   const steps: OrderStep[] = [];
   const catalog = s.storefront_mode === "catalog";
-  const number = whatsapp?.trim() || null;
+  // As a reader takes it in ("+973 3995 0016"), never the stored digits.
+  const number = whatsapp?.trim() ? displayPhone(whatsapp) : null;
 
   // Where to order. A catalog store takes orders on WhatsApp alone.
   if (catalog) {

@@ -6,6 +6,8 @@ import {
   roundedRect,
   type Box,
 } from "@/features/content-studio/engine/draw";
+import { CTA_HEIGHT, drawCallToAction } from "@/features/content-studio/engine/cta";
+import { CONTENT_BOTTOM } from "@/features/content-studio/engine/safe-area";
 import { drawBrandMark } from "@/features/content-studio/engine/brand-mark";
 import { displayFont, STUDIO_FONTS } from "@/features/content-studio/engine/fonts";
 import type { Drawable, SceneData, StudioTemplate } from "@/features/content-studio/engine/scene";
@@ -341,30 +343,65 @@ function drawEndCard(
     y += fitName.size * 1.35;
   }
 
+  // The price large enough to read on a phone, the price before an offer struck beside it.
   if (scene.price) {
     ctx.save();
-    ctx.globalAlpha = at(0.55) * 0.9;
+    ctx.globalAlpha = at(0.55);
     ctx.fillStyle = palette.ink;
-    ctx.font = font(42 * u, STUDIO_FONTS.body, 500);
-    ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    // An Arabic price ("30.000 د.ب.") reads right to left: number first, then the currency.
+    const priceSize = 60 * u;
+    ctx.font = font(priceSize, STUDIO_FONTS.body, 600);
     ctx.direction = textDirection(scene.price);
-    ctx.fillText(scene.price, cx, y);
+    const priceW = ctx.measureText(scene.price).width;
+    const was = scene.originalPrice;
+    ctx.font = font(36 * u, STUDIO_FONTS.body, 400);
+    const wasW = was ? ctx.measureText(was).width : 0;
+    const gap = was ? 28 * u : 0;
+    const total = priceW + gap + wasW;
+    const rtl = scene.lang === "ar";
+    // In reading order: the price, then the old one.
+    const priceLeft = rtl ? cx + total / 2 - priceW : cx - total / 2;
+    const wasLeft = rtl ? cx - total / 2 : cx - total / 2 + priceW + gap;
+    ctx.textAlign = "left";
+    ctx.font = font(priceSize, STUDIO_FONTS.body, 600);
+    ctx.fillText(scene.price, priceLeft, y);
+    if (was) {
+      ctx.globalAlpha = at(0.55) * 0.6;
+      ctx.font = font(36 * u, STUDIO_FONTS.body, 400);
+      ctx.direction = textDirection(was);
+      ctx.fillText(was, wasLeft, y + 16 * u);
+      ctx.fillRect(wasLeft - 4 * u, y + 34 * u, wasW + 8 * u, 3 * u);
+    }
     ctx.restore();
-    y += 74 * u;
+    y += priceSize * 1.5;
   }
 
+  // What to do now, as a button in the store's ink, then the handle under it when there is room.
+  const ctaW = drawCallToAction(ctx, scene.cta, {
+    x: cx,
+    y: y + (CTA_HEIGHT * u) / 2,
+    u,
+    align: "center",
+    fill: palette.ink,
+    ink: palette.ground,
+    alpha: at(0.7),
+  });
+  if (ctaW > 0) y += CTA_HEIGHT * u + 22 * u;
+
   const handle = brand.handle || brand.contact;
-  if (handle) {
+  // Only above Instagram's reply bar (CONTENT_BOTTOM): a story's foot belongs to it.
+  if (
+    handle &&
+    y + 34 * u <= Math.min(card.y + card.h * 0.9, CONTENT_BOTTOM[scene.format] * scene.height)
+  ) {
     ctx.save();
-    ctx.globalAlpha = at(0.7) * 0.75;
+    ctx.globalAlpha = at(0.8) * 0.75;
     ctx.fillStyle = palette.ink;
     ctx.font = font(28 * u, STUDIO_FONTS.body, 400);
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     ctx.direction = "ltr";
-    ctx.fillText(handle, cx, Math.min(y + 10 * u, card.y + card.h * 0.82));
+    ctx.fillText(handle, cx, y);
     ctx.restore();
   }
 }

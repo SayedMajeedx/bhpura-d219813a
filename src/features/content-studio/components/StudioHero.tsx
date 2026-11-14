@@ -1,47 +1,14 @@
-import {
-  Check,
-  Copy,
-  Download,
-  Palette,
-  Sparkles,
-  Video,
-  Image as LucideImage,
-  ChevronDown,
-  FolderOpen,
-} from "lucide-react";
+import { Check, Copy, Palette, Sparkles, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 import { TemplateExportActions } from "@/features/content-studio/components/TemplateExportActions";
 import { DraftsDialog } from "@/features/content-studio/components/DraftsDialog";
-import { ShimmerText } from "@/components/motion/ShimmerText";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 
 /** The page header: what the studio does, the caption copy and the export actions. */
 export function StudioHero({ studio }: { studio: ContentStudio }) {
-  const {
-    isAr,
-    brandNameEn,
-    productsQ,
-    isCurrentVideo,
-    activeTemplate,
-    exporting,
-    exportProgress,
-    downloadOriginalVideo,
-    exportImageCreative,
-    exportVideoCreative,
-    exportCreative,
-    copiedCaption,
-    handleCopyCaption,
-    setDraftsOpen,
-    draftsQ,
-    openDraft,
-  } = studio;
+  const { isAr, brandNameEn, copiedCaption, handleCopyCaption, setDraftsOpen, draftsQ, openDraft } =
+    studio;
   return (
     <section className="relative overflow-hidden rounded-2xl sm:rounded-[24px] border border-border-strong bg-card p-4 sm:p-6 lg:p-8 shadow-xs">
       <div className="absolute inset-y-0 end-0 w-72 bg-[radial-gradient(circle_at_center,hsl(var(--primary)/.12),transparent_70%)] pointer-events-none" />
@@ -84,127 +51,24 @@ export function StudioHero({ studio }: { studio: ContentStudio }) {
             )}
           </Button>
           <DraftsDialog studio={studio} />
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCopyCaption}
-            size="default"
-            className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-3.5 sm:px-4 shadow-2xs hover:bg-muted/50"
-          >
-            {copiedCaption ? (
-              <Check className="size-4 text-emerald-600" />
-            ) : (
-              <Copy className="size-4 text-primary" />
-            )}
-            <span>{isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}</span>
-          </Button>
-          {activeTemplate ? (
-            <TemplateExportActions studio={studio} />
-          ) : isCurrentVideo ? (
-            <div className="flex items-center shadow-2xs">
-              <Button
-                onClick={exportCreative}
-                disabled={exporting || productsQ.isLoading}
-                size="default"
-                className="h-10 gap-2 rounded-s-xl rounded-e-none text-xs font-semibold px-3.5 sm:px-4"
-              >
-                <Video className="size-4" />
-                {exporting ? (
-                  // Work going on: a highlight sweeps the words (shimmer text).
-                  <ShimmerText
-                    text={
-                      exportProgress > 0
-                        ? isAr
-                          ? `جارٍ التصدير (${exportProgress}%)…`
-                          : `Exporting (${exportProgress}%)…`
-                        : isAr
-                          ? "جارٍ التجهيز…"
-                          : "Preparing…"
-                    }
-                  />
-                ) : (
-                  <span>{isAr ? "تنزيل فيديو MP4" : "Download Video (MP4)"}</span>
-                )}
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    disabled={exporting || productsQ.isLoading}
-                    size="default"
-                    className="h-10 px-2.5 rounded-s-none rounded-e-xl border-s border-primary-foreground/20 text-xs"
-                    aria-label={isAr ? "خيارات التنزيل" : "Download options"}
-                  >
-                    <ChevronDown className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align={isAr ? "start" : "end"} className="w-60">
-                  <DropdownMenuItem
-                    onClick={exportVideoCreative}
-                    disabled={exporting}
-                    className="gap-2.5 cursor-pointer py-2"
-                  >
-                    <Video className="size-4 text-primary shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-xs">
-                        {isAr ? "تنزيل فيديو مصمم (MP4)" : "Branded Video (MP4)"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isAr
-                          ? "فيديو مع القالب والشعار والأسعار"
-                          : "Video with layout, branding & price"}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={downloadOriginalVideo}
-                    disabled={exporting}
-                    className="gap-2.5 cursor-pointer py-2"
-                  >
-                    <Download className="size-4 text-muted-foreground shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-xs">
-                        {isAr ? "تنزيل الفيديو الأصلي الخام" : "Original Raw Video"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isAr
-                          ? "ملف الفيديو الأصلي بدون إضافات"
-                          : "Source MP4 file without overlays"}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={exportImageCreative}
-                    disabled={exporting}
-                    className="gap-2.5 cursor-pointer py-2"
-                  >
-                    <LucideImage className="size-4 text-muted-foreground shrink-0" />
-                    <div className="flex flex-col">
-                      <span className="font-semibold text-xs">
-                        {isAr ? "تنزيل لقطة كصورة (PNG)" : "Snapshot Frame (PNG)"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {isAr ? "صورة ثابتة للتصميم الحالي" : "Still image of current frame"}
-                      </span>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ) : (
+          {studio.wide && (
             <Button
-              onClick={exportCreative}
-              disabled={exporting || productsQ.isLoading}
+              type="button"
+              variant="outline"
+              onClick={handleCopyCaption}
               size="default"
-              className="h-10 gap-2 rounded-xl text-xs font-semibold px-3.5 sm:px-4 shadow-2xs"
+              className="h-10 gap-2 rounded-xl border-border bg-background/80 text-xs font-semibold px-3.5 sm:px-4 shadow-2xs hover:bg-muted/50"
             >
-              <Download className="size-4" />
-              {exporting ? (
-                <ShimmerText text={isAr ? "جارٍ التصدير…" : "Exporting…"} />
+              {copiedCaption ? (
+                <Check className="size-4 text-emerald-600" />
               ) : (
-                <span>{isAr ? "تنزيل PNG" : "Download PNG"}</span>
+                <Copy className="size-4 text-primary" />
               )}
+              <span>{isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}</span>
             </Button>
           )}
+          {/* Narrower screens have them under the post instead. */}
+          {studio.wide && <TemplateExportActions studio={studio} />}
         </div>
       </div>
     </section>

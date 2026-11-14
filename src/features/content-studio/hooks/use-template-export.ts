@@ -178,6 +178,32 @@ export function useTemplateExport({
 
   const cancelTemplateExport = () => abortRef.current?.abort();
 
+  /** The product's own video, as uploaded, with nothing drawn on it. */
+  const downloadOriginalVideo = async () => {
+    if (!photo || !isCurrentVideo) return;
+    const extension =
+      photo.split("?")[0].split(".").pop()?.toLowerCase() === "webm" ? "webm" : "mp4";
+    try {
+      const response = await fetch(photo);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const blob = await response.blob();
+      const fileName = creativeFileName(brandSlugClean, productFileName, format, "mp4").replace(
+        /\.mp4$/,
+        `-original.${extension}`,
+      );
+      const delivered = await deliverCreativeFile(
+        blob,
+        fileName,
+        blob.type || "video/mp4",
+        headline,
+      );
+      if (delivered === "cancelled") return;
+      toast.success(isAr ? "الفيديو الأصلي جاهز" : "Original video ready");
+    } catch {
+      toast.error(isAr ? "تعذر تنزيل الفيديو الأصلي" : "Could not download the original video");
+    }
+  };
+
   return {
     templateExporting,
     templateProgress,
@@ -188,5 +214,6 @@ export function useTemplateExport({
     setStillAt,
     exportTemplateSlides,
     cancelTemplateExport,
+    downloadOriginalVideo,
   };
 }

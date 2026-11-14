@@ -135,7 +135,7 @@ describe("the Studio's caption", () => {
     expect(caption.split("\n")).toEqual([
       "For your next evening out",
       "Ready now in 52 · 54",
-      "24.5 BHD",
+      "24.500 BHD",
       "Order from the link in bio",
     ]);
   });

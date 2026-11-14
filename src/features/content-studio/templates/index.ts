@@ -1,5 +1,6 @@
 import type { BrandKit, StudioTemplate } from "@/features/content-studio/engine/scene";
 import type { StudioStyle } from "@/features/content-studio/lib/studio-styles";
+import { classic } from "@/features/content-studio/templates/classic";
 import { atelierReveal } from "@/features/content-studio/templates/atelier-reveal";
 import { priceDrop } from "@/features/content-studio/templates/price-drop";
 import { swatchRun } from "@/features/content-studio/templates/swatch-run";
@@ -18,8 +19,9 @@ import { madeForYou } from "@/features/content-studio/templates/made-for-you";
 import { backInStock } from "@/features/content-studio/templates/back-in-stock";
 import { customerFavourite } from "@/features/content-studio/templates/customer-favourite";
 
-/** The animated templates, in the order the picker shows them after Classic. */
+/** Every template, Classic first (the picker keeps it first and orders the rest per store). */
 export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
+  classic,
   atelierReveal,
   reelCut,
   boldPoster,
@@ -39,11 +41,18 @@ export const ENGINE_TEMPLATES: readonly StudioTemplate[] = [
   occasionPack,
 ];
 
-/** "classic" is today's layout (the HTML stage); the rest run on the engine. */
-export type TemplateId = "classic" | (typeof ENGINE_TEMPLATES)[number]["id"];
+/** Every template runs on the engine; Classic was an HTML stage until 2026-11-14. */
+export type TemplateId = (typeof ENGINE_TEMPLATES)[number]["id"];
 
 export function templateById(id: TemplateId): StudioTemplate | null {
   return ENGINE_TEMPLATES.find((template) => template.id === id) ?? null;
+}
+
+/** A template id kept somewhere (a draft, this device), or Classic when it names none of them. */
+export function knownTemplateId(id: unknown): TemplateId {
+  return typeof id === "string" && ENGINE_TEMPLATES.some((template) => template.id === id)
+    ? id
+    : "classic";
 }
 
 /** A template's palette for one of the studio's colour styles. */

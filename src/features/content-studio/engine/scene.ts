@@ -30,7 +30,15 @@ export type SceneData = {
   format: FormatKey;
   lang: "ar" | "en";
   brand: BrandKit;
+  /** The piece's own name ("وتر"; a catalogue name's kind is taken off, `postName`). */
   productName: string;
+  /** What the piece is ("عباية"), when its name says, for a small line above the name. */
+  productKind?: string | null;
+  /**
+   * The line that tells a viewer what to do ("اطلبوا من الرابط في البايو"), in the store's own
+   * way of saying "you"; null where a template has no such ask (a greeting, a teaser).
+   */
+  cta?: string | null;
   headline: string;
   body: string;
   /** The formatted selling price ("42.000 BHD"), or null to hide it. */

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Check, Clapperboard, LayoutTemplate } from "lucide-react";
+import { classic } from "@/features/content-studio/templates/classic";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { ENGINE_TEMPLATES, type TemplateId } from "@/features/content-studio/templates";
@@ -9,8 +10,8 @@ import type { SceneData } from "@/features/content-studio/engine/scene";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 
 /**
- * Choose the design: Classic (today's layout) or one of the animated
- * templates, ordered for the kind of store with the best few suggested.
+ * Choose the design: Classic (the product full bleed) first, then the
+ * templates ordered for the kind of store with the best few suggested.
  */
 export function TemplatePicker({ studio }: { studio: ContentStudio }) {
   const {
@@ -57,12 +58,15 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
   }> = [
     {
       id: "classic",
-      name: isAr ? "كلاسيكي" : "Classic",
-      note: isAr ? "صورة ثابتة أو فيديو المنتج" : "Still, or the product video",
+      name: isAr ? classic.name.ar : classic.name.en,
+      note: isAr ? classic.goal.ar : classic.goal.en,
       animated: false,
       suggested: false,
     },
-    ...templatesForStore(ENGINE_TEMPLATES, storeProfile.vertical).map((template) => ({
+    ...templatesForStore(
+      ENGINE_TEMPLATES.filter((template) => template.id !== "classic"),
+      storeProfile.vertical,
+    ).map((template) => ({
       id: template.id as TemplateId,
       name: isAr ? template.name.ar : template.name.en,
       note: template.suggested

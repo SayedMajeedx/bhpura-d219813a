@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { extractSnappySnippet, type Product } from "@/features/content-studio/lib/studio-content";
+import { postName } from "@/features/content-studio/lib/post-name";
 
 /**
  * The edition label, headline and body, refilled from the product when the
@@ -43,8 +44,9 @@ export function useStudioCopy({
       return;
     }
     const name = isAr ? selected.name_ar || selected.name : selected.name_en || selected.name;
+    // The piece's own name ("وتر"), its kind ("عباية") set small above it by the template.
     if (name) {
-      setHeadline(name);
+      setHeadline(postName(name).name);
     }
     const rawDesc = isAr
       ? selected.description_ar || selected.description
