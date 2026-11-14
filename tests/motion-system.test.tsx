@@ -192,6 +192,48 @@ describe("tabs sliding: where the pill sits", () => {
     expect(pill.dataset.ready).toBe("true");
   });
 
+  it("moves with its tab when the page's direction flips (a change of language)", async () => {
+    // Laid out by the shell's direction: in Arabic the first tab is on the right.
+    const shell = document.createElement("div");
+    shell.setAttribute("dir", "rtl");
+    document.body.appendChild(shell);
+    const box = (left: number) =>
+      ({
+        left,
+        top: 0,
+        right: left + 100,
+        bottom: 40,
+        width: 100,
+        height: 40,
+        x: left,
+        y: 0,
+      }) as DOMRect;
+    const { container } = render(
+      <div className="t-tabs" data-testid="bar">
+        <TabsPill />
+        <button type="button" className="t-tab" aria-pressed={true} data-tab="first">
+          Ready size
+        </button>
+        <button type="button" className="t-tab" aria-pressed={false}>
+          Made to order
+        </button>
+      </div>,
+      { container: shell },
+    );
+    const bar = container.querySelector<HTMLElement>(".t-tabs")!;
+    const first = container.querySelector<HTMLElement>('[data-tab="first"]')!;
+    bar.getBoundingClientRect = () => box(0);
+    first.getBoundingClientRect = () => box(shell.getAttribute("dir") === "rtl" ? 100 : 0);
+    const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
+    shell.setAttribute("dir", "ltr");
+    await act(async () => {});
+    expect(pill.style.transform).toBe("translate(0px, 0px)");
+    shell.setAttribute("dir", "rtl");
+    await act(async () => {});
+    expect(pill.style.transform).toBe("translate(100px, 0px)");
+    shell.remove();
+  });
+
   it("hides the pill while nothing is chosen", () => {
     const { container } = render(
       <div className="t-tabs">

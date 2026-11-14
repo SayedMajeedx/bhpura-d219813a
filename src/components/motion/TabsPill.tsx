@@ -85,9 +85,18 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
       // product page's pills never moved after the first tap.
       attributeFilter: [...ACTIVE_TAB_ATTRIBUTES, "class"],
     });
+    // A change of language flips the page's direction: the tabs swap sides at the same size, so
+    // neither watcher above hears it, and the pill stayed on the side its tab had left (the
+    // product page's sizing toggle drew its fill under the other choice). The direction is set
+    // on an element above the bar (the page, the store's shell), so every one of them is watched.
+    const directions = new MutationObserver(() => place(true));
+    for (let node = bar.parentElement; node; node = node.parentElement) {
+      directions.observe(node, { attributes: true, attributeFilter: ["dir"] });
+    }
     return () => {
       changes.disconnect();
       resizes?.disconnect();
+      directions.disconnect();
     };
   }, []);
 

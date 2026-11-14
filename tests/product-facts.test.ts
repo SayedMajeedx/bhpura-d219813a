@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FACT_LIMITS, cleanFacts, factLines, factSet, splitList } from "../src/lib/product-facts";
 import { detailGroups, productDetailLines } from "../src/features/product-page/lib/product-details";
 import { buildProductSchema } from "../src/lib/seo/structured-data";
+import { registerDynamicTranslations } from "../src/lib/variant-i18n";
 import { productColumnsFrom, productFormFrom } from "../src/features/inventory/lib/product-form";
 
 // What a product is, in the facts its kind of store records (products.details).
@@ -164,5 +165,25 @@ describe("the product editor", () => {
       details: { ...form.details, top_notes: [" Rose ", "Rose"], longevity: "" },
     });
     expect(columns.details).toEqual({ concentration: "oil", top_notes: ["Rose"] });
+  });
+});
+
+describe("the product's own fabric", () => {
+  it("is named in the page's language, as the option pickers name a variant's", () => {
+    // Pura writes its fabric once, in Arabic: the English page printed it as written.
+    registerDynamicTranslations({ "ميني مت و حرير هندي": "Mini Matt and Indian silk" }, "en");
+    const line = (lang: "ar" | "en") =>
+      productDetailLines({ fabricType: "ميني مت و حرير هندي", fabricLabel: "Fabric", lang })[0];
+    expect(line("en")).toMatchObject({ key: "fabric_type", value: "Mini Matt and Indian silk" });
+    expect(line("ar").value).toBe("ميني مت و حرير هندي");
+  });
+
+  it("stays as written while no translation is known", () => {
+    const [line] = productDetailLines({
+      fabricType: " قماش لم يُترجم بعد ",
+      fabricLabel: "Fabric",
+      lang: "en",
+    });
+    expect(line.value).toBe("قماش لم يُترجم بعد");
   });
 });

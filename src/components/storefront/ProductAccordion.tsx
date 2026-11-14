@@ -11,6 +11,7 @@ import { DEFAULT_VOCABULARY, getVerticalVocabularyOverrides } from "@/lib/store-
 import { verticalLineage } from "@/lib/verticals/registry";
 import type { StoreVertical } from "@/lib/store-profile";
 import { useStoreAxisDefaults } from "@/lib/variant-axes";
+import { useVariantTranslations } from "@/lib/use-variant-translations";
 import { resolveVariantAxis } from "@/lib/addons/addon-registry";
 import type { StorefrontProductDetail } from "@/lib/data/storefront";
 import {
@@ -59,6 +60,8 @@ export function ProductAccordion({
   const vocabText = (key: keyof typeof vocab) => (isAr ? vocab[key].ar : vocab[key].en);
 
   const axisDefaults = useStoreAxisDefaults();
+  // The product's own fabric, in the page's language (written once, it showed as written).
+  useVariantTranslations([product?.fabric_type], isAr ? "ar" : "en");
   const details = detailsSection({
     lines: productDetailLines({
       fabricType: product?.fabric_type,
