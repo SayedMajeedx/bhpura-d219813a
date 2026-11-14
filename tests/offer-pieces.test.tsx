@@ -243,3 +243,12 @@ describe("an offer in the store's own words", () => {
     );
   });
 });
+
+describe("choosing a ready size from the offers line", () => {
+  it("takes the measurements typed for tailoring away, as the toggle does", async () => {
+    const { withoutMeasurements } = await import("../src/features/product-page/lib/size-mode");
+    expect(
+      withoutMeasurements({ fit_length: "54", passport_chest: "40", tailoring_notes: "Wide" }),
+    ).toEqual({ tailoring_notes: "Wide" });
+  });
+});

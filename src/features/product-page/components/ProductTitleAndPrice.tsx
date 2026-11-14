@@ -27,6 +27,7 @@ export function ProductTitleAndPrice({
   isWishlisted,
   lang,
   madeForShopper = false,
+  onChooseReady,
   originalPrice,
   priceLabel,
   priceRange,
@@ -44,6 +45,8 @@ export function ProductTitleAndPrice({
   lang: ReturnType<typeof useStorefront>["lang"];
   /** The shopper is having this piece made: the made-to-order delivery time is said. */
   madeForShopper?: boolean;
+  /** Switches the sizing toggle to a ready size (absent: the product has no toggle). */
+  onChooseReady?: () => void;
   originalPrice: number;
   priceLabel: string;
   /** The prices of the sizes still possible (the label shows a range when they differ). */
@@ -142,7 +145,7 @@ export function ProductTitleAndPrice({
           <ApproxPrice amount={shownPrice} className="basis-full text-sm" />
         )}
       </div>
-      <ProductOffers product={product} />
+      <ProductOffers product={product} madeToOrder={madeForShopper} onChooseReady={onChooseReady} />
     </>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from "@/lib/data/storefront";
 import { isDefaultVariant, realSize } from "@/lib/default-variant";
 import type { Dispatch, RefObject, SetStateAction } from "react";
+import { chooseReadySize } from "@/features/product-page/lib/size-mode";
 
 import { resolveColorHex } from "@/lib/color-names";
 import { TabsPill } from "@/components/motion/TabsPill";
@@ -22,8 +23,8 @@ export function ProductOptionPickers({
   hasVariants,
   isColorOutOfStock,
   isFabricOutOfStock,
-  isMadeToOrder,
   isMeasurementField,
+  isMadeToOrder,
   isSizeOutOfStock,
   isTailoringActive,
   isVisualColorAxis,
@@ -122,20 +123,15 @@ export function ProductOptionPickers({
               type="button"
               aria-pressed={sizeMode === "ready"}
               variant={sizeMode === "ready" ? "default" : "outline"}
-              onClick={() => {
-                setSizeMode("ready");
-                setErrorMsg(null);
-                setCfValues((prev) => {
-                  const next = { ...prev };
-                  Object.keys(next).forEach((k) => {
-                    if (isMeasurementField(k)) {
-                      delete next[k];
-                    }
-                  });
-                  return next;
-                });
-                setMeasurementsApplied(false);
-              }}
+              onClick={() =>
+                chooseReadySize({
+                  setSizeMode,
+                  setErrorMsg,
+                  setCfValues,
+                  setMeasurementsApplied,
+                  isMeasurement: isMeasurementField,
+                })
+              }
               className={`t-tab h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
                 sizeMode === "ready" ? "shadow-sm" : "bg-transparent"
               }`}

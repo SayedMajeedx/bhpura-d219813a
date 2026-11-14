@@ -189,6 +189,30 @@ export function offerWording(offer: StoreOffer, lang: Lang, money: Money): strin
   return own || offerTerms(offer, lang, money);
 }
 
+/**
+ * Whether an offer is for the other kind of piece than the one the shopper is choosing (the
+ * product page's ready/tailoring toggle): an offer on ready pieces while the piece is being made,
+ * or the reverse. Unknown (`madeToOrder` undefined) is never the other kind.
+ */
+export function offerForOtherPieces(
+  offer: Pick<StoreOffer, "pieces">,
+  madeToOrder: boolean | null | undefined,
+): boolean {
+  if (madeToOrder == null) return false;
+  return (
+    (offer.pieces === "ready" && madeToOrder) || (offer.pieces === "made_to_order" && !madeToOrder)
+  );
+}
+
+/**
+ * The kind of piece an offer is for, said beside the store's own wording, which may leave it out
+ * ("White Friday | 20%"): the system's words already say it. Empty for an offer on every piece.
+ */
+export function offerLimitNote(offer: StoreOffer, lang: Lang): string {
+  const own = (lang === "ar" ? offer.terms_ar : offer.terms_en)?.trim();
+  return own ? piecesTerms(offer, lang) : "";
+}
+
 /** "on ready-made pieces" / "على القطع الجاهزة": said only when an offer is for one kind. */
 export function piecesTerms(offer: Pick<StoreOffer, "pieces">, lang: Lang): string {
   if (offer.pieces === "ready") return lang === "ar" ? "على القطع الجاهزة" : "on ready-made pieces";
