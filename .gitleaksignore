@@ -6,3 +6,9 @@ d4e4d71abc40ee39397d3dee8644781d2ef89849:src/lib/web-push.ts:generic-api-key:13
 c9c57252c0bc778c4947618a182db6e2f3ab6d8a:tests/store-seo-settings.test.tsx:generic-api-key:158
 # A made-up event id in a test (tests/tiktok-snap-events.test.ts: Snapchat's client_dedup_id), not a secret.
 b5f08802328958b760aefe9eb51eb830955389e7:tests/tiktok-snap-events.test.ts:generic-api-key:149
+# The Mumbai project's publishable key (sb_publishable_…): public by design, it ships in every browser.
+dcddc8c7b875c388d59793e54e7e0623d23e732b:.github/workflows/ci.yml:generic-api-key:91
+dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/test-brand-wizard-e2e.cjs:generic-api-key:7
+dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/test-rls-subscribers-stock.cjs:generic-api-key:4
+dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/verify-clean-settings-save.cjs:generic-api-key:6
+dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/verify-storefront-v2-visual.cjs:generic-api-key:7
