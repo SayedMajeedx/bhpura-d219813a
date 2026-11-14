@@ -10,6 +10,7 @@ import { todayPosts } from "../src/features/content-studio/lib/today";
 import { shareChecks } from "../src/features/content-studio/lib/share-checks";
 import { readRemembered } from "../src/features/content-studio/lib/remembered";
 import { knownTemplateId } from "../src/features/content-studio/templates";
+import { classicMarkBox } from "../src/features/content-studio/templates/classic";
 import type { StoreOffer } from "../src/lib/offers";
 
 // The content studio review of 2026-11-14: a post priced 33 while the offer made it 26.400 (the
@@ -175,5 +176,17 @@ describe("what the studio remembers on this device", () => {
     expect(readRemembered("not json")).toEqual({});
     expect(knownTemplateId("price-drop")).toBe("price-drop");
     expect(knownTemplateId("gone-template")).toBe("classic");
+  });
+});
+
+describe("Classic's logo", () => {
+  it("grows down from where it stands, never up through the frame (the owner's report)", () => {
+    const small = classicMarkBox("portrait", 1350, 1, 1);
+    const large = classicMarkBox("portrait", 1350, 1, 2.2);
+    expect(large.top).toBe(small.top);
+    expect(large.height).toBeCloseTo(small.height * 2.2);
+    // The frame's line is 28 in: the mark starts below it with room to spare.
+    expect(large.top).toBeGreaterThanOrEqual(50);
+    expect(classicMarkBox("story", 1920, 1, 2.2).top).toBeGreaterThanOrEqual(50);
   });
 });
