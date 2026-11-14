@@ -17,6 +17,10 @@ import { ease, mix, presence, progress } from "@/features/content-studio/engine/
 const DURATION = 6;
 const WHITE = "#ffffff";
 const CTA_INK = "#141414";
+/** The logo's height at size 1, at 1080 wide. */
+const MARK_HEIGHT = 66;
+/** How far in the thin frame is drawn, at 1080 wide. */
+const FRAME_INSET = 28;
 
 /** Where the logo sits and how much of the foot is shaded, per format (fractions of the height). */
 const LAYOUT: Record<FormatKey, { logoY: number; shadeFrom: number; headlineMax: number }> = {
@@ -25,6 +29,15 @@ const LAYOUT: Record<FormatKey, { logoY: number; shadeFrom: number; headlineMax:
   portrait: { logoY: 0.06, shadeFrom: 0.36, headlineMax: 104 },
   square: { logoY: 0.065, shadeFrom: 0.3, headlineMax: 92 },
 };
+
+/**
+ * Where Classic's logo sits: its top edge where it is at size 1 (and never above the frame's line),
+ * its height growing with the store's logo size, so a larger mark grows down, not up.
+ */
+export function classicMarkBox(format: FormatKey, H: number, u: number, scale: number) {
+  const top = Math.max(LAYOUT[format].logoY * H - (MARK_HEIGHT * u) / 2, (FRAME_INSET + 22) * u);
+  return { top, height: MARK_HEIGHT * u * scale };
+}
 
 /** A line of the copy block, measured once so the block can be set from its foot up. */
 type Part = { height: number; gapAfter: number; draw: (top: number, alpha: number) => void };
@@ -68,17 +81,21 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   drawShade(ctx, W, H, { height: 0.2, alpha: 0.42 }, { from: layout.shadeFrom, alpha: 0.86 });
   ctx.restore();
 
-  // The logo, centred and large enough to read at a glance; on a story the handle under it.
+  // The logo, centred and large enough to read at a glance; on a story the handle under it. Its
+  // top edge stays where it is at size 1 and a larger mark grows down: grown from its middle, a
+  // mark at 220% rose through the frame's line and the top of the post (the owner's report of
+  // 2026-11-14).
+  const { top: markTop, height: markH } = classicMarkBox(scene.format, H, u, brand.logoScale);
   ctx.save();
   ctx.globalAlpha = appear(0.2);
   drawBrandMark(ctx, brand, {
     x: W / 2,
-    y: layout.logoY * H,
+    y: markTop + markH / 2,
     u,
     align: "center",
     onPhoto: true,
     ink: brand.palette.ink,
-    height: 66,
+    height: MARK_HEIGHT,
     maxWidth: 460,
   });
   const contact = [brand.handle, brand.contact].filter(Boolean).join("   ·   ");
@@ -89,7 +106,7 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
     ctx.direction = "ltr";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(contact, W / 2, layout.logoY * H + 66 * u * brand.logoScale * 0.5 + 40 * u);
+    ctx.fillText(contact, W / 2, markTop + markH + 40 * u);
   }
   ctx.restore();
 
@@ -323,7 +340,12 @@ function render(ctx: CanvasRenderingContext2D, t: number, scene: SceneData) {
   ctx.globalAlpha = appear(0.4) * 0.5;
   ctx.strokeStyle = withAlpha(WHITE, 0.6);
   ctx.lineWidth = 2 * u;
-  ctx.strokeRect(28 * u, 28 * u, W - 56 * u, H - 56 * u);
+  ctx.strokeRect(
+    FRAME_INSET * u,
+    FRAME_INSET * u,
+    W - 2 * FRAME_INSET * u,
+    H - 2 * FRAME_INSET * u,
+  );
   ctx.restore();
 }
 
