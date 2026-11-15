@@ -9,7 +9,6 @@ import {
   pickDescription,
   useStoreModules,
 } from "@/lib/storefront-context";
-import { isServicesProfile } from "@/lib/store-profile";
 import { Card } from "@/components/ui/card";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
@@ -101,6 +100,8 @@ import { RecentlyViewed, recordRecentlyViewed } from "@/components/storefront/Re
 import { getProductRecentPurchaseCount } from "@/lib/storefront-social-proof";
 
 import { RecommendationRail } from "@/features/product-page/components/RecommendationRail";
+import { suggestionRail } from "@/features/product-page/lib/suggestions";
+import { ProductBreadcrumb } from "@/features/product-page/components/ProductBreadcrumb";
 import { ProductPurchaseActions } from "@/features/product-page/components/ProductPurchaseActions";
 import { soldOnlyByBooking } from "@/lib/bookings/service";
 import { useServiceBookingTerms } from "@/features/product-page/hooks/use-service-booking-terms";
@@ -561,6 +562,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     ...(product.product_variants ?? []).map((v) => Number(v.selling_price) || Infinity),
   );
   const bundleItems = relatedProducts.filter((item) => item.item_kind !== "service").slice(0, 3);
+  // One rail under the page, leaving out what the bundle already offers (suggestions.ts).
+  const suggestions = suggestionRail({
+    related: relatedProducts,
+    bestSelling: bestSellingProducts,
+    exclude: isService ? [] : bundleItems.map((item) => item.id),
+  });
 
   const cfLabel = (f: CustomField) => customFieldLabel(f, lang);
 
@@ -728,6 +735,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10 overflow-x-clip w-full max-w-full">
+      <ProductBreadcrumb category={product.category} displayName={displayName} />
       <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start w-full max-w-full">
         <ProductGallery
           displayName={displayName}
@@ -969,24 +977,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
       {productReviews && <ProductReviews reviews={productReviews} lang={lang} />}
 
-      {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (
-        <div className="mt-10 space-y-9 border-t pt-8 sm:mt-14 sm:pt-10">
-          {relatedProducts.length > 0 && (
-            <RecommendationRail
-              title={t("قد يعجبك أيضاً", "You may also like")}
-              products={relatedProducts}
-            />
-          )}
-          {bestSellingProducts.length > 0 && (
-            <RecommendationRail
-              title={
-                isServicesProfile(modules)
-                  ? t("حجزها العملاء أيضاً", "Customers also booked")
-                  : t("اشتراها العملاء أيضاً", "Customers also bought")
-              }
-              products={bestSellingProducts}
-            />
-          )}
+      {suggestions.length > 0 && (
+        <div className="mt-10 border-t pt-8 sm:mt-14 sm:pt-10">
+          <RecommendationRail
+            title={t("قد يعجبك أيضاً", "You may also like")}
+            products={suggestions}
+          />
         </div>
       )}
 

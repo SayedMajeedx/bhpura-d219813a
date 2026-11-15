@@ -130,6 +130,17 @@ export function ProductGallery({
                   >
                     <ChevronRight className="size-8 rtl:rotate-180 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.85)] filter" />
                   </Button>
+                  {/* Where the shopper is among the photos, on a phone (no thumbnails there); centred, as
+                      the zoom button holds a corner. */}
+                  <span
+                    aria-live="polite"
+                    className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/45 px-2.5 py-1 text-xs font-medium text-white tabular-nums backdrop-blur-sm md:hidden"
+                  >
+                    <span className="sr-only">{t("الصورة", "Photo")} </span>
+                    <span dir="ltr">
+                      {(mediaIdx % media.length) + 1} / {media.length}
+                    </span>
+                  </span>
                 </>
               )}
             </>
@@ -139,9 +150,11 @@ export function ProductGallery({
           )}
         </div>
         {media.length > 1 && (
+          // From a tablet up: a phone swipes and reads the counter on the photo, and keeps the
+          // room for the name and price (the product page review of 2026-11-15).
           // Padding keeps the focus ring inside the scroll area; the negative margin gives the
           // first thumbnail back the edge it shares with the main picture.
-          <div className="-mx-1 mt-2 flex gap-2.5 overflow-x-auto p-1 scrollbar-thin">
+          <div className="-mx-1 mt-2 hidden gap-2.5 overflow-x-auto p-1 scrollbar-thin md:flex">
             {media.map((m, i) => {
               const selected = i === mediaIdx % media.length;
               return (
