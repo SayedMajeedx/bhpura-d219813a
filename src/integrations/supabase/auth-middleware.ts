@@ -2,6 +2,7 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { workerEnv } from "@/lib/worker-env";
 
 export function getEnvVariable(name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
@@ -58,23 +59,10 @@ export async function getEnvVariableAsync(name: string): Promise<string | undefi
 
   // 1. Try Cloudflare request context (runtime environment variables)
   if (typeof window === "undefined") {
-    try {
-      const vinxiHttp = "vinxi/http";
-      const { getEvent } = await import(vinxiHttp);
-      const event = getEvent();
-      const env =
-        event?.context?.cloudflare?.env ||
-        (event?.context as any)?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-      if (env) {
-        if (env[name]) return env[name];
-        if (env[viteName]) return env[viteName];
-        if (env[unprefixed]) return env[unprefixed];
-      }
-    } catch (e) {
-      if (name === "GEMINI_API_KEY") {
-        console.error(`[Env Debug] Error reading Cloudflare context:`, e);
+    const env = workerEnv();
+    if (env) {
+      for (const key of [name, viteName, unprefixed]) {
+        if (typeof env[key] === "string" && env[key]) return env[key] as string;
       }
     }
   }
@@ -106,21 +94,10 @@ export async function getEnvDiagnostics(): Promise<{
 
   // 2. Cloudflare request context
   if (typeof window === "undefined") {
-    try {
-      const vinxiHttp = "vinxi/http";
-      const { getEvent } = await import(vinxiHttp);
-      const event = getEvent();
-      const env =
-        event?.context?.cloudflare?.env ||
-        (event?.context as any)?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-      if (env) {
-        hasCloudflare = true;
-        Object.keys(env).forEach((k) => keys.add(k));
-      }
-    } catch {
-      // This source isn't available in the current runtime — move on to the next one.
+    const env = workerEnv();
+    if (env) {
+      hasCloudflare = true;
+      Object.keys(env).forEach((k) => keys.add(k));
     }
   }
 

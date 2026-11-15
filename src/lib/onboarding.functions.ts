@@ -74,19 +74,6 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireValidTurnstile(data.turnstileToken);
     let env: any = null;
-    try {
-      // A variable specifier keeps bundlers and the test runner from resolving it.
-      const vinxiHttp = "vinxi/http";
-      const { getEvent } = await import(/* @vite-ignore */ vinxiHttp);
-      const event = getEvent();
-      env =
-        event?.context?.cloudflare?.env ||
-        event?.context?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-    } catch {
-      // Fall back to the globally-bound Worker environment below.
-    }
 
     if (!env) {
       try {

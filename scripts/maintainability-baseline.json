@@ -818,7 +818,6 @@
     "src/routes/reset-password.tsx": 350,
     "src/routes/review.$token.tsx": 255,
     "src/server.ts": 239,
-    "src/start.ts": 24,
-    "src/vinxi-http.d.ts": 7
+    "src/start.ts": 24
   }
 }

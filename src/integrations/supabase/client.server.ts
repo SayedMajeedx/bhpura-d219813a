@@ -1,12 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-let getEventFn: any = null;
-import(/* @vite-ignore */ "vinxi/http")
-  .then((m) => {
-    getEventFn = m.getEvent;
-  })
-  .catch(() => {});
+import { workerEnv } from "@/lib/worker-env";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -39,23 +34,12 @@ function getEnvSync(name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
 
-  // 1. Try Vinxi/Cloudflare context synchronously
-  try {
-    if (getEventFn) {
-      const event = getEventFn();
-      const env =
-        event?.context?.cloudflare?.env ||
-        (event?.context as any)?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-      if (env) {
-        if (env[name]) return env[name];
-        if (env[viteName]) return env[viteName];
-        if (env[unprefixed]) return env[unprefixed];
-      }
+  // 1. The Worker's environment for this request (src/server.ts binds it)
+  const env = workerEnv();
+  if (env) {
+    for (const key of [name, viteName, unprefixed]) {
+      if (typeof env[key] === "string" && env[key]) return env[key] as string;
     }
-  } catch {
-    // No request context in this runtime; fall through to process.env.
   }
 
   // 2. Try process.env
