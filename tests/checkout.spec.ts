@@ -86,7 +86,13 @@ test.describe("Storefront checkout", () => {
     const placeOrder = page.locator("button:visible", { hasText: "Place order" }).first();
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
     await waitForHydration(placeOrder);
-    await expect(page.getByText(variant!.products.name).first()).toBeVisible();
+    // The line names the piece ("Nasaq"), its kind beside its size ("Abaya | Nasaq" as written),
+    // as the product page does (src/lib/product-name.ts).
+    const pieceName = variant!.products.name
+      .split(/\s*[|｜/·•]\s*/)
+      .filter(Boolean)
+      .pop()!;
+    await expect(page.getByText(pieceName).first()).toBeVisible();
 
     await page.locator("#checkout-name").fill("E2E Test Shopper");
     await page.locator("#checkout-phone").fill("+97333000000");
@@ -102,7 +108,8 @@ test.describe("Storefront checkout", () => {
     await page.locator("#checkout-house").fill("45");
 
     await page.getByText("Cash on delivery", { exact: true }).first().click();
-    await page.locator("label", { hasText: "I agree to the" }).getByRole("checkbox").click();
+    // Placing the order is agreeing to the terms, said beside the summary: no tick to find.
+    await expect(page.getByText("By placing your order you agree to the").first()).toBeVisible();
 
     await expect(placeOrder).toBeEnabled();
     await placeOrder.click();
@@ -178,11 +185,9 @@ test.describe("Storefront checkout", () => {
     await expect(placeOrder).toBeVisible({ timeout: 60_000 });
     await waitForHydration(placeOrder);
 
-    // Terms not accepted yet: the button stays disabled.
-    await expect(placeOrder).toBeDisabled();
-
-    // Terms accepted but no name or phone: submitting shows an error and places nothing.
-    await page.locator("label", { hasText: "I agree to the" }).getByRole("checkbox").click();
+    // No terms tick holds the button (placing the order is agreeing to them), so the fields do:
+    // with no name or phone, submitting shows an error and places nothing.
+    await expect(placeOrder).toBeEnabled();
     await placeOrder.click();
     await expect(page.getByText("Name and phone are required").first()).toBeVisible();
     expect(guard.orderPayloads).toHaveLength(0);
