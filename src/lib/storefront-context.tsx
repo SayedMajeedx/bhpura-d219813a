@@ -405,6 +405,8 @@ type StoreCtx = {
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
+  /** The saved cart is read: "your cart is empty" waits for it (the server draws no cart). */
+  cartReady: boolean;
   wishlist: string[];
   wishlistCount: number;
   isWishlisted: (productId: string) => boolean;
@@ -913,6 +915,7 @@ export function StorefrontProvider({
     updateQty,
     clearCart,
     cartCount,
+    cartReady: storageHydrated,
     cartTotal,
     wishlist,
     wishlistCount: wishlist.length,

@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FieldLink } from "@/features/checkout/components/FieldLink";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,20 +105,26 @@ export function CustomerDetailsCard({
       {/* The gift order's fields: not for a services store, where an order is a booking. */}
       {!servicesStore && giftFields}
 
-      <div>
-        <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>
-        <Textarea
-          id="checkout-notes"
-          name="notes"
-          className="min-h-[90px] rounded-xl shadow-2xs resize-y"
-          placeholder={t(
-            "أي ملاحظات خاصة بالطلب أو التوصيل...",
-            "Any special instructions for order or delivery...",
-          )}
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-        />
-      </div>
+      <FieldLink
+        label={t("إضافة ملاحظة", "Add a note")}
+        startOpen={Boolean(form.notes)}
+        focusId="checkout-notes"
+      >
+        <div>
+          <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>
+          <Textarea
+            id="checkout-notes"
+            name="notes"
+            className="min-h-[90px] rounded-xl shadow-2xs resize-y"
+            placeholder={t(
+              "أي ملاحظات خاصة بالطلب أو التوصيل...",
+              "Any special instructions for order or delivery...",
+            )}
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
+        </div>
+      </FieldLink>
       {session?.user && (
         <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
           <Checkbox

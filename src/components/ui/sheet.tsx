@@ -93,7 +93,7 @@ const SheetContent = React.forwardRef<
           {!hideDefaultClose && (
             <SheetPrimitive.Close
               aria-label={closeLabel()}
-              className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+              className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
             >
               <X className="h-5 w-5" strokeWidth={2} />
             </SheetPrimitive.Close>

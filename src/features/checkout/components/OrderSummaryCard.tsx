@@ -2,7 +2,8 @@ import type { CartBooking } from "@/lib/bookings/cart";
 import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 import { minutesOf, timeOf } from "@/lib/bookings/rules";
 import { Link } from "@tanstack/react-router";
-import { formatPrice } from "@/lib/storefront-context";
+import { formatPrice, pickName } from "@/lib/storefront-context";
+import { postName } from "@/lib/product-name";
 import { taxRateLabel } from "@/lib/order-tax";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { Card } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-check
 import type { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
 import type { usePlaceOrder } from "@/features/checkout/hooks/use-place-order";
 import type { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
+import { FieldLink } from "@/features/checkout/components/FieldLink";
 import { ProductPhotoPlaceholder } from "@/components/storefront/ProductPhotoPlaceholder";
 import { arNoun } from "@/lib/arabic-count";
 import { ApproxPrice } from "@/components/storefront/CurrencySwitcher";
@@ -71,7 +73,6 @@ export function OrderSummaryCard({
   promoInput,
   promoRefusals,
   redeemedPoints,
-  setAcceptedTerms,
   setAppliedPromo,
   setMarketingConsent,
   setPointsToRedeemInput,
@@ -131,7 +132,6 @@ export function OrderSummaryCard({
   /** How many times a code was refused: the field shakes once each time. */
   promoRefusals: number;
   redeemedPoints: ReturnType<typeof useCheckoutLoyalty>["redeemedPoints"];
-  setAcceptedTerms: Dispatch<SetStateAction<boolean>>;
   setAppliedPromo: ReturnType<typeof usePromoCode>["setAppliedPromo"];
   setMarketingConsent: Dispatch<SetStateAction<boolean>>;
   setPointsToRedeemInput: ReturnType<typeof useCheckoutLoyalty>["setPointsToRedeemInput"];
@@ -198,18 +198,23 @@ export function OrderSummaryCard({
               </div>
               <div className="min-w-0">
                 <div className="line-clamp-2 break-words">
-                  {c.name} × {c.qty}
+                  {postName(pickName(lang, c)).name} × {c.qty}
                 </div>
                 {(() => {
-                  const parts = displayVariantParts(
-                    {
-                      size: c.size,
-                      size_unit: c.size_unit,
-                      color: c.color,
-                      fabric: c.fabric,
-                    },
-                    lang,
-                  );
+                  // The piece's kind beside its size ("عباية · 54"), as the cart drawer says it.
+                  const kind = postName(pickName(lang, c)).kind;
+                  const parts = [
+                    ...(kind ? [kind] : []),
+                    ...displayVariantParts(
+                      {
+                        size: c.size,
+                        size_unit: c.size_unit,
+                        color: c.color,
+                        fabric: c.fabric,
+                      },
+                      lang,
+                    ),
+                  ];
                   return parts.length > 0 ? (
                     <div className="truncate text-xs text-muted-foreground">
                       {parts.join(" · ")}
@@ -296,7 +301,7 @@ export function OrderSummaryCard({
             </span>
           </div>
         )}
-        {!appointment && fulfillment === "delivery" && (
+        {!appointment && fulfillment === "delivery" && estimatedDeliveryLines.length > 0 && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">
               {t("التوصيل المتوقع", "Estimated delivery")}
@@ -306,7 +311,7 @@ export function OrderSummaryCard({
             </span>
           </div>
         )}
-        {!appointment && fulfillment === "pickup" && (
+        {!appointment && fulfillment === "pickup" && estimatedDeliveryLines.length > 0 && (
           <div className="flex justify-between gap-3">
             <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
             <span className="font-medium text-foreground text-end">
@@ -376,44 +381,50 @@ export function OrderSummaryCard({
         )}
       </div>
 
-      {/* Promo Code Box */}
-      <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-        <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
-        <div ref={promoRow} className="flex gap-2">
-          <Input
-            id="promo-code"
-            name="promo-code"
-            autoComplete="off"
-            className="h-11 uppercase"
-            value={promoInput}
-            onChange={(e) => {
-              const value = e.target.value.toUpperCase();
-              setPromoInput(value);
-              if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                applyPromo();
-              }
-            }}
-            // Not a sample code: "EID20" read as a code every store gives (Pura has none).
-            placeholder={t("أدخل الرمز", "Enter code")}
-          />
-          <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>
-            {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-            {t("تطبيق", "Apply")}
-          </Button>
+      {/* A code is a link until the shopper has one (FieldLink). */}
+      <FieldLink
+        label={t("هل لديك رمز خصم؟", "Have a discount code?")}
+        startOpen={Boolean(promoInput || appliedPromo)}
+        focusId="promo-code"
+      >
+        <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+          <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
+          <div ref={promoRow} className="flex gap-2">
+            <Input
+              id="promo-code"
+              name="promo-code"
+              autoComplete="off"
+              className="h-11 uppercase"
+              value={promoInput}
+              onChange={(e) => {
+                const value = e.target.value.toUpperCase();
+                setPromoInput(value);
+                if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  applyPromo();
+                }
+              }}
+              // Not a sample code: "EID20" read as a code every store gives (Pura has none).
+              placeholder={t("أدخل الرمز", "Enter code")}
+            />
+            <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>
+              {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t("تطبيق", "Apply")}
+            </Button>
+          </div>
+          {appliedPromo && (offers?.code_dropped || bookingCodeDropped) && (
+            <p className="text-xs text-muted-foreground" role="status">
+              {t(
+                "عرض المتجر يوفّر لك أكثر من هذا الرمز، فطُبّق العرض بدلًا منه.",
+                "The store's offer saves you more than this code, so the offer is used instead.",
+              )}
+            </p>
+          )}
         </div>
-        {appliedPromo && (offers?.code_dropped || bookingCodeDropped) && (
-          <p className="text-xs text-muted-foreground" role="status">
-            {t(
-              "عرض المتجر يوفّر لك أكثر من هذا الرمز، فطُبّق العرض بدلًا منه.",
-              "The store's offer saves you more than this code, so the offer is used instead.",
-            )}
-          </p>
-        )}
-      </div>
+      </FieldLink>
 
       {giftCardBox}
 
@@ -509,31 +520,25 @@ export function OrderSummaryCard({
         appointment={Boolean(appointment)}
       />
       {!appointment && <ReturnsLine />}
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
-        <Checkbox
-          className="mt-0.5"
-          checked={acceptedTerms}
-          onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-        />
-        <span className="text-xs leading-relaxed text-muted-foreground">
-          {t("أوافق على", "I agree to the")}{" "}
-          {termsPage ? (
-            <Link
-              to="/$slug/$category"
-              params={{ slug: brand.slug, category: termsPage }}
-              className="font-semibold text-foreground underline underline-offset-2"
-            >
-              {t("الشروط والأحكام", "terms and conditions")}
-            </Link>
-          ) : (
-            t("شروط المتجر وأحكامه", "store's terms and conditions")
-          )}{" "}
-          {t(
-            "وسياسة الخصوصية المعروضة ضمن خيارات الخصوصية.",
-            "and the privacy policy available in Privacy Preferences.",
-          )}
-        </span>
-      </label>
+      {/* Placing the order is agreeing to the terms: said, not ticked. */}
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {t("بتأكيد طلبك فإنك توافق على", "By placing your order you agree to the")}{" "}
+        {termsPage ? (
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: termsPage }}
+            className="font-semibold text-foreground underline underline-offset-2"
+          >
+            {t("الشروط والأحكام", "terms and conditions")}
+          </Link>
+        ) : (
+          t("شروط المتجر وأحكامه", "store's terms and conditions")
+        )}{" "}
+        {t(
+          "وسياسة الخصوصية المعروضة ضمن خيارات الخصوصية.",
+          "and the privacy policy in Privacy Preferences.",
+        )}
+      </p>
 
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border-strong bg-muted/20 p-3">
         <Checkbox

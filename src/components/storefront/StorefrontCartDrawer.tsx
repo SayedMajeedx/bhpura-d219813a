@@ -38,7 +38,7 @@ export function CartDrawer({ children }: { children: React.ReactNode }) {
       <SheetContent
         side={lang === "ar" ? "left" : "right"}
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={`w-full sm:max-w-md flex flex-col ${lang === "ar" ? "[&>button]:left-auto [&>button]:right-4" : ""}`}
+        className="flex w-full flex-col sm:max-w-md"
       >
         {open && (
           <Suspense fallback={null}>

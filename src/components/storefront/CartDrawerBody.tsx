@@ -25,6 +25,7 @@ import { bookingOfCart } from "@/lib/bookings/cart";
 import { AnimatedNumber } from "@/components/motion/AnimatedNumber";
 import { SoftText } from "@/components/motion/SoftText";
 import { useLeavingRows } from "@/components/motion/use-leaving-rows";
+import { postName } from "@/lib/product-name";
 
 /**
  * What the cart drawer shows once it is open: the lines, the gift box, the store's offers on the
@@ -109,9 +110,9 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <SheetHeader
-        className={`${lang === "ar" ? "text-end sm:text-end pe-14" : "text-start sm:text-start pe-14"}`}
-      >
+      {/* The title on the reading side, the close button on the other (it read from the far
+          side in Arabic). */}
+      <SheetHeader className="pe-14 text-start sm:text-start">
         <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
       </SheetHeader>
 
@@ -135,6 +136,8 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
               name_ar: item.name_ar,
               name_en: item.name_en,
             });
+            // "عباية | غُصن" reads as the piece, its kind beside its size (product-name.ts).
+            const lineName = postName(displayName);
             return (
               <div
                 key={item.cart_line_id}
@@ -163,18 +166,23 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
                       dir="auto"
                       className="font-medium line-clamp-2 break-words text-page-start"
                     >
-                      {displayName}
+                      {lineName.name}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {displayVariantParts(
-                        {
-                          size: item.size,
-                          size_unit: item.size_unit,
-                          color: item.color,
-                          fabric: item.fabric,
-                        },
-                        lang,
-                      ).join(" · ")}
+                      {[
+                        lineName.kind,
+                        ...displayVariantParts(
+                          {
+                            size: item.size,
+                            size_unit: item.size_unit,
+                            color: item.color,
+                            fabric: item.fabric,
+                          },
+                          lang,
+                        ),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </div>
                     {(() => {
                       const formattedFields = formatCustomFieldsList(item.custom_fields, lang);
@@ -327,8 +335,10 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
               <span dir="ltr">− {formatPrice(offer.amount, currency, lang)}</span>
             </div>
           ))}
+          {/* What the pieces come to: delivery is added at checkout, so this is not the total
+              the shopper pays (it read "Total", and checkout's was higher). */}
           <div className="flex justify-between text-lg font-semibold">
-            <span>{t("الإجمالي", "Total")}</span>
+            <span>{t("المجموع الفرعي", "Subtotal")}</span>
             <span className="flex flex-col items-end" style={{ color: settings.primary_color }}>
               <SoftText align="end" value={formatPrice(totalAfterOffers, currency, lang)} />
               {offerOff > 0 && (
@@ -339,31 +349,35 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
               <ApproxPrice amount={totalAfterOffers} />
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 rounded-xl gap-2 border-border font-medium"
-              onClick={() => setShareOpen(true)}
-            >
-              <Share2 className="h-4 w-4 text-primary" />
-              <span>{t("مشاركة السلة", "Share cart")}</span>
-            </Button>
-            <Button
-              className="h-12 rounded-xl"
-              style={{
-                backgroundColor: drawerCheckoutBg,
-                color: drawerCheckoutFg,
-                borderColor: drawerCheckoutBg,
-              }}
-              onClick={() => {
-                onClose();
-                navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
-              }}
-            >
-              {t("إتمام الشراء", "Checkout")}
-            </Button>
-          </div>
+          {!servicesStore && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              {t("يُضاف التوصيل عند إتمام الطلب", "Delivery is added at checkout")}
+            </p>
+          )}
+          {/* One way on: checkout. Sharing the cart is a link under it. */}
+          <Button
+            className="h-12 w-full rounded-xl text-base"
+            style={{
+              backgroundColor: drawerCheckoutBg,
+              color: drawerCheckoutFg,
+              borderColor: drawerCheckoutBg,
+            }}
+            onClick={() => {
+              onClose();
+              navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+            }}
+          >
+            {t("إتمام الشراء", "Checkout")}
+          </Button>
+          <Button
+            type="button"
+            variant="link"
+            className="mx-auto flex h-auto min-h-11 gap-1.5 p-0 text-xs font-normal text-muted-foreground"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="h-3.5 w-3.5" aria-hidden />
+            {t("مشاركة السلة", "Share cart")}
+          </Button>
           <ShareCartModal open={shareOpen} onOpenChange={setShareOpen} />
         </div>
       )}
