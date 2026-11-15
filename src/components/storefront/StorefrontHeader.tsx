@@ -7,16 +7,13 @@ import {
   DesktopStoreNavigation,
   MobileStorefrontDropdown,
 } from "@/components/storefront/StorefrontNavigation";
-import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 import {
   HEADER_ICON,
   HeaderShoppingIcons,
   HeaderStoreSettings,
 } from "@/components/storefront/HeaderActions";
-import { isCatalogMode } from "@/lib/storefront-mode";
-import { ShoppingBag, X, Search } from "lucide-react";
+import { X, Search } from "lucide-react";
 import { SearchOverlay } from "@/components/storefront/SearchOverlay";
-import { CountBadge } from "@/components/motion/CountBadge";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
 import { menuFitsOneRow } from "@/features/storefront-shell/lib/header-layout";
 
@@ -57,7 +54,7 @@ function DesktopLogo() {
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, t, cartCount } = useStorefront();
+  const { brand, settings, lang, t } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
@@ -74,17 +71,32 @@ function StoreHeader() {
 
   return (
     <header className="w-full">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
-        {/* Phone header, one row: [Menu] [Logo] [Search] [Cart] */}
-        <div className="flex md:hidden min-h-14 h-auto py-1 items-center justify-between gap-2">
-          <div className="shrink-0">
+      <div className="mx-auto max-w-7xl px-2 py-1 sm:px-6 md:py-2">
+        {/* Phone, one row: menu and search, the logo exactly in the middle, wishlist and bag.
+            Two icons a side keep the logo centred (the menu was a wide box with a word and an
+            arrow, which pushed it 12px aside); the account is in the menu. */}
+        <div className="grid h-14 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center md:hidden">
+          <div
+            className="flex items-center justify-self-start"
+            style={{ color: "var(--sf-header-fg)" }}
+          >
             <MobileStorefrontDropdown />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={HEADER_ICON}
+              onClick={openSearch}
+              aria-label={t("البحث", "Search")}
+            >
+              <Search className="h-5 w-5" strokeWidth={1.75} />
+            </Button>
           </div>
 
           <Link
             to="/$slug"
             params={{ slug: brand.slug }}
-            className="flex min-h-11 items-center justify-center gap-2 min-w-0 flex-1 px-1"
+            className="flex min-h-11 min-w-0 items-center justify-center gap-2 px-1"
             style={{ color: "var(--sf-header-fg)" }}
             aria-label={displayName}
           >
@@ -100,9 +112,9 @@ function StoreHeader() {
                 className="shrink-0 object-contain"
                 style={{
                   height: logoSize,
-                  maxHeight: Math.min(logoSize, 64),
+                  maxHeight: Math.min(logoSize, 48),
                   width: "auto",
-                  maxWidth: logoSize * 3,
+                  maxWidth: `min(${logoSize * 3}px, 40vw)`,
                 }}
               />
             )}
@@ -111,44 +123,8 @@ function StoreHeader() {
             )}
           </Link>
 
-          <div
-            className="flex items-center gap-1 shrink-0"
-            style={{ color: "var(--sf-header-fg)" }}
-          >
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 rounded-full bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-              style={{ color: "var(--sf-header-fg)" }}
-              onClick={() => setSearchOverlayOpen(true)}
-              aria-label={t("البحث", "Search")}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-
-            {!isCatalogMode(settings) && (
-              <CartDrawer>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-11 w-11 rounded-full bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-                  style={{ color: "var(--sf-header-fg)" }}
-                  aria-label={t("سلة التسوق", "Shopping cart")}
-                >
-                  <ShoppingBag className="h-5 w-5" />
-                  <CountBadge
-                    count={cartCount}
-                    placement="absolute top-1 end-1"
-                    className="min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
-                    style={{
-                      backgroundColor: "var(--sf-btn-primary-bg)",
-                      color: "var(--sf-btn-primary-fg)",
-                    }}
-                  />
-                </Button>
-              </CartDrawer>
-            )}
+          <div className="justify-self-end">
+            <HeaderShoppingIcons account={false} />
           </div>
         </div>
 
