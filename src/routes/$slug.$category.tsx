@@ -369,7 +369,7 @@ function CategoryPage() {
       }
       value={sort}
       onChange={(event) => setSort(event.target.value as typeof sort)}
-      className="h-10 max-w-36 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="h-10 min-w-0 max-w-36 flex-1 rounded-lg border border-border bg-card px-3 text-xs font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
       <option value="best">
@@ -586,7 +586,7 @@ function CategoryPage() {
         </div>
       </SecondaryBannerParallax>
 
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 pt-4 pb-8 sm:px-6 sm:pt-8">
         {/* Desktop 2-column layout: Sidebar + Grid */}
         <div className="flex gap-8 items-start">
           {settings?.category_filters_enabled !== false && (
@@ -604,7 +604,7 @@ function CategoryPage() {
             <ProductGrid
               withSidebar={settings?.category_filters_enabled !== false}
               toolbar={
-                <div className="flex items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   {settings?.category_filters_enabled !== false && (
                     <CategoryFiltersSheet
                       filters={filters}

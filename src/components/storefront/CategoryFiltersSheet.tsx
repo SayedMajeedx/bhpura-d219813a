@@ -33,7 +33,7 @@ export function CategoryFiltersSheet({
           type="button"
           variant="outline"
           size="sm"
-          className="h-10 px-3.5 gap-2 text-xs font-semibold rounded-lg border-border bg-card text-foreground flex items-center lg:hidden"
+          className="h-10 shrink-0 px-3.5 gap-2 text-xs font-semibold rounded-lg border-border bg-card text-foreground flex items-center lg:hidden"
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
           <span>{t("الفلاتر", "Filters")}</span>

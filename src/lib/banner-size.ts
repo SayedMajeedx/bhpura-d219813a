@@ -62,9 +62,11 @@ export const SECTION_BANNER: Record<BannerSize, BannerSpec> = {
 /** The band above a category's products. */
 export const CATEGORY_BANNER: Record<BannerSize, BannerSpec> = {
   compact: {
-    height: "min-h-[clamp(9rem,15vw,12rem)]",
+    // A phone keeps the room for the products (the category review of 2026-11-15: they began
+    // halfway down the first screen).
+    height: "min-h-20 sm:min-h-[clamp(9rem,15vw,12rem)]",
     title: "text-2xl sm:text-3xl",
-    padding: "py-6 sm:py-8",
+    padding: "py-4 sm:py-8",
     body: "",
     gap: "mb-3",
   },

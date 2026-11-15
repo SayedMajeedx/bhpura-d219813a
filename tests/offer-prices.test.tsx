@@ -261,3 +261,45 @@ describe("a card in the store", () => {
     expect(screen.getByText("Offer")).toBeInTheDocument();
   });
 });
+
+// The category review of 2026-11-15: on an Arabic page the badge read "20%-", a card printed its
+// name as the catalogue writes it ("عباية | غُصن"), and "New" was as loud as a sale.
+describe("a card's name and badges", () => {
+  const withQuery = (node: React.ReactNode) =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <I18nProvider>{node}</I18nProvider>
+      </QueryClientProvider>,
+    );
+  const card = {
+    id: "p2",
+    name: "Abaya | Ghusn",
+    name_en: "Abaya | Ghusn",
+    category: "abayas",
+    image_url: null,
+    product_variants: [{ id: "v1", selling_price: 160, stock_main: 3 }],
+  };
+
+  it("reads a percentage left to right on any page", () => {
+    localStorage.setItem("lang", "en");
+    state.offers = [offer()];
+    withQuery(<ProductCardV2 product={card} />);
+    expect(screen.getByText("-26%").getAttribute("dir")).toBe("ltr");
+  });
+
+  it("names the piece, its kind small above it", () => {
+    localStorage.setItem("lang", "en");
+    withQuery(<ProductCardV2 product={card} />);
+    const title = screen.getByRole("heading", { level: 3 });
+    expect(title.textContent).toBe("Abaya Ghusn");
+    expect(screen.getByText("Ghusn")).toBeInTheDocument();
+    expect(screen.queryByText("Abaya | Ghusn")).toBeNull();
+  });
+
+  it("says New quietly, so a sale stands out", () => {
+    localStorage.setItem("lang", "en");
+    withQuery(<ProductCardV2 product={{ ...card, created_at: new Date().toISOString() }} />);
+    const badge = screen.getByText("New");
+    expect(badge.className).not.toMatch(/bg-primary/);
+  });
+});

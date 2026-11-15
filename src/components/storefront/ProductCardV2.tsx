@@ -33,6 +33,7 @@ import { hasAvailableStock } from "@/lib/data/storefront";
 import { useLiveOffers } from "@/hooks/use-live-offers";
 import { offeredCardPrice } from "@/lib/offer-price";
 import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
+import { postName } from "@/lib/product-name";
 
 export interface ProductCardV2Props {
   product: any;
@@ -136,6 +137,8 @@ export function ProductCardV2({
   })();
 
   let badgeLabel: string | null = null;
+  // A percentage reads left to right on any page: "-20%" read "20%-" on an Arabic one.
+  let badgeIsNumber = false;
   let badgeStyle = "bg-primary text-primary-foreground border-transparent";
 
   // The store's and the product's sale badge switches (as on the classic card).
@@ -147,9 +150,11 @@ export function ProductCardV2({
   if (shouldShowPrices(settings) && price.offerBadge?.kind === "discount") {
     // A store offer lowers the price: its percentage, struck price beside the new one.
     badgeLabel = `-${price.offerBadge.percent}%`;
+    badgeIsNumber = true;
     badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (saleBadge) {
     badgeLabel = price.percent ? `-${price.percent}%` : t("تخفيض", "Sale");
+    badgeIsNumber = Boolean(price.percent);
     badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (shouldShowPrices(settings) && price.offerBadge?.kind === "offer") {
     // An offer with terms (a minimum, buy X get Y): its terms are on the product's page.
@@ -157,7 +162,8 @@ export function ProductCardV2({
     badgeStyle = `${SALE_BADGE_CLASS} border-transparent`;
   } else if (isNewProduct) {
     badgeLabel = t("جديد", "New");
-    badgeStyle = "bg-primary text-primary-foreground border-transparent";
+    // Quiet: most of a young store's pieces are new, and a sale must still stand out.
+    badgeStyle = "bg-background/90 text-foreground border-transparent backdrop-blur-xs";
   } else if (badge === "best") {
     badgeLabel = t("الأكثر طلباً", "Best Seller");
     badgeStyle = "bg-background/95 text-foreground border-border";
@@ -169,6 +175,8 @@ export function ProductCardV2({
   const displayName = isAr
     ? product.name_ar || product.name_en || product.name
     : product.name_en || product.name_ar || product.name;
+  // "عباية | غُصن" reads as the piece, its kind small above it (src/lib/product-name.ts).
+  const cardName = postName(displayName);
 
   // One entrance: the scroll reveal, staggered along a row (it once also ran a mount
   // animation, so a card below the fold faded in unseen, vanished and faded in again).
@@ -210,9 +218,11 @@ export function ProductCardV2({
           size="icon-touch"
           onClick={handleTriggerQuickView}
           aria-label={t("معاينة سريعة", "Quick view")}
-          className="absolute end-12 top-2.5 z-20 hidden md:inline-flex rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-(--motion-quick) hover:scale-110 active:scale-95 hover:bg-background hover:text-primary"
+          className="group/icon absolute end-11 top-1 z-20 hidden rounded-full bg-transparent shadow-none transition-opacity duration-(--motion-fast) hover:bg-transparent pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100 md:inline-flex"
         >
-          <Eye className="h-4 w-4" />
+          <span className="grid size-8 place-items-center rounded-full bg-background/85 text-foreground shadow-xs backdrop-blur-xs transition-transform duration-(--motion-quick) group-hover/icon:scale-110">
+            <Eye className="h-4 w-4" />
+          </span>
         </Button>
       )}
 
@@ -227,9 +237,16 @@ export function ProductCardV2({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs transition-[transform,colors] duration-(--motion-quick) hover:scale-110 active:scale-95 hover:bg-background hover:text-destructive"
+        // A small disc in a 44px tap area. With a mouse it shows on hover (always once liked).
+        className={`group/icon absolute end-1 top-1 z-20 rounded-full bg-transparent shadow-none transition-opacity duration-(--motion-fast) hover:bg-transparent ${
+          wished
+            ? ""
+            : "pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:focus-visible:opacity-100"
+        }`}
       >
-        <LikeHeart liked={wished} className="h-4 w-4" />
+        <span className="grid size-8 place-items-center rounded-full bg-background/85 text-foreground shadow-xs backdrop-blur-xs transition-transform duration-(--motion-quick) group-hover/icon:scale-110">
+          <LikeHeart liked={wished} className="h-4 w-4" />
+        </span>
       </Button>
 
       <Link
@@ -250,8 +267,9 @@ export function ProductCardV2({
           {/* Badge */}
           {badgeLabel && (
             <span
-              className={`absolute start-2.5 top-2.5 z-10 rounded-md px-2.5 py-0.5 text-xs font-semibold shadow-xs select-none ${badgeStyle} ${
-                isAr ? "font-display leading-none" : "tracking-wider uppercase"
+              dir={badgeIsNumber ? "ltr" : undefined}
+              className={`absolute start-2.5 top-2.5 z-10 rounded-md px-2 py-0.5 text-xs font-semibold shadow-xs select-none ${badgeStyle} ${
+                isAr && !badgeIsNumber ? "font-display leading-none" : "tracking-wider uppercase"
               }`}
             >
               {badgeLabel}
@@ -313,7 +331,13 @@ export function ProductCardV2({
             className="product-title text-sm font-medium leading-[1.8] line-clamp-2 break-words text-page-start"
             style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
           >
-            {displayName}
+            {cardName.kind && (
+              <span className="block text-xs font-normal text-muted-foreground">
+                {cardName.kind}
+                <span className="sr-only"> </span>
+              </span>
+            )}
+            <span className="block">{cardName.name}</span>
           </h3>
           <CardFactLine details={product.details} reserve={false} />
 
@@ -395,13 +419,15 @@ export function ProductCardV2({
                   ? `${pageWords(quickAddPlan.reason, customWord, t)}: ${displayName}`
                   : t(`إضافة ${displayName} إلى السلة`, `Add ${displayName} to bag`)
               }
-              className="pointer-events-auto absolute bottom-2.5 end-2.5 rounded-full bg-background/90 text-foreground shadow-xs border border-border backdrop-blur-xs active:scale-95 lg:hidden"
+              className="group/icon pointer-events-auto absolute bottom-1 end-1 rounded-full bg-transparent shadow-none hover:bg-transparent lg:hidden"
             >
-              {quickAddPlan.kind === "page" ? (
-                <PageIcon reason={quickAddPlan.reason} className="h-4 w-4" />
-              ) : (
-                <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-              )}
+              <span className="grid size-8 place-items-center rounded-full bg-background/85 text-foreground shadow-xs backdrop-blur-xs transition-transform duration-(--motion-quick) group-hover/icon:scale-110">
+                {quickAddPlan.kind === "page" ? (
+                  <PageIcon reason={quickAddPlan.reason} className="h-4 w-4" />
+                ) : (
+                  <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                )}
+              </span>
             </Button>
           </div>
         )}

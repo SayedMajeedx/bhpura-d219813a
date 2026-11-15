@@ -13,6 +13,8 @@ export function OfferTag({ badge, className }: { badge: OfferBadge | null; class
   if (!badge) return null;
   return (
     <span
+      // "-20%" reads left to right on an Arabic page too (it read "20%-").
+      dir={badge.kind === "discount" ? "ltr" : undefined}
       className={cn(
         "inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-semibold",
         SALE_BADGE_CLASS,
