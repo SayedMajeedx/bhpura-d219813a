@@ -38,22 +38,7 @@ interface R2Config {
 async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
   let env: any = null;
 
-  // 1. Try Cloudflare request context dynamically via Vinxi/H3 event
-  try {
-    const vinxiHttp = "vinxi/http";
-    const { getEvent } = await import(vinxiHttp);
-    const event = getEvent();
-
-    env =
-      event?.context?.cloudflare?.env ||
-      event?.context?.env ||
-      event?.context?.cloudflare ||
-      (event?.context as any)?.cloudflare?.env;
-  } catch (err) {
-    console.error("[R2 Context Error] Failed to retrieve H3 event execution context:", err);
-  }
-
-  // 2. Fall back safely to global environment contexts (e.g. globalThis.__env__ injected by Vite)
+  // The Worker's environment for this request (src/server.ts binds it); then fall back safely to global environment contexts (e.g. globalThis.__env__ injected by Vite)
   if (!env) {
     try {
       const g = globalThis as any;

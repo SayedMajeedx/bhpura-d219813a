@@ -129,14 +129,6 @@ export default defineConfig({
       ],
     },
   },
-  optimizeDeps: {
-    exclude: ["vinxi/http"],
-  },
-  ssr: {
-    optimizeDeps: {
-      exclude: ["vinxi/http"],
-    },
-  },
   resolve: {
     tsconfigPaths: true,
   },

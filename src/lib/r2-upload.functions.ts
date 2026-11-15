@@ -4,17 +4,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isProductPictureKey, productPictureInUse } from "@/lib/product-picture-use";
 
-let getEventFn: any = null;
-// The server's alone: this file's top level also runs in the browser, which cannot resolve it.
-if (typeof window === "undefined") {
-  const vinxiHttp = "vinxi/http";
-  import(/* @vite-ignore */ vinxiHttp)
-    .then((m) => {
-      getEventFn = m.getEvent;
-    })
-    .catch(() => {});
-}
-
 const mediaKinds = [
   "logo",
   "favicon",
@@ -104,20 +93,8 @@ function r2ObjectUrl(endpoint: string, bucket: string, key: string): string {
 
 export function r2Client(): { client: R2CompatClient; bucket: string; publicBaseUrl: string } {
   let env: any = null;
-  try {
-    if (getEventFn) {
-      const event = getEventFn();
-      env =
-        event?.context?.cloudflare?.env ||
-        event?.context?.env ||
-        event?.context?.cloudflare ||
-        (event?.context as any)?.cloudflare?.env;
-    }
-  } catch {
-    // No request context in this runtime; try the global env next.
-  }
 
-  // Safe global fallback
+  // The Worker's environment for this request (src/server.ts binds it), else the process's.
   if (!env) {
     try {
       const g = globalThis as any;
