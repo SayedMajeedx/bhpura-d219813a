@@ -8,7 +8,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { AnnouncementBar, StoreHeader } from "@/components/storefront/StorefrontHeader";
-import { DesktopStoreNavigation } from "@/components/storefront/StorefrontNavigation";
 import { WhatsAppFab } from "@/features/storefront-shell/components/WhatsAppFab";
 import { NavigationProgress } from "@/features/storefront-shell/components/NavigationProgress";
 import { StorefrontFooter } from "@/features/storefront-shell/components/StorefrontFooter";
@@ -129,14 +128,7 @@ export function StoreShell() {
         {/* Checkout keeps the logo and a way back; whether the store takes orders now stays. */}
         {!isCheckout && <AnnouncementBar />}
         <StoreStatusBanner />
-        {isCheckout ? (
-          <CheckoutHeader />
-        ) : (
-          <>
-            <StoreHeader />
-            <DesktopStoreNavigation />
-          </>
-        )}
+        {isCheckout ? <CheckoutHeader /> : <StoreHeader />}
       </div>
       {/* At least the first screen under the header: while a page draws its loading state the
           footer (about 700px on a phone) would fill the screen and then be pushed down, which

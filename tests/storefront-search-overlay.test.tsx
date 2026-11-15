@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // was the header's 79px with the hero showing under it. Its results showed the category's slug
 // ("abayas") and wrote prices in Arabic on an English page.
 
-const state = vi.hoisted(() => ({ lang: "en" as "ar" | "en" }));
+const state = vi.hoisted(() => ({ lang: "en" as "ar" | "en", services: false }));
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to: _to, params: _params, ...props }: Record<string, unknown>) => (
@@ -25,6 +25,7 @@ const storefrontModule = vi.hoisted(() => async (importOriginal: () => Promise<o
     lang: state.lang,
     t: (ar: string, en: string) => (state.lang === "ar" ? ar : en),
   }),
+  useIsServicesStore: () => state.services,
 }));
 vi.mock("../src/lib/storefront-context", (io) => storefrontModule(io));
 vi.mock("@/lib/storefront-context", (io) => storefrontModule(io));
@@ -83,6 +84,7 @@ function renderInHeader() {
 
 beforeEach(() => {
   state.lang = "en";
+  state.services = false;
   localStorage.clear();
 });
 
@@ -135,5 +137,19 @@ describe("the store search on a phone", () => {
     )!;
     expect(within(row).getByText("عبايات")).toBeInTheDocument();
     expect(row.textContent).toContain("د.ب");
+  });
+});
+
+describe("the store search's words", () => {
+  it("asks for a product or a service, never a clothes shop's fabric", () => {
+    renderInHeader();
+    expect(screen.getByRole("searchbox").getAttribute("placeholder")).toBe("Search for products…");
+  });
+
+  it("asks for a service in a services store", () => {
+    state.services = true;
+    state.lang = "ar";
+    renderInHeader();
+    expect(screen.getByRole("searchbox").getAttribute("placeholder")).toBe("ابحث عن خدمة…");
   });
 });
