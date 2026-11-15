@@ -284,3 +284,18 @@ export function promoAreaShows({
   // The new arrivals rail shows on the whole shop only, when on and with a product (MerchandisingSection).
   return !activeCat && Boolean(showNewArrivals) && newest.length > 0;
 }
+
+/**
+ * How many pieces the home page's grid shows before "View all" (the home page review of
+ * 2026-11-15: it listed the whole catalogue, 4,580px of Pura's 5,610px phone page, so the home
+ * page grew with every product and the brand story sank under it). Two rows on a laptop, four
+ * on a phone; the full list is the collection's own page.
+ */
+export const HOME_GRID_LIMIT = 8;
+
+export function homeGridShown<T>(
+  products: readonly T[],
+  limit = HOME_GRID_LIMIT,
+): { shown: T[]; more: number } {
+  return { shown: products.slice(0, limit), more: Math.max(0, products.length - limit) };
+}

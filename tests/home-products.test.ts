@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   availableFirst,
   getDescendantCategories,
+  HOME_GRID_LIMIT,
   homeGridProducts,
+  homeGridShown,
   homeMerchandising,
   homeSectionBackgrounds,
 } from "../src/features/storefront-home/lib/home-products";
@@ -221,5 +223,21 @@ describe("homeSectionBackgrounds", () => {
       promoAreaBackground: "var(--sf-background)",
       productsAreaBackground: "#111",
     });
+  });
+});
+
+// The home page review of 2026-11-15: the grid listed the whole catalogue (4,580px of Pura's
+// 5,610px phone page). It shows its first pieces, then "View all".
+describe("the home page's grid", () => {
+  it("shows the first eight and counts the rest", () => {
+    const list = Array.from({ length: 20 }, (_, i) => i);
+    const { shown, more } = homeGridShown(list);
+    expect(HOME_GRID_LIMIT).toBe(8);
+    expect(shown).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(more).toBe(12);
+  });
+
+  it("shows a short list whole, with nothing more", () => {
+    expect(homeGridShown([1, 2, 3])).toEqual({ shown: [1, 2, 3], more: 0 });
   });
 });

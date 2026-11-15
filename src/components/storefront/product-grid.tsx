@@ -27,6 +27,8 @@ export function ProductGrid({
   onViewAll,
   withSidebar = false,
   toolbar,
+  total,
+  footer,
 }: {
   products: ProductRow[];
   loading: boolean;
@@ -43,6 +45,10 @@ export function ProductGrid({
    * a category page had three (a count, the controls, then the count again).
    */
   toolbar?: ReactNode;
+  /** The whole list's count, when the grid shows a part of it (the home page's first pieces). */
+  total?: number;
+  /** Under the grid: the home page's "View all". */
+  footer?: ReactNode;
 }) {
   const { t, settings, lang } = useStorefront();
   // The placeholders take the cards' own photo shape, so nothing jumps when they load.
@@ -183,7 +189,10 @@ export function ProductGrid({
       <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
         {toolbar ?? (
           <span className="text-xs text-muted-foreground font-medium">
-            {catalogCount(products.length, { services, lang: lang === "ar" ? "ar" : "en" })}
+            {catalogCount(total ?? products.length, {
+              services,
+              lang: lang === "ar" ? "ar" : "en",
+            })}
           </span>
         )}
 
@@ -232,6 +241,7 @@ export function ProductGrid({
           )}
         </div>
       )}
+      {footer}
     </div>
   );
 }

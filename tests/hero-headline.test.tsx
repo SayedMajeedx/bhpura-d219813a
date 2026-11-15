@@ -132,6 +132,23 @@ describe("the headline on the page", () => {
     expect(seen).toEqual([phrases[0], phrases[1], phrases[0], phrases[0], phrases[0], phrases[0]]);
   });
 
+  it("is the page's main heading on the first slide only, in the heading face on every one", () => {
+    // Every slide's headline was an <h1>: a hero of two slides gave the page two.
+    render(
+      <HeroHeadline
+        phrases={["بيورا لاين"]}
+        animation="none"
+        seconds={3}
+        loops={1}
+        active={false}
+        dir="rtl"
+        heading={false}
+      />,
+    );
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
+    expect(document.querySelector("p.hero-title")).not.toBeNull();
+  });
+
   it("pauses while the pointer is on it", () => {
     vi.useFakeTimers();
     render(

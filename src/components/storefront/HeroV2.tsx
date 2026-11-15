@@ -472,6 +472,7 @@ export function HeroV2View({
                         seconds={item.headline.seconds}
                         loops={item.headline.loops}
                         active={isActive && isInViewport}
+                        heading={idx === 0}
                         dir={isAr ? "rtl" : "ltr"}
                         className={`font-bold tracking-tight text-balance [--hero-text-scale:var(--hero-scale-phone)] sm:[--hero-text-scale:var(--hero-scale-wide)] ${
                           item.look.tone === "dark" ? "" : "text-white drop-shadow-md"
