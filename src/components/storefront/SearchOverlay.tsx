@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { storefrontQueries } from "@/lib/data/storefront";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
-import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, useIsServicesStore } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { Search, X, Sparkles, Clock, ShoppingBag } from "lucide-react";
@@ -23,6 +23,7 @@ const RECENT_SEARCHES_KEY_PREFIX = "boutq_recent_searches_";
 
 export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
   const { brand, settings, lang, t } = useStorefront();
+  const servicesStore = useIsServicesStore();
   const offers = useLiveOffers();
   const navigate = useNavigate();
   const isAr = lang === "ar";
@@ -179,48 +180,56 @@ export function SearchOverlay({ isOpen, onClose }: SearchOverlayProps) {
       style={{ backgroundColor: settings?.background_color || undefined }}
     >
       {/* 1. Header Search Bar: the field and one way out (Cancel, or Escape), below the notch. */}
-      <div className="flex min-h-16 items-center gap-2 border-b border-border px-4 pt-[env(safe-area-inset-top,0px)] sm:px-6">
-        <form onSubmit={handleSubmit} className="flex-1 relative flex items-center min-w-0">
-          <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" />
-          <input
-            ref={inputRef}
-            type="search"
-            enterKeyHint="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("ابحث عن قطعة أو قماش…", "Search products, fabrics…")}
-            // Room for the clear button only while there is text to clear.
-            // The browser's own clear (x) for a search field is hidden: the field has its own.
-            className={`h-11 w-full appearance-none rounded-full border border-border bg-muted/50 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none ps-9 ${query ? "pe-11" : "pe-4"} text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-          />
-          {query && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                setQuery("");
-                inputRef.current?.focus();
-              }}
-              className="absolute end-1.5 h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              aria-label={t("مسح", "Clear")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </form>
+      <div className="border-b border-border px-4 pt-[env(safe-area-inset-top,0px)] sm:px-6">
+        {/* As wide as the results under it: on a laptop the field once ran the screen's width. */}
+        <div className="mx-auto flex min-h-16 w-full max-w-3xl items-center gap-2">
+          <form onSubmit={handleSubmit} className="flex-1 relative flex items-center min-w-0">
+            <Search className="pointer-events-none absolute start-3 h-4 w-4 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="search"
+              enterKeyHint="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              // Every kind of store's words: "fabrics" was a clothes shop's, shown to a roastery.
+              placeholder={
+                servicesStore
+                  ? t("ابحث عن خدمة…", "Search for a service…")
+                  : t("ابحث عن منتج…", "Search for products…")
+              }
+              // Room for the clear button only while there is text to clear.
+              // The browser's own clear (x) for a search field is hidden: the field has its own.
+              className={`h-11 w-full appearance-none rounded-full border border-border bg-muted/50 [&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none ps-9 ${query ? "pe-11" : "pe-4"} text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent`}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            {query && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+                className="absolute end-1.5 h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                aria-label={t("مسح", "Clear")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </form>
 
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onClose}
-          className="h-11 shrink-0 px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          {t("إلغاء", "Cancel")}
-        </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="h-11 shrink-0 px-3 text-sm font-medium text-muted-foreground hover:text-foreground"
+          >
+            {t("إلغاء", "Cancel")}
+          </Button>
+        </div>
       </div>
 
       {/* 2. Content Area */}

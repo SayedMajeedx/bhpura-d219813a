@@ -1,29 +1,76 @@
 import { useEffect, useState } from "react";
-import { CurrencySwitcher } from "@/components/storefront/CurrencySwitcher";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
-import { SearchBar, MobileStorefrontDropdown } from "@/components/storefront/StorefrontNavigation";
+import {
+  DesktopStoreNavigation,
+  MobileStorefrontDropdown,
+} from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
+import {
+  HEADER_ICON,
+  HeaderShoppingIcons,
+  HeaderStoreSettings,
+} from "@/components/storefront/HeaderActions";
 import { isCatalogMode } from "@/lib/storefront-mode";
-import { ShoppingBag, Heart, User, Languages, X, Bell, Search } from "lucide-react";
+import { ShoppingBag, X, Search } from "lucide-react";
 import { SearchOverlay } from "@/components/storefront/SearchOverlay";
 import { CountBadge } from "@/components/motion/CountBadge";
+import { useStorefrontCategories } from "@/lib/use-storefront-categories";
+import { menuFitsOneRow } from "@/features/storefront-shell/lib/header-layout";
+
+/** The logo on a laptop, at the size the store chose: the way home (the menu has no Home link). */
+function DesktopLogo() {
+  const { brand, settings, lang } = useStorefront();
+  const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
+  const logoSize = settings.logo_size || 40;
+  return (
+    <Link
+      to="/$slug"
+      params={{ slug: brand.slug }}
+      className="flex min-h-11 shrink-0 items-center gap-3 min-w-0"
+      style={{ color: "var(--sf-header-fg)" }}
+      aria-label={displayName}
+    >
+      {settings.logo_url && (
+        <img
+          src={cloudflareImageUrl(settings.logo_url, 320)}
+          alt={displayName}
+          width={165}
+          height={55}
+          decoding="async"
+          className="shrink-0 object-contain"
+          style={{
+            height: logoSize,
+            maxHeight: Math.min(logoSize, 64),
+            width: "auto",
+            maxWidth: logoSize * 3,
+          }}
+        />
+      )}
+      {settings.show_header_name && (
+        <span className="font-display text-lg sm:text-xl truncate">{displayName}</span>
+      )}
+    </Link>
+  );
+}
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } =
-    useStorefront();
+  const { brand, settings, lang, t, cartCount } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
-  const [mounted, setMounted] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const openSearch = () => setSearchOverlayOpen(true);
+  const { data: categories = [] } = useStorefrontCategories();
+  const centred = align === "center";
+  const oneRow = menuFitsOneRow(
+    categories
+      .filter((c: any) => !c.parent_id)
+      .map((c: any) => (lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar) ?? ""),
+    centred,
+  );
 
   return (
     <header className="w-full">
@@ -105,222 +152,47 @@ function StoreHeader() {
           </div>
         </div>
 
-        {/* Wide-screen header row */}
-        <div className="h-14 items-center gap-3 justify-between hidden md:flex">
-          <Link
-            to="/$slug"
-            params={{ slug: brand.slug }}
-            className={`flex min-h-11 items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
-            style={{ color: "var(--sf-header-fg)" }}
-            aria-label={displayName}
-          >
-            {settings.logo_url && (
-              <img
-                src={cloudflareImageUrl(settings.logo_url, 320)}
-                alt={displayName}
-                width={165}
-                height={55}
-                decoding="async"
-                className="shrink-0 object-contain"
-                style={{
-                  height: logoSize,
-                  maxHeight: logoSize,
-                  width: "auto",
-                  maxWidth: logoSize * 3,
-                }}
-              />
-            )}
-
-            {settings.show_header_name && (
-              <span
-                className="font-display text-lg sm:text-xl truncate"
-                style={{ color: "var(--sf-header-fg)" }}
-              >
-                {displayName}
-              </span>
-            )}
-          </Link>
-          {/* Desktop search */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4">
-            <SearchBar />
-          </div>
-
-          <div
-            className="flex items-center gap-1 sm:gap-2 shrink-0"
-            style={{ color: "var(--sf-header-fg)" }}
-          >
-            <Button
-              variant="ghost"
-              size="sm"
-              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-              style={{ color: "var(--sf-header-fg)" }}
-              onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-              aria-label={
-                lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"
-              }
-            >
-              <Languages className="h-4 w-4" />
-              <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
-            </Button>
-            <CurrencySwitcher />
-
-            {session && isStoreMember ? (
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-                style={{ color: "var(--sf-header-fg)" }}
-              >
-                <Link
-                  to="/$slug/account"
-                  params={{ slug: brand.slug }}
-                  title={session.user?.email ?? ""}
-                  aria-label={t("لوحة التحكم", "Dashboard")}
-                >
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline max-w-[120px] truncate">
-                    {t("لوحة التحكم", "Dashboard")}
-                  </span>
-                </Link>
-              </Button>
-            ) : (
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-                style={{ color: "var(--sf-header-fg)" }}
-              >
-                <Link
-                  to="/$slug/auth"
-                  params={{ slug: brand.slug }}
-                  search={{
-                    redirect: mounted ? window.location.pathname + window.location.search : "",
-                  }}
-                  aria-label={t("دخول", "Sign in")}
-                >
-                  <User className="h-4 w-4" />
-                  <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
-                </Link>
-              </Button>
-            )}
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-              style={{ color: "var(--sf-header-fg)" }}
-              onClick={() => {
-                if (
-                  typeof window !== "undefined" &&
-                  (window as any).ReactNativeWebView?.postMessage
-                ) {
-                  (window as any).ReactNativeWebView.postMessage(
-                    JSON.stringify({ type: "OPEN_NOTIFICATIONS" }),
-                  );
-                } else {
-                  setNotificationsOpen(true);
-                }
-              }}
-              aria-label={t("الإشعارات", "Notifications")}
-            >
-              <Bell className="h-5 w-5" />
-              <span className="hidden sm:inline">{t("الإشعارات", "Notifications")}</span>
-            </Button>
-
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-              style={{ color: "var(--sf-header-fg)" }}
-            >
-              <Link
-                to="/$slug/wishlist"
-                params={{ slug: brand.slug }}
-                aria-label={t("المفضلة", "Wishlist")}
-              >
-                <Heart className="h-5 w-5" />
-                <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
-                <CountBadge
-                  count={wishlistCount}
-                  placement="absolute -top-1 -right-1"
-                  className="grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-xs font-semibold"
-                  style={{
-                    backgroundColor: "var(--sf-btn-primary-bg)",
-                    color: "var(--sf-btn-primary-fg)",
-                  }}
-                />
-              </Link>
-            </Button>
-
-            {!isCatalogMode(settings) && (
-              <CartDrawer>
+        {/* Laptop: the logo leads, the shopping icons and the store's language and currency
+            after it; the menu in the same row when it fits (header review of 2026-11-15). */}
+        <div className="hidden md:block">
+          {centred ? (
+            <div className="grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
+              <div className="justify-self-start" style={{ color: "var(--sf-header-fg)" }}>
                 <Button
+                  type="button"
                   variant="ghost"
-                  size="sm"
-                  className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-                  style={{ color: "var(--sf-header-fg)" }}
-                  aria-label={t("سلة التسوق", "Shopping cart")}
+                  size="icon"
+                  className={HEADER_ICON}
+                  onClick={openSearch}
+                  aria-label={t("البحث", "Search")}
+                  title={t("البحث", "Search")}
                 >
-                  <ShoppingBag className="h-5 w-5" />
-                  <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
-                  <CountBadge
-                    count={cartCount}
-                    placement="absolute -top-1 -right-1"
-                    className="min-w-[18px] h-[18px] px-1 rounded-full text-xs font-semibold grid place-items-center"
-                    style={{
-                      backgroundColor: "var(--sf-btn-primary-bg)",
-                      color: "var(--sf-btn-primary-fg)",
-                    }}
-                  />
+                  <Search className="h-5 w-5" strokeWidth={1.75} />
                 </Button>
-              </CartDrawer>
-            )}
-          </div>
+              </div>
+              <DesktopLogo />
+              <div className="flex items-center justify-self-end">
+                <HeaderShoppingIcons />
+                <HeaderStoreSettings />
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-16 items-center gap-6">
+              <DesktopLogo />
+              {oneRow && (
+                <DesktopStoreNavigation variant="inline" className="hidden flex-1 xl:block" />
+              )}
+              <div className={`flex-1 ${oneRow ? "xl:hidden" : ""}`} />
+              <div className="flex shrink-0 items-center">
+                <HeaderShoppingIcons onSearch={openSearch} />
+                <HeaderStoreSettings />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              {t("إشعارات المتجر", "Store Notifications")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-3">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {t(
-                "استقبل تنبيهات مباشرة وفورية عند توفر عروض جديدة وتحديثات طلباتك.",
-                "Receive direct instant notifications about new promotions and your order status.",
-              )}
-            </p>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setNotificationsOpen(false)}>
-                {t("إغلاق", "Close")}
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  if (typeof window !== "undefined" && "Notification" in window) {
-                    try {
-                      await Notification.requestPermission();
-                    } catch {
-                      // Notification API can be unsupported or blocked — nothing to do.
-                    }
-                  }
-                  setNotificationsOpen(false);
-                }}
-              >
-                {t("تفعيل الإشعارات", "Enable Notifications")}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DesktopStoreNavigation className={oneRow ? "xl:hidden" : ""} />
 
       <SearchOverlay isOpen={searchOverlayOpen} onClose={() => setSearchOverlayOpen(false)} />
     </header>

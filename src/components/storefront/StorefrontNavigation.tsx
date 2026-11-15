@@ -1,33 +1,23 @@
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { storefrontQueries } from "@/lib/data/storefront";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { isCurrentMenuLink } from "@/features/storefront-shell/lib/header-layout";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
-import { useStorefront, formatPrice, pickName, useIsServicesStore } from "@/lib/storefront-context";
+import { useStorefront } from "@/lib/storefront-context";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { isColorDark, hexToRgba } from "@/components/storefront/storefront-utils";
 import {
-  Search,
   Menu,
   Home,
   PackageSearch,
   FileText,
   LogIn,
   ChevronDown,
-  Sparkles,
-  X,
   Languages,
   User,
   Grid2X2,
 } from "lucide-react";
-import { useLiveOffers } from "@/hooks/use-live-offers";
-import { offeredCardPrice } from "@/lib/offer-price";
-
-/** How many products the header search lists while typing. */
-const HEADER_SEARCH_RESULT_LIMIT = 8;
 
 function NavCategoryItem({
   category,
@@ -577,9 +567,28 @@ function DesktopSubMenu({
  */
 const SALE_LINK = "font-bold underline decoration-2 underline-offset-4";
 
-function DesktopStoreNavigation() {
-  const { brand, lang, t } = useStorefront();
+/**
+ * A menu link: the bar's own colour, a fine line under the page being shown and, for a mouse,
+ * under the one pointed at. No box and no lift (the header review of 2026-11-15). Latin names get
+ * a little tracking; Arabic is never tracked.
+ */
+const MENU_LINK =
+  "relative inline-flex min-h-11 items-center gap-1 whitespace-nowrap px-3 text-sm font-medium ltr:tracking-wide transition-opacity duration-(--motion-quick) hover:opacity-80 after:pointer-events-none after:absolute after:inset-x-3 after:bottom-2 after:h-px after:origin-center after:scale-x-0 after:bg-current after:transition-transform after:duration-(--motion-fast) hover:after:scale-x-100 aria-[current=page]:after:scale-x-100";
+
+/**
+ * The store's top categories on a laptop: in the logo's row (`inline`) or as a row of its own
+ * under it (`row`). The logo is the way home, so there is no Home link.
+ */
+function DesktopStoreNavigation({
+  variant = "row",
+  className = "",
+}: {
+  variant?: "row" | "inline";
+  className?: string;
+}) {
+  const { brand, lang } = useStorefront();
   const { data = [] } = useStorefrontCategories();
+  const { pathname } = useLocation();
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
   const timeoutRef = useRef<any>(null);
@@ -616,23 +625,33 @@ function DesktopStoreNavigation() {
 
   // Only direct top-level (parent) categories should be rendered as main navigation items
   const mainCategories = data.filter((c: any) => !c.parent_id);
+  if (mainCategories.length === 0) return null;
+
+  const linkClass = (c: any) => `${MENU_LINK} ${isSale(c) ? `${SALE_LINK} after:hidden` : ""}`;
 
   return (
-    <nav className="hidden border-t border-current/10 md:block overflow-visible">
-      <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 flex-wrap px-6 py-2 overflow-visible">
-        <Link
-          to="/$slug"
-          params={{ slug: brand.slug }}
-          className="shrink-0 rounded-[var(--radius)] border border-dashed border-current/30 px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-current/10"
-        >
-          {t("الصفحة الرئيسية", "Home")}
-        </Link>
+    <nav
+      aria-label={lang === "ar" ? "الأقسام" : "Categories"}
+      className={
+        variant === "row"
+          ? `hidden border-t border-current/10 md:block overflow-visible ${className}`
+          : `min-w-0 overflow-visible ${className}`
+      }
+    >
+      <div
+        className={
+          variant === "row"
+            ? "mx-auto flex min-h-12 max-w-7xl flex-wrap items-center justify-center gap-x-4 px-6"
+            : "flex items-center justify-center gap-x-1"
+        }
+      >
         {mainCategories.map((c: any) => {
           const subs = data.filter((sub: any) => sub.parent_id === c.id);
           const name = lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar;
           const url = c.slug || c.name_en;
           const hasDropdown = subs.length > 0;
           const isOpen = activeDropdownId === c.id;
+          const current = isCurrentMenuLink(pathname, brand.slug, url) ? "page" : undefined;
 
           if (hasDropdown) {
             return (
@@ -645,26 +664,16 @@ function DesktopStoreNavigation() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: url }}
-                  className={`flex items-center gap-1.5 rounded-[var(--radius)] px-5 py-2.5 text-base font-semibold transition hover:-translate-y-0.5 hover:bg-current/10 ${
-                    isSale(c) ? SALE_LINK : ""
-                  }`}
+                  aria-current={current}
+                  className={linkClass(c)}
                 >
                   <span>{name}</span>
-                  <svg
-                    className={`h-3.5 w-3.5 opacity-70 transition-transform duration-(--motion-fast) ${
+                  <ChevronDown
+                    aria-hidden
+                    className={`h-3.5 w-3.5 opacity-60 transition-transform duration-(--motion-fast) ${
                       isOpen ? "rotate-180" : ""
                     }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2.5}
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
+                  />
                 </Link>
                 {/* State-controlled dropdown menu card with unmount-on-exit */}
                 {isOpen && (
@@ -689,9 +698,8 @@ function DesktopStoreNavigation() {
               key={c.id}
               to="/$slug/$category"
               params={{ slug: brand.slug, category: url }}
-              className={`shrink-0 rounded-[var(--radius)] px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-current/10 ${
-                isSale(c) ? SALE_LINK : "font-semibold"
-              }`}
+              aria-current={current}
+              className={`shrink-0 ${linkClass(c)}`}
               onMouseEnter={() => {
                 if (timeoutRef.current) {
                   clearTimeout(timeoutRef.current);
@@ -708,245 +716,4 @@ function DesktopStoreNavigation() {
   );
 }
 
-function SearchBar() {
-  const { brand, lang, t, currency } = useStorefront();
-  const offers = useLiveOffers();
-  const servicesStore = useIsServicesStore();
-  const navigate = useNavigate();
-  const [q, setQ] = useState("");
-  const [debounced, setDebounced] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-
-  React.useEffect(() => {
-    const id = setTimeout(() => setDebounced(q.trim()), 200);
-    return () => clearTimeout(id);
-  }, [q]);
-
-  const { data, isFetching } = useQuery({
-    ...storefrontQueries.quickSearch(brand, debounced, HEADER_SEARCH_RESULT_LIMIT),
-    enabled: modalOpen && debounced.length >= 2,
-  });
-
-  const { data: categories = [] } = useStorefrontCategories({ enabled: modalOpen });
-
-  const topCategories = useMemo(() => {
-    return categories.filter((c: any) => !c.parent_id).slice(0, 6);
-  }, [categories]);
-
-  const results = data ?? [];
-  const searchLabel = t("البحث في المتجر", "Search store");
-  const searchPlaceholder = servicesStore
-    ? t("ابحث عن خدمة...", "Search for a service...")
-    : t("ابحث عن منتج...", "Search for products...");
-
-  return (
-    <>
-      {/* Search Input Trigger inside the page headers */}
-      <Button
-        type="button"
-        variant="outline"
-        aria-label={searchLabel}
-        aria-haspopup="dialog"
-        className="relative flex h-11 w-full justify-start font-normal rounded-[var(--radius)] border bg-background/80 text-foreground shadow-sm transition-colors hover:bg-background ps-9 pe-3"
-        style={{
-          borderColor: "rgba(128, 128, 128, 0.25)",
-        }}
-        onClick={() => setModalOpen(true)}
-      >
-        <Search className="pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 start-3" />
-        <span className="truncate opacity-80">{searchPlaceholder}</span>
-      </Button>
-
-      {/* Premium backdrop-blurred modal dialog */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent
-          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-card/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl [&>button]:text-muted-foreground [&>button]:hover:text-foreground [&>button]:top-5"
-          dir={lang === "ar" ? "rtl" : "ltr"}
-        >
-          <DialogHeader className="p-4 border-b border-border flex flex-row items-center gap-2">
-            <Search className="h-5 w-5 opacity-60 shrink-0" />
-            <DialogTitle className="sr-only">{t("البحث", "Search")}</DialogTitle>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const query = q.trim();
-                if (!query) return;
-                setModalOpen(false);
-                navigate({
-                  to: "/$slug/search",
-                  params: { slug: brand.slug },
-                  search: { q: query },
-                });
-              }}
-              className="flex-1"
-            >
-              <input
-                id="storefront-search"
-                name="storefront-search"
-                type="search"
-                autoFocus
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={t("اكتب اسم المنتج للبحث السريع...", "Type to search products...")}
-                className="w-full bg-transparent border-0 focus:outline-none focus:ring-0 text-base py-1 px-1 font-medium"
-              />
-            </form>
-            {q && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setQ("")}
-                aria-label={t("مسح البحث", "Clear search")}
-                className="h-8 w-8 rounded-md shrink-0 me-6"
-              >
-                <X className="h-4 w-4 opacity-70" />
-              </Button>
-            )}
-          </DialogHeader>
-
-          <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4">
-            {/* suggestions if query is too short */}
-            {debounced.length < 2 && (
-              <div className="space-y-3">
-                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-                  <span>{t("اكتشف الأقسام المميزة", "Explore Featured Categories")}</span>
-                </div>
-                {topCategories.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {topCategories.map((cat: any) => {
-                      const catName =
-                        lang === "ar" ? cat.name_ar || cat.name_en : cat.name_en || cat.name_ar;
-                      return (
-                        <Link
-                          key={cat.id}
-                          to="/$slug/$category"
-                          params={{ slug: brand.slug, category: cat.slug }}
-                          onClick={() => setModalOpen(false)}
-                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-muted hover:bg-muted/80 transition cursor-pointer"
-                        >
-                          {catName}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground">
-                    {t(
-                      "ابدأ بكتابة حرفين أو أكثر لبدء البحث الفوري.",
-                      "Type 2 or more characters to start instant searching.",
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* active search results or loader */}
-            {debounced.length >= 2 && (
-              <div className="space-y-2">
-                {isFetching && (
-                  <div className="space-y-3 py-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex items-center gap-3 animate-pulse">
-                        <div className="h-12 w-12 rounded bg-muted shrink-0" />
-                        <div className="flex-1 space-y-2 min-w-0">
-                          <div className="h-4 bg-muted rounded w-2/3" />
-                          <div className="h-3 bg-muted rounded w-1/4" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {!isFetching && results.length === 0 && (
-                  <div className="py-8 text-center text-sm text-muted-foreground">
-                    {t(
-                      "لا توجد نتائج مطابقة",
-                      servicesStore
-                        ? "No services found matching your query"
-                        : "No products found matching your query",
-                    )}
-                  </div>
-                )}
-
-                {!isFetching && results.length > 0 && (
-                  <ul className="divide-y divide-border">
-                    {results.map((p: any) => {
-                      const displayName = pickName(lang, p);
-                      // What can be bought now, and its own discount (src/lib/product-price.ts).
-                      const shown = offeredCardPrice(p, p.product_variants, offers);
-                      const price = shown.from;
-                      const oldPrice = shown.was ?? 0;
-                      const imageUrl =
-                        p.image_url ||
-                        p.media?.find((item: any) => item.type === "image")?.url ||
-                        null;
-                      const discount =
-                        oldPrice > price ? Math.round((1 - price / oldPrice) * 100) : 0;
-
-                      return (
-                        <li key={p.id} className="first:pt-0 last:pb-0 py-2.5">
-                          <Link
-                            to="/$slug/product/$id"
-                            params={{ slug: brand.slug, id: p.id }}
-                            onClick={() => {
-                              setModalOpen(false);
-                              setQ("");
-                            }}
-                            className="flex items-center gap-3 group"
-                          >
-                            <div className="h-12 w-12 shrink-0 rounded-lg bg-muted border border-border overflow-hidden relative">
-                              {imageUrl && (
-                                <img
-                                  src={cloudflareImageUrl(imageUrl, 120)}
-                                  alt={displayName}
-                                  width={120}
-                                  height={120}
-                                  loading="lazy"
-                                  decoding="async"
-                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-(--motion-medium)"
-                                />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0 text-start">
-                              <div
-                                className="text-sm font-semibold truncate group-hover:text-amber-500 transition-colors"
-                                style={{ color: "var(--sf-heading)" }}
-                              >
-                                {displayName}
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                                <span className="font-semibold text-foreground">
-                                  {formatPrice(Number(price), currency, lang)}
-                                </span>
-                                {oldPrice > Number(price) && (
-                                  <>
-                                    <span className="line-through text-xs">
-                                      {formatPrice(oldPrice, currency, lang)}
-                                    </span>
-                                    {discount > 0 && (
-                                      <span className="text-xs px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 dark:bg-red-950/45 dark:text-red-400 font-medium">
-                                        {discount}% {t("خصم", "OFF")}
-                                      </span>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-export { DesktopStoreNavigation, SearchBar, MobileStorefrontDropdown };
+export { DesktopStoreNavigation, MobileStorefrontDropdown };
