@@ -8,11 +8,19 @@ const CHIP =
  * The store's payment methods as quiet marks in the footer's own colour, as luxury stores show
  * them: one colour, one height, the card schemes by their shape and the rest in words.
  */
-export function PaymentMarks({ marks, lang }: { marks: PaymentMark[]; lang: "ar" | "en" }) {
+export function PaymentMarks({
+  marks,
+  lang,
+  className = "",
+}: {
+  marks: PaymentMark[];
+  lang: "ar" | "en";
+  className?: string;
+}) {
   if (marks.length === 0) return null;
   return (
     <ul
-      className="flex flex-wrap items-center gap-1.5"
+      className={`flex flex-wrap items-center gap-1.5 ${className}`}
       aria-label={lang === "ar" ? "طرق الدفع" : "Ways to pay"}
     >
       {marks.map((mark) => (

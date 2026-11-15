@@ -44,7 +44,7 @@ function FooterGroup({
       {folds && (
         <Button
           type="button"
-          variant="ghost"
+          variant="bar"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={id}
@@ -162,7 +162,9 @@ export function FooterV2() {
             } as React.CSSProperties
           }
         >
-          <div className="space-y-3 pb-3 lg:pb-0">
+          {/* On a phone the logo stands alone, centred, as the closing block does; on a laptop it
+              leads its column. */}
+          <div className="flex flex-col items-center space-y-3 pb-3 lg:items-start lg:pb-0">
             {settings.logo_url ? (
               <img
                 src={settings.logo_url}
@@ -320,8 +322,8 @@ export function FooterV2() {
         </div>
 
         {/* Socials and payment marks, then the copyright. */}
-        <div className="mt-6 flex flex-col gap-5 border-t border-current/10 pt-6 lg:mt-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="mt-6 flex flex-col items-center gap-5 border-t border-current/10 pt-6 text-center lg:mt-10 lg:flex-row lg:items-center lg:justify-between lg:text-start">
+          <div className="flex flex-col items-center gap-4 lg:flex-row lg:flex-wrap lg:gap-x-6">
             {socialsList.length > 0 && (
               <ul className="flex items-center gap-1" aria-label={t("حساباتنا", "Follow us")}>
                 {socialsList.map((s, i) => (
@@ -340,10 +342,14 @@ export function FooterV2() {
                 ))}
               </ul>
             )}
-            <PaymentMarks marks={marks} lang={isAr ? "ar" : "en"} />
+            <PaymentMarks
+              marks={marks}
+              lang={isAr ? "ar" : "en"}
+              className="justify-center lg:justify-start"
+            />
           </div>
 
-          <div className="flex flex-col gap-1 text-xs opacity-75 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3">
+          <div className="flex flex-col items-center gap-1 text-xs opacity-75 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 lg:justify-start">
             <span>
               © {new Date().getFullYear()} {brandName}.{" "}
               {t("جميع الحقوق محفوظة", "All rights reserved.")}

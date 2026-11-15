@@ -71,7 +71,7 @@ function NavCategoryItem({
         {childCategories.length > 0 && (
           <Button
             type="button"
-            variant="ghost"
+            variant="bar"
             size="icon"
             onClick={() => onToggleExpand(category.id)}
             className="h-11 w-11 shrink-0 rounded-full bg-transparent text-inherit hover:bg-current/10"
@@ -179,7 +179,7 @@ function MobileStorefrontDropdown() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
-          variant="ghost"
+          variant="bar"
           size="icon"
           className={HEADER_ICON}
           style={{ color: "var(--sf-header-fg)" }}

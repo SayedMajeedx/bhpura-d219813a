@@ -174,3 +174,17 @@ describe("the menu", () => {
     expect(container.innerHTML).toBe("");
   });
 });
+
+describe("the icons' colours", () => {
+  it("stay the bar's own on hover, never the admin's accent", () => {
+    render(<HeaderShoppingIcons onSearch={() => undefined} />);
+    for (const control of [
+      screen.getByRole("button", { name: "البحث" }),
+      screen.getByRole("link", { name: "المفضلة" }),
+      screen.getByRole("button", { name: "سلة التسوق" }),
+    ]) {
+      expect(control.className).not.toMatch(/accent-foreground/);
+      expect(control.className).toMatch(/text-inherit/);
+    }
+  });
+});
