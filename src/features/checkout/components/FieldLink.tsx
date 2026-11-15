@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 /**
  * A field most shoppers never need (a discount code, a gift card, a note), shown as a link that
  * opens it, focused (the checkout review of 2026-11-15: three open boxes made a phone's checkout
- * about 3,200px long). It starts open while it holds something.
+ * about 3,200px long). It starts open while it holds something. Each link takes its own line:
+ * as inline buttons, two of them ran together on one line (the owner's report of 2026-11-15).
  */
 export function FieldLink({
   label,
@@ -36,7 +37,7 @@ export function FieldLink({
         opened.current = true;
         setOpen(true);
       }}
-      className="h-auto min-h-11 justify-start gap-1.5 p-0 text-sm font-medium text-foreground underline-offset-4"
+      className="flex h-auto min-h-11 w-full justify-start gap-1.5 p-0 text-sm font-medium text-foreground underline-offset-4"
     >
       <Plus aria-hidden className="h-4 w-4" />
       {label}

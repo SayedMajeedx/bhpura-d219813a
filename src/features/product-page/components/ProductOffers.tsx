@@ -69,7 +69,9 @@ export function ProductOffers({
             key={offer.id}
             data-applies={other ? "false" : "true"}
             className={cn(
-              "flex items-start gap-2 rounded-lg border border-border px-3 py-2 text-sm",
+              // A relaxed line: the store's Arabic face drew a three-line offer past the box's edge on
+              // an iPhone (the owner's report of 2026-11-15).
+              "flex items-start gap-2 rounded-lg border border-border px-3 py-2.5 text-sm leading-relaxed",
               other && "border-dashed bg-muted/40",
             )}
           >
