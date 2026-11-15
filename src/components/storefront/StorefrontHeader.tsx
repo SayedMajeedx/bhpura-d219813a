@@ -83,7 +83,7 @@ function StoreHeader() {
             <MobileStorefrontDropdown />
             <Button
               type="button"
-              variant="ghost"
+              variant="bar"
               size="icon"
               className={HEADER_ICON}
               onClick={openSearch}
@@ -136,7 +136,7 @@ function StoreHeader() {
               <div className="justify-self-start" style={{ color: "var(--sf-header-fg)" }}>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="bar"
                   size="icon"
                   className={HEADER_ICON}
                   onClick={openSearch}
@@ -220,7 +220,7 @@ function AnnouncementBar() {
       {settings.announcement_dismissible && (
         <Button
           type="button"
-          variant="ghost"
+          variant="bar"
           size="icon"
           className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-md hover:bg-current/15 opacity-80 hover:opacity-100"
           aria-label={lang === "ar" ? "إغلاق الإعلان" : "Dismiss announcement"}

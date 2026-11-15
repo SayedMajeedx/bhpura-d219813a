@@ -15,6 +15,10 @@ const buttonVariants = cva(
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
+        // On a store's own bar (header, menu, footer): its colour, never the admin's accent. A
+        // ghost button turned its icon to the accent on hover, dark on Pura's dark header
+        // (the owner's report of 2026-11-15).
+        bar: "bg-transparent text-inherit shadow-none hover:bg-current/10 active:bg-current/20 focus-visible:ring-current/70 focus-visible:ring-offset-0",
         link: "text-primary underline-offset-4 hover:underline",
         // Selectable chip / segmented toggle. Neutral at rest; callers layer the
         // selected state (border/bg/text) via className so it stays on-token.

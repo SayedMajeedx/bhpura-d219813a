@@ -9,11 +9,10 @@ import { useStorefront } from "@/lib/storefront-context";
 import { isCatalogMode } from "@/lib/storefront-mode";
 
 /**
- * A header icon: 44px, the bar's own colour, named for screen readers (the header review of
+ * A header icon (with the button's `bar` look): 44px, the bar's own colour, named for screen readers (the header review of
  * 2026-11-15: a word beside every icon made six buttons of one weight).
  */
-export const HEADER_ICON =
-  "relative h-11 w-11 rounded-full bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80";
+export const HEADER_ICON = "relative h-11 w-11 rounded-full border-0";
 
 const COUNT_BADGE =
   "grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-xs font-semibold";
@@ -42,7 +41,7 @@ export function HeaderShoppingIcons({
       {onSearch && (
         <Button
           type="button"
-          variant="ghost"
+          variant="bar"
           size="icon"
           className={HEADER_ICON}
           onClick={onSearch}
@@ -54,7 +53,7 @@ export function HeaderShoppingIcons({
       )}
 
       {account && (
-        <Button asChild variant="ghost" size="icon" className={HEADER_ICON}>
+        <Button asChild variant="bar" size="icon" className={HEADER_ICON}>
           {signedIn ? (
             <Link
               to="/$slug/account"
@@ -80,7 +79,7 @@ export function HeaderShoppingIcons({
         </Button>
       )}
 
-      <Button asChild variant="ghost" size="icon" className={HEADER_ICON}>
+      <Button asChild variant="bar" size="icon" className={HEADER_ICON}>
         <Link
           to="/$slug/wishlist"
           params={{ slug: brand.slug }}
@@ -100,7 +99,7 @@ export function HeaderShoppingIcons({
       {!isCatalogMode(settings) && (
         <CartDrawer>
           <Button
-            variant="ghost"
+            variant="bar"
             size="icon"
             className={HEADER_ICON}
             aria-label={t("سلة التسوق", "Shopping cart")}
@@ -142,9 +141,9 @@ export function HeaderStoreSettings({
       {!inMenu && <span aria-hidden className="mx-1 h-5 w-px bg-current opacity-20" />}
       <Button
         type="button"
-        variant="ghost"
+        variant="bar"
         size="sm"
-        className="min-h-11 px-2 text-xs font-medium bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
+        className="min-h-11 border-0 px-2 text-xs font-medium"
         onClick={() => {
           setLang(other);
           onChanged?.();
