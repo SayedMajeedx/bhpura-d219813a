@@ -23,7 +23,14 @@ const COUNT_COLOURS = {
 };
 
 /** Account, wishlist and bag; search first when the row has room for it. */
-export function HeaderShoppingIcons({ onSearch }: { onSearch?: () => void }) {
+export function HeaderShoppingIcons({
+  onSearch,
+  account = true,
+}: {
+  onSearch?: () => void;
+  /** Off on a phone, whose bar has room for four icons: the account is in its menu. */
+  account?: boolean;
+}) {
   const { brand, settings, t, cartCount, session, isStoreMember, wishlistCount } = useStorefront();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -46,30 +53,32 @@ export function HeaderShoppingIcons({ onSearch }: { onSearch?: () => void }) {
         </Button>
       )}
 
-      <Button asChild variant="ghost" size="icon" className={HEADER_ICON}>
-        {signedIn ? (
-          <Link
-            to="/$slug/account"
-            params={{ slug: brand.slug }}
-            aria-label={accountLabel}
-            title={accountLabel}
-          >
-            <User className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        ) : (
-          <Link
-            to="/$slug/auth"
-            params={{ slug: brand.slug }}
-            search={{
-              redirect: mounted ? window.location.pathname + window.location.search : "",
-            }}
-            aria-label={accountLabel}
-            title={accountLabel}
-          >
-            <User className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        )}
-      </Button>
+      {account && (
+        <Button asChild variant="ghost" size="icon" className={HEADER_ICON}>
+          {signedIn ? (
+            <Link
+              to="/$slug/account"
+              params={{ slug: brand.slug }}
+              aria-label={accountLabel}
+              title={accountLabel}
+            >
+              <User className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
+          ) : (
+            <Link
+              to="/$slug/auth"
+              params={{ slug: brand.slug }}
+              search={{
+                redirect: mounted ? window.location.pathname + window.location.search : "",
+              }}
+              aria-label={accountLabel}
+              title={accountLabel}
+            >
+              <User className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
+          )}
+        </Button>
+      )}
 
       <Button asChild variant="ghost" size="icon" className={HEADER_ICON}>
         <Link
@@ -115,23 +124,36 @@ export function HeaderShoppingIcons({ onSearch }: { onSearch?: () => void }) {
  * The language and the currency, small and quiet after the shopping icons: a shopper sets them
  * once. The other language is written in itself ("English" on an Arabic page).
  */
-export function HeaderStoreSettings() {
+export function HeaderStoreSettings({
+  inMenu = false,
+  onChanged,
+}: {
+  /** In the phone's menu: the menu's own colour, no divider before it. */
+  inMenu?: boolean;
+  onChanged?: () => void;
+} = {}) {
   const { lang, setLang } = useStorefront();
   const other = lang === "ar" ? "en" : "ar";
   return (
-    <div className="flex items-center gap-1 text-xs" style={{ color: "var(--sf-header-fg)" }}>
-      <span aria-hidden className="mx-1 h-5 w-px bg-current opacity-20" />
+    <div
+      className="flex items-center gap-1 text-xs"
+      style={{ color: inMenu ? "inherit" : "var(--sf-header-fg)" }}
+    >
+      {!inMenu && <span aria-hidden className="mx-1 h-5 w-px bg-current opacity-20" />}
       <Button
         type="button"
         variant="ghost"
         size="sm"
         className="min-h-11 px-2 text-xs font-medium bg-transparent hover:bg-current/10 active:bg-current/20 text-inherit border-0 shadow-none focus-visible:ring-2 focus-visible:ring-current/80"
-        onClick={() => setLang(other)}
+        onClick={() => {
+          setLang(other);
+          onChanged?.();
+        }}
         aria-label={lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"}
       >
         <span lang={other}>{other === "en" ? "English" : "العربية"}</span>
       </Button>
-      <CurrencySwitcher />
+      <CurrencySwitcher inherit={inMenu} />
     </div>
   );
 }

@@ -91,7 +91,6 @@ function StorefrontLayout() {
 }
 
 // Modularized storefront components
-import { StorefrontMenu } from "@/components/storefront/StorefrontNavigation";
 import { CartDrawer } from "@/components/storefront/StorefrontCartDrawer";
 
-export { StorefrontMenu, CartDrawer };
+export { CartDrawer };

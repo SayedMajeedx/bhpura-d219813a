@@ -7,7 +7,7 @@ import { useDisplayCurrency } from "@/features/storefront-shell/hooks/use-displa
  * In the header, for a store that offers other currencies: which currency the shopper sees prices
  * in beside the store's own. Display only: the order is always charged in the store's currency.
  */
-export function CurrencySwitcher() {
+export function CurrencySwitcher({ inherit = false }: { inherit?: boolean } = {}) {
   const { lang, currency } = useStorefront();
   const { options, active, choose } = useDisplayCurrency();
   if (options.length < 2) return null;
@@ -15,7 +15,7 @@ export function CurrencySwitcher() {
     <select
       aria-label={lang === "ar" ? "عرض الأسعار بعملة" : "Show prices in"}
       className="h-11 max-w-full rounded-md border-0 bg-transparent px-1 text-xs font-semibold focus-visible:ring-2 focus-visible:ring-current/80"
-      style={{ color: "var(--sf-header-fg)" }}
+      style={{ color: inherit ? "inherit" : "var(--sf-header-fg)" }}
       value={active ?? currency}
       onChange={(event) => choose(event.target.value)}
     >
