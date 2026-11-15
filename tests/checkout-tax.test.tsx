@@ -17,6 +17,7 @@ const storefront = vi.hoisted(() => ({
   currency: "BHD",
   cart: [] as unknown[],
   cartTotal: 0,
+  cartReady: true,
   addToCart: vi.fn(),
   clearCart: () => undefined,
   session: null,

@@ -20,6 +20,7 @@ const storefront = vi.hoisted(() => ({
   currency: "BHD",
   cart: [] as unknown[],
   cartTotal: 0,
+  cartReady: true,
   wishlist: [] as string[],
   toggleWishlist: () => undefined,
   isWishlisted: () => false,

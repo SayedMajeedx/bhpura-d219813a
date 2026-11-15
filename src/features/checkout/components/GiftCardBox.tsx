@@ -1,3 +1,4 @@
+import { FieldLink } from "@/features/checkout/components/FieldLink";
 import { Gift, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,62 +37,68 @@ export function GiftCardBox({
 }) {
   const { card, input, setInput, apply, remove, checking, refusal } = giftCard;
   return (
-    <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-      {card ? (
-        <div className="flex items-center justify-between gap-2 text-sm">
-          <span className="flex min-w-0 items-center gap-2">
-            <Gift className="size-4 shrink-0 text-primary" aria-hidden="true" />
-            <span className="min-w-0">
-              <span className="font-mono" dir="ltr">
-                {card.code}
-              </span>{" "}
-              <span className="text-muted-foreground">
-                {t("الرصيد", "Balance")} {formatPrice(card.balance, currency, lang)}
+    <FieldLink
+      label={t("هل لديك بطاقة هدية؟", "Have a gift card?")}
+      startOpen={Boolean(card || input || refusal)}
+      focusId="gift-card-code"
+    >
+      <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+        {card ? (
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="flex min-w-0 items-center gap-2">
+              <Gift className="size-4 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="font-mono" dir="ltr">
+                  {card.code}
+                </span>{" "}
+                <span className="text-muted-foreground">
+                  {t("الرصيد", "Balance")} {formatPrice(card.balance, currency, lang)}
+                </span>
               </span>
             </span>
-          </span>
-          <Button type="button" variant="ghost" size="sm" onClick={remove}>
-            {t("إزالة", "Remove")}
-          </Button>
-        </div>
-      ) : (
-        <>
-          <Label htmlFor="gift-card-code">{t("هل لديك بطاقة هدية؟", "Have a gift card?")}</Label>
-          <div className="flex gap-2">
-            <Input
-              id="gift-card-code"
-              name="gift-card-code"
-              autoComplete="off"
-              dir="ltr"
-              className="h-11 font-mono uppercase"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void apply();
-                }
-              }}
-              placeholder="XXXX-XXXX-XXXX"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void apply()}
-              disabled={checking}
-            >
-              {checking && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {t("تطبيق", "Apply")}
+            <Button type="button" variant="ghost" size="sm" onClick={remove}>
+              {t("إزالة", "Remove")}
             </Button>
           </div>
-          {refusal && (
-            <p className="text-xs text-destructive" role="alert">
-              {REFUSALS[refusal][lang === "ar" ? "ar" : "en"]}
-            </p>
-          )}
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            <Label htmlFor="gift-card-code">{t("هل لديك بطاقة هدية؟", "Have a gift card?")}</Label>
+            <div className="flex gap-2">
+              <Input
+                id="gift-card-code"
+                name="gift-card-code"
+                autoComplete="off"
+                dir="ltr"
+                className="h-11 font-mono uppercase"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void apply();
+                  }
+                }}
+                placeholder="XXXX-XXXX-XXXX"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void apply()}
+                disabled={checking}
+              >
+                {checking && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {t("تطبيق", "Apply")}
+              </Button>
+            </div>
+            {refusal && (
+              <p className="text-xs text-destructive" role="alert">
+                {REFUSALS[refusal][lang === "ar" ? "ar" : "en"]}
+              </p>
+            )}
+          </>
+        )}
+      </div>
+    </FieldLink>
   );
 }
 

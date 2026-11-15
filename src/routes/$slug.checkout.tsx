@@ -1,4 +1,5 @@
 import { termsPageSlug } from "@/lib/cms-pages";
+import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useDeliveryTime } from "@/features/checkout/hooks/use-delivery-time";
 import { DeliveryTimeCard } from "@/features/checkout/components/DeliveryTimeCard";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
@@ -71,8 +72,19 @@ export const Route = createFileRoute("/$slug/checkout")({
 });
 
 function Checkout() {
-  const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, addToCart, session } =
-    useStorefront();
+  const {
+    brand,
+    settings,
+    cart,
+    cartReady,
+    cartTotal,
+    currency,
+    lang,
+    t,
+    clearCart,
+    addToCart,
+    session,
+  } = useStorefront();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -109,7 +121,9 @@ function Checkout() {
   // Offered only by a store that can really send them (its WhatsApp connection is on).
   const whatsappUpdatesReady =
     useQuery(checkoutQueries.whatsappUpdatesReady(brand.id)).data === true;
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  // Placing the order is agreeing to the store's terms, said under the button (the checkout review
+  // of 2026-11-15: a required tick held the button greyed out until it was found).
+  const acceptedTerms = true;
 
   const {
     showAccountPopup,
@@ -500,6 +514,20 @@ function Checkout() {
     giftCardCoversNow: Boolean(giftPay?.coversNow),
   });
 
+  // Until the saved cart is read, the page's shape, not "your cart is empty".
+  if (!cartReady) {
+    return (
+      <div
+        className="mx-auto grid max-w-4xl grid-cols-1 gap-6 px-4 pt-8 sm:px-6 md:grid-cols-[minmax(0,1fr)_360px]"
+        aria-busy="true"
+        aria-label={t("جارٍ تحميل طلبك", "Loading your order")}
+      >
+        <SectionSkeleton rows={3} />
+        <SectionSkeleton rows={2} className="hidden md:block" />
+      </div>
+    );
+  }
+
   if (cart.length === 0) {
     return (
       <div className="mx-auto max-w-lg p-8">
@@ -602,12 +630,10 @@ function Checkout() {
           <FulfillmentMethodCard
             appointment={Boolean(appointment)}
             currency={currency}
-            estimatedDeliveryLines={estimatedDeliveryLines}
             fulfillment={fulfillment}
             fulfillmentOptions={fulfillmentOptions}
             lang={lang}
             setFulfillment={setFulfillment}
-            settings={settings}
             t={t}
           />
         )}
@@ -646,6 +672,7 @@ function Checkout() {
             homeEstimateLines={homeEstimateLines}
             lang={lang}
             savedAddresses={savedAddresses}
+            signedIn={Boolean(session)}
             selectedAddressId={selectedAddressId}
             selectedCountryCode={selectedCountryCode}
             selectedDestination={selectedDestination}
@@ -746,7 +773,6 @@ function Checkout() {
           promoInput={promoInput}
           promoRefusals={promoRefusals}
           redeemedPoints={redeemedPoints}
-          setAcceptedTerms={setAcceptedTerms}
           setAppliedPromo={setAppliedPromo}
           setMarketingConsent={setMarketingConsent}
           setPointsToRedeemInput={setPointsToRedeemInput}

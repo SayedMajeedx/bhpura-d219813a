@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { formatPrice, type CartItem, type StoreLang } from "@/lib/storefront-context";
+import { formatPrice, pickName, type CartItem, type StoreLang } from "@/lib/storefront-context";
+import { postName } from "@/lib/product-name";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
@@ -83,15 +84,19 @@ export function MobileCartPeek({
       {open && (
         <ul id="checkout-cart-peek" className="space-y-2 border-t border-border p-3">
           {cart.map((item) => {
-            const parts = displayVariantParts(
-              {
-                size: item.size,
-                size_unit: item.size_unit,
-                color: item.color,
-                fabric: item.fabric,
-              },
-              lang,
-            );
+            const lineName = postName(pickName(lang, item));
+            const parts = [
+              ...(lineName.kind ? [lineName.kind] : []),
+              ...displayVariantParts(
+                {
+                  size: item.size,
+                  size_unit: item.size_unit,
+                  color: item.color,
+                  fabric: item.fabric,
+                },
+                lang,
+              ),
+            ];
             return (
               <li
                 key={item.cart_line_id}
@@ -99,7 +104,7 @@ export function MobileCartPeek({
               >
                 <span className="min-w-0">
                   <span className="block line-clamp-2 break-words">
-                    {item.name} × {item.qty}
+                    {lineName.name} × {item.qty}
                   </span>
                   {parts.length > 0 && (
                     <span className="block break-words text-xs text-muted-foreground">

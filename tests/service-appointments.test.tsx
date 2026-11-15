@@ -227,6 +227,10 @@ const storefrontCtx = {
     t: (_ar: string, en: string) => en,
   }),
   formatPrice: (n: number) => `BHD ${Number(n).toFixed(3)}`,
+  pickName: (
+    lang: string,
+    p: { name?: string | null; name_ar?: string | null; name_en?: string | null },
+  ) => (lang === "ar" ? p.name_ar || p.name_en || p.name : p.name_en || p.name_ar || p.name) || "",
 };
 vi.mock("../src/lib/storefront-context", () => storefrontCtx);
 vi.mock("@/lib/storefront-context", () => storefrontCtx);

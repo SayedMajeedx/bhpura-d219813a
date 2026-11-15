@@ -39,6 +39,7 @@ export function DeliveryAddressCard({
   totalCartQuantity,
   zones,
   appointment = false,
+  signedIn = false,
 }: {
   currency: Storefront["currency"];
   form: CheckoutForm;
@@ -60,6 +61,8 @@ export function DeliveryAddressCard({
   zones: ReturnType<typeof useCheckoutFulfillment>["zones"];
   /** The order is a booked service: the address is where it happens. */
   appointment?: boolean;
+  /** A signed-in shopper names the address to keep it (a guest's is not kept by name). */
+  signedIn?: boolean;
 }) {
   return (
     <Card className="p-5 space-y-4">
@@ -97,8 +100,10 @@ export function DeliveryAddressCard({
         </div>
       )}
 
-      {/* An appointment is at an address in Bahrain: no shipping destination to choose. */}
-      {!appointment && (
+      {/* An appointment is at an address in Bahrain, and a store with no shipping zones delivers
+          in Bahrain only: no destination to choose (one card that could not be changed, labelled
+          with the store's word "Default", once stood here). */}
+      {!appointment && zones.length > 0 && (
         <>
           <div className="space-y-2 mb-4">
             <Label className="font-semibold text-sm mb-1.5 block">
@@ -142,9 +147,6 @@ export function DeliveryAddressCard({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-semibold text-foreground text-sm">
                           {t("التوصيل داخل البحرين", "Bahrain (Domestic)")}
-                        </span>
-                        <span className="text-xs bg-primary/20 text-primary font-bold px-2 py-0.5 rounded-full shrink-0">
-                          {t("الافتراضي", "Default")}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -315,21 +317,25 @@ export function DeliveryAddressCard({
             <span>{t("تفاصيل العنوان داخل مملكة البحرين", "Address Details in Bahrain")}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
-              <Input
-                id="checkout-address-label"
-                name="address-label"
-                autoComplete="address-level3"
-                className="h-11"
-                placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")}
-                value={form.label}
-                onChange={(e) => {
-                  setSelectedAddressId("manual");
-                  setForm({ ...form, label: e.target.value });
-                }}
-              />
-            </div>
+            {signedIn && (
+              <div>
+                <Label htmlFor="checkout-address-label">
+                  {t("لقب العنوان (اختياري)", "Address label (optional)")}
+                </Label>
+                <Input
+                  id="checkout-address-label"
+                  name="address-label"
+                  autoComplete="off"
+                  className="h-11"
+                  placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")}
+                  value={form.label}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, label: e.target.value });
+                  }}
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
               <RegionPicker
@@ -509,22 +515,25 @@ export function DeliveryAddressCard({
                 }}
               />
             </div>
-            <div>
-              <Label htmlFor="checkout-intl-label">
-                {t("لقب العنوان (اختياري)", "Address label (optional)")}
-              </Label>
-              <Input
-                id="checkout-intl-label"
-                name="intl-label"
-                className="h-11"
-                placeholder={t("مثال: المنزل، المكتب", "e.g. Home, Office")}
-                value={form.label}
-                onChange={(e) => {
-                  setSelectedAddressId("manual");
-                  setForm({ ...form, label: e.target.value });
-                }}
-              />
-            </div>
+            {signedIn && (
+              <div>
+                <Label htmlFor="checkout-intl-label">
+                  {t("لقب العنوان (اختياري)", "Address label (optional)")}
+                </Label>
+                <Input
+                  id="checkout-intl-label"
+                  name="intl-label"
+                  autoComplete="off"
+                  className="h-11"
+                  placeholder={t("مثال: المنزل، المكتب", "e.g. Home, Office")}
+                  value={form.label}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, label: e.target.value });
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -23,6 +23,10 @@ const storefront = {
     brand: { name_en: "Pura", name_ar: "بورا" },
   }),
   formatPrice: (amount: number, currency: string) => `${amount.toFixed(3)} ${currency}`,
+  pickName: (
+    lang: string,
+    p: { name?: string | null; name_ar?: string | null; name_en?: string | null },
+  ) => (lang === "ar" ? p.name_ar || p.name_en || p.name : p.name_en || p.name_ar || p.name) || "",
 };
 vi.mock("../src/lib/storefront-context", () => storefront);
 vi.mock("@/lib/storefront-context", () => storefront);

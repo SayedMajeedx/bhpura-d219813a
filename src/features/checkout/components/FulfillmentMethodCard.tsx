@@ -1,32 +1,26 @@
 import { formatPrice } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Truck } from "lucide-react";
-import { DeliveryEstimateLines } from "@/features/checkout/components/DeliveryEstimateLines";
 import type { Storefront } from "@/features/checkout/types";
 import type { useCheckoutFulfillment } from "@/features/checkout/hooks/use-checkout-fulfillment";
 
 /** Delivery, pickup or digital delivery, with each option's fee. */
 export function FulfillmentMethodCard({
   currency,
-  estimatedDeliveryLines,
   fulfillment,
   fulfillmentOptions,
   lang,
   setFulfillment,
-  settings,
   t,
   appointment = false,
 }: {
   /** The order is a booked service: where it happens, not how it ships. */
   appointment?: boolean;
   currency: Storefront["currency"];
-  estimatedDeliveryLines: ReturnType<typeof useCheckoutFulfillment>["estimatedDeliveryLines"];
   fulfillment: ReturnType<typeof useCheckoutFulfillment>["fulfillment"];
   fulfillmentOptions: ReturnType<typeof useCheckoutFulfillment>["fulfillmentOptions"];
   lang: Storefront["lang"];
   setFulfillment: ReturnType<typeof useCheckoutFulfillment>["setFulfillment"];
-  settings: Storefront["settings"];
   t: Storefront["t"];
 }) {
   return (
@@ -67,20 +61,7 @@ export function FulfillmentMethodCard({
           );
         })}
       </div>
-      {!appointment &&
-        fulfillment === "delivery" &&
-        estimatedDeliveryLines.length > 0 &&
-        settings.delivery_estimate_enabled !== false && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
-            <Truck className="h-4 w-4 text-primary shrink-0" />
-            <span>
-              <strong className="text-foreground font-semibold">
-                {t("التوصيل المتوقع", "Estimated delivery")}:
-              </strong>{" "}
-              <DeliveryEstimateLines lines={estimatedDeliveryLines} />
-            </span>
-          </div>
-        )}
+      {/* The delivery time is said once, in the order summary. */}
     </Card>
   );
 }
