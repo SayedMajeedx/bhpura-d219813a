@@ -67,12 +67,7 @@ describe("registry scoping", () => {
   });
 
   it("scopes the columns-footer-only controls", () => {
-    for (const key of [
-      "newsletter_enabled",
-      "newsletter_title_ar",
-      "newsletter_title_en",
-      "footer_show_payment_methods",
-    ]) {
+    for (const key of ["footer_show_payment_methods"]) {
       expect(byKey.get(key)?.scope, key).toBe("columns_footer");
     }
   });

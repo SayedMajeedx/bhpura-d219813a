@@ -5,7 +5,6 @@ import { Link } from "@tanstack/react-router";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { Button } from "@/components/ui/button";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
-import { NewsletterForm } from "@/components/storefront/NewsletterForm";
 import { PaymentMarks } from "@/components/storefront/PaymentMarks";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { StorefrontSocialIcon } from "@/features/storefront-shell/components/StorefrontSocialIcon";
@@ -80,9 +79,9 @@ function FooterGroup({
 }
 
 /**
- * The store's footer (the footer review of 2026-11-15): the newsletter first, as one field; the
- * store and its links in columns on a laptop and folds on a phone; how to reach the store
- * (its WhatsApp and opening hours, `footer-care.ts`) when it set them; then its socials, its
+ * The store's footer (the footer review of 2026-11-15): the store and its links in columns on a
+ * laptop and folds on a phone; how to reach the store (its WhatsApp and opening hours,
+ * `footer-care.ts`) when it set them; then its socials, its
  * payment marks and the copyright. The Pages & Policies screen drives the links: each page sits
  * in the group the store chose (company or help), under the headings the store wrote.
  */
@@ -155,16 +154,6 @@ export function FooterV2() {
       {showTrustBarAboveFooter && <TrustBar />}
 
       <div className="mx-auto max-w-7xl px-4 py-8 text-start sm:px-6 lg:px-8 lg:py-12">
-        {/* The newsletter first: the one thing a shopper does here. */}
-        {settings.newsletter_enabled !== false && (
-          <section
-            aria-label={t("النشرة", "Newsletter")}
-            className="mb-5 border-b border-current/10 pb-6 lg:mb-10 lg:pb-10"
-          >
-            <NewsletterForm />
-          </section>
-        )}
-
         <div
           className="grid grid-cols-1 gap-y-2 lg:grid-cols-(--footer-cols) lg:gap-x-10 xl:gap-x-14"
           style={

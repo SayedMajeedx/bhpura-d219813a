@@ -326,53 +326,6 @@ export function HeaderFooterGroup() {
           <>
             <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
               <div className="min-w-0">
-                <Label htmlFor="footer-newsletter" className="cursor-pointer text-xs font-semibold">
-                  {isAr ? "الاشتراك في النشرة" : "Newsletter sign-up"}
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr
-                    ? "واتساب أو بريد، ويغذّي حملات الواتساب"
-                    : "WhatsApp or email; feeds your WhatsApp campaigns"}
-                </p>
-              </div>
-              <Switch
-                id="footer-newsletter"
-                checked={bs.newsletter_enabled ?? true}
-                onCheckedChange={(checked) => setBs({ newsletter_enabled: checked })}
-              />
-            </div>
-            {bs.newsletter_enabled !== false && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="min-w-0">
-                  <Label htmlFor="newsletter-title-ar" className="text-xs font-medium">
-                    {isAr ? "عنوان الاشتراك (عربي)" : "Newsletter title (Arabic)"}
-                  </Label>
-                  <Input
-                    id="newsletter-title-ar"
-                    dir="rtl"
-                    className="mt-1 h-9 text-xs"
-                    placeholder="اشترك لتصلك أحدث المنتجات والعروض"
-                    value={bs.newsletter_title_ar ?? ""}
-                    onChange={(e) => setBs({ newsletter_title_ar: e.target.value || null })}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <Label htmlFor="newsletter-title-en" className="text-xs font-medium">
-                    {isAr ? "عنوان الاشتراك (إنجليزي)" : "Newsletter title (English)"}
-                  </Label>
-                  <Input
-                    id="newsletter-title-en"
-                    dir="ltr"
-                    className="mt-1 h-9 text-xs"
-                    placeholder="Be the first to see new arrivals"
-                    value={bs.newsletter_title_en ?? ""}
-                    onChange={(e) => setBs({ newsletter_title_en: e.target.value || null })}
-                  />
-                </div>
-              </div>
-            )}
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3.5 bg-background">
-              <div className="min-w-0">
                 <Label htmlFor="footer-payments" className="cursor-pointer text-xs font-semibold">
                   {isAr ? "أيقونات طرق الدفع" : "Payment icons"}
                 </Label>

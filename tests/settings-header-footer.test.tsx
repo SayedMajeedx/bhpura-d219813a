@@ -102,10 +102,10 @@ describe("the Header & footer group", () => {
     expect(form.setBs).toHaveBeenCalledWith({ menu_bg: "#111111", menu_fg: "#ffffff" });
   });
 
-  it("offers the columns footer its newsletter and payment icons", () => {
+  it("offers the columns footer its payment icons, and no newsletter (removed 2026-11-15)", () => {
     show(<HeaderFooterGroup />);
     expect(screen.getByLabelText("Footer layout")).toBeInTheDocument();
-    expect(screen.getByLabelText("Newsletter title (English)")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Newsletter title (English)")).toBeNull();
     fireEvent.click(screen.getByLabelText("Payment icons"));
     expect(form.setBs).toHaveBeenCalledWith({ footer_show_payment_methods: false });
     // The columns footer reads the footer colours too (--sf-footer-bg / --sf-footer-fg).

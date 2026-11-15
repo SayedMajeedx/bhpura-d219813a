@@ -3,8 +3,8 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 
 /**
- * Public (anonymous) storefront lead capture: back-in-stock alerts and newsletter
- * signups. Runs server-side with the service role so the browser never writes
+ * Public (anonymous) storefront lead capture: back-in-stock alerts. (The footer's newsletter
+ * sign-up was removed on 2026-11-15; the subscribers it gathered stay on the Sign-ups page.) Runs server-side with the service role so the browser never writes
  * these tables directly, and applies a per-IP + per-brand sliding-window rate limit.
  * Mirrors the in-memory limiter used by `api.admin.nabda-otp.ts`.
  */
@@ -122,40 +122,4 @@ export const createBackInStockRequest = createServerFn({ method: "POST" })
     });
     if (error) throw new Error("INSERT_FAILED");
     return { ok: true, duplicate: false };
-  });
-
-const NewsletterInput = z.object({
-  brandId: z.string().uuid(),
-  channel: Channel,
-  contact: z.string().min(3).max(254),
-  lang: Lang,
-  source: z.string().max(40).default("footer"),
-});
-
-export const subscribeToNewsletter = createServerFn({ method: "POST" })
-  .validator((raw: unknown) => NewsletterInput.parse(raw))
-  .handler(async ({ data }) => {
-    enforceRateLimit("newsletter", data.brandId);
-    const contact = normalizeContact(data.channel, data.contact);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: brand } = await (supabaseAdmin.from("brands") as any)
-      .select("id")
-      .eq("id", data.brandId)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!brand) throw new Error("BRAND_NOT_FOUND");
-
-    const { error } = await (supabaseAdmin.from("newsletter_subscribers") as any).upsert(
-      {
-        brand_id: data.brandId,
-        channel: data.channel,
-        contact,
-        lang: data.lang,
-        source: data.source.replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || "footer",
-      },
-      { onConflict: "brand_id,channel,contact" },
-    );
-    if (error) throw new Error("INSERT_FAILED");
-    return { ok: true };
   });

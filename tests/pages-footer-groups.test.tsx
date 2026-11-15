@@ -53,8 +53,6 @@ const storefrontMock = vi.hoisted(() => () => ({
 }));
 vi.mock("../src/lib/storefront-context", storefrontMock);
 vi.mock("@/lib/storefront-context", storefrontMock);
-vi.mock("../src/components/storefront/NewsletterForm", () => ({ NewsletterForm: () => <div /> }));
-vi.mock("@/components/storefront/NewsletterForm", () => ({ NewsletterForm: () => <div /> }));
 vi.mock("../src/components/storefront/TrustBar", () => ({ TrustBar: () => <div /> }));
 vi.mock("@/components/storefront/TrustBar", () => ({ TrustBar: () => <div /> }));
 
@@ -78,7 +76,6 @@ const page = (over: Partial<EditablePage>): EditablePage => ({
 beforeEach(() => {
   state.lang = "en";
   state.settings = {
-    newsletter_enabled: false,
     footer_logo_size: 32,
     socials: [{ name: "TikTok", url: "https://tiktok.com/@a" }],
     footer_company_title_en: "The House",
