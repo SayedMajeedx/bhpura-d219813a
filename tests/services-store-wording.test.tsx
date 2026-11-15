@@ -29,7 +29,13 @@ const storefrontMock = vi.hoisted(() => () => ({
   useIsServicesStore: () => state.services,
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora", name_en: "Aurora", name_ar: "أورورا" },
-    settings: { newsletter_enabled: true, socials: [], footer_logo_size: 32 },
+    settings: {
+      newsletter_enabled: true,
+      socials: [],
+      footer_logo_size: 32,
+      whatsapp_enabled: true,
+      whatsapp_number: "97339950016",
+    },
     get lang() {
       return state.lang;
     },
@@ -91,7 +97,7 @@ describe("a services store's footer", () => {
   it("is about services and booking, with Arabic that suits everyone", () => {
     render(<FooterV2 />, { wrapper: queryWrapper });
     expect(screen.getAllByText("خدماتنا").length).toBeGreaterThan(0);
-    expect(screen.getByText("تواصل معنا")).toBeInTheDocument();
+    expect(screen.getByText("خدمة العملاء")).toBeInTheDocument();
     expect(screen.queryByText("تواصلي معنا")).toBeNull();
     expect(screen.getByText("كل الخدمات")).toBeInTheDocument();
     expect(screen.getByText("احجز موعدك")).toBeInTheDocument();
@@ -106,7 +112,7 @@ describe("a services store's footer", () => {
     expect(screen.getAllByText("تسوّق").length).toBeGreaterThan(0);
     expect(screen.getAllByText("كل المنتجات").length).toBeGreaterThan(0);
     expect(screen.getAllByText("وصل حديثاً").length).toBeGreaterThan(0);
-    expect(screen.getByText("تواصل معنا")).toBeInTheDocument();
+    expect(screen.getByText("خدمة العملاء")).toBeInTheDocument();
   });
 
   it("opens the mobile Services section with the booking link", () => {

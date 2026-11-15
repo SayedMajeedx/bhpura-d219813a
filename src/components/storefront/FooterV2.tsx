@@ -1,28 +1,90 @@
 import { useQuery } from "@tanstack/react-query";
 import { giftCardOnlineQueries } from "@/lib/data/gift-cards/online";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { Button } from "@/components/ui/button";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { NewsletterForm } from "@/components/storefront/NewsletterForm";
+import { PaymentMarks } from "@/components/storefront/PaymentMarks";
 import { TrustBar } from "@/components/storefront/TrustBar";
 import { StorefrontSocialIcon } from "@/features/storefront-shell/components/StorefrontSocialIcon";
 import { footerGroupTitles, footerPageGroups } from "@/features/storefront-shell/lib/footer-pages";
 import { footerCollections } from "@/features/storefront-shell/lib/footer-collections";
+import { hoursLines, paymentMarks } from "@/features/storefront-shell/lib/footer-care";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
-import { ChevronDown } from "lucide-react";
-
-type SectionKey = "shop" | "company" | "help";
+import { whatsappChatUrl } from "@/lib/whatsapp-phone";
+import { displayPhone } from "@/lib/invoice-display";
+import { ChevronDown, MessageCircle } from "lucide-react";
 
 const FG = { color: "var(--sf-footer-fg)" } as const;
-const DESKTOP_LINK = "opacity-75 hover:opacity-100 hover:translate-x-0.5 transition w-fit";
-const MOBILE_LINK = "opacity-75 hover:opacity-100 py-1 min-h-11 flex items-center";
+const LINK =
+  "flex min-h-11 w-fit items-center text-sm opacity-75 transition-opacity duration-(--motion-quick) hover:opacity-100 lg:min-h-0 lg:py-1";
 
 /**
- * The columns footer (used by the v2 storefront). The Pages & Policies screen
- * drives it: each page sits in the group the store chose (company or help),
- * under the headings the store wrote, and socials come from the same list.
+ * A group of the footer's links: a column under its heading on a laptop, a fold on a phone (one
+ * piece of markup for both; the footer once drew everything twice, its description too).
+ * Its heading is a level-2 heading: the page's sections are h2. Not an <h2>: the storefront sets
+ * every h1-h3 in the store's heading font with !important, and these small labels are in its text
+ * font.
+ */
+function FooterGroup({
+  title,
+  folds = true,
+  children,
+}: {
+  title: string;
+  /** Short groups stay open on a phone. */
+  folds?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <div className={folds ? "border-b border-current/10 lg:border-0" : ""}>
+      {folds && (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={id}
+          className="flex h-auto min-h-12 w-full items-center justify-between rounded-none bg-transparent px-0 text-sm font-semibold text-inherit hover:bg-transparent lg:hidden"
+          style={FG}
+        >
+          <span>{title}</span>
+          <ChevronDown
+            aria-hidden
+            className={`h-4 w-4 opacity-70 transition-transform duration-(--motion-fast) ${open ? "rotate-180" : ""}`}
+          />
+        </Button>
+      )}
+      <p
+        role="heading"
+        aria-level={2}
+        className={`text-xs font-semibold uppercase opacity-90 ltr:tracking-wider ${
+          folds ? "hidden lg:block" : "pb-1 lg:pb-0"
+        }`}
+        style={FG}
+      >
+        {title}
+      </p>
+      <div
+        id={id}
+        className={`flex-col pb-3 lg:flex lg:pt-4 lg:pb-0 ${folds && !open ? "hidden" : "flex"}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The store's footer (the footer review of 2026-11-15): the newsletter first, as one field; the
+ * store and its links in columns on a laptop and folds on a phone; how to reach the store
+ * (its WhatsApp and opening hours, `footer-care.ts`) when it set them; then its socials, its
+ * payment marks and the copyright. The Pages & Policies screen drives the links: each page sits
+ * in the group the store chose (company or help), under the headings the store wrote.
  */
 export function FooterV2() {
   const { brand, settings, lang, t } = useStorefront();
@@ -35,23 +97,10 @@ export function FooterV2() {
   const { data: categories = [] } = useStorefrontCategories();
   const collections = footerCollections(categories, isAr);
 
-  const [openSections, setOpenSections] = useState<Record<SectionKey, boolean>>({
-    shop: false,
-    company: false,
-    help: false,
-  });
-  const toggleSection = (key: SectionKey) =>
-    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
-
   const footerLogoSize = Math.max(20, Math.min(120, Number(settings.footer_logo_size ?? 32)));
   const aboutText = isAr
     ? brand.about_ar || settings.footer_note
     : brand.about_en || settings.footer_note;
-  const truncatedAbout = aboutText
-    ? aboutText.length > 160
-      ? `${aboutText.slice(0, 160)}...`
-      : aboutText
-    : null;
 
   const socialsList: Array<{ name: string; url: string }> = Array.isArray(settings.socials)
     ? settings.socials
@@ -62,172 +111,35 @@ export function FooterV2() {
   const shopTitle = servicesStore ? t("خدماتنا", "Our services") : t("تسوّق", "Shop");
   const brandName = isAr ? brand.name_ar || brand.name_en : brand.name_en;
 
+  const whatsapp =
+    settings.whatsapp_enabled && settings.whatsapp_number
+      ? {
+          url: whatsappChatUrl(settings.whatsapp_number),
+          number: displayPhone(settings.whatsapp_number),
+        }
+      : null;
+  const hours = hoursLines(settings.opening_hours, isAr ? "ar" : "en");
+  const showCare = Boolean(whatsapp?.url) || hours.length > 0;
+  const marks = settings.footer_show_payment_methods !== false ? paymentMarks(settings) : [];
+
   const showTrustBarAboveFooter =
     settings.trust_bar_enabled &&
     (settings.trust_bar_position === "above_footer" || settings.trust_bar_position === "both");
 
-  const pageLinks = (pages: typeof companyPages, linkClass: string) =>
+  const linkGroups = 2 + (companyPages.length > 0 ? 1 : 0) + (showCare ? 1 : 0);
+
+  const pageLinks = (pages: typeof companyPages) =>
     pages.map((p) => (
       <Link
         key={p.idx}
         to="/$slug/$category"
         params={{ slug: brand.slug, category: p.slug }}
-        className={linkClass}
+        className={LINK}
         style={FG}
       >
         {p.title}
       </Link>
     ));
-
-  const shopLinks = (linkClass: string) => (
-    <>
-      <Link to="/$slug" params={{ slug: brand.slug }} className={linkClass} style={FG}>
-        {t("الرئيسية", "Home")}
-      </Link>
-      {servicesStore ? (
-        <>
-          <Link
-            to="/$slug/$category"
-            params={{ slug: brand.slug, category: "all" }}
-            className={linkClass}
-            style={FG}
-          >
-            {t("كل الخدمات", "All services")}
-          </Link>
-          <Link
-            preload="viewport"
-            to="/$slug/book"
-            params={{ slug: brand.slug }}
-            className={`${linkClass} font-medium`}
-            style={FG}
-          >
-            {t("احجز موعدك", "Book a date")}
-          </Link>
-        </>
-      ) : (
-        <>
-          <Link
-            to="/$slug/$category"
-            params={{ slug: brand.slug, category: "all" }}
-            className={linkClass}
-            style={FG}
-          >
-            {t("كل المنتجات", "All Products")}
-          </Link>
-          {collections.map((c) => (
-            <Link
-              key={c.slug}
-              to="/$slug/$category"
-              params={{ slug: brand.slug, category: c.slug }}
-              className={c.sale ? `${linkClass} font-semibold` : linkClass}
-              style={FG}
-            >
-              {c.name}
-            </Link>
-          ))}
-        </>
-      )}
-    </>
-  );
-
-  const helpLinks = (linkClass: string) => (
-    <>
-      {/* Tracking needs no account: an order's number and phone open it. */}
-      {!servicesStore && (
-        <Link
-          preload="viewport"
-          to="/$slug/track-order"
-          params={{ slug: brand.slug }}
-          className={linkClass}
-          style={FG}
-        >
-          {t("تتبّع طلبك", "Track your order")}
-        </Link>
-      )}
-      {sellsGiftCards && (
-        <Link
-          preload="viewport"
-          to="/$slug/gift-cards"
-          params={{ slug: brand.slug }}
-          className={linkClass}
-          style={FG}
-        >
-          {t("بطاقات الهدايا", "Gift cards")}
-        </Link>
-      )}
-      <Link
-        preload="viewport"
-        to="/$slug/account"
-        params={{ slug: brand.slug }}
-        className={linkClass}
-        style={FG}
-      >
-        {servicesStore ? t("حجوزاتي وحسابي", "My bookings & account") : t("حسابي", "My account")}
-      </Link>
-      {pageLinks(helpPages, linkClass)}
-      <AddonSlot
-        placement="storefront.footer.helpLink"
-        props={{ className: linkClass, style: FG }}
-      />
-    </>
-  );
-
-  // The page's sections are headed h2, so the footer's columns are level-2 headings too: an h4
-  // under an h2 skipped a level, which screen readers' heading lists (and PageSpeed, 2026-11-14)
-  // read as a gap. Not an <h2>: the storefront sets every h1-h3 in the store's heading font with
-  // !important, and these small labels are in its text font.
-  const columnHeading = (title: string) => (
-    <p
-      role="heading"
-      aria-level={2}
-      className="text-xs font-semibold uppercase tracking-wider opacity-90 border-b border-current/10 pb-2"
-      style={FG}
-    >
-      {title}
-    </p>
-  );
-
-  const accordion = (key: SectionKey, title: string, links: React.ReactNode) => (
-    <div className="border-b border-current/10 pb-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => toggleSection(key)}
-        aria-expanded={openSections[key]}
-        className="h-auto min-h-11 rounded-md w-full flex items-center justify-between py-2 text-xs font-semibold"
-        style={FG}
-      >
-        <span>{title}</span>
-        <ChevronDown
-          className={`h-4 w-4 transition-transform duration-(--motion-fast) ${
-            openSections[key] ? "rotate-180" : ""
-          }`}
-        />
-      </Button>
-      {openSections[key] && (
-        <nav className="flex flex-col space-y-2 pt-1 pb-2 text-xs ps-2">{links}</nav>
-      )}
-    </div>
-  );
-
-  const logo = (textClass: string) =>
-    settings.logo_url ? (
-      <img
-        src={settings.logo_url}
-        alt={brand.name_en || "Logo"}
-        width={footerLogoSize * 3}
-        height={footerLogoSize}
-        loading="lazy"
-        decoding="async"
-        style={{ height: `${footerLogoSize}px`, width: "auto" }}
-        className="object-contain"
-      />
-    ) : (
-      <span className={`${textClass} font-bold font-display`} style={FG}>
-        {brandName}
-      </span>
-    );
 
   return (
     <footer
@@ -242,136 +154,207 @@ export function FooterV2() {
     >
       {showTrustBarAboveFooter && <TrustBar />}
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        {/* Desktop columns: brand, shop, company (when it has pages), help, newsletter */}
+      <div className="mx-auto max-w-7xl px-4 py-8 text-start sm:px-6 lg:px-8 lg:py-12">
+        {/* The newsletter first: the one thing a shopper does here. */}
+        {settings.newsletter_enabled !== false && (
+          <section
+            aria-label={t("النشرة", "Newsletter")}
+            className="mb-5 border-b border-current/10 pb-6 lg:mb-10 lg:pb-10"
+          >
+            <NewsletterForm />
+          </section>
+        )}
+
         <div
-          className={`hidden lg:grid gap-8 xl:gap-12 text-start ${
-            companyPages.length > 0 ? "grid-cols-5" : "grid-cols-4"
-          }`}
+          className="grid grid-cols-1 gap-y-2 lg:grid-cols-(--footer-cols) lg:gap-x-10 xl:gap-x-14"
+          style={
+            {
+              "--footer-cols": `minmax(0,1.5fr) repeat(${linkGroups}, minmax(0,1fr))`,
+            } as React.CSSProperties
+          }
         >
-          <div className="space-y-4">
-            {logo("text-lg")}
-            {truncatedAbout && (
-              <p className="text-xs leading-relaxed opacity-80" style={FG}>
-                {truncatedAbout}
-              </p>
+          <div className="space-y-3 pb-3 lg:pb-0">
+            {settings.logo_url ? (
+              <img
+                src={settings.logo_url}
+                alt={brandName || "Logo"}
+                width={footerLogoSize * 3}
+                height={footerLogoSize}
+                loading="lazy"
+                decoding="async"
+                style={
+                  {
+                    "--logo-h": `${footerLogoSize}px`,
+                    "--logo-h-phone": `${Math.min(footerLogoSize, 48)}px`,
+                  } as React.CSSProperties
+                }
+                className="h-(--logo-h-phone) w-auto object-contain lg:h-(--logo-h)"
+              />
+            ) : (
+              <span className="font-display text-lg font-bold" style={FG}>
+                {brandName}
+              </span>
             )}
-            {socialsList.length > 0 && (
-              <div className="flex items-center gap-2 pt-1 flex-wrap">
-                {socialsList.map((s, i) => (
-                  <a
-                    key={`${s.name}-${i}`}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.name}
-                    className="h-8 w-8 rounded-full border border-current/15 bg-current/5 flex items-center justify-center hover:bg-current/15 transition text-xs opacity-80 hover:opacity-100"
-                    style={FG}
-                  >
-                    <StorefrontSocialIcon platform={s.name} />
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            {columnHeading(shopTitle)}
-            <nav className="flex flex-col space-y-2 text-xs">{shopLinks(DESKTOP_LINK)}</nav>
-          </div>
-
-          {companyPages.length > 0 && (
-            <div className="space-y-3">
-              {columnHeading(titles.company)}
-              <nav className="flex flex-col space-y-2 text-xs">
-                {pageLinks(companyPages, DESKTOP_LINK)}
-              </nav>
-            </div>
-          )}
-
-          <div className="space-y-3">
-            {columnHeading(titles.help)}
-            <nav className="flex flex-col space-y-2 text-xs">{helpLinks(DESKTOP_LINK)}</nav>
-          </div>
-
-          <div className="space-y-4">
-            {columnHeading(t("تواصل معنا", "Stay Connected"))}
-            {settings.newsletter_enabled !== false && <NewsletterForm />}
-          </div>
-        </div>
-
-        {/* Mobile: the same groups as accordions */}
-        <div className="block lg:hidden space-y-4 text-start">
-          <div className="flex flex-col items-center text-center space-y-2 pb-3 border-b border-current/10">
-            {logo("text-base")}
-            {truncatedAbout && (
-              <p className="text-xs leading-relaxed opacity-75 max-w-sm" style={FG}>
-                {truncatedAbout}
+            {aboutText && (
+              <p
+                className="hidden max-w-sm text-sm leading-relaxed opacity-75 line-clamp-4 lg:block"
+                style={FG}
+              >
+                {aboutText}
               </p>
             )}
           </div>
 
-          {accordion("shop", shopTitle, shopLinks(MOBILE_LINK))}
-          {companyPages.length > 0 &&
-            accordion("company", titles.company, pageLinks(companyPages, MOBILE_LINK))}
-          {accordion("help", titles.help, helpLinks(MOBILE_LINK))}
-
-          {socialsList.length > 0 && (
-            <div className="flex flex-wrap justify-center items-center gap-3 py-1">
-              {socialsList.map((s, i) => (
-                <a
-                  key={`${s.name}-${i}`}
-                  href={s.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={s.name}
-                  className="h-11 w-11 rounded-full border border-current/15 bg-current/5 flex items-center justify-center hover:bg-current/15 transition active:scale-95"
+          <FooterGroup title={shopTitle}>
+            {servicesStore ? (
+              <>
+                <Link
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: "all" }}
+                  className={LINK}
                   style={FG}
                 >
-                  <StorefrontSocialIcon platform={s.name} />
-                </a>
-              ))}
-            </div>
+                  {t("كل الخدمات", "All services")}
+                </Link>
+                <Link
+                  preload="viewport"
+                  to="/$slug/book"
+                  params={{ slug: brand.slug }}
+                  className={`${LINK} font-medium`}
+                  style={FG}
+                >
+                  {t("احجز موعدك", "Book a date")}
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: "all" }}
+                  className={LINK}
+                  style={FG}
+                >
+                  {t("كل المنتجات", "All Products")}
+                </Link>
+                {collections.map((c) => (
+                  <Link
+                    key={c.slug}
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: c.slug }}
+                    className={c.sale ? `${LINK} font-semibold` : LINK}
+                    style={FG}
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </>
+            )}
+          </FooterGroup>
+
+          {companyPages.length > 0 && (
+            <FooterGroup title={titles.company}>{pageLinks(companyPages)}</FooterGroup>
           )}
 
-          {settings.newsletter_enabled !== false && (
-            <div className="pt-2">
-              <NewsletterForm />
+          <FooterGroup title={titles.help}>
+            {/* Tracking needs no account: an order's number and phone open it. */}
+            {!servicesStore && (
+              <Link
+                preload="viewport"
+                to="/$slug/track-order"
+                params={{ slug: brand.slug }}
+                className={LINK}
+                style={FG}
+              >
+                {t("تتبّع طلبك", "Track your order")}
+              </Link>
+            )}
+            {sellsGiftCards && (
+              <Link
+                preload="viewport"
+                to="/$slug/gift-cards"
+                params={{ slug: brand.slug }}
+                className={LINK}
+                style={FG}
+              >
+                {t("بطاقات الهدايا", "Gift cards")}
+              </Link>
+            )}
+            <Link
+              preload="viewport"
+              to="/$slug/account"
+              params={{ slug: brand.slug }}
+              className={LINK}
+              style={FG}
+            >
+              {servicesStore
+                ? t("حجوزاتي وحسابي", "My bookings & account")
+                : t("حسابي", "My account")}
+            </Link>
+            {pageLinks(helpPages)}
+            <AddonSlot
+              placement="storefront.footer.helpLink"
+              props={{ className: LINK, style: FG }}
+            />
+          </FooterGroup>
+
+          {/* How to reach the store, from its own settings; short, so open on a phone too. */}
+          {showCare && (
+            <div className="pt-4 lg:pt-0">
+              <FooterGroup title={t("خدمة العملاء", "Customer care")} folds={false}>
+                {whatsapp?.url && (
+                  <a
+                    href={whatsapp.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${LINK} gap-2`}
+                    style={FG}
+                  >
+                    <MessageCircle aria-hidden className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                    <span dir="ltr">{whatsapp.number}</span>
+                  </a>
+                )}
+                {hours.length > 0 && (
+                  <dl className="mt-2 space-y-1 text-sm opacity-75" style={FG}>
+                    {hours.map((line) => (
+                      <div key={line.days} className="flex flex-wrap gap-x-2">
+                        <dt>{line.days}</dt>
+                        <dd dir="ltr" className="tabular-nums">
+                          {line.hours}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </FooterGroup>
             </div>
           )}
         </div>
 
-        {/* Bottom bar: payment icons, copyright, privacy choices, powered by */}
-        <div className="mt-8 pt-6 border-t border-current/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs opacity-75">
-          {settings.footer_show_payment_methods !== false && (
-            <div
-              className="flex items-center gap-2 flex-wrap justify-center sm:justify-start"
-              aria-label={isAr ? "طرق الدفع المدعومة" : "Accepted payment methods"}
-            >
-              {settings.benefit_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-bold">
-                  BenefitPay
-                </span>
-              )}
-              {settings.card_enabled && (
-                <>
-                  <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-medium">
-                    Visa / Mastercard
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs font-medium">
-                    Apple Pay
-                  </span>
-                </>
-              )}
-              {settings.cod_enabled && (
-                <span className="px-2 py-0.5 rounded-md border border-current/15 bg-current/5 text-xs">
-                  {t("الدفع عند الاستلام", "COD")}
-                </span>
-              )}
-            </div>
-          )}
+        {/* Socials and payment marks, then the copyright. */}
+        <div className="mt-6 flex flex-col gap-5 border-t border-current/10 pt-6 lg:mt-10 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+            {socialsList.length > 0 && (
+              <ul className="flex items-center gap-1" aria-label={t("حساباتنا", "Follow us")}>
+                {socialsList.map((s, i) => (
+                  <li key={`${s.name}-${i}`}>
+                    <a
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={s.name}
+                      className="flex h-11 w-11 items-center justify-center rounded-full opacity-80 transition-opacity duration-(--motion-quick) hover:bg-current/10 hover:opacity-100"
+                      style={FG}
+                    >
+                      <StorefrontSocialIcon platform={s.name} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <PaymentMarks marks={marks} lang={isAr ? "ar" : "en"} />
+          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-center sm:text-end">
+          <div className="flex flex-col gap-1 text-xs opacity-75 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3">
             <span>
               © {new Date().getFullYear()} {brandName}.{" "}
               {t("جميع الحقوق محفوظة", "All rights reserved.")}
@@ -380,19 +363,21 @@ export function FooterV2() {
               <Button
                 type="button"
                 variant="link"
-                className="inline-flex min-h-11 items-center hover:opacity-100 py-0.5 sm:min-h-0 h-auto p-0 font-normal underline underline-offset-2"
+                className="inline-flex h-auto min-h-11 w-fit items-center p-0 py-0.5 font-normal underline underline-offset-2 hover:opacity-100 sm:min-h-0"
                 style={FG}
                 onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
               >
                 {t("خيارات الخصوصية", "Privacy choices")}
               </Button>
             )}
-            <span className="opacity-40">•</span>
+            <span aria-hidden className="hidden opacity-40 sm:inline">
+              •
+            </span>
             <a
               href="https://boutq.store"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:opacity-100 transition-opacity font-medium"
+              className="w-fit font-medium transition-opacity hover:opacity-100"
             >
               {t("مدعوم من Boutq OS", "Powered by Boutq OS")}
             </a>

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import { subscribeToNewsletter } from "@/lib/storefront-leads.functions";
 import { toast } from "sonner";
-import { Send, CheckCircle2, MessageCircle, Mail } from "lucide-react";
+import { CheckCircle2, MessageCircle, Mail } from "lucide-react";
 
 interface NewsletterFormProps {
   className?: string;
@@ -89,85 +89,84 @@ export function NewsletterForm({ className = "", source = "footer" }: Newsletter
   if (success) {
     return (
       <div
-        className={`flex items-center gap-2 text-xs text-primary font-medium p-3 rounded-lg bg-primary/10 border border-primary/20 ${className}`}
+        role="status"
+        className={`flex items-center gap-2 rounded-lg border border-current/20 p-3 text-sm font-medium ${className}`}
+        style={{ color: "var(--sf-footer-fg)" }}
       >
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
+        <CheckCircle2 className="h-4 w-4 shrink-0" />
         <span>{t("تم تسجيل اشتراكك بنجاح!", "You have successfully subscribed!")}</span>
       </div>
     );
   }
 
+  const otherChannel = channel === "whatsapp" ? "email" : "whatsapp";
+
+  // One field (the footer review of 2026-11-15: a WhatsApp / email switch came first). Its colours
+  // are the footer's own, the button the footer's turned round, so it stands out on any footer:
+  // the store's primary colour sat a shade off Pura's near-black footer.
   return (
-    <div className={`space-y-2.5 ${className}`}>
-      <p className="text-xs leading-relaxed opacity-85" style={{ color: "var(--sf-footer-fg)" }}>
+    <div
+      className={`space-y-3 lg:flex lg:items-center lg:justify-between lg:gap-10 lg:space-y-0 ${className}`}
+    >
+      <p
+        className="text-sm leading-relaxed lg:max-w-md lg:text-lg lg:font-display"
+        style={{ color: "var(--sf-footer-fg)" }}
+      >
         {title}
       </p>
+      <div className="space-y-1 lg:w-full lg:max-w-md lg:shrink-0">
+        <form onSubmit={handleSubmit} className="flex w-full max-w-md items-stretch gap-2">
+          <Input
+            type={channel === "whatsapp" ? "tel" : "email"}
+            inputMode={channel === "whatsapp" ? "tel" : "email"}
+            autoComplete={channel === "whatsapp" ? "tel" : "email"}
+            aria-label={
+              channel === "whatsapp"
+                ? t("رقم الواتساب", "WhatsApp number")
+                : t("البريد الإلكتروني", "Email address")
+            }
+            placeholder={channel === "whatsapp" ? "+973 3XXXXXXX" : "name@example.com"}
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            dir="ltr"
+            required
+            className="h-11 min-w-0 flex-1 rounded-lg border-current/20 bg-transparent text-sm text-inherit placeholder:text-current/45 focus-visible:ring-2 focus-visible:ring-current/60"
+            style={{ color: "var(--sf-footer-fg)" }}
+          />
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="h-11 shrink-0 gap-1.5 rounded-lg px-4 text-sm font-semibold hover:opacity-90"
+            style={{ backgroundColor: "var(--sf-footer-fg)", color: "var(--sf-footer-bg)" }}
+          >
+            {submitting ? (
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current/40 border-t-current" />
+            ) : (
+              <span>{t("اشتراك", "Join")}</span>
+            )}
+          </Button>
+        </form>
 
-      {/* Channel Selector Pills */}
-      <div className="flex items-center gap-1.5 p-0.5 rounded-lg bg-black/10 border border-current/10 w-fit">
         <Button
           type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setChannel("whatsapp")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-current/10 ${
-            channel === "whatsapp"
-              ? "bg-current/20 text-white shadow-xs font-semibold"
-              : "opacity-80 hover:opacity-100"
-          }`}
+          variant="link"
+          onClick={() => {
+            setChannel(otherChannel);
+            setContact("");
+          }}
+          className="h-auto min-h-11 gap-1.5 p-0 text-xs font-normal underline-offset-4 opacity-75 hover:opacity-100 sm:min-h-0"
           style={{ color: "var(--sf-footer-fg)" }}
         >
-          <MessageCircle className="h-3 w-3" />
-          <span>{t("واتساب", "WhatsApp")}</span>
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setChannel("email")}
-          className={`h-auto min-h-11 flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition hover:bg-current/10 ${
-            channel === "email"
-              ? "bg-current/20 text-white shadow-xs font-semibold"
-              : "opacity-80 hover:opacity-100"
-          }`}
-          style={{ color: "var(--sf-footer-fg)" }}
-        >
-          <Mail className="h-3 w-3" />
-          <span>{t("بريد إلكتروني", "Email")}</span>
+          {otherChannel === "email" ? (
+            <Mail aria-hidden className="h-3.5 w-3.5" />
+          ) : (
+            <MessageCircle aria-hidden className="h-3.5 w-3.5" />
+          )}
+          {otherChannel === "email"
+            ? t("أو اشترك بالبريد الإلكتروني", "Or use email")
+            : t("أو اشترك بالواتساب", "Or use WhatsApp")}
         </Button>
       </div>
-
-      {/* Input & Submit Form */}
-      <form onSubmit={handleSubmit} className="flex items-center gap-1.5 max-w-sm">
-        <Input
-          type={channel === "whatsapp" ? "tel" : "email"}
-          placeholder={
-            channel === "whatsapp"
-              ? t("+973 3XXXXXXX", "+973 3XXXXXXX")
-              : t("name@example.com", "name@example.com")
-          }
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-          dir="ltr"
-          required
-          className="h-11 text-xs bg-current/10 border-current/15 text-white placeholder:text-current/40 focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
-        />
-        <Button
-          type="submit"
-          disabled={submitting}
-          size="sm"
-          className="h-11 px-3 gap-1 shrink-0 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium"
-        >
-          {submitting ? (
-            <span className="h-3.5 w-3.5 rounded-full border-2 border-current/40 border-t-white animate-spin" />
-          ) : (
-            <>
-              <Send className="h-3.5 w-3.5" />
-              <span>{t("اشتراك", "Join")}</span>
-            </>
-          )}
-        </Button>
-      </form>
     </div>
   );
 }
