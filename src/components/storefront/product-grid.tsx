@@ -180,34 +180,29 @@ export function ProductGrid({
   return (
     <div className="space-y-4">
       {/* Dynamic Grid Layout Switcher control bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+      <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
         {toolbar ?? (
           <span className="text-xs text-muted-foreground font-medium">
             {catalogCount(products.length, { services, lang: lang === "ar" ? "ar" : "en" })}
           </span>
         )}
 
-        {/* Toggle columns trigger button (strictly visible on mobile viewport <md) */}
-        <div className="ms-auto flex items-center gap-1.5 md:hidden">
-          <Button
-            type="button"
-            variant={mobileCols === "2" ? "default" : "outline"}
-            size="icon-touch"
-            onClick={() => toggleMobileCols("2")}
-            aria-label={t("عرض شبكة ثنائية", "Dense 2-Column Grid")}
-          >
-            <Grid2X2 className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant={mobileCols === "1" ? "default" : "outline"}
-            size="icon-touch"
-            onClick={() => toggleMobileCols("1")}
-            aria-label={t("عرض قائمة عمودية", "Immersive 1-Column List")}
-          >
-            <Rows className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* One button switches a phone's grid between two columns and one (two buttons once
+            pushed it onto a row of its own). */}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon-touch"
+          className="ms-auto shrink-0 md:hidden"
+          onClick={() => toggleMobileCols(mobileCols === "1" ? "2" : "1")}
+          aria-label={
+            mobileCols === "1"
+              ? t("عرض عمودين", "Show two columns")
+              : t("عرض عمود واحد", "Show one column")
+          }
+        >
+          {mobileCols === "1" ? <Grid2X2 className="h-4 w-4" /> : <Rows className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* Grid container responsive columns based on toggled preference */}
