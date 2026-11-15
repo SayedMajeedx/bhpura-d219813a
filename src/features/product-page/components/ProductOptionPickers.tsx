@@ -112,11 +112,14 @@ export function ProductOptionPickers({
   return (
     <div ref={optionsRef} className="mb-6 space-y-4 scroll-mt-24">
       {showSizeModeToggle && (
-        <div className="rounded-xl border bg-muted/30 p-2">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-            {t("طريقة اختيار المقاس", "Sizing Method")}
-          </div>
-          <div className="t-tabs relative grid grid-cols-2 gap-2">
+        // A slim two-part switch, named for screen readers (the product page review of
+        // 2026-11-15: two large boxes under a heading).
+        <div>
+          <div
+            role="group"
+            aria-label={t("طريقة اختيار المقاس", "Sizing method")}
+            className="t-tabs relative grid grid-cols-2 gap-1 rounded-full border border-border p-1"
+          >
             {/* The chosen choice's fill slides to the next one (transitions.dev's tabs sliding). */}
             <TabsPill />
             <Button
@@ -132,11 +135,11 @@ export function ProductOptionPickers({
                   isMeasurement: isMeasurementField,
                 })
               }
-              className={`t-tab h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                sizeMode === "ready" ? "shadow-sm" : "bg-transparent"
+              className={`t-tab h-10 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
+                sizeMode === "ready" ? "" : "bg-transparent hover:bg-muted/60"
               }`}
             >
-              <Ruler className="h-4 w-4" />
+              <Ruler className="h-4 w-4" strokeWidth={1.75} />
               <span>{t("مقاس جاهز", "Ready Size")}</span>
             </Button>
             <Button
@@ -147,11 +150,11 @@ export function ProductOptionPickers({
                 setSizeMode("custom");
                 setErrorMsg(null);
               }}
-              className={`t-tab h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
-                sizeMode === "custom" ? "shadow-sm" : "bg-transparent"
+              className={`t-tab h-10 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
+                sizeMode === "custom" ? "" : "bg-transparent hover:bg-muted/60"
               }`}
             >
-              <Scissors className="h-4 w-4" />
+              <Scissors className="h-4 w-4" strokeWidth={1.75} />
               <span>{vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}</span>
             </Button>
           </div>

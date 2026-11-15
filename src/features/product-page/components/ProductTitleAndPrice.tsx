@@ -14,6 +14,7 @@ import { offeredShownPrice } from "@/lib/offer-price";
 import { SALE_BADGE_CLASS } from "@/lib/storefront-badges";
 import { Truck } from "lucide-react";
 import { productDeliveryLine } from "@/features/product-page/lib/delivery-line";
+import { postName as productNameParts } from "@/lib/product-name";
 
 /**
  * Product name with share and wishlist, the price with any original price and saving, the
@@ -79,14 +80,22 @@ export function ProductTitleAndPrice({
   const shownPrice = offered ? offered.price : displayPrice;
   const shownPercent = offered ? offered.percent : discountPercent;
   const delivery = productDeliveryLine({ settings, lang, madeForShopper });
+  const name = productNameParts(displayName);
   return (
     <>
       <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
+        {/* "عباية | غُصن" reads as the piece, large, and its kind, small above it (product-name.ts). */}
         <h1
-          className="font-display text-2xl sm:text-3xl"
+          className="min-w-0 font-display text-2xl break-words sm:text-3xl"
           style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
         >
-          {displayName}
+          {name.kind && (
+            <span className="mb-1 block font-sans text-xs font-medium text-muted-foreground ltr:tracking-wider ltr:uppercase sm:text-sm">
+              {name.kind}
+              <span className="sr-only"> </span>
+            </span>
+          )}
+          <span className="block">{name.name}</span>
         </h1>
         <div className="flex items-center gap-2 shrink-0">
           <ProductShareModal
@@ -135,16 +144,17 @@ export function ProductTitleAndPrice({
             )}
           </>
         )}
-        {delivery && (
-          <span className="ms-auto inline-flex max-w-full items-center gap-1.5 rounded-full bg-success-subtle px-3 py-1 text-xs font-medium text-foreground">
-            <Truck className="h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" />
-            <span className="min-w-0 break-words">{delivery}</span>
-          </span>
-        )}
         {shouldShowPrices(settings) && (
           <ApproxPrice amount={shownPrice} className="basis-full text-sm" />
         )}
       </div>
+      {/* A quiet line under the price, not a badge (the product page review of 2026-11-15). */}
+      {delivery && (
+        <p className="-mt-1 mb-4 flex items-start gap-2 text-sm text-muted-foreground sm:mb-5">
+          <Truck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden="true" />
+          <span className="min-w-0 break-words">{delivery}</span>
+        </p>
+      )}
       <ProductOffers product={product} madeToOrder={madeForShopper} onChooseReady={onChooseReady} />
     </>
   );
