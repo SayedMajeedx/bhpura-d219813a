@@ -1423,13 +1423,14 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     },
   },
   {
-    scope: "columns_footer",
+    // Read by nothing: the footer has no newsletter sign-up since 2026-11-15 (the owner's
+    // decision: it took too much room); the column stays until it is dropped.
     key: "newsletter_enabled",
     table: "business_settings",
-    tab: "storefront",
-    group: "header_footer",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "boolean",
     label: {
       ar: "تفعيل صندوق النشرة البريدية / الواتساب",
@@ -1438,25 +1439,27 @@ export const SETTINGS_REGISTRY: SettingsFieldDef[] = [
     keywords: { ar: ["نشرة بريدية", "اشتراك"], en: ["newsletter", "subscribe"] },
   },
   {
-    scope: "columns_footer",
+    // Read by nothing: the footer has no newsletter sign-up since 2026-11-15 (the owner's
+    // decision: it took too much room); the column stays until it is dropped.
     key: "newsletter_title_ar",
     table: "business_settings",
-    tab: "storefront",
-    group: "header_footer",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "text",
     label: { ar: "عنوان النشرة البريدية (عربي)", en: "Newsletter Title (Arabic)" },
     keywords: { ar: ["عنوان النشرة عربي"], en: ["newsletter title ar"] },
   },
   {
-    scope: "columns_footer",
+    // Read by nothing: the footer has no newsletter sign-up since 2026-11-15 (the owner's
+    // decision: it took too much room); the column stays until it is dropped.
     key: "newsletter_title_en",
     table: "business_settings",
-    tab: "storefront",
-    group: "header_footer",
+    tab: null,
+    group: null,
     level: "advanced",
-    owner: "settings",
+    owner: "system",
     type: "text",
     label: { ar: "عنوان النشرة البريدية (إنجليزي)", en: "Newsletter Title (English)" },
     keywords: { ar: ["عنوان النشرة إنجليزي"], en: ["newsletter title en"] },

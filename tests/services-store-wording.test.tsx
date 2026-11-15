@@ -30,7 +30,6 @@ const storefrontMock = vi.hoisted(() => () => ({
   useStorefront: () => ({
     brand: { id: "b1", slug: "aurora", name_en: "Aurora", name_ar: "أورورا" },
     settings: {
-      newsletter_enabled: true,
       socials: [],
       footer_logo_size: 32,
       whatsapp_enabled: true,
@@ -54,8 +53,6 @@ vi.mock("../src/lib/use-storefront-categories", categoriesMock);
 vi.mock("@/lib/use-storefront-categories", categoriesMock);
 vi.mock("../src/lib/storefront-context", storefrontMock);
 vi.mock("@/lib/storefront-context", storefrontMock);
-vi.mock("../src/components/storefront/NewsletterForm", () => ({ NewsletterForm: () => <div /> }));
-vi.mock("@/components/storefront/NewsletterForm", () => ({ NewsletterForm: () => <div /> }));
 vi.mock("../src/components/storefront/TrustBar", () => ({ TrustBar: () => <div /> }));
 vi.mock("@/components/storefront/TrustBar", () => ({ TrustBar: () => <div /> }));
 vi.mock("../src/lib/variant-axes", () => ({

@@ -1,13 +1,13 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hoursLines, paymentMarks } from "../src/features/storefront-shell/lib/footer-care";
 
 // The footer review of 2026-11-15: the Join button sat a shade off Pura's near-black footer, the
 // payment chips read "COD" and promised Apple Pay to every store that takes cards, the footer
-// named no way to reach the store, the newsletter asked WhatsApp or email first, and the phone
-// drew everything a second time.
+// named no way to reach the store, and the phone drew everything a second time. Its newsletter
+// sign-up was then removed: it took too much room.
 
 const state = vi.hoisted(() => ({
   lang: "en" as "ar" | "en",
@@ -29,7 +29,6 @@ const storefrontModule = vi.hoisted(() => async (importOriginal: () => Promise<o
     settings: {
       pages: [],
       socials: [{ name: "Instagram", url: "https://instagram.com/pura" }],
-      newsletter_enabled: true,
       footer_logo_size: 32,
       ...state.settings,
     },
@@ -55,8 +54,6 @@ const giftCardsModule = vi.hoisted(() => () => ({
 vi.mock("../src/lib/data/gift-cards/online", giftCardsModule);
 vi.mock("@/lib/data/gift-cards/online", giftCardsModule);
 
-vi.mock("../src/lib/storefront-leads.functions", () => ({ subscribeToNewsletter: vi.fn() }));
-vi.mock("@/lib/storefront-leads.functions", () => ({ subscribeToNewsletter: vi.fn() }));
 vi.mock("../src/components/addons/AddonSlot", () => ({ AddonSlot: () => null }));
 vi.mock("@/components/addons/AddonSlot", () => ({ AddonSlot: () => null }));
 vi.mock("../src/components/storefront/TrustBar", () => ({ TrustBar: () => null }));
@@ -148,15 +145,10 @@ describe("the footer", () => {
     expect(screen.getAllByRole("link", { name: "Track your order" })).toHaveLength(1);
   });
 
-  it("asks for one thing to join, and offers email beside it", () => {
+  it("has no newsletter sign-up (the owner's decision: it took too much room)", () => {
     renderFooter();
-    const field = screen.getByRole("textbox", { name: "WhatsApp number" });
-    expect(field.getAttribute("type")).toBe("tel");
-    expect(screen.getByRole("button", { name: "Join" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Or use email" }));
-    expect(screen.getByRole("textbox", { name: "Email address" }).getAttribute("type")).toBe(
-      "email",
-    );
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Join" })).toBeNull();
   });
 
   it("keeps Powered by Boutq OS", () => {
