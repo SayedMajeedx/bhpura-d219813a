@@ -8,7 +8,8 @@ import { cn } from "@/lib/utils";
  * the page is for, and its actions. On a phone it is one row (title and counts
  * at the reading start, actions at the end) and the line is left out: stacked,
  * a page's heading took 121 to 167px before its first order, product or
- * customer. From `sm` up it is the card it always was.
+ * customer. It is a plain row, not a card (the admin review of 2026-11-15: a bordered box
+ * opened every page, about 80px on a laptop and 100px on a phone before the data).
  */
 export function AdminPageHeader({
   icon: Icon,
@@ -29,7 +30,7 @@ export function AdminPageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:p-4">
+    <header className="flex min-w-0 items-center justify-between gap-3 py-1 sm:py-2">
       <div className="flex min-w-0 flex-1 items-center gap-3">
         <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary sm:flex">
           <Icon className="h-4.5 w-4.5" aria-hidden="true" />

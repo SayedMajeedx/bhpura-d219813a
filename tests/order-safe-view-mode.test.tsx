@@ -98,10 +98,9 @@ describe("the order header in safe view mode", () => {
 
   it("explains the locked state and locks payment and status changes", () => {
     const { onUnlock } = renderHeader();
+    // A quiet line, not a box (the admin review of 2026-11-15).
     expect(
-      screen.getByText(
-        "You are in safe view mode. Fields are locked to prevent accidental changes.",
-      ),
+      screen.getByText("View only: fields are locked until you press Edit order."),
     ).toBeInTheDocument();
     expect(screen.getByTitle("Click to manage payment lifecycle")).toBeDisabled();
     fireEvent.click(screen.getAllByRole("button", { name: /Edit Order/ })[0]);
@@ -119,7 +118,7 @@ describe("the order header in safe view mode", () => {
 
   it("offers cancel and save while editing, without the locked notice", () => {
     const { onCancelEditing } = renderHeader({ isReadOnly: false, isEditing: true });
-    expect(screen.queryByText(/safe view mode/)).toBeNull();
+    expect(screen.queryByText(/View only/)).toBeNull();
     expect(screen.getByTitle("Click to manage payment lifecycle")).not.toBeDisabled();
     fireEvent.click(screen.getAllByRole("button", { name: /Cancel Editing/ })[0]);
     expect(onCancelEditing).toHaveBeenCalledTimes(1);

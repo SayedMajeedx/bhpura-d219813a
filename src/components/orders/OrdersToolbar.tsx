@@ -35,6 +35,8 @@ interface OrdersToolbarProps {
   onSortOrderChange: (val: "newest" | "oldest") => void;
   activeFilterCount: number;
   onClearFilters: () => void;
+  /** At the end of the search row: the list or board switch and the order sound. */
+  trailing?: React.ReactNode;
 }
 
 const PAYMENT_FILTER_OPTIONS = [
@@ -96,6 +98,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   onSortOrderChange,
   activeFilterCount,
   onClearFilters,
+  trailing,
 }) => {
   const isAr = lang === "ar";
   const { isInstalled } = useAddons();
@@ -411,6 +414,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             {isAr ? "الأرشيف" : "Archive"}
           </label>
         </div>
+        {trailing}
       </div>
 
       {/* Active Filter Chips */}

@@ -42,7 +42,9 @@ export function StockOverviewStrip({
     // first product (it started at 755px of an 812px screen).
     <section
       aria-label={isAr ? "ملخص المخزون" : "Stock summary"}
-      className="scrollbar-none -mx-1 flex snap-x gap-2 overflow-x-auto px-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      // One slim band with lines between the figures, not five cards (the admin review of
+      // 2026-11-15: the cards took about 90px above the list on a laptop).
+      className="scrollbar-none flex snap-x overflow-x-auto rounded-xl border border-border-subtle bg-card shadow-2xs sm:overflow-visible"
     >
       <Tile
         label={isAr ? "قطع في المحل" : "Pieces in store"}
@@ -88,10 +90,14 @@ export function StockOverviewStrip({
 
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="w-40 min-w-0 shrink-0 snap-start rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
+    <div className="w-40 min-w-0 shrink-0 snap-start border-e border-border-subtle px-3 py-2 last:border-e-0 sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
       <p className="break-words text-xs font-medium text-muted-foreground">{label}</p>
-      <p className="mt-1 break-words font-mono text-sm font-extrabold text-foreground">{value}</p>
-      {hint && <p className="mt-0.5 break-words text-xs text-muted-foreground">{hint}</p>}
+      <p className="break-words font-mono text-sm font-extrabold text-foreground">
+        {value}
+        {hint && (
+          <span className="ms-1.5 font-sans text-xs font-normal text-muted-foreground">{hint}</span>
+        )}
+      </p>
     </div>
   );
 }
@@ -134,11 +140,11 @@ function LowStockLevelTile({
         : `${level} or fewer`;
 
   return (
-    <div className="w-40 min-w-0 shrink-0 snap-start rounded-xl border border-border-subtle bg-card p-3 shadow-2xs sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
+    <div className="w-40 min-w-0 shrink-0 snap-start border-e border-border-subtle px-3 py-2 last:border-e-0 sm:w-auto sm:flex-1 sm:shrink sm:basis-36">
       <p className="break-words text-xs font-medium text-muted-foreground">
         {isAr ? "تنبيه المخزون المنخفض عند" : "Low stock warning at"}
       </p>
-      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <p className="break-words font-mono text-sm font-extrabold text-foreground">{says}</p>
         {canEdit && (
           <Popover
