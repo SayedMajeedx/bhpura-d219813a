@@ -18,6 +18,7 @@ export function HeroHeadline({
   dir,
   className,
   style,
+  heading = true,
 }: {
   phrases: readonly string[];
   animation: HeroTextAnimation;
@@ -28,6 +29,11 @@ export function HeroHeadline({
   dir: "rtl" | "ltr";
   className?: string;
   style?: React.CSSProperties;
+  /**
+   * The page's main heading: the first slide's only. Every slide's headline was an <h1>, so a
+   * hero of two slides gave the page two (the home page review of 2026-11-15).
+   */
+  heading?: boolean;
 }) {
   const [step, setStep] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
@@ -56,13 +62,16 @@ export function HeroHeadline({
 
   if (phrases.length === 0) return null;
   const motion = still ? "none" : animation;
+  const Tag = heading ? "h1" : "p";
 
   return (
     <>
       <HeroHeadlineStyles />
-      <h1
+      <Tag
         dir={dir}
-        className={className}
+        // A slide's headline that is not the page's heading keeps the heading face (the store
+        // sets it on h1-h3 and .hero-title).
+        className={heading ? className : `hero-title ${className ?? ""}`}
         style={style}
         onPointerEnter={() => setPaused(true)}
         onPointerLeave={() => setPaused(false)}
@@ -87,7 +96,7 @@ export function HeroHeadline({
             );
           })}
         </span>
-      </h1>
+      </Tag>
     </>
   );
 }

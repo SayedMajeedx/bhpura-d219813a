@@ -75,9 +75,11 @@ describe("a slide's look", () => {
     expect(screen.getByRole("heading", { name: "Dark", hidden: true }).style.color).toBe(
       "rgb(245, 230, 200)",
     );
-    expect(screen.getByRole("heading", { name: "Light", hidden: true }).style.color).toBe(
-      "rgb(20, 20, 20)",
-    );
+    // The second slide's headline is not the page's heading (one <h1> a page): read it by its class.
+    const light = [...container.querySelectorAll<HTMLElement>("p.hero-title")].find((p) =>
+      p.textContent?.includes("Light"),
+    )!;
+    expect(light.style.color).toBe("rgb(20, 20, 20)");
     expect(container.innerHTML).toMatch(/linear-gradient\(to top, rgba\(0, 0, 0, 0\.95\)/);
     expect(container.innerHTML).toMatch(/linear-gradient\(to top, rgba\(255, 255, 255, 0\.38\)/);
   });

@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, useStoreModules } from "@/lib/storefront-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { Suspense, lazy, useCallback, useMemo, useRef, useEffect, useLayoutEffect } from "react";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { TrustBar } from "@/components/storefront/TrustBar";
@@ -12,6 +13,7 @@ import { storeLayoutData } from "@/features/storefront-shell/lib/layout-data";
 import { categoryPathParam, parseCategoryPath } from "@/features/storefront-home/lib/category-path";
 import {
   homeGridProducts,
+  homeGridShown,
   homeMerchandising,
   homeSectionBackgrounds,
   promoAreaShows,
@@ -67,7 +69,7 @@ export const Route = createFileRoute("/$slug/")({
 });
 
 function StoreHome() {
-  const { brand, settings } = useStorefront();
+  const { brand, settings, t } = useStorefront();
   const modules = useStoreModules();
   const loaderData = Route.useLoaderData();
   const { cat } = Route.useSearch();
@@ -162,6 +164,9 @@ function StoreHome() {
     [products, activeCategorySlugs, categories, bestSellerRows],
   );
 
+  // The first pieces, then "View all": the home page is not the whole catalogue.
+  const homeGrid = homeGridShown(filtered);
+
   const bestIdsKeys = useMemo(() => {
     return new Set<string>((bestSellerRows ?? []).map((row: any) => String(row.product_id)));
   }, [bestSellerRows]);
@@ -203,7 +208,11 @@ function StoreHome() {
             {settings.show_new_arrivals && (
               <SkeletonMerchandisingSection label={["وصل حديثاً", "New arrivals"]} />
             )}
-            <SkeletonMerchandisingSection label={["الأكثر مبيعاً", "Best sellers"]} />
+            {/* Only the rails the page will draw: a store with best sellers off saw their
+                placeholder appear and vanish. */}
+            {settings.homepage_editorial_sections.best.enabled && (
+              <SkeletonMerchandisingSection label={["الأكثر مبيعاً", "Best sellers"]} />
+            )}
           </div>
           <div className="mt-8 pt-6 sm:pt-8 border-t border-border">
             <SectionHeading fallbackAr="كل المنتجات" fallbackEn="All products" />
@@ -270,10 +279,28 @@ function StoreHome() {
             setActiveCategorySlugs={setActiveCategorySlugs}
           />
           <ProductGrid
-            products={filtered}
+            products={homeGrid.shown}
+            total={filtered.length}
             loading={isLoading}
             categoryEmpty={activeCat !== null}
             onViewAll={() => setActiveCategorySlugs([])}
+            footer={
+              homeGrid.more > 0 && (
+                <div className="flex justify-center pt-6">
+                  <Button asChild variant="outline" size="touch" className="min-w-48 rounded-full">
+                    <Link
+                      to="/$slug/$category"
+                      params={{
+                        slug: brand.slug,
+                        category: activeCategorySlugs[activeCategorySlugs.length - 1] ?? "all",
+                      }}
+                    >
+                      {t(`عرض الكل (${filtered.length})`, `View all (${filtered.length})`)}
+                    </Link>
+                  </Button>
+                </div>
+              )
+            }
           />
         </div>
       </section>
