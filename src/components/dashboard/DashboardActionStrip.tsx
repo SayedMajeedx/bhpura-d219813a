@@ -192,7 +192,7 @@ export function DashboardActionStrip({
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
           >
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>{isAr ? "خيارات بمخزون حرج" : "Critical Stock Options"}</span>
+            <span>{isAr ? "منتجات بمخزون حرج" : "Products low on stock"}</span>
             <span className="font-mono font-bold">({lowStockCount})</span>
           </Link>
         )}

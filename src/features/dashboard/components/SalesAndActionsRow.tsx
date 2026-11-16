@@ -1,16 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { TrendingUp, AlertCircle, CheckCircle2, MessageCircle } from "lucide-react";
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
-import type {
-  DashboardFinancials,
-  ordersNeedingAction,
-} from "@/features/dashboard/lib/dashboard-metrics";
-import { countOf } from "@/lib/arabic-count";
+import type { ordersNeedingAction } from "@/features/dashboard/lib/dashboard-metrics";
+import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figures";
+import { DailySalesChart } from "@/features/dashboard/components/DailySalesChart";
 import { useOrderNumber } from "@/hooks/use-order-number";
 
 /** The 30-day sales trajectory and the orders that need action. */
@@ -19,7 +16,7 @@ export function SalesAndActionsRow({
   canViewFinancials,
   catalogInquiriesQ,
   currency,
-  financials,
+  figures,
   hasSales,
   isAr,
   isCatalog,
@@ -31,7 +28,8 @@ export function SalesAndActionsRow({
   canViewFinancials: boolean;
   catalogInquiriesQ: DashboardData["catalogInquiriesQ"];
   currency: DashboardData["currency"];
-  financials: DashboardFinancials;
+  /** The Reports' figures for the 30 days; null for staff who may not see the finances. */
+  figures: DashboardFigures | null;
   hasSales: boolean;
   isAr: boolean;
   isCatalog: DashboardData["isCatalog"];
@@ -142,68 +140,25 @@ export function SalesAndActionsRow({
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {isAr
-                    ? "المبيعات خلال آخر 30 يومًا"
-                    : "Daily revenue trajectory and completed volume trends."}
+                    ? "صافي المبيعات يومًا بيوم، المتجر والمحلات الشريكة"
+                    : "Net sales day by day, the store's and the partner shops'"}
                 </p>
               </div>
               <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
-                {formatMoney(financials.revenueCurrent, currency, locale)}
-                {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
+                {formatMoney(figures?.sales.total ?? 0, currency, locale)}
+                {isAr ? " · صافي 30 يومًا" : " · net, 30 days"}
               </span>
             </div>
 
             <div className="h-56 min-w-0 w-full overflow-hidden pt-1">
-              {isMounted ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={financials.dailyChartSeries}
-                    margin={{ top: 15, right: 15, left: -10, bottom: 5 }}
-                  >
-                    <defs>
-                      <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10 }}
-                      stroke="#888888"
-                      tickLine={false}
-                    />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
-                    <Tooltip
-                      content={({ active, payload }) => {
-                        if (active && payload && payload.length) {
-                          const data = payload[0].payload;
-                          return (
-                            <div className="rounded-xl border bg-popover/95 p-2.5 shadow-xl backdrop-blur-md text-xs space-y-1">
-                              <p className="font-bold text-foreground">{data.date}</p>
-                              <p className="text-emerald-500 font-mono font-bold">
-                                {formatMoney(Number(data.sales), currency, locale)}
-                              </p>
-                              <p className="text-muted-foreground text-xs">
-                                {countOf(data.orders, "sale", isAr ? "ar" : "en")}
-                              </p>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="#10b981"
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill="url(#salesGrad)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full w-full animate-pulse bg-muted rounded-xl" />
-              )}
+              <DailySalesChart
+                series={figures?.dailySeries ?? []}
+                currency={currency}
+                locale={locale}
+                isAr={isAr}
+                isMounted={isMounted}
+                showPartners={(figures?.sales.partners ?? 0) > 0}
+              />
             </div>
           </Card>
         ))

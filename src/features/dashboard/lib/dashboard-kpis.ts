@@ -1,18 +1,33 @@
 import { MessageCircle, Package, PiggyBank, ReceiptText, TrendingUp, Wallet } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
-import type { DashboardFinancials } from "@/features/dashboard/lib/dashboard-metrics";
+import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figures";
 
 /**
- * The headline cards: WhatsApp inquiries, views, top product and manual sales
- * for catalog stores; otherwise revenue and profit, AOV and gross margin (for
- * people who may see financials) and the sales count.
+ * The headline cards. A catalog store: WhatsApp inquiries, views, top product and sales recorded
+ * by hand. Otherwise, for staff who see the finances, the Reports' own figures for the last 30
+ * days (`dashboardFigures`): net sales with where they came from (the parts add up to it) and the
+ * profit, the average store order, the gross margin; and for everyone the sales, the store's
+ * orders and the partner shops' apart. Each beside the 30 days before.
  */
+
+type Kpi = {
+  label: string;
+  value: string;
+  subValue: string;
+  breakdown?: string | null;
+  deltaPct?: number | null;
+  icon: typeof TrendingUp;
+  color: string;
+  border: string;
+};
+
 export function primaryKpisFor({
   isCatalog,
   isAr,
   catalogInquiries,
-  financials,
+  figures,
+  counts,
   canViewFinancials,
   currency,
   locale,
@@ -21,7 +36,15 @@ export function primaryKpisFor({
   isCatalog: boolean;
   isAr: boolean;
   catalogInquiries: DashboardData["catalogInquiriesQ"]["data"];
-  financials: DashboardFinancials;
+  /** The Reports' figures; null for staff who may not see the finances. */
+  figures: DashboardFigures | null;
+  /** The sales of the period, counted as Reports counts them (anyone may see these). */
+  counts: {
+    storeOrders: number;
+    partnerSales: number;
+    transactions: number;
+    deltaPct?: number | null;
+  };
   canViewFinancials: boolean;
   currency: string;
   locale: string;
@@ -31,117 +54,123 @@ export function primaryKpisFor({
    * was recorded.
    */
   isServices?: boolean;
-}) {
-  const showMargin = !isServices || financials.cogs > 0;
-  return isCatalog
-    ? [
-        {
-          label: isAr ? "استفسارات واتساب" : "WhatsApp Inquiries",
-          value: `${catalogInquiries?.totalInquiries ?? 0}`,
-          subValue: isAr
-            ? `معدل التحويل: ${(catalogInquiries?.inquiryRate ?? 0).toFixed(1)}%`
-            : `Inquiry rate: ${(catalogInquiries?.inquiryRate ?? 0).toFixed(1)}%`,
-          deltaPct: null,
-          icon: MessageCircle,
-          color: "text-emerald-500",
-          border: "hover:border-emerald-500/20",
-        },
-        {
-          label: isAr ? "مشاهدات المنتجات" : "Product Views",
-          value: `${catalogInquiries?.totalViews ?? 0}`,
-          subValue: isAr
-            ? `النقرات: ${catalogInquiries?.totalClicks ?? 0}`
-            : `Clicks: ${catalogInquiries?.totalClicks ?? 0}`,
-          deltaPct: null,
-          icon: TrendingUp,
-          color: "text-sky-500",
-          border: "hover:border-sky-500/20",
-        },
-        {
-          label: isAr ? "أكثر المنتجات استفساراً" : "Top Inquired Product",
-          value:
-            catalogInquiries?.productInquiries?.[0]?.productName ||
-            (isAr ? "لا توجد استفسارات بعد" : "No inquiries yet"),
-          subValue: catalogInquiries?.productInquiries?.[0]
-            ? `${catalogInquiries.productInquiries[0].inquiries} ${isAr ? "استفسار" : "inquiries"}`
-            : isAr
-              ? "عبر واتساب"
-              : "via WhatsApp",
-          icon: Package,
-          color: "text-blue-500",
-          border: "hover:border-blue-500/20",
-        },
-        {
-          label: isAr ? "إجمالي المبيعات المسجلة يدويًا" : "Manual Sales Recorded",
-          value: `${financials.ordersCurrent}`,
-          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
-          deltaPct: financials.ordersDeltaPct,
-          icon: ReceiptText,
-          color: "text-indigo-500",
-          border: "hover:border-indigo-500/20",
-        },
-      ]
-    : [
-        ...(canViewFinancials
-          ? [
-              {
-                label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
-                value: formatMoney(financials.revenue, currency, locale),
-                subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
-                breakdown:
-                  financials.incubatorRevenue > 0
-                    ? isAr
-                      ? `(متجر: ${formatMoney(financials.storeRevenue, currency, locale)} | محلات شركاء: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                      : `(Store: ${formatMoney(financials.storeRevenue, currency, locale)} | Incubators: ${formatMoney(financials.incubatorRevenue, currency, locale)})`
-                    : null,
-                deltaPct: financials.revenueDeltaPct,
-                icon: TrendingUp,
-                color: "text-emerald-500",
-                border: "hover:border-emerald-500/20",
-              },
-              {
-                label: isServices
-                  ? isAr
-                    ? "متوسط قيمة الحجز"
-                    : "Average Booking Value"
-                  : isAr
-                    ? "متوسط قيمة الطلب"
-                    : "Average Order Value (AOV)",
-                value: formatMoney(financials.aovCurrent, currency, locale),
-                subValue: `${isServices ? (isAr ? "إجمالي الحجوزات" : "Total Bookings") : isAr ? "طلبات المتجر" : "Store orders"}: ${financials.storeOrdersCurrent}`,
-                deltaPct: financials.aovDeltaPct,
-                icon: Wallet,
-                color: "text-sky-500",
-                border: "hover:border-sky-500/20",
-              },
-              ...(showMargin
-                ? [
-                    {
-                      label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
-                      value: `${financials.grossMarginPercent.toFixed(1)}%`,
-                      subValue: `${isAr ? "تكلفة البضاعة" : "Cost of goods"}: ${formatMoney(financials.cogs, currency, locale)}`,
-                      icon: PiggyBank,
-                      color: "text-blue-500",
-                      border: "hover:border-blue-500/20",
-                    },
-                  ]
-                : []),
-            ]
-          : []),
-        {
-          label: isServices
-            ? isAr
-              ? "إجمالي الحجوزات المدفوعة"
-              : "Total Paid Bookings"
-            : isAr
-              ? "إجمالي عمليات البيع"
-              : "Total Sales Transactions",
-          value: `${financials.ordersCurrent}`,
-          subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
-          deltaPct: financials.ordersDeltaPct,
-          icon: ReceiptText,
-          color: "text-indigo-500",
-          border: "hover:border-indigo-500/20",
-        },
-      ];
+}): Kpi[] {
+  const money = (value: number) => formatMoney(value, currency, locale);
+  const before = (value: number | null | undefined, format: (v: number) => string) =>
+    value === null || value === undefined
+      ? ""
+      : ` · ${isAr ? "السابقة" : "before"}: ${format(value)}`;
+  const salesCount: Kpi = {
+    label: isServices ? (isAr ? "الحجوزات" : "Bookings") : isAr ? "عمليات البيع" : "Sales",
+    value: `${counts.transactions}`,
+    subValue:
+      counts.partnerSales > 0
+        ? isAr
+          ? `طلبات المتجر ${counts.storeOrders} · المحلات الشريكة ${counts.partnerSales}`
+          : `Store orders ${counts.storeOrders} · partner shops ${counts.partnerSales}`
+        : isAr
+          ? "خلال آخر 30 يومًا"
+          : "Over the last 30 days",
+    deltaPct: counts.deltaPct ?? null,
+    icon: ReceiptText,
+    color: "text-primary",
+    border: "hover:border-primary/20",
+  };
+
+  if (isCatalog) {
+    return [
+      {
+        label: isAr ? "استفسارات واتساب" : "WhatsApp Inquiries",
+        value: `${catalogInquiries?.totalInquiries ?? 0}`,
+        subValue: isAr
+          ? `معدل التحويل: ${(catalogInquiries?.inquiryRate ?? 0).toFixed(1)}%`
+          : `Inquiry rate: ${(catalogInquiries?.inquiryRate ?? 0).toFixed(1)}%`,
+        deltaPct: null,
+        icon: MessageCircle,
+        color: "text-success",
+        border: "hover:border-success/20",
+      },
+      {
+        label: isAr ? "مشاهدات المنتجات" : "Product Views",
+        value: `${catalogInquiries?.totalViews ?? 0}`,
+        subValue: isAr
+          ? `النقرات: ${catalogInquiries?.totalClicks ?? 0}`
+          : `Clicks: ${catalogInquiries?.totalClicks ?? 0}`,
+        deltaPct: null,
+        icon: TrendingUp,
+        color: "text-info",
+        border: "hover:border-info/20",
+      },
+      {
+        label: isAr ? "أكثر المنتجات استفساراً" : "Top Inquired Product",
+        value:
+          catalogInquiries?.productInquiries?.[0]?.productName ||
+          (isAr ? "لا توجد استفسارات بعد" : "No inquiries yet"),
+        subValue: catalogInquiries?.productInquiries?.[0]
+          ? `${catalogInquiries.productInquiries[0].inquiries} ${isAr ? "استفسار" : "inquiries"}`
+          : isAr
+            ? "عبر واتساب"
+            : "via WhatsApp",
+        icon: Package,
+        color: "text-info",
+        border: "hover:border-info/20",
+      },
+      { ...salesCount, label: isAr ? "المبيعات المسجلة يدويًا" : "Sales recorded by hand" },
+    ];
+  }
+
+  if (!canViewFinancials || !figures) return [salesCount];
+
+  const showMargin = !isServices || figures.cogs > 0;
+  const { sales } = figures;
+  const parts = [
+    sales.partners > 0.0005
+      ? `${isAr ? "متجر" : "Store"}: ${money(sales.store)} | ${isAr ? "محلات شريكة" : "Partner shops"}: ${money(sales.partners)}`
+      : null,
+    sales.services > 0.0005 ? `${isAr ? "خدمات" : "Services"}: ${money(sales.services)}` : null,
+  ].filter(Boolean);
+  return [
+    {
+      label: isAr ? "صافي المبيعات وصافي الربح" : "Net sales and net profit",
+      value: money(sales.total),
+      subValue: `${isAr ? "صافي الربح" : "Net profit"}: ${money(figures.netProfit)}${
+        figures.salesBefore
+          ? ` · ${isAr ? "مبيعات الفترة السابقة" : "sales before"}: ${money(figures.salesBefore.total)}`
+          : ""
+      }`,
+      breakdown: parts.length ? parts.join(" | ") : null,
+      deltaPct: figures.salesDeltaPct,
+      icon: TrendingUp,
+      color: "text-success",
+      border: "hover:border-success/20",
+    },
+    {
+      label: isServices
+        ? isAr
+          ? "متوسط قيمة الحجز"
+          : "Average booking"
+        : isAr
+          ? "متوسط طلب المتجر"
+          : "Average store order",
+      value: money(figures.average),
+      subValue: `${isAr ? "صافي، بلا ضريبة ولا توصيل" : "Net, without VAT or delivery"}${before(figures.averageBefore, money)}`,
+      deltaPct: figures.averageDeltaPct,
+      icon: Wallet,
+      color: "text-info",
+      border: "hover:border-info/20",
+    },
+    ...(showMargin
+      ? [
+          {
+            label: isAr ? "هامش مجمل الربح" : "Gross margin",
+            value: `${figures.grossMarginPercent.toFixed(1)}%`,
+            subValue: `${isAr ? "تكلفة البضاعة" : "Cost of goods"}: ${money(figures.cogs)}${before(figures.grossMarginBefore, (v) => `${v.toFixed(1)}%`)}`,
+            icon: PiggyBank,
+            color: "text-info",
+            border: "hover:border-info/20",
+          },
+        ]
+      : []),
+    salesCount,
+  ];
 }
