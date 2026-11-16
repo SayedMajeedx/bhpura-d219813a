@@ -81,7 +81,7 @@ export function statementSheet(input: {
         value: line.label[lang],
         bold: strong,
         total: line.kind === "total",
-        indent: line.kind === "item" || line.kind === "ratio" ? 1 : 0,
+        indent: line.kind === "part" ? 2 : line.kind === "item" || line.kind === "ratio" ? 1 : 0,
       },
       ...line.values.map((v) => figure(line, v)),
       { ...figure(line, line.total), bold: true },

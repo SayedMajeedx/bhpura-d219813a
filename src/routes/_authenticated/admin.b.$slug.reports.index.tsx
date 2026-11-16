@@ -6,7 +6,9 @@ import { defaultReportRange } from "@/lib/reports-view";
 import { useI18n } from "@/lib/i18n";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
-import { overviewProfit } from "@/lib/reporting-compose";
+import { overviewProfit, salesBySource } from "@/lib/reporting-compose";
+import { SALES_WORDS } from "@/lib/report-words";
+import { SalesBySourceCard } from "@/components/reports/SalesBySourceCard";
 import { formatMoney } from "@/lib/format";
 import {
   Banknote,
@@ -95,6 +97,11 @@ function ReportsOverview() {
     previousData?.net_revenue ?? previousData?.paid_order_value ?? 0,
   );
   const { operatingProfit: previousNetProfit } = overviewProfit(previousData);
+  const sales = salesBySource(data);
+  const previousSales = salesBySource(previousData);
+  const words = lang === "ar" ? "ar" : "en";
+  const partnerSaleCount = Number(data?.incubator_sale_count || 0);
+  const storeOrderCount = Math.max(0, Number(data?.paid_order_count || 0) - partnerSaleCount);
   const trend = (current: number, previous: number) =>
     previous === 0
       ? undefined
@@ -170,34 +177,31 @@ function ReportsOverview() {
           )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              title={lang === "ar" ? "المبيعات" : "Sales"}
-              value={money(data.paid_order_value)}
+              title={SALES_WORDS.total[words]}
+              value={money(sales.total)}
               icon={<Banknote />}
-              description={
-                lang === "ar"
-                  ? "كل طلب بيع في الفترة، دُفع أو لم يُدفع بعد"
-                  : "Every order sold in the period, paid or not yet"
-              }
-              trend={trend(
-                Number(data.paid_order_value || 0),
-                Number(previousData?.paid_order_value || 0),
-              )}
+              description={SALES_WORDS.netSalesNote[words]}
+              trend={trend(sales.total, previousSales.total)}
             />
             <KpiCard
-              title={lang === "ar" ? "صافي مبيعات المنتجات" : "Net merchandise"}
-              value={money(data.net_merch_sales)}
-              icon={<ShoppingBag />}
-              accent="emerald"
-              description={lang === "ar" ? "بعد الخصومات" : "After discounts"}
-            />
-            <KpiCard
-              title={lang === "ar" ? "الطلبات المبيعة" : "Orders sold"}
-              value={Number(data.paid_order_count || 0)}
+              title={lang === "ar" ? "طلبات المتجر" : "Store orders"}
+              value={storeOrderCount}
               icon={<PackageCheck />}
               accent="blue"
+              description={
+                shows(modules.incubators, partnerSaleCount)
+                  ? lang === "ar"
+                    ? `ومبيعات المحلات الشريكة: ${partnerSaleCount}`
+                    : `And partner shop sales: ${partnerSaleCount}`
+                  : undefined
+              }
               trend={trend(
-                Number(data.paid_order_count || 0),
-                Number(previousData?.paid_order_count || 0),
+                storeOrderCount,
+                Math.max(
+                  0,
+                  Number(previousData?.paid_order_count || 0) -
+                    Number(previousData?.incubator_sale_count || 0),
+                ),
               )}
             />
             <KpiCard
@@ -206,7 +210,19 @@ function ReportsOverview() {
               icon={<Percent />}
               accent="amber"
             />
+            <KpiCard
+              title={SALES_WORDS.billed[words]}
+              value={money(data.paid_order_value)}
+              icon={<ShoppingBag />}
+              description={SALES_WORDS.billedNote[words]}
+            />
           </div>
+          <SalesBySourceCard
+            sales={sales}
+            currency={data.currency || storeCurrency}
+            lang={words}
+            showPartners={modules.incubators}
+          />
           <div
             className={`grid gap-4 ${shows(modules.shipping, data.shipping_collected) ? "md:grid-cols-3" : "md:grid-cols-2"}`}
           >
@@ -289,10 +305,6 @@ function ReportsOverview() {
                   data.incubator_sales || data.incubator_commissions || data.incubator_receivables,
                 )
                   ? ([
-                      [
-                        lang === "ar" ? "مبيعات محلات الشركاء" : "Partner shop sales",
-                        money(data.incubator_sales),
-                      ],
                       [
                         lang === "ar" ? "عمولات محلات الشركاء" : "Partner shop commissions",
                         money(data.incubator_commissions),
