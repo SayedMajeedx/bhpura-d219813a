@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import type React from "react";
 import { Link } from "@tanstack/react-router";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
@@ -333,7 +334,11 @@ export function OrderQuickInspectSheet({
                   <span className="text-muted-foreground block mb-1">
                     {isAr ? "آخر تحقق" : "Last verified"}
                   </span>
-                  <span>{new Date(order.gateway_verified_at).toLocaleString(locale)}</span>
+                  <span>
+                    {new Date(order.gateway_verified_at).toLocaleString(
+                      westernNumeralLocale(locale),
+                    )}
+                  </span>
                 </div>
               )}
             </div>

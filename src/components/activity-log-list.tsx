@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -88,7 +89,7 @@ export function ActivityLogList({
                     <span className="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full bg-primary" />
                     <p className="text-sm font-medium text-foreground">{displayMsg}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(l.created_at).toLocaleString(locale)}
+                      {new Date(l.created_at).toLocaleString(westernNumeralLocale(locale))}
                     </p>
                   </li>
                 );

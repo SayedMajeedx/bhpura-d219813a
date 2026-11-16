@@ -33,7 +33,10 @@ export type CategoryMonth = {
   category: string;
   /** Spent in the month. */
   spent: number;
-  /** The average of the three months before it (a month with nothing counts as nothing). */
+  /**
+   * The average of the three months before it, counting only months since the store's first
+   * recorded expense (a month in that time with nothing counts as nothing).
+   */
   average: number;
   /** Against that average, as a share (+0.25 is a quarter more); null with no average. */
   change: number | null;
@@ -50,7 +53,18 @@ export function categoryMonths(
   storeCurrency: string,
   budgets: readonly Budget[] = [],
 ): CategoryMonth[] {
-  const before = [shift(month, -1), shift(month, -2), shift(month, -3)];
+  // Only the months since the store recorded its first expense: a month before it kept any is
+  // not a month it spent nothing in. Pura's rent, the same 50.000 since August, read "+50%" in
+  // October against an average that counted July as zero (2026-11-16).
+  const kept = expenses
+    .filter((e) => !e.currency || e.currency === storeCurrency)
+    .map((e) => monthKey(e.expense_date))
+    .filter(Boolean)
+    .sort();
+  const firstMonth = kept[0] ?? month;
+  const before = [shift(month, -1), shift(month, -2), shift(month, -3)].filter(
+    (m) => m >= firstMonth,
+  );
   const names = new Map<string, string>();
   const spent = new Map<string, number>();
   const earlier = new Map<string, number>();
@@ -73,7 +87,7 @@ export function categoryMonths(
   return [...names.entries()]
     .map(([k, category]): CategoryMonth => {
       const s = spent.get(k) ?? 0;
-      const average = (earlier.get(k) ?? 0) / 3;
+      const average = before.length ? (earlier.get(k) ?? 0) / before.length : 0;
       const budget = budgetOf.get(k)?.monthly_amount ?? null;
       return {
         category,

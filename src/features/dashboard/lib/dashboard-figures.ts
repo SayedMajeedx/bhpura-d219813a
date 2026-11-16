@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { countsAsSold } from "@/lib/data/orders/sold-orders";
 import { overviewProfit, salesBySource, type ComposedOverviewRow } from "@/lib/reporting-compose";
 import { splitSalesBucket } from "@/lib/reports-view";
@@ -67,7 +68,7 @@ export function dailySeries(
     const day = byDay.get(dayKey(d)) ?? { store: 0, partner: 0, orders: 0 };
     return {
       key: dayKey(d),
-      date: d.toLocaleDateString(locale, { day: "numeric", month: "short" }),
+      date: d.toLocaleDateString(westernNumeralLocale(locale), { day: "numeric", month: "short" }),
       store: day.store,
       partner: day.partner,
       sales: day.store + day.partner,

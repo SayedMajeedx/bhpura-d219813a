@@ -55,6 +55,14 @@ describe("the month by category", () => {
     expect(rows[1]).toMatchObject({ spent: 0, budget: 400, over: false, change: null });
   });
 
+  it("counts only the months since the store's first expense", () => {
+    // The same rent since August read "+50%" in October: July, before the store kept any
+    // expense, counted as a month it spent nothing in.
+    const [october] = categoryMonths(expenses, "2026-10", "BHD");
+    expect(october).toMatchObject({ category: "Rent", spent: 50, average: 50, change: 0 });
+    expect(categoryMonths(expenses, "2026-08", "BHD")[0].change).toBeNull();
+  });
+
   it("leaves a category out of a month it spent nothing in and has no budget for", () => {
     expect(categoryMonths(expenses, "2026-11", "BHD").map((r) => r.category)).toEqual([
       "Marketing",

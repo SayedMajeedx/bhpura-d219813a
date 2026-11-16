@@ -85,6 +85,15 @@ function countMatches(pattern: RegExp, filter?: (rel: string) => boolean): numbe
 }
 
 describe("design system guardrails", () => {
+  it("writes dates with Western digits: a locale passed to toLocale*String goes through westernNumeralLocale", () => {
+    // A page's locale "ar-BH" wrote the partner shop's sale dates as ١٤/١١/٢٠٢٦ (2026-11-16);
+    // formatDate and formatMoney already turn it to Western digits, a direct call did not.
+    const offenders = FILES.flatMap(({ rel, source }) =>
+      [...source.matchAll(/toLocale(?:Date|Time)?String\(\s*(locale|loc)\b/g)].map(() => rel),
+    );
+    expect(offenders).toEqual([]);
+  });
+
   it("crops every upload with a named preset, never a hand-picked aspect", () => {
     // The opening tag, skipping arrow functions in its props. A preset ties the crop ratio to the output size and to the surface that
     // renders it (tests/image-crop-system.test.tsx), so they cannot drift.

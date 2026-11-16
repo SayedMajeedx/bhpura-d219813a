@@ -206,6 +206,14 @@ export function saleCanBeReversed(sale: Pick<Sale, "status" | "paid_amount">): b
  * What the store keeps from a sale after the pieces' cost and their packaging, or null when
  * the sale carries no cost (an older sale, or a reader who may not see costs).
  */
+/**
+ * A sale whose piece carries no cost: no cost was entered for the product, or it was entered
+ * after the sale. Its profit would read as the whole price (Pura's "side tie" dresses, 2026-11-16).
+ */
+export function saleMissingCost(sale: Sale): boolean {
+  return !(Number(sale.product_cost_snapshot || 0) > 0);
+}
+
 export function saleProfit(sale: Sale): number | null {
   if (sale.product_cost_snapshot == null) return null;
   return fils(

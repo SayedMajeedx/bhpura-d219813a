@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -111,7 +112,7 @@ export function AttentionList({
                   {getOrderCustomerName(order) || (isAr ? "عميل" : "Customer")}
                 </span>
                 <span className="block text-xs text-muted-foreground">
-                  {new Date(order.created_at).toLocaleDateString(locale, {
+                  {new Date(order.created_at).toLocaleDateString(westernNumeralLocale(locale), {
                     day: "numeric",
                     month: "short",
                   })}
