@@ -4,7 +4,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
+    PostgrestVersion: "14.18";
   };
   public: {
     Tables: {
@@ -3502,17 +3502,17 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: "expenses_recurring_source_id_fkey";
-            columns: ["recurring_source_id"];
-            isOneToOne: false;
-            referencedRelation: "expenses";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "expenses_brand_id_fkey";
             columns: ["brand_id"];
             isOneToOne: false;
             referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "expenses_recurring_source_id_fkey";
+            columns: ["recurring_source_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
             referencedColumns: ["id"];
           },
           {
@@ -9103,11 +9103,11 @@ export type Database = {
           name_ar: string;
           name_en: string;
           pieces: string;
-          terms_ar: string;
-          terms_en: string;
           product_ids: string[];
           regions: string[];
           starts_at: string | null;
+          terms_ar: string;
+          terms_en: string;
           updated_at: string;
         };
         Insert: {
@@ -9134,11 +9134,11 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           pieces?: string;
-          terms_ar?: string;
-          terms_en?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;
+          terms_ar?: string;
+          terms_en?: string;
           updated_at?: string;
         };
         Update: {
@@ -9165,11 +9165,11 @@ export type Database = {
           name_ar?: string;
           name_en?: string;
           pieces?: string;
-          terms_ar?: string;
-          terms_en?: string;
           product_ids?: string[];
           regions?: string[];
           starts_at?: string | null;
+          terms_ar?: string;
+          terms_en?: string;
           updated_at?: string;
         };
         Relationships: [
@@ -11256,6 +11256,15 @@ export type Database = {
         Args: { p_booking_id: string };
         Returns: undefined;
       };
+      expenses_materialize_recurring: {
+        Args: { p_expense?: string };
+        Returns: number;
+      };
+      expenses_recurring_date: {
+        Args: { p_period: string; p_start: string; p_step: number };
+        Returns: string;
+      };
+      expenses_recurring_today: { Args: never; Returns: string };
       expire_gift_card_purchases: { Args: never; Returns: number };
       expire_loyalty_points: { Args: never; Returns: number };
       finish_gift_card_purchase_event: {
@@ -11982,15 +11991,6 @@ export type Database = {
             };
             Returns: boolean;
           };
-      record_checkout_step: {
-        Args: {
-          p_problem: string | null;
-          p_session: string;
-          p_slug: string;
-          p_step: number;
-        };
-        Returns: undefined;
-      };
       record_cash_account_entry: {
         Args: {
           p_account_type: string;
@@ -12000,6 +12000,15 @@ export type Database = {
           p_notes?: string;
         };
         Returns: string;
+      };
+      record_checkout_step: {
+        Args: {
+          p_problem: string | null;
+          p_session: string;
+          p_slug: string;
+          p_step: number;
+        };
+        Returns: undefined;
       };
       record_incubator_payment: {
         Args: {
@@ -12056,7 +12065,7 @@ export type Database = {
           }
         | {
             Args: {
-              p_campaign: string | null;
+              p_campaign: string;
               p_session: string;
               p_slug: string;
               p_source: string;
@@ -13032,18 +13041,9 @@ export type Database = {
         Args: { p_brand_slug: string };
         Returns: Json;
       };
-      storefront_currency_display: {
-        Args: { p_brand_slug: string };
-        Returns: Json;
-      };
-      storefront_delivery_fee: {
-        Args: {
-          p_brand_id: string;
-          p_country_code: string;
-          p_quantity: number;
-          p_zone_id: string;
-        };
-        Returns: number;
+      storefront_campaign_word: {
+        Args: { p_campaign: string };
+        Returns: string;
       };
       storefront_checkout_problems: {
         Args: { p_brand_id: string; p_from: string; p_to: string };
@@ -13062,6 +13062,19 @@ export type Database = {
           pressed: number;
           ready: number;
         }[];
+      };
+      storefront_currency_display: {
+        Args: { p_brand_slug: string };
+        Returns: Json;
+      };
+      storefront_delivery_fee: {
+        Args: {
+          p_brand_id: string;
+          p_country_code: string;
+          p_quantity: number;
+          p_zone_id: string;
+        };
+        Returns: number;
       };
       storefront_funnel: {
         Args: { p_brand_id: string; p_from: string; p_to: string };
