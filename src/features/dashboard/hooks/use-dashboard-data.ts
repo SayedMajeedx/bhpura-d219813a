@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { isCatalogMode } from "@/lib/storefront-mode";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
-import { expensesKeys, expensesQueries } from "@/lib/data/expenses";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 import { customersKeys, customersQueries } from "@/lib/data/customers";
@@ -11,10 +10,10 @@ import { reportingKeys, reportingQueries } from "@/lib/data/reporting";
 import { returnsQueries } from "@/lib/data/returns";
 
 /**
- * Everything the dashboard reads: settings, the Reports accounting rows for
- * the last 30 days and the 30 before, catalog inquiries, products, variants,
- * packaging, customers, orders, expenses, pending returns and incubator
- * sales, kept fresh by realtime invalidation.
+ * Everything the dashboard reads: settings, the Reports accounting rows and daily sales for the
+ * last 30 days (and the overview of the 30 before), catalog inquiries, products, variants,
+ * customers, orders, pending returns and partner sales, kept fresh by realtime invalidation. Its
+ * money figures are the Reports' own; it no longer loads expenses or packaging to add them up.
  */
 export function useDashboardData({
   brandId,
@@ -79,17 +78,24 @@ export function useDashboardData({
     refetchOnWindowFocus: false,
   });
 
+  // The thirty days' net sales day by day (the Reports sales page's own series).
+  const salesSeriesQ = useQuery({
+    ...reportingQueries.sales(
+      slug,
+      { from: dashboardPeriods.start, to: dashboardPeriods.end },
+      "day",
+      reportingTimezone,
+      false,
+    ),
+    staleTime: 60_000,
+    enabled: Boolean(canViewFinancials && slug),
+    refetchOnWindowFocus: false,
+  });
+
   // 2-3. The catalog (shared with inventory, orders and expenses)
   const productsQ = useQuery({ ...catalogQueries.products(brandId), refetchOnWindowFocus: false });
 
   const variantsQ = useQuery({ ...catalogQueries.variants(brandId), refetchOnWindowFocus: false });
-
-  const bomItemsQ = useQuery({ ...catalogQueries.bomItems(brandId), refetchOnWindowFocus: false });
-
-  const packagingMaterialsQ = useQuery({
-    ...catalogQueries.packagingMaterials(brandId),
-    refetchOnWindowFocus: false,
-  });
 
   // 4. Fetch all customers
   const customersQ = useQuery({
@@ -103,13 +109,6 @@ export function useDashboardData({
   // 6. Recent 5 orders for the operational feed
   const recentOrdersQ = useQuery({
     ...ordersQueries.recent(brandId, 5),
-    refetchOnWindowFocus: false,
-  });
-
-  // 7. Manual expenses (shared with the expenses page and reports)
-  const expensesQ = useQuery({
-    ...expensesQueries.list(brandId),
-    enabled: Boolean(canViewFinancials && brandId),
     refetchOnWindowFocus: false,
   });
 
@@ -131,7 +130,9 @@ export function useDashboardData({
       { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "products", brandId, queryKey: catalogKeys.products(brandId) },
       { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },
-      { table: "expenses", brandId, queryKey: expensesKeys.all(brandId) },
+      // A new order, expense or return moves the Reports figures the cards read.
+      { table: "orders", brandId, queryKey: reportingKeys.all(slug) },
+      { table: "expenses", brandId, queryKey: reportingKeys.overviews(slug) },
       { table: "return_requests", brandId, queryKey: reportingKeys.overviews(slug) },
       { table: "product_bom_items", brandId, queryKey: reportingKeys.overviews(slug) },
       { table: "packaging_materials", brandId, queryKey: reportingKeys.overviews(slug) },
@@ -149,7 +150,7 @@ export function useDashboardData({
     recentOrdersQ.isLoading ||
     incubatorSalesQ.isLoading ||
     (canViewFinancials
-      ? expensesQ.isLoading || reportingOverviewQ.isLoading || previousReportingOverviewQ.isLoading
+      ? reportingOverviewQ.isLoading || previousReportingOverviewQ.isLoading
       : false);
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
   const accountingRow: any =
@@ -170,17 +171,16 @@ export function useDashboardData({
     reportingOverviewQ,
     productsQ,
     variantsQ,
-    bomItemsQ,
-    packagingMaterialsQ,
     customersQ,
     ordersQ,
     recentOrdersQ,
-    expensesQ,
     pendingReturnsQ,
     incubatorSalesQ,
     isLoading,
     accountingRow,
     previousAccountingRow,
+    salesSeriesQ,
+    periodStart: dashboardPeriods.start,
   };
 }
 

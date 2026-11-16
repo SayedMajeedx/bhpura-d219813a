@@ -1,15 +1,15 @@
-import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { isSoldFromStock } from "@/lib/product-availability";
 import { countsAsSold } from "@/lib/data/orders/sold-orders";
+import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
+import { customerGroup } from "@/features/customers/lib/customer-value";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 
 /**
- * The dashboard's figures, computed from the rows `useDashboardData` loads.
- * Headline financials come from the Reports accounting rows when present, so
- * the dashboard and Reports agree; the order-based sums are the fallback and
- * feed the daily chart.
+ * The dashboard's operational readings from the rows `useDashboardData` loads: the orders that
+ * count as sold, what needs action, customers' groups and stock health. Its money figures are
+ * the Reports' own (`dashboard-figures.ts`), never added up here.
  */
 
 type Rows<K extends keyof DashboardData> = DashboardData[K] extends { data: infer T }
@@ -52,308 +52,35 @@ export function appointmentsToCompleteCount(orders: DashboardOrders): number {
 }
 
 /**
- * Revenue, COGS (product, packaging BOM, incubator), OpEx (expenses, payment
- * fees, incubator commissions), profit and margin for the last 30 days, the
- * change against the 30 days before, and the daily sales series.
+ * VIPs and customers at risk by the customers page's own rule (`buildCustomerCrmStats`,
+ * `customerGroup`: the store's VIP amount in its own currency), with the VIPs gone quiet for
+ * 60 days. The dashboard once had its own rule: over 250 in any currency.
  */
-export function dashboardFinancials({
-  validRevenueOrders,
-  expenseRows,
-  incubatorSaleRows,
-  variantRows,
-  productRows,
-  bomItemRows,
-  packagingMaterialRows,
-  settings,
-  accountingRow,
-  previousAccountingRow,
-  locale,
-  now,
-}: {
-  validRevenueOrders: DashboardOrders;
-  expenseRows: Rows<"expensesQ">;
-  incubatorSaleRows: Rows<"incubatorSalesQ">;
-  variantRows: Rows<"variantsQ">;
-  productRows: Rows<"productsQ">;
-  bomItemRows: Rows<"bomItemsQ">;
-  packagingMaterialRows: Rows<"packagingMaterialsQ">;
-  settings: DashboardData["businessSettings"]["data"];
-  accountingRow: DashboardData["accountingRow"];
-  previousAccountingRow: DashboardData["previousAccountingRow"];
-  locale: string;
-  now: Date;
-}) {
-  const allOrders = validRevenueOrders;
-  const currentStart = new Date(now);
-  currentStart.setDate(currentStart.getDate() - 29);
-  currentStart.setHours(0, 0, 0, 0);
-  const priorStart = new Date(currentStart);
-  priorStart.setDate(priorStart.getDate() - 30);
-  const orders = allOrders.filter((o) => {
-    const timestamp = Date.parse(o.created_at);
-    return (
-      Number.isFinite(timestamp) &&
-      timestamp >= currentStart.getTime() &&
-      timestamp <= now.getTime()
-    );
-  });
-  const expenses = expenseRows.filter((expense: any) => {
-    const rawDate = expense.expense_date || expense.created_at;
-    const timestamp = rawDate ? Date.parse(rawDate) : NaN;
-    return (
-      Number.isFinite(timestamp) &&
-      timestamp >= currentStart.getTime() &&
-      timestamp <= now.getTime()
-    );
-  });
-  const allIncubatorSales = incubatorSaleRows;
-  const incubatorSales = allIncubatorSales.filter((sale: any) => {
-    const timestamp = Date.parse(sale.sold_at);
-    return (
-      Number.isFinite(timestamp) &&
-      timestamp >= currentStart.getTime() &&
-      timestamp <= now.getTime()
-    );
-  });
-  const variants = variantRows;
-
-  const variantCostMap = new Map<string, number>();
-  variants.forEach((v) => {
-    variantCostMap.set(v.id, Number(v.cost_price || 0));
-  });
-
-  const orderRevenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-  const incubatorRevenue = incubatorSales.reduce(
-    (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
-    0,
-  );
-  const revenue = orderRevenue + incubatorRevenue;
-
-  let productCogs = 0;
-  let packagingBomCogs = 0;
-  const prods = productRows;
-  const boms = bomItemRows;
-  const mats = packagingMaterialRows;
-
-  orders.forEach((order) => {
-    const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up"].includes(
-      String(order.fulfillment_status || order.status || "").toLowerCase(),
-    );
-    (order.order_items ?? []).forEach((item: any) => {
-      const itemCost =
-        item.unit_cost != null && !isNaN(Number(item.unit_cost))
-          ? Number(item.unit_cost)
-          : (variantCostMap.get(item.variant_id) ?? 0);
-      const qty = Number(item.quantity || 0);
-
-      productCogs += itemCost * qty;
-      if (isFulfilled && (settings as any)?.bom_enabled !== false) {
-        const pkgCost = getItemPackagingCost(item, prods, variants, boms, mats);
-        packagingBomCogs += pkgCost * qty;
-      }
-    });
-  });
-
-  const incubatorCogs = incubatorSales.reduce(
-    (sum: number, sale: any) =>
-      sum + Number(sale.product_cost_snapshot || 0) + Number(sale.packaging_cost_snapshot || 0),
-    0,
-  );
-  const cogs = productCogs + packagingBomCogs + incubatorCogs;
-
-  const cardFeePercent = Number((settings as any)?.card_processing_fee ?? 0);
-  const benefitFeePercent = Number((settings as any)?.benefit_processing_fee ?? 0);
-
-  let paymentProcessingFees = 0;
-  orders.forEach((o) => {
-    const totalVal = Number(o.total || 0);
-    if (o.payment_method === "card") {
-      paymentProcessingFees += totalVal * (cardFeePercent / 100);
-    } else if (o.payment_method === "benefit") {
-      paymentProcessingFees += totalVal * (benefitFeePercent / 100);
-    }
-  });
-
-  // OpEx excludes bulk packaging asset purchases (expense_type === 'cogs')
-  const manualOpex = expenses
-    .filter((e: any) => (e.expense_type || "opex") === "opex")
-    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-
-  const incubatorCommissions = incubatorSales.reduce(
-    (sum: number, sale: any) => sum + Number(sale.commission_amount || 0),
-    0,
-  );
-  const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
-  const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
-  const reportMerchRevenue = Number(
-    accountingRow?.net_merchandise_after_returns ?? accountingRow?.net_merch_sales ?? revenue,
-  );
-  const reportCogs = Number(
-    accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs,
-  );
-  const reportOpex = Number(accountingRow?.expenses ?? opex);
-  const grossProfit = reportMerchRevenue - reportCogs;
-  const netProfit = grossProfit - reportOpex;
-  const grossMarginPercent = reportMerchRevenue > 0 ? (grossProfit / reportMerchRevenue) * 100 : 0;
-  const current30Orders = orders;
-  const prior30Orders = allOrders.filter((o) => {
-    const timestamp = Date.parse(o.created_at);
-    return (
-      Number.isFinite(timestamp) &&
-      timestamp >= priorStart.getTime() &&
-      timestamp < currentStart.getTime()
-    );
-  });
-  const priorIncubatorSales = allIncubatorSales.filter((sale: any) => {
-    const timestamp = Date.parse(sale.sold_at);
-    return (
-      Number.isFinite(timestamp) &&
-      timestamp >= priorStart.getTime() &&
-      timestamp < currentStart.getTime()
-    );
-  });
-  const revenueWithIncubators = reportRevenue;
-  const revenuePrior = Number(
-    previousAccountingRow?.net_revenue ??
-      prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
-        priorIncubatorSales.reduce(
-          (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
-          0,
-        ),
-  );
-  const revenueDeltaPct =
-    revenuePrior > 0 ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100 : null;
-
-  const ordersCurrent =
-    current30Orders.length +
-    incubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
-  const ordersPrior =
-    prior30Orders.length +
-    priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
-  const ordersDeltaPct =
-    ordersPrior > 0 ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100 : null;
-
-  // The average order is the store's own orders: a partner shop's sale is a piece sold through
-  // it, not an order of the store's, and mixed in it read 17.062 under "orders: 13" for a store
-  // with 8 orders of its own (the admin audit of 2026-11-12).
-  const storeOrdersCurrent = current30Orders.length;
-  const storeRevenuePrior = prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-  const aovCurrent = storeOrdersCurrent > 0 ? orderRevenue / storeOrdersCurrent : 0;
-  const aovPrior = prior30Orders.length > 0 ? storeRevenuePrior / prior30Orders.length : 0;
-  const aovDeltaPct = aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
-
-  // 30-Day Daily Sales Time Series Chart Data
-  const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date(currentStart);
-    d.setDate(currentStart.getDate() + (29 - i));
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const label = d.toLocaleDateString(locale, { day: "numeric", month: "short" });
-    chartDataMap.set(key, { date: label, sales: 0, orders: 0 });
-  }
-
-  orders.forEach((o) => {
-    if (!o.created_at) return;
-    const d = new Date(o.created_at);
-    if (isNaN(d.getTime())) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    if (chartDataMap.has(key)) {
-      const item = chartDataMap.get(key)!;
-      item.sales += Number(o.total || 0);
-      item.orders += 1;
-    }
-  });
-  incubatorSales.forEach((sale: any) => {
-    const d = new Date(sale.sold_at);
-    if (isNaN(d.getTime())) return;
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const item = chartDataMap.get(key);
-    if (item) {
-      item.sales += Number(sale.gross_amount || 0);
-      item.orders += Number(sale.quantity || 0);
-    }
-  });
-
-  const dailyChartSeries = Array.from(chartDataMap.values());
-
-  return {
-    revenue: reportRevenue,
-    storeRevenue: orderRevenue,
-    incubatorRevenue,
-    cogs: reportCogs,
-    opex: reportOpex,
-    totalExpenses: reportCogs + reportOpex,
-    netProfit,
-    grossMarginPercent,
-    revenueCurrent: revenueWithIncubators,
-    revenueDeltaPct,
-    ordersCurrent,
-    ordersDeltaPct,
-    storeOrdersCurrent,
-    aovCurrent,
-    aovDeltaPct,
-    dailyChartSeries,
-  };
-}
-
-export type DashboardFinancials = ReturnType<typeof dashboardFinancials>;
-
-/** VIPs (lifetime spend over 250) and customers idle for 60 days, with the idle VIPs. */
 export function customerSegments(
   validRevenueOrders: DashboardOrders,
   customerRows: Rows<"customersQ">,
   now: Date,
+  currency: string,
 ) {
-  const orders = validRevenueOrders;
-  const customers = customerRows;
-
-  const nowMs = now.getTime();
+  const stats = buildCustomerCrmStats(validRevenueOrders, now.getTime(), currency);
   const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-  const ordersByCustomer = new Map<string, typeof orders>();
-  orders.forEach((o) => {
-    if (o.customer_id) {
-      if (!ordersByCustomer.has(o.customer_id)) {
-        ordersByCustomer.set(o.customer_id, []);
-      }
-      ordersByCustomer.get(o.customer_id)!.push(o);
-    }
-  });
-
   let vipCount = 0;
   let churnRiskCount = 0;
   const churnRiskVips: Array<{ id: string; name: string }> = [];
-
-  customers.forEach((c) => {
-    const custOrders = ordersByCustomer.get(c.id) ?? [];
-    const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-    let lastOrderMs = 0;
-    custOrders.forEach((o) => {
-      const ms = new Date(o.created_at).getTime();
-      if (ms > lastOrderMs) lastOrderMs = ms;
-    });
-
-    const isVip = lifetimeSpend > 250;
-    const isIdle60 = lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs;
-
-    if (isVip) {
+  for (const customer of customerRows) {
+    const own = stats.get(customer.id);
+    const group = customerGroup(own);
+    if (group === "vip") {
       vipCount++;
-      if (isIdle60) {
-        churnRiskVips.push({ id: c.id, name: c.name });
+      const last = own?.lastOrderDate ? Date.parse(own.lastOrderDate) : 0;
+      if (last > 0 && now.getTime() - last > sixtyDaysMs) {
+        churnRiskVips.push({ id: customer.id, name: customer.name });
       }
-    }
-
-    if (isIdle60) {
+    } else if (group === "churn") {
       churnRiskCount++;
     }
-  });
-
-  return {
-    vipCount,
-    churnRiskCount,
-    churnRiskVips,
-  };
+  }
+  return { vipCount, churnRiskCount: churnRiskCount + churnRiskVips.length, churnRiskVips };
 }
 
 /**
@@ -421,10 +148,11 @@ export function inventoryIntelFor({
     return qtySold / daysElapsed;
   };
 
+  // Dead stock is pieces on the shelf that did not sell: a sold-out size is not dead stock.
   let deadStockCount = 0;
   variants.forEach((v) => {
     const qtySold = salesByVariant.get(v.id) || 0;
-    if (qtySold === 0) {
+    if (qtySold === 0 && getVariantStock(v) > 0) {
       deadStockCount++;
     }
   });

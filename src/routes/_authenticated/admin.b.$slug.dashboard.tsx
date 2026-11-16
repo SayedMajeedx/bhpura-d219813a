@@ -28,7 +28,6 @@ import { lowStockLevel } from "@/lib/inventory-health";
 import { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
 import {
   customerSegments,
-  dashboardFinancials,
   inventoryIntelFor,
   ordersNeedingAction,
   ordersToPrepareCount,
@@ -37,6 +36,11 @@ import {
 } from "@/features/dashboard/lib/dashboard-metrics";
 import { isServicesProfile } from "@/lib/store-profile";
 import { primaryKpisFor } from "@/features/dashboard/lib/dashboard-kpis";
+import {
+  dashboardFigures,
+  salesCountsSince,
+  type SeriesRow,
+} from "@/features/dashboard/lib/dashboard-figures";
 import { OnboardingChecklist } from "@/features/dashboard/components/OnboardingChecklist";
 import { DashboardKpiCards } from "@/features/dashboard/components/DashboardKpiCards";
 import { SalesAndActionsRow } from "@/features/dashboard/components/SalesAndActionsRow";
@@ -88,17 +92,16 @@ function Dashboard() {
     reportingOverviewQ,
     productsQ,
     variantsQ,
-    bomItemsQ,
-    packagingMaterialsQ,
     customersQ,
     ordersQ,
     recentOrdersQ,
-    expensesQ,
     pendingReturnsQ,
     incubatorSalesQ,
     isLoading,
     accountingRow,
     previousAccountingRow,
+    salesSeriesQ,
+    periodStart,
   } = useDashboardData({ brandId, slug, canViewFinancials });
 
   // The orders that count as sold, as the Reports overview counts them
@@ -110,42 +113,48 @@ function Dashboard() {
     [ordersQ.data, hasMadeToOrder],
   );
 
-  // Financial intelligence aggregations
-  const financials = useMemo(
+  // The money figures are the Reports' own for the 30 days (null without the finances).
+  const figures = useMemo(
     () =>
-      dashboardFinancials({
-        validRevenueOrders,
-        expenseRows: expensesQ.data ?? [],
-        incubatorSaleRows: incubatorSalesQ.data ?? [],
-        variantRows: variantsQ.data ?? [],
-        productRows: productsQ.data ?? [],
-        bomItemRows: bomItemsQ.data ?? [],
-        packagingMaterialRows: packagingMaterialsQ.data ?? [],
-        settings: businessSettings.data,
-        accountingRow,
-        previousAccountingRow,
-        locale,
-        now: new Date(),
-      }),
+      canViewFinancials && accountingRow
+        ? dashboardFigures({
+            row: accountingRow,
+            previous: previousAccountingRow,
+            series:
+              (salesSeriesQ.data as { timeseries?: SeriesRow[] } | undefined)?.timeseries ?? [],
+            start: periodStart,
+            locale,
+            currency,
+          })
+        : null,
     [
-      validRevenueOrders,
-      expensesQ.data,
-      incubatorSalesQ.data,
-      variantsQ.data,
-      productsQ.data,
-      bomItemsQ.data,
-      packagingMaterialsQ.data,
-      businessSettings.data,
+      canViewFinancials,
       accountingRow,
       previousAccountingRow,
+      salesSeriesQ.data,
+      periodStart,
       locale,
+      currency,
     ],
+  );
+  // How many sales the 30 days hold, counted as Reports counts them (anyone may see it).
+  const counts = useMemo(
+    () =>
+      figures
+        ? {
+            storeOrders: figures.storeOrders,
+            partnerSales: figures.partnerSales,
+            transactions: figures.transactions,
+            deltaPct: figures.transactionsDeltaPct,
+          }
+        : salesCountsSince(validRevenueOrders, incubatorSalesQ.data ?? [], periodStart, new Date()),
+    [figures, validRevenueOrders, incubatorSalesQ.data, periodStart],
   );
 
   // CRM segmentation distribution
   const crmStats = useMemo(
-    () => customerSegments(validRevenueOrders, customersQ.data ?? [], new Date()),
-    [validRevenueOrders, customersQ.data],
+    () => customerSegments(validRevenueOrders, customersQ.data ?? [], new Date(), currency),
+    [validRevenueOrders, customersQ.data, currency],
   );
 
   // Inventory velocity & stock depletion calculations
@@ -206,7 +215,7 @@ function Dashboard() {
   // Sales & Product status for guided onboarding milestones
   const totalOrdersCount = ordersQ.data?.length ?? 0;
   const hasRealSales =
-    totalOrdersCount > 0 || financials.ordersCurrent > 0 || validRevenueOrders.length > 0;
+    totalOrdersCount > 0 || counts.transactions > 0 || validRevenueOrders.length > 0;
   const hasSales = hasRealSales;
   const hasProducts = (productsQ.data?.length ?? 0) > 0;
 
@@ -226,7 +235,8 @@ function Dashboard() {
     isCatalog,
     isAr,
     catalogInquiries: catalogInquiriesQ.data,
-    financials,
+    figures,
+    counts,
     canViewFinancials,
     currency,
     locale,
@@ -240,7 +250,7 @@ function Dashboard() {
         lang={isAr ? "ar" : "en"}
         slug={slug}
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
-        salesTransactionCount={financials.ordersCurrent}
+        salesTransactionCount={counts.transactions}
         periodLabel={reportingPeriodLabel}
         isCatalog={isCatalog}
         inquiryCount={catalogInquiriesQ.data?.totalInquiries ?? 0}
@@ -360,7 +370,7 @@ function Dashboard() {
             canViewFinancials={canViewFinancials}
             catalogInquiriesQ={catalogInquiriesQ}
             currency={currency}
-            financials={financials}
+            figures={figures}
             hasSales={hasSales}
             isAr={isAr}
             isCatalog={isCatalog}
@@ -387,7 +397,7 @@ function Dashboard() {
       {activeScope === "sales_series" && (
         <SalesSeriesView
           currency={currency}
-          financials={financials}
+          figures={figures}
           isAr={isAr}
           isMounted={isMounted}
           locale={locale}

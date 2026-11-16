@@ -13,7 +13,7 @@ const client = {
 };
 vi.mock("../src/integrations/supabase/client", () => client);
 vi.mock("@/integrations/supabase/client", () => client);
-const { dashboardFinancials } = await import("../src/features/dashboard/lib/dashboard-metrics");
+const { salesCountsSince } = await import("../src/features/dashboard/lib/dashboard-figures");
 const { fetchReportingOverview } = await import("../src/lib/reporting.functions");
 
 describe("incubator sales reporting and packaging contracts", () => {
@@ -35,37 +35,21 @@ describe("incubator sales reporting and packaging contracts", () => {
     expect(migration).toContain("stock_quantity = stock_quantity + r.quantity");
   });
 
-  it("merges confirmed incubator sales into the dashboard revenue", () => {
+  it("counts the partner shops' sales of the dashboard's 30 days apart from the store's orders", () => {
     const now = new Date(2026, 8, 25, 12);
     const daysAgo = (days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
-    const financials = dashboardFinancials({
-      validRevenueOrders: [
-        {
-          id: "o1",
-          created_at: daysAgo(1),
-          total: 100,
-          status: "delivered",
-          payment_status: "paid",
-          payment_method: "cod",
-          order_items: [],
-        },
-      ],
-      expenseRows: [],
-      incubatorSaleRows: [
-        { sold_at: daysAgo(3), gross_amount: 40 },
-        { sold_at: daysAgo(90), gross_amount: 99 },
-      ],
-      variantRows: [],
-      productRows: [],
-      bomItemRows: [],
-      packagingMaterialRows: [],
-      settings: { business_name: "", currency: "BHD", storefront_mode: "shop" },
-      accountingRow: undefined,
-      previousAccountingRow: undefined,
-      locale: "en-US",
-      now,
-    } as unknown as Parameters<typeof dashboardFinancials>[0]);
-    expect(financials).toMatchObject({ storeRevenue: 100, incubatorRevenue: 40, revenue: 140 });
+    const start = new Date(now.getTime() - 29 * 86_400_000);
+    expect(
+      salesCountsSince(
+        [{ status: "delivered", created_at: daysAgo(1) }],
+        [
+          { sold_at: daysAgo(3), quantity: 2 },
+          { sold_at: daysAgo(90), quantity: 9 },
+        ],
+        start,
+        now,
+      ),
+    ).toEqual({ storeOrders: 1, partnerSales: 2, transactions: 3 });
   });
 
   it("adds incubator sales, commissions and receivables to the Reports overview", async () => {

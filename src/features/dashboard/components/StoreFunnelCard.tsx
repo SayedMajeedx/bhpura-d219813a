@@ -136,6 +136,13 @@ export function StoreFunnelCard({
           ))}
         </ol>
       )}
+      {data.visits > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {isAr
+            ? "الطلبات هنا كل ما طُلب من المتجر الإلكتروني ومنها الملغاة، فقد تختلف عن المبيعات في الأرقام فوق."
+            : "Orders here are every order placed on the online store, cancelled ones included, so they can differ from the sales above."}
+        </p>
+      )}
 
       {sources && sources.length > 0 ? (
         <CountsTable

@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   customerSegments,
-  dashboardFinancials,
   inventoryIntelFor,
   revenueOrders,
   type DashboardOrders,
 } from "../src/features/dashboard/lib/dashboard-metrics";
 import { primaryKpisFor } from "../src/features/dashboard/lib/dashboard-kpis";
-
-type FinancialsInput = Parameters<typeof dashboardFinancials>[0];
+import { dashboardFigures } from "../src/features/dashboard/lib/dashboard-figures";
+import { composeOverviewRows } from "../src/lib/reporting-compose";
 
 const now = new Date(2026, 8, 25, 12, 0, 0);
 const daysAgo = (days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
@@ -41,101 +40,8 @@ describe("revenueOrders", () => {
   });
 });
 
-const financialsInput = (overrides: Partial<FinancialsInput> = {}): FinancialsInput => ({
-  validRevenueOrders: [
-    order({
-      id: "a",
-      total: 100,
-      payment_method: "card",
-      order_items: [{ variant_id: "v1", quantity: 2, unit_cost: null }],
-    }),
-    order({
-      id: "b",
-      total: 50,
-      payment_method: "benefit",
-      order_items: [{ variant_id: "v1", quantity: 1, unit_cost: 5 }],
-    }),
-    order({ id: "prior", total: 60, created_at: daysAgo(40) }),
-  ] as DashboardOrders,
-  expenseRows: [
-    { amount: 20, expense_type: "opex", expense_date: daysAgo(2) },
-    { amount: 99, expense_type: "cogs", expense_date: daysAgo(2) },
-    { amount: 7, expense_type: "opex", expense_date: daysAgo(90) },
-  ] as FinancialsInput["expenseRows"],
-  incubatorSaleRows: [],
-  variantRows: [{ id: "v1", cost_price: 10 }] as FinancialsInput["variantRows"],
-  productRows: [],
-  bomItemRows: [],
-  packagingMaterialRows: [],
-  settings: {
-    business_name: "",
-    currency: "BHD",
-    card_processing_fee: 2,
-    benefit_processing_fee: 1,
-    bom_enabled: false,
-    storefront_mode: "shop",
-  },
-  accountingRow: undefined,
-  previousAccountingRow: undefined,
-  locale: "en-US",
-  now,
-  ...overrides,
-});
-
-describe("dashboardFinancials", () => {
-  it("falls back to order sums when Reports has no row", () => {
-    const f = dashboardFinancials(financialsInput());
-    expect(f.revenue).toBe(150);
-    expect(f.storeRevenue).toBe(150);
-    // 2 x variant cost 10, then 1 x the line's own unit cost 5.
-    expect(f.cogs).toBe(25);
-    // Opex expenses only, plus 2% of the card order and 1% of the Benefit order.
-    expect(f.opex).toBeCloseTo(20 + 2 + 0.5);
-    expect(f.netProfit).toBeCloseTo(150 - 25 - 22.5);
-    expect(f.ordersCurrent).toBe(2);
-    expect(f.aovCurrent).toBe(75);
-    expect(f.revenueDeltaPct).toBeCloseTo(150);
-    expect(f.dailyChartSeries).toHaveLength(30);
-    expect(f.dailyChartSeries.reduce((sum, day) => sum + day.sales, 0)).toBe(150);
-  });
-
-  it("averages the store's own orders, never a partner shop's sales (the audit of 2026-11-12)", () => {
-    // Pura's read 17.062 under "orders: 13": 221.800 over its 8 orders and 5 partner pieces.
-    const f = dashboardFinancials(
-      financialsInput({
-        incubatorSaleRows: [
-          { sold_at: daysAgo(3), gross_amount: 100, quantity: 4 },
-        ] as FinancialsInput["incubatorSaleRows"],
-      }),
-    );
-    expect(f.ordersCurrent).toBe(6);
-    expect(f.storeOrdersCurrent).toBe(2);
-    expect(f.aovCurrent).toBe(75);
-  });
-
-  it("uses the Reports accounting row so both screens agree", () => {
-    const f = dashboardFinancials(
-      financialsInput({
-        accountingRow: {
-          net_revenue: 500,
-          net_merchandise_after_returns: 400,
-          known_cogs_after_returns: 100,
-          expenses: 50,
-        },
-        previousAccountingRow: { net_revenue: 250 },
-      }),
-    );
-    expect(f.revenue).toBe(500);
-    expect(f.cogs).toBe(100);
-    expect(f.opex).toBe(50);
-    expect(f.netProfit).toBe(250);
-    expect(f.grossMarginPercent).toBe(75);
-    expect(f.revenueDeltaPct).toBe(100);
-  });
-});
-
 describe("customerSegments", () => {
-  it("counts VIPs and customers idle for 60 days", () => {
+  it("reads VIPs and customers at risk by the customers page's own rule", () => {
     const orders = [
       order({ customer_id: "vip", total: 300, created_at: daysAgo(90) }),
       order({ customer_id: "recent", total: 40, created_at: daysAgo(3) }),
@@ -147,9 +53,11 @@ describe("customerSegments", () => {
       { id: "idle", name: "Idle", phone: null },
       { id: "new", name: "No orders", phone: null },
     ] as Parameters<typeof customerSegments>[1];
-    expect(customerSegments(orders, customers, now)).toEqual({
+    // A single order 70 days ago is a one-time buyer there, not a customer at risk; the VIP gone
+    // quiet is (the dashboard once counted 250 in any currency and every idle buyer).
+    expect(customerSegments(orders, customers, now, "BHD")).toEqual({
       vipCount: 1,
-      churnRiskCount: 2,
+      churnRiskCount: 1,
       churnRiskVips: [{ id: "vip", name: "Vip" }],
     });
   });
@@ -212,7 +120,8 @@ describe("inventoryIntelFor", () => {
     // 9 sold in 45 days: 0.2 a day, so 3 left last 15 days (over 14) and is not listed.
     expect(intel.lowStockVariants).toEqual([{ id: "v2", name: "Shayla", stock: 0, daysLeft: 0 }]);
     expect(intel.outOfStockVariantCount).toBe(1);
-    expect(intel.deadStockCount).toBe(1);
+    // The sold-out Shayla has nothing on the shelf: it is not dead stock.
+    expect(intel.deadStockCount).toBe(0);
     expect(intel.lowStockCount).toBe(1);
     expect(intel.availableWithoutImages).toEqual([{ id: "p1", name: "Abaya", stock: 3 }]);
   });
@@ -256,7 +165,8 @@ describe("inventoryIntelFor", () => {
     // Only the two stocked products count, exactly as without them.
     expect(intel.lowStockCount).toBe(1);
     expect(intel.outOfStockVariantCount).toBe(1);
-    expect(intel.deadStockCount).toBe(1);
+    // The sold-out Shayla has nothing on the shelf: it is not dead stock.
+    expect(intel.deadStockCount).toBe(0);
     expect(intel.lowStockVariants.map((v) => v.id)).toEqual(["v2"]);
   });
 
@@ -281,11 +191,35 @@ describe("inventoryIntelFor", () => {
 });
 
 describe("primaryKpisFor", () => {
-  const financials = dashboardFinancials(financialsInput());
+  const [row] = composeOverviewRows({
+    overview: [
+      {
+        currency: "BHD",
+        net_merch_sales: 150,
+        gross_merch_sales: 150,
+        paid_order_count: 2,
+        known_cogs: 25,
+        expenses: 20,
+      },
+    ],
+    returns: [],
+    cogs: [],
+    fees: [],
+    incubatorSummary: [],
+  });
+  const figures = dashboardFigures({
+    row,
+    previous: undefined,
+    series: [],
+    start: new Date(2026, 7, 27),
+    locale: "en-US",
+    currency: "BHD",
+  });
   const base = {
     isAr: false,
     catalogInquiries: undefined,
-    financials,
+    figures,
+    counts: { storeOrders: 2, partnerSales: 0, transactions: 2 },
     currency: "BHD",
     locale: "en-US",
   };
@@ -293,15 +227,12 @@ describe("primaryKpisFor", () => {
   it("shows money cards only to people who may see financials", () => {
     expect(
       primaryKpisFor({ ...base, isCatalog: false, canViewFinancials: true }).map((k) => k.label),
-    ).toEqual([
-      "Revenue & Net Profit",
-      "Average Order Value (AOV)",
-      "Gross Margin %",
-      "Total Sales Transactions",
-    ]);
+    ).toEqual(["Net sales and net profit", "Average store order", "Gross margin", "Sales"]);
     expect(
-      primaryKpisFor({ ...base, isCatalog: false, canViewFinancials: false }).map((k) => k.label),
-    ).toEqual(["Total Sales Transactions"]);
+      primaryKpisFor({ ...base, figures: null, isCatalog: false, canViewFinancials: false }).map(
+        (k) => k.label,
+      ),
+    ).toEqual(["Sales"]);
   });
 
   it("shows inquiry cards for catalog stores", () => {
@@ -310,7 +241,7 @@ describe("primaryKpisFor", () => {
       "WhatsApp Inquiries",
       "Product Views",
       "Top Inquired Product",
-      "Manual Sales Recorded",
+      "Sales recorded by hand",
     ]);
     expect(kpis[2].value).toBe("No inquiries yet");
   });
