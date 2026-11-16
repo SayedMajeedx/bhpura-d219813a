@@ -5,24 +5,8 @@ import { DateRange } from "react-day-picker";
 import { defaultReportRange } from "@/lib/reports-view";
 import { useI18n } from "@/lib/i18n";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
-import { KpiCard } from "@/components/reports/kpi-card";
-import { overviewProfit, salesBySource } from "@/lib/reporting-compose";
-import { SALES_WORDS } from "@/lib/report-words";
-import { SalesBySourceCard } from "@/components/reports/SalesBySourceCard";
-import { formatMoney } from "@/lib/format";
-import {
-  Banknote,
-  ShoppingBag,
-  Percent,
-  ReceiptText,
-  PackageCheck,
-  CircleDollarSign,
-  WalletCards,
-  AlertCircle,
-  RefreshCw,
-  Info,
-  TrendingUp,
-} from "lucide-react";
+import { OverviewSections } from "@/components/reports/OverviewSections";
+import { AlertCircle, RefreshCw, Info } from "lucide-react";
 import { OsSkeleton } from "@/components/os/os-skeleton";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,12 +24,6 @@ import { useStoreCurrency } from "@/hooks/use-store-currency";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
   component: ReportsOverview,
 });
-
-/**
- * A row for something the store does not use (incubators, packaging, shipping) is left out, unless
- * it holds a figure: data from before a change of vertical stays visible.
- */
-const shows = (enabled: boolean, value: unknown) => enabled || Number(value || 0) !== 0;
 
 function ReportsOverview() {
   const { lang } = useI18n();
@@ -85,31 +63,8 @@ function ReportsOverview() {
     ? selectedCurrency
     : currencies[0];
   const data = rows.find((row: any) => row.currency === effectiveCurrency) as any;
-  const money = (value: unknown) =>
-    formatMoney(Number(value || 0), data?.currency || storeCurrency, lang);
-  const netRevenue = Number(data?.net_revenue ?? data?.paid_order_value ?? 0);
-  const { grossProfit, grossMargin, operatingProfit: netProfit } = overviewProfit(data);
-  const averageOrderValue =
-    Number(data?.paid_order_count || 0) > 0 ? netRevenue / Number(data.paid_order_count) : 0;
   const previousRows = Array.isArray(previousQuery.data) ? previousQuery.data : [];
   const previousData: any = previousRows.find((row: any) => row.currency === effectiveCurrency);
-  const previousNetRevenue = Number(
-    previousData?.net_revenue ?? previousData?.paid_order_value ?? 0,
-  );
-  const { operatingProfit: previousNetProfit } = overviewProfit(previousData);
-  const sales = salesBySource(data);
-  const previousSales = salesBySource(previousData);
-  const words = lang === "ar" ? "ar" : "en";
-  const partnerSaleCount = Number(data?.incubator_sale_count || 0);
-  const storeOrderCount = Math.max(0, Number(data?.paid_order_count || 0) - partnerSaleCount);
-  const trend = (current: number, previous: number) =>
-    previous === 0
-      ? undefined
-      : {
-          value: Number((((current - previous) / Math.abs(previous)) * 100).toFixed(1)),
-          label: lang === "ar" ? "مقارنة بالفترة السابقة" : "vs previous period",
-          isPositive: current >= previous,
-        };
 
   return (
     <div className="space-y-6">
@@ -175,209 +130,13 @@ function ReportsOverview() {
               </span>
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              title={SALES_WORDS.total[words]}
-              value={money(sales.total)}
-              icon={<Banknote />}
-              description={SALES_WORDS.netSalesNote[words]}
-              trend={trend(sales.total, previousSales.total)}
-            />
-            <KpiCard
-              title={lang === "ar" ? "طلبات المتجر" : "Store orders"}
-              value={storeOrderCount}
-              icon={<PackageCheck />}
-              accent="blue"
-              description={
-                shows(modules.incubators, partnerSaleCount)
-                  ? lang === "ar"
-                    ? `ومبيعات المحلات الشريكة: ${partnerSaleCount}`
-                    : `And partner shop sales: ${partnerSaleCount}`
-                  : undefined
-              }
-              trend={trend(
-                storeOrderCount,
-                Math.max(
-                  0,
-                  Number(previousData?.paid_order_count || 0) -
-                    Number(previousData?.incubator_sale_count || 0),
-                ),
-              )}
-            />
-            <KpiCard
-              title={lang === "ar" ? "الخصومات" : "Discounts"}
-              value={money(data.discounts)}
-              icon={<Percent />}
-              accent="amber"
-            />
-            <KpiCard
-              title={SALES_WORDS.billed[words]}
-              value={money(data.paid_order_value)}
-              icon={<ShoppingBag />}
-              description={SALES_WORDS.billedNote[words]}
-            />
-          </div>
-          <SalesBySourceCard
-            sales={sales}
+          <OverviewSections
+            data={data}
+            previous={previousData}
+            lang={lang === "ar" ? "ar" : "en"}
             currency={data.currency || storeCurrency}
-            lang={words}
-            showPartners={modules.incubators}
+            modules={modules}
           />
-          <div
-            className={`grid gap-4 ${shows(modules.shipping, data.shipping_collected) ? "md:grid-cols-3" : "md:grid-cols-2"}`}
-          >
-            {shows(modules.shipping, data.shipping_collected) && (
-              <KpiCard
-                title={lang === "ar" ? "الشحن المحصل" : "Shipping collected"}
-                value={money(data.shipping_collected)}
-                icon={<ReceiptText />}
-              />
-            )}
-            <KpiCard
-              title={lang === "ar" ? "ضريبة القيمة المضافة" : "VAT collected"}
-              value={money(data.vat_collected)}
-              icon={<CircleDollarSign />}
-              accent="blue"
-            />
-            <KpiCard
-              title={lang === "ar" ? "المصروفات" : "Expenses"}
-              value={money(data.expenses)}
-              icon={<WalletCards />}
-              accent="amber"
-              description={
-                shows(modules.incubators, data.incubator_commissions)
-                  ? lang === "ar"
-                    ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)} + عمولات ${money(data.incubator_commissions)}`
-                    : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)} + commissions ${money(data.incubator_commissions)}`
-                  : lang === "ar"
-                    ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)}`
-                    : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)}`
-              }
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <KpiCard
-              title={lang === "ar" ? "صافي الإيراد بعد الاسترجاع" : "Net revenue after refunds"}
-              value={money(netRevenue)}
-              icon={<Banknote />}
-              accent="emerald"
-              trend={trend(netRevenue, previousNetRevenue)}
-            />
-            <KpiCard
-              title={lang === "ar" ? "مجمل الربح" : "Gross profit"}
-              value={money(grossProfit)}
-              icon={<TrendingUp />}
-              accent={grossProfit >= 0 ? "emerald" : "amber"}
-              description={
-                lang === "ar" ? "بعد التكلفة والاسترجاعات" : "After cost of goods and refunds"
-              }
-            />
-            <KpiCard
-              title={lang === "ar" ? "هامش الربح" : "Gross margin"}
-              value={`${grossMargin.toFixed(1)}%`}
-              icon={<Percent />}
-              accent={grossMargin >= 30 ? "emerald" : "amber"}
-            />
-            <KpiCard
-              title={lang === "ar" ? "صافي الربح التشغيلي" : "Operating net profit"}
-              value={money(netProfit)}
-              icon={<WalletCards />}
-              accent={netProfit >= 0 ? "emerald" : "amber"}
-              description={`${lang === "ar" ? "متوسط الطلب" : "AOV"}: ${money(averageOrderValue)}`}
-              trend={trend(netProfit, previousNetProfit)}
-            />
-          </div>
-          <div className="grid gap-5 lg:grid-cols-2">
-            <DetailCard
-              title={lang === "ar" ? "تفاصيل التحصيل" : "Collection details"}
-              rows={[
-                [
-                  lang === "ar" ? "المحصّل من هذه المبيعات" : "Collected on these sales",
-                  money(data.collected),
-                ],
-                [
-                  lang === "ar" ? "باقي على العملاء" : "Still owed by customers",
-                  money(data.owed_by_customers),
-                ],
-                [lang === "ar" ? "المبالغ المستردة" : "Refunded total", money(data.refunded_total)],
-                ...(shows(
-                  modules.incubators,
-                  data.incubator_sales || data.incubator_commissions || data.incubator_receivables,
-                )
-                  ? ([
-                      [
-                        lang === "ar" ? "عمولات محلات الشركاء" : "Partner shop commissions",
-                        money(data.incubator_commissions),
-                      ],
-                      [
-                        lang === "ar" ? "مستحقات محلات الشركاء" : "Partner shop receivables",
-                        money(data.incubator_receivables),
-                      ],
-                    ] as Array<[string, string | number]>)
-                  : []),
-                [
-                  lang === "ar" ? "طلبات مجانية مكتملة" : "Free completed orders",
-                  Number(data.free_completed_order_count || 0),
-                ],
-              ]}
-            />
-            <DetailCard
-              title={lang === "ar" ? "صحة بيانات التكلفة" : "Cost data health"}
-              rows={[
-                [
-                  lang === "ar" ? "تكلفة البضاعة المعروفة" : "Known cost of goods",
-                  money(data.known_cogs),
-                ],
-                [
-                  lang === "ar" ? "تكلفة طلبات المتجر" : "Cost of store orders",
-                  money(data.product_cogs),
-                ],
-                ...(shows(modules.incubators, data.incubator_cogs)
-                  ? ([
-                      [
-                        lang === "ar" ? "تكلفة مبيعات محلات الشركاء" : "Cost of partner sales",
-                        money(data.incubator_cogs),
-                      ],
-                    ] as Array<[string, string | number]>)
-                  : []),
-                ...(shows(modules.packaging, data.packaging_cogs)
-                  ? ([
-                      [
-                        lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging cost",
-                        money(data.packaging_cogs),
-                      ],
-                    ] as Array<[string, string | number]>)
-                  : []),
-                [
-                  lang === "ar" ? "عناصر بلا تكلفة مسجلة" : "Items missing cost",
-                  Number(data.missing_cost_item_count || 0),
-                ],
-                [
-                  lang === "ar" ? "عناصر يدوية (طلبات مخصصة)" : "Manual / bespoke items",
-                  Number(data.missing_product_link_count || 0),
-                ],
-                ...(shows(modules.packaging, data.zero_packaging_item_count)
-                  ? ([
-                      [
-                        lang === "ar"
-                          ? "عناصر مكتملة بتغليف صفري"
-                          : "Completed items with zero packaging",
-                        Number(data.zero_packaging_item_count || 0),
-                      ],
-                    ] as Array<[string, string | number]>)
-                  : []),
-                [
-                  lang === "ar" ? "قيمة المبيعات غير المحددة التكلفة" : "Sales value missing cost",
-                  money(data.missing_cost_exposure),
-                ],
-              ]}
-              warning={
-                Number(data.missing_cost_item_count || 0) > 0 ||
-                Number(data.missing_cost_exposure || 0) > 0
-              }
-              warningLabel={lang === "ar" ? "يتطلب المراجعة" : "Action required"}
-            />
-          </div>
         </>
       ) : (
         <div className="rounded-2xl border bg-white p-14 text-center text-sm text-muted-foreground">
@@ -388,41 +147,6 @@ function ReportsOverview() {
   );
 }
 
-function DetailCard({
-  title,
-  rows,
-  warning,
-  warningLabel,
-}: {
-  title: string;
-  rows: [string, string | number][];
-  warning?: boolean;
-  warningLabel?: string;
-}) {
-  return (
-    <section className="rounded-2xl border bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{title}</h2>
-        {warning && (
-          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-            {warningLabel || "Action required"}
-          </span>
-        )}
-      </div>
-      <div className="mt-5 divide-y">
-        {rows.map(([label, value]) => (
-          <div
-            key={label}
-            className="flex items-center justify-between gap-5 py-3 first:pt-0 last:pb-0"
-          >
-            <span className="text-sm text-muted-foreground">{label}</span>
-            <strong className="text-sm tabular-nums">{value}</strong>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 function Skeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

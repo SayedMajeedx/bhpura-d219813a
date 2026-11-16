@@ -304,6 +304,8 @@ export async function fetchReportingSales(
       existing.paid_order_count =
         Number(existing.paid_order_count || 0) + Number(row.sale_count || 0);
       existing.collected = Number(existing.collected || 0) + Number(row.paid_amount || 0);
+      // The partner shops' part of the bucket, so a chart can draw it apart from the store's.
+      existing.partner = Number(existing.partner || 0) + Number(row.gross_amount || 0);
     } else {
       series.push({
         time_bucket: row.time_bucket,
@@ -312,6 +314,7 @@ export async function fetchReportingSales(
         net_merch: row.gross_amount,
         paid_order_count: row.sale_count,
         collected: row.paid_amount,
+        partner: row.gross_amount,
       });
     }
   }

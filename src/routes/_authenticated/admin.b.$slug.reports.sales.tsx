@@ -2,12 +2,16 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
-import { defaultReportRange, salesBreakdownRows } from "@/lib/reports-view";
+import { defaultReportRange, salesBreakdownRows, splitSalesBucket } from "@/lib/reports-view";
+import { SALES_WORDS, fulfillmentWords, paymentMethodWords } from "@/lib/report-words";
+import { PartnerShopsCard } from "@/components/reports/PartnerShopsCard";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useI18n } from "@/lib/i18n";
 import { ReportInterval } from "@/lib/reporting.functions";
 import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
+import { salesBySource } from "@/lib/reporting-compose";
 import {
   Select,
   SelectContent,
@@ -17,7 +21,15 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { OsSkeleton } from "@/components/os/os-skeleton";
-import { AlertCircle, Banknote, CreditCard, RefreshCw, ShoppingBag, Truck } from "lucide-react";
+import {
+  AlertCircle,
+  Banknote,
+  CreditCard,
+  RefreshCw,
+  Store,
+  Handshake,
+  Truck,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -44,7 +56,9 @@ function ReportsSales() {
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const storeCurrency = useStoreCurrency(useBrand().id);
+  const brandId = useBrand().id;
+  const storeCurrency = useStoreCurrency(brandId);
+  const { modules } = useAdminStoreProfile(brandId).profile;
 
   const query = useQuery(
     reportingQueries.sales(
@@ -67,6 +81,7 @@ function ReportsSales() {
       .sort((a, b) => new Date(a.time_bucket).getTime() - new Date(b.time_bucket).getTime())
       .map((row) => ({
         ...row,
+        ...splitSalesBucket(row),
         displayDate: new Date(row.time_bucket).toLocaleDateString(
           lang === "ar" ? "ar-BH-u-nu-latn" : "en-GB",
           {
@@ -89,8 +104,26 @@ function ReportsSales() {
   );
 
   const currency = chartData[0]?.currency || storeCurrency;
-  const totalRevenue = chartData.reduce((sum, row) => sum + Number(row.pov || 0), 0);
-  const totalMerchandise = chartData.reduce((sum, row) => sum + Number(row.net_merch || 0), 0);
+  // The figures above the chart are the overview's own (`salesBySource`), services included,
+  // so this page and the overview say the same total; the chart draws the store and partners.
+  const overviewQ = useQuery({
+    ...reportingQueries.overview(
+      slug,
+      date?.from && date?.to ? { from: date.from, to: date.to } : undefined,
+      timezone,
+      includeHistorical,
+    ),
+    retry: 1,
+  });
+  const overviewRows = (Array.isArray(overviewQ.data) ? overviewQ.data : []) as Array<{
+    currency: string;
+  }>;
+  const split = salesBySource(overviewRows.find((row) => row.currency === currency));
+  const totalSales = split.total;
+  const storeSales = split.store;
+  const partnerSales = split.partners;
+  const showPartners = modules.incubators || Math.abs(partnerSales) > 0.0005;
+  const words = lang === "ar" ? "ar" : "en";
   const orderCount = chartData.reduce(
     (sum, row) => sum + Number(row.paid_order_count || row.order_count || 0),
     0,
@@ -136,23 +169,27 @@ function ReportsSales() {
         <ErrorState lang={lang} onRetry={() => query.refetch()} />
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              title={lang === "ar" ? "إجمالي المبيعات" : "Total sales"}
-              value={formatMoney(totalRevenue, currency, lang)}
+              title={SALES_WORDS.total[words]}
+              value={formatMoney(totalSales, currency, lang)}
               icon={<Banknote />}
-              description={
-                lang === "ar"
-                  ? "قبل المرتجعات، وتطرحها النظرة العامة"
-                  : "Before returns: the overview deducts them"
-              }
+              description={SALES_WORDS.netSalesNote[words]}
             />
             <KpiCard
-              title={lang === "ar" ? "صافي مبيعات المنتجات" : "Net merchandise"}
-              value={formatMoney(totalMerchandise, currency, lang)}
-              icon={<ShoppingBag />}
+              title={SALES_WORDS.store[words]}
+              value={formatMoney(storeSales, currency, lang)}
+              icon={<Store />}
               accent="emerald"
             />
+            {showPartners && (
+              <KpiCard
+                title={SALES_WORDS.partners[words]}
+                value={formatMoney(partnerSales, currency, lang)}
+                icon={<Handshake />}
+                accent="amber"
+              />
+            )}
             <KpiCard
               title={lang === "ar" ? "عمليات البيع" : "Sales transactions"}
               value={orderCount}
@@ -169,8 +206,8 @@ function ReportsSales() {
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {lang === "ar"
-                    ? "الإيرادات وصافي مبيعات المنتجات خلال الفترة المحددة"
-                    : "Revenue and net merchandise across the selected period"}
+                    ? "صافي المبيعات، المتجر والمحلات الشريكة، خلال الفترة المحددة"
+                    : "Net sales, the store's and the partner shops', across the selected period"}
                 </p>
               </div>
               <div className="mt-2 text-xs font-medium text-muted-foreground">
@@ -235,26 +272,24 @@ function ReportsSales() {
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: 18, fontSize: 12 }} />
                     <Area
                       type="monotone"
-                      dataKey="pov"
-                      name={lang === "ar" ? "الإيرادات" : "Revenue"}
+                      dataKey="store"
+                      stackId="sales"
+                      name={SALES_WORDS.store[words]}
                       stroke="var(--color-primary, oklch(0.26 0.09 25))"
-                      strokeWidth={3}
-                      fill="url(#revenueFill)"
-                      activeDot={{
-                        r: 5,
-                        fill: "var(--color-primary, oklch(0.26 0.09 25))",
-                        stroke: "var(--color-background)",
-                        strokeWidth: 2,
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="net_merch"
-                      name={lang === "ar" ? "صافي المنتجات" : "Net merchandise"}
-                      stroke="var(--color-secondary, oklch(0.72 0.08 70))"
                       strokeWidth={2.5}
-                      fill="url(#merchFill)"
+                      fill="url(#revenueFill)"
                     />
+                    {showPartners && (
+                      <Area
+                        type="monotone"
+                        dataKey="partner"
+                        stackId="sales"
+                        name={SALES_WORDS.partners[words]}
+                        stroke="var(--color-secondary, oklch(0.72 0.08 70))"
+                        strokeWidth={2.5}
+                        fill="url(#merchFill)"
+                      />
+                    )}
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -269,6 +304,7 @@ function ReportsSales() {
               icon={<CreditCard />}
               rows={salesBreakdownRows(query.data, "payment", currency)}
               keyName="payment_method"
+              label={(code: string) => paymentMethodWords(code, words)}
               currency={currency}
               lang={lang}
             />
@@ -277,10 +313,20 @@ function ReportsSales() {
               icon={<Truck />}
               rows={salesBreakdownRows(query.data, "fulfillment", currency)}
               keyName="fulfillment_method"
+              label={(code: string) => fulfillmentWords(code, words)}
               currency={currency}
               lang={lang}
             />
           </div>
+          {showPartners && date?.from && date?.to && (
+            <PartnerShopsCard
+              slug={slug}
+              range={{ from: date.from, to: date.to }}
+              timeZone={timezone}
+              currency={currency}
+              lang={words}
+            />
+          )}
         </>
       )}
     </div>
@@ -305,7 +351,7 @@ function SalesTooltip({ active, payload, label, currency, lang }: any) {
   );
 }
 
-function BreakdownCard({ title, icon, rows = [], keyName, currency, lang }: any) {
+function BreakdownCard({ title, icon, rows = [], keyName, currency, lang, label }: any) {
   const max = Math.max(...rows.map((row: any) => Number(row.pov || 0)), 1);
   return (
     <section className="rounded-2xl border bg-card p-5 shadow-xs">
@@ -320,9 +366,7 @@ function BreakdownCard({ title, icon, rows = [], keyName, currency, lang }: any)
           {rows.map((row: any, index: number) => (
             <div key={`${row[keyName]}-${index}`}>
               <div className="mb-2 flex justify-between gap-4 text-sm">
-                <span className="font-medium capitalize">
-                  {String(row[keyName] || "Unknown").replace(/_/g, " ")}
-                </span>
+                <span className="font-medium">{label(row[keyName])}</span>
                 <span className="font-semibold tabular-nums">
                   {formatMoney(row.pov, row.currency || currency, lang)}
                 </span>

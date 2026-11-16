@@ -1,6 +1,8 @@
 import { moneyFractionDigits } from "@/lib/format";
 import { methodLabel, type PaymentMethod } from "@/features/supplier-orders/lib/supplier-account";
 import type { ComposedOverviewRow } from "@/lib/reporting-compose";
+import { channelWords, paymentMethodWords, paymentStatusWords } from "@/lib/report-words";
+import { monthPackPartnersSheet } from "./month-pack-partners";
 import { giftCardSheet, type GiftCardReport } from "./gift-card-report";
 import { productMargins, marginsSheet, type MarginRow } from "./margins";
 import {
@@ -250,9 +252,9 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
         day(r.created_at),
         { value: str(r.invoice_number), text: true },
         { value: str(r.customer_name) },
-        { value: str(r.channel) },
-        { value: str(r.payment_status) },
-        { value: str(r.payment_method) },
+        { value: channelWords(r.channel, lang) || null },
+        { value: paymentStatusWords(r.payment_status, lang) || null },
+        { value: paymentMethodWords(r.payment_method, lang) || null },
         m(r.subtotal),
         { value: -num(r.discount), format: money },
         m(r.shipping),
@@ -277,73 +279,17 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
     ],
   };
 
-  // 4. Partner shops: their sales and what they paid ---------------------------------------
-  const partnerSales = input.detail.partner_sales.filter(mine);
-  const partnerPays = input.detail.partner_payments.filter(mine);
-  const partnersSheet: XSheet = {
+  // 4. Partner shops: their sales, each shop's total and what they paid -------------------
+  const partnersSheet = monthPackPartnersSheet({
+    sales: input.detail.partner_sales.filter(mine),
+    payments: input.detail.partner_payments.filter(mine),
+    monthRow: periods[0].find((row) => row.currency === currency),
+    currency,
+    digits,
+    lang,
+    head: top(PACK_SHEETS.partners),
     name: w(PACK_SHEETS.partners),
-    rtl: isAr,
-    widths: [12, 22, 28, 14, 9, 12, 12, 12, 12, 12, 12],
-    rows: [
-      ...top(PACK_SHEETS.partners),
-      (isAr
-        ? [
-            "التاريخ",
-            "المحل",
-            "المنتج",
-            "الرمز",
-            "الكمية",
-            "سعر القطعة",
-            "المبيعات",
-            "العمولة",
-            "المستحق",
-            "المدفوع",
-            "التكلفة",
-          ]
-        : [
-            "Date",
-            "Partner shop",
-            "Product",
-            "SKU",
-            "Pieces",
-            "Unit price",
-            "Sales",
-            "Commission",
-            "Due to store",
-            "Paid",
-            "Cost",
-          ]
-      ).map(head),
-      ...partnerSales.map((r): XCell[] => [
-        day(r.sold_at),
-        { value: str(r.partner) },
-        { value: str(r.product) },
-        { value: str(r.sku), text: true },
-        { value: num(r.quantity), format: COUNT_FORMAT },
-        m(r.unit_price),
-        m(r.gross),
-        { value: -num(r.commission), format: money },
-        m(r.net_due),
-        m(r.paid),
-        m(r.cost),
-      ]),
-      [],
-      [
-        head(isAr ? "دفعات المحلات" : "Payments from partner shops"),
-        head(isAr ? "المحل" : "Partner shop"),
-        head(isAr ? "المبلغ" : "Amount"),
-        head(isAr ? "الطريقة" : "Method"),
-        head(isAr ? "المرجع" : "Reference"),
-      ],
-      ...partnerPays.map((r): XCell[] => [
-        day(r.payment_date),
-        { value: str(r.partner) },
-        m(r.amount),
-        { value: str(r.method) },
-        { value: str(r.reference), text: true },
-      ]),
-    ],
-  };
+  });
 
   // 5. Returns -------------------------------------------------------------------------------
   const returns = input.detail.returns.filter(mine);
