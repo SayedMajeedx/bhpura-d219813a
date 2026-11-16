@@ -18,6 +18,8 @@ export const expensesKeys = {
   list: (brandId: string) => [...expensesKeys.all(brandId), "list"] as const,
   /** The columns the data export writes (refreshed with every expenses write). */
   exportRows: (brandId: string) => [...expensesKeys.all(brandId), "export"] as const,
+  /** The store's monthly budget per category (staff who see the finances). */
+  budgets: (brandId: string) => [...expensesKeys.all(brandId), "budgets"] as const,
 };
 
 /** The brand's expenses, newest first. */
@@ -85,7 +87,78 @@ export const expensesQueries = {
       queryFn: () => fetchExpenseExportRows(brandId),
       enabled: Boolean(brandId),
     }),
+  budgets: (brandId: string) =>
+    queryOptions({
+      queryKey: expensesKeys.budgets(brandId),
+      queryFn: () => fetchExpenseBudgets(brandId),
+      enabled: Boolean(brandId),
+      staleTime: 60_000,
+    }),
 };
+
+export type ExpenseBudget = { id: string; category: string; monthly_amount: number };
+
+/**
+ * The store's monthly budgets (migration 20261211100000): one per category. A store with none,
+ * or a database the migration has not reached yet, reads as none.
+ */
+export async function fetchExpenseBudgets(brandId: string): Promise<ExpenseBudget[]> {
+  const { data, error } = await supabase
+    .from("expense_budgets")
+    .select("id, category, monthly_amount")
+    .eq("brand_id", brandId)
+    .order("category")
+    .limit(200);
+  if (error) {
+    if (error.code === "42P01" || error.code === "PGRST205") return [];
+    throw error;
+  }
+  return (data ?? []).map((row) => ({ ...row, monthly_amount: Number(row.monthly_amount) }));
+}
+
+/**
+ * Saves the store's budgets as one set: a category with an amount is written (updated when it
+ * has one), and a budget whose category is left out or cleared is removed.
+ */
+export async function saveExpenseBudgets(
+  brandId: string,
+  current: readonly ExpenseBudget[],
+  wanted: ReadonlyArray<{ category: string; monthly_amount: number }>,
+) {
+  const key = (category: string) => category.trim().toLocaleLowerCase();
+  const byKey = new Map(current.map((b) => [key(b.category), b]));
+  const keep = new Set<string>();
+  for (const budget of wanted) {
+    if (!(budget.monthly_amount > 0) || !budget.category.trim()) continue;
+    const existing = byKey.get(key(budget.category));
+    keep.add(key(budget.category));
+    if (existing) {
+      if (existing.monthly_amount === budget.monthly_amount) continue;
+      const { error } = await supabase
+        .from("expense_budgets")
+        .update({ monthly_amount: budget.monthly_amount })
+        .eq("id", existing.id)
+        .eq("brand_id", brandId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from("expense_budgets").insert({
+        brand_id: brandId,
+        category: budget.category.trim(),
+        monthly_amount: budget.monthly_amount,
+      });
+      if (error) throw error;
+    }
+  }
+  const gone = current.filter((b) => !keep.has(key(b.category))).map((b) => b.id);
+  if (gone.length) {
+    const { error } = await supabase
+      .from("expense_budgets")
+      .delete()
+      .eq("brand_id", brandId)
+      .in("id", gone);
+    if (error) throw error;
+  }
+}
 
 /** Every expenses view of the brand is stale after a write. */
 export function invalidateExpenses(qc: QueryClient, brandId: string) {
