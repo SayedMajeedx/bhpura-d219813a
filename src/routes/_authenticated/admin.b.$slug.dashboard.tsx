@@ -8,26 +8,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Sparkles } from "lucide-react";
-import { useI18n, useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useMemo, useState } from "react";
-import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { useAddons } from "@/components/addons/AddonsProvider";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
-import {
-  DashboardScopeSwitcher,
-  type DashboardViewScope,
-} from "@/components/dashboard/DashboardScopeSwitcher";
 import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 import { ReviewInsightsSummary } from "@/components/dashboard/ReviewInsightsSummary";
-import { DashboardActionStrip } from "@/components/dashboard/DashboardActionStrip";
 import { useDashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import { lowStockLevel } from "@/lib/inventory-health";
 import { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
 import {
-  customerSegments,
   inventoryIntelFor,
   ordersNeedingAction,
   ordersToPrepareCount,
@@ -41,12 +34,14 @@ import {
   salesCountsSince,
   type SeriesRow,
 } from "@/features/dashboard/lib/dashboard-figures";
+import { attentionLines, todayFigures } from "@/features/dashboard/lib/dashboard-today";
 import { OnboardingChecklist } from "@/features/dashboard/components/OnboardingChecklist";
 import { DashboardKpiCards } from "@/features/dashboard/components/DashboardKpiCards";
-import { SalesAndActionsRow } from "@/features/dashboard/components/SalesAndActionsRow";
-import { ActivityAndStockRow } from "@/features/dashboard/components/ActivityAndStockRow";
-import { SalesSeriesView } from "@/features/dashboard/components/SalesSeriesView";
-import { DiagnosticsView } from "@/features/dashboard/components/DiagnosticsView";
+import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
+import { SalesAndRecentRow } from "@/features/dashboard/components/SalesAndRecentRow";
+import { StockAlertsCard } from "@/features/dashboard/components/StockAlertsCard";
+import { TodayStrip } from "@/features/dashboard/components/TodayStrip";
+import { AttentionList } from "@/features/dashboard/components/AttentionList";
 import { OutreachDashboardLine } from "@/features/outreach/components/OutreachDashboardLine";
 import { SupplierOrdersDashboardLine } from "@/features/supplier-orders/components/SupplierOrdersDashboardLine";
 
@@ -54,8 +49,14 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")(
   component: Dashboard,
 });
 
+/**
+ * The store's dashboard, read top to bottom: today (orders, net sales, what is still to collect),
+ * what needs a person in one list, the store's status and the one-line ways in (bookings,
+ * clients to message, suppliers, reviews to ask for), then the last 30 days (the Reports' own
+ * figures), the daily chart beside the latest orders, the sizes running out, the visits folded to
+ * one line and the launch checklist. Each part draws as its own data arrives.
+ */
 function Dashboard() {
-  const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { canViewFinancials, hasPermission } = useProfile();
@@ -69,7 +70,6 @@ function Dashboard() {
   const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
 
   const isMounted = typeof window !== "undefined";
-  const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
   const [checklistOpen, setChecklistOpen] = useState(false);
 
   const {
@@ -92,12 +92,12 @@ function Dashboard() {
     reportingOverviewQ,
     productsQ,
     variantsQ,
-    customersQ,
     ordersQ,
+    orderCountQ,
     recentOrdersQ,
     pendingReturnsQ,
     incubatorSalesQ,
-    isLoading,
+    figuresLoading,
     accountingRow,
     previousAccountingRow,
     salesSeriesQ,
@@ -107,7 +107,7 @@ function Dashboard() {
   // The orders that count as sold, as the Reports overview counts them
   const validRevenueOrders = useMemo(() => revenueOrders(ordersQ.data ?? []), [ordersQ.data]);
 
-  // Operational Actionable Orders (Orders needing triage/action)
+  // The orders waiting on the store (the attention list shows the first five)
   const actionNeededOrders = useMemo(
     () => ordersNeedingAction(ordersQ.data ?? [], hasMadeToOrder),
     [ordersQ.data, hasMadeToOrder],
@@ -151,13 +151,7 @@ function Dashboard() {
     [figures, validRevenueOrders, incubatorSalesQ.data, periodStart],
   );
 
-  // CRM segmentation distribution
-  const crmStats = useMemo(
-    () => customerSegments(validRevenueOrders, customersQ.data ?? [], new Date(), currency),
-    [validRevenueOrders, customersQ.data, currency],
-  );
-
-  // Inventory velocity & stock depletion calculations
+  // Stock health from the last 45 days of sales
   const lowStockUnits = lowStockLevel(businessSettings.data?.low_stock_threshold);
   const inventoryIntel = useMemo(
     () =>
@@ -172,7 +166,7 @@ function Dashboard() {
     [productsQ.data, variantsQ.data, validRevenueOrders, lang, lowStockUnits],
   );
 
-  // Orders awaiting merchant preparation & fulfillment (synchronized with orders page to_prepare tab)
+  // Orders waiting to be prepared (the orders page's "to prepare" tab)
   const unfulfilledOrdersCount = useMemo(
     () => ordersToPrepareCount(ordersQ.data ?? [], hasMadeToOrder),
     [ordersQ.data, hasMadeToOrder],
@@ -184,16 +178,24 @@ function Dashboard() {
     [ordersQ.data, storeProfile.modules.bookings],
   );
 
-  // Loading skeleton placeholder
-  if (isLoading) {
-    return <RoutePendingSkeleton />;
-  }
+  // Today: the orders placed, the net sales and what is still to collect on open orders.
+  const today = useMemo(
+    () =>
+      ordersQ.data
+        ? todayFigures({
+            orders: ordersQ.data,
+            dailySeries: canViewFinancials ? (figures?.dailySeries ?? null) : null,
+            now: new Date(),
+          })
+        : null,
+    [ordersQ.data, canViewFinancials, figures],
+  );
 
   if (canViewFinancials && reportingOverviewQ.error) {
     return (
       <div className="mx-auto max-w-3xl p-4">
-        <Card className="border-rose-200 bg-rose-50/70 p-8 text-center">
-          <AlertCircle className="mx-auto h-9 w-9 text-rose-600" />
+        <Card className="border-destructive/30 bg-destructive/5 p-8 text-center">
+          <AlertCircle className="mx-auto h-9 w-9 text-destructive" />
           <h2 className="mt-4 text-lg font-semibold">
             {isAr
               ? "تعذر تحميل الأرقام المالية الموحّدة"
@@ -213,11 +215,14 @@ function Dashboard() {
   }
 
   // Sales & Product status for guided onboarding milestones
-  const totalOrdersCount = ordersQ.data?.length ?? 0;
+  const totalOrdersCount = orderCountQ.data ?? ordersQ.data?.length ?? 0;
   const hasRealSales =
     totalOrdersCount > 0 || counts.transactions > 0 || validRevenueOrders.length > 0;
   const hasSales = hasRealSales;
   const hasProducts = (productsQ.data?.length ?? 0) > 0;
+  const isServices = isServicesProfile(storeProfile.modules);
+  const ordersLoading = ordersQ.isPending;
+  const catalogLoading = productsQ.isPending || variantsQ.isPending;
 
   const step1Done = hasProducts;
   const step2Done = shareStepDone({ marked: isPreviewed, hasRealSales });
@@ -225,12 +230,12 @@ function Dashboard() {
 
   const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
   const isAllStepsCompleted = completedStepsCount === 3;
-  const checklist = checklistView({
-    completed: completedStepsCount,
-    dismissed: isOnboardingDismissed,
-  });
+  // The checklist waits for what it counts, so it does not open and fold as the reads arrive.
+  const checklistReady = !catalogLoading && !ordersLoading && !orderCountQ.isPending;
+  const checklist = checklistReady
+    ? checklistView({ completed: completedStepsCount, dismissed: isOnboardingDismissed })
+    : "hidden";
 
-  // Primary Financial or Catalog KPIs
   const primaryKpis = primaryKpisFor({
     isCatalog,
     isAr,
@@ -240,54 +245,64 @@ function Dashboard() {
     canViewFinancials,
     currency,
     locale,
-    isServices: isServicesProfile(storeProfile.modules),
+    isServices,
   });
+  const attention = attentionLines({
+    prepare: unfulfilledOrdersCount,
+    appointments: appointmentsToComplete,
+    returns: pendingReturnsQ.data ?? 0,
+    low_stock: storeProfile.modules.stock && !catalogLoading ? inventoryIntel.lowStockCount : 0,
+  });
+  const brandName = (isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">
-      {/* 1. Integrated Command Header */}
       <DashboardCommandHeader
         lang={isAr ? "ar" : "en"}
         slug={slug}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        brandName={brandName}
         salesTransactionCount={counts.transactions}
         periodLabel={reportingPeriodLabel}
         isCatalog={isCatalog}
         inquiryCount={catalogInquiriesQ.data?.totalInquiries ?? 0}
         hasIncubators={storeProfile.modules.incubators}
-        isServices={isServicesProfile(storeProfile.modules)}
+        isServices={isServices}
       />
 
-      {/* The figures first, on every view: on a phone they once came after the checklist, a screen down. */}
-      <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} />
-
-      {/* 1.5 Merchant Action Strip: What Needs Attention Today */}
-      <DashboardActionStrip
-        slug={slug}
-        isAr={isAr}
-        unfulfilledOrdersCount={unfulfilledOrdersCount}
-        lowStockCount={storeProfile.modules.stock ? inventoryIntel.lowStockCount : 0}
-        pendingReturnsCount={pendingReturnsQ.data ?? 0}
-        appointmentsToCompleteCount={appointmentsToComplete}
-      />
-
-      {/* How many shoppers came and how far they went (not for a catalog: it has no bag). */}
+      {/* Today first, then what needs a person: the page once opened on thirty days' figures. */}
       {!isCatalog && (
-        <StoreFunnelCard
-          brandId={brandId}
+        <TodayStrip
+          today={today}
+          loading={ordersLoading || (canViewFinancials && figuresLoading)}
+          currency={currency}
+          locale={locale}
           isAr={isAr}
-          isServices={isServicesProfile(storeProfile.modules)}
+          slug={slug}
+          isServices={isServices}
         />
       )}
 
+      <AttentionList
+        lines={attention}
+        orders={actionNeededOrders}
+        loading={ordersLoading}
+        isAr={isAr}
+        slug={slug}
+        locale={locale}
+      />
+
       {/* Whether the store takes orders now, and a busy pause in one tap. */}
       <StoreStatusCard brandId={brandId} isAr={isAr} canChange={hasPermission("manage_settings")} />
+
+      {storeProfile.modules.bookings && (
+        <BookingsGlanceCard brandId={brandId} slug={slug} isAr={isAr} />
+      )}
 
       {/* Clients worth a message today: one line, the way in to the list. */}
       {hasPermission("manage_customers") && <OutreachDashboardLine slug={slug} isAr={isAr} />}
 
       {/* A supplier's order late, or money owed to suppliers: one line, the way in. */}
-      {canViewFinancials && !isServicesProfile(storeProfile.modules) && (
+      {canViewFinancials && !isServices && (
         <SupplierOrdersDashboardLine
           brandId={brandId}
           slug={slug}
@@ -296,123 +311,91 @@ function Dashboard() {
         />
       )}
 
-      {storeProfile.modules.bookings && (
-        <BookingsGlanceCard brandId={brandId} slug={slug} isAr={isAr} />
-      )}
+      <ReviewRequestQueue brandId={brandId} brandName={brandName} store={brand} isAr={isAr} />
 
-      <ReviewRequestQueue
-        brandId={brandId}
-        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
-        store={brand}
-        isAr={isAr}
-      />
-
-      {/* 2. Scope Switcher Toolbar */}
-      <DashboardScopeSwitcher
-        lang={isAr ? "ar" : "en"}
-        activeScope={activeScope}
-        onScopeChange={(scope) => setActiveScope(scope)}
-        lowStockCount={inventoryIntel.lowStockCount}
-        tracksStock={storeProfile.modules.stock}
-      />
-
-      {/* Dynamic View 1: Financial Telemetry (Default / "financials") */}
-      {activeScope === "financials" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          {/* Guided Onboarding Checklist with Real State & Interactive Completion */}
-          {checklist === "line" && !checklistOpen && (
-            <OnboardingChecklistLine
-              completed={completedStepsCount}
-              isAr={isAr}
-              onOpen={() => setChecklistOpen(true)}
+      {/* The last 30 days, beside the 30 before (the Reports' own figures). */}
+      {canViewFinancials && figuresLoading && !isCatalog ? (
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((n) => (
+            <CardPlaceholder
+              key={n}
+              label={isAr ? "جارٍ تحميل الأرقام" : "Loading figures"}
+              className="min-h-28"
             />
-          )}
-          {(checklist === "full" || (checklist === "line" && checklistOpen)) && (
-            <OnboardingChecklist
-              brand={brand}
-              completedStepsCount={completedStepsCount}
-              handleCopyStoreLink={handleCopyStoreLink}
-              handleDismissOnboarding={handleDismissOnboarding}
-              handlePreviewStorefront={handlePreviewStorefront}
-              isAllStepsCompleted={isAllStepsCompleted}
-              isAr={isAr}
-              productsQ={productsQ}
-              slug={slug}
-              step1Done={step1Done}
-              step2Done={step2Done}
-              step3Done={step3Done}
-              togglePreviewMilestone={togglePreviewMilestone}
-              toggleSaleMilestone={toggleSaleMilestone}
-              totalOrdersCount={totalOrdersCount}
-              takesBookings={storeProfile.modules.bookings}
-            />
-          )}
-
-          {/* Dismissed indicator if merchant wants to reopen */}
-          {isOnboardingDismissed && (
-            <div className="flex items-center justify-end">
-              <button
-                type="button"
-                onClick={handleRestoreOnboarding}
-                className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1.5 py-1 px-2.5 rounded-lg hover:bg-muted/50"
-              >
-                <Sparkles className="h-3 w-3 text-primary" />
-                {isAr
-                  ? `عرض خطوات إطلاق المتجر (${completedStepsCount} من 3)`
-                  : `Show launch checklist (${completedStepsCount} of 3)`}
-              </button>
-            </div>
-          )}
-
-          {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
-          <SalesAndActionsRow
-            actionNeededOrders={actionNeededOrders}
-            canViewFinancials={canViewFinancials}
-            catalogInquiriesQ={catalogInquiriesQ}
-            currency={currency}
-            figures={figures}
-            hasSales={hasSales}
-            isAr={isAr}
-            isCatalog={isCatalog}
-            isMounted={isMounted}
-            locale={locale}
-            slug={slug}
-          />
-
-          {/* Lower Feed: Activity Queue & Low Stock Alerts */}
-          <ActivityAndStockRow
-            currency={currency}
-            inventoryIntel={inventoryIntel}
-            isAr={isAr}
-            locale={locale}
-            recentOrdersQ={recentOrdersQ}
-            slug={slug}
-            t={t}
-            tracksStock={storeProfile.modules.stock}
-          />
+          ))}
         </div>
+      ) : (
+        <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} />
       )}
 
-      {/* Dynamic View 2: Expanded Sales Chart Series ("sales_series") */}
-      {activeScope === "sales_series" && (
-        <SalesSeriesView
-          currency={currency}
-          figures={figures}
-          isAr={isAr}
-          isMounted={isMounted}
-          locale={locale}
-        />
-      )}
+      <SalesAndRecentRow
+        canViewFinancials={canViewFinancials}
+        catalogInquiriesQ={catalogInquiriesQ}
+        currency={currency}
+        figures={figures}
+        figuresLoading={figuresLoading}
+        hasSales={hasSales}
+        isAr={isAr}
+        isCatalog={isCatalog}
+        isMounted={isMounted}
+        locale={locale}
+        recentOrdersQ={recentOrdersQ}
+        slug={slug}
+      />
 
-      {/* Dynamic View 3: Diagnostics View ("diagnostics") */}
-      {activeScope === "diagnostics" && (
-        <DiagnosticsView
-          crmStats={crmStats}
+      {storeProfile.modules.stock && (
+        <StockAlertsCard
           inventoryIntel={inventoryIntel}
+          loading={catalogLoading || ordersLoading}
           isAr={isAr}
           slug={slug}
-          tracksStock={storeProfile.modules.stock}
         />
+      )}
+
+      {/* How many shoppers came and how far they went, one line until opened (not a catalog). */}
+      {!isCatalog && <StoreFunnelCard brandId={brandId} isAr={isAr} isServices={isServices} />}
+
+      {checklist === "line" && !checklistOpen && (
+        <OnboardingChecklistLine
+          completed={completedStepsCount}
+          isAr={isAr}
+          onOpen={() => setChecklistOpen(true)}
+        />
+      )}
+      {(checklist === "full" || (checklist === "line" && checklistOpen)) && (
+        <OnboardingChecklist
+          brand={brand}
+          completedStepsCount={completedStepsCount}
+          handleCopyStoreLink={handleCopyStoreLink}
+          handleDismissOnboarding={handleDismissOnboarding}
+          handlePreviewStorefront={handlePreviewStorefront}
+          isAllStepsCompleted={isAllStepsCompleted}
+          isAr={isAr}
+          productsQ={productsQ}
+          slug={slug}
+          step1Done={step1Done}
+          step2Done={step2Done}
+          step3Done={step3Done}
+          togglePreviewMilestone={togglePreviewMilestone}
+          toggleSaleMilestone={toggleSaleMilestone}
+          totalOrdersCount={totalOrdersCount}
+          takesBookings={storeProfile.modules.bookings}
+        />
+      )}
+
+      {checklistReady && isOnboardingDismissed && (
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={handleRestoreOnboarding}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary"
+          >
+            <Sparkles className="h-3 w-3 text-primary" />
+            {isAr
+              ? `عرض خطوات إطلاق المتجر (${completedStepsCount} من 3)`
+              : `Show launch checklist (${completedStepsCount} of 3)`}
+          </button>
+        </div>
       )}
 
       {/* What customers say: worth reading, after the figures and the work to do. */}

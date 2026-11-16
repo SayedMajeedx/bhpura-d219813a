@@ -21,14 +21,14 @@ export const ORDER_DETAIL_SELECT =
   "*, customers(*), order_items(*), bookings(id, reference, status, event_date, starts_at, ends_at, deposit_amount, location), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*), line_revisions:order_line_revisions(id, order_item_id, revision, changes, note, changed_by, changed_at, told_supplier_at)";
 
 /**
- * Finance views (dashboard KPIs, P&L and cash-flow reports): money, status,
+ * The dashboard's orders (`fetchDashboardOrders`): money, what was collected, status,
  * reconciliation and the cost snapshot of every line. Type: `OrderFinanceRow`.
  * The dashboard also stages each order with `getOrderWorkflow`, which needs the way it is
  * fulfilled and, for an appointment, when its booking starts: without them an appointment
  * is counted as a parcel to prepare.
  */
 export const ORDER_FINANCE_SELECT =
-  "id, invoice_number, created_at, currency, total, status, fulfillment_status, fulfillment_method, payment_status, payment_method, reconciliation_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), bookings(id, starts_at), order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total, packaging_cost_snapshot)";
+  "id, invoice_number, created_at, currency, total, status, fulfillment_status, fulfillment_method, payment_status, payment_method, reconciliation_status, advance_paid, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), bookings(id, starts_at), order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total, packaging_cost_snapshot)";
 
 /** The dashboard's latest-orders feed. Type: `OrderRecentRow`. */
 export const ORDER_RECENT_SELECT =

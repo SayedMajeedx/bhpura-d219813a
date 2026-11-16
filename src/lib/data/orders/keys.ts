@@ -16,8 +16,11 @@ export const ordersKeys = {
   lists: (brandId: string) => [...ordersKeys.all(brandId), "list"] as const,
   list: (brandId: string, scope: OrderScope) => [...ordersKeys.lists(brandId), scope] as const,
 
-  /** Finance views (dashboard and reports): every order, newest first. */
-  finance: (brandId: string) => [...ordersKeys.all(brandId), "finance"] as const,
+  /** The dashboard's orders: those placed since a moment, and every open one. */
+  dashboard: (brandId: string, since: string) =>
+    [...ordersKeys.all(brandId), "dashboard", since] as const,
+  /** How many orders the brand has ever had. */
+  count: (brandId: string) => [...ordersKeys.all(brandId), "count"] as const,
   recent: (brandId: string, limit: number) =>
     [...ordersKeys.all(brandId), "recent", limit] as const,
   reconciliation: (brandId: string, limit: number) =>

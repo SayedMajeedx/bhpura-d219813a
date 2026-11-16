@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -136,6 +136,7 @@ describe("the card's sources", () => {
         <StoreFunnelCard brandId="b1" isAr={isAr} />
       </QueryClientProvider>,
     );
+    fireEvent.click(await screen.findByRole("button", { expanded: false }));
     await screen.findAllByText(isAr ? "زيارات" : "Visits");
   };
 
@@ -182,7 +183,7 @@ describe("the card's sources", () => {
       </QueryClientProvider>,
     );
     const placeholder = screen.getByRole("status", { name: "Loading visits" });
-    expect(placeholder.className).toContain("min-h-24");
+    expect(placeholder.className).toContain("min-h-12");
     answer(data.counts);
   });
 });
@@ -237,9 +238,19 @@ describe("the dashboard card", () => {
       </QueryClientProvider>,
     );
 
+  it("is one line, the visits and the conversion rate, until it is opened", async () => {
+    // Open, it took a phone's screen on a dashboard 4,000px long (the review of 2026-11-16).
+    data.counts = { visits: 200, product_views: 120, carts: 30, checkouts: 12, orders: 5 };
+    show();
+    const line = await screen.findByRole("button", { expanded: false });
+    expect(line).toHaveTextContent(/200.*2.5%/);
+    expect(screen.queryByText("Added to bag")).toBeNull();
+  });
+
   it("shows the visits, each step and the conversion rate", async () => {
     data.counts = { visits: 200, product_views: 120, carts: 30, checkouts: 12, orders: 5 };
     show();
+    fireEvent.click(await screen.findByRole("button", { expanded: false }));
     expect(await screen.findByText("2.5%")).toBeInTheDocument();
     expect(screen.getByText("Added to bag")).toBeInTheDocument();
     expect(screen.getByText(/· 15%/)).toBeInTheDocument();
@@ -248,6 +259,7 @@ describe("the dashboard card", () => {
   it("says counting has started when no visit is recorded yet, in Arabic too", async () => {
     data.counts = { visits: 0, product_views: 0, carts: 0, checkouts: 0, orders: 0 };
     show(true);
+    fireEvent.click(await screen.findByRole("button", { expanded: false }));
     expect(await screen.findByText(/تُعدّ الزيارات من الآن/)).toBeInTheDocument();
     expect(screen.queryByText(/%/)).toBeNull();
   });

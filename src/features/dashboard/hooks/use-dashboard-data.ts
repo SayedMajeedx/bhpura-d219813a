@@ -5,15 +5,16 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { businessSettingsKeys, businessSettingsQueries } from "@/lib/data/business-settings";
 import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
-import { customersKeys, customersQueries } from "@/lib/data/customers";
 import { reportingKeys, reportingQueries } from "@/lib/data/reporting";
 import { returnsQueries } from "@/lib/data/returns";
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows and daily sales for the
- * last 30 days (and the overview of the 30 before), catalog inquiries, products, variants,
- * customers, orders, pending returns and partner sales, kept fresh by realtime invalidation. Its
- * money figures are the Reports' own; it no longer loads expenses or packaging to add them up.
+ * last 30 days (and the overview of the 30 before), catalog inquiries, products and variants
+ * (shared with the inventory), the orders of the last 45 days with every order still open, how
+ * many orders the store has had, the latest orders, pending returns and partner sales, kept fresh
+ * by realtime invalidation. Each part of the page draws as its own read arrives: nothing waits
+ * for everything. It once read every order the store ever had and every customer on each visit.
  */
 export function useDashboardData({
   brandId,
@@ -32,7 +33,10 @@ export function useDashboardData({
     const periodDurationMs = end.getTime() - start.getTime();
     const previousEnd = new Date(start.getTime() - 1);
     const previousStart = new Date(previousEnd.getTime() - periodDurationMs);
-    return { start, end, previousStart, previousEnd };
+    // The orders read reaches 45 days back: the stock pace looks at 45 days of sales.
+    const ordersSince = new Date(start);
+    ordersSince.setDate(ordersSince.getDate() - 15);
+    return { start, end, previousStart, previousEnd, ordersSince: ordersSince.toISOString() };
   }, []);
   const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -97,14 +101,12 @@ export function useDashboardData({
 
   const variantsQ = useQuery({ ...catalogQueries.variants(brandId), refetchOnWindowFocus: false });
 
-  // 4. Fetch all customers
-  const customersQ = useQuery({
-    ...customersQueries.contacts(brandId),
+  // The orders of the last 45 days and every open one, with their lines; and how many in all.
+  const ordersQ = useQuery({
+    ...ordersQueries.dashboard(brandId, dashboardPeriods.ordersSince),
     refetchOnWindowFocus: false,
   });
-
-  // 5. Every order with its lines (shared with the finance reports)
-  const ordersQ = useQuery({ ...ordersQueries.finance(brandId), refetchOnWindowFocus: false });
+  const orderCountQ = useQuery({ ...ordersQueries.count(brandId), refetchOnWindowFocus: false });
 
   // 6. Recent 5 orders for the operational feed
   const recentOrdersQ = useQuery({
@@ -126,7 +128,6 @@ export function useDashboardData({
   useRealtimeInvalidate(
     [
       { table: "orders", brandId, queryKey: ordersKeys.all(brandId) },
-      { table: "orders", brandId, queryKey: customersKeys.contacts(brandId) },
       { table: "order_items", brandId, queryKey: ordersKeys.all(brandId) },
       { table: "products", brandId, queryKey: catalogKeys.products(brandId) },
       { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },
@@ -141,17 +142,9 @@ export function useDashboardData({
     `dashboard-realtime:${brandId}`,
   );
 
-  const isLoading =
-    businessSettings.isLoading ||
-    productsQ.isLoading ||
-    variantsQ.isLoading ||
-    customersQ.isLoading ||
-    ordersQ.isLoading ||
-    recentOrdersQ.isLoading ||
-    incubatorSalesQ.isLoading ||
-    (canViewFinancials
-      ? reportingOverviewQ.isLoading || previousReportingOverviewQ.isLoading
-      : false);
+  const figuresLoading = canViewFinancials
+    ? reportingOverviewQ.isPending || previousReportingOverviewQ.isPending
+    : false;
   const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
   const accountingRow: any =
     accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
@@ -171,12 +164,12 @@ export function useDashboardData({
     reportingOverviewQ,
     productsQ,
     variantsQ,
-    customersQ,
     ordersQ,
+    orderCountQ,
     recentOrdersQ,
     pendingReturnsQ,
     incubatorSalesQ,
-    isLoading,
+    figuresLoading,
     accountingRow,
     previousAccountingRow,
     salesSeriesQ,
