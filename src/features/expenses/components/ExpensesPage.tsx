@@ -53,6 +53,7 @@ import {
   type KindFilter,
 } from "@/features/expenses/components/ExpensesFilterBar";
 import { ExpensesList } from "@/features/expenses/components/ExpensesList";
+import { ExpenseInsights } from "@/features/expenses/components/ExpenseInsights";
 import { ReceiptReviewDialog } from "@/features/expenses/components/ReceiptReviewDialog";
 
 /**
@@ -74,6 +75,7 @@ export function ExpensesPage() {
   const { modules } = useAdminStoreProfile(brandId).profile;
 
   const q = useQuery({ ...expensesQueries.list(brandId), retry: false });
+  const budgetsQ = useQuery(expensesQueries.budgets(brandId));
   const list = useMemo(() => (q.data ?? []) as ExpenseRow[], [q.data]);
 
   const [editing, setEditing] = useState<ExpenseRow | null>(null);
@@ -302,6 +304,16 @@ export function ExpensesPage() {
             onDownloadExcel={() => void downloadExcel()}
             onDownloadCogs={downloadCogsCsv}
           />
+          {period.kind === "month" && (
+            <ExpenseInsights
+              lang={words}
+              month={period.month}
+              expenses={list}
+              budgets={budgetsQ.data ?? []}
+              storeCurrency={currency}
+              brandId={brandId}
+            />
+          )}
           <ExpensesList
             lang={words}
             expenses={shown}

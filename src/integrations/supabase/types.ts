@@ -3377,6 +3377,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      expense_budgets: {
+        Row: {
+          brand_id: string;
+          category: string;
+          created_at: string;
+          id: string;
+          monthly_amount: number;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          category: string;
+          created_at?: string;
+          id?: string;
+          monthly_amount: number;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          category?: string;
+          created_at?: string;
+          id?: string;
+          monthly_amount?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expense_budgets_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       expenses: {
         Row: {
           amount: number;
