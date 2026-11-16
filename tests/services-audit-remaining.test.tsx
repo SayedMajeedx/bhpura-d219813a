@@ -2,6 +2,8 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { primaryKpisFor } from "../src/features/dashboard/lib/dashboard-kpis";
+import { dashboardFigures } from "../src/features/dashboard/lib/dashboard-figures";
+import { composeOverviewRows } from "../src/lib/reporting-compose";
 import { InventoryImportMenu } from "../src/features/inventory/components/InventoryImportMenu";
 import { IntegrationsScopeSwitcher } from "../src/components/integrations/IntegrationsScopeSwitcher";
 import { PROVIDER_PRESETS, shownIntegration } from "../src/lib/integration-providers";
@@ -14,27 +16,36 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/x">{children}</a>,
 }));
 
-const financials = (over: Record<string, number> = {}) =>
-  ({
-    revenue: 1000,
-    netProfit: 700,
-    storeRevenue: 1000,
-    incubatorRevenue: 0,
-    revenueDeltaPct: 5,
-    aovCurrent: 100,
-    aovDeltaPct: 1,
-    ordersCurrent: 10,
-    ordersDeltaPct: 2,
-    grossMarginPercent: 100,
-    cogs: 0,
-    ...over,
-  }) as never;
-const kpis = (isServices: boolean, over: Record<string, number> = {}) =>
+const figures = (cogs = 0) =>
+  dashboardFigures({
+    row: composeOverviewRows({
+      overview: [
+        {
+          currency: "BHD",
+          net_merch_sales: 1000,
+          gross_merch_sales: 1000,
+          paid_order_count: 10,
+          known_cogs: cogs,
+        },
+      ],
+      returns: [],
+      cogs: [],
+      fees: [],
+      incubatorSummary: [],
+    })[0],
+    previous: undefined,
+    series: [],
+    start: new Date(2026, 9, 18),
+    locale: "en-US",
+    currency: "BHD",
+  });
+const kpis = (isServices: boolean, cogs = 0) =>
   primaryKpisFor({
     isCatalog: false,
     isAr: false,
     catalogInquiries: undefined,
-    financials: financials(over),
+    figures: figures(cogs),
+    counts: { storeOrders: 10, partnerSales: 0, transactions: 10 },
     canViewFinancials: true,
     currency: "BHD",
     locale: "en-US",
@@ -44,24 +55,22 @@ const kpis = (isServices: boolean, over: Record<string, number> = {}) =>
 describe("the dashboard's headline cards", () => {
   it("talk about bookings, not orders, for a services store", () => {
     const labels = kpis(true).map((k) => k.label);
-    expect(labels).toContain("Average Booking Value");
-    expect(labels).toContain("Total Paid Bookings");
-    expect(labels.join(" ")).not.toMatch(/Order Value|Sales Transactions/);
+    expect(labels).toContain("Average booking");
+    expect(labels).toContain("Bookings");
+    expect(labels.join(" ")).not.toMatch(/order|Sales$/i);
   });
 
   it("leave out the gross margin of a store with no cost of goods, and keep it once a cost is recorded", () => {
-    expect(kpis(true).map((k) => k.label)).not.toContain("Gross Margin %");
-    expect(kpis(true, { cogs: 40, grossMarginPercent: 96 }).map((k) => k.label)).toContain(
-      "Gross Margin %",
-    );
+    expect(kpis(true).map((k) => k.label)).not.toContain("Gross margin");
+    expect(kpis(true, 40).map((k) => k.label)).toContain("Gross margin");
   });
 
-  it("are unchanged for a shop", () => {
+  it("are the Reports' figures for a shop", () => {
     expect(kpis(false).map((k) => k.label)).toEqual([
-      "Revenue & Net Profit",
-      "Average Order Value (AOV)",
-      "Gross Margin %",
-      "Total Sales Transactions",
+      "Net sales and net profit",
+      "Average store order",
+      "Gross margin",
+      "Sales",
     ]);
   });
 });
