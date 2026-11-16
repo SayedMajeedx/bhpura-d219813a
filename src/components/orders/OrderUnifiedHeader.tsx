@@ -363,23 +363,15 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         </div>
       </div>
 
-      {/* On a phone the notice is one line and nothing more: the thumb bar holds "Edit order"
-          (its main button, or its menu when the next step has that place), so a button here
-          offered it twice. */}
+      {/* A quiet line, not a box (the admin review of 2026-11-15: a full-width amber box on every
+          visit). "Edit order" is beside it on a laptop and in the thumb bar on a phone. */}
       {isReadOnly && (
-        <div className="flex items-center gap-2 rounded-xl border border-amber-300/80 bg-amber-50/90 px-3.5 py-2 text-xs text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200 sm:py-2.5">
-          <Lock className="h-4 w-4 shrink-0" />
-          <span className="min-w-0 flex-1">
-            <span className="sm:hidden">
-              {isAr ? "وضع العرض: الحقول مقفلة." : "View mode: fields are locked."}
-            </span>
-            <span className="hidden sm:inline">
-              {isAr
-                ? "أنت في وضع العرض الآمن. الحقول مقفلة لمنع التعديل غير المقصود."
-                : "You are in safe view mode. Fields are locked to prevent accidental changes."}
-            </span>
-          </span>
-        </div>
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {isAr
+            ? "عرض فقط: الحقول مقفلة حتى تضغط تعديل الطلب."
+            : "View only: fields are locked until you press Edit order."}
+        </p>
       )}
 
       {isEditing && (

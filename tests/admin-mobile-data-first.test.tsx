@@ -40,8 +40,7 @@ const { TeamCommandHeader } = await import("../src/components/team/TeamCommandHe
 const { ReturnsCommandHeader } = await import("../src/components/returns/ReturnsCommandHeader");
 const { OrderMobileCard } = await import("../src/components/orders/OrderMobileCard");
 const { OrdersScopeSwitcher } = await import("../src/components/orders/OrdersScopeSwitcher");
-const { UrgentOrdersBanner } = await import("../src/features/orders/components/UrgentOrdersBanner");
-const { orderQueueTabs } = await import("../src/features/orders/lib/order-queue-tabs");
+const { BulkSelectionToolbar } = await import("../src/components/bulk-selection-toolbar");
 
 describe("what an order's card says", () => {
   it("has no next step once handed over, cancelled or refunded", () => {
@@ -229,63 +228,35 @@ describe("the order filters", () => {
   });
 });
 
-describe("the orders that need action", () => {
-  it("are one line that opens their tab at its first page", () => {
-    const setTabFilter = vi.fn();
-    const setPage = vi.fn();
-    render(
-      <UrgentOrdersBanner
-        hasMadeToOrder={false}
-        lang="ar"
-        setPage={setPage}
-        setTabFilter={setTabFilter}
-        tabCounts={{
-          all: 20,
-          unpaid: 2,
-          action_required: 6,
-          to_prepare: 4,
-          shipped: 1,
-          completed: 7,
-        }}
-      />,
-    );
-    const line = screen.getByRole("button", { name: /تحتاج إجراءً فورياً: 6 طلبات/ });
-    // The reasons wait for a wider screen; on a phone the line is the count and the way in.
-    expect(screen.getByText(/تحصيل عند الاستلام/)).toHaveClass("hidden");
-    // On a phone the first filter tab says it (amber, with its count), right above this line.
-    expect(line).toHaveClass("max-sm:hidden");
-    fireEvent.click(line);
-    expect(setTabFilter).toHaveBeenCalledWith("action_required");
-    expect(setPage).toHaveBeenCalledWith(1);
+// The admin review of 2026-11-15: every page opened on a bordered heading box, and an empty
+// selection bar ("0 selected", "Select all", "Deselect all") stood above every list.
+describe("the data comes first", () => {
+  it("a page's heading is a plain row, not a box", () => {
+    render(<AdminPageHeader icon={Plus} title="Orders" />);
+    const header = screen.getByRole("heading", { name: "Orders" }).closest("header")!;
+    expect(header.className.split(" ")).not.toContain("border");
+    expect(header.className).not.toMatch(/bg-card|shadow/);
   });
 
-  it("turn their filter tab amber while they wait, and only then", () => {
-    const counts = {
-      all: 20,
-      unpaid: 2,
-      action_required: 6,
-      to_prepare: 4,
-      shipped: 1,
-      completed: 7,
-    };
-    const { rerender } = render(
-      <OrdersScopeSwitcher
-        lang="en"
-        tabs={orderQueueTabs(counts)}
-        activeTab="all"
-        onTabChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /Needs attention/ }).className).toMatch(/amber/);
-    expect(screen.getByRole("button", { name: /Awaiting payment/ }).className).not.toMatch(/amber/);
-    rerender(
-      <OrdersScopeSwitcher
-        lang="en"
-        tabs={orderQueueTabs({ ...counts, action_required: 0 })}
-        activeTab="all"
-        onTabChange={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole("button", { name: /Needs attention/ }).className).not.toMatch(/amber/);
+  it("shows the selection bar only once something is ticked, on every width", () => {
+    const bar = (selectedCount: number) =>
+      render(
+        <BulkSelectionToolbar
+          lang="en"
+          noun="product"
+          selectedCount={selectedCount}
+          allFilteredSelected={false}
+          onSelectAll={() => undefined}
+          onDeselectAll={() => undefined}
+          onDeleteSelected={() => undefined}
+        />,
+      );
+    const none = bar(0);
+    const empty = none.container.firstElementChild!;
+    expect(empty.className.split(" ")).toContain("hidden");
+    expect(empty.className).not.toMatch(/sm:flex/);
+    none.unmount();
+    bar(2);
+    expect(screen.getByText("2 products selected")).toBeInTheDocument();
   });
 });

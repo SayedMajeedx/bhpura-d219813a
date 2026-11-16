@@ -51,7 +51,8 @@ export function OrderBatchActionsBar({
   return (
     <div
       className={cn(
-        "flex-col gap-2 rounded-xl border border-border-strong bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
+        // Only once an order is ticked: `sm:flex` showed an empty bar on every wider screen.
+        "flex-col gap-2 rounded-xl border border-border-strong bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between",
         selectedOrderIds.size > 0 ? "flex" : "hidden",
       )}
     >

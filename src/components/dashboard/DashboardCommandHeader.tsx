@@ -43,11 +43,20 @@ export function DashboardCommandHeader({
           </span>
         ) : (
           <AdminPageCount>
-            {countOf(
-              salesTransactionCount,
-              isServices ? "paidBooking" : "sale",
-              isAr ? "ar" : "en",
-            )}
+            {/* "0 عملية بيع" read badly: none is said in words. */}
+            {salesTransactionCount === 0
+              ? isServices
+                ? isAr
+                  ? "لا حجوزات مدفوعة بعد"
+                  : "No paid bookings yet"
+                : isAr
+                  ? "لا مبيعات بعد"
+                  : "No sales yet"
+              : countOf(
+                  salesTransactionCount,
+                  isServices ? "paidBooking" : "sale",
+                  isAr ? "ar" : "en",
+                )}
           </AdminPageCount>
         )
       }

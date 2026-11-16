@@ -24,7 +24,8 @@ export function OrdersViewControls({
   useEffect(() => setSound(newOrderSoundOn()), []);
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
+    // In the search row (the admin review of 2026-11-15: a row of its own above the orders).
+    <div className="flex shrink-0 items-center gap-1.5">
       <div
         role="group"
         aria-label={isAr ? "طريقة العرض" : "View"}
@@ -47,7 +48,9 @@ export function OrdersViewControls({
               onClick={() => onView(option)}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />
-              {option === "list" ? (isAr ? "قائمة" : "List") : isAr ? "لوحة" : "Board"}
+              <span className="sr-only lg:not-sr-only">
+                {option === "list" ? (isAr ? "قائمة" : "List") : isAr ? "لوحة" : "Board"}
+              </span>
             </Button>
           );
         })}
@@ -57,7 +60,16 @@ export function OrdersViewControls({
         size="sm"
         variant="outline"
         aria-pressed={sound}
-        className="h-8 gap-1.5 text-xs"
+        title={
+          sound
+            ? isAr
+              ? "صوت الطلبات الجديدة: مفعّل"
+              : "New-order sound: on"
+            : isAr
+              ? "صوت الطلبات الجديدة: متوقف"
+              : "New-order sound: off"
+        }
+        className="h-9 w-9 shrink-0 p-0"
         onClick={() => {
           const next = !sound;
           setNewOrderSound(next);
@@ -71,13 +83,15 @@ export function OrdersViewControls({
         ) : (
           <BellOff className="h-3.5 w-3.5" aria-hidden />
         )}
-        {sound
-          ? isAr
-            ? "صوت الطلبات الجديدة: مفعّل"
-            : "New-order sound: on"
-          : isAr
-            ? "صوت الطلبات الجديدة: متوقف"
-            : "New-order sound: off"}
+        <span className="sr-only">
+          {sound
+            ? isAr
+              ? "صوت الطلبات الجديدة: مفعّل"
+              : "New-order sound: on"
+            : isAr
+              ? "صوت الطلبات الجديدة: متوقف"
+              : "New-order sound: off"}
+        </span>
       </Button>
     </div>
   );

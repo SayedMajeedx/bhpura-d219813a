@@ -21,7 +21,6 @@ const { getOrderWorkflow } = await import("../src/lib/order-workflow");
 const { OrderFinancialCard } = await import("../src/features/orders/components/OrderFinancialCard");
 const { BenefitReceiptReview } =
   await import("../src/features/orders/components/BenefitReceiptReview");
-const { UrgentOrdersBanner } = await import("../src/features/orders/components/UrgentOrdersBanner");
 const { orderTotals } = await import("../src/features/orders/lib/order-editor");
 const { inPromoScope } = await import("../src/lib/promo-scope");
 
@@ -134,35 +133,6 @@ describe("a transfer receipt once verified", () => {
 
   it("is amber while it waits for its check", () => {
     expect(review("unpaid")).toMatch(/amber/);
-  });
-});
-
-describe("the urgent banner counts in words", () => {
-  const banner = (count: number, lang: "en" | "ar") =>
-    render(
-      <UrgentOrdersBanner
-        hasMadeToOrder={false}
-        lang={lang}
-        setPage={vi.fn()}
-        setTabFilter={vi.fn()}
-        tabCounts={{
-          all: 9,
-          unpaid: 0,
-          action_required: count,
-          to_prepare: 0,
-          shipped: 0,
-          completed: 0,
-        }}
-      />,
-    );
-
-  it("says one order and several orders, with the verb that goes with them", () => {
-    const one = banner(1, "en");
-    expect(screen.getByText("1 order needs action now")).toBeTruthy();
-    one.unmount();
-    banner(3, "en");
-    expect(screen.getByText("3 orders need action now")).toBeTruthy();
-    expect(screen.queryByText(/order\(s\)/)).toBeNull();
   });
 });
 

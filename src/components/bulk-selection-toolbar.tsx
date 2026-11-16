@@ -48,7 +48,10 @@ export function BulkSelectionToolbar({
   return (
     <div
       className={cn(
-        "flex-wrap items-center justify-between gap-2 rounded-xl border border-border-subtle bg-card px-3 py-2.5 shadow-2xs sm:flex",
+        // Only once something is ticked (the admin review of 2026-11-15: an empty bar, "0
+        // selected" with "Select all" and "Deselect all", stood above every list); the table's
+        // own heading box ticks them all.
+        "flex-wrap items-center justify-between gap-2 rounded-xl border border-border-subtle bg-card px-3 py-2.5 shadow-2xs",
         selectedCount > 0 ? "flex" : "hidden",
       )}
     >

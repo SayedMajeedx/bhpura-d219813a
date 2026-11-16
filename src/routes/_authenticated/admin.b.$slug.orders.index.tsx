@@ -60,7 +60,6 @@ import { orderQueueTabs } from "@/features/orders/lib/order-queue-tabs";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { isServicesProfile } from "@/lib/store-profile";
 import { useCompleteDelivery } from "@/features/orders/hooks/use-complete-delivery";
-import { UrgentOrdersBanner } from "@/features/orders/components/UrgentOrdersBanner";
 import { OrderBatchActionsBar } from "@/features/orders/components/OrderBatchActionsBar";
 import { OrderListPagination } from "@/features/orders/components/OrderListPagination";
 import { OrderFulfillmentModal } from "@/features/orders/components/OrderFulfillmentModal";
@@ -575,17 +574,6 @@ function OrdersList() {
         }}
       />
 
-      {/* 2b. Urgent Order Exceptions Banner */}
-      {tabCounts.action_required > 0 && tabFilter !== "action_required" && (
-        <UrgentOrdersBanner
-          hasMadeToOrder={hasMadeToOrder}
-          lang={lang}
-          setPage={setPage}
-          setTabFilter={setTabFilter}
-          tabCounts={tabCounts}
-        />
-      )}
-
       {/* 3. Compact Command Toolbar */}
       <OrdersToolbar
         lang={lang}
@@ -620,6 +608,20 @@ function OrdersList() {
         onSortOrderChange={(val) => setSortDirection(val === "oldest" ? "asc" : "desc")}
         activeFilterCount={activeFilterCount}
         onClearFilters={clearFilters}
+        // The list or the board, and this browser's new-order sound, in the search's row.
+        trailing={
+          <OrdersViewControls
+            view={view}
+            isAr={lang === "ar"}
+            onView={(next) => {
+              setView(next);
+              const url = new URL(window.location.href);
+              if (next === "board") url.searchParams.set("view", "board");
+              else url.searchParams.delete("view");
+              replaceUrlQuietly(url.pathname + url.search);
+            }}
+          />
+        }
       />
 
       {isAdmin && (
@@ -636,19 +638,6 @@ function OrdersList() {
           sortedOrders={sortedOrders}
         />
       )}
-
-      {/* Above the orders: the list or the board, and this browser's new-order sound. */}
-      <OrdersViewControls
-        view={view}
-        isAr={lang === "ar"}
-        onView={(next) => {
-          setView(next);
-          const url = new URL(window.location.href);
-          if (next === "board") url.searchParams.set("view", "board");
-          else url.searchParams.delete("view");
-          replaceUrlQuietly(url.pathname + url.search);
-        }}
-      />
 
       {view === "board" ? (
         <OrdersBoard
