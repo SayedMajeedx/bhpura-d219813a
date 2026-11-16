@@ -141,6 +141,26 @@ describe("tabs sliding: where the pill sits", () => {
     expect(pill.style.backgroundColor).toBe(fills[1]);
   });
 
+  it("wears the chosen tab's look again when the page turns dark", async () => {
+    // The admin turns dark just after it starts: the pill kept the light background it read
+    // first, under the chosen tab's light text (the dashboard's period switch, 2026-11-16).
+    const { container } = render(
+      <div className="t-tabs">
+        <TabsPill />
+        <button type="button" className="t-tab tab-under-theme" aria-pressed={true}>
+          30
+        </button>
+      </div>,
+    );
+    const pill = container.querySelector<HTMLElement>(".t-tabs-pill")!;
+    const tab = container.querySelector<HTMLElement>(".tab-under-theme")!;
+    tab.style.backgroundColor = "rgb(20, 22, 30)";
+    document.documentElement.classList.add("dark");
+    await act(async () => {});
+    expect(pill.style.backgroundColor).toBe("rgb(20, 22, 30)");
+    document.documentElement.classList.remove("dark");
+  });
+
   it("moves to a new set of tabs, as the workspace tabs are replaced", async () => {
     // Each workspace has its own tabs: moving to another one replaces them all.
     function Bar({ set }: { set: "home" | "orders" }) {
