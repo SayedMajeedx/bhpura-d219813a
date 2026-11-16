@@ -52,7 +52,7 @@ export function KpiCard({
       <div className="mt-3 text-[1.35rem] sm:mt-4 sm:text-[1.75rem] font-semibold leading-none tracking-tight text-foreground tabular-nums">
         {value}
       </div>
-      <div className="mt-3 flex min-h-5 items-center gap-2">
+      <div className="mt-3 flex min-h-5 flex-wrap items-center gap-x-2 gap-y-1">
         {trend && (
           <span
             className={cn(
@@ -65,7 +65,10 @@ export function KpiCard({
             ) : (
               <ArrowDownRight className="h-3.5 w-3.5" />
             )}
-            {Math.abs(trend.value)}%
+            <span dir="ltr">{Math.abs(trend.value)}%</span>
+            {trend.label && (
+              <span className="font-normal text-muted-foreground">· {trend.label}</span>
+            )}
           </span>
         )}
         {description && <p className="text-xs leading-5 text-muted-foreground">{description}</p>}

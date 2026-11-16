@@ -67,3 +67,13 @@ export function reportStockState(row: ReportStockRow, lowStockUnits: number): Pr
     : { stock_main: row.current_stock };
   return productAvailability(row, readyUnitsOf([variant]), 0, lowStockUnits);
 }
+
+/**
+ * A sales bucket split by where it was sold: the store's own orders' net sales and the partner
+ * shops', which `fetchReportingSales` keeps apart in `partner` (both before VAT and delivery).
+ */
+export function splitSalesBucket(row: { net_merch?: unknown; partner?: unknown }) {
+  const partner = Number(row.partner ?? 0) || 0;
+  const total = Number(row.net_merch ?? 0) || 0;
+  return { store: total - partner, partner, total };
+}

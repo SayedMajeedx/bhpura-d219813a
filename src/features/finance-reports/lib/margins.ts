@@ -35,6 +35,8 @@ export type MarginLine = {
   category: string | null;
   units: number;
   partnerUnits: number;
+  /** What the partner shops sold of it (part of its gross sales). */
+  partnerSales: number;
   grossSales: number;
   discounts: number;
   returns: number;
@@ -101,6 +103,7 @@ function line(
     category,
     units: rows.reduce((s, r) => s + r.units, 0),
     partnerUnits: rows.reduce((s, r) => s + r.partner_units, 0),
+    partnerSales: rows.reduce((s, r) => s + r.partner_sales, 0),
     grossSales,
     discounts,
     returns,
@@ -193,6 +196,7 @@ export function marginTotals(lines: MarginLine[]) {
       ...s,
       units: s.units + l.units,
       partnerUnits: s.partnerUnits + l.partnerUnits,
+      partnerSales: s.partnerSales + l.partnerSales,
       grossSales: s.grossSales + l.grossSales,
       discounts: s.discounts + l.discounts,
       returns: s.returns + l.returns,
@@ -247,6 +251,7 @@ export const MARGIN_COLUMNS = {
   discounts: { en: "Discounts", ar: "الخصومات" },
   returns: { en: "Returns", ar: "المرتجعات" },
   partnerUnits: { en: "Of which at partner shops", ar: "منها في المحلات الشريكة" },
+  partnerSales: { en: "Partner shops' sales", ar: "مبيعات المحلات الشريكة" },
   total: { en: "Total", ar: "المجموع" },
   products: { en: "Products sold", ar: "منتجات مبيعة" },
 };
@@ -272,6 +277,7 @@ export function marginsSheet(input: {
     w(MARGIN_COLUMNS.units),
     w(MARGIN_COLUMNS.partnerUnits),
     `${w(MARGIN_COLUMNS.grossSales)} (${currency})`,
+    w(MARGIN_COLUMNS.partnerSales),
     w(MARGIN_COLUMNS.discounts),
     w(MARGIN_COLUMNS.returns),
     w(MARGIN_COLUMNS.netSales),
@@ -288,6 +294,7 @@ export function marginsSheet(input: {
     { value: l.units, format: COUNT_FORMAT, total },
     { value: l.partnerUnits, format: COUNT_FORMAT, total },
     { value: l.grossSales, format: money, total },
+    { value: l.partnerSales, format: money, total },
     { value: -l.discounts, format: money, total },
     { value: -l.returns, format: money, total },
     { value: l.netSales, format: money, bold: true, total },
@@ -301,7 +308,7 @@ export function marginsSheet(input: {
     rtl: lang === "ar",
     stickyRows: 4,
     stickyColumns: 1,
-    widths: [34, 18, 9, 12, 14, 12, 12, 14, 14, 14, 9, 10],
+    widths: [34, 18, 9, 12, 14, 14, 12, 12, 14, 14, 14, 9, 10],
     rows: [
       [{ value: title, bold: true }],
       [{ value: subtitle }],

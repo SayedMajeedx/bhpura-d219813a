@@ -356,7 +356,7 @@ function MarginRowView({
               {line.category ??
                 (isAr ? arNoun(line.products ?? 0, "product") : `${line.products} products`)}
               {line.partnerUnits > 0 &&
-                ` · ${isAr ? `${line.partnerUnits} في المحلات الشريكة` : `${line.partnerUnits} at partner shops`}`}
+                ` · ${isAr ? `${line.partnerUnits} في المحلات الشريكة (${money(line.partnerSales)})` : `${line.partnerUnits} at partner shops (${money(line.partnerSales)})`}`}
             </span>
           )}
         </span>
