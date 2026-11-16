@@ -222,7 +222,7 @@ describe("fetchCategoryProducts", () => {
     expect(rows.map((r) => r.id)).toEqual(["b", "a"]);
   });
 
-  it("keeps only discounted products for offers", async () => {
+  it("leaves the sale collection to the page, which also reads the store's automatic offers", async () => {
     respond = () => ({
       data: [
         { id: "sale", product_variants: [{ selling_price: 8, original_price: 10 }] },
@@ -231,7 +231,7 @@ describe("fetchCategoryProducts", () => {
       error: null,
     });
     const rows = await fetchCategoryProducts(brand, { kind: "offers" });
-    expect(rows.map((r) => r.id)).toEqual(["sale"]);
+    expect(rows.map((r) => r.id)).toEqual(["sale", "full"]);
   });
 
   it("limits new arrivals to the last 30 days, newest first", async () => {

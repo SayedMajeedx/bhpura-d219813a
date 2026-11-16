@@ -1,6 +1,7 @@
 import { hasAvailableStock, type ProductRow, type StorefrontCategory } from "@/lib/data/storefront";
 import type { PublicSettings } from "@/lib/storefront-context";
-import { productOnSale } from "@/lib/product-price";
+import { productOnSaleOrOffer } from "@/lib/offer-price";
+import type { StoreOffer } from "@/lib/offers";
 import { hasProductPhoto } from "@/lib/product-photo";
 
 /**
@@ -63,6 +64,7 @@ export function homeMerchandising(
   bestSellerRows: RankingRows,
   trendingRows: RankingRows,
   shown: ShownRails = ALL_RAILS,
+  offers: readonly StoreOffer[] = [],
 ) {
   // A rail is the shop window: a product with no photo stays in the grid below, not here.
   const list = availableFirst(products.filter(hasProductPhoto));
@@ -82,7 +84,7 @@ export function homeMerchandising(
   const candidates = {
     new: list,
     best: ranked(bestSellerRows),
-    sale: list.filter(productOnSale),
+    sale: list.filter((p) => productOnSaleOrOffer(p, offers)),
     trending: ranked(trendingRows),
   };
 
@@ -119,7 +121,10 @@ export function homeGridProducts({
   categories,
   bestSellerRows,
   now,
+  offers = [],
 }: {
+  /** The store's live automatic offers: a product one lowers is in the sale collection. */
+  offers?: readonly StoreOffer[];
   products: ProductRow[];
   activeCategorySlugs: string[];
   categories: StorefrontCategory[];
@@ -153,7 +158,7 @@ export function homeGridProducts({
             ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
         );
     }
-    if (isSale) return list.filter(productOnSale);
+    if (isSale) return list.filter((p) => productOnSaleOrOffer(p, offers));
 
     // Filter recursively by the leaf selection (deepest active level)
     const leafSlug = activeCategorySlugs[activeCategorySlugs.length - 1];

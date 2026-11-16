@@ -3,6 +3,7 @@ import { readyUnitsOf } from "@/lib/product-availability";
 import {
   buyableVariants,
   cardPrice,
+  productOnSale,
   sellingPrice,
   variantDiscounted,
   type CardPrice,
@@ -177,6 +178,23 @@ export function offeredCardPrice(
         ? { kind: "offer", endsAt: other.ends_at }
         : null;
   return { ...result, offerBadge };
+}
+
+/**
+ * Whether the product belongs in the sale collection and on the sale rail: it has a price of its
+ * own on sale (`productOnSale`) or a live automatic offer lowers the price of a piece a shopper
+ * can buy (the same reading as the card's struck price, `offeredPiecePrice`). A product that only
+ * a conditional offer reaches (a minimum, buy X get Y) is not on sale: its price does not change.
+ */
+export function productOnSaleOrOffer(
+  product: OfferedProduct & { product_variants?: readonly PricedVariant[] | null },
+  offers: readonly StoreOffer[] | null | undefined,
+): boolean {
+  if (productOnSale(product)) return true;
+  if (!offers || offers.length === 0) return false;
+  return buyableVariants(product, product.product_variants)
+    .filter((variant) => sellingPrice(variant, product) > 0)
+    .some((variant) => offeredPiecePrice(offers, product, variant).offer !== null);
 }
 
 /**

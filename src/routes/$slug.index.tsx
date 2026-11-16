@@ -11,6 +11,7 @@ import { RecentlyViewed } from "@/components/storefront/RecentlyViewed";
 import { PAGE_DATA_RANKING_LIMIT, storefrontQueries } from "@/lib/data/storefront";
 import { storeLayoutData } from "@/features/storefront-shell/lib/layout-data";
 import { categoryPathParam, parseCategoryPath } from "@/features/storefront-home/lib/category-path";
+import { useLiveOffers } from "@/hooks/use-live-offers";
 import {
   homeGridProducts,
   homeGridShown,
@@ -141,15 +142,30 @@ function StoreHome() {
 
   // A product shows in one rail only, among the rails the page draws (the grid stays whole).
   const editorialSections = settings.homepage_editorial_sections;
+  // The store's live automatic offers: a product one lowers is on sale, as its card shows.
+  const liveOffers = useLiveOffers();
   const { newest, bestSellers, saleProducts, trending } = useMemo(
     () =>
-      homeMerchandising(products ?? [], bestSellerRows, trendingRows, {
-        new: Boolean(settings.show_new_arrivals),
-        best: editorialSections.best.enabled,
-        sale: editorialSections.sale.enabled,
-        trending: editorialSections.trending.enabled,
-      }),
-    [products, bestSellerRows, trendingRows, settings.show_new_arrivals, editorialSections],
+      homeMerchandising(
+        products ?? [],
+        bestSellerRows,
+        trendingRows,
+        {
+          new: Boolean(settings.show_new_arrivals),
+          best: editorialSections.best.enabled,
+          sale: editorialSections.sale.enabled,
+          trending: editorialSections.trending.enabled,
+        },
+        liveOffers,
+      ),
+    [
+      products,
+      bestSellerRows,
+      trendingRows,
+      settings.show_new_arrivals,
+      editorialSections,
+      liveOffers,
+    ],
   );
 
   const filtered = useMemo(
@@ -160,8 +176,9 @@ function StoreHome() {
         categories: categories ?? [],
         bestSellerRows,
         now: Date.now(),
+        offers: liveOffers,
       }),
-    [products, activeCategorySlugs, categories, bestSellerRows],
+    [products, activeCategorySlugs, categories, bestSellerRows, liveOffers],
   );
 
   // The first pieces, then "View all": the home page is not the whole catalogue.
