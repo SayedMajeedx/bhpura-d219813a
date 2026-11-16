@@ -60,7 +60,7 @@ export function TodayStrip({
       note:
         today && today.toCollectCount > 0
           ? isAr
-            ? `على ${countOf(today.toCollectCount, "order", lang)} مفتوحة`
+            ? `الطلبات المفتوحة: ${countOf(today.toCollectCount, "order", lang)}`
             : `on ${countOf(today.toCollectCount, "order", lang)} still open`
           : null,
     },

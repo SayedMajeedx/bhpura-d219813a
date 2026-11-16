@@ -41,7 +41,7 @@ export function StockAlertsCard({
       <div className="flex items-center justify-between border-b border-border-subtle pb-2">
         <h3 className="flex items-center gap-2 font-heading text-base font-bold text-foreground">
           <Package className="h-4.5 w-4.5 text-warning" aria-hidden />
-          {isAr ? "مقاسات قاربت على النفاد" : "Sizes running out"}
+          {isAr ? "مقاسات نفدت أو قاربت على النفاد" : "Sizes sold out or running out"}
         </h3>
         <Link
           to="/admin/b/$slug/inventory"

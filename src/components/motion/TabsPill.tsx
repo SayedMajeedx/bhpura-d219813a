@@ -114,10 +114,20 @@ export function TabsPill({ className, as = "span" }: { className?: string; as?: 
     for (let node = bar.parentElement; node; node = node.parentElement) {
       directions.observe(node, { attributes: true, attributeFilter: ["dir"] });
     }
+    // A change of theme (light, dark, the store's own colour) restyles the chosen tab through the
+    // page's colours, not its own classes: the pill kept the look it read first. The admin turns
+    // dark just after it starts, so every pill bar in dark mode drew the light background under
+    // light text (the dashboard's period switch and the workspace tabs, 2026-11-16).
+    const themes = new MutationObserver(() => place(true));
+    themes.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style", "data-theme"],
+    });
     return () => {
       changes.disconnect();
       resizes?.disconnect();
       directions.disconnect();
+      themes.disconnect();
       stopSettling();
     };
   }, []);
