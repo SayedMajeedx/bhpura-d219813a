@@ -11,7 +11,6 @@ import {
   QUICK_SEARCH_SELECT,
   RECOMMENDATION_SELECT,
 } from "./selects";
-import { productOnSale } from "@/lib/product-price";
 import { searchFilters } from "@/lib/search-terms";
 import type {
   BestSellerRow,
@@ -361,9 +360,9 @@ export async function fetchCategoryProducts(
     if (latest.error) throw latest.error;
     data = latest.data ?? [];
   }
-  const rows = data as unknown as ProductRow[];
-  if (scope.kind !== "offers") return rows;
-  return rows.filter(productOnSale);
+  // The sale collection is narrowed by the page (`productOnSaleOrOffer`): the store's automatic
+  // offers are read there, so a product an offer lowers is not dropped here.
+  return data as unknown as ProductRow[];
 }
 
 /* ------------------------------------------------------------------------- */

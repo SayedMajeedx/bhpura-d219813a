@@ -1,6 +1,8 @@
 import { createFileRoute, Link, notFound, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefrontCategories } from "@/lib/use-storefront-categories";
+import { useLiveOffers } from "@/hooks/use-live-offers";
+import { productOnSaleOrOffer } from "@/lib/offer-price";
 import { useIsServicesStore, useStorefront } from "@/lib/storefront-context";
 import {
   storefrontQueries,
@@ -265,8 +267,11 @@ function CategoryPage() {
   ]);
 
   // The products of this page (its category and sub-category), before the shopper's filters.
+  const liveOffers = useLiveOffers();
   const categoryProducts = useMemo(() => {
     let list = productsQuery.data ?? [];
+    // The sale collection: a price on sale, or one a live automatic offer lowers.
+    if (smartKind === "offers") list = list.filter((p) => productOnSaleOrOffer(p, liveOffers));
     const leafSlug = selectedSubCategorySlugs[selectedSubCategorySlugs.length - 1] || null;
     if (leafSlug) {
       const selectedCat = categoriesQuery.data?.find(
@@ -290,7 +295,7 @@ function CategoryPage() {
     }
 
     return list;
-  }, [productsQuery.data, selectedSubCategorySlugs, categoriesQuery.data]);
+  }, [productsQuery.data, selectedSubCategorySlugs, categoriesQuery.data, smartKind, liveOffers]);
 
   // What can be picked here, each option counted against the other filters.
   const facets = useMemo(
