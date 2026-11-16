@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import {
   Building2,
   CircleDollarSign,
@@ -74,7 +75,10 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
     money,
     lang,
     date: (day) =>
-      new Date(`${day}T12:00:00`).toLocaleDateString(locale, { day: "numeric", month: "long" }),
+      new Date(`${day}T12:00:00`).toLocaleDateString(westernNumeralLocale(locale), {
+        day: "numeric",
+        month: "long",
+      }),
   });
   const packaging =
     current.packaging_policy === "our_bom"

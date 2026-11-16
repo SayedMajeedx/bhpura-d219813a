@@ -82,7 +82,8 @@ export function useIncubatorsPage() {
   const language: "ar" | "en" = isAr ? "ar" : "en";
   const { canViewFinancials } = useProfile();
   const qc = useQueryClient();
-  const locale = isAr ? "ar-BH" : "en-BH";
+  // Western digits in both languages, as the rest of the admin writes them (dates read ١٤/١١).
+  const locale = isAr ? "ar-BH-u-nu-latn" : "en-BH";
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState("stock");

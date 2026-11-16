@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { Link } from "@tanstack/react-router";
 import { RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { movementLines } from "@/features/incubators/lib/movements";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
 import {
   saleCanBeReversed,
+  saleMissingCost,
   saleProfit,
   saleState,
   saleStateLabel,
@@ -24,7 +26,8 @@ function Fact({ label, value, strong }: { label: string; value: string; strong?:
   );
 }
 
-const day = (value: string, locale: string) => new Date(value).toLocaleDateString(locale);
+const day = (value: string, locale: string) =>
+  new Date(value).toLocaleDateString(westernNumeralLocale(locale));
 
 /**
  * The partner's sales, each with everything that was agreed: the piece, how many, at what
@@ -101,8 +104,17 @@ export function IncubatorSalesTab({ page }: { page: IncubatorsPageState }) {
                   label={isAr ? "المتبقي" : "Still owed"}
                   value={state === "reversed" ? "—" : money(owed)}
                 />
-                {profit !== null && (
-                  <Fact label={isAr ? "صافي الربح" : "Profit after costs"} value={money(profit)} />
+                {canViewFinancials && (
+                  <Fact
+                    label={isAr ? "الربح بعد التكلفة" : "Profit after costs"}
+                    value={
+                      saleMissingCost(sale) || profit === null
+                        ? isAr
+                          ? "لا تكلفة مسجلة"
+                          : "No cost recorded"
+                        : money(profit)
+                    }
+                  />
                 )}
               </dl>
               {state === "reversed" && sale.reversal_reason && (
@@ -271,7 +283,7 @@ export function IncubatorHistoryTab({ page }: { page: IncubatorsPageState }) {
                 {line.piece}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {new Date(line.at).toLocaleString(locale, {
+                {new Date(line.at).toLocaleString(westernNumeralLocale(locale), {
                   dateStyle: "medium",
                   timeStyle: "short",
                 })}

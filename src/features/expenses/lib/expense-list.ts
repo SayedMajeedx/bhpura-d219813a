@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { orderNumberLabel, type OrderNumberFormat } from "@/lib/order-number";
 
 /** What the list rules read of an expense. */
@@ -98,7 +99,7 @@ export function cogsCsv(
       grandTotal += itemTotal;
       lines.push(
         [
-          new Date(order.created_at).toLocaleDateString(locale),
+          new Date(order.created_at).toLocaleDateString(westernNumeralLocale(locale)),
           orderNumberLabel(order.invoice_number, numberFormat),
           `"${(item.description ?? "").replace(/"/g, '""')}"`,
           item.quantity,

@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -186,7 +187,7 @@ export function TeamList({ page }: { page: TeamPageState }) {
 
                 <div className="pt-3 mt-1 border-t border-border-subtle flex justify-between items-center">
                   <span className="text-xs text-muted-foreground font-medium">
-                    {new Date(member.created_at).toLocaleDateString(locale)}
+                    {new Date(member.created_at).toLocaleDateString(westernNumeralLocale(locale))}
                   </span>
 
                   <div className="flex items-center gap-1">
@@ -417,7 +418,9 @@ export function TeamList({ page }: { page: TeamPageState }) {
                         </div>
                       </td>
                       <td className="hidden p-4 text-muted-foreground lg:table-cell">
-                        {new Date(member.created_at).toLocaleDateString(locale)}
+                        {new Date(member.created_at).toLocaleDateString(
+                          westernNumeralLocale(locale),
+                        )}
                       </td>
                       <td className="p-4 text-end">
                         <div className="flex items-center justify-end gap-1">
