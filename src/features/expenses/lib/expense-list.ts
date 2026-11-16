@@ -7,6 +7,7 @@ type ListedExpense = {
   description?: string | null;
   store_name?: string | null;
   notes?: string | null;
+  expense_type?: string | null;
 };
 
 /**
@@ -37,7 +38,14 @@ export function expenseCategories(list: readonly ListedExpense[], locale: string
  */
 export function filterExpenses<T extends ListedExpense>(
   list: readonly T[],
-  view: { from: string; to: string; search: string; category: string },
+  view: {
+    from: string;
+    to: string;
+    search: string;
+    category: string;
+    /** Running costs (`opex`), stock purchases (`cogs`) or both. */
+    kind?: "all" | "opex" | "cogs";
+  },
 ): T[] {
   return list.filter((expense) => {
     const key = expense.expense_date.slice(0, 10);
@@ -53,7 +61,10 @@ export function filterExpenses<T extends ListedExpense>(
 
     const matchesCategory = view.category === "all" || expense.category === view.category;
 
-    return matchesDate && matchesSearch && matchesCategory;
+    const kind = expense.expense_type === "cogs" ? "cogs" : "opex";
+    const matchesKind = !view.kind || view.kind === "all" || view.kind === kind;
+
+    return matchesDate && matchesSearch && matchesCategory && matchesKind;
   });
 }
 
@@ -129,4 +140,30 @@ export function scanFailureMessage(code: string | undefined, lang: string): stri
             ? "تعذر ضغط الصورة. يرجى التقاط صورة أوضح وأقرب"
             : "Could not prepare the image. Try a closer, clearer photo"
           : (code ?? (isAr ? "فشل مسح الفاتورة" : "Failed to scan receipt"));
+}
+
+/**
+ * What a list of expenses adds up to, in the store's currency (an expense in another currency
+ * is counted apart, never added in): running costs, stock purchases, and how many in others.
+ */
+export function expenseTotals(
+  list: ReadonlyArray<{
+    amount: number | string;
+    currency?: string | null;
+    expense_type?: string | null;
+  }>,
+  storeCurrency: string,
+) {
+  let running = 0;
+  let stock = 0;
+  let otherCurrency = 0;
+  for (const expense of list) {
+    if (expense.currency && expense.currency !== storeCurrency) {
+      otherCurrency += 1;
+      continue;
+    }
+    if (expense.expense_type === "cogs") stock += Number(expense.amount) || 0;
+    else running += Number(expense.amount) || 0;
+  }
+  return { running, stock, total: running + stock, otherCurrency };
 }

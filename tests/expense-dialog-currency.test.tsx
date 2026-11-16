@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { expenseCurrency } from "../src/features/expenses/lib/expense-list";
 
@@ -44,6 +45,13 @@ const client = vi.hoisted(() => () => ({ supabase: {} }));
 vi.mock("../src/integrations/supabase/client", client);
 vi.mock("@/integrations/supabase/client", client);
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+const accounting = vi.hoisted(() => () => ({
+  accountingQueries: {
+    vendorOptions: () => ({ queryKey: ["vendors"], queryFn: async () => [] }),
+  },
+}));
+vi.mock("../src/lib/data/accounting", accounting);
+vi.mock("@/lib/data/accounting", accounting);
 // The category picker is a popover of its own; here it is a plain field.
 const picker = vi.hoisted(() => () => ({
   CreatableCategorySelect: (props: { value: string; onChange: (value: string) => void }) => (
@@ -57,7 +65,7 @@ const picker = vi.hoisted(() => () => ({
 vi.mock("../src/features/expenses/components/CreatableCategorySelect", picker);
 vi.mock("@/features/expenses/components/CreatableCategorySelect", picker);
 
-const { ExpenseDialog } = await import("../src/features/expenses/components/ExpenseDialog");
+const { ExpenseFormDialog } = await import("../src/features/expenses/components/ExpenseFormDialog");
 
 const existing = {
   id: "e1",
@@ -70,15 +78,18 @@ const existing = {
 };
 const dialog = (expense: typeof existing | null) =>
   render(
-    <ExpenseDialog
-      open
-      onOpenChange={() => undefined}
-      expense={expense}
-      categories={["Rent"]}
-      onSaved={() => undefined}
-    />,
+    <QueryClientProvider client={new QueryClient()}>
+      <ExpenseFormDialog
+        open
+        onOpenChange={() => undefined}
+        expense={expense as never}
+        usedCategories={["Rent"]}
+        offerStock={false}
+        onSaved={() => undefined}
+      />
+    </QueryClientProvider>,
   );
-const save = () => fireEvent.click(screen.getByRole("button", { name: "common.save" }));
+const save = () => fireEvent.click(screen.getByRole("button", { name: "Save" }));
 
 beforeEach(() => {
   state.storeCurrency = "SAR";
@@ -96,17 +107,28 @@ describe("the currency an expense is written in", () => {
   });
 });
 
-describe("the manual expense dialog", () => {
+describe("the expense dialog", () => {
   it("saves a new expense in the store's currency, not in BHD", async () => {
     dialog(null);
     fireEvent.change(screen.getByLabelText("category"), { target: { value: "Rent" } });
+    fireEvent.change(screen.getByLabelText("Amount (SAR)"), { target: { value: "120" } });
     save();
     await waitFor(() => expect(state.createExpense).toHaveBeenCalled());
     expect(state.createExpense.mock.calls[0][0]).toMatchObject({
       brand_id: "b1",
       category: "Rent",
       currency: "SAR",
+      amount: 120,
+      expense_type: "opex",
     });
+  });
+
+  it("asks for the amount before it saves anything", async () => {
+    dialog(null);
+    fireEvent.change(screen.getByLabelText("category"), { target: { value: "Rent" } });
+    save();
+    expect(await screen.findByText("Write the amount")).toBeInTheDocument();
+    expect(state.createExpense).not.toHaveBeenCalled();
   });
 
   it("leaves an expense being edited in the currency it was recorded in", async () => {

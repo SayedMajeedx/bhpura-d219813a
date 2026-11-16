@@ -18,17 +18,27 @@ export function CreatableCategorySelect({
   categories,
   lang,
   onChange,
+  labelOf = (category) => category,
+  id,
 }: {
   value: string;
   categories: string[];
   lang: "en" | "ar";
   onChange: (value: string) => void;
+  /** A category in the reader's words (a built-in code is stored in English). */
+  labelOf?: (category: string) => string;
+  id?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().replace(/\s+/g, " ");
+  const matches = (category: string, text: string) =>
+    category.toLocaleLowerCase().includes(text) ||
+    labelOf(category).toLocaleLowerCase().includes(text);
   const exactMatch = categories.find(
-    (category) => category.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+    (category) =>
+      category.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase() ||
+      labelOf(category).toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
   );
   const select = (category: string) => {
     onChange(category);
@@ -49,11 +59,16 @@ export function CreatableCategorySelect({
           type="button"
           variant="outline"
           role="combobox"
+          id={id}
           aria-expanded={open}
           className="mt-1 w-full justify-between font-normal"
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>
-            {value || (lang === "ar" ? "اختر أو أنشئ فئة" : "Select or create a category")}
+            {value
+              ? labelOf(value)
+              : lang === "ar"
+                ? "اختر أو أنشئ فئة"
+                : "Select or create a category"}
           </span>
           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -76,15 +91,13 @@ export function CreatableCategorySelect({
             )}
             <CommandGroup heading={lang === "ar" ? "الفئات المستخدمة" : "Existing categories"}>
               {categories
-                .filter((category) =>
-                  category.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()),
-                )
+                .filter((category) => matches(category, normalizedQuery.toLocaleLowerCase()))
                 .map((category) => (
                   <CommandItem key={category} value={category} onSelect={() => select(category)}>
                     <Check
                       className={cn("h-4 w-4", value === category ? "opacity-100" : "opacity-0")}
                     />{" "}
-                    {category}
+                    {labelOf(category)}
                   </CommandItem>
                 ))}
               {normalizedQuery && !exactMatch && (

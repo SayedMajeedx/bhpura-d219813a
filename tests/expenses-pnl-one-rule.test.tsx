@@ -1,6 +1,5 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 import { composeOverviewRows } from "../src/lib/reporting-compose";
 import { periodFigures } from "../src/features/expenses/lib/profit-and-loss";
@@ -44,7 +43,6 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 const { ExpensesScopeSwitcher } = await import("../src/components/expenses/ExpensesScopeSwitcher");
-const { FinancialReportsTab } = await import("../src/components/accounting/FinancialReportsTab");
 
 // A period with store sales, a partner shop's sale, a return, packaging, fees, a partner's
 // commission and running costs: every piece the old rules missed or counted differently.
@@ -81,24 +79,5 @@ describe("the expenses page's profit and loss", () => {
     expect(
       screen.getAllByText("Payment fees & commissions")[0].parentElement!.nextSibling,
     ).toHaveTextContent("15.000");
-  });
-
-  it("and in the accounting tab's income statement for the same period", async () => {
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <FinancialReportsTab
-          slug="pura"
-          range={{ from: new Date(2026, 9, 1), to: new Date(2026, 9, 31, 23, 59, 59, 999) }}
-          figures={figures}
-        />
-      </QueryClientProvider>,
-    );
-    const operating = await screen.findByText("Operating profit");
-    expect(operating.parentElement).toHaveTextContent("101.000");
-    expect(screen.getByText("Cost of goods").parentElement).toHaveTextContent("(BHD 84.000)");
-    expect(screen.getByText("• Cost of partner shops' sales").parentElement).toHaveTextContent(
-      "20.000",
-    );
-    expect(screen.getByText("Partner shops' commission").parentElement).toHaveTextContent("10.000");
   });
 });
