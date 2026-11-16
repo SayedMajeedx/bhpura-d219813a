@@ -4,7 +4,7 @@ import { StoreFunnelCard } from "@/features/dashboard/components/StoreFunnelCard
 import { StoreStatusCard } from "@/features/dashboard/components/StoreStatusCard";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { BookingsGlanceCard } from "@/features/bookings/components/BookingsGlanceCard";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Sparkles } from "lucide-react";
@@ -35,6 +35,8 @@ import {
   type SeriesRow,
 } from "@/features/dashboard/lib/dashboard-figures";
 import { attentionLines, todayFigures } from "@/features/dashboard/lib/dashboard-today";
+import { periodSearch, periodWords, readPeriod } from "@/features/dashboard/lib/dashboard-period";
+import { PeriodSwitch } from "@/features/dashboard/components/PeriodSwitch";
 import { OnboardingChecklist } from "@/features/dashboard/components/OnboardingChecklist";
 import { DashboardKpiCards } from "@/features/dashboard/components/DashboardKpiCards";
 import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
@@ -46,14 +48,15 @@ import { OutreachDashboardLine } from "@/features/outreach/components/OutreachDa
 import { SupplierOrdersDashboardLine } from "@/features/supplier-orders/components/SupplierOrdersDashboardLine";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
+  validateSearch: (search: Record<string, unknown>) => periodSearch(readPeriod(search.days)),
   component: Dashboard,
 });
 
 /**
  * The store's dashboard, read top to bottom: today (orders, net sales, what is still to collect),
  * what needs a person in one list, the store's status and the one-line ways in (bookings,
- * clients to message, suppliers, reviews to ask for), then the last 30 days (the Reports' own
- * figures), the daily chart beside the latest orders, the sizes running out, the visits folded to
+ * clients to message, suppliers, reviews to ask for), then the period chosen (7, 30 or 90 days,
+ * the Reports' own figures), the daily chart beside the latest orders, the sizes running out, the visits folded to
  * one line and the launch checklist. Each part draws as its own data arrives.
  */
 function Dashboard() {
@@ -67,7 +70,10 @@ function Dashboard() {
   const brandId = brand.id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
-  const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
+  const days = readPeriod(Route.useSearch().days);
+  const navigate = useNavigate({ from: Route.fullPath });
+  const period = periodWords(days, isAr ? "ar" : "en");
+  const reportingPeriodLabel = period.last;
 
   const isMounted = typeof window !== "undefined";
   const [checklistOpen, setChecklistOpen] = useState(false);
@@ -102,7 +108,7 @@ function Dashboard() {
     previousAccountingRow,
     salesSeriesQ,
     periodStart,
-  } = useDashboardData({ brandId, slug, canViewFinancials });
+  } = useDashboardData({ brandId, slug, canViewFinancials, days });
 
   // The orders that count as sold, as the Reports overview counts them
   const validRevenueOrders = useMemo(() => revenueOrders(ordersQ.data ?? []), [ordersQ.data]);
@@ -125,6 +131,7 @@ function Dashboard() {
             start: periodStart,
             locale,
             currency,
+            days,
           })
         : null,
     [
@@ -135,6 +142,7 @@ function Dashboard() {
       periodStart,
       locale,
       currency,
+      days,
     ],
   );
   // How many sales the 30 days hold, counted as Reports counts them (anyone may see it).
@@ -246,6 +254,7 @@ function Dashboard() {
     currency,
     locale,
     isServices,
+    periodLast: period.last,
   });
   const attention = attentionLines({
     prepare: unfulfilledOrdersCount,
@@ -267,6 +276,17 @@ function Dashboard() {
         inquiryCount={catalogInquiriesQ.data?.totalInquiries ?? 0}
         hasIncubators={storeProfile.modules.incubators}
         isServices={isServices}
+        actions={
+          !isCatalog && (
+            <PeriodSwitch
+              days={days}
+              isAr={isAr}
+              onChange={(next) =>
+                navigate({ search: periodSearch(next), replace: true, resetScroll: false })
+              }
+            />
+          )
+        }
       />
 
       {/* Today first, then what needs a person: the page once opened on thirty days' figures. */}
@@ -313,7 +333,7 @@ function Dashboard() {
 
       <ReviewRequestQueue brandId={brandId} brandName={brandName} store={brand} isAr={isAr} />
 
-      {/* The last 30 days, beside the 30 before (the Reports' own figures). */}
+      {/* The period chosen, beside the period before (the Reports' own figures). */}
       {canViewFinancials && figuresLoading && !isCatalog ? (
         <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
           {[0, 1, 2, 3].map((n) => (
@@ -325,7 +345,7 @@ function Dashboard() {
           ))}
         </div>
       ) : (
-        <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} />
+        <DashboardKpiCards isAr={isAr} primaryKpis={primaryKpis} comparedTo={period.before} />
       )}
 
       <SalesAndRecentRow
@@ -339,6 +359,7 @@ function Dashboard() {
         isCatalog={isCatalog}
         isMounted={isMounted}
         locale={locale}
+        periodLast={period.last}
         recentOrdersQ={recentOrdersQ}
         slug={slug}
       />
@@ -353,7 +374,9 @@ function Dashboard() {
       )}
 
       {/* How many shoppers came and how far they went, one line until opened (not a catalog). */}
-      {!isCatalog && <StoreFunnelCard brandId={brandId} isAr={isAr} isServices={isServices} />}
+      {!isCatalog && (
+        <StoreFunnelCard brandId={brandId} isAr={isAr} isServices={isServices} days={days} />
+      )}
 
       {checklist === "line" && !checklistOpen && (
         <OnboardingChecklistLine

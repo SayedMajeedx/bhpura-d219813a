@@ -83,6 +83,7 @@ export function dashboardFigures({
   start,
   locale,
   currency,
+  days = 30,
 }: {
   row: Row;
   previous: Row;
@@ -90,6 +91,8 @@ export function dashboardFigures({
   start: Date;
   locale: string;
   currency: string;
+  /** The period's length: one point of the chart per day. */
+  days?: number;
 }) {
   const sales = salesBySource(row);
   const salesBefore = previous ? salesBySource(previous) : null;
@@ -118,7 +121,7 @@ export function dashboardFigures({
     average,
     averageBefore,
     averageDeltaPct: deltaPct(average, averageBefore),
-    dailySeries: dailySeries(series, start, locale, currency),
+    dailySeries: dailySeries(series, start, locale, currency, days),
   };
 }
 

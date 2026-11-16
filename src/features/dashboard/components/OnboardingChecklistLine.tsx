@@ -24,7 +24,7 @@ export function OnboardingChecklistLine({
       className="h-auto w-full justify-between gap-3 rounded-xl border-border-subtle bg-card px-3.5 py-2.5 text-start font-normal"
     >
       <span className="flex min-w-0 items-center gap-2.5">
-        <Icon className={`h-4 w-4 shrink-0 ${done ? "text-emerald-600" : "text-primary"}`} />
+        <Icon className={`h-4 w-4 shrink-0 ${done ? "text-success" : "text-primary"}`} />
         <span className="min-w-0 break-words text-xs font-semibold text-foreground">
           {done
             ? isAr

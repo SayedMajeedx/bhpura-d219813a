@@ -89,7 +89,8 @@ export const reportingKeys = {
     [...reportingKeys.all(slug), "receivables", today, timezone] as const,
   monthPack: (slug: string, range: DateRange, timezone: string) =>
     [...reportingKeys.all(slug), "month-pack", ...iso(range), timezone] as const,
-  incubatorSales: (slug: string) => [...reportingKeys.all(slug), "incubator-sales"] as const,
+  incubatorSales: (slug: string, days: number) =>
+    [...reportingKeys.all(slug), "incubator-sales", days] as const,
   /** Catalog inquiries by brand, optionally within a date range (ISO strings). */
   catalogInquiries: (brandId: string, from?: string, to?: string) =>
     ["catalog-inquiries", brandId, from ?? null, to ?? null] as const,
@@ -230,10 +231,11 @@ export const reportingQueries = {
         range ? fetchReportingCustomers(range, timezone, includeHistorical, 200, 0, slug) : null,
       enabled: Boolean(slug && range),
     }),
-  incubatorSales: (brandId: string, slug: string) =>
+  /** The partner shops' daily sales of the last `days` days (60 unless told). */
+  incubatorSales: (brandId: string, slug: string, days = 60) =>
     queryOptions({
-      queryKey: reportingKeys.incubatorSales(slug),
-      queryFn: () => fetchIncubatorSales(slug, 60),
+      queryKey: reportingKeys.incubatorSales(slug, days),
+      queryFn: () => fetchIncubatorSales(slug, days),
       enabled: Boolean(brandId && slug),
       staleTime: 60_000,
     }),

@@ -1,3 +1,4 @@
+import type React from "react";
 import { LayoutDashboard } from "lucide-react";
 import { AdminPageCount, AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { countOf } from "@/lib/arabic-count";
@@ -14,6 +15,8 @@ interface DashboardCommandHeaderProps {
   hasIncubators?: boolean;
   /** A services store: its sales are bookings, not parcels. */
   isServices?: boolean;
+  /** The period switch, beside the title. */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -29,6 +32,7 @@ export function DashboardCommandHeader({
   inquiryCount = 0,
   hasIncubators = true,
   isServices = false,
+  actions,
 }: DashboardCommandHeaderProps) {
   const isAr = lang === "ar";
 
@@ -36,9 +40,10 @@ export function DashboardCommandHeader({
     <AdminPageHeader
       icon={LayoutDashboard}
       title={isAr ? "نظرة عامة" : "Overview"}
+      actions={actions}
       badges={
         isCatalog ? (
-          <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40 rounded-full">
+          <span className="inline-flex items-center rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-bold text-success">
             {inquiryCount} {isAr ? "استفسار واتساب" : "inquiries"}
           </span>
         ) : (
@@ -67,15 +72,15 @@ export function DashboardCommandHeader({
             : `WhatsApp customer inquiries and catalog product engagement for ${periodLabel}.`
           : isServices
             ? isAr
-              ? `المبالغ المحصلة من الحجوزات والطلبات خلال ${periodLabel}. افتح الطلبات للتفاصيل.`
-              : `Money collected from bookings and orders for ${periodLabel}. Open Orders for the details.`
+              ? `صافي مبيعات الحجوزات والطلبات خلال ${periodLabel}، كما تحسبها التقارير.`
+              : `Net sales of bookings and orders for ${periodLabel}, as Reports counts them.`
             : hasIncubators
               ? isAr
-                ? `المبيعات المحصلة من الطلبات ومحلات الشركاء خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
-                : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`
+                ? `صافي مبيعات المتجر ومحلات الشركاء خلال ${periodLabel}، كما تحسبها التقارير.`
+                : `Net sales of the store and its partner shops for ${periodLabel}, as Reports counts them.`
               : isAr
-                ? `المبيعات المحصلة من الطلبات خلال ${periodLabel}. افتح صفحة الطلبات للتفاصيل.`
-                : `Collected order sales for ${periodLabel}. Open Orders for the details.`
+                ? `صافي مبيعات المتجر خلال ${periodLabel}، كما تحسبها التقارير.`
+                : `Net sales of the store for ${periodLabel}, as Reports counts them.`
       }
     />
   );

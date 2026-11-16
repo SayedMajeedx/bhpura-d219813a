@@ -215,18 +215,18 @@ describe("the dashboard's words", () => {
 
   it("talk about incubators only to a store that has them", () => {
     const shop = header();
-    expect(shop.container.textContent).toContain("incubator sales");
+    expect(shop.container.textContent).toContain("partner shops");
     shop.unmount();
     const noIncubators = header({ hasIncubators: false });
-    expect(noIncubators.container.textContent).not.toMatch(/incubator/i);
-    expect(noIncubators.container.textContent).toContain("Collected order sales");
+    expect(noIncubators.container.textContent).not.toMatch(/incubator|partner/i);
+    expect(noIncubators.container.textContent).toContain("Net sales of the store");
   });
 
   it("talk about bookings, not parcels, to a services store", () => {
     const view = header({ isServices: true, hasIncubators: false });
     expect(view.container.textContent).toContain("4 paid bookings");
-    expect(view.container.textContent).toContain("Money collected from bookings and orders");
-    expect(view.container.textContent).not.toMatch(/incubator|storefront orders only/i);
+    expect(view.container.textContent).toContain("Net sales of bookings and orders");
+    expect(view.container.textContent).not.toMatch(/incubator|partner/i);
   });
 
   const strip = (counts: Partial<Record<"prepare" | "appointments", number>> = {}) =>

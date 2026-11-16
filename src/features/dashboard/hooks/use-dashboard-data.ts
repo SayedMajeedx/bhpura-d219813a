@@ -7,10 +7,15 @@ import { ordersKeys, ordersQueries } from "@/lib/data/orders";
 import { catalogKeys, catalogQueries } from "@/lib/data/catalog";
 import { reportingKeys, reportingQueries } from "@/lib/data/reporting";
 import { returnsQueries } from "@/lib/data/returns";
+import { periodBounds, type DashboardPeriod } from "@/features/dashboard/lib/dashboard-period";
+
+/** A moment's day on the reader's calendar, `YYYY-MM-DD`. */
+const localDay = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /**
  * Everything the dashboard reads: settings, the Reports accounting rows and daily sales for the
- * last 30 days (and the overview of the 30 before), catalog inquiries, products and variants
+ * period chosen (30 days by default, and the overview of the period before), catalog inquiries, products and variants
  * (shared with the inventory), the orders of the last 45 days with every order still open, how
  * many orders the store has had, the latest orders, pending returns and partner sales, kept fresh
  * by realtime invalidation. Each part of the page draws as its own read arrives: nothing waits
@@ -20,24 +25,15 @@ export function useDashboardData({
   brandId,
   slug,
   canViewFinancials,
+  days,
 }: {
   brandId: string;
   slug: string;
   canViewFinancials: boolean;
+  /** The period the figures cover (`dashboard-period.ts`). */
+  days: DashboardPeriod;
 }) {
-  const dashboardPeriods = useMemo(() => {
-    const end = new Date();
-    const start = new Date(end);
-    start.setDate(start.getDate() - 29);
-    start.setHours(0, 0, 0, 0);
-    const periodDurationMs = end.getTime() - start.getTime();
-    const previousEnd = new Date(start.getTime() - 1);
-    const previousStart = new Date(previousEnd.getTime() - periodDurationMs);
-    // The orders read reaches 45 days back: the stock pace looks at 45 days of sales.
-    const ordersSince = new Date(start);
-    ordersSince.setDate(ordersSince.getDate() - 15);
-    return { start, end, previousStart, previousEnd, ordersSince: ordersSince.toISOString() };
-  }, []);
+  const dashboardPeriods = useMemo(() => periodBounds(days, new Date()), [days]);
   const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   // 1. Business settings (the whole row; null when the brand has none yet)
@@ -50,7 +46,7 @@ export function useDashboardData({
 
   // Fetch catalog inquiries metrics when store is in catalog mode
   const catalogInquiriesQ = useQuery({
-    ...reportingQueries.catalogInquiries(brandId),
+    ...reportingQueries.catalogInquiries(brandId, localDay(dashboardPeriods.start)),
     enabled: Boolean(brandId) && isCatalog,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -121,7 +117,7 @@ export function useDashboardData({
   });
 
   const incubatorSalesQ = useQuery({
-    ...reportingQueries.incubatorSales(brandId, slug),
+    ...reportingQueries.incubatorSales(brandId, slug, Math.max(60, days)),
     refetchOnWindowFocus: false,
   });
 

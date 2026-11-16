@@ -20,7 +20,7 @@ describe("dashboard metric clarity", () => {
     );
 
     expect(screen.getByText("6 sales")).toBeDefined();
-    expect(screen.getByText(/incubator sales for the last 30 days/i)).toBeDefined();
+    expect(screen.getByText(/partner shops for the last 30 days/i)).toBeDefined();
     expect(screen.queryByText("6 orders")).toBeNull();
   });
 });

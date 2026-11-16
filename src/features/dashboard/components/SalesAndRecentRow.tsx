@@ -10,7 +10,7 @@ import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figure
 import { DailySalesChart } from "@/features/dashboard/components/DailySalesChart";
 
 /**
- * The 30 days' sales day by day (a catalog store: its most asked-about products) beside the
+ * The period's sales day by day (a catalog store: its most asked-about products) beside the
  * latest orders. The orders that need action are in the attention list at the top.
  */
 export function SalesAndRecentRow({
@@ -24,6 +24,7 @@ export function SalesAndRecentRow({
   isCatalog,
   isMounted,
   locale,
+  periodLast,
   recentOrdersQ,
   slug,
 }: {
@@ -39,6 +40,8 @@ export function SalesAndRecentRow({
   isCatalog: DashboardData["isCatalog"];
   isMounted: boolean;
   locale: string;
+  /** The period in words (`periodWords(...).last`). */
+  periodLast: string;
   recentOrdersQ: DashboardData["recentOrdersQ"];
   slug: string;
 }) {
@@ -54,8 +57,8 @@ export function SalesAndRecentRow({
               </h3>
               <p className="text-xs text-muted-foreground">
                 {isAr
-                  ? "المنتجات التي أبدى العملاء اهتماماً بها واستفسروا عنها خلال آخر 30 يوماً"
-                  : "Products with the highest customer inquiry volume over the last 30 days"}
+                  ? `المنتجات التي أبدى العملاء اهتماماً بها واستفسروا عنها خلال ${periodLast}`
+                  : `Products with the most customer inquiries over ${periodLast}`}
               </p>
             </div>
             <span className="text-xs font-bold text-success bg-success/10 px-2.5 py-1 rounded-full border border-success/20 w-fit">
@@ -148,8 +151,8 @@ export function SalesAndRecentRow({
                 <h3 className="text-base font-bold font-heading flex items-center gap-2">
                   <TrendingUp className="h-4.5 w-4.5 text-success" />
                   {isAr
-                    ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
-                    : "Daily Sales Performance (30 Days)"}
+                    ? `صافي المبيعات يومًا بيوم (${periodLast})`
+                    : `Net sales day by day (${periodLast})`}
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {isAr
@@ -159,7 +162,7 @@ export function SalesAndRecentRow({
               </div>
               <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
                 {formatMoney(figures?.sales.total ?? 0, currency, locale)}
-                {isAr ? " · صافي 30 يومًا" : " · net, 30 days"}
+                {isAr ? " · صافي الفترة" : " · net, the period"}
               </span>
             </div>
 

@@ -62,7 +62,7 @@ export function OnboardingChecklist({
     <Card
       className={`p-5 sm:p-6 border-2 transition-all duration-300 rounded-3xl shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 ${
         isAllStepsCompleted
-          ? "border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-background to-secondary/15"
+          ? "border-success/30 bg-success/5"
           : "border-primary/25 bg-gradient-to-br from-primary/5 via-background to-secondary/15"
       }`}
     >
@@ -71,7 +71,7 @@ export function OnboardingChecklist({
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow-xs transition-colors ${
               isAllStepsCompleted
-                ? "bg-emerald-600 text-white"
+                ? "bg-success text-success-foreground"
                 : "bg-primary text-primary-foreground"
             }`}
           >
@@ -106,8 +106,8 @@ export function OnboardingChecklist({
         </div>
         <div className="flex items-center gap-2">
           {isAllStepsCompleted ? (
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-success/15 text-success border border-success/30 inline-flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
               {isAr ? "مكتمل 3 من 3" : "3 of 3 Done"}
             </span>
           ) : (
@@ -133,7 +133,7 @@ export function OnboardingChecklist({
       <div className="w-full h-1.5 bg-muted/60 rounded-full overflow-hidden">
         <div
           className={`h-full transition-all duration-500 rounded-full ${
-            isAllStepsCompleted ? "bg-emerald-500" : "bg-primary"
+            isAllStepsCompleted ? "bg-success" : "bg-primary"
           }`}
           style={{ width: `${Math.max(6, (completedStepsCount / 3) * 100)}%` }}
         />
@@ -144,7 +144,7 @@ export function OnboardingChecklist({
         <div
           className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
             step1Done
-              ? "bg-emerald-500/5 border-emerald-500/20 text-foreground"
+              ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"
           }`}
         >
@@ -154,12 +154,12 @@ export function OnboardingChecklist({
                 {isAr ? "الخطوة 1" : "Step 1"}
               </span>
               {step1Done ? (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {isAr ? "تمت الإضافة" : "Completed"}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-foreground bg-warning/15 px-2 py-0.5 rounded-full">
                   <Clock className="h-3.5 w-3.5" />
                   {isAr ? "بانتظارك" : "Pending"}
                 </span>
@@ -191,7 +191,7 @@ export function OnboardingChecklist({
         <div
           className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
             step2Done
-              ? "bg-emerald-500/5 border-emerald-500/20 text-foreground"
+              ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"
           }`}
         >
@@ -201,7 +201,7 @@ export function OnboardingChecklist({
                 {isAr ? "الخطوة 2" : "Step 2"}
               </span>
               {step2Done ? (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {isAr ? "تمت المعاينة" : "Completed"}
                 </span>
@@ -279,7 +279,7 @@ export function OnboardingChecklist({
         <div
           className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
             step3Done
-              ? "bg-emerald-500/5 border-emerald-500/20 text-foreground"
+              ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"
           }`}
         >
@@ -289,7 +289,7 @@ export function OnboardingChecklist({
                 {isAr ? "الخطوة 3" : "Step 3"}
               </span>
               {step3Done ? (
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                <span className="inline-flex items-center gap-1 text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-full">
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {isAr ? "تم التسجيل" : "Completed"}
                 </span>

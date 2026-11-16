@@ -5,10 +5,10 @@ import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figure
 
 /**
  * The headline cards. A catalog store: WhatsApp inquiries, views, top product and sales recorded
- * by hand. Otherwise, for staff who see the finances, the Reports' own figures for the last 30
- * days (`dashboardFigures`): net sales with where they came from (the parts add up to it) and the
+ * by hand. Otherwise, for staff who see the finances, the Reports' own figures for the
+ * dashboard's period (`dashboardFigures`): net sales with where they came from (the parts add up to it) and the
  * profit, the average store order, the gross margin; and for everyone the sales, the store's
- * orders and the partner shops' apart. Each beside the 30 days before.
+ * orders and the partner shops' apart. Each beside the period before.
  */
 
 type Kpi = {
@@ -32,6 +32,7 @@ export function primaryKpisFor({
   currency,
   locale,
   isServices = false,
+  periodLast,
 }: {
   isCatalog: boolean;
   isAr: boolean;
@@ -54,6 +55,8 @@ export function primaryKpisFor({
    * was recorded.
    */
   isServices?: boolean;
+  /** The period in words, "آخر 30 يومًا" / "the last 30 days" (`periodWords`). */
+  periodLast?: string;
 }): Kpi[] {
   const money = (value: number) => formatMoney(value, currency, locale);
   const before = (value: number | null | undefined, format: (v: number) => string) =>
@@ -69,8 +72,8 @@ export function primaryKpisFor({
           ? `طلبات المتجر ${counts.storeOrders} · المحلات الشريكة ${counts.partnerSales}`
           : `Store orders ${counts.storeOrders} · partner shops ${counts.partnerSales}`
         : isAr
-          ? "خلال آخر 30 يومًا"
-          : "Over the last 30 days",
+          ? `خلال ${periodLast ?? "آخر 30 يومًا"}`
+          : `Over ${periodLast ?? "the last 30 days"}`,
     deltaPct: counts.deltaPct ?? null,
     icon: ReceiptText,
     color: "text-primary",

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { storefrontFunnelQueries, type CheckoutProgressCounts } from "@/lib/data/storefront-funnel";
 import { problemLabel } from "@/lib/checkout-progress";
+import { campaignLabel, isAdCampaignId } from "@/lib/funnel";
 
 type Words = { ar: string; en: string };
 
@@ -136,15 +137,29 @@ export function CampaignCounts({
 }) {
   const { data } = useQuery(storefrontFunnelQueries.campaigns(brandId, from, to));
   if (!data?.length) return null;
+  const lang = isAr ? "ar" : "en";
   return (
-    <CountsTable
-      caption={isAr ? "الحملات والمنشورات" : "Campaigns and posts"}
-      heads={[isAr ? "الحملة" : "Campaign", isAr ? "زيارات" : "Visits", isAr ? "طلبات" : "Orders"]}
-      rows={data.map((row) => ({
-        key: row.campaign,
-        name: row.campaign,
-        counts: [row.visits, row.orders],
-      }))}
-    />
+    <div className="space-y-1">
+      <CountsTable
+        caption={isAr ? "الحملات والمنشورات" : "Campaigns and posts"}
+        heads={[
+          isAr ? "الحملة" : "Campaign",
+          isAr ? "زيارات" : "Visits",
+          isAr ? "طلبات" : "Orders",
+        ]}
+        rows={data.map((row) => ({
+          key: row.campaign,
+          name: campaignLabel(row.campaign, lang),
+          counts: [row.visits, row.orders],
+        }))}
+      />
+      {data.some((row) => isAdCampaignId(row.campaign)) && (
+        <p className="text-xs text-muted-foreground">
+          {isAr
+            ? "منصة الإعلان ترسل رقم الحملة لا اسمها: طابقه مع آخر أرقام الحملة في مدير الإعلانات، أو استعمل «رابط لمنشور» ليظهر باسم تختاره."
+            : "The ad platform sends the campaign's number, not its name: match it with the last digits in its ads manager, or use “Link for a post” to see it under a name you choose."}
+        </p>
+      )}
+    </div>
   );
 }
