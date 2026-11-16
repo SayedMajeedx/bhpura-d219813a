@@ -58,7 +58,7 @@ const { stepToSend, funnelStages, conversionRate, share, visitSource } =
   await import("../src/lib/funnel");
 const { trackStorefrontEvent, setFunnelRecording } =
   await import("../src/lib/storefront-analytics");
-const { StoreFunnelCard, last30Days } =
+const { StoreFunnelCard, lastDays } =
   await import("../src/features/dashboard/components/StoreFunnelCard");
 
 describe("the funnel's rules", () => {
@@ -83,7 +83,7 @@ describe("the funnel's rules", () => {
   });
 
   it("read the last 30 days from midnight, as the dashboard's other figures", () => {
-    const { from, to } = last30Days(new Date(2026, 9, 30, 15, 20, 30));
+    const { from, to } = lastDays(new Date(2026, 9, 30, 15, 20, 30));
     expect(new Date(from)).toEqual(new Date(2026, 9, 1, 0, 0, 0));
     expect(new Date(to)).toEqual(new Date(2026, 9, 30, 15, 21, 0));
   });

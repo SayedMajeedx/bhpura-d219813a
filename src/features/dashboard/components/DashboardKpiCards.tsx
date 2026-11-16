@@ -5,15 +5,18 @@ import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import type { primaryKpisFor } from "@/features/dashboard/lib/dashboard-kpis";
 
 /**
- * The headline KPI cards with their change against the previous 30 days. On a
+ * The headline KPI cards with their change against the period before. On a
  * phone they sit two by two: one to a row, the four took 1,100px before
  * anything else on the dashboard.
  */
 export function DashboardKpiCards({
   isAr,
   primaryKpis,
+  comparedTo,
 }: {
   isAr: boolean;
+  /** What each change is against: "الـ 30 يومًا السابقة" / "the 30 days before". */
+  comparedTo: string;
   primaryKpis: ReturnType<typeof primaryKpisFor>;
 }) {
   return (
@@ -39,13 +42,11 @@ export function DashboardKpiCards({
                 <div className="flex items-center gap-1.5 shrink-0">
                   {hasDelta ? (
                     <span
-                      title={
-                        isAr ? "مقارنة بـ 30 يومًا السابقة" : "Compared to previous 30-day period"
-                      }
+                      title={isAr ? `مقارنة بـ${comparedTo}` : `Compared with ${comparedTo}`}
                       className={`inline-flex items-center text-xs font-bold px-1.5 py-0.5 rounded-full border ${
                         isPositive
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
-                          : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+                          ? "bg-success/10 text-success border-success/30"
+                          : "bg-destructive/10 text-destructive border-destructive/30"
                       }`}
                     >
                       {isPositive ? (

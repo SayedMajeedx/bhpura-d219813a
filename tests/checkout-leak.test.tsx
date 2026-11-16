@@ -199,9 +199,16 @@ describe("the dashboard", () => {
   it("lists each post's visits and orders", async () => {
     data.campaigns = [{ campaign: "final-call", visits: 120, orders: 4 }];
     show(<CampaignCounts brandId="b1" from="a" to="b" isAr={false} />);
-    const row = (await screen.findByText("final-call")).closest("tr") as HTMLElement;
+    const row = (await screen.findByText("final call")).closest("tr") as HTMLElement;
     expect(row).toHaveTextContent("120");
     expect(row).toHaveTextContent("4");
+  });
+
+  it("names an ad platform's campaign number as its ad, and says where its name is", async () => {
+    data.campaigns = [{ campaign: "120250283409310510", visits: 36, orders: 0 }];
+    show(<CampaignCounts brandId="b1" from="a" to="b" isAr />);
+    expect(await screen.findByText("إعلان ميتا · رقم ينتهي بـ 0510")).toBeInTheDocument();
+    expect(screen.getByText(/مدير الإعلانات/)).toBeInTheDocument();
   });
 });
 

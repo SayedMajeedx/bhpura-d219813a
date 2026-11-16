@@ -9,12 +9,13 @@ import {
   CountsTable,
 } from "@/features/dashboard/components/FunnelDetails";
 import { CampaignLinkButton } from "@/components/admin/CampaignLinkDialog";
+import { periodWords } from "@/features/dashboard/lib/dashboard-period";
 import { conversionRate, funnelStages, type FunnelStage, type VisitSource } from "@/lib/funnel";
 
-/** The last 30 days, as the dashboard's other figures read them (from midnight 29 days ago). */
-export function last30Days(now: Date): { from: string; to: string } {
+/** The last `days` days, as the dashboard's other figures read them (from midnight `days - 1` days ago). */
+export function lastDays(now: Date, days = 30): { from: string; to: string } {
   const start = new Date(now);
-  start.setDate(start.getDate() - 29);
+  start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
   // To the next minute, so the period stays one request while the page is open.
   const end = new Date(Math.ceil(now.getTime() / 60_000) * 60_000);
@@ -55,12 +56,15 @@ export function StoreFunnelCard({
   brandId,
   isAr,
   isServices = false,
+  days = 30,
 }: {
   brandId: string;
   isAr: boolean;
   isServices?: boolean;
+  /** The dashboard's period, in days. */
+  days?: number;
 }) {
-  const period = useMemo(() => last30Days(new Date()), []);
+  const period = useMemo(() => lastDays(new Date(), days), [days]);
   const [open, setOpen] = useState(false);
   const { data, isPending } = useQuery(
     storefrontFunnelQueries.period(brandId, period.from, period.to),
@@ -101,7 +105,9 @@ export function StoreFunnelCard({
         >
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Users className="h-4 w-4 text-muted-foreground" aria-hidden />
-            {isAr ? "الزيارات · آخر 30 يومًا" : "Visits · last 30 days"}
+            {isAr
+              ? `الزيارات · ${periodWords(days, "ar").last}`
+              : `Visits · ${periodWords(days, "en").last}`}
           </span>
           <span className="flex items-center gap-3 text-sm">
             <span className="font-mono font-semibold tabular-nums" dir="ltr">

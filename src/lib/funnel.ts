@@ -139,6 +139,27 @@ export function campaignLink(address: string, platform: LinkPlatform, campaign: 
 
 export type CampaignCounts = { campaign: string; visits: number; orders: number };
 
+/** A campaign word that is only a number: an ad platform's own campaign id, not a name. */
+export function isAdCampaignId(word: string): boolean {
+  return /^\d{8,}$/.test(word);
+}
+
+/**
+ * A campaign as the dashboard names it. A word the store chose ("final-call") reads as words
+ * ("final call"); an ad platform's number (Meta sends its campaign id, eighteen digits from
+ * "120") reads as that platform's ad with the number's last digits, which its ads manager shows.
+ * Pura's dashboard showed "120250283409310510".
+ */
+export function campaignLabel(word: string, lang: "ar" | "en"): string {
+  if (isAdCampaignId(word)) {
+    const meta = word.length >= 15 && word.startsWith("120");
+    const ending = word.slice(-4);
+    if (lang === "ar") return `${meta ? "إعلان ميتا" : "حملة إعلانية"} · رقم ينتهي بـ ${ending}`;
+    return `${meta ? "Meta ad" : "Ad campaign"} · number ending ${ending}`;
+  }
+  return word.replace(/[-_]+/g, " ").trim() || word;
+}
+
 /** A share as a percentage with one decimal, or null with nothing to divide by. */
 export function share(part: number, whole: number): number | null {
   if (!(whole > 0)) return null;
