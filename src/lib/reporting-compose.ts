@@ -58,6 +58,11 @@ export type ComposedOverviewRow = Row & {
   service_sales: number;
   service_vat: number;
   service_count: number;
+  /** The store's own orders alone: gross (before discounts) and net (after discounts and returns). */
+  store_gross_sales: number;
+  store_net_sales: number;
+  /** Pieces sold at partner shops in the period (each sale is one line, any quantity). */
+  incubator_sale_count: number;
   expenses: number;
 };
 
@@ -137,6 +142,9 @@ export function composeOverviewRows(pieces: OverviewPieces): ComposedOverviewRow
       service_sales: serviceSales,
       service_vat: serviceVat,
       service_count: num(services.service_count),
+      store_gross_sales: num(row.gross_merch_sales),
+      store_net_sales: num(row.net_merch_sales) - num(refunds.merchandise_deduction),
+      incubator_sale_count: num(consignment.sale_count),
       expenses: manualExpenses + processingFees + incubatorCommissions,
     };
   });
@@ -158,4 +166,30 @@ export function overviewProfit(row: Partial<ComposedOverviewRow> | null | undefi
     operatingProfit,
     operatingMargin: netSales > 0 ? (operatingProfit / netSales) * 100 : 0,
   };
+}
+
+/** Where a period's net sales came from. The three parts add up to `total`, to the fils. */
+export type SalesBySource = {
+  /** The store's own orders, after discounts and returns. */
+  store: number;
+  /** Sold at partner shops (their full price: the commission is a running cost). */
+  partners: number;
+  /** Services sold outside an order (printing and delivering gift cards), net of VAT. */
+  services: number;
+  /** Net sales: before VAT and delivery, after discounts and returns. */
+  total: number;
+};
+
+/**
+ * Net sales split by where they were made: the one reading every report and every Excel file
+ * uses, so "total sales with the partner shops" is the same figure everywhere.
+ */
+export function salesBySource(row: Partial<ComposedOverviewRow> | null | undefined): SalesBySource {
+  const partners = num(row?.incubator_sales);
+  const services = num(row?.service_sales);
+  const total = overviewProfit(row).netSales;
+  // An older row (before the split was kept) has no store figure: it is what the others leave.
+  const store =
+    row?.store_net_sales === undefined ? total - partners - services : num(row.store_net_sales);
+  return { store, partners, services, total };
 }

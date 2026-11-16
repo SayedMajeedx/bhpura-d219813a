@@ -9,7 +9,7 @@ export type DateRange = {
 
 export type ReportInterval = "day" | "week" | "month" | "year";
 
-async function fetchIncubatorReporting(
+export async function fetchIncubatorReporting(
   range: DateRange,
   tz: string,
   brandSlug?: string,
@@ -382,6 +382,33 @@ export async function fetchReportingProducts(
       ? Number(b.net_merch_sales || 0) - Number(a.net_merch_sales || 0)
       : Number(b.units_sold || 0) - Number(a.units_sold || 0),
   );
+}
+
+/**
+ * Every size sold in the period (`rpc_reporting_products_inventory`, which answers at most 200
+ * rows at a time), read page by page to its end: the export's products. Store orders only; the
+ * partner shops' are `fetchIncubatorReporting`'s products.
+ */
+export async function fetchReportingProductsAll(range: DateRange, tz: string, brandSlug?: string) {
+  const page = 200;
+  const rows: Array<Record<string, unknown>> = [];
+  for (let offset = 0; offset < page * 100; offset += page) {
+    const { data, error } = await (supabase as any).rpc("rpc_reporting_products_inventory", {
+      p_start_date: range.from.toISOString(),
+      p_end_date: range.to.toISOString(),
+      p_tz: tz,
+      p_include_historical: false,
+      p_limit: page,
+      p_offset: offset,
+      p_sort_by: "net_merch_desc",
+      p_brand_slug: brandSlug || null,
+    });
+    if (error) throw error;
+    const got = Array.isArray(data) ? data : [];
+    rows.push(...got);
+    if (got.length < page) break;
+  }
+  return rows;
 }
 
 // Customers metrics

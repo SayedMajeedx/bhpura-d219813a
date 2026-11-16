@@ -10,7 +10,7 @@ import {
   type OpenOrder,
   type PartnerBalance,
 } from "./receivables";
-import { columnsIn, monthLabel, statementLines, type StatementMonth } from "./statement";
+import { columnsIn, growth, monthLabel, statementLines, type StatementMonth } from "./statement";
 import { STATEMENT_WORDS } from "./statement-sheet";
 import { COUNT_FORMAT, PERCENT_FORMAT, moneyFormat, type XCell, type XSheet } from "./workbook";
 
@@ -154,9 +154,8 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
       const pts = isAr ? "نقطة" : "pts";
       return { value: now - before, format: `+0.0" ${pts}";-0.0" ${pts}";"–"` };
     }
-    return before === 0
-      ? null
-      : { value: (now - before) / Math.abs(before), format: '+0.0%;-0.0%;"–"' };
+    const grew = growth(now, before, kind === "item");
+    return grew === null ? null : { value: grew, format: '+0.0%;-0.0%;"–"' };
   };
   const figure = (kind: string, value: number): Exclude<XCell, null> =>
     kind === "ratio"
@@ -188,7 +187,7 @@ export function monthPackSheets(input: MonthPackInput): XSheet[] {
             value: line.label[lang],
             bold: strong,
             total: line.kind === "total",
-            indent: line.kind === "item" ? 1 : 0,
+            indent: line.kind === "part" ? 2 : line.kind === "item" ? 1 : 0,
           },
           { ...figure(line.kind, now), bold: true },
           figure(line.kind, before),

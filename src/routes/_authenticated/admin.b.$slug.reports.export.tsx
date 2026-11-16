@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { subDays, startOfDay, endOfDay, format } from "date-fns";
+import { subDays, startOfDay, endOfDay } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { useI18n } from "@/lib/i18n";
 import { DatePickerWithRange } from "@/components/reports/date-range-picker";
@@ -13,42 +13,51 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { exportReportData } from "@/lib/reporting.functions";
-import { sanitizeReportRows } from "@/lib/report-export";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { buildExport, isEmptyExport, type ExportKind } from "@/features/report-export/build-export";
+import { csvText } from "@/features/report-export/lib/export-shared";
+import { downloadWorkbook, workbookFileName } from "@/features/finance-reports/lib/workbook";
+import { localDay } from "@/features/finance-reports/lib/receivables";
+import { useBrand } from "@/lib/brand-context";
+import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { moneyFractionDigits } from "@/lib/format";
 import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/export")({
   component: ReportsExport,
 });
 
-type ReportType = "sales" | "products" | "customers";
+type ReportType = ExportKind;
 type FormatType = "csv" | "xlsx";
 
 const reportOptions = [
   {
     id: "sales",
     icon: FileText,
-    en: "Sales & orders",
-    ar: "المبيعات والطلبات",
-    descEn: "Transactions, totals, payment and fulfillment",
-    descAr: "المعاملات والإجماليات والدفع والاستلام",
+    en: "Full report",
+    ar: "التقرير الشامل",
+    descEn:
+      "Sales by source, profit and loss, cost of goods, profit by product, partner shops, expenses, balances and stock",
+    descAr:
+      "المبيعات حسب المصدر، الأرباح والخسائر، تكلفة البضاعة، الربح حسب المنتج، المحلات الشريكة، المصاريف، الأرصدة والمخزون",
   },
   {
     id: "products",
     icon: FileSpreadsheet,
     en: "Product performance",
     ar: "أداء المنتجات",
-    descEn: "Units sold, net sales, cost and inventory",
-    descAr: "الوحدات والمبيعات والتكلفة والمخزون",
+    descEn: "Pieces and sales in store and at partners, cost and stock",
+    descAr: "القطع والمبيعات في المتجر والمحلات، والتكلفة والمخزون",
   },
   {
     id: "customers",
     icon: Sparkles,
     en: "Customer insights",
     ar: "تحليلات العملاء",
-    descEn: "Privacy-safe customer purchasing insights",
-    descAr: "تحليلات شراء العملاء مع حماية الخصوصية",
+    descEn: "Orders and spend per customer, with no contact details",
+    descAr: "الطلبات والمشتريات لكل عميل، بدون بيانات التواصل",
   },
 ] as const;
 
@@ -63,6 +72,10 @@ function ReportsExport() {
   const [formatType, setFormatType] = useState<FormatType>("xlsx");
   const [isExporting, setIsExporting] = useState(false);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const qc = useQueryClient();
+  const brand = useBrand();
+  const currency = useStoreCurrency(brand.id);
+  const numberFormat = useOrderNumberFormat(brand.id);
 
   const handleExport = async () => {
     if (!date?.from || !date?.to) return;
@@ -73,32 +86,38 @@ function ReportsExport() {
         id: toastId,
       });
 
-      // This RPC uses the active browser session. The previous server function had no
-      // user session, so every legitimate admin export was rejected as anonymous.
-      const raw = await exportReportData(
-        reportType,
-        { from: date.from, to: date.to },
-        timezone,
+      const words = lang === "ar" ? "ar" : "en";
+      const file = await buildExport({
+        kind: reportType,
+        qc,
         slug,
-      );
-      if (!Array.isArray(raw) || raw.length === 0)
+        range: { from: date.from, to: date.to },
+        ctx: {
+          lang: words,
+          storeName: (words === "ar" ? brand.name_ar : null) || brand.name_en,
+          currency,
+          digits: moneyFractionDigits(currency),
+          timeZone: timezone,
+          numberFormat,
+        },
+      });
+      // The full report has a summary worth reading even in a period with no sale.
+      if (reportType !== "sales" && isEmptyExport(file))
         throw new Error(
           lang === "ar"
             ? "لا توجد بيانات للتصدير في هذه الفترة."
             : "No data is available for this period.",
         );
-
-      const limit = formatType === "xlsx" ? 10_000 : 50_000;
-      const rows = sanitizeReportRows(raw.slice(0, limit));
-      const fileName = `boutq_${reportType}_${format(new Date(), "yyyy-MM-dd")}.${formatType}`;
+      const period = `${localDay(date.from)}-to-${localDay(date.to)}`;
+      const fileName = workbookFileName(
+        slug,
+        reportType === "sales" ? "report" : reportType,
+        period,
+      );
       if (formatType === "xlsx") {
-        const { default: writeXlsxFile } = await import("write-excel-file/browser");
-        await writeXlsxFile(toSheetData(rows), {
-          sheet: "Boutq report",
-          stickyRowsCount: 1,
-        }).toFile(fileName);
+        await downloadWorkbook(file.sheets, fileName);
       } else {
-        downloadCsv(toCsv(rows), fileName);
+        downloadCsv(csvText(file.csv), fileName.replace(/\.xlsx$/, ".csv"));
       }
       toast.success(lang === "ar" ? "تم تنزيل التقرير بنجاح" : "Report downloaded successfully", {
         id: toastId,
@@ -198,11 +217,11 @@ function ReportsExport() {
           <p className="text-xs text-muted-foreground">
             {formatType === "xlsx"
               ? lang === "ar"
-                ? "حتى 10,000 صف لكل ملف Excel"
-                : "Up to 10,000 rows per Excel file"
+                ? "أرقام بعملة المتجر وخاناتها، وسطر مجموع في كل ورقة"
+                : "Figures in the store's currency and decimals, a total on every sheet"
               : lang === "ar"
-                ? "حتى 50,000 صف لكل ملف CSV"
-                : "Up to 50,000 rows per CSV file"}
+                ? "الجدول الرئيسي فقط، بدون الملخص"
+                : "The main table only, without the summary"}
           </p>
           <Button
             onClick={handleExport}
@@ -249,34 +268,6 @@ function ReportsExport() {
       </aside>
     </div>
   );
-}
-
-function toSheetData(rows: Record<string, unknown>[]) {
-  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
-  return [
-    headers.map((value) => ({ value, fontWeight: "bold" as const })),
-    ...rows.map((row) => headers.map((header) => toCellValue(row[header]))),
-  ];
-}
-
-function toCellValue(value: unknown): string | number | boolean | Date | null {
-  if (value == null) return null;
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return value;
-  }
-  if (value instanceof Date) return value;
-  return JSON.stringify(value);
-}
-
-function toCsv(rows: Record<string, unknown>[]): string {
-  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
-  const escape = (value: unknown) => {
-    const text = toCellValue(value)?.toString() ?? "";
-    return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
-  };
-  return [headers.map(escape), ...rows.map((row) => headers.map((header) => escape(row[header])))]
-    .map((row) => row.join(","))
-    .join("\r\n");
 }
 
 function downloadCsv(content: string, fileName: string) {

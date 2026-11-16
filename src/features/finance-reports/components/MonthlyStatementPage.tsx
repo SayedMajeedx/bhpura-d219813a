@@ -299,7 +299,7 @@ function StatementRow({
   span: number;
 }) {
   const strong = line.kind === "subtotal" || line.kind === "total";
-  const muted = line.kind === "ratio";
+  const muted = line.kind === "ratio" || line.kind === "part";
   const loss = line.kind === "total" && line.total < 0;
   const cell = (value: number) => lineFigure(line.kind, value, digits);
   return (
@@ -330,7 +330,7 @@ function StatementRow({
           scope="row"
           className={cn(
             "sticky start-0 z-10 bg-card px-3 py-1.5 text-start font-[inherit]",
-            (line.kind === "item" || muted) && "ps-6",
+            line.kind === "part" ? "ps-10" : (line.kind === "item" || muted) && "ps-6",
           )}
         >
           <span className="block w-32 whitespace-normal sm:w-56">{line.label[lang]}</span>
