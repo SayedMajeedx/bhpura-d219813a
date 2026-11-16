@@ -40,7 +40,6 @@ const { TeamCommandHeader } = await import("../src/components/team/TeamCommandHe
 const { ReturnsCommandHeader } = await import("../src/components/returns/ReturnsCommandHeader");
 const { OrderMobileCard } = await import("../src/components/orders/OrderMobileCard");
 const { OrdersScopeSwitcher } = await import("../src/components/orders/OrdersScopeSwitcher");
-const { orderQueueTabs } = await import("../src/features/orders/lib/order-queue-tabs");
 const { BulkSelectionToolbar } = await import("../src/components/bulk-selection-toolbar");
 
 describe("what an order's card says", () => {
