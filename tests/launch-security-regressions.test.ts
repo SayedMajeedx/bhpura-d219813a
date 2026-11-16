@@ -31,7 +31,8 @@ const onboarding = (await import("../src/lib/onboarding.functions")) as unknown 
   string,
   ServerFn
 >;
-const { sanitizeReportRows } = await import("../src/lib/report-export");
+const { csvText } = await import("../src/features/report-export/lib/export-shared");
+const { libraryCell } = await import("../src/features/finance-reports/lib/workbook");
 
 describe("launch security regressions", () => {
   it.each([
@@ -480,12 +481,10 @@ describe("launch security regressions", () => {
     expect(operator.result.apiKey).toBe("vault-key");
   });
 
-  it("writes report exports without contact details or cells a spreadsheet would run", () => {
-    // The Reports page reads the export through the caller's own client (RLS applies) and writes
-    // the file from these rows.
-    const [row] = sanitizeReportRows([
-      { customer: "=HYPERLINK(1)", email: "a@b.c", customer_phone: "3900", total: 30 },
-    ]);
-    expect(row).toEqual({ customer: "'=HYPERLINK(1)", total: 30 });
+  it("writes report exports with no cell a spreadsheet would run", () => {
+    // The Reports export names its columns itself (no contact column exists to leak), and both
+    // its files quote a formula-like text.
+    expect(csvText([["=HYPERLINK(1)", -30]])).toBe("'=HYPERLINK(1),-30");
+    expect(libraryCell({ value: "+cmd" })).toMatchObject({ value: "'+cmd" });
   });
 });

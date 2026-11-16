@@ -1,4 +1,5 @@
-import { overviewProfit, type ComposedOverviewRow } from "@/lib/reporting-compose";
+import { overviewProfit, salesBySource, type ComposedOverviewRow } from "@/lib/reporting-compose";
+import { SALES_WORDS } from "@/lib/report-words";
 
 /**
  * The monthly statement: the Reports overview's figures, month by month, laid out as a profit
@@ -69,7 +70,8 @@ export function yearEarlier(months: readonly StatementMonth[], now = new Date())
   return months.map((m) => monthOf(m.year - 1, m.month, now));
 }
 
-export type LineKind = "item" | "subtotal" | "total" | "ratio" | "count" | "memo";
+/** A `part` is one share of the line above it (net sales by source): read, never added. */
+export type LineKind = "item" | "subtotal" | "total" | "ratio" | "count" | "memo" | "part";
 
 export type StatementLine = {
   key: string;
@@ -137,6 +139,26 @@ const LINES: LineSpec[] = [
     kind: "subtotal",
     label: { en: "Net sales", ar: "صافي المبيعات" },
     value: (r) => profit(r).netSales,
+  },
+  {
+    key: "store_sales",
+    kind: "part",
+    label: SALES_WORDS.store,
+    value: (r) => salesBySource(r).store,
+  },
+  {
+    key: "partner_sales",
+    kind: "part",
+    label: SALES_WORDS.partners,
+    value: (r) => salesBySource(r).partners,
+    optional: true,
+  },
+  {
+    key: "service_sales",
+    kind: "part",
+    label: SALES_WORDS.services,
+    value: (r) => salesBySource(r).services,
+    optional: true,
   },
   {
     key: "cost_of_goods",
@@ -275,11 +297,22 @@ function totalsOf(columns: Row[]) {
   return totals;
 }
 
+/**
+ * How much a figure grew, as a share of what it was. A deduction is written negative (a cost,
+ * a discount), so it is compared by its size: a cost that went from (146) to (169) grew 16%; it
+ * once read "-16%", as if the cost had fallen. A profit keeps its sign (a loss that deepens fell).
+ */
+export function growth(now: number, before: number, deduction = false) {
+  if (before === 0) return null;
+  if (deduction && now <= 0 && before < 0) return (Math.abs(now) - Math.abs(before)) / -before;
+  return (now - before) / Math.abs(before);
+}
+
 function changeOf(kind: LineKind, total: number, prior: number | null) {
   if (prior === null) return null;
   if (kind === "ratio") return total - prior;
-  if (prior === 0) return null;
-  return ((total - prior) / Math.abs(prior)) * 100;
+  const change = growth(total, prior, kind === "item");
+  return change === null ? null : change * 100;
 }
 
 /**
@@ -287,6 +320,13 @@ function changeOf(kind: LineKind, total: number, prior: number | null) {
  * and, when given, the same months a year earlier. A line the store never uses is left out.
  */
 export function statementLines(columns: Row[], priorColumns?: Row[] | null): StatementLine[] {
+  const lines = allLines(columns, priorColumns);
+  // Net sales by source only says something when there is more than the store's own orders.
+  const parts = lines.filter((line) => line.kind === "part");
+  return parts.length > 1 ? lines : lines.filter((line) => line.kind !== "part");
+}
+
+function allLines(columns: Row[], priorColumns?: Row[] | null): StatementLine[] {
   const totals = totalsOf(columns);
   const priorTotals = priorColumns ? totalsOf(priorColumns) : null;
   return LINES.flatMap((spec) => {

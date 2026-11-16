@@ -17,6 +17,8 @@ export type XCell = null | {
   indent?: number;
   /** Kept as text (an invoice number, a phone), so Excel does not reinterpret it. */
   text?: boolean;
+  /** A calendar day (`YYYY-MM-DD`), written as a real Excel date a filter and a sort read. */
+  date?: boolean;
 };
 
 export type XSheet = {
@@ -59,6 +61,15 @@ export function libraryCell(cell: XCell): LibraryCell {
   if (cell.heading) style.bottomBorderStyle = "thin";
   if (cell.total) style.topBorderStyle = "thin";
   if (cell.indent) style.indent = cell.indent;
+  if (cell.date && typeof cell.value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(cell.value)) {
+    // Midnight UTC: the writer counts days from 1899-12-30 in UTC, so no time zone moves the day.
+    return {
+      value: new Date(`${cell.value}T00:00:00Z`),
+      type: Date,
+      format: DATE_FORMAT,
+      ...style,
+    };
+  }
   if (typeof cell.value === "number") {
     return { value: cell.value, type: Number, format: cell.format, align: "right", ...style };
   }

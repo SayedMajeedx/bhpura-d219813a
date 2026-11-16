@@ -169,6 +169,8 @@ describe("the statement's lines", () => {
       "discounts",
       "returns",
       "net_sales",
+      "store_sales",
+      "partner_sales",
       "cost_of_goods",
       "gross_profit",
       "gross_margin",
@@ -189,6 +191,10 @@ describe("the statement's lines", () => {
     expect(line("discounts").values).toEqual([-20, -40]);
     expect(line("returns").values).toEqual([-20, -40]);
     expect(line("net_sales").values).toEqual([230, 460]);
+    // Net sales by source: the store's own orders after discounts and returns, and the partners'.
+    expect(line("store_sales").values).toEqual([180, 360]);
+    expect(line("partner_sales").values).toEqual([50, 100]);
+    expect(line("store_sales").kind).toBe("part");
     expect(line("cost_of_goods").values).toEqual([-84, -168]);
     expect(line("operating_profit").values).toEqual([101, 202]);
     // The lines add up: gross less deductions is net sales, and so on down.
