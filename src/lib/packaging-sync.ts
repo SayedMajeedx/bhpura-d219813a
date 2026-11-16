@@ -168,6 +168,10 @@ export async function syncSingleExpenseToPackagingMaterial(
   },
 ): Promise<"synced" | "skipped" | "failed"> {
   if (!brandId || !expense.description?.trim()) return "skipped";
+  // Only a purchase of stock (a direct cost with its quantity) becomes packaging material. A
+  // running cost is spent, not stocked: mirroring one counted it twice, once as a running cost and
+  // again in every order's packaging cost, at a quantity of 100 nobody typed.
+  if (expense.expense_type !== "cogs" || !(Number(expense.quantity) > 0)) return "skipped";
 
   const cat = (expense.category || "").toLowerCase();
   const desc = expense.description.trim();

@@ -33,6 +33,8 @@ import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { localDateKey } from "@/features/expenses/lib/date-range";
+import { datesDueBy, inPeriod, monthsText, recurringDate } from "@/features/expenses/lib/recurring";
 
 interface ExpensesOpExCogsTabProps {
   activeRange?: { from: string; to: string };
@@ -62,7 +64,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePeriod, setRecurrencePeriod] = useState<"monthly" | "yearly">("monthly");
   const [vendorId, setVendorId] = useState<string>("");
-  const [expenseDate, setExpenseDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [expenseDate, setExpenseDate] = useState<string>(localDateKey(new Date()));
   const [isSaving, setIsSaving] = useState(false);
 
   const calculatedUnitCost = expenseType === "cogs" && quantity > 0 ? amount / quantity : 0;
@@ -119,7 +121,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     setIsRecurring(false);
     setRecurrencePeriod("monthly");
     setVendorId("");
-    setExpenseDate(new Date().toISOString().split("T")[0]);
+    setExpenseDate(localDateKey(new Date()));
     setModalOpen(true);
   };
 
@@ -134,7 +136,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
     setIsRecurring(Boolean(item.is_recurring));
     setRecurrencePeriod(item.recurrence_period || "monthly");
     setVendorId(item.vendor_id || "");
-    setExpenseDate(item.expense_date || new Date().toISOString().split("T")[0]);
+    setExpenseDate(item.expense_date || localDateKey(new Date()));
     setModalOpen(true);
   };
 
@@ -155,6 +157,23 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           ? "تعذر حذف المصروف، يرجى المحاولة مرة أخرى."
           : "Failed to delete expense. Please try again.",
       );
+    }
+  };
+
+  const stopRepeating = async (item: any) => {
+    const ok = await confirmDialog({
+      title: isAr ? "إيقاف تكرار هذا المصروف؟" : "Stop repeating this expense?",
+      description: isAr
+        ? "ما سُجّل من الأشهر يبقى، ولا يُسجَّل شهر جديد."
+        : "The months already recorded stay; no new month is recorded.",
+    });
+    if (!ok) return;
+    try {
+      await updateExpense(brandId, item.id, { is_recurring: false });
+      toast.success(isAr ? "أُوقف التكرار" : "Repeat stopped");
+      invalidateExpenses(qc, brandId);
+    } catch {
+      toast.error(isAr ? "تعذر إيقاف التكرار" : "Could not stop the repeat");
     }
   };
 
@@ -240,7 +259,30 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
           );
         }
         if (error) throw error;
-        toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
+        // A new repeating expense fills the months since its date at once (the database does).
+        const filled = isRecurring
+          ? datesDueBy(expenseDate, recurrencePeriod, localDateKey(new Date()))
+          : [];
+        toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added", {
+          description: filled.length
+            ? isAr
+              ? `وسُجّل تلقائياً أيضاً لـ ${monthsText(filled, "ar")}`
+              : `Also recorded for ${monthsText(filled, "en")}`
+            : undefined,
+        });
+      }
+      // An expense dated outside the period on screen would vanish: show every period instead.
+      if (
+        filterByDateRange &&
+        activeRange?.from &&
+        !inPeriod(expenseDate, { from: activeRange.from, to: activeRange.to })
+      ) {
+        setFilterByDateRange(false);
+        toast.info(
+          isAr
+            ? "تاريخ المصروف خارج الفترة المعروضة، فنعرض كل الفترات."
+            : "Its date is outside the period on screen, so every period is shown.",
+        );
       }
 
       // Mirror a packaging / COGS material to the packaging inventory before
@@ -333,7 +375,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
         <Card className="p-4 border-border-strong bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-muted-foreground">
-              {isAr ? "مصاريف تشغيلية ثابتة شهرياً" : "Fixed monthly running costs"}
+              {isAr ? "المصاريف التشغيلية للفترة" : "Running costs of the period"}
             </span>
             <Badge variant="outline" className="bg-muted text-muted-foreground text-xs">
               {isAr ? "تشغيلية" : "Running"}
@@ -431,8 +473,14 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                         <Badge variant="secondary" className="text-xs gap-1">
                           <Repeat className="h-2.5 w-2.5" />
                           {isAr
-                            ? `دوري (${exp.recurrence_period === "yearly" ? "سنوي" : "شهري"})`
-                            : `Recurring (${exp.recurrence_period})`}
+                            ? `يتكرر ${exp.recurrence_period === "yearly" ? "سنوياً" : "شهرياً"} · التالي ${formatDate(exp.next_recurrence_date ?? recurringDate(exp.expense_date, exp.recurrence_period, Number(exp.recurring_generated ?? 0) + 1), "ar-BH")}`
+                            : `Repeats ${exp.recurrence_period === "yearly" ? "yearly" : "monthly"} · next ${formatDate(exp.next_recurrence_date ?? recurringDate(exp.expense_date, exp.recurrence_period, Number(exp.recurring_generated ?? 0) + 1), "en-BH")}`}
+                        </Badge>
+                      )}
+                      {exp.recurring_source_id && (
+                        <Badge variant="outline" className="text-xs gap-1">
+                          <Repeat className="h-2.5 w-2.5" />
+                          {isAr ? "من مصروف متكرر" : "From a repeating expense"}
                         </Badge>
                       )}
                     </div>
@@ -470,6 +518,16 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                   </span>
 
                   <div className="flex items-center gap-1">
+                    {exp.is_recurring && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void stopRepeating(exp)}
+                        className="h-8 text-xs"
+                      >
+                        {isAr ? "إيقاف التكرار" : "Stop repeating"}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -700,7 +758,7 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
                     className="rounded border-input text-primary"
                   />
                   <span className="font-bold text-xs text-foreground">
-                    {isAr ? "مصروف دوري مكرر (مصروف ثابت)" : "Recurring Expense"}
+                    {isAr ? "يتكرر تلقائياً" : "Repeats by itself"}
                   </span>
                 </label>
 
@@ -717,8 +775,8 @@ export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = 
               </div>
               <p className="text-xs text-muted-foreground">
                 {isAr
-                  ? "مثل رسوم العرض لدى محل شريك أو الإيجار الشهري لتتبع الالتزامات المستقبلية."
-                  : "For fixed recurring obligations like monthly incubator fees or rent."}
+                  ? "يُسجَّل كل شهر (أو كل سنة) في نفس اليوم حتى توقفه، مثل إيجار المحل الشريك. إذا كان التاريخ قديماً تُسجَّل الأشهر الفائتة أيضاً."
+                  : "Recorded every month (or year) on the same day until you stop it, like a partner shop's rent. Dated in the past, the months since are recorded too."}
               </p>
             </div>
           </div>

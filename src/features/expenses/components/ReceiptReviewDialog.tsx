@@ -43,7 +43,8 @@ export function ReceiptReviewDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   scanned: ScannedExpense | null;
-  onSaved: () => void;
+  /** Told the saved expense's day, so the page can show its period. */
+  onSaved: (expenseDate: string) => void;
 }) {
   const t = useT();
   const { lang } = useI18n();
@@ -115,7 +116,7 @@ export function ReceiptReviewDialog({
       };
       await createExpense(payload);
       toast.success(t("common.save"));
-      onSaved();
+      onSaved(form.expense_date);
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to save");
     } finally {
