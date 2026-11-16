@@ -148,8 +148,29 @@ describe("Packaging Expenses to Inventory Auto-Sync", () => {
         insert: () => Promise.resolve({ error: { message: "denied" } }),
       }),
     };
-    const expense = { description: "كرتون شحن", category: "Packaging", quantity: 10, amount: 5 };
+    const expense = {
+      description: "كرتون شحن",
+      category: "Packaging",
+      expense_type: "cogs",
+      quantity: 10,
+      amount: 5,
+    };
     expect(await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", expense)).toBe("failed");
+    // A running cost, or a purchase with no quantity typed, is never stocked (it was mirrored
+    // at a quantity of 100 and counted twice: as a running cost and in every order's packaging).
+    expect(
+      await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", {
+        description: "اكياس",
+        category: "Packaging",
+        amount: 5,
+      }),
+    ).toBe("skipped");
+    expect(
+      await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", {
+        ...expense,
+        quantity: null,
+      }),
+    ).toBe("skipped");
     expect(
       await syncSingleExpenseToPackagingMaterial(refusing, "brand-1", {
         description: "Rent",

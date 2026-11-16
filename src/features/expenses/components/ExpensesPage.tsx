@@ -33,6 +33,7 @@ import { FinancialReportsTab } from "@/components/accounting/FinancialReportsTab
 import { scanReceipt, type ScannedExpense } from "@/lib/scan-receipt.functions";
 import type { Expense, DatePreset } from "@/features/expenses/types";
 import { presetRange } from "@/features/expenses/lib/date-range";
+import { inPeriod } from "@/features/expenses/lib/recurring";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import {
   cogsCsv,
@@ -176,6 +177,17 @@ export function ExpensesPage() {
     [periodQ.data, currency],
   );
 
+  // A saved expense dated outside the period on screen would vanish: show every period instead.
+  const showSaved = (day: string) => {
+    if (datePreset === "custom" || inPeriod(day, activeRange)) return;
+    setDatePreset("custom");
+    toast.info(
+      lang === "ar"
+        ? "تاريخ المصروف خارج الفترة المعروضة، فنعرض كل الفترات."
+        : "Its date is outside the period on screen, so every period is shown.",
+    );
+  };
+
   return (
     <div className="space-y-3.5">
       {/* Hidden File Input for Scanner */}
@@ -316,9 +328,10 @@ export function ExpensesPage() {
           }}
           expense={editing}
           categories={categories}
-          onSaved={() => {
+          onSaved={(day) => {
             setOpen(false);
             void invalidateExpenses(qc, brandId);
+            showSaved(day);
           }}
         />
       )}
@@ -332,10 +345,11 @@ export function ExpensesPage() {
             if (!v) setScanned(null);
           }}
           scanned={scanned}
-          onSaved={() => {
+          onSaved={(day) => {
             setReviewOpen(false);
             setScanned(null);
             invalidateExpenses(qc, brandId);
+            showSaved(day);
           }}
         />
       )}

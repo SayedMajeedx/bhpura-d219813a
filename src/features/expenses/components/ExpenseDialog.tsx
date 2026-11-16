@@ -25,6 +25,7 @@ import type { Expense } from "@/features/expenses/types";
 import { expenseCurrency } from "@/features/expenses/lib/expense-list";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { CreatableCategorySelect } from "@/features/expenses/components/CreatableCategorySelect";
+import { localDateKey } from "@/features/expenses/lib/date-range";
 
 // ============================================================================
 // Basic (manual) add/edit dialog
@@ -40,7 +41,8 @@ export function ExpenseDialog({
   onOpenChange: (open: boolean) => void;
   expense: Expense | null;
   categories: string[];
-  onSaved: () => void;
+  /** Told the saved expense's day, so the page can show its period. */
+  onSaved: (expenseDate: string) => void;
 }) {
   const t = useT();
   const { lang } = useI18n();
@@ -56,7 +58,7 @@ export function ExpenseDialog({
     description: expense?.description ?? "",
     amount: expense ? String(expense.amount) : "0",
     currency: expenseCurrency(expense, storeCurrency),
-    expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
+    expense_date: expense?.expense_date ?? localDateKey(new Date()),
     notes: expense?.notes ?? "",
   });
 
@@ -110,7 +112,7 @@ export function ExpenseDialog({
       // Auto sync packaging expense to packaging materials inventory
       void syncExpensePackaging(supabase, brand.id, payload, lang === "ar");
       toast.success(t("common.save"));
-      onSaved();
+      onSaved(form.expense_date);
     } catch (error: any) {
       if (uploadedUrl) void deletePublicMediaUrl(brand.id, uploadedUrl).catch(() => undefined);
       toast.error(

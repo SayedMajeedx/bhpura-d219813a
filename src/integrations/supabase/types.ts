@@ -3396,6 +3396,8 @@ export type Database = {
           receipt_time: string | null;
           receipt_url: string | null;
           recurrence_period: string | null;
+          recurring_generated: number;
+          recurring_source_id: string | null;
           store_name: string | null;
           tax_amount: number | null;
           tax_rate: number | null;
@@ -3423,6 +3425,8 @@ export type Database = {
           receipt_time?: string | null;
           receipt_url?: string | null;
           recurrence_period?: string | null;
+          recurring_generated?: number;
+          recurring_source_id?: string | null;
           store_name?: string | null;
           tax_amount?: number | null;
           tax_rate?: number | null;
@@ -3450,6 +3454,8 @@ export type Database = {
           receipt_time?: string | null;
           receipt_url?: string | null;
           recurrence_period?: string | null;
+          recurring_generated?: number;
+          recurring_source_id?: string | null;
           store_name?: string | null;
           tax_amount?: number | null;
           tax_rate?: number | null;
@@ -3460,6 +3466,13 @@ export type Database = {
           vendor_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "expenses_recurring_source_id_fkey";
+            columns: ["recurring_source_id"];
+            isOneToOne: false;
+            referencedRelation: "expenses";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "expenses_brand_id_fkey";
             columns: ["brand_id"];
