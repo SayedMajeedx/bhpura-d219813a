@@ -1,40 +1,35 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Trash2, Wallet, Loader2, Receipt, FileText } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { ArrowUpRight, Receipt, Wallet } from "lucide-react";
 import { toast } from "sonner";
-import { useI18n, useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl } from "@/lib/r2-upload";
-import { deleteExpense, expensesQueries, invalidateExpenses } from "@/lib/data/expenses";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  deleteExpense,
+  expensesQueries,
+  invalidateExpenses,
+  updateExpense,
+  type ExpenseRow,
+} from "@/lib/data/expenses";
 import { ordersQueries } from "@/lib/data/orders";
-
+import { accountingQueries } from "@/lib/data/accounting";
+import { reportingQueries } from "@/lib/data/reporting";
+import { moneyFractionDigits } from "@/lib/format";
+import { isServicesProfile } from "@/lib/store-profile";
 import { ExpensesCommandHeader } from "@/components/expenses/ExpensesCommandHeader";
 import { ExpensesScopeSwitcher } from "@/components/expenses/ExpensesScopeSwitcher";
-import { ExpensesToolbar } from "@/components/expenses/ExpensesToolbar";
-import { ExpensesWorkQueue } from "@/components/expenses/ExpensesWorkQueue";
-import { ExpenseMobileCard } from "@/components/expenses/ExpenseMobileCard";
-
-import { ExpensesOpExCogsTab } from "@/components/accounting/ExpensesOpExCogsTab";
 import { CashFlowLiquidityTab } from "@/components/accounting/CashFlowLiquidityTab";
-import { VendorsPurchaseOrdersTab } from "@/components/accounting/VendorsPurchaseOrdersTab";
-import { FinancialReportsTab } from "@/components/accounting/FinancialReportsTab";
 import { scanReceipt, type ScannedExpense } from "@/lib/scan-receipt.functions";
-import type { Expense, DatePreset } from "@/features/expenses/types";
-import { presetRange } from "@/features/expenses/lib/date-range";
-import { inPeriod } from "@/features/expenses/lib/recurring";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { useAdminStoreProfile } from "@/hooks/use-store-profile";
+import { downloadWorkbook, workbookFileName } from "@/features/finance-reports/lib/workbook";
+import { localDateKey } from "@/features/expenses/lib/date-range";
 import {
   cogsCsv,
   cogsCsvFileName,
@@ -43,131 +38,71 @@ import {
   scanFailureMessage,
 } from "@/features/expenses/lib/expense-list";
 import { periodFigures, reportRangeOfDays } from "@/features/expenses/lib/profit-and-loss";
-import { reportingQueries } from "@/lib/data/reporting";
 import { prepareReceiptForScanning } from "@/features/expenses/lib/receipt-scan";
-import { ExpenseDialog } from "@/features/expenses/components/ExpenseDialog";
+import {
+  periodDays,
+  periodLabel,
+  periodShowing,
+  thisMonth,
+  type ExpensePeriod,
+} from "@/features/expenses/lib/period";
+import { expensesSheet } from "@/features/expenses/lib/expense-sheet";
+import { ExpenseFormDialog } from "@/features/expenses/components/ExpenseFormDialog";
+import {
+  ExpensesFilterBar,
+  type KindFilter,
+} from "@/features/expenses/components/ExpensesFilterBar";
+import { ExpensesList } from "@/features/expenses/components/ExpensesList";
 import { ReceiptReviewDialog } from "@/features/expenses/components/ReceiptReviewDialog";
-import { useOrderNumberFormat } from "@/hooks/use-order-number";
 
-/** The expenses page: the list, the profit and loss strip, the accounting tabs and the dialogs. */
+/**
+ * The expenses page, read top to bottom: the heading (add, scan a receipt), the period's profit
+ * and loss (the Reports' own figures), one filter (period, kind, category, search) and one list
+ * with its totals. It once stacked two lists, two add forms and two period filters, an income
+ * statement and a cash flow statement of its own, and a supplier directory.
+ */
 export function ExpensesPage() {
-  const t = useT();
   const { lang } = useI18n();
-  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
+  const isAr = lang === "ar";
+  const words = isAr ? "ar" : "en";
+  const locale = isAr ? "ar-BH-u-nu-latn" : "en-US";
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
+  const currency = useStoreCurrency(brandId);
+  const numberFormat = useOrderNumberFormat(brandId);
+  const { modules } = useAdminStoreProfile(brandId).profile;
 
-  // Expenses (shared with the OpEx/COGS and reports tabs and the dashboard)
   const q = useQuery({ ...expensesQueries.list(brandId), retry: false });
+  const list = useMemo(() => (q.data ?? []) as ExpenseRow[], [q.data]);
 
-  const [editing, setEditing] = useState<Expense | null>(null);
-  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<ExpenseRow | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [scanned, setScanned] = useState<ScannedExpense | null>(null);
   const [scanning, setScanning] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [deleting, setDeleting] = useState(false);
-  const [datePreset, setDatePreset] = useState<DatePreset>("month");
+  const [period, setPeriod] = useState<ExpensePeriod>(() => thisMonth());
+  const [kind, setKind] = useState<KindFilter>("all");
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">(
-    "opex_cogs",
-  );
-  const [customRange] = useState({ from: "", to: "" });
+  const [category, setCategory] = useState("all");
+  const [view, setView] = useState<"expenses" | "cash">("expenses");
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
-  const rawList = q.data;
-  const list = useMemo(() => rawList ?? [], [rawList]);
+  const offerStock =
+    modules.packaging || modules.stock || list.some((e) => e.expense_type === "cogs");
   const categories = useMemo(() => expenseCategories(list, locale), [list, locale]);
-  const activeRange = datePreset === "custom" ? customRange : presetRange(datePreset);
-  const filteredList = useMemo(
-    () =>
-      filterExpenses(list, {
-        from: activeRange.from,
-        to: activeRange.to,
-        search,
-        category: categoryFilter,
-      }),
-    [list, activeRange.from, activeRange.to, search, categoryFilter],
+  const days = periodDays(period);
+  const shown = useMemo(
+    () => filterExpenses(list, { from: days.from, to: days.to, search, category, kind }),
+    [list, days.from, days.to, search, category, kind],
   );
-  // The strip above the list is the store's own money (its orders and its costs); a row is in
-  // its expense's own currency, with the store's when it has none.
-  const currency = useStoreCurrency(brandId);
-  const numberFormat = useOrderNumberFormat(brandId);
 
-  // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
-  const cogsQ = useQuery(ordersQueries.cogs(brandId, activeRange.from, activeRange.to));
-
-  const downloadCogsCsv = () => {
-    const blob = new Blob([cogsCsv(cogsQ.data ?? [], lang, locale, numberFormat)], {
-      type: "text/csv;charset=utf-8;",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = cogsCsvFileName(activeRange);
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const del = async (id: string) => {
-    setDeleting(true);
-    try {
-      const target = list.find((expense) => expense.id === id);
-      const error = await deleteExpense(brandId, id).then(
-        () => null,
-        (err: { message: string }) => err,
-      );
-      if (error) toast.error(error.message);
-      else {
-        toast.success(t("common.delete"));
-        setDeleteTargetId(null);
-        if (target?.receipt_url)
-          void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
-        await invalidateExpenses(qc, brandId);
-      }
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const onFilePicked = async (file: File | null) => {
-    if (!file) return;
-    if (file.size > 40 * 1024 * 1024) {
-      toast.error(
-        lang === "ar" ? "الملف كبير جداً (الحد 40 ميغابايت)" : "File too large (max 40MB)",
-      );
-      return;
-    }
-    setScanning(true);
-    try {
-      const prepared = await prepareReceiptForScanning(file);
-      const result = await scanFn({
-        data: {
-          dataUrl: prepared.dataUrl,
-          mimeType: prepared.mimeType,
-          targetLang: lang === "ar" ? "ar" : "en",
-        },
-      });
-      setScanned(result);
-      setEditing(null);
-      setReviewOpen(true);
-      toast.success(lang === "ar" ? "تم استخراج بيانات الفاتورة" : "Receipt data extracted");
-    } catch (e: any) {
-      toast.error(scanFailureMessage(e?.message, lang));
-    } finally {
-      setScanning(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
-  // The profit and loss strip: the Reports' own figures for the page's days, so this page, the
-  // overview and the monthly statement agree (running costs are every one of the period, not
-  // only those the list's search shows).
+  // The period's profit and loss is the Reports' own (every period: from the first expense).
+  const today = localDateKey(new Date());
+  const firstDay = list.length ? list[list.length - 1].expense_date.slice(0, 10) : today;
+  const reportRange = reportRangeOfDays(days.from || firstDay, days.to || today);
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const reportRange = reportRangeOfDays(activeRange.from, activeRange.to);
   const periodQ = useQuery({
     ...reportingQueries.overview(brand.slug, reportRange, timeZone, false),
     retry: 1,
@@ -176,21 +111,125 @@ export function ExpensesPage() {
     () => periodFigures(Array.isArray(periodQ.data) ? periodQ.data : null, currency),
     [periodQ.data, currency],
   );
+  const cogsQ = useQuery({
+    ...ordersQueries.cogs(brandId, days.from, days.to),
+    enabled: offerStock,
+  });
 
-  // A saved expense dated outside the period on screen would vanish: show every period instead.
+  // The cash box and bank stay reachable only while they hold something: every store's are at
+  // zero, kept by hand order by order, and the tab read like a statement of nothing.
+  const accountsQ = useQuery(accountingQueries.cashAccounts(brandId));
+  const cashInUse = ((accountsQ.data ?? []) as Array<{ balance?: number | string | null }>).some(
+    (account) => Number(account.balance ?? 0) !== 0,
+  );
+
   const showSaved = (day: string) => {
-    if (datePreset === "custom" || inPeriod(day, activeRange)) return;
-    setDatePreset("custom");
+    const next = periodShowing(period, day);
+    if (next === period) return;
+    setPeriod(next);
     toast.info(
-      lang === "ar"
-        ? "تاريخ المصروف خارج الفترة المعروضة، فنعرض كل الفترات."
-        : "Its date is outside the period on screen, so every period is shown.",
+      isAr
+        ? `نعرض ${periodLabel(next, "ar")}، شهر المصروف.`
+        : `Showing ${periodLabel(next, "en")}, the expense's month.`,
     );
+  };
+
+  const remove = async (expense: ExpenseRow) => {
+    const ok = await confirmDialog({
+      title: isAr ? "حذف هذا المصروف؟" : "Delete this expense?",
+      description: expense.is_recurring
+        ? isAr
+          ? "يتوقف تكراره، وتبقى الأشهر التي سُجّلت منه."
+          : "Its repeat stops; the months it recorded stay."
+        : undefined,
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await deleteExpense(brandId, expense.id);
+      if (expense.receipt_url)
+        void deletePublicMediaUrl(brandId, expense.receipt_url).catch(() => undefined);
+      toast.success(isAr ? "حُذف المصروف" : "Expense deleted");
+      await invalidateExpenses(qc, brandId);
+    } catch {
+      toast.error(isAr ? "تعذر حذف المصروف" : "The expense could not be deleted");
+    }
+  };
+
+  const stopRepeat = async (expense: ExpenseRow) => {
+    const ok = await confirmDialog({
+      title: isAr ? "إيقاف تكرار هذا المصروف؟" : "Stop repeating this expense?",
+      description: isAr
+        ? "ما سُجّل من الأشهر يبقى، ولا يُسجَّل شهر جديد."
+        : "The months already recorded stay; no new month is recorded.",
+    });
+    if (!ok) return;
+    try {
+      await updateExpense(brandId, expense.id, { is_recurring: false });
+      toast.success(isAr ? "أُوقف التكرار" : "Repeat stopped");
+      await invalidateExpenses(qc, brandId);
+    } catch {
+      toast.error(isAr ? "تعذر إيقاف التكرار" : "Could not stop the repeat");
+    }
+  };
+
+  const onFilePicked = async (file: File | null) => {
+    if (!file) return;
+    if (file.size > 40 * 1024 * 1024) {
+      toast.error(isAr ? "الملف كبير جداً (الحد 40 ميغابايت)" : "File too large (max 40MB)");
+      return;
+    }
+    setScanning(true);
+    try {
+      const prepared = await prepareReceiptForScanning(file);
+      const result = await scanFn({
+        data: { dataUrl: prepared.dataUrl, mimeType: prepared.mimeType, targetLang: words },
+      });
+      setScanned(result);
+      setReviewOpen(true);
+      toast.success(isAr ? "تم استخراج بيانات الفاتورة" : "Receipt data extracted");
+    } catch (e) {
+      toast.error(scanFailureMessage((e as { message?: string })?.message, lang));
+    } finally {
+      setScanning(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const downloadExcel = async () => {
+    try {
+      await downloadWorkbook(
+        [
+          expensesSheet({
+            expenses: shown,
+            lang: words,
+            storeName: (isAr ? brand.name_ar : null) || brand.name_en,
+            currency,
+            digits: moneyFractionDigits(currency),
+            periodText: periodLabel(period, words),
+          }),
+        ],
+        workbookFileName(brand.slug, "expenses", `${days.from || "start"}-to-${days.to || today}`),
+      );
+    } catch {
+      toast.error(isAr ? "تعذر إعداد الملف" : "The file could not be prepared");
+    }
+  };
+
+  const downloadCogsCsv = () => {
+    const blob = new Blob(["﻿", cogsCsv(cogsQ.data ?? [], lang, locale, numberFormat)], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = cogsCsvFileName(days);
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <div className="space-y-3.5">
-      {/* Hidden File Input for Scanner */}
       <input
         ref={fileRef}
         type="file"
@@ -199,144 +238,127 @@ export function ExpensesPage() {
         onChange={(e) => void onFilePicked(e.target.files?.[0] ?? null)}
       />
 
-      {/* 1. Command Header */}
       <ExpensesCommandHeader
-        lang={lang === "ar" ? "ar" : "en"}
-        expenseCount={filteredList.length}
+        lang={words}
+        expenseCount={shown.length}
         scanning={scanning}
         onScanReceipt={() => fileRef.current?.click()}
         onCreateNew={() => {
           setEditing(null);
-          setOpen(true);
+          setFormOpen(true);
         }}
       />
 
-      {/* 2. P&L Financial Scope Switcher */}
       <ExpensesScopeSwitcher
-        lang={lang === "ar" ? "ar" : "en"}
+        lang={words}
         currency={currency}
         slug={brand.slug}
         figures={figures}
-        period={{ from: activeRange.from, to: activeRange.to }}
+        period={{ from: days.from || firstDay, to: days.to || today }}
       />
 
-      {/* Financial & Accounting Hub Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-border pb-2 pt-1">
-        <Button
-          variant={mainTab === "opex_cogs" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setMainTab("opex_cogs")}
-          className="h-9 text-xs font-bold gap-1.5 shrink-0"
-        >
-          <Receipt className="h-4 w-4" />
-          {lang === "ar" ? "المصاريف وتكلفة البضاعة" : "Expenses & cost of goods"}
-        </Button>
-        <Button
-          variant={mainTab === "cash_flow" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setMainTab("cash_flow")}
-          className="h-9 text-xs font-bold gap-1.5 shrink-0"
-        >
-          <Wallet className="h-4 w-4" />
-          {lang === "ar" ? "التدفقات النقدية والحسابات" : "Cash Flow & Liquidity"}
-        </Button>
-        <Button
-          variant={mainTab === "vendors_pos" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setMainTab("vendors_pos")}
-          className="h-9 text-xs font-bold gap-1.5 shrink-0"
-        >
-          <Receipt className="h-4 w-4" />
-          {lang === "ar" ? "الموردين وأوامر الشراء" : "Vendors & POs"}
-        </Button>
-        <Button
-          variant={mainTab === "reports" ? "default" : "ghost"}
-          size="sm"
-          onClick={() => setMainTab("reports")}
-          className="h-9 text-xs font-bold gap-1.5 shrink-0"
-        >
-          <FileText className="h-4 w-4" />
-          {lang === "ar" ? "التقارير المالية والدفاتر" : "Financial Statements"}
-        </Button>
-      </div>
-
-      {/* Tab Views */}
-      {mainTab === "opex_cogs" && <ExpensesOpExCogsTab activeRange={activeRange} />}
-      {mainTab === "cash_flow" && <CashFlowLiquidityTab />}
-      {mainTab === "vendors_pos" && <VendorsPurchaseOrdersTab />}
-      {mainTab === "reports" && (
-        <FinancialReportsTab slug={brand.slug} range={reportRange} figures={figures} />
+      {cashInUse && (
+        <div role="tablist" className="flex gap-1 border-b border-border">
+          {[
+            { id: "expenses" as const, Icon: Receipt, label: isAr ? "المصاريف" : "Expenses" },
+            { id: "cash" as const, Icon: Wallet, label: isAr ? "الصندوق والبنك" : "Cash and bank" },
+          ].map(({ id, Icon, label }) => (
+            <button
+              key={id}
+              role="tab"
+              type="button"
+              aria-selected={view === id}
+              onClick={() => setView(id)}
+              className={cn(
+                "flex min-h-10 items-center gap-1.5 border-b-2 px-3 text-sm font-medium",
+                view === id
+                  ? "border-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* 3. Toolbar */}
-      <ExpensesToolbar
-        lang={lang === "ar" ? "ar" : "en"}
-        search={search}
-        onSearchChange={setSearch}
-        categoryFilter={categoryFilter}
-        onCategoryFilterChange={setCategoryFilter}
-        categories={categories}
-        datePreset={datePreset}
-        onDatePresetChange={setDatePreset}
-        activeFilterCount={(search ? 1 : 0) + (categoryFilter !== "all" ? 1 : 0)}
-        onClearFilters={() => {
-          setSearch("");
-          setCategoryFilter("all");
-        }}
-        onDownloadCogsCsv={downloadCogsCsv}
-      />
-
-      {/* 4. Mobile View */}
-      <div className="space-y-2.5 block sm:hidden">
-        {filteredList.map((e) => (
-          <ExpenseMobileCard
-            key={e.id}
-            lang={lang === "ar" ? "ar" : "en"}
-            expense={e}
-            currency={currency}
-            onEdit={(item) => {
-              setEditing(item);
-              setOpen(true);
-            }}
-            onDelete={(id) => setDeleteTargetId(id)}
+      {view === "cash" && cashInUse ? (
+        <CashFlowLiquidityTab />
+      ) : (
+        <>
+          <ExpensesFilterBar
+            lang={words}
+            period={period}
+            onPeriod={setPeriod}
+            kind={kind}
+            onKind={setKind}
+            offerStock={offerStock}
+            category={category}
+            onCategory={setCategory}
+            categories={categories}
+            search={search}
+            onSearch={setSearch}
+            onDownloadExcel={() => void downloadExcel()}
+            onDownloadCogs={downloadCogsCsv}
           />
-        ))}
-      </div>
+          <ExpensesList
+            lang={words}
+            expenses={shown}
+            storeCurrency={currency}
+            onEdit={(expense) => {
+              setEditing(expense);
+              setFormOpen(true);
+            }}
+            onDelete={(expense) => void remove(expense)}
+            onStopRepeat={(expense) => void stopRepeat(expense)}
+          />
+          <nav
+            aria-label={isAr ? "صفحات مرتبطة" : "Related pages"}
+            className="flex flex-wrap gap-x-5 gap-y-2 px-1 text-sm"
+          >
+            <Link
+              to="/admin/b/$slug/reports/export"
+              params={{ slug: brand.slug }}
+              className="inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              {isAr ? "التقرير الشامل والقوائم المالية" : "The full report and statements"}
+              <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+            {!isServicesProfile(modules) && (
+              <Link
+                to="/admin/b/$slug/supplier-orders"
+                params={{ slug: brand.slug }}
+                className="inline-flex items-center gap-1 text-primary hover:underline"
+              >
+                {isAr ? "الموردون وطلبياتهم" : "Suppliers and their orders"}
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </Link>
+            )}
+          </nav>
+        </>
+      )}
 
-      {/* 5. Desktop High-Density Work Queue */}
-      <div className="hidden sm:block">
-        <ExpensesWorkQueue
-          lang={lang === "ar" ? "ar" : "en"}
-          expenses={filteredList}
-          currency={currency}
-          onEdit={(item) => {
-            setEditing(item);
-            setOpen(true);
-          }}
-          onDelete={(id) => setDeleteTargetId(id)}
-        />
-      </div>
-
-      {/* Manual Expense Modal */}
-      {open && (
-        <ExpenseDialog
+      {formOpen && (
+        <ExpenseFormDialog
           key={editing?.id ?? "new-expense"}
-          open={open}
-          onOpenChange={(nextOpen) => {
-            setOpen(nextOpen);
-            if (!nextOpen) setEditing(null);
+          open={formOpen}
+          onOpenChange={(next) => {
+            setFormOpen(next);
+            if (!next) setEditing(null);
           }}
           expense={editing}
-          categories={categories}
+          usedCategories={categories}
+          offerStock={offerStock}
           onSaved={(day) => {
-            setOpen(false);
+            setFormOpen(false);
+            setEditing(null);
             void invalidateExpenses(qc, brandId);
             showSaved(day);
           }}
         />
       )}
 
-      {/* AI Scanned Review Dialog */}
       {scanned && (
         <ReceiptReviewDialog
           open={reviewOpen}
@@ -348,36 +370,11 @@ export function ExpensesPage() {
           onSaved={(day) => {
             setReviewOpen(false);
             setScanned(null);
-            invalidateExpenses(qc, brandId);
+            void invalidateExpenses(qc, brandId);
             showSaved(day);
           }}
         />
       )}
-
-      {/* Delete Confirmation Alert Dialog */}
-      <AlertDialog open={!!deleteTargetId} onOpenChange={(val) => !val && setDeleteTargetId(null)}>
-        <AlertDialogContent dir={lang === "ar" ? "rtl" : "ltr"}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("expenses.deleteConfirm")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={deleting}
-              onClick={() => deleteTargetId && void del(deleteTargetId)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? (
-                <Loader2 className="h-4 w-4 animate-spin me-2" />
-              ) : (
-                <Trash2 className="h-4 w-4 me-2" />
-              )}
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }
