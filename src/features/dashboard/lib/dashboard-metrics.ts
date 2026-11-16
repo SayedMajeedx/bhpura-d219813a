@@ -2,13 +2,11 @@ import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { isSoldFromStock } from "@/lib/product-availability";
 import { countsAsSold } from "@/lib/data/orders/sold-orders";
-import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
-import { customerGroup } from "@/features/customers/lib/customer-value";
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 
 /**
  * The dashboard's operational readings from the rows `useDashboardData` loads: the orders that
- * count as sold, what needs action, customers' groups and stock health. Its money figures are
+ * count as sold, what needs action and stock health. Its money figures are
  * the Reports' own (`dashboard-figures.ts`), never added up here.
  */
 
@@ -49,38 +47,6 @@ export function appointmentsToCompleteCount(orders: DashboardOrders): number {
       (wf.nextAction === "complete_service" || wf.nextAction === "collect_and_complete_service")
     );
   }).length;
-}
-
-/**
- * VIPs and customers at risk by the customers page's own rule (`buildCustomerCrmStats`,
- * `customerGroup`: the store's VIP amount in its own currency), with the VIPs gone quiet for
- * 60 days. The dashboard once had its own rule: over 250 in any currency.
- */
-export function customerSegments(
-  validRevenueOrders: DashboardOrders,
-  customerRows: Rows<"customersQ">,
-  now: Date,
-  currency: string,
-) {
-  const stats = buildCustomerCrmStats(validRevenueOrders, now.getTime(), currency);
-  const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-  let vipCount = 0;
-  let churnRiskCount = 0;
-  const churnRiskVips: Array<{ id: string; name: string }> = [];
-  for (const customer of customerRows) {
-    const own = stats.get(customer.id);
-    const group = customerGroup(own);
-    if (group === "vip") {
-      vipCount++;
-      const last = own?.lastOrderDate ? Date.parse(own.lastOrderDate) : 0;
-      if (last > 0 && now.getTime() - last > sixtyDaysMs) {
-        churnRiskVips.push({ id: customer.id, name: customer.name });
-      }
-    } else if (group === "churn") {
-      churnRiskCount++;
-    }
-  }
-  return { vipCount, churnRiskCount: churnRiskCount + churnRiskVips.length, churnRiskVips };
 }
 
 /**

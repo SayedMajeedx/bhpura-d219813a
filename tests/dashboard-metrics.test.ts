@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  customerSegments,
   inventoryIntelFor,
   revenueOrders,
   type DashboardOrders,
@@ -37,29 +36,6 @@ describe("revenueOrders", () => {
       order({ id: "returned", status: "returned" }),
     ] as DashboardOrders;
     expect(revenueOrders(orders).map((o) => o.id)).toEqual(["paid", "advance", "cash-to-collect"]);
-  });
-});
-
-describe("customerSegments", () => {
-  it("reads VIPs and customers at risk by the customers page's own rule", () => {
-    const orders = [
-      order({ customer_id: "vip", total: 300, created_at: daysAgo(90) }),
-      order({ customer_id: "recent", total: 40, created_at: daysAgo(3) }),
-      order({ customer_id: "idle", total: 40, created_at: daysAgo(70) }),
-    ] as DashboardOrders;
-    const customers = [
-      { id: "vip", name: "Vip", phone: null },
-      { id: "recent", name: "Recent", phone: null },
-      { id: "idle", name: "Idle", phone: null },
-      { id: "new", name: "No orders", phone: null },
-    ] as Parameters<typeof customerSegments>[1];
-    // A single order 70 days ago is a one-time buyer there, not a customer at risk; the VIP gone
-    // quiet is (the dashboard once counted 250 in any currency and every idle buyer).
-    expect(customerSegments(orders, customers, now, "BHD")).toEqual({
-      vipCount: 1,
-      churnRiskCount: 1,
-      churnRiskVips: [{ id: "vip", name: "Vip" }],
-    });
   });
 });
 

@@ -33,6 +33,7 @@ function builder(table: string) {
     gte: record("gte"),
     lt: record("lt"),
     not: record("not"),
+    or: record("or"),
     order: record("order"),
     range: record("range"),
     limit: record("limit"),
@@ -66,7 +67,8 @@ beforeEach(() => {
 describe("one key per shape", () => {
   it("gives every finance read its own key under the brand", () => {
     const keys = [
-      orders.ordersQueries.finance("b1").queryKey,
+      orders.ordersQueries.dashboard("b1", "2026-07-19T00:00:00.000Z").queryKey,
+      orders.ordersQueries.count("b1").queryKey,
       orders.ordersQueries.recent("b1", 5).queryKey,
       orders.ordersQueries.reconciliation("b1", 20).queryKey,
       orders.ordersQueries.cogs("b1", "2026-09-01", "2026-09-30").queryKey,
@@ -91,7 +93,7 @@ describe("one key per shape", () => {
 
 describe("finance order reads", () => {
   it("scope every read by brand, newest first", async () => {
-    await orders.fetchFinanceOrders("b1");
+    await orders.fetchDashboardOrders("b1", "2026-07-19T00:00:00.000Z");
     await orders.fetchRecentOrders("b1", 5);
     await orders.fetchReconciliationOrders("b1", 20);
     for (const request of requests) {

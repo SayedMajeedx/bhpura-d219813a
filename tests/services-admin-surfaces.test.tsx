@@ -13,6 +13,8 @@ import { evaluateStoreReadiness } from "../src/components/settings/StoreReadines
 // A services store's admin: appointments are not parcels, and what it does not use (shipping,
 // incubators, stock) is not on its dashboard, its orders tabs or its set-up list.
 
+vi.mock("../src/hooks/use-order-number", () => ({ useOrderNumber: () => String }));
+vi.mock("@/hooks/use-order-number", () => ({ useOrderNumber: () => String }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/x">{children}</a>,
 }));
@@ -195,9 +197,8 @@ const { servicesReadinessItems, hasBookingTerms } =
   await import("../src/features/settings/lib/services-readiness");
 const { DashboardCommandHeader } =
   await import("../src/components/dashboard/DashboardCommandHeader");
-const { DashboardActionStrip } = await import("../src/components/dashboard/DashboardActionStrip");
-const { DashboardScopeSwitcher } =
-  await import("../src/components/dashboard/DashboardScopeSwitcher");
+const { AttentionList } = await import("../src/features/dashboard/components/AttentionList");
+const { attentionLines } = await import("../src/features/dashboard/lib/dashboard-today");
 
 describe("the dashboard's words", () => {
   const header = (props: Record<string, unknown> = {}) =>
@@ -228,58 +229,34 @@ describe("the dashboard's words", () => {
     expect(view.container.textContent).not.toMatch(/incubator|storefront orders only/i);
   });
 
-  const strip = (props: Record<string, unknown> = {}) =>
+  const strip = (counts: Partial<Record<"prepare" | "appointments", number>> = {}) =>
     render(
-      <DashboardActionStrip
-        slug="aurora"
+      <AttentionList
+        lines={attentionLines({ prepare: 0, appointments: 0, returns: 0, low_stock: 0, ...counts })}
+        orders={[]}
+        loading={false}
         isAr={false}
-        unfulfilledOrdersCount={0}
-        lowStockCount={0}
-        pendingReturnsCount={0}
-        {...props}
+        slug="aurora"
+        locale="en-US"
       />,
     );
 
-  it("ask a services store to complete appointments, not to fulfil and dispatch orders", () => {
-    strip({ appointmentsToCompleteCount: 2 });
-    expect(screen.getAllByText("Appointments to Complete").length).toBeGreaterThan(0);
-    expect(screen.getByText(/2 appointments whose time has come/)).toBeInTheDocument();
-    expect(screen.queryByText(/Fulfill Orders|waiting for dispatch/)).not.toBeInTheDocument();
+  it("ask a services store to complete appointments, not to prepare orders", () => {
+    strip({ appointments: 2 });
+    expect(screen.getByText("Appointments whose time has come")).toBeInTheDocument();
+    expect(screen.getByText("2 appointments")).toBeInTheDocument();
+    expect(screen.queryByText("Orders to prepare")).not.toBeInTheDocument();
   });
 
   it("still ask a shop to prepare its orders", () => {
-    strip({ unfulfilledOrdersCount: 2 });
-    expect(screen.getByText("Orders Awaiting Fulfillment")).toBeInTheDocument();
-    expect(screen.queryByText("Appointments to Complete")).not.toBeInTheDocument();
+    strip({ prepare: 2 });
+    expect(screen.getByText("Orders to prepare")).toBeInTheDocument();
+    expect(screen.queryByText(/Appointments/)).not.toBeInTheDocument();
   });
 
   it("say all is clear when nothing waits", () => {
     strip();
-    expect(screen.getByText("Nothing needs your attention today")).toBeInTheDocument();
-  });
-
-  it("name the alerts tab for what it holds", () => {
-    const view = render(
-      <DashboardScopeSwitcher
-        lang="en"
-        activeScope="financials"
-        onScopeChange={() => undefined}
-        lowStockCount={0}
-        tracksStock={false}
-      />,
-    );
-    expect(view.container.textContent).toContain("Customer Alerts");
-    expect(view.container.textContent).not.toContain("Stock & Customer Alerts");
-    view.unmount();
-    const shop = render(
-      <DashboardScopeSwitcher
-        lang="en"
-        activeScope="financials"
-        onScopeChange={() => undefined}
-        lowStockCount={0}
-      />,
-    );
-    expect(shop.container.textContent).toContain("Stock & Customer Alerts");
+    expect(screen.getByText("Nothing needs your attention now")).toBeInTheDocument();
   });
 });
 

@@ -1,43 +1,47 @@
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, AlertCircle, CheckCircle2, MessageCircle } from "lucide-react";
-import { formatDate, formatMoney } from "@/lib/format";
-import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
+import { MessageCircle, ReceiptText, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatMoney } from "@/lib/format";
+import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
 
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
-import type { ordersNeedingAction } from "@/features/dashboard/lib/dashboard-metrics";
 import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figures";
 import { DailySalesChart } from "@/features/dashboard/components/DailySalesChart";
-import { useOrderNumber } from "@/hooks/use-order-number";
 
-/** The 30-day sales trajectory and the orders that need action. */
-export function SalesAndActionsRow({
-  actionNeededOrders,
+/**
+ * The 30 days' sales day by day (a catalog store: its most asked-about products) beside the
+ * latest orders. The orders that need action are in the attention list at the top.
+ */
+export function SalesAndRecentRow({
   canViewFinancials,
   catalogInquiriesQ,
   currency,
   figures,
+  figuresLoading,
   hasSales,
   isAr,
   isCatalog,
   isMounted,
   locale,
+  recentOrdersQ,
   slug,
 }: {
-  actionNeededOrders: ReturnType<typeof ordersNeedingAction>;
   canViewFinancials: boolean;
   catalogInquiriesQ: DashboardData["catalogInquiriesQ"];
   currency: DashboardData["currency"];
   /** The Reports' figures for the 30 days; null for staff who may not see the finances. */
   figures: DashboardFigures | null;
+  /** The Reports' figures are still on their way: the chart's place waits for them. */
+  figuresLoading: boolean;
   hasSales: boolean;
   isAr: boolean;
   isCatalog: DashboardData["isCatalog"];
   isMounted: boolean;
   locale: string;
+  recentOrdersQ: DashboardData["recentOrdersQ"];
   slug: string;
 }) {
-  const orderNo = useOrderNumber();
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
       {isCatalog ? (
@@ -45,7 +49,7 @@ export function SalesAndActionsRow({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border-subtle">
             <div>
               <h3 className="text-base font-bold font-heading flex items-center gap-2">
-                <MessageCircle className="h-4.5 w-4.5 text-emerald-500" />
+                <MessageCircle className="h-4.5 w-4.5 text-success" />
                 {isAr ? "أكثر المنتجات طلباً عبر واتساب" : "Top Inquired Products (WhatsApp)"}
               </h3>
               <p className="text-xs text-muted-foreground">
@@ -54,7 +58,7 @@ export function SalesAndActionsRow({
                   : "Products with the highest customer inquiry volume over the last 30 days"}
               </p>
             </div>
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 w-fit">
+            <span className="text-xs font-bold text-success bg-success/10 px-2.5 py-1 rounded-full border border-success/20 w-fit">
               {catalogInquiriesQ.data?.totalInquiries ?? 0}{" "}
               {isAr ? "استفسار إجمالي" : "Total Inquiries"}
             </span>
@@ -98,7 +102,7 @@ export function SalesAndActionsRow({
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300/40">
+                    <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-success/10 text-success border border-success/30">
                       <MessageCircle className="h-3.5 w-3.5" />
                       {p.inquiries} {isAr ? "استفسار" : "inquiries"}
                     </span>
@@ -110,7 +114,16 @@ export function SalesAndActionsRow({
         </Card>
       ) : (
         canViewFinancials &&
-        (!hasSales ? (
+        (figuresLoading ? (
+          <div
+            role="status"
+            aria-label={isAr ? "جارٍ تحميل المبيعات" : "Loading sales"}
+            className="min-w-0 space-y-3 rounded-2xl border border-border bg-card p-5 lg:col-span-3"
+          >
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-56 w-full" />
+          </div>
+        ) : !hasSales ? (
           <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <TrendingUp className="h-6 w-6" />
@@ -133,7 +146,7 @@ export function SalesAndActionsRow({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-base font-bold font-heading flex items-center gap-2">
-                  <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
+                  <TrendingUp className="h-4.5 w-4.5 text-success" />
                   {isAr
                     ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
                     : "Daily Sales Performance (30 Days)"}
@@ -164,71 +177,41 @@ export function SalesAndActionsRow({
         ))
       )}
 
-      {/* Action Needed Feed */}
+      {/* The latest orders, beside the chart. */}
       <Card
-        className={
-          canViewFinancials
-            ? "lg:col-span-2 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full"
-            : "lg:col-span-5 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full"
-        }
+        className={`${canViewFinancials || isCatalog ? "lg:col-span-2" : "lg:col-span-5"} flex h-full flex-col space-y-3 rounded-2xl border border-border bg-card p-5 shadow-xs`}
       >
-        <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4.5 w-4.5 text-amber-500" />
-            <h3 className="font-bold text-base font-heading text-foreground">
-              {isAr ? "طلبات تتطلب إجراءً" : "Action Needed Feed"}
-            </h3>
-          </div>
+        <div className="flex items-center justify-between border-b border-border-subtle pb-2">
+          <h3 className="flex items-center gap-2 font-heading text-base font-bold text-foreground">
+            <ReceiptText className="h-4.5 w-4.5 text-primary" aria-hidden />
+            {isAr ? "أحدث الطلبات" : "Latest orders"}
+          </h3>
           <Link
             to="/admin/b/$slug/orders"
             params={{ slug }}
-            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+            className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
-            {isAr ? "إدارة الطلبات ←" : "Triage ←"}
+            {isAr ? "كل الطلبات" : "All orders"}
           </Link>
         </div>
-
-        {actionNeededOrders.length === 0 ? (
-          // One quiet line: the strip at the top of the dashboard already says the day is clear.
-          <p className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-            {isAr ? "لا طلبات تحتاج إجراء الآن." : "No order needs action now."}
-          </p>
-        ) : (
-          <div className="space-y-2 my-auto">
-            {actionNeededOrders.map((o) => (
-              <div
-                key={o.id}
-                className="p-2.5 bg-background/80 border border-border-subtle rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
-              >
-                <div className="min-w-0">
-                  <Link
-                    to="/admin/b/$slug/orders/$id"
-                    params={{ slug, id: o.id }}
-                    className="font-bold text-primary hover:underline block truncate"
-                  >
-                    {orderNo(o.invoice_number)} —{" "}
-                    {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    {formatDate(o.created_at, locale)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-mono font-bold text-foreground">
-                    {formatMoney(Number(o.total), o.currency, locale)}
-                  </span>
-                  <Link
-                    to="/admin/b/$slug/orders/$id"
-                    params={{ slug, id: o.id }}
-                    className="h-6 px-2 rounded-md bg-primary/10 text-primary text-xs font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
-                  >
-                    {isAr ? "عرض التفاصيل" : "View Details"}
-                  </Link>
-                </div>
-              </div>
-            ))}
+        {recentOrdersQ.isPending ? (
+          <div
+            role="status"
+            aria-label={isAr ? "جارٍ تحميل الطلبات" : "Loading orders"}
+            className="space-y-2"
+          >
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
           </div>
+        ) : (
+          <DashboardActivityQueue
+            lang={isAr ? "ar" : "en"}
+            slug={slug}
+            orders={recentOrdersQ.data ?? []}
+            currency={currency}
+            locale={locale}
+          />
         )}
       </Card>
     </div>

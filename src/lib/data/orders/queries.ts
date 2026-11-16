@@ -84,19 +84,37 @@ export async function fetchOrderDetail(
   return data;
 }
 
-/** Every order of the brand for the finance views, newest first. */
-export async function fetchFinanceOrders(brandId: string) {
+/** An order still open: not finished and not undone (`orderReleased`'s statuses). */
+const OPEN_ORDER_FILTER = "status.not.in.(completed,cancelled,canceled,refunded,voided,failed)";
+
+/**
+ * The dashboard's orders, newest first: those placed since `since` (an ISO moment) and every
+ * order still open, however old, so its work and what is owed on it are not missed. The
+ * dashboard once read every order the store ever had, with their lines, on each visit.
+ */
+export async function fetchDashboardOrders(brandId: string, since: string) {
   return readAll((from, to) =>
     supabase
       .from("orders")
       .select(ORDER_FINANCE_SELECT, { count: "exact" })
       .eq("brand_id", brandId)
+      .or(`created_at.gte.${since},${OPEN_ORDER_FILTER}`)
       .order("created_at", { ascending: false })
       .order("id")
       .range(from, to),
   );
 }
-export type OrderFinanceRow = Awaited<ReturnType<typeof fetchFinanceOrders>>[number];
+export type OrderFinanceRow = Awaited<ReturnType<typeof fetchDashboardOrders>>[number];
+
+/** How many orders the brand has ever had (a count only, no rows). */
+export async function fetchOrderCount(brandId: string) {
+  const { count, error } = await supabase
+    .from("orders")
+    .select("id", { count: "exact", head: true })
+    .eq("brand_id", brandId);
+  if (error) throw error;
+  return count ?? 0;
+}
 
 /** The brand's latest orders. */
 export async function fetchRecentOrders(brandId: string, limit: number) {
@@ -205,10 +223,17 @@ export const ordersQueries = {
       ...pollingFor(scope),
     }),
 
-  finance: (brandId: string) =>
+  dashboard: (brandId: string, since: string) =>
     queryOptions({
-      queryKey: ordersKeys.finance(brandId),
-      queryFn: () => fetchFinanceOrders(brandId),
+      queryKey: ordersKeys.dashboard(brandId, since),
+      queryFn: () => fetchDashboardOrders(brandId, since),
+      staleTime: 60_000,
+    }),
+
+  count: (brandId: string) =>
+    queryOptions({
+      queryKey: ordersKeys.count(brandId),
+      queryFn: () => fetchOrderCount(brandId),
       staleTime: 60_000,
     }),
 
