@@ -17,6 +17,7 @@ import {
   incubatorsQueries,
   invalidateIncubators,
   transferStockBatchToIncubator,
+  type TransferDone,
 } from "@/lib/data/incubators";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -65,7 +66,8 @@ export interface BatchIncubatorTransferModalProps {
   targetProducts: BatchTransferProduct[];
   variantsByProduct?: Record<string, BatchTransferVariant[]>;
   allVariants?: BatchTransferVariant[];
-  onSuccess?: () => void;
+  /** Called with the numbered batch once the pieces are sent. */
+  onSuccess?: (done?: TransferDone) => void;
   initialIncubatorId?: string | null;
   /**
    * Tick the listed products' sizes that have pieces when the screen opens: for products the
@@ -315,7 +317,7 @@ export function BatchIncubatorTransferModal({
 
       // One transaction: every piece moves, or none does. (Sent one at a time, a failure
       // midway left half a transfer behind while the screen announced the whole.)
-      const { pieces, number } = await transferStockBatchToIncubator({
+      const done = await transferStockBatchToIncubator({
         incubatorId: selectedIncubatorId,
         items: activeRows.map((row) => ({
           variantId: row.variantId,
@@ -330,8 +332,8 @@ export function BatchIncubatorTransferModal({
 
       toast.success(
         isAr
-          ? `تم تحويل ${arNounOblique(pieces, "piece")} إلى ${selectedIncubator?.name || ""} · ${transferLabel(number)}`
-          : `${countOf(pieces, "piece", "en")} sent to ${selectedIncubator?.name || "the partner"} · ${transferLabel(number)}`,
+          ? `تم تحويل ${arNounOblique(done.pieces, "piece")} إلى ${selectedIncubator?.name || ""} · ${transferLabel(done.number)}`
+          : `${countOf(done.pieces, "piece", "en")} sent to ${selectedIncubator?.name || "the partner"} · ${transferLabel(done.number)}`,
       );
 
       // Invalidate all inventory and incubator queries
@@ -340,7 +342,7 @@ export function BatchIncubatorTransferModal({
         invalidateIncubators(qc, brandId),
       ]);
 
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(done);
       onOpenChange(false);
     } catch (err) {
       const pieceOf = (variantId: string) => {

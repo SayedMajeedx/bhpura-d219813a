@@ -4,6 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 import { MovePiecesDialog } from "@/features/incubators/components/MovePiecesDialog";
+import {
+  IncubatorTransfersTab,
+  TransferSheetDialog,
+} from "@/features/incubators/components/TransferSheet";
 import { OsLoadFailedState } from "@/components/os/os-load-failed-state";
 import { useIncubatorsPage } from "@/features/incubators/hooks/use-incubators-page";
 import {
@@ -95,6 +99,7 @@ export function IncubatorsPage() {
               <TabsTrigger value="stock">{isAr ? "البضاعة عندهم" : "Stock"}</TabsTrigger>
               <TabsTrigger value="sales">{isAr ? "المبيعات" : "Sales"}</TabsTrigger>
               <TabsTrigger value="payments">{isAr ? "الدفعات" : "Payments"}</TabsTrigger>
+              <TabsTrigger value="transfers">{isAr ? "التحويلات" : "Transfers"}</TabsTrigger>
               <TabsTrigger value="history">{isAr ? "السجل" : "History"}</TabsTrigger>
             </TabsList>
             <TabsContent value="stock">
@@ -105,6 +110,9 @@ export function IncubatorsPage() {
             </TabsContent>
             <TabsContent value="payments">
               <IncubatorPaymentsTab page={page} />
+            </TabsContent>
+            <TabsContent value="transfers">
+              <IncubatorTransfersTab page={page} />
             </TabsContent>
             <TabsContent value="history">
               <IncubatorHistoryTab page={page} />
@@ -129,6 +137,7 @@ export function IncubatorsPage() {
       <VoidPaymentDialog page={page} />
       <IncubatorStatementDialog page={page} />
       <MovePiecesDialog page={page} />
+      <TransferSheetDialog page={page} />
       <BatchIncubatorTransferModal
         open={page.dialog === "transfer"}
         onOpenChange={(open) => {
@@ -136,7 +145,11 @@ export function IncubatorsPage() {
         }}
         targetProducts={page.products}
         initialIncubatorId={currentId}
-        onSuccess={page.invalidateData}
+        onSuccess={(done) => {
+          void page.invalidateData();
+          // The partner's sheet for the batch opens at once, ready to hand over.
+          if (done?.transferId) page.showTransfer(done.transferId);
+        }}
       />
     </div>
   );

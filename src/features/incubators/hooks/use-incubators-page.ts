@@ -25,6 +25,7 @@ import {
 } from "@/lib/data/incubators";
 import { incubatorErrorMessage } from "@/features/incubators/lib/errors";
 import { movePayload, transferLabel, type MoveRow } from "@/features/incubators/lib/move-pieces";
+import type { TransferRow } from "@/features/incubators/lib/transfer-sheet";
 import {
   incubatorDetails,
   incubatorDetailsProblem,
@@ -60,6 +61,7 @@ const asStock = (rows: unknown[]) => rows as StockItem[];
 const asSales = (rows: unknown[]) => rows as Sale[];
 const asPayments = (rows: unknown[]) => rows as Payment[];
 const asAllocations = (rows: unknown[]) => rows as PaymentAllocation[];
+const asTransfers = (rows: unknown[]) => rows as TransferRow[];
 /** Each partner's figures from the database, by partner. */
 const asSummaries = (rows: Array<Parameters<typeof serverSummary>[0] & { incubator_id: string }>) =>
   new Map<string, ServerSummary>(rows.map((row) => [row.incubator_id, serverSummary(row)]));
@@ -96,6 +98,8 @@ export function useIncubatorsPage() {
   const [paymentToVoid, setPaymentToVoid] = useState<Payment | null>(null);
   const [includeZeroStock, setIncludeZeroStock] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** The transfer whose sheet is open (after a send or a move, or from the Transfers tab). */
+  const [shownTransferId, setShownTransferId] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [stockPaging, setStockPaging] = useState<Paging>(FIRST);
   const [salesPaging, setSalesPaging] = useState<Paging>(FIRST);
@@ -122,6 +126,7 @@ export function useIncubatorsPage() {
     ...incubatorsQueries.allocations(brand.id),
     select: asAllocations,
   });
+  const transfersQ = useQuery({ ...incubatorsQueries.transfers(brand.id), select: asTransfers });
   const settingsQ = useQuery(businessSettingsQueries.detail(brand.id));
   // The batch transfer's product list comes from the shared catalog.
   const productsQ = useQuery(catalogQueries.products(brand.id));
@@ -339,6 +344,8 @@ export function useIncubatorsPage() {
       );
       closeDialog();
       await invalidateData();
+      // The partner's sheet for the batch opens at once, ready to hand over.
+      setShownTransferId(moved.transferId);
       return true;
     } catch (error) {
       toast.error(incubatorErrorMessage(error, language));
@@ -434,6 +441,10 @@ export function useIncubatorsPage() {
     setPaymentToVoid,
     voidPayment,
     movePieces,
+    transfers: transfersQ.data ?? [],
+    transfersLoading: transfersQ.isLoading,
+    shownTransferId,
+    showTransfer: setShownTransferId,
     invalidateData,
   };
 }
