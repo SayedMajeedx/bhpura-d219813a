@@ -12,6 +12,7 @@ import {
 } from "@/features/incubators/lib/batch-transfer";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { batchTransferRefusal } from "@/features/incubators/lib/errors";
+import { transferLabel } from "@/features/incubators/lib/move-pieces";
 import {
   incubatorsQueries,
   invalidateIncubators,
@@ -314,7 +315,7 @@ export function BatchIncubatorTransferModal({
 
       // One transaction: every piece moves, or none does. (Sent one at a time, a failure
       // midway left half a transfer behind while the screen announced the whole.)
-      const pieces = await transferStockBatchToIncubator({
+      const { pieces, number } = await transferStockBatchToIncubator({
         incubatorId: selectedIncubatorId,
         items: activeRows.map((row) => ({
           variantId: row.variantId,
@@ -329,8 +330,8 @@ export function BatchIncubatorTransferModal({
 
       toast.success(
         isAr
-          ? `تم تحويل ${arNounOblique(pieces, "piece")} بنجاح إلى محل شريك ${selectedIncubator?.name || ""}`
-          : `Successfully transferred ${pieces} items to ${selectedIncubator?.name || "incubator"}`,
+          ? `تم تحويل ${arNounOblique(pieces, "piece")} إلى ${selectedIncubator?.name || ""} · ${transferLabel(number)}`
+          : `${countOf(pieces, "piece", "en")} sent to ${selectedIncubator?.name || "the partner"} · ${transferLabel(number)}`,
       );
 
       // Invalidate all inventory and incubator queries

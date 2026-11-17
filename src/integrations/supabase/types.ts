@@ -11749,6 +11749,15 @@ export type Database = {
         Args: { p_item_id: string };
         Returns: Json;
       };
+      move_stock_between_incubators: {
+        Args: {
+          p_from_incubator_id: string;
+          p_items: Json;
+          p_notes?: string;
+          p_to_incubator_id: string;
+        };
+        Returns: Json;
+      };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
@@ -12296,6 +12305,10 @@ export type Database = {
         };
         Returns: undefined;
       };
+      return_stock_to_store: {
+        Args: { p_incubator_id: string; p_items: Json; p_notes?: string };
+        Returns: Json;
+      };
       reverse_incubator_sale: {
         Args: { p_reason: string; p_sale_id: string };
         Returns: undefined;
@@ -12752,6 +12765,10 @@ export type Database = {
           p_vendor_id: string;
         };
         Returns: string;
+      };
+      send_stock_to_incubator: {
+        Args: { p_incubator_id: string; p_items: Json; p_notes?: string };
+        Returns: Json;
       };
       service_option_extra_hours: {
         Args: { p_base_minutes: number; p_minutes: number };

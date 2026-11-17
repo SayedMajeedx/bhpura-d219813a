@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
+import { MovePiecesDialog } from "@/features/incubators/components/MovePiecesDialog";
 import { OsLoadFailedState } from "@/components/os/os-load-failed-state";
 import { useIncubatorsPage } from "@/features/incubators/hooks/use-incubators-page";
 import {
@@ -127,6 +128,7 @@ export function IncubatorsPage() {
       <ReverseSaleDialog page={page} />
       <VoidPaymentDialog page={page} />
       <IncubatorStatementDialog page={page} />
+      <MovePiecesDialog page={page} />
       <BatchIncubatorTransferModal
         open={page.dialog === "transfer"}
         onOpenChange={(open) => {

@@ -72,6 +72,18 @@ const MESSAGES: Record<string, { en: string; ar: string }> = {
     en: "That is too many different pieces for one transfer; send them in two",
     ar: "عدد الأصناف كبير على تحويل واحد؛ قسّمه على تحويلين",
   },
+  SAME_PARTNER: {
+    en: "Choose another partner shop: the pieces are already at this one",
+    ar: "اختر محلاً شريكاً آخر: القطع موجودة عند هذا المحل",
+  },
+  PARTNER_INACTIVE: {
+    en: "That partner shop is inactive, so no pieces can go to it",
+    ar: "هذا المحل الشريك موقوف، فلا تُنقل إليه قطع",
+  },
+  INVALID_PRICE: {
+    en: "A price cannot be negative",
+    ar: "السعر لا يكون بالسالب",
+  },
   NOT_AUTHORIZED: {
     en: "You do not have permission to do this (or the partner is inactive)",
     ar: "لا تملك صلاحية هذه العملية (أو أن المحل الشريك موقوف)",

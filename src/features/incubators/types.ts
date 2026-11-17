@@ -128,6 +128,7 @@ export type IncubatorDialog =
   | "edit_incubator"
   | "edit_item"
   | "transfer"
+  | "move"
   | "sale"
   | "payment"
   | "return"
