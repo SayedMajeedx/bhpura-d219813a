@@ -253,7 +253,9 @@ const stockTable = async () => within(await screen.findByRole("table"));
 describe("a partner's details and stock", () => {
   it("edits the current incubator's details for its brand", async () => {
     renderPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Edit partner shop" }));
+    // Editing is a rare action: it sits in the "More" menu beside the daily ones.
+    fireEvent.keyDown(await screen.findByRole("button", { name: "More" }), { key: "Enter" });
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Edit partner shop" }));
     const dialog = await screen.findByRole("dialog");
     const name = within(dialog).getByDisplayValue("Souq Box");
     fireEvent.change(name, { target: { value: "  Souq Box Seef " } });

@@ -10,9 +10,16 @@ import {
   Wallet,
   ArrowLeftRight,
   CircleSlash,
+  MoreHorizontal,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Card } from "@/components/ui/card";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { settlementNote } from "@/features/incubators/lib/summary";
@@ -117,11 +124,8 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
             {settles?.overdue && <Badge variant="destructive">{settles.overdue}</Badge>}
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => openDialog("edit_incubator")}>
-            <Pencil className="me-2 h-4 w-4" />
-            {isAr ? "تعديل المحل الشريك" : "Edit partner shop"}
-          </Button>
+        {/* The daily actions in view, the main one at the end; the rare ones in "More". */}
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <Button variant="outline" onClick={() => openDialog("statement")}>
             <FileText className="me-2 h-4 w-4" />
             {isAr ? "كشف حساب" : "Statement"}
@@ -134,12 +138,6 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
             <Wallet className="me-2 h-4 w-4" />
             {isAr ? "تسجيل دفعة" : "Record payment"}
           </Button>
-          {current.is_active && (
-            <Button variant="outline" onClick={() => openDialog("end")}>
-              <CircleSlash className="me-2 h-4 w-4" />
-              {isAr ? "إنهاء الشراكة" : "End partnership"}
-            </Button>
-          )}
           {/* An ended partner can still be emptied into another. */}
           <Button
             variant="outline"
@@ -153,6 +151,28 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
             <Package className="me-2 h-4 w-4" />
             {isAr ? "تحويل بضاعة" : "Transfer stock"}
           </Button>
+          <DropdownMenu dir={isAr ? "rtl" : "ltr"}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" aria-label={isAr ? "المزيد" : "More"}>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => openDialog("edit_incubator")}>
+                <Pencil className="me-2 h-4 w-4" />
+                {isAr ? "تعديل المحل الشريك" : "Edit partner shop"}
+              </DropdownMenuItem>
+              {current.is_active && (
+                <DropdownMenuItem
+                  onSelect={() => openDialog("end")}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <CircleSlash className="me-2 h-4 w-4" />
+                  {isAr ? "إنهاء الشراكة" : "End partnership"}
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">

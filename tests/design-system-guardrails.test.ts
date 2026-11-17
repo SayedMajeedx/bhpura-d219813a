@@ -94,6 +94,15 @@ describe("design system guardrails", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("places the shared menus' marks and footers' gaps by reading direction", () => {
+    // A select's check sat at a fixed right-2 while its item kept the end free, so in Arabic it
+    // lay on the text; a dialog's footer stacked space-x margins (wrong side in Arabic for the
+    // alert and the sheet) and never wrapped, so two long buttons ran past its edge (2026-11-17).
+    const ui = (rel: string) => rel.startsWith("components/ui/");
+    expect(countMatches(/absolute (?:left|right)-\d/g, ui)).toBe(0);
+    expect(countMatches(/space-x-\d/g, (rel) => ui(rel) && /dialog|sheet/.test(rel))).toBe(0);
+  });
+
   it("crops every upload with a named preset, never a hand-picked aspect", () => {
     // The opening tag, skipping arrow functions in its props. A preset ties the crop ratio to the output size and to the surface that
     // renders it (tests/image-crop-system.test.tsx), so they cannot drift.
