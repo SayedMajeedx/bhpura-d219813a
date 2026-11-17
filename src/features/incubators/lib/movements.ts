@@ -16,6 +16,8 @@ const LABELS: Record<string, { en: string; ar: string }> = {
   adjustment: { en: "Adjustment", ar: "تسوية" },
   order_reserve: { en: "Taken by a store order", ar: "حجز لطلب من المتجر" },
   order_release: { en: "Given back by a store order", ar: "إعادة من طلب أُلغي" },
+  move_out: { en: "Moved to another partner", ar: "نقل إلى محل شريك آخر" },
+  move_in: { en: "Received from another partner", ar: "استلام من محل شريك آخر" },
 };
 
 export function movementLabel(type: string, lang: Lang): string {

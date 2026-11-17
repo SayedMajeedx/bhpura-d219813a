@@ -278,9 +278,9 @@ describe("writes", () => {
     await expect(incubators.voidIncubatorPayment("pay1", "x")).rejects.toBe(denied);
   });
 
-  it("send a batch of transfers in one call, and say how many pieces moved", async () => {
-    respond = () => ({ data: 5, error: null });
-    const pieces = await incubators.transferStockBatchToIncubator({
+  it("send a batch of transfers in one call, and say its number and how many pieces moved", async () => {
+    respond = () => ({ data: { transfer_id: "t1", number: 7, pieces: 5 }, error: null });
+    const done = await incubators.transferStockBatchToIncubator({
       incubatorId: "i1",
       notes: null,
       items: [
@@ -302,10 +302,10 @@ describe("writes", () => {
         },
       ],
     });
-    expect(pieces).toBe(5);
+    expect(done).toEqual({ transferId: "t1", number: 7, pieces: 5 });
     expect(requests).toHaveLength(1);
     expect(requests[0]).toMatchObject({
-      table: "transfer_stock_to_incubator_batch",
+      table: "send_stock_to_incubator",
       op: "rpc",
       payload: {
         p_incubator_id: "i1",
@@ -337,5 +337,34 @@ describe("writes", () => {
     expect(await incubators.syncIncubatorPrices("i1")).toBe(3);
     respond = () => ({ data: null, error: null });
     expect(await incubators.syncIncubatorPrices("i1")).toBe(0);
+  });
+
+  it("return pieces to the store and move them between partners as numbered batches", async () => {
+    respond = () => ({ data: { transfer_id: "t2", number: 8, pieces: 1 }, error: null });
+    const back = await incubators.returnStockFromIncubator({
+      incubatorId: "i1",
+      variantId: "v1",
+      quantity: 1,
+    });
+    expect(back.number).toBe(8);
+    expect(requests[0]).toMatchObject({
+      table: "return_stock_to_store",
+      op: "rpc",
+      payload: { p_incubator_id: "i1", p_items: [{ variant_id: "v1", quantity: 1 }] },
+    });
+    await incubators.moveStockBetweenIncubators({
+      fromIncubatorId: "i1",
+      toIncubatorId: "i2",
+      items: [{ variantId: "v1", quantity: 2, price: 32, externalCode: null }],
+    });
+    expect(requests[1]).toMatchObject({
+      table: "move_stock_between_incubators",
+      op: "rpc",
+      payload: {
+        p_from_incubator_id: "i1",
+        p_to_incubator_id: "i2",
+        p_items: [{ variant_id: "v1", quantity: 2, price: 32, external_code: "" }],
+      },
+    });
   });
 });

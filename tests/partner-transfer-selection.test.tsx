@@ -9,7 +9,9 @@ import { describe, expect, it, vi } from "vitest";
 // Now nothing starts ticked there, a sold-out size cannot be ticked, "Select all" and "Deselect
 // all" act on what the search shows, and the button waits while a size asks for too much.
 
-const transfer = vi.hoisted(() => ({ batch: vi.fn(async () => 3) }));
+const transfer = vi.hoisted(() => ({
+  batch: vi.fn(async () => ({ transferId: "t1", number: 3, pieces: 3 })),
+}));
 const incubators = async (importOriginal: () => Promise<object>) => {
   const actual = (await importOriginal()) as { incubatorsQueries: object };
   return {

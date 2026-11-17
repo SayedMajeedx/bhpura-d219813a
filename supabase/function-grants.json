@@ -336,6 +336,11 @@
       "authenticated": true,
       "reason": "Signed-in staff who handle orders: checked inside (can_access_brand, has_permission manage_orders); records only that the supplier holding the piece was given its latest revision"
     },
+    "move_stock_between_incubators(p_from_incubator_id uuid, p_to_incubator_id uuid, p_items jsonb, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_inventory)"
+    },
     "order_inventory_transition(p_order_id uuid)": {
       "anon": true,
       "authenticated": true,
@@ -526,6 +531,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "return_stock_to_store(p_incubator_id uuid, p_items jsonb, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_inventory)"
+    },
     "reverse_incubator_sale(p_sale_id uuid, p_reason text)": {
       "anon": false,
       "authenticated": true,
@@ -700,6 +710,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff who handle orders and see the finances of the order's store: checked inside (can_access_brand, has_permission); the supplier and the supplier order must be the store's; a line is never sent twice"
+    },
+    "send_stock_to_incubator(p_incubator_id uuid, p_items jsonb, p_notes text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_inventory)"
     },
     "set_booking_discount(p_booking_id uuid, p_amount numeric, p_label text)": {
       "anon": false,

@@ -376,19 +376,68 @@ export async function transferStockToIncubator(args: {
   if (error) throw error;
 }
 
+/**
+ * A numbered batch the database wrote (`incubator_transfers`, migration 20261212100000): every
+ * send, return and move between partners is one, with a copy of its lines.
+ */
+export type TransferDone = { transferId: string; number: number; pieces: number };
+
+function transferDone(data: unknown): TransferDone {
+  const row = (data ?? {}) as { transfer_id?: unknown; number?: unknown; pieces?: unknown };
+  return {
+    transferId: String(row.transfer_id ?? ""),
+    number: Number(row.number ?? 0),
+    pieces: Number(row.pieces ?? 0),
+  };
+}
+
+/** Brings a partner's pieces back to the store, as one numbered batch. */
 export async function returnStockFromIncubator(args: {
   incubatorId: string;
   variantId: string;
   quantity: number;
   notes?: string | null;
-}) {
-  const { error } = await supabase.rpc("return_stock_from_incubator", {
+}): Promise<TransferDone> {
+  const { data, error } = await supabase.rpc("return_stock_to_store", {
     p_incubator_id: args.incubatorId,
-    p_variant_id: args.variantId,
-    p_quantity: args.quantity,
+    p_items: [{ variant_id: args.variantId, quantity: args.quantity }],
     p_notes: args.notes ?? undefined,
   });
   if (error) throw error;
+  return transferDone(data);
+}
+
+/** One line of a move between partners: the price and code at the partner receiving it. */
+export type MoveItem = {
+  variantId: string;
+  quantity: number;
+  price: number;
+  externalCode: string | null;
+};
+
+/**
+ * Moves pieces from one partner to another in one transaction: all of them, or none. Only what
+ * the first partner holds free moves; a refusal names the piece (`<code>:<variant id>`).
+ */
+export async function moveStockBetweenIncubators(args: {
+  fromIncubatorId: string;
+  toIncubatorId: string;
+  items: readonly MoveItem[];
+  notes?: string | null;
+}): Promise<TransferDone> {
+  const { data, error } = await supabase.rpc("move_stock_between_incubators", {
+    p_from_incubator_id: args.fromIncubatorId,
+    p_to_incubator_id: args.toIncubatorId,
+    p_items: args.items.map((item) => ({
+      variant_id: item.variantId,
+      quantity: item.quantity,
+      price: item.price,
+      external_code: item.externalCode ?? "",
+    })),
+    p_notes: args.notes ?? undefined,
+  });
+  if (error) throw error;
+  return transferDone(data);
 }
 
 export async function recordIncubatorSale(args: {
@@ -459,14 +508,14 @@ export type BatchTransferItem = {
 
 /**
  * Sends several pieces to a partner in one transaction: all of them, or none. A refusal names
- * the piece it happened on (`<code>:<variant id>`). Returns how many pieces moved.
+ * the piece it happened on (`<code>:<variant id>`). Answers the batch's number and pieces.
  */
 export async function transferStockBatchToIncubator(args: {
   incubatorId: string;
   items: readonly BatchTransferItem[];
   notes?: string | null;
-}): Promise<number> {
-  const { data, error } = await supabase.rpc("transfer_stock_to_incubator_batch", {
+}): Promise<TransferDone> {
+  const { data, error } = await supabase.rpc("send_stock_to_incubator", {
     p_incubator_id: args.incubatorId,
     p_items: args.items.map((item) => ({
       variant_id: item.variantId,
@@ -479,7 +528,7 @@ export async function transferStockBatchToIncubator(args: {
     p_notes: args.notes ?? undefined,
   });
   if (error) throw error;
-  return Number(data ?? 0);
+  return transferDone(data);
 }
 
 /** Changes a stock line's code, consignment price and commission. */

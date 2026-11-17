@@ -13,6 +13,7 @@ import {
   incubatorsKeys,
   incubatorsQueries,
   invalidateIncubators,
+  moveStockBetweenIncubators,
   recordIncubatorPayment,
   recordIncubatorSale,
   returnStockFromIncubator,
@@ -23,6 +24,7 @@ import {
   voidIncubatorPayment,
 } from "@/lib/data/incubators";
 import { incubatorErrorMessage } from "@/features/incubators/lib/errors";
+import { movePayload, transferLabel, type MoveRow } from "@/features/incubators/lib/move-pieces";
 import {
   incubatorDetails,
   incubatorDetailsProblem,
@@ -271,7 +273,15 @@ export function useIncubatorsPage() {
         await recordIncubatorSale(sale);
       } else if (dialog === "return" && activeItem && currentId) {
         setBusy(true);
-        await returnStockFromIncubator(returnDetails(values, currentId, activeItem));
+        const back = await returnStockFromIncubator(returnDetails(values, currentId, activeItem));
+        toast.success(
+          isAr
+            ? `رجعت القطع إلى المحل · ${transferLabel(back.number)}`
+            : `Pieces back in the store · ${transferLabel(back.number)}`,
+        );
+        closeDialog();
+        await invalidateData();
+        return;
       } else if (dialog === "payment" && currentId) {
         setBusy(true);
         await recordIncubatorPayment(paymentDetails(values, currentId));
@@ -302,6 +312,37 @@ export function useIncubatorsPage() {
       await invalidateData();
     } catch (error) {
       toast.error(incubatorErrorMessage(error, language));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Moves the chosen pieces from the open partner to another, in one step (a numbered batch).
+   * Answers whether it went; a refusal is said in words and the dialog stays open.
+   */
+  async function movePieces(toId: string, rows: readonly MoveRow[], notes: string) {
+    if (!currentId) return false;
+    setBusy(true);
+    try {
+      const moved = await moveStockBetweenIncubators({
+        fromIncubatorId: currentId,
+        toIncubatorId: toId,
+        items: movePayload(rows),
+        notes: notes.trim() || null,
+      });
+      const to = incubators.find((partner) => partner.id === toId)?.name ?? "";
+      toast.success(
+        isAr
+          ? `نُقلت القطع إلى ${to} · ${transferLabel(moved.number)}`
+          : `Pieces moved to ${to} · ${transferLabel(moved.number)}`,
+      );
+      closeDialog();
+      await invalidateData();
+      return true;
+    } catch (error) {
+      toast.error(incubatorErrorMessage(error, language));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -392,6 +433,7 @@ export function useIncubatorsPage() {
     paymentToVoid,
     setPaymentToVoid,
     voidPayment,
+    movePieces,
     invalidateData,
   };
 }
