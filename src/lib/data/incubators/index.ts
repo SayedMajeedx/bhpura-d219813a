@@ -31,6 +31,8 @@ export const incubatorsKeys = {
   orderHolds: (brandId: string) => [...incubatorsKeys.all(brandId), "order-holds"] as const,
   orderPickups: (brandId: string, orderId: string) =>
     [...incubatorsKeys.orderHolds(brandId), orderId] as const,
+  /** Every numbered transfer with its lines (send, return, move), newest first. */
+  transfers: (brandId: string) => [...incubatorsKeys.all(brandId), "transfers"] as const,
   /** Variants with a quantity at partners, to check against what the partners hold. */
   partnerTotals: (brandId: string) => [...incubatorsKeys.all(brandId), "partner-totals"] as const,
   /** Some products' variants with what each incubator holds (batch transfer). */
@@ -74,6 +76,22 @@ export async function fetchIncubatorInventory(brandId: string) {
       )
       .eq("brand_id", brandId)
       .order("updated_at", { ascending: false })
+      .order("id")
+      .range(from, to),
+  );
+}
+
+/**
+ * Every numbered transfer of the brand with a copy of its lines (migration 20261212100000),
+ * newest first, read to its end: the partner page lists a partner's and makes their sheets.
+ */
+export async function fetchIncubatorTransfers(brandId: string) {
+  return readAll((from, to) =>
+    supabase
+      .from("incubator_transfers")
+      .select("*, incubator_transfer_items(*)", { count: "exact" })
+      .eq("brand_id", brandId)
+      .order("created_at", { ascending: false })
       .order("id")
       .range(from, to),
   );
@@ -315,6 +333,12 @@ export const incubatorsQueries = {
       queryFn: () => fetchOrderPartnerPickups(brandId, orderId),
       enabled: Boolean(brandId && orderId),
       staleTime: 15_000,
+    }),
+  transfers: (brandId: string) =>
+    queryOptions({
+      queryKey: incubatorsKeys.transfers(brandId),
+      queryFn: () => fetchIncubatorTransfers(brandId),
+      enabled: Boolean(brandId),
     }),
   partnerTotals: (brandId: string) =>
     queryOptions({

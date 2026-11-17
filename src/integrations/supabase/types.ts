@@ -4713,6 +4713,152 @@ export type Database = {
           },
         ];
       };
+      incubator_transfer_items: {
+        Row: {
+          barcode: string | null;
+          brand_id: string;
+          color: string | null;
+          commission_type: string | null;
+          commission_value: number | null;
+          created_at: string;
+          external_code: string | null;
+          id: string;
+          previous_code: string | null;
+          price: number | null;
+          product_name: string | null;
+          product_name_ar: string | null;
+          product_name_en: string | null;
+          quantity: number;
+          size: string | null;
+          sku: string | null;
+          transfer_id: string;
+          variant_id: string;
+        };
+        Insert: {
+          barcode?: string | null;
+          brand_id: string;
+          color?: string | null;
+          commission_type?: string | null;
+          commission_value?: number | null;
+          created_at?: string;
+          external_code?: string | null;
+          id?: string;
+          previous_code?: string | null;
+          price?: number | null;
+          product_name?: string | null;
+          product_name_ar?: string | null;
+          product_name_en?: string | null;
+          quantity: number;
+          size?: string | null;
+          sku?: string | null;
+          transfer_id: string;
+          variant_id: string;
+        };
+        Update: {
+          barcode?: string | null;
+          brand_id?: string;
+          color?: string | null;
+          commission_type?: string | null;
+          commission_value?: number | null;
+          created_at?: string;
+          external_code?: string | null;
+          id?: string;
+          previous_code?: string | null;
+          price?: number | null;
+          product_name?: string | null;
+          product_name_ar?: string | null;
+          product_name_en?: string | null;
+          quantity?: number;
+          size?: string | null;
+          sku?: string | null;
+          transfer_id?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "incubator_transfer_items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "incubator_transfer_items_transfer_id_fkey";
+            columns: ["transfer_id"];
+            isOneToOne: false;
+            referencedRelation: "incubator_transfers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "incubator_transfer_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      incubator_transfers: {
+        Row: {
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          from_incubator_id: string | null;
+          id: string;
+          kind: string;
+          notes: string | null;
+          number: number;
+          pieces: number;
+          to_incubator_id: string | null;
+        };
+        Insert: {
+          brand_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          from_incubator_id?: string | null;
+          id?: string;
+          kind: string;
+          notes?: string | null;
+          number: number;
+          pieces?: number;
+          to_incubator_id?: string | null;
+        };
+        Update: {
+          brand_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          from_incubator_id?: string | null;
+          id?: string;
+          kind?: string;
+          notes?: string | null;
+          number?: number;
+          pieces?: number;
+          to_incubator_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "incubator_transfers_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "incubator_transfers_from_incubator_id_fkey";
+            columns: ["from_incubator_id"];
+            isOneToOne: false;
+            referencedRelation: "incubators";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "incubator_transfers_to_incubator_id_fkey";
+            columns: ["to_incubator_id"];
+            isOneToOne: false;
+            referencedRelation: "incubators";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       incubators: {
         Row: {
           brand_id: string;
@@ -11581,6 +11727,50 @@ export type Database = {
           stock_value: number;
           units: number;
         }[];
+      };
+      incubator_transfer_add_item: {
+        Args: {
+          p_previous_code: string;
+          p_quantity: number;
+          p_transfer: Database["public"]["Tables"]["incubator_transfers"]["Row"];
+          p_variant_id: string;
+        };
+        Returns: undefined;
+      };
+      incubator_transfer_caller_may: {
+        Args: { p_brand_id: string };
+        Returns: boolean;
+      };
+      incubator_transfer_check_items: {
+        Args: { p_items: Json };
+        Returns: undefined;
+      };
+      incubator_transfer_open: {
+        Args: {
+          p_brand_id: string;
+          p_from: string;
+          p_kind: string;
+          p_notes: string;
+          p_to: string;
+        };
+        Returns: {
+          brand_id: string;
+          created_at: string;
+          created_by: string | null;
+          from_incubator_id: string | null;
+          id: string;
+          kind: string;
+          notes: string | null;
+          number: number;
+          pieces: number;
+          to_incubator_id: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "incubator_transfers";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       is_active: { Args: never; Returns: boolean };
       is_admin: { Args: never; Returns: boolean };

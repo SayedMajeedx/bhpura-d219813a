@@ -51,6 +51,8 @@ const variant = (n: number) => ({
 const twelve = <T,>(row: (n: number) => T) => Array.from({ length: 12 }, (_, i) => row(i + 1));
 const rows: Record<string, unknown> = {
   list: [partner, { ...partner, id: "i2", name: "Arcade", phone: null, is_active: false }],
+  // The numbered batches (migration 20261212100000); none in these tests.
+  transfers: [],
   inventory: twelve((n) => ({
     id: `s${n}`,
     incubator_id: "i1",
