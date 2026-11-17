@@ -10786,6 +10786,10 @@ export type Database = {
         Args: { p_order_id: string; p_partner_id: string };
         Returns: undefined;
       };
+      assign_variant_codes: {
+        Args: { p_fill_partner_codes?: boolean; p_items: Json };
+        Returns: Json;
+      };
       award_past_order_loyalty_points: {
         Args: { p_brand_id: string };
         Returns: Json;
@@ -11950,6 +11954,10 @@ export type Database = {
       };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
+      next_variant_code_number: {
+        Args: { p_brand_id: string };
+        Returns: Json;
+      };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };
       normalize_whatsapp_recipient: {

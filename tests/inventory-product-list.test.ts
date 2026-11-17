@@ -271,11 +271,11 @@ describe("duplication", () => {
     });
   });
 
-  it("copies variants with new SKUs, no barcode and no incubator stock", () => {
-    const [copy] = duplicateVariantValues([variant()], "p2", "brand-1", () => 0.5);
+  it("copies variants with no code (the store numbers them), no barcode and no incubator stock", () => {
+    const [copy] = duplicateVariantValues([variant()], "p2", "brand-1");
     expect(copy).toMatchObject({
       product_id: "p2",
-      sku: "AB-S-COPY-500",
+      sku: null,
       barcode: null,
       stock_main: 3,
       stock_incubator: 0,
@@ -297,7 +297,6 @@ describe("duplication", () => {
       ],
       "p2",
       "brand-1",
-      () => 0.5,
     );
     expect(copy).toMatchObject({
       size: "250",

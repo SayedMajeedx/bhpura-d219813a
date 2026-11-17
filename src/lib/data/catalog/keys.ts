@@ -12,4 +12,6 @@ export const catalogKeys = {
   packagingMaterials: (brandId: string) => ["packaging-materials", brandId] as const,
   /** Paid add-ons (customization options), shared by the inventory tab and the order editor. */
   customizations: (brandId: string) => ["customizations", brandId] as const,
+  /** The store's next size code (migration 20261213100000). */
+  codeNumbering: (brandId: string) => ["variants", brandId, "code-numbering"] as const,
 };

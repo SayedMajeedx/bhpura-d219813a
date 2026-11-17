@@ -384,17 +384,16 @@ export function duplicateProductValues(product: Product, brandId: string, isAr: 
   };
 }
 
-/** Variant copies for a duplicated product: every option, unit, image and price; new SKUs, no barcode, no incubator stock. */
-export function duplicateVariantValues(
-  variants: Variant[],
-  newProductId: string,
-  brandId: string,
-  random: () => number = Math.random,
-) {
+/**
+ * Variant copies for a duplicated product: every option, unit, image and price; no code (the
+ * database gives each the store's next number, migration 20261213100000), no barcode, no
+ * incubator stock.
+ */
+export function duplicateVariantValues(variants: Variant[], newProductId: string, brandId: string) {
   return variants.map((v) => ({
     product_id: newProductId,
     brand_id: brandId,
-    sku: v.sku ? `${v.sku}-COPY-${Math.floor(random() * 1000)}` : null,
+    sku: null,
     barcode: null,
     size: v.size,
     color: v.color,
