@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Wallet,
   ArrowLeftRight,
+  CircleSlash,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,12 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
             <Wallet className="me-2 h-4 w-4" />
             {isAr ? "تسجيل دفعة" : "Record payment"}
           </Button>
+          {current.is_active && (
+            <Button variant="outline" onClick={() => openDialog("end")}>
+              <CircleSlash className="me-2 h-4 w-4" />
+              {isAr ? "إنهاء الشراكة" : "End partnership"}
+            </Button>
+          )}
           {/* An ended partner can still be emptied into another. */}
           <Button
             variant="outline"

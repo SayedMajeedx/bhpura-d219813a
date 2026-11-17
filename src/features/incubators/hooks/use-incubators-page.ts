@@ -355,6 +355,31 @@ export function useIncubatorsPage() {
     }
   }
 
+  /**
+   * Ends the partnership with the open partner: marked inactive and no pickups there. Its page,
+   * sales, payments and statement stay; it can be turned back on in its settings.
+   */
+  async function endPartnership() {
+    if (!currentId) return false;
+    setBusy(true);
+    try {
+      await updateIncubator(brand.id, currentId, { is_active: false, pickup_enabled: false });
+      toast.success(
+        isAr
+          ? "انتهت الشراكة: المحل موقوف، وسجلّه وحسابه باقيان"
+          : "Partnership ended: the partner is inactive; its records and account stay",
+      );
+      closeDialog();
+      await invalidateData();
+      return true;
+    } catch (error) {
+      toast.error(incubatorErrorMessage(error, language));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   /** Takes a payment back; the reason is kept with it. A refusal leaves the dialog open. */
   async function voidPayment(reason: string) {
     if (!paymentToVoid) return;
@@ -441,6 +466,7 @@ export function useIncubatorsPage() {
     setPaymentToVoid,
     voidPayment,
     movePieces,
+    endPartnership,
     transfers: transfersQ.data ?? [],
     transfersLoading: transfersQ.isLoading,
     shownTransferId,
