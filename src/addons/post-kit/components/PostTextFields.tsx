@@ -7,6 +7,7 @@ import { useI18n } from "@/lib/i18n";
 import { PAPER_LOOKS, paperLook } from "../lib/layout-paper";
 import { isOwnPost } from "../lib/own-posts";
 import { fieldsOf, hasSceneText } from "../lib/post-rules";
+import { isStretched, toggleStretch } from "../lib/stretch";
 import type { PaperLook, Post } from "../lib/types";
 
 type TextField =
@@ -53,6 +54,15 @@ const FIELD_WORDS: Record<string, Partial<Record<TextField, [string, string]>>> 
     foot: ["الكلام تحت", "Words at the foot"],
   },
   memeCaption: { head: ["الكلام فوق الصورة", "Words over the photo"] },
+  memeShow: {
+    lead: ["السطر الأول", "First line"],
+    head: ["الجملة على الشريط", "Words on the ribbon"],
+    foot: ["القفلة فوق الصورة", "Punch line over the photo"],
+  },
+  memeTeaser: {
+    lead: ["السطر الأول", "First line"],
+    head: ["السطر الذهبي", "The gold line"],
+  },
   memeNoYes: {
     labelA: ["كلام «لا»", 'The "no" words'],
     labelB: ["كلام «إي»", 'The "yes" words'],
@@ -156,6 +166,15 @@ export function PostTextFields({
       {fields.includes("head") ? (
         <div className="space-y-1">
           {textInput("head", "العنوان", "Headline", true)}
+          <Button
+            type="button"
+            size="sm"
+            variant={isStretched(post.head) ? "default" : "outline"}
+            aria-pressed={isStretched(post.head)}
+            onClick={() => onChange({ head: toggleStretch(post.head ?? "") })}
+          >
+            {isAr ? "مطّ الحروف: بتنـــــزل باچـــــر" : "Stretch the letters"}
+          </Button>
           <p className="text-xs text-muted-foreground">
             {isAr
               ? "حط الكلمة المهمة بين نجمتين عشان تطلع على الليبل: *جذي*"

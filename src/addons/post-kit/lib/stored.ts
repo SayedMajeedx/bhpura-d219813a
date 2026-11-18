@@ -1,4 +1,5 @@
 import { livePost, type Catalogue } from "./photos";
+import { isPostLook } from "./looks";
 import { TEXT_ALIGNS, TEXT_COLORS, TEXT_LOOKS } from "./text-sticker";
 import { TEMPLATES } from "./layouts";
 import { PHOTO_FRAMES } from "./photo-shape";
@@ -65,7 +66,10 @@ export function fromStored(value: unknown, template: Post, catalogue: Catalogue)
   const stickers = Array.isArray(value.stickers)
     ? value.stickers.map(readSticker).filter((st): st is Sticker => st !== null)
     : [];
-  return livePost({ ...template, ...(value as Partial<Post>), stickers }, catalogue);
+  const read: Post = { ...template, ...(value as Partial<Post>), stickers };
+  // A look this version does not know is drawn plain, and is not kept as something else.
+  if (read.look !== undefined && !isPostLook(read.look)) delete read.look;
+  return livePost(read, catalogue);
 }
 
 /** A photo got a new key (it moved to the store's shared record): every use of it follows. */

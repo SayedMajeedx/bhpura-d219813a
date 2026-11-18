@@ -17,42 +17,13 @@ import {
   textBox,
 } from "../src/addons/post-kit/lib/text-sticker";
 import { TONES } from "../src/addons/post-kit/lib/tones";
-import type { Ctx, Photo, Post, Sticker } from "../src/addons/post-kit/lib/types";
+import { canvasRecorder } from "./helpers/canvas-recorder";
+import type { Photo, Post, Sticker } from "../src/addons/post-kit/lib/types";
 
 // The logo is drawn from paths; this test's browser has none, and only counts the calls.
 vi.stubGlobal("Path2D", class {});
 
-type Call = { name: string; args: unknown[]; state: Record<string, unknown> };
-
-/**
- * A canvas context that keeps what it was asked to draw: every call, with the colours and font in
- * force at the time. A word is measured at half its font size a letter.
- */
-function recorder() {
-  const calls: Call[] = [];
-  const state: Record<string, unknown> = { font: "400 40px sans-serif" };
-  const ctx = new Proxy(state, {
-    get(target, key: string) {
-      if (key in target) return target[key];
-      if (key === "measureText") {
-        return (text: string) => {
-          const size = parseFloat(/([\d.]+)px/.exec(String(target.font))?.[1] ?? "40");
-          return { width: text.length * size * 0.5 };
-        };
-      }
-      if (key === "createPattern") return () => ({});
-      return (...args: unknown[]) => {
-        calls.push({ name: key, args, state: { ...target } });
-      };
-    },
-    set(target, key: string, value) {
-      target[key] = value;
-      return true;
-    },
-  }) as unknown as Ctx;
-  const texts = () => calls.filter((c) => c.name === "fillText").map((c) => String(c.args[0]));
-  return { ctx, calls, texts };
-}
+const recorder = canvasRecorder;
 
 const img = { width: 800, height: 1000 } as HTMLImageElement;
 const photo: Photo = { label: "p", img, upload: true };
@@ -126,6 +97,9 @@ describe("the meme layouts", () => {
   it("start from New post, each with a layout and stickers the kit has", () => {
     const memes = STARTERS.filter((s) => s.id.startsWith("meme") || s.id === "free");
     expect(memes.map((s) => s.id)).toEqual([
+      "meme-show",
+      "meme-show-lace",
+      "meme-teaser",
       "meme-stack",
       "meme-side",
       "meme-classic",

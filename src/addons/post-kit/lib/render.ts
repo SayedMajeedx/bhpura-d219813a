@@ -3,6 +3,7 @@ import { geometry, grain } from "./frame";
 import { DRAW } from "./layouts";
 import { drawSticker } from "./stickers";
 import { handlesOf } from "./photo-shape";
+import { drawLookCloth } from "./looks";
 import type { Ctx, Geometry, PhotoBook, Post, Sticker } from "./types";
 
 /* One post, drawn at 1080 wide so the screen and the file match. */
@@ -30,6 +31,7 @@ export function renderPost(
   ctx.fillStyle = ctx.createPattern(grain(), "repeat") as CanvasPattern;
   ctx.fillRect(0, 0, g.W, g.H);
   ctx.restore();
+  drawLookCloth(ctx, g, tone);
   (DRAW[s.tpl] || DRAW.joke)(ctx, s, g, tone, photos);
   ctx.direction = "rtl";
   (s.stickers || []).forEach((st, i) => {

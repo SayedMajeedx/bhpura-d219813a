@@ -9,7 +9,7 @@ import type { Ctx, Sticker, TextAlign, TextColor, TextLook, Tone } from "./types
  */
 
 export const TEXT_LOOKS: readonly TextLook[] = ["plain", "meme", "box", "hand"];
-export const TEXT_COLORS: readonly TextColor[] = ["ink", "tag", "bg", "white", "black"];
+export const TEXT_COLORS: readonly TextColor[] = ["ink", "sub", "tag", "bg", "white", "black"];
 export const TEXT_ALIGNS: readonly TextAlign[] = ["right", "center", "left"];
 
 /** A new piece of words: plain, in the cloth's ink, in the middle of the post. */
@@ -32,6 +32,8 @@ const WRAP_AT = 880;
 /** A colour of the cloth, by its name. */
 export function colorOf(tone: Tone, color: TextColor | undefined) {
   switch (color) {
+    case "sub":
+      return tone.sub;
     case "tag":
       return tone.tag;
     case "bg":
@@ -48,6 +50,8 @@ export function colorOf(tone: Tone, color: TextColor | undefined) {
 /** What reads on a band of a colour: the cloth's pair for it. */
 export function inkOn(tone: Tone, color: TextColor | undefined) {
   switch (color) {
+    case "sub":
+      return tone.bg;
     case "tag":
       return tone.tagInk;
     case "bg":

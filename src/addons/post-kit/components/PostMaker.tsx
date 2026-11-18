@@ -46,6 +46,7 @@ import type { Post } from "../lib/types";
 import { copyWords, savePost } from "./PostKitPage";
 import { CutoutDialog } from "./CutoutDialog";
 import { PhotoLibrary } from "./PhotoLibrary";
+import { PostLookField } from "./PostLookField";
 import { PostTextFields } from "./PostTextFields";
 import { SelectionToolbar } from "./SelectionToolbar";
 import { StickerPicker } from "./StickerPicker";
@@ -512,6 +513,7 @@ export function PostMaker({
               ))}
             </div>
           </div>
+          <PostLookField post={post} onChange={update} />
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <p className="text-xs font-medium text-foreground">{isAr ? "اللون" : "Colour"}</p>

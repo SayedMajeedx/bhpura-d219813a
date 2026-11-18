@@ -144,3 +144,28 @@ describe("words and collage pieces", () => {
     expect(within(tools).getByLabelText("الكلام")).toHaveValue("شلون صرت");
   }, 20_000);
 });
+
+describe("a post's look", () => {
+  it("dresses the post and puts it on the look's own cloth, and goes back to plain", async () => {
+    await openMaker(withSticker);
+    expect(screen.getByRole("button", { name: "بسيط" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "دانتيل" }));
+    expect(screen.getByRole("button", { name: "دانتيل" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "كريمي" })).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: "بسيط" }));
+    expect(screen.getByRole("button", { name: "بسيط" })).toHaveAttribute("aria-pressed", "true");
+  }, 20_000);
+
+  it("stretches a words sticker's letters and puts them back", async () => {
+    await openMaker(withSticker);
+    fireEvent.click(screen.getByRole("button", { name: "أضف كلام" }));
+    const tools = screen.getByRole("region", { name: /تعديل الكلام/ });
+    fireEvent.change(within(tools).getByLabelText("الكلام"), { target: { value: "بتنزل باچر" } });
+    fireEvent.click(within(tools).getByRole("button", { name: "مطّ الحروف" }));
+    expect((within(tools).getByLabelText("الكلام") as HTMLTextAreaElement).value).toMatch(
+      /^بتنـ{8}زل باچـ{8}ر$/,
+    );
+    fireEvent.click(within(tools).getByRole("button", { name: "مطّ الحروف" }));
+    expect(within(tools).getByLabelText("الكلام")).toHaveValue("بتنزل باچر");
+  }, 20_000);
+});
