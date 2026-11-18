@@ -1,11 +1,20 @@
 import { AR, HAND } from "./tones";
-import { drawText, fit, LOGO_RATIO, roundRect, sewnTag, wrap } from "./text";
-import { coverImage, handle, photoCrop, sideNote, stitchedFrame, wordmark } from "./frame";
+import { drawText, fit, roundRect, sewnTag, wrap } from "./text";
+import {
+  coverImage,
+  handle,
+  logoOnLabel,
+  photoCrop,
+  sideNote,
+  stitchedFrame,
+  wordmark,
+} from "./frame";
 import { drawBracket } from "./layout-bracket";
 import { drawPaper } from "./layout-paper";
 import { drawPiece } from "./layout-piece";
 import { drawGrid, drawProof, drawReply, drawSplit } from "./layout-series";
 import { MEME_DRAW, MEME_TEMPLATES } from "./layout-meme";
+import { SHOW_DRAW, SHOW_TEMPLATES } from "./layout-meme-show";
 import type { Ctx, Geometry, PhotoBook, Post, TextLayout, Tone } from "./types";
 
 /* The layouts a post can take. */
@@ -41,6 +50,7 @@ export const TEMPLATES: Record<string, { name: { ar: string; en: string }; field
     fields: ["lead", "head", "label", "photo1"],
   },
   ...MEME_TEMPLATES,
+  ...SHOW_TEMPLATES,
 };
 
 function drawJoke(ctx: Ctx, s: Post, g: Geometry, tone: Tone, _photos: PhotoBook) {
@@ -223,18 +233,7 @@ function drawPoster(ctx: Ctx, s: Post, g: Geometry, tone: Tone, photos: PhotoBoo
   const photo = photos[s.photo1 ?? ""];
   coverImage(ctx, photo?.img, 0, 0, g.W, g.H, photoCrop(s, "photo1"));
   stitchedFrame(ctx, g, tone);
-  const logoH = g.logoW * LOGO_RATIO;
-  sewnTag(
-    ctx,
-    g.W - g.M - g.logoW - 26,
-    g.logoTop - 22,
-    g.logoW + 52,
-    logoH + 44,
-    tone.bg,
-    tone.ink,
-    0,
-  );
-  wordmark(ctx, g, tone);
+  logoOnLabel(ctx, g, tone);
   if (s.head) {
     const layout = fit(ctx, s.head, AR, 700, 76, 40, g.W - g.M * 2, 300, 1.44);
     const h = layout.lines.length * layout.size * layout.lh + 64;
@@ -273,6 +272,7 @@ export const DRAW: Record<
   reply: (ctx, s, g, tone) => drawReply(ctx, s, g, tone),
   proof: drawProof,
   ...MEME_DRAW,
+  ...SHOW_DRAW,
   // Drawn from the cup's results, never chosen as a layout in the maker.
   bracket: (ctx, s, g, tone) => drawBracket(ctx, s, g, tone),
 };

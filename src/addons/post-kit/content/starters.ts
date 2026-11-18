@@ -14,10 +14,63 @@ export type Starter = {
 /** Where a new post starts: one per layout, the paper three times, with words to type over. */
 export const STARTERS: Starter[] = [
   {
+    id: "meme-show",
+    name: {
+      ar: "ميم مطرز: عنوان وصورة وقفلة",
+      en: "Embroidered meme: headline, photo, punch line",
+    },
+    title: "ميم جديد",
+    usesPiece: true,
+    post: {
+      tpl: "memeShow",
+      look: "embroidered",
+      tone: "wine",
+      lead: "لكل وحدة تسأل:",
+      head: "ليش التفصيل ياخذ وقت؟",
+      foot: "لأنها تنخيط على مقاسش\nمو على مقاس الرف",
+      stickers: [
+        { id: "tool-spool", x: 0.04, y: 0.95, s: 520, r: 24 },
+        { id: "tool-needle", x: 0.93, y: 0.42, s: 420, r: 0 },
+      ],
+    },
+  },
+  {
+    id: "meme-show-lace",
+    name: { ar: "ميم دانتيل: جملة وصورة", en: "Lace meme: a line and a photo" },
+    title: "ميم جديد",
+    post: {
+      tpl: "memeShow",
+      look: "lace",
+      tone: "cream",
+      lead: "البنت وهي جاية",
+      head: "تستلم عبايتها من بيورا:",
+      stickers: [{ id: "tool-tape", x: 0.93, y: 0.9, s: 720, r: 0 }],
+    },
+  },
+  {
+    id: "meme-teaser",
+    name: { ar: "تشويق: أسود وذهب", en: "Teaser: black and gold" },
+    title: "تشويق جديد",
+    post: {
+      tpl: "memeTeaser",
+      look: "gold",
+      tone: "ink",
+      lead: "خمّني عبايتنا الجديدة",
+      head: "اللي بتنـــــــزل باچـــــــر!",
+      stickers: [
+        { id: "text", x: 0.7, y: 0.64, s: 1620, r: 0, text: "؟", look: "plain", color: "sub" },
+        { id: "hanger-beg", x: 0.34, y: 0.66, s: 520, r: -4 },
+        { id: "tool-needle", x: 0.08, y: 0.44, s: 400, r: 0, flip: true },
+        { id: "tool-spool", x: 0.95, y: 0.88, s: 560, r: -24 },
+      ],
+    },
+  },
+  {
     id: "meme-stack",
     name: { ar: "ميم: شلون كنت أفكر / شلون صرت", en: "Meme: what I thought / what I became" },
     title: "ميم جديد",
     post: {
+      look: "embroidered",
       tpl: "memeStack",
       tone: "wine",
       labelA: "شلون كنت أفكر",
@@ -35,6 +88,7 @@ export const STARTERS: Starter[] = [
     name: { ar: "ميم: جنب بعض", en: "Meme: side by side" },
     title: "ميم جديد",
     post: {
+      look: "lace",
       tpl: "memeSide",
       tone: "cream",
       labelA: "يوم الراتب",
@@ -45,13 +99,20 @@ export const STARTERS: Starter[] = [
     id: "meme-classic",
     name: { ar: "ميم كلاسيكي", en: "Classic meme" },
     title: "ميم جديد",
-    post: { tpl: "memeClassic", tone: "ink", head: "الكلام فوق", foot: "والكلام تحت" },
+    post: {
+      tpl: "memeClassic",
+      look: "gold",
+      tone: "ink",
+      head: "الكلام فوق",
+      foot: "والكلام تحت",
+    },
   },
   {
     id: "meme-nobody",
     name: { ar: "ميم: محد: / أنا:", en: "Meme: nobody: / me:" },
     title: "ميم جديد",
     post: {
+      look: "lace",
       tpl: "memeCaption",
       tone: "cream",
       head: "محد:\nأنا الساعة 2 الفجر أطالع العبايات اللي في السلة:",
@@ -61,13 +122,19 @@ export const STARTERS: Starter[] = [
     id: "meme-pov",
     name: { ar: "ميم: POV", en: "Meme: POV" },
     title: "ميم جديد",
-    post: { tpl: "memeCaption", tone: "wine", head: "POV: طلبتي عباية وزوجش شاف الكيس" },
+    post: {
+      tpl: "memeCaption",
+      look: "embroidered",
+      tone: "wine",
+      head: "POV: طلبتي عباية وزوجش شاف الكيس",
+    },
   },
   {
     id: "meme-no-yes",
     name: { ar: "ميم: لا / إي", en: "Meme: no / yes" },
     title: "ميم جديد",
     post: {
+      look: "lace",
       tpl: "memeNoYes",
       tone: "sand",
       labelA: "تشترين بدون ما تعرفين مقاسش",
@@ -79,6 +146,7 @@ export const STARTERS: Starter[] = [
     name: { ar: "لوحة حرة", en: "Free canvas" },
     title: "بوست جديد",
     post: {
+      look: "embroidered",
       tpl: "free",
       tone: "wine",
       stickers: [

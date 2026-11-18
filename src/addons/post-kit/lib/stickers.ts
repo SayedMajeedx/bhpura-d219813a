@@ -5,6 +5,7 @@ import { roundRect } from "./text";
 import { HANGER_STICKERS } from "./stickers-hanger";
 import { OTHER_STICKERS } from "./stickers-other";
 import { COLLAGE_STICKERS } from "./stickers-collage";
+import { TOOL_STICKERS } from "./stickers-tools";
 import { colorOf, drawTextSticker } from "./text-sticker";
 import { sceneHusband, sceneMind, scenePhone, sceneSign } from "./scenes";
 import { sceneCalc, sceneNote, sceneOwl, sceneSalary, sceneWell } from "./scenes-more";
@@ -15,6 +16,7 @@ export const STICKERS: Record<string, StickerDef> = {
   ...HANGER_STICKERS,
   ...OTHER_STICKERS,
   ...COLLAGE_STICKERS,
+  ...TOOL_STICKERS,
   photo: { name: { ar: "صورة", en: "Photo" }, photoCard: true },
   text: { name: { ar: "كلام", en: "Words" } },
   "scene-salary": {
@@ -235,7 +237,8 @@ export function drawSticker(
   const def = STICKERS[st.id];
   if (def.bare) {
     // A mark takes the colour chosen for it; a piece's words are its own.
-    const inked = st.color ? { ...tone, ink: colorOf(tone, st.color) } : tone;
+    const chosen = st.color ? colorOf(tone, st.color) : null;
+    const inked = chosen ? { ...tone, ink: chosen, tag: chosen, sub: chosen } : tone;
     ctx.save();
     ctx.translate(st.x * g.W, st.y * g.H);
     ctx.rotate(((st.r || 0) * Math.PI) / 180);

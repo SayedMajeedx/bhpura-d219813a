@@ -54,10 +54,10 @@ export type Sticker = {
 };
 
 export type TextLook = "plain" | "meme" | "box" | "hand";
-export type TextColor = "ink" | "tag" | "bg" | "white" | "black";
+export type TextColor = "ink" | "sub" | "tag" | "bg" | "white" | "black";
 export type TextAlign = "right" | "center" | "left";
 /** Where a drawn sticker is listed in the maker. */
-export type StickerGroup = "marks" | "paper" | "words";
+export type StickerGroup = "marks" | "paper" | "words" | "tools";
 
 export type StickerEdge = "thin";
 export type EdgeColor = "cream";
@@ -78,6 +78,8 @@ export type StickerDef = {
 };
 
 export type PaperLook = "receipt" | "circular" | "licence";
+/** A post's dress: the plain stitched frame, or embroidered, lace, or black and gold. */
+export type PostLook = "plain" | "embroidered" | "lace" | "gold";
 
 export type Post = {
   key: string;
@@ -97,6 +99,8 @@ export type Post = {
   chatSize?: number;
   items?: string;
   bag?: string;
+  /** The post's dress; none written is plain, as every post was before the looks. */
+  look?: PostLook;
   /** The look of the paper layout, and the words only a paper has. */
   paper?: PaperLook;
   total?: string;
@@ -136,4 +140,6 @@ export type Geometry = {
   B: number;
   logoTop: number;
   logoW: number;
+  /** A dressed look: the logo centred and larger, the words below it, the look's own edges. */
+  look?: PostLook;
 };

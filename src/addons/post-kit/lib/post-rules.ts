@@ -91,9 +91,8 @@ export function newSticker(id: string): Sticker {
   if (id === "text") return newText();
   const def = STICKERS[id];
   if (def?.bare) {
-    return def.ownText
-      ? { id, x: 0.5, y: 0.55, s: 560, r: 0, text: def.sample ?? "" }
-      : { id, x: 0.5, y: 0.6, s: 420, r: 0 };
+    if (def.ownText) return { id, x: 0.5, y: 0.55, s: 560, r: 0, text: def.sample ?? "" };
+    return { id, x: 0.5, y: 0.6, s: def.group === "tools" ? 620 : 420, r: 0 };
   }
   return STICKERS[id]?.stitch
     ? { id, x: 0.45, y: 0.66, s: 680, r: 0 }

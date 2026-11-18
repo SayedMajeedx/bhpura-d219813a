@@ -12,6 +12,7 @@ const GROUPS: { group: StickerGroup | "shammoua"; ar: string; en: string }[] = [
   { group: "words", ar: "فقاعات وكلام", en: "Bubbles and words" },
   { group: "marks", ar: "أسهم وعلامات", en: "Arrows and marks" },
   { group: "paper", ar: "ورق وشريط", en: "Paper and tape" },
+  { group: "tools", ar: "أدوات الخياطة", en: "Sewing tools" },
   { group: "shammoua", ar: "شمّوعة ورسماتها", en: "Shammoua and drawings" },
 ];
 

@@ -1,5 +1,6 @@
 import { AR, HAND, TONES } from "./tones";
-import { drawLogo, fit, drawText, roundRect } from "./text";
+import { drawLogo, fit, drawText, LOGO_RATIO, roundRect, sewnTag } from "./text";
+import { drawLookEdges, lookOf } from "./looks";
 import type { Crop, Ctx, Geometry, Post, Tone } from "./types";
 
 /* The frame every post shares: its size, the photo's crop, the logo, the stitching and the cloth. */
@@ -35,9 +36,26 @@ export function coverImage(
   ctx.restore();
 }
 
-export function geometry(s: Pick<Post, "size">): Geometry {
+export function geometry(s: Pick<Post, "size" | "look">): Geometry {
   const story = s.size === "story";
   const H = story ? 1920 : 1350;
+  const look = lookOf(s);
+  if (look !== "plain") {
+    // Dressed: the logo centred and larger, the words starting below it, clear of the edges.
+    const logoTop = story ? 280 : 150;
+    const logoW = 230;
+    return {
+      W: 1080,
+      H,
+      M: 104,
+      story,
+      T: Math.round(logoTop + logoW * LOGO_RATIO + 58),
+      B: story ? H - 380 : H - 175,
+      logoTop,
+      logoW,
+      look,
+    };
+  }
   return {
     W: 1080,
     H,
@@ -52,11 +70,26 @@ export function geometry(s: Pick<Post, "size">): Geometry {
 export function logoColor(tone: Tone) {
   return tone === TONES.wine || tone === TONES.ink ? "#F7ECE6" : "#330a0a";
 }
+/** Where the logo starts: centred on a dressed post, at the right edge on a plain one. */
+export const logoLeft = (g: Geometry) => (g.look ? (g.W - g.logoW) / 2 : g.W - g.M - g.logoW);
+
 export function wordmark(ctx: Ctx, g: Geometry, tone: Tone) {
   /* The logo keeps its own colour on the light tones and turns cream on the dark ones. */
-  drawLogo(ctx, g.W - g.M - g.logoW, g.logoTop, g.logoW, logoColor(tone));
+  drawLogo(ctx, logoLeft(g), g.logoTop, g.logoW, logoColor(tone));
 }
+
+/** The logo on a sewn label of the cloth, for a post whose photo fills it. */
+export function logoOnLabel(ctx: Ctx, g: Geometry, tone: Tone) {
+  const logoH = g.logoW * LOGO_RATIO;
+  sewnTag(ctx, logoLeft(g) - 26, g.logoTop - 22, g.logoW + 52, logoH + 44, tone.bg, tone.ink, 0);
+  wordmark(ctx, g, tone);
+}
+
 export function stitchedFrame(ctx: Ctx, g: Geometry, tone: Tone) {
+  if (g.look) {
+    drawLookEdges(ctx, g, tone);
+    return;
+  }
   ctx.save();
   ctx.strokeStyle = tone.stitch;
   ctx.lineWidth = 4;
@@ -70,8 +103,13 @@ export function handle(ctx: Ctx, g: Geometry, tone: Tone) {
   ctx.fillStyle = tone.sub;
   ctx.font = `500 26px ${AR}`;
   ctx.direction = "ltr";
-  ctx.textAlign = "right";
-  ctx.fillText("@puraline.bh", g.W - g.M, g.story ? g.H - 260 : g.H - 78);
+  if (g.look) {
+    ctx.textAlign = "center";
+    ctx.fillText("@puraline.bh", g.W / 2, g.story ? g.H - 280 : g.H - 128);
+  } else {
+    ctx.textAlign = "right";
+    ctx.fillText("@puraline.bh", g.W - g.M, g.story ? g.H - 260 : g.H - 78);
+  }
   ctx.direction = "rtl";
 }
 export function sideNote(

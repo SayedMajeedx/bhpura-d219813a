@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { STICKERS } from "../lib/stickers";
 import { TEXT_ALIGNS, TEXT_COLORS, TEXT_LOOKS } from "../lib/text-sticker";
+import { isStretched, toggleStretch } from "../lib/stretch";
 import type { Sticker, TextAlign, TextColor, TextLook } from "../lib/types";
 
 const LOOK_WORDS: Record<TextLook, [string, string]> = {
@@ -15,6 +16,7 @@ const LOOK_WORDS: Record<TextLook, [string, string]> = {
 };
 const COLOR_WORDS: Record<TextColor, [string, string]> = {
   ink: ["لون الكلام", "Text colour"],
+  sub: ["اللون الثاني", "Second colour"],
   tag: ["لون الليبل", "Label colour"],
   bg: ["لون القماش", "Cloth colour"],
   white: ["أبيض", "White"],
@@ -96,6 +98,15 @@ export function StickerWordsTools({
             value={sticker.text ?? ""}
             onChange={(e) => onChange({ text: e.target.value })}
           />
+          <Button
+            type="button"
+            size="sm"
+            variant={isStretched(sticker.text) ? "default" : "outline"}
+            aria-pressed={isStretched(sticker.text)}
+            onClick={() => onChange({ text: toggleStretch(sticker.text ?? "") })}
+          >
+            {say("مطّ الحروف", "Stretch the letters")}
+          </Button>
         </div>
       ) : null}
       {isText ? (

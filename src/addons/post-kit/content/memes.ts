@@ -19,8 +19,54 @@ const meme = (post: Omit<Post, "series" | "size" | "stickers"> & Partial<Post>):
 
 export const MEME_POSTS: Post[] = [
   meme({
+    key: "meme-show-tailoring",
+    title: "ليش التفصيل ياخذ وقت؟",
+    tpl: "memeShow",
+    look: "embroidered",
+    tone: "wine",
+    lead: "لكل وحدة تسأل:",
+    head: "ليش التفصيل ياخذ وقت؟",
+    foot: "لأنها تنخيط على مقاسش\nمو على مقاس الرف",
+    stickers: [
+      { id: "tool-spool", x: 0.04, y: 0.95, s: 520, r: 24 },
+      { id: "tool-needle", x: 0.93, y: 0.42, s: 420, r: 0 },
+    ],
+    caption: "التفصيل ياخذ وقته عشان يطلع على مقاسش بالضبط 🖤\nاطلبي من وقت، الرابط في البايو.",
+    note: "الصورة: عباية من صوركم، أو اختاروا قطعة من المعرض. البكرة والإبرة طالعين من الحافة عن قصد.",
+  }),
+  meme({
+    key: "meme-show-arrival",
+    title: "البنت وهي جاية تستلم عبايتها",
+    tpl: "memeShow",
+    look: "lace",
+    tone: "cream",
+    lead: "البنت وهي جاية",
+    head: "تستلم عبايتها من بيورا:",
+    stickers: [{ id: "tool-tape", x: 0.93, y: 0.9, s: 720, r: 0 }],
+    caption: "هذي كل وحدة يوصلها طلبها 😎🖤\nمنشني اللي تنتظر طلبها.",
+    note: "الصورة: رياكشن فرحان مقصوص من «ستيكراتي» (يطلع على قطعة قماش)، أو شمّوعة بنظارتها من ستيكرات العدة فوق الخانة.",
+  }),
+  meme({
+    key: "meme-teaser-new",
+    title: "خمّني عبايتنا الجديدة",
+    tpl: "memeTeaser",
+    look: "gold",
+    tone: "ink",
+    lead: "خمّني عبايتنا الجديدة",
+    head: "اللي بتنـــــــزل باچـــــــر!",
+    stickers: [
+      { id: "text", x: 0.7, y: 0.64, s: 1620, r: 0, text: "؟", look: "plain", color: "sub" },
+      { id: "hanger-beg", x: 0.34, y: 0.66, s: 520, r: -4 },
+      { id: "tool-needle", x: 0.08, y: 0.44, s: 400, r: 0, flip: true },
+      { id: "tool-spool", x: 0.95, y: 0.88, s: 560, r: -24 },
+    ],
+    caption: "خمّني… والجواب باچر 👀🖤\nحطي تخمينش في التعليقات.",
+    note: "غيّروا «باچر» لموعد الإطلاق الحقيقي قبل النشر: القطع المخفية للحين ما تقرر إطلاقها.",
+  }),
+  meme({
     key: "meme-business",
     title: "شلون كنت أفكر / شلون صرت",
+    look: "embroidered",
     tpl: "memeStack",
     tone: "wine",
     labelA: "شلون كنت أفكر",
@@ -37,6 +83,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-reply-later",
     title: "بفكر وأرد عليكم",
+    look: "lace",
     tpl: "memeStack",
     tone: "cream",
     labelA: "الزبونة:",
@@ -49,6 +96,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-2am",
     title: "محد: / أنا الساعة 2 الفجر",
+    look: "embroidered",
     tpl: "memeCaption",
     tone: "wine",
     head: "محد:\nأنا الساعة 2 الفجر أطالع العبايات اللي في السلة:",
@@ -58,6 +106,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-pov-bag",
     title: "POV: زوجش شاف الكيس",
+    look: "lace",
     tpl: "memeCaption",
     tone: "sand",
     head: "POV: طلبتي عباية وزوجش شاف الكيس",
@@ -67,6 +116,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-payday",
     title: "يوم الراتب / بعد أسبوع",
+    look: "lace",
     tpl: "memeSide",
     tone: "cream",
     labelA: "يوم الراتب",
@@ -77,6 +127,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-size",
     title: "لا: بدون مقاس / إي: على مقاسش",
+    look: "lace",
     tpl: "memeNoYes",
     tone: "sand",
     labelA: "تشترين بدون ما تعرفين مقاسش",
@@ -87,6 +138,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-occasion",
     title: "قبل المناسبة بشهر / بيوم",
+    look: "gold",
     tpl: "memeStack",
     tone: "ink",
     labelA: "قبل المناسبة بشهر",
@@ -99,6 +151,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-cart",
     title: "حطيت العباية في السلة",
+    look: "embroidered",
     tpl: "memeClassic",
     tone: "wine",
     head: "حطيت العباية في السلة",
@@ -109,6 +162,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-in-mind",
     title: "العباية في بالي / من بيورا",
+    look: "embroidered",
     tpl: "memeSide",
     tone: "wine",
     labelA: "العباية اللي في بالي",
@@ -120,6 +174,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-mother",
     title: "POV: أمش تسأل «هذي جديدة؟»",
+    look: "lace",
     tpl: "memeCaption",
     tone: "cream",
     head: "POV: أمش تسألش «هذي جديدة؟»",
@@ -129,6 +184,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-wardrobe",
     title: "الكبت مليان عبايات",
+    look: "gold",
     tpl: "memeClassic",
     tone: "ink",
     head: "الكبت مليان عبايات",
@@ -139,6 +195,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-price",
     title: "لا: كم السعر؟ / إي: الموقع",
+    look: "lace",
     tpl: "memeNoYes",
     tone: "cream",
     labelA: "تسألين «كم السعر؟» في الخاص وتنتظرين",
@@ -149,6 +206,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-delivery",
     title: "أول ما أطلب / لما يوصل",
+    look: "lace",
     tpl: "memeSide",
     tone: "sand",
     labelA: "أول ما أطلب",
@@ -159,6 +217,7 @@ export const MEME_POSTS: Post[] = [
   meme({
     key: "meme-free-best",
     title: "أحسن عباية لبستها",
+    look: "embroidered",
     tpl: "free",
     tone: "wine",
     stickers: [
@@ -188,6 +247,7 @@ export const MEME_REEL_POSTS: Post[] = [
     series: REEL,
     size: "story",
     title: "ريل: بفكر وأرد عليكم (1)",
+    look: "lace",
     tpl: "memeCaption",
     tone: "cream",
     head: "الزبونة: بفكر وأرد عليكم",
@@ -199,6 +259,7 @@ export const MEME_REEL_POSTS: Post[] = [
     series: REEL,
     size: "story",
     title: "ريل: بفكر وأرد عليكم (2)",
+    look: "lace",
     tpl: "memeCaption",
     tone: "cream",
     head: "أنا بعد ثلاث أيام:",
@@ -210,6 +271,7 @@ export const MEME_REEL_POSTS: Post[] = [
     series: REEL,
     size: "story",
     title: "ريل: قبل المشروع (1)",
+    look: "embroidered",
     tpl: "memeCaption",
     tone: "wine",
     head: "قبل ما أفتح المشروع",
@@ -221,6 +283,7 @@ export const MEME_REEL_POSTS: Post[] = [
     series: REEL,
     size: "story",
     title: "ريل: بعد المشروع (2)",
+    look: "embroidered",
     tpl: "memeCaption",
     tone: "wine",
     head: "بعد ما فتحت المشروع",

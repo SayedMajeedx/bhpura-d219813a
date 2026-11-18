@@ -1,7 +1,17 @@
 import { AR, HAND } from "./tones";
-import { drawText, fit, LOGO_RATIO, roundRect, sewnTag, wrap } from "./text";
-import { coverImage, handle, photoCrop, stitchedFrame, wordmark } from "./frame";
-import type { Ctx, Geometry, Photo, PhotoBook, Post, Tone } from "./types";
+import { drawText, fit, LOGO_RATIO, roundRect, wrap } from "./text";
+import {
+  coverImage,
+  grain,
+  handle,
+  logoOnLabel,
+  photoCrop,
+  stitchedFrame,
+  wordmark,
+} from "./frame";
+import { pinkedMount, pinkedPath, photoPaper } from "./look-pieces";
+import { threadOf } from "./looks";
+import type { Ctx, Geometry, Photo, PhotoBook, Post, TextLayout, Tone } from "./types";
 
 /*
  * The meme layouts: the kit's stitched frame, logo and handle round one or two reaction photos and
@@ -9,7 +19,10 @@ import type { Ctx, Geometry, Photo, PhotoBook, Post, Tone } from "./types";
  * whole on the cloth instead of cropped to the slot.
  */
 
-/** A photo in a slot: cropped to fill it, or a cut-out sticker set whole inside it. */
+/**
+ * A photo in a slot: cropped to fill it, or a cut-out sticker set whole inside it. On a dressed
+ * post the photo sits in a pinked paper mount and a sticker on a pinked swatch of cloth.
+ */
 export function slotPicture(
   ctx: Ctx,
   photo: Photo | undefined,
@@ -21,12 +34,14 @@ export function slotPicture(
   slot: string,
   tone: Tone,
   radius = 14,
+  dressed = false,
 ) {
   const img = photo?.img;
   if (!img) {
     // An empty slot says what goes in it, in the post's own thread.
     ctx.save();
-    roundRect(ctx, x, y, w, h, radius);
+    if (dressed) pinkedPath(ctx, x + 9, y + 9, w - 18, h - 18, 16);
+    else roundRect(ctx, x, y, w, h, radius);
     ctx.strokeStyle = tone.stitch;
     ctx.lineWidth = 4;
     ctx.setLineDash([18, 12]);
@@ -40,10 +55,24 @@ export function slotPicture(
     return;
   }
   if (photo?.sticker && img) {
-    const k = Math.min(w / img.width, h / img.height);
+    let box = { x, y, w, h };
+    if (dressed) {
+      box = pinkedMount(ctx, x, y, w, h, tone.tag, threadOf(tone));
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = ctx.createPattern(grain(), "repeat") as CanvasPattern;
+      ctx.fillRect(box.x, box.y, box.w, box.h);
+      ctx.restore();
+    }
+    const k = Math.min(box.w / img.width, box.h / img.height) * (dressed ? 0.92 : 1);
     const dw = img.width * k,
       dh = img.height * k;
-    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    ctx.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
+    return;
+  }
+  if (dressed) {
+    const box = pinkedMount(ctx, x, y, w, h, photoPaper(tone), threadOf(tone));
+    coverImage(ctx, img, box.x, box.y, box.w, box.h, photoCrop(s, slot));
     return;
   }
   ctx.save();
@@ -51,6 +80,28 @@ export function slotPicture(
   ctx.clip();
   coverImage(ctx, img, x, y, w, h, photoCrop(s, slot));
   ctx.restore();
+}
+
+/** Lines centred on `cx`, each drawn with the kit's own text (marks and Latin runs kept). */
+export function centreText(
+  ctx: Ctx,
+  layout: TextLayout,
+  cx: number,
+  top: number,
+  tone: Tone,
+  color?: string,
+) {
+  layout.lines.forEach((line, i) => {
+    drawText(
+      ctx,
+      { ...layout, lines: [line] },
+      cx + line.w / 2,
+      top + i * layout.size * layout.lh,
+      tone,
+      color,
+    );
+  });
+  return top + layout.lines.length * layout.size * layout.lh;
 }
 
 /**
@@ -80,7 +131,10 @@ export function memeWords(
   let y = top + layout.size;
   for (const line of layout.lines) {
     const t = line.tokens.map((tok) => tok.t).join(" ");
+    ctx.shadowColor = "rgba(0,0,0,.5)";
+    ctx.shadowOffsetY = layout.size * 0.08;
     ctx.strokeText(t, cx, y);
+    ctx.shadowColor = "transparent";
     ctx.fillText(t, cx, y);
     y += layout.size * layout.lh;
   }
@@ -88,7 +142,10 @@ export function memeWords(
   return top + layout.lines.length * layout.size * layout.lh;
 }
 
-/** A caption and the small line under it, at the right; the answer is where they end. */
+/**
+ * A caption and the small line under it, at the right, or centred on a dressed post; the answer
+ * is where they end.
+ */
 function caption(
   ctx: Ctx,
   big: string | undefined,
@@ -98,15 +155,19 @@ function caption(
   w: number,
   maxH: number,
   tone: Tone,
+  centred = false,
 ) {
   let y = top;
+  const cx = right - w / 2;
   if (big) {
     const layout = fit(ctx, big, AR, 700, 76, 40, w, maxH * 0.7, 1.36);
-    y = drawText(ctx, layout, right, y, tone);
+    y = centred ? centreText(ctx, layout, cx, y, tone) : drawText(ctx, layout, right, y, tone);
   }
   if (small) {
     const layout = { ...fit(ctx, small, HAND, 600, 44, 28, w, maxH * 0.3, 1.3), noTag: true };
-    y = drawText(ctx, layout, right, y + 6, tone, tone.sub);
+    y = centred
+      ? centreText(ctx, layout, cx, y + 6, tone, tone.sub)
+      : drawText(ctx, layout, right, y + 6, tone, tone.sub);
   }
   return y;
 }
@@ -124,19 +185,22 @@ export function drawMemeStack(ctx: Ctx, s: Post, g: Geometry, tone: Tone, photos
     w = g.W - g.M * 2;
   const gap = 34;
   const half = (g.B - g.T - gap) / 2;
+  const dressed = Boolean(g.look);
   const part = (top: number, big?: string, small?: string, slot = "photo1") => {
-    const end = caption(ctx, big, small, right, top, w, half * 0.36, tone) + 18;
+    const end = caption(ctx, big, small, right, top, w, half * 0.36, tone, dressed) + 18;
     const pw = Math.min(w * 0.78, (top + half - end) * 1.5);
     slotPicture(
       ctx,
       photos[s[slot as "photo1"] ?? ""],
-      g.M,
+      dressed ? (g.W - pw) / 2 : g.M,
       end,
       pw,
       top + half - end,
       s,
       slot,
       tone,
+      14,
+      dressed,
     );
   };
   part(g.T, s.labelA, s.lead, "photo1");
@@ -153,13 +217,25 @@ export function drawMemeSide(ctx: Ctx, s: Post, g: Geometry, tone: Tone, photos:
   const tops = [s.labelA, s.labelB].map((big, i) => {
     const small = i === 0 ? s.lead : s.foot;
     const right = g.W - g.M - i * (cw + gap);
-    return caption(ctx, big, small, right, top, cw, (g.B - top) * 0.32, tone);
+    return caption(ctx, big, small, right, top, cw, (g.B - top) * 0.32, tone, Boolean(g.look));
   });
   const photoTop = Math.max(...tops) + 22;
   const ph = Math.min(g.B - photoTop, cw * 1.45);
   ["photo1", "photo2"].forEach((slot, i) => {
     const x = g.W - g.M - cw - i * (cw + gap);
-    slotPicture(ctx, photos[s[slot as "photo1"] ?? ""], x, photoTop, cw, ph, s, slot, tone);
+    slotPicture(
+      ctx,
+      photos[s[slot as "photo1"] ?? ""],
+      x,
+      photoTop,
+      cw,
+      ph,
+      s,
+      slot,
+      tone,
+      14,
+      Boolean(g.look),
+    );
   });
 }
 
@@ -172,18 +248,8 @@ export function drawMemeClassic(ctx: Ctx, s: Post, g: Geometry, tone: Tone, phot
     h = g.H - inset * 2;
   slotPicture(ctx, photos[s.photo1 ?? ""], x, y, w, h, s, "photo1", tone, 22);
   stitchedFrame(ctx, g, tone);
+  logoOnLabel(ctx, g, tone);
   const logoH = g.logoW * LOGO_RATIO;
-  sewnTag(
-    ctx,
-    g.W - g.M - g.logoW - 26,
-    g.logoTop - 22,
-    g.logoW + 52,
-    logoH + 44,
-    tone.bg,
-    tone.ink,
-    0,
-  );
-  wordmark(ctx, g, tone);
   const maxW = w - 80;
   memeWords(ctx, s.head, g.W / 2, g.logoTop + logoH + 40, maxW, 92, h * 0.28);
   if (s.foot) {
@@ -200,8 +266,22 @@ export function drawMemeCaption(ctx: Ctx, s: Post, g: Geometry, tone: Tone, phot
   const right = g.W - g.M,
     w = g.W - g.M * 2;
   const head = fit(ctx, s.head, AR, 600, 70, 40, w, (g.B - g.T) * 0.36, 1.4);
-  const end = drawText(ctx, head, right, g.T, tone) + 26;
-  slotPicture(ctx, photos[s.photo1 ?? ""], g.M, end, w, g.B - end, s, "photo1", tone, 18);
+  const end =
+    (g.look ? centreText(ctx, head, g.W / 2, g.T, tone) : drawText(ctx, head, right, g.T, tone)) +
+    26;
+  slotPicture(
+    ctx,
+    photos[s.photo1 ?? ""],
+    g.M,
+    end,
+    w,
+    g.B - end,
+    s,
+    "photo1",
+    tone,
+    18,
+    Boolean(g.look),
+  );
 }
 
 /** A stitched cross for "no" or a tick for "yes", in a sewn ring. */
@@ -250,7 +330,19 @@ export function drawMemeNoYes(ctx: Ctx, s: Post, g: Geometry, tone: Tone, photos
     [s.labelB, "photo2", true],
   ].forEach(([words, slot, yes], i) => {
     const y = top + i * (rowH + gap);
-    slotPicture(ctx, photos[s[slot as "photo1"] ?? ""], g.M, y, pw, rowH, s, slot as string, tone);
+    slotPicture(
+      ctx,
+      photos[s[slot as "photo1"] ?? ""],
+      g.M,
+      y,
+      pw,
+      rowH,
+      s,
+      slot as string,
+      tone,
+      14,
+      Boolean(g.look),
+    );
     const r = 46;
     verdict(ctx, g.W - g.M - r, y + r + 4, r, yes as boolean, tone);
     const layout = fit(ctx, words as string, AR, 700, 64, 34, textW, rowH - r * 2 - 40, 1.36);
