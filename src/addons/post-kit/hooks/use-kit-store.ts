@@ -14,6 +14,8 @@ import {
   type PostKitPhotoRow,
 } from "@/lib/data/post-kit";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
+import { offersCutout } from "../lib/cutout";
+import { uploadFacts } from "../lib/cutout-canvas";
 import { POSTS } from "../content/posts";
 import type { Catalogue } from "../lib/photos";
 import { CALENDAR_KEY, readCalendar, type CalendarState } from "../lib/calendar";
@@ -49,10 +51,15 @@ const asJson = (post: Post) => JSON.parse(JSON.stringify(post)) as Json;
  * Sends a photo to the store's media folder and records it. A photo whose row could not be written
  * takes its file back with it, so nothing is left that no screen can reach.
  */
-async function storePhoto(brandId: string, blob: Blob, name: string) {
+async function storePhoto(
+  brandId: string,
+  blob: Blob,
+  name: string,
+  facts: Omit<Parameters<typeof addPostKitPhoto>[1], "name" | "url"> = {},
+) {
   const url = await uploadPublicMedia(brandId, blob, "post");
   try {
-    return await addPostKitPhoto(brandId, { name, url });
+    return await addPostKitPhoto(brandId, { name, url, ...facts });
   } catch (error) {
     await deletePublicMediaUrl(brandId, url).catch(() => undefined);
     throw error;
@@ -362,6 +369,8 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
           url: row.url,
           img: images.current.get(row.id),
           upload: true,
+          ...(row.kind === "sticker" ? { sticker: true } : {}),
+          ...(row.source_id ? { source: uploadKey(row.source_id) } : {}),
         };
       }
       setOwnPhotos(book);
@@ -371,10 +380,28 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     };
   }, [photoRows]);
 
-  /** Sends the files to the store. The answer says which went in and how many did not. */
+  /** Keeps a row the store just wrote, its picture loaded, and answers its key. */
+  const keepRow = useCallback(
+    async (row: PostKitPhotoRow) => {
+      const img = await loadImage(row.url);
+      images.current.set(row.id, img);
+      qc.setQueryData<PostKitPhotoRow[]>(postKitKeys.photos(brandId), (rows) => [
+        ...(rows ?? []),
+        row,
+      ]);
+      return uploadKey(row.id);
+    },
+    [brandId, qc],
+  );
+
+  /**
+   * Sends the files to the store. The answer says which went in, how many did not, and which have
+   * a flat background a cut-out could take off (`plainEdge`).
+   */
   const addUploads = useCallback(
     async (files: File[]) => {
       const added: string[] = [];
+      const plainEdge: string[] = [];
       let failed = 0;
       for (const file of files.slice(0, 12)) {
         try {
@@ -385,21 +412,42 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
               .replace(/\.[^.]+$/, "")
               .trim()
               .slice(0, 22) || "صورتي";
-          const row = await storePhoto(brandId, blob, name);
-          const img = await loadImage(row.url);
-          images.current.set(row.id, img);
-          qc.setQueryData<PostKitPhotoRow[]>(postKitKeys.photos(brandId), (rows) => [
-            ...(rows ?? []),
-            row,
-          ]);
-          added.push(uploadKey(row.id));
+          const facts = await uploadFacts(blob);
+          const row = await storePhoto(brandId, blob, name, {
+            width: facts.width ?? null,
+            height: facts.height ?? null,
+          });
+          const key = await keepRow(row);
+          added.push(key);
+          if (facts.backdrop && offersCutout(facts.backdrop)) plainEdge.push(key);
         } catch {
           failed += 1;
         }
       }
-      return { added, failed };
+      return { added, failed, plainEdge };
     },
-    [brandId, qc],
+    [brandId, keepRow],
+  );
+
+  /**
+   * Keeps a cut-out as one of the store's stickers, beside the photo it came from, which stays.
+   * The answer is the sticker's key; it throws when the store did not take it.
+   */
+  const addSticker = useCallback(
+    async (
+      cut: { blob: Blob; width: number; height: number },
+      from: { name: string; key?: string },
+    ) => {
+      const source = from.key?.startsWith("upload-") ? from.key.slice("upload-".length) : null;
+      const row = await storePhoto(brandId, cut.blob, from.name.trim().slice(0, 60) || "ستيكر", {
+        kind: "sticker",
+        source_id: source,
+        width: cut.width,
+        height: cut.height,
+      });
+      return keepRow(row);
+    },
+    [brandId, keepRow],
   );
 
   /** Takes a photo out of the store: posts using it fall back first. Null when it stayed. */
@@ -448,6 +496,7 @@ export function useKitStore(brandId: string, catalogue: Catalogue | null) {
     saveCup,
     retrySave: flush,
     addUploads,
+    addSticker,
     removeUpload,
   };
 }

@@ -37,6 +37,8 @@ function readSticker(value: unknown): Sticker | null {
   // A frame this version does not know is drawn as a print, and is not kept as something else.
   if (sticker.frame !== undefined && !PHOTO_FRAMES.includes(sticker.frame)) delete sticker.frame;
   if (sticker.shadow !== undefined && typeof sticker.shadow !== "boolean") delete sticker.shadow;
+  if (sticker.edge !== undefined && sticker.edge !== "thin") delete sticker.edge;
+  if (sticker.edgeColor !== undefined && sticker.edgeColor !== "cream") delete sticker.edgeColor;
   return sticker;
 }
 

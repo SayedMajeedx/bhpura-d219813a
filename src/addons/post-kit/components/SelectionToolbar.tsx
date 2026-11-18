@@ -4,6 +4,7 @@ import {
   CopyPlus,
   FlipHorizontal,
   MoveHorizontal,
+  Scissors,
   SendToBack,
   Trash2,
 } from "lucide-react";
@@ -97,6 +98,7 @@ export function SelectionToolbar({
   onLayer,
   onDuplicate,
   onRemove,
+  onCutout,
 }: {
   sticker: Sticker;
   index: number;
@@ -108,6 +110,8 @@ export function SelectionToolbar({
   onLayer: (step: 1 | -1) => void;
   onDuplicate: () => void;
   onRemove: () => void;
+  /** Opens the background remover on this photo. */
+  onCutout?: () => void;
 }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -172,6 +176,33 @@ export function SelectionToolbar({
               </Toggle>
             </div>
           </div>
+          {frameOf(sticker) === "cut" ? (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-foreground">
+                {say("حافة الستيكر", "Sticker edge")}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Toggle on={sticker.edge === "thin"} onClick={() => onChange({ edge: "thin" })}>
+                  {say("رفيعة", "Thin")}
+                </Toggle>
+                <Toggle on={sticker.edge !== "thin"} onClick={() => onChange({ edge: undefined })}>
+                  {say("عريضة", "Wide")}
+                </Toggle>
+                <Toggle
+                  on={sticker.edgeColor !== "cream"}
+                  onClick={() => onChange({ edgeColor: undefined })}
+                >
+                  {say("أبيض", "White")}
+                </Toggle>
+                <Toggle
+                  on={sticker.edgeColor === "cream"}
+                  onClick={() => onChange({ edgeColor: "cream" })}
+                >
+                  {say("كريمي", "Cream")}
+                </Toggle>
+              </div>
+            </div>
+          ) : null}
           <div className="grid gap-4 sm:grid-cols-3">
             <Labelled
               label={say("قص: تقريب", "Crop: zoom")}
@@ -252,6 +283,12 @@ export function SelectionToolbar({
           >
             <MoveHorizontal className="size-4" />
             {say("بعرض البوست", "Full width")}
+          </Button>
+        ) : null}
+        {isPhoto && onCutout && img ? (
+          <Button type="button" size="sm" variant="outline" onClick={onCutout}>
+            <Scissors className="size-4" />
+            {say("شيل الخلفية", "Remove the background")}
           </Button>
         ) : null}
         <Button type="button" size="sm" variant="outline" onClick={onDuplicate}>

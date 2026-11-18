@@ -11,10 +11,21 @@ import { readAll } from "../read-all";
  */
 
 export type PostKitEditRow = { post_key: string; post: Json; updated_at: string };
-export type PostKitPhotoRow = { id: string; name: string; url: string; created_at: string };
+export type PostKitPhotoKind = "photo" | "sticker";
+export type PostKitPhotoRow = {
+  id: string;
+  name: string;
+  url: string;
+  created_at: string;
+  /** A photo, or a sticker cut from one (migration 20261214100000). */
+  kind: string;
+  source_id: string | null;
+  width: number | null;
+  height: number | null;
+};
 
 const EDIT_COLUMNS = "post_key, post, updated_at" as const;
-const PHOTO_COLUMNS = "id, name, url, created_at" as const;
+const PHOTO_COLUMNS = "id, name, url, created_at, kind, source_id, width, height" as const;
 
 export const postKitKeys = {
   all: (brandId: string) => ["post-kit", brandId] as const,
@@ -94,7 +105,14 @@ export async function deletePostKitEdits(brandId: string, postKeys: string[]): P
 
 export async function addPostKitPhoto(
   brandId: string,
-  photo: { name: string; url: string },
+  photo: {
+    name: string;
+    url: string;
+    kind?: PostKitPhotoKind;
+    source_id?: string | null;
+    width?: number | null;
+    height?: number | null;
+  },
 ): Promise<PostKitPhotoRow> {
   const { data, error } = await supabase
     .from("post_kit_photos")

@@ -477,8 +477,44 @@ describe("the merchant's own photos", () => {
     await act(async () => {
       answer = await hook.result.current.addUploads([file]);
     });
-    expect(answer).toEqual({ added: [], failed: 1 });
+    expect(answer).toEqual({ added: [], failed: 1, plainEdge: [] });
     expect(r2.deletePublicMediaUrl).toHaveBeenCalledTimes(1);
+  });
+
+  it("keep a sticker cut from one beside it, as a sticker, and the photo stays", async () => {
+    const hook = await opened(openDevice());
+    let photo = "";
+    let sticker = "";
+    await act(async () => {
+      photo = (await hook.result.current.addUploads([file])).added[0];
+    });
+    const png = new Blob(["png"], { type: "image/png" });
+    await act(async () => {
+      sticker = await hook.result.current.addSticker(
+        { blob: png, width: 300, height: 200 },
+        { name: "صورة العيد", key: photo },
+      );
+    });
+    const rows = db.tables.post_kit_photos;
+    expect(rows).toHaveLength(2);
+    expect(rows[1]).toMatchObject({
+      kind: "sticker",
+      source_id: photo.replace("upload-", ""),
+      width: 300,
+      height: 200,
+    });
+    await waitFor(() => expect(hook.result.current.ownPhotos[sticker]?.sticker).toBe(true));
+    expect(hook.result.current.ownPhotos[sticker].source).toBe(photo);
+    expect(hook.result.current.ownPhotos[photo].sticker).toBe(undefined);
+
+    // One cut from a piece of the store's catalogue has no upload to name.
+    await act(async () => {
+      await hook.result.current.addSticker(
+        { blob: png, width: 10, height: 10 },
+        { name: "ربطة", key: "tie" },
+      );
+    });
+    expect(db.tables.post_kit_photos[2]).toMatchObject({ kind: "sticker", source_id: null });
   });
 
   it("leave a post using them with the fallback once deleted, and the file goes", async () => {

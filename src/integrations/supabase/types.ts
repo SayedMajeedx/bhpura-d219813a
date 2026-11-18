@@ -6877,23 +6877,35 @@ export type Database = {
         Row: {
           brand_id: string;
           created_at: string;
+          height: number | null;
           id: string;
+          kind: string;
           name: string;
+          source_id: string | null;
           url: string;
+          width: number | null;
         };
         Insert: {
           brand_id: string;
           created_at?: string;
+          height?: number | null;
           id?: string;
+          kind?: string;
           name: string;
+          source_id?: string | null;
           url: string;
+          width?: number | null;
         };
         Update: {
           brand_id?: string;
           created_at?: string;
+          height?: number | null;
           id?: string;
+          kind?: string;
           name?: string;
+          source_id?: string | null;
           url?: string;
+          width?: number | null;
         };
         Relationships: [
           {
@@ -6902,6 +6914,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "brands";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "post_kit_photos_source_fkey";
+            columns: ["brand_id", "source_id"];
+            isOneToOne: false;
+            referencedRelation: "post_kit_photos";
+            referencedColumns: ["brand_id", "id"];
           },
         ];
       };

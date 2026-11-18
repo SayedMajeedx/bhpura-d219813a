@@ -14,6 +14,12 @@ export const frameOf = (st: Sticker): PhotoFrame =>
 /** Whether a photo casts a shadow: what it says, else its frame's own (a bare photo has none). */
 export const shadowOf = (st: Sticker): boolean => st.shadow ?? frameOf(st) !== "none";
 
+/** A cut-out's white edge, as a share of its long side: thin, or as it always was. */
+export const edgeShare = (st: Sticker) => (st.edge === "thin" ? 0.016 : 0.035);
+export const EDGE_COLORS = { white: "#fff", cream: "#F3E6CF" } as const;
+export const edgeColorOf = (st: Sticker) =>
+  st.edgeColor === "cream" ? EDGE_COLORS.cream : EDGE_COLORS.white;
+
 /** The smallest and largest a sticker can be, in the post's own pixels (1080 wide). */
 export const SIZE_MIN = 60;
 export const SIZE_MAX = 1620;
