@@ -1,4 +1,5 @@
 import type { Post } from "../lib/types";
+import { MEME_POSTS, MEME_REEL_POSTS } from "./memes";
 import { PAPER_POSTS } from "./papers";
 import { PIECE_CARDS } from "./piece-cards";
 import { SERIES_POSTS } from "./series";
@@ -536,4 +537,11 @@ const READY_POSTS: Post[] = [
   },
 ];
 
-export const POSTS: Post[] = [...READY_POSTS, ...PIECE_CARDS, ...PAPER_POSTS, ...SERIES_POSTS];
+export const POSTS: Post[] = [
+  ...READY_POSTS,
+  ...PIECE_CARDS,
+  ...PAPER_POSTS,
+  ...SERIES_POSTS,
+  ...MEME_POSTS,
+  ...MEME_REEL_POSTS,
+];

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { isMemePost } from "../src/addons/post-kit/content/memes";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { POSTS } from "../src/addons/post-kit/content/posts";
 import { PLAN, REELS } from "../src/addons/post-kit/content/plan";
@@ -327,7 +328,8 @@ describe("the page", () => {
     const edits = screen.getAllByRole("button", { name: /عدّل/ });
     // A Piece card is listed only while its piece is on sale, and this store has no photos.
     expect(edits).toHaveLength(POSTS.filter((post) => post.tpl !== "piece").length);
-    fireEvent.click(edits[0]);
+    // The memes are listed first, then the ready posts in their order.
+    fireEvent.click(edits[POSTS.filter(isMemePost).length]);
     expect(screen.getByRole("button", { name: /رجوع للبوستات/ })).toBeInTheDocument();
     expect(screen.getByLabelText("العنوان")).toHaveValue(POSTS[0].head);
   });
@@ -378,7 +380,9 @@ describe("the page", () => {
       const { default: PostKitPage } =
         await import("../src/addons/post-kit/components/PostKitPage");
       render(<PostKitPage slug="store" />);
-      fireEvent.click(screen.getAllByRole("button", { name: /عدّل/ })[0]);
+      fireEvent.click(
+        screen.getAllByRole("button", { name: /عدّل/ })[POSTS.filter(isMemePost).length],
+      );
       fireEvent.change(screen.getByLabelText("العنوان"), { target: { value: "كلام جديد" } });
       fireEvent.click(screen.getByRole("button", { name: /رجوع للبوستات/ }));
       expect(kitState.edit).toHaveBeenCalledTimes(1);

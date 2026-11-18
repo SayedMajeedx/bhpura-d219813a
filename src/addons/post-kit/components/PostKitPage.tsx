@@ -21,6 +21,7 @@ import { isInstalled } from "@/lib/addons/addon-registry";
 import { deliverCreativeFile } from "@/lib/creative-export";
 import { useI18n } from "@/lib/i18n";
 import { POSTS } from "../content/posts";
+import { isMemePost } from "../content/memes";
 import { REELS, VIDEO_REELS } from "../content/plan";
 import { usePostKit, type PostKit } from "../hooks/use-post-kit";
 import { pieceOnSale } from "../lib/own-posts";
@@ -259,8 +260,9 @@ function PostKitBody() {
   }
   const onSale = POSTS.filter((post) => pieceOnSale(post, kit.photos));
   const keysOf = (tpl: string) => onSale.filter((post) => post.tpl === tpl).map((post) => post.key);
+  const memes = onSale.filter(isMemePost).map((post) => post.key);
   const rest = onSale
-    .filter((post) => post.tpl !== "piece" && post.tpl !== "paper")
+    .filter((post) => post.tpl !== "piece" && post.tpl !== "paper" && !isMemePost(post))
     .map((post) => post.key);
   return (
     <div className="space-y-4">
@@ -300,6 +302,12 @@ function PostKitBody() {
           <PostGrid
             title={isAr ? "بوستاتكم" : "Your posts"}
             keys={kit.ownKeys}
+            kit={kit}
+            open={open}
+          />
+          <PostGrid
+            title={isAr ? "ميمز: حطوا صور الرياكشن" : "Memes: add your reaction photos"}
+            keys={memes}
             kit={kit}
             open={open}
           />

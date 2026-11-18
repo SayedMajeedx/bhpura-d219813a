@@ -234,3 +234,34 @@ describe("words laid anywhere", () => {
     expect(read?.stickers[2]).not.toHaveProperty("text");
   });
 });
+
+describe("the ready memes", () => {
+  it("leave every photo slot to the store, and say what goes in it", async () => {
+    const { MEME_POSTS, MEME_REEL_POSTS } = await import("../src/addons/post-kit/content/memes");
+    const all = [...MEME_POSTS, ...MEME_REEL_POSTS];
+    expect(MEME_POSTS.length).toBeGreaterThanOrEqual(12);
+    for (const meme of all) {
+      expect(TEMPLATES[meme.tpl]).toBeDefined();
+      expect(meme.photo1).toBe(undefined);
+      expect(meme.photo2).toBe(undefined);
+      expect(meme.note?.length).toBeGreaterThan(10);
+      for (const st of meme.stickers) expect(STICKERS[st.id]).toBeDefined();
+      // A price is never written into the kit's content.
+      expect(`${meme.caption} ${meme.head ?? ""}`).not.toMatch(/\d+(\.\d+)?\s*(د\.ب|BHD)/);
+    }
+    for (const meme of MEME_POSTS) expect(meme.caption.length).toBeGreaterThan(10);
+  });
+
+  it("make two-beat reels: tall frames, the set-up held a second and a half", async () => {
+    const { VIDEO_REELS } = await import("../src/addons/post-kit/content/plan");
+    const { POSTS } = await import("../src/addons/post-kit/content/posts");
+    const memeReels = VIDEO_REELS.filter((reel) => reel.key.startsWith("meme-"));
+    expect(memeReels).toHaveLength(2);
+    for (const reel of memeReels) {
+      expect(reel.frames.map((frame) => frame.seconds)).toEqual([1.5, 4]);
+      for (const frame of reel.frames) {
+        expect(POSTS.find((post) => post.key === frame.post)?.size).toBe("story");
+      }
+    }
+  });
+});
