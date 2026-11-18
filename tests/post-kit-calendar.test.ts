@@ -37,7 +37,15 @@ describe("the plan as days", () => {
     expect(plan.find((day) => day.what.includes("كرت القطعة: عباية كلاود"))?.post).toBe(
       "piece-cloud",
     );
-    expect(plan.find((day) => day.what.startsWith("السكليف"))?.post).toBe("sick-1");
+    expect(plan.find((day) => day.what.startsWith("بالكتمان"))?.post).toBe("secret-1");
+  });
+
+  it("opens a meme day on its post, and a meme reel's day on its first beat", () => {
+    expect(plan.find((day) => day.what.includes("شلون كنت أفكر"))?.post).toBe("meme-business");
+    expect(plan.find((day) => day.what.includes("بفكر وأرد عليكم"))?.post).toBe(
+      "meme-reel-reply-1",
+    );
+    expect(plan.find((day) => day.what.includes("قبل المشروع"))?.post).toBe("meme-reel-business-1");
   });
 
   it("has a post for every day the plan calls ready, apart from the two with their own note", () => {
