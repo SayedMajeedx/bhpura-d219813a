@@ -1,6 +1,6 @@
 import { TONES } from "./tones";
 import { coverImage } from "./frame";
-import { frameOf, photoBox, shadowOf } from "./photo-shape";
+import { edgeColorOf, edgeShare, frameOf, photoBox, shadowOf } from "./photo-shape";
 import { roundRect } from "./text";
 import { HANGER_STICKERS } from "./stickers-hanger";
 import { OTHER_STICKERS } from "./stickers-other";
@@ -109,15 +109,23 @@ export function stickerCanvas(id: string): HTMLCanvasElement {
 /** A photo cut out along its own edge with a white margin round it, made once per photo and crop. */
 const CUT_LONG = 900;
 const cutCache = new Map<string, HTMLCanvasElement>();
-function cutOut(img: HTMLImageElement, key: string, crop: Crop, w: number, h: number) {
-  const id = `${key}|${crop.z ?? 1}|${crop.fx ?? 0.5}|${crop.fy ?? 0.05}|${(w / h).toFixed(3)}`;
+function cutOut(
+  img: HTMLImageElement,
+  key: string,
+  crop: Crop,
+  w: number,
+  h: number,
+  share: number,
+  color: string,
+) {
+  const id = `${key}|${crop.z ?? 1}|${crop.fx ?? 0.5}|${crop.fy ?? 0.05}|${(w / h).toFixed(3)}|${share}|${color}`;
   const kept = cutCache.get(id);
   if (kept) return kept;
   // Drawn at a fixed resolution, whatever the size on the post, so a drag never makes it again.
   const long = CUT_LONG;
   const cw = Math.round(w >= h ? long : (long * w) / h);
   const ch = Math.round(w >= h ? (long * h) / w : long);
-  const edge = Math.round(long * 0.035);
+  const edge = Math.round(long * share);
   const art = document.createElement("canvas");
   art.width = cw + edge * 2;
   art.height = ch + edge * 2;
@@ -128,7 +136,7 @@ function cutOut(img: HTMLImageElement, key: string, crop: Crop, w: number, h: nu
   const sc = silhouette.getContext("2d") as Ctx;
   sc.drawImage(art, 0, 0);
   sc.globalCompositeOperation = "source-in";
-  sc.fillStyle = "#fff";
+  sc.fillStyle = color;
   sc.fillRect(0, 0, art.width, art.height);
   const out = document.createElement("canvas");
   out.width = art.width;
@@ -183,7 +191,7 @@ function drawLaidPhoto(ctx: Ctx, st: Sticker, g: Geometry, photos: PhotoBook) {
     });
     coverImage(ctx, ph?.img, -w / 2 + 14, -h / 2 + 14, w - 28, h - 28, crop);
   } else if (frame === "cut" && ph?.img) {
-    const cut = cutOut(ph.img, st.photo ?? "", crop, w, h);
+    const cut = cutOut(ph.img, st.photo ?? "", crop, w, h, edgeShare(st), edgeColorOf(st));
     // The cut's photo is CUT_LONG on its long side: scale that to the box, its white edge with it.
     const k = Math.max(w, h) / CUT_LONG;
     const dw = cut.width * k,

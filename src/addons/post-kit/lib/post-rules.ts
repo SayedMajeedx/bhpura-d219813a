@@ -142,3 +142,44 @@ export function duplicated(post: Post, i: number): { post: Post; index: number }
 export function withoutSticker(post: Post, i: number): Post {
   return { ...post, stickers: post.stickers.filter((_, at) => at !== i) };
 }
+
+/**
+ * A sticker just cut from a photo goes where that photo was laid on the post, with a thin white
+ * edge as a sticker has; a photo cut from the library, or from a template's slot, is laid on top.
+ * Its old crop goes: the sticker is trimmed to what it kept, so its shape is new.
+ */
+export function withCutout(
+  post: Post,
+  sourceKey: string,
+  stickerKey: string,
+): { post: Post; index: number } {
+  let index = -1;
+  const stickers = post.stickers.map((st, i) => {
+    if (st.id !== "photo" || st.photo !== sourceKey) return st;
+    index = i;
+    return {
+      ...st,
+      photo: stickerKey,
+      crop: undefined,
+      frame: "cut" as const,
+      edge: "thin" as const,
+    };
+  });
+  if (index >= 0) return { post: { ...post, stickers }, index };
+  return {
+    post: { ...post, stickers: [...post.stickers, laidSticker(stickerKey)] },
+    index: post.stickers.length,
+  };
+}
+
+/** One of the store's own stickers, laid on the post as a sticker. */
+export const laidSticker = (key: string): Sticker => ({
+  id: "photo",
+  photo: key,
+  x: 0.5,
+  y: 0.62,
+  s: 520,
+  r: 0,
+  frame: "cut",
+  edge: "thin",
+});

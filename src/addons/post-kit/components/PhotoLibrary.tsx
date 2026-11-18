@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Scissors, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +19,8 @@ export function PhotoLibrary({
   editingCard,
   onPick,
   onRemoved,
+  onCutout,
+  onOfferCutout,
 }: {
   kit: PostKit;
   current?: string;
@@ -31,6 +33,10 @@ export function PhotoLibrary({
   editingCard: boolean;
   onPick: (key: string) => void;
   onRemoved: (key: string, fallback: string) => void;
+  /** Opens the background remover on a photo. */
+  onCutout: (key: string) => void;
+  /** An upload whose edge is one flat colour: offer to take it off. */
+  onOfferCutout: (key: string) => void;
 }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -70,55 +76,70 @@ export function PhotoLibrary({
         </div>
       ) : null}
       <div className="flex gap-2 overflow-x-auto p-0.5 lg:grid lg:max-h-80 lg:grid-cols-[repeat(auto-fill,minmax(88px,1fr))] lg:overflow-y-auto lg:overflow-x-hidden">
-        {photoOrder(kit.photos).map(([key, photo]) => (
-          <div key={key} className="relative w-[88px] shrink-0 lg:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              aria-pressed={current === key}
-              aria-label={`${isAr ? "اختر صورة" : "Choose the photo"} ${photo.label}`}
-              onClick={() => onPick(key)}
-              className="grid h-auto w-full gap-1 whitespace-normal rounded-lg bg-card p-1 text-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-            >
-              <img
-                crossOrigin="anonymous"
-                src={photo.img?.src ?? photo.url ?? ""}
-                alt=""
-                className="aspect-[3/4] w-full rounded-md object-cover object-top"
-              />
-              <span className="line-clamp-2 break-words text-xs leading-snug">{photo.label}</span>
-            </Button>
-            {photo.upload ? (
+        {photoOrder(kit.photos)
+          .filter(([, photo]) => !photo.sticker)
+          .map(([key, photo]) => (
+            <div key={key} className="relative w-[88px] shrink-0 lg:w-auto">
               <Button
                 type="button"
-                size="sm"
-                variant={armed === key ? "destructive" : "secondary"}
-                className="absolute start-1 top-1 h-8 min-w-8 px-1.5 text-xs"
-                aria-label={`${isAr ? "احذف صورة" : "Delete the photo"} ${photo.label}`}
-                onClick={() => {
-                  if (armed !== key) {
-                    setArmed(key);
-                    setTimeout(() => setArmed((now) => (now === key ? null : now)), 3000);
-                    return;
-                  }
-                  setArmed(null);
-                  void kit.removeUpload(key).then((result) => {
-                    if (result) onRemoved(key, result.fallback);
-                    else {
-                      toast.error(
-                        isAr
-                          ? "ما قدرنا نحذف الصورة. جرّب مرة ثانية."
-                          : "Could not delete the photo. Try again.",
-                      );
-                    }
-                  });
-                }}
+                variant="outline"
+                aria-pressed={current === key}
+                aria-label={`${isAr ? "اختر صورة" : "Choose the photo"} ${photo.label}`}
+                onClick={() => onPick(key)}
+                className="grid h-auto w-full gap-1 whitespace-normal rounded-lg bg-card p-1 text-foreground aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
               >
-                {armed === key ? isAr ? "تحذفها؟" : "Delete?" : <X className="size-4" />}
+                <img
+                  crossOrigin="anonymous"
+                  src={photo.img?.src ?? photo.url ?? ""}
+                  alt=""
+                  className="aspect-[3/4] w-full rounded-md object-cover object-top"
+                />
+                <span className="line-clamp-2 break-words text-xs leading-snug">{photo.label}</span>
               </Button>
-            ) : null}
-          </div>
-        ))}
+              {photo.img ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="absolute end-1 top-1 h-8 min-w-8 px-1.5"
+                  aria-label={`${isAr ? "شيل الخلفية من صورة" : "Remove the background of"} ${photo.label}`}
+                  title={isAr ? "شيل الخلفية" : "Remove the background"}
+                  onClick={() => onCutout(key)}
+                >
+                  <Scissors className="size-4" />
+                </Button>
+              ) : null}
+              {photo.upload ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={armed === key ? "destructive" : "secondary"}
+                  className="absolute start-1 top-1 h-8 min-w-8 px-1.5 text-xs"
+                  aria-label={`${isAr ? "احذف صورة" : "Delete the photo"} ${photo.label}`}
+                  onClick={() => {
+                    if (armed !== key) {
+                      setArmed(key);
+                      setTimeout(() => setArmed((now) => (now === key ? null : now)), 3000);
+                      return;
+                    }
+                    setArmed(null);
+                    void kit.removeUpload(key).then((result) => {
+                      if (result) onRemoved(key, result.fallback);
+                      else {
+                        toast.error(
+                          isAr
+                            ? "ما قدرنا نحذف الصورة. جرّب مرة ثانية."
+                            : "Could not delete the photo. Try again.",
+                        );
+                      }
+                    });
+                  }}
+                >
+                  {armed === key ? isAr ? "تحذفها؟" : "Delete?" : <X className="size-4" />}
+                </Button>
+              ) : null}
+            </div>
+          ))}
       </div>
       <div className="flex flex-wrap gap-2">
         <input
@@ -133,8 +154,9 @@ export function PhotoLibrary({
             const files = [...(e.target.files ?? [])];
             e.target.value = "";
             if (!files.length) return;
-            const { added, failed } = await kit.addUploads(files);
+            const { added, failed, plainEdge } = await kit.addUploads(files);
             if (added[0]) onPick(added[0]);
+            if (plainEdge[0]) onOfferCutout(plainEdge[0]);
             if (failed) {
               toast.error(
                 isAr

@@ -30,22 +30,25 @@ import {
   duplicated,
   fieldsOf,
   hasPhotoSlot,
+  laidSticker,
   movedLayer,
   newSticker,
   photoNotes,
   withCrop,
+  withCutout,
   withPhoto,
   withSticker,
   withoutSticker,
 } from "../lib/post-rules";
 import { renderPost } from "../lib/render";
-import { STICKERS, stickerCanvas } from "../lib/stickers";
 import { TONES } from "../lib/tones";
 import type { Post } from "../lib/types";
 import { copyWords, savePost } from "./PostKitPage";
+import { CutoutDialog } from "./CutoutDialog";
 import { PhotoLibrary } from "./PhotoLibrary";
 import { PostTextFields } from "./PostTextFields";
 import { SelectionToolbar } from "./SelectionToolbar";
+import { StickerPicker } from "./StickerPicker";
 
 function Choice({
   active,
@@ -67,17 +70,6 @@ function Choice({
       {children}
     </Button>
   );
-}
-
-function StickerThumb({ id }: { id: string }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    canvas.width = canvas.height = 140;
-    canvas.getContext("2d")?.drawImage(stickerCanvas(id), 0, 0, 140, 140);
-  }, [id]);
-  return <canvas ref={ref} aria-hidden="true" className="block h-auto w-full" />;
 }
 
 /** Whether what the merchant just did is in the store: never "saved" until it really is. */
@@ -240,11 +232,26 @@ export function PostMaker({
     setPendingPlace(null);
   }, [pendingPlace, kit.photos]);
 
+  // The photo whose background is being taken off, and the offer to after an upload.
+  const [cutting, setCutting] = useState<string | null>(null);
+  const offerCutout = (key: string) =>
+    toast(isAr ? "خلفية الصورة لون واحد. نشيلها؟" : "This background is one colour. Remove it?", {
+      action: { label: isAr ? "شيل الخلفية" : "Remove it", onClick: () => setCutting(key) },
+    });
+  const removeFromPost = (key: string, fallback: string) =>
+    setPost((prev) => ({
+      ...prev,
+      photo1: prev.photo1 === key ? fallback : prev.photo1,
+      photo2: prev.photo2 === key ? fallback : prev.photo2,
+      stickers: prev.stickers.filter((st) => st.photo !== key),
+    }));
+
   /** Pictures pasted or dropped on the maker go to the store's photos and onto the post. */
   const takeFiles = async (files: File[]) => {
     if (!files.length) return;
-    const { added, failed } = await kit.addUploads(files);
+    const { added, failed, plainEdge } = await kit.addUploads(files);
     setPendingPlace(added[0] ?? null);
+    if (plainEdge[0]) offerCutout(plainEdge[0]);
     if (failed) {
       toast.error(
         isAr
@@ -358,6 +365,7 @@ export function PostMaker({
               onChange={setSticker}
               onLayer={(way) => reselect(movedLayer(post, selected, way))}
               onDuplicate={() => reselect(duplicated(post, selected))}
+              onCutout={sticker.photo ? () => setCutting(sticker.photo ?? null) : undefined}
               onRemove={() => {
                 setPost((prev) => withoutSticker(prev, selected));
                 setSelected(-1);
@@ -475,14 +483,9 @@ export function PostMaker({
             hasSlot={hasPhotoSlot(post)}
             editingCard={sticker?.id === "photo"}
             onPick={placePhoto}
-            onRemoved={(key, fallback) =>
-              setPost((prev) => ({
-                ...prev,
-                photo1: prev.photo1 === key ? fallback : prev.photo1,
-                photo2: prev.photo2 === key ? fallback : prev.photo2,
-                stickers: prev.stickers.filter((st) => st.photo !== key),
-              }))
-            }
+            onRemoved={removeFromPost}
+            onCutout={setCutting}
+            onOfferCutout={offerCutout}
           />
           {crop ? (
             <div className="space-y-2">
@@ -539,32 +542,20 @@ export function PostMaker({
 
           <PostTextFields post={post} onChange={update} />
 
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-foreground">
-              {isAr ? "الستيكرات: اضغط عشان تضيفين" : "Stickers: tap to add"}
-            </p>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-2">
-              {Object.entries(STICKERS)
-                .filter(([, def]) => !def.photoCard)
-                .map(([id, def]) => (
-                  <Button
-                    key={id}
-                    type="button"
-                    variant="outline"
-                    aria-label={`${isAr ? "أضف ستيكر" : "Add sticker"} ${isAr ? def.name.ar : def.name.en}`}
-                    title={isAr ? def.name.ar : def.name.en}
-                    className="block h-auto min-h-11 w-full whitespace-normal rounded-lg bg-muted p-1"
-                    onClick={() => {
-                      const next = [...post.stickers, newSticker(id)];
-                      update({ stickers: next });
-                      setSelected(next.length - 1);
-                    }}
-                  >
-                    <StickerThumb id={id} />
-                  </Button>
-                ))}
-            </div>
-          </div>
+          <StickerPicker
+            kit={kit}
+            onAddDrawn={(id) => {
+              const next = [...post.stickers, newSticker(id)];
+              update({ stickers: next });
+              setSelected(next.length - 1);
+            }}
+            onAddOwn={(key) => {
+              const next = [...post.stickers, laidSticker(key)];
+              update({ stickers: next });
+              setSelected(next.length - 1);
+            }}
+            onRemoved={removeFromPost}
+          />
           <div className="space-y-1.5">
             <Label htmlFor={`${uid}-caption`}>{isAr ? "الكابشن" : "Caption"}</Label>
             <Textarea
@@ -577,6 +568,15 @@ export function PostMaker({
           </div>
         </div>
       </div>
+      <CutoutDialog
+        kit={kit}
+        photoKey={cutting}
+        onClose={() => setCutting(null)}
+        onSaved={(stickerKey) => {
+          if (cutting) reselect(withCutout(latest.current, cutting, stickerKey));
+          setCutting(null);
+        }}
+      />
     </div>
   );
 }

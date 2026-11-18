@@ -114,7 +114,8 @@ export function usePostKit() {
   );
 
   const removeUpload = useCallback(
-    (key: string) => removeFromStore(key, Object.keys(photos).find((k) => k !== key) ?? ""),
+    (key: string) =>
+      removeFromStore(key, Object.keys(photos).find((k) => k !== key && !photos[k].sticker) ?? ""),
     [photos, removeFromStore],
   );
 
@@ -142,6 +143,7 @@ export function usePostKit() {
     saveState: store.saveState,
     retrySave: store.retrySave,
     addUploads: store.addUploads,
+    addSticker: store.addSticker,
     removeUpload,
   };
 }

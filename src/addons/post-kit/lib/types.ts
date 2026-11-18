@@ -40,7 +40,14 @@ export type Sticker = {
   frame?: PhotoFrame;
   /** A photo's shadow; none written is its frame's own. */
   shadow?: boolean;
+  /** A cut-out's white edge: thin, or as it always was. */
+  edge?: StickerEdge;
+  /** A cut-out's edge in cream rather than white. */
+  edgeColor?: EdgeColor;
 };
+
+export type StickerEdge = "thin";
+export type EdgeColor = "cream";
 
 export type StickerDef = {
   name: Words;
@@ -94,6 +101,10 @@ export type Photo = {
   img?: HTMLImageElement;
   url?: string;
   upload?: boolean;
+  /** A sticker the store cut from a photo: listed with the stickers, not the photos. */
+  sticker?: boolean;
+  /** The upload a sticker was cut from, while it is kept. */
+  source?: string;
 };
 export type PhotoBook = Record<string, Photo>;
 

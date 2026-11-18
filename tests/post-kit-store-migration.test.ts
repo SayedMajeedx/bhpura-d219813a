@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import migration from "../supabase/migrations/20261120100000_post_kit_store.sql?raw";
+import stickers from "../supabase/migrations/20261214100000_post_kit_stickers.sql?raw";
 
 // A store's edited posts and own photos (migration 20261120100000), in a real Postgres, as the
 // roles a browser really uses: who reads, who writes, and what a row may hold.
@@ -68,6 +69,7 @@ beforeAll(async () => {
     INSERT INTO public.brand_addons VALUES ('${PURA}', 'post-kit', 'installed');
   `);
   await db.exec(migration);
+  await db.exec(stickers);
 });
 
 beforeEach(async () => {
@@ -180,5 +182,98 @@ describe("what a row may hold", () => {
     await db.exec(`DELETE FROM public.brands WHERE id = '${PURA}'`);
     expect((await db.query("SELECT 1 FROM public.post_kit_edits")).rows).toEqual([]);
     await db.exec(`INSERT INTO public.brands VALUES ('${PURA}')`);
+  });
+});
+
+describe("a sticker cut from a photo (migration 20261214100000)", () => {
+  const insert = `INSERT INTO public.post_kit_photos (brand_id, name, url, kind, source_id, width, height)
+    VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
+  const photo = async (brand = PURA, user = USER.owner) =>
+    (
+      await as<{ id: string }>(user, insert, [
+        brand,
+        "صورة",
+        photoUrl(brand),
+        "photo",
+        null,
+        1200,
+        900,
+      ])
+    ).rows[0].id;
+
+  it("keeps a photo as before, a photo by default", async () => {
+    await as(
+      USER.owner,
+      "INSERT INTO public.post_kit_photos (brand_id, name, url) VALUES ($1, 'قديمة', $2)",
+      [PURA, photoUrl(PURA)],
+    );
+    const { rows } = await db.query<{ kind: string; source_id: string | null }>(
+      "SELECT kind, source_id FROM public.post_kit_photos",
+    );
+    expect(rows).toEqual([{ kind: "photo", source_id: null }]);
+  });
+
+  it("keeps a sticker with the photo it came from and its size", async () => {
+    const source = await photo();
+    await as(USER.owner, insert, [
+      PURA,
+      "ستيكر",
+      photoUrl(PURA, "post", "ab12.png"),
+      "sticker",
+      source,
+      640,
+      480,
+    ]);
+    const { rows } = await as<{ kind: string; source_id: string; width: number }>(
+      USER.owner,
+      "SELECT kind, source_id, width FROM public.post_kit_photos WHERE kind = 'sticker'",
+    );
+    expect(rows).toEqual([{ kind: "sticker", source_id: source, width: 640 }]);
+  });
+
+  it("refuses a sticker that is not a PNG, an unknown kind and a size out of bounds", async () => {
+    const png = photoUrl(PURA, "post", "ab12.png");
+    await refused(as(USER.owner, insert, [PURA, "x", photoUrl(PURA), "sticker", null, 10, 10]));
+    await refused(as(USER.owner, insert, [PURA, "x", png, "meme", null, 10, 10]));
+    await refused(as(USER.owner, insert, [PURA, "x", png, "sticker", null, 0, 10]));
+    await refused(as(USER.owner, insert, [PURA, "x", png, "sticker", null, 10, 20000]));
+  });
+
+  it("never names another store's photo as its source", async () => {
+    await db.exec(`INSERT INTO public.brand_addons VALUES ('${OTHER}', 'post-kit', 'installed')`);
+    try {
+      const theirs = await photo(OTHER, USER.otherOwner);
+      await refused(
+        as(USER.owner, insert, [
+          PURA,
+          "x",
+          photoUrl(PURA, "post", "ab12.png"),
+          "sticker",
+          theirs,
+          10,
+          10,
+        ]),
+      );
+    } finally {
+      await db.exec(`DELETE FROM public.brand_addons WHERE brand_id = '${OTHER}'`);
+    }
+  });
+
+  it("keeps the sticker when its photo is deleted, and forgets the source", async () => {
+    const source = await photo();
+    await as(USER.owner, insert, [
+      PURA,
+      "ستيكر",
+      photoUrl(PURA, "post", "ab12.png"),
+      "sticker",
+      source,
+      10,
+      10,
+    ]);
+    await as(USER.owner, "DELETE FROM public.post_kit_photos WHERE id = $1", [source]);
+    const { rows } = await db.query<{ kind: string; source_id: string | null }>(
+      "SELECT kind, source_id FROM public.post_kit_photos",
+    );
+    expect(rows).toEqual([{ kind: "sticker", source_id: null }]);
   });
 });
