@@ -1,13 +1,15 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
+  ClipboardPaste,
   Copy,
   CopyPlus,
   Download,
-  FlipHorizontal,
+  Redo2,
   RotateCcw,
   Trash2,
+  Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,18 +19,24 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import type { PostKit } from "../hooks/use-post-kit";
+import { useStageGestures } from "../hooks/use-stage-gestures";
+import { canRedo, canUndo, commit, redo, startHistory, undo } from "../lib/history";
+import { imageFiles, isTyping } from "../lib/pasted";
 import { geometry } from "../lib/frame";
 import { TEMPLATES } from "../lib/layouts";
 import { isOwnPost } from "../lib/own-posts";
 import {
   cropOf,
+  duplicated,
   fieldsOf,
   hasPhotoSlot,
+  movedLayer,
   newSticker,
   photoNotes,
-  stickerAt,
   withCrop,
   withPhoto,
+  withSticker,
+  withoutSticker,
 } from "../lib/post-rules";
 import { renderPost } from "../lib/render";
 import { STICKERS, stickerCanvas } from "../lib/stickers";
@@ -37,6 +45,7 @@ import type { Post } from "../lib/types";
 import { copyWords, savePost } from "./PostKitPage";
 import { PhotoLibrary } from "./PhotoLibrary";
 import { PostTextFields } from "./PostTextFields";
+import { SelectionToolbar } from "./SelectionToolbar";
 
 function Choice({
   active,
@@ -121,7 +130,6 @@ export function PostMaker({
   const [slot, setSlot] = useState<"photo1" | "photo2">("photo1");
   const [addOnTop, setAddOnTop] = useState(false);
   const stage = useRef<HTMLCanvasElement>(null);
-  const drag = useRef<{ dx: number; dy: number } | null>(null);
   const opened = useRef(JSON.stringify(post));
   const { saveEdit } = kit;
   const Back = isAr ? ArrowRight : ArrowLeft;
@@ -129,9 +137,18 @@ export function PostMaker({
   const sticker = post.stickers[selected];
   const g = geometry(post);
 
+  const { handleRadius, canvasProps } = useStageGestures({
+    stage,
+    post,
+    setPost,
+    selected,
+    setSelected,
+    photos: kit.photos,
+  });
+
   useEffect(() => {
-    if (stage.current) renderPost(stage.current, post, kit.photos, 1, selected);
-  }, [post, selected, kit.photos]);
+    if (stage.current) renderPost(stage.current, post, kit.photos, 1, selected, handleRadius);
+  }, [post, selected, kit.photos, handleRadius]);
 
   // A tap that only selects a sticker changes nothing, so nothing is saved for it.
   useEffect(() => {
@@ -147,6 +164,29 @@ export function PostMaker({
   const latest = useRef(post);
   latest.current = post;
 
+  // Undo keeps a step each time the merchant pauses, not each pixel of a drag.
+  const history = useRef(startHistory(post));
+  const [, setHistoryTick] = useState(0);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = commit(history.current, post);
+      if (next !== history.current) {
+        history.current = next;
+        setHistoryTick((n) => n + 1);
+      }
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [post]);
+  // Reads the post through `latest`, so one function serves the buttons and the keys.
+  const step = useCallback((way: "undo" | "redo") => {
+    const result = (way === "undo" ? undo : redo)(history.current, latest.current);
+    if (!result) return;
+    history.current = result.history;
+    setPost(result.post);
+    setSelected((i) => (result.post.stickers[i] ? i : -1));
+    setHistoryTick((n) => n + 1);
+  }, []);
+
   // Leaving straight after a change still keeps it: the timer above is cleared on the way out.
   useEffect(
     () => () => {
@@ -156,37 +196,25 @@ export function PostMaker({
     [saveEdit],
   );
 
-  // A finger on a sticker moves the sticker; anywhere else it scrolls the page.
-  useEffect(() => {
-    const canvas = stage.current;
-    if (!canvas) return;
-    const onTouch = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      if (!touch) return;
-      const box = canvas.getBoundingClientRect();
-      const x = (touch.clientX - box.left) / box.width;
-      const y = (touch.clientY - box.top) / box.height;
-      const size = geometry(latest.current);
-      if (stickerAt(latest.current, x, y, size.W, size.H) >= 0) e.preventDefault();
-    };
-    canvas.addEventListener("touchstart", onTouch, { passive: false });
-    return () => canvas.removeEventListener("touchstart", onTouch);
-  }, []);
-
   const update = (change: Partial<Post>) => setPost((prev) => ({ ...prev, ...change }));
   const setSticker = (change: Partial<Post["stickers"][number]>) =>
-    setPost((prev) => ({
-      ...prev,
-      stickers: prev.stickers.map((st, i) => (i === selected ? { ...st, ...change } : st)),
-    }));
+    setPost((prev) => withSticker(prev, selected, change));
+  const reselect = (result: { post: Post; index: number }) => {
+    setPost(result.post);
+    setSelected(result.index);
+  };
 
-  const placePhoto = (key: string) => {
+  const placePhoto = (key: string, onTop = false) => {
     const photo = kit.photos[key];
     if (!photo) return;
-    const card = sticker?.id === "photo" ? selected : undefined;
-    const placesOnTop = card === undefined && (addOnTop || !hasPhotoSlot(post));
+    const card = sticker?.id === "photo" && !onTop ? selected : undefined;
+    const placesOnTop = card === undefined && (onTop || addOnTop || !hasPhotoSlot(post));
     const notes = card === undefined && !placesOnTop ? photoNotes(post, slot, kit.photos) : [];
-    const next = withPhoto(post, key, photo, { selected: card, slot, addOnTop });
+    const next = withPhoto(post, key, photo, {
+      selected: card,
+      slot,
+      addOnTop: onTop || addOnTop,
+    });
     setPost(next);
     if (placesOnTop) setSelected(next.stickers.length - 1);
     setAddOnTop(false);
@@ -202,14 +230,75 @@ export function PostMaker({
     }
   };
 
-  const pointOf = (e: { clientX: number; clientY: number }) => {
-    const box = stage.current?.getBoundingClientRect();
-    if (!box) return { x: 0, y: 0 };
-    return { x: (e.clientX - box.left) / box.width, y: (e.clientY - box.top) / box.height };
+  // A picture pasted or dropped is in the store's book on a later render: laid on top from there.
+  const [pendingPlace, setPendingPlace] = useState<string | null>(null);
+  const placeRef = useRef(placePhoto);
+  placeRef.current = placePhoto;
+  useEffect(() => {
+    if (!pendingPlace || !kit.photos[pendingPlace]) return;
+    placeRef.current(pendingPlace, true);
+    setPendingPlace(null);
+  }, [pendingPlace, kit.photos]);
+
+  /** Pictures pasted or dropped on the maker go to the store's photos and onto the post. */
+  const takeFiles = async (files: File[]) => {
+    if (!files.length) return;
+    const { added, failed } = await kit.addUploads(files);
+    setPendingPlace(added[0] ?? null);
+    if (failed) {
+      toast.error(
+        isAr
+          ? "ما قدرنا نرفع الصورة. تأكد من النت، وجرّب JPG أو PNG."
+          : "The photo did not upload. Check your connection and try JPG or PNG.",
+      );
+    }
+  };
+  const takeFilesRef = useRef(takeFiles);
+  takeFilesRef.current = takeFiles;
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      const files = imageFiles(e.clipboardData?.files);
+      if (!files.length) return;
+      e.preventDefault();
+      void takeFilesRef.current(files);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== "z" || isTyping(e.target)) return;
+      e.preventDefault();
+      step(e.shiftKey ? "redo" : "undo");
+    };
+    window.addEventListener("paste", onPaste);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("paste", onPaste);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [step]);
+
+  const pasteFromClipboard = async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      const files: File[] = [];
+      for (const item of items) {
+        const type = item.types.find((t) => t.startsWith("image/"));
+        if (type) files.push(new File([await item.getType(type)], "pasted", { type }));
+      }
+      if (files.length) {
+        await takeFiles(files);
+        return;
+      }
+    } catch {
+      // A browser that refuses to read the clipboard says nothing; the message below helps.
+    }
+    toast(
+      isAr
+        ? "ما لقينا صورة منسوخة. انسخ الصورة نفسها، مو رابطها."
+        : "No copied picture found. Copy the picture itself, not its link.",
+    );
   };
 
-  const crop = hasPhotoSlot(post) || sticker?.id === "photo" ? cropOf(post, slot, sticker) : null;
-  const cropCard = sticker?.id === "photo" ? selected : undefined;
+  // The slot's crop: a laid photo's own is in the toolbar under the post.
+  const crop = hasPhotoSlot(post) && sticker?.id !== "photo" ? cropOf(post, slot) : null;
   const cropSlider = (
     name: "z" | "fx" | "fy",
     ar: string,
@@ -226,9 +315,7 @@ export function PostMaker({
         max={max}
         step={0.01}
         value={[crop?.[name] ?? min]}
-        onValueChange={([value]) =>
-          setPost((prev) => withCrop(prev, slot, { [name]: value }, cropCard))
-        }
+        onValueChange={([value]) => setPost((prev) => withCrop(prev, slot, { [name]: value }))}
       />
     </div>
   );
@@ -250,44 +337,64 @@ export function PostMaker({
             tabIndex={0}
             aria-label={
               isAr
-                ? "معاينة البوست. اسحب الستيكر، أو اختره واستخدمي الأسهم."
-                : "The post. Drag a sticker, or select one and use the arrow keys."
+                ? "معاينة البوست. اسحب الستيكر أو الصورة، وكبّر وصغّر من النقطة اللي في الزاوية، أو استخدم الأسهم و + و −."
+                : "The post. Drag a sticker or photo, resize it from its corner dot, or use the arrow keys and + and −."
             }
             className="block h-auto max-h-[80vh] w-auto max-w-full cursor-grab touch-pan-y rounded-lg bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            onPointerDown={(e) => {
-              const pt = pointOf(e);
-              const i = stickerAt(post, pt.x, pt.y, g.W, g.H);
-              setSelected(i);
-              if (i >= 0) {
-                drag.current = { dx: post.stickers[i].x - pt.x, dy: post.stickers[i].y - pt.y };
-                e.currentTarget.setPointerCapture(e.pointerId);
-              }
-            }}
-            onPointerMove={(e) => {
-              if (!drag.current || selected < 0) return;
-              const pt = pointOf(e);
-              setSticker({
-                x: Math.min(1, Math.max(0, pt.x + drag.current.dx)),
-                y: Math.min(1, Math.max(0, pt.y + drag.current.dy)),
-              });
-            }}
-            onPointerUp={() => (drag.current = null)}
-            onPointerCancel={() => (drag.current = null)}
-            onKeyDown={(e) => {
-              if (!sticker) return;
-              const step = 0.012;
-              const moves: Record<string, [number, number]> = {
-                ArrowLeft: [-step, 0],
-                ArrowRight: [step, 0],
-                ArrowUp: [0, -step],
-                ArrowDown: [0, step],
-              };
-              const move = moves[e.key];
-              if (!move) return;
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
               e.preventDefault();
-              setSticker({ x: sticker.x + move[0], y: sticker.y + move[1] });
+              void takeFiles(imageFiles(e.dataTransfer.files));
             }}
+            {...canvasProps}
           />
+          {sticker ? (
+            <SelectionToolbar
+              sticker={sticker}
+              index={selected}
+              count={post.stickers.length}
+              photos={kit.photos}
+              width={g.W}
+              onChange={setSticker}
+              onLayer={(way) => reselect(movedLayer(post, selected, way))}
+              onDuplicate={() => reselect(duplicated(post, selected))}
+              onRemove={() => {
+                setPost((prev) => withoutSticker(prev, selected));
+                setSelected(-1);
+              }}
+            />
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!canUndo(history.current, post)}
+              onClick={() => step("undo")}
+            >
+              <Undo2 className="size-4" />
+              {isAr ? "تراجع" : "Undo"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!canRedo(history.current, post)}
+              onClick={() => step("redo")}
+            >
+              <Redo2 className="size-4" />
+              {isAr ? "إعادة" : "Redo"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => void pasteFromClipboard()}
+            >
+              <ClipboardPaste className="size-4" />
+              {isAr ? "الصق صورة" : "Paste a picture"}
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button type="button" onClick={() => void savePost(post, kit, isAr)}>
               <Download className="size-4" />
@@ -378,10 +485,17 @@ export function PostMaker({
             }
           />
           {crop ? (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {cropSlider("z", "تقريب الصورة", "Zoom", 1, 3)}
-              {cropSlider("fx", "يمين ويسار", "Left and right", 0, 1)}
-              {cropSlider("fy", "فوق وتحت", "Up and down", 0, 1)}
+            <div className="space-y-2">
+              <div className="grid gap-4 sm:grid-cols-3">
+                {cropSlider("z", "تقريب داخل الإطار", "Zoom inside the frame", 1, 3)}
+                {cropSlider("fx", "يمين ويسار", "Left and right", 0, 1)}
+                {cropSlider("fy", "فوق وتحت", "Up and down", 0, 1)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "هذي تقص الصورة داخل مكانها في التمبلت. لتكبير الصورة نفسها وتصغيرها وتحريكها بحرية: «أضف صورة فوق البوست»."
+                  : "These crop the photo inside its place in the layout. To size and move a photo freely, lay it on the post."}
+              </p>
             </div>
           ) : null}
 
@@ -451,62 +565,6 @@ export function PostMaker({
                 ))}
             </div>
           </div>
-          {sticker ? (
-            <div className="space-y-3 rounded-lg border border-dashed border-border p-3">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-foreground">{isAr ? "الحجم" : "Size"}</p>
-                  <Slider
-                    dir="ltr"
-                    aria-label={isAr ? "حجم الستيكر" : "Sticker size"}
-                    min={90}
-                    max={1100}
-                    step={5}
-                    value={[sticker.s]}
-                    onValueChange={([value]) => setSticker({ s: value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-foreground">{isAr ? "الميلان" : "Tilt"}</p>
-                  <Slider
-                    dir="ltr"
-                    aria-label={isAr ? "ميلان الستيكر" : "Sticker tilt"}
-                    min={-45}
-                    max={45}
-                    step={1}
-                    value={[sticker.r ?? 0]}
-                    onValueChange={([value]) => setSticker({ r: value })}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {sticker.id !== "photo" ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSticker({ flip: !sticker.flip })}
-                  >
-                    <FlipHorizontal className="size-4" />
-                    {isAr ? "اقلبه" : "Flip"}
-                  </Button>
-                ) : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    update({ stickers: post.stickers.filter((_, i) => i !== selected) });
-                    setSelected(-1);
-                  }}
-                >
-                  <Trash2 className="size-4" />
-                  {isAr ? "احذفه" : "Remove"}
-                </Button>
-              </div>
-            </div>
-          ) : null}
-
           <div className="space-y-1.5">
             <Label htmlFor={`${uid}-caption`}>{isAr ? "الكابشن" : "Caption"}</Label>
             <Textarea

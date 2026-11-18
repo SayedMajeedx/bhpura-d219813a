@@ -80,7 +80,22 @@ export const oldPhotos = async (brandId: string): Promise<OldPhoto[]> =>
 export const forgetOldPhoto = (brandId: string, id: string) =>
   run(brandId, "readwrite", (store) => store.delete(id));
 
-/** A phone's photo can be 12 megapixels: keep what a 1080 post can show. */
+/**
+ * Whether a picture has see-through pixels, read from its RGBA bytes. A sticker saved as a PNG
+ * has them; a photo does not. A pixel only a touch short of solid is a photo's edge, not a hole.
+ */
+export function hasTransparency(rgba: ArrayLike<number>): boolean {
+  for (let i = 3; i < rgba.length; i += 4) if (rgba[i] < 250) return true;
+  return false;
+}
+
+/** The kind a shrunk picture is saved as: PNG keeps its see-through parts, JPEG is smaller. */
+export const savedType = (seeThrough: boolean) => (seeThrough ? "image/png" : "image/jpeg");
+
+/**
+ * A phone's photo can be 12 megapixels: keep what a 1080 post can show. A picture with
+ * see-through parts stays a PNG: saved as a JPEG, they came out black.
+ */
 export async function shrinkPhoto(file: Blob): Promise<Blob | null> {
   const url = URL.createObjectURL(file);
   try {
@@ -89,8 +104,17 @@ export async function shrinkPhoto(file: Blob): Promise<Blob | null> {
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(img.width * k);
     canvas.height = Math.round(img.height * k);
-    canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+    // A JPEG has nothing see-through to find; anything else is read once to know.
+    const seeThrough =
+      !/jpe?g/i.test(file.type) && ctx
+        ? hasTransparency(ctx.getImageData(0, 0, canvas.width, canvas.height).data)
+        : false;
+    const type = savedType(seeThrough);
+    return await new Promise((resolve) =>
+      canvas.toBlob(resolve, type, type === "image/jpeg" ? 0.9 : undefined),
+    );
   } finally {
     URL.revokeObjectURL(url);
   }

@@ -1,6 +1,7 @@
 import { photoCrop } from "./frame";
 import { STICKERS } from "./stickers";
 import { TEMPLATES } from "./layouts";
+import { topStickerAt } from "./photo-shape";
 import type { Crop, Photo, PhotoBook, Post, Sticker } from "./types";
 
 /** The pure rules behind the maker's buttons: each takes a post and returns the next one. */
@@ -30,7 +31,8 @@ export function withPhoto(post: Post, key: string, photo: Photo, target: PhotoTa
     return next;
   }
   if (target.addOnTop || !hasPhotoSlot(post)) {
-    next.stickers.push({ id: "photo", photo: key, x: 0.3, y: 0.68, s: 460, r: -4 });
+    // Laid bare and straight, in its own shape, as a meme's photo is: a frame is a choice after.
+    next.stickers.push({ id: "photo", photo: key, x: 0.5, y: 0.62, s: 520, r: 0, frame: "none" });
     return next;
   }
   next[target.slot] = key;
@@ -90,11 +92,53 @@ export function newSticker(id: string): Sticker {
     : { id, x: 0.3, y: 0.7, s: 320, r: 0 };
 }
 
-/** The sticker under a point of the post, topmost first. */
-export function stickerAt(post: Post, x: number, y: number, W: number, H: number): number {
-  for (let i = post.stickers.length - 1; i >= 0; i--) {
-    const st = post.stickers[i];
-    if (Math.abs(x - st.x) * W < st.s * 0.42 && Math.abs(y - st.y) * H < st.s * 0.42) return i;
-  }
-  return -1;
+/** The sticker under a point of the post, topmost first, its turn and a photo's shape counted. */
+export function stickerAt(
+  post: Post,
+  x: number,
+  y: number,
+  W: number,
+  H: number,
+  photos: PhotoBook = {},
+): number {
+  return topStickerAt(post, x, y, { W, H }, photos);
+}
+
+/** One sticker's change, by its place in the list. */
+export function withSticker(post: Post, i: number, change: Partial<Sticker>): Post {
+  if (!post.stickers[i]) return post;
+  return {
+    ...post,
+    stickers: post.stickers.map((st, at) => (at === i ? { ...st, ...change } : st)),
+  };
+}
+
+/**
+ * A sticker brought forward or sent back one step: the list's order is the order they are drawn,
+ * the last on top. Answers the post and where the sticker now is.
+ */
+export function movedLayer(post: Post, i: number, step: 1 | -1): { post: Post; index: number } {
+  const to = i + step;
+  if (!post.stickers[i] || to < 0 || to >= post.stickers.length) return { post, index: i };
+  const stickers = [...post.stickers];
+  [stickers[i], stickers[to]] = [stickers[to], stickers[i]];
+  return { post: { ...post, stickers }, index: to };
+}
+
+/** A copy of a sticker laid just beside it, on top of everything. */
+export function duplicated(post: Post, i: number): { post: Post; index: number } {
+  const st = post.stickers[i];
+  if (!st) return { post, index: i };
+  const copy: Sticker = {
+    ...st,
+    x: Math.min(1, st.x + 0.04),
+    y: Math.min(1, st.y + 0.04),
+    crop: st.crop ? { ...st.crop } : undefined,
+  };
+  const stickers = [...post.stickers, copy];
+  return { post: { ...post, stickers }, index: stickers.length - 1 };
+}
+
+export function withoutSticker(post: Post, i: number): Post {
+  return { ...post, stickers: post.stickers.filter((_, at) => at !== i) };
 }
