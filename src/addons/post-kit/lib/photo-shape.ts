@@ -1,4 +1,5 @@
 import type { Crop, Geometry, PhotoBook, PhotoFrame, Post, Sticker } from "./types";
+import { textBox } from "./text-sticker";
 
 /*
  * The shape of what sits on a post, worked out without drawing it: how big a laid photo is, where
@@ -50,6 +51,7 @@ export function photoBox(st: Pick<Sticker, "s" | "frame">, img?: Size | null) {
  */
 export function stickerBox(st: Sticker, photos: PhotoBook = {}) {
   if (st.id === "photo") return { ...photoBox(st, photos[st.photo ?? ""]?.img), grip: 0.5 };
+  if (st.id === "text") return { ...textBox(st), grip: 0.5 };
   return { w: st.s, h: st.s, grip: 0.42 };
 }
 

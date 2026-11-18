@@ -13,7 +13,7 @@ export const STICKER_CELL = mmToPx(42);
 /** Every sticker that is a single die-cut shape: not a stitched scene, not a photo, not typed text. */
 export function printableStickerIds(): string[] {
   return Object.entries(STICKERS)
-    .filter(([, def]) => def.art && !def.stitch && !def.photoCard && !def.text)
+    .filter(([, def]) => def.art && !def.stitch && !def.bare && !def.photoCard && !def.text)
     .map(([id]) => id);
 }
 

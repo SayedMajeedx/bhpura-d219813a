@@ -14,6 +14,89 @@ export type Starter = {
 /** Where a new post starts: one per layout, the paper three times, with words to type over. */
 export const STARTERS: Starter[] = [
   {
+    id: "meme-stack",
+    name: { ar: "ميم: شلون كنت أفكر / شلون صرت", en: "Meme: what I thought / what I became" },
+    title: "ميم جديد",
+    post: {
+      tpl: "memeStack",
+      tone: "wine",
+      labelA: "شلون كنت أفكر",
+      lead: "بصير عقب ما أفتح البزنس",
+      labelB: "شلون صرت",
+      foot: "",
+      stickers: [
+        { id: "torn-paper", x: 0.76, y: 0.74, s: 340, r: -6, text: "هذا أنا" },
+        { id: "arrow-curve", x: 0.74, y: 0.85, s: 220, r: 150 },
+      ],
+    },
+  },
+  {
+    id: "meme-side",
+    name: { ar: "ميم: جنب بعض", en: "Meme: side by side" },
+    title: "ميم جديد",
+    post: {
+      tpl: "memeSide",
+      tone: "cream",
+      labelA: "يوم الراتب",
+      labelB: "بعد أسبوع",
+    },
+  },
+  {
+    id: "meme-classic",
+    name: { ar: "ميم كلاسيكي", en: "Classic meme" },
+    title: "ميم جديد",
+    post: { tpl: "memeClassic", tone: "ink", head: "الكلام فوق", foot: "والكلام تحت" },
+  },
+  {
+    id: "meme-nobody",
+    name: { ar: "ميم: محد: / أنا:", en: "Meme: nobody: / me:" },
+    title: "ميم جديد",
+    post: {
+      tpl: "memeCaption",
+      tone: "cream",
+      head: "محد:\nأنا الساعة 2 الفجر أطالع العبايات اللي في السلة:",
+    },
+  },
+  {
+    id: "meme-pov",
+    name: { ar: "ميم: POV", en: "Meme: POV" },
+    title: "ميم جديد",
+    post: { tpl: "memeCaption", tone: "wine", head: "POV: طلبتي عباية وزوجش شاف الكيس" },
+  },
+  {
+    id: "meme-no-yes",
+    name: { ar: "ميم: لا / إي", en: "Meme: no / yes" },
+    title: "ميم جديد",
+    post: {
+      tpl: "memeNoYes",
+      tone: "sand",
+      labelA: "تشترين بدون ما تعرفين مقاسش",
+      labelB: "تفصّلينها على مقاسش",
+    },
+  },
+  {
+    id: "free",
+    name: { ar: "لوحة حرة", en: "Free canvas" },
+    title: "بوست جديد",
+    post: {
+      tpl: "free",
+      tone: "wine",
+      stickers: [
+        {
+          id: "text",
+          x: 0.5,
+          y: 0.4,
+          s: 480,
+          r: 0,
+          text: "اكتب هني",
+          look: "plain",
+          color: "ink",
+          align: "center",
+        },
+      ],
+    },
+  },
+  {
     id: "joke",
     name: { ar: "نكتة", en: "Joke" },
     title: "نكتة جديدة",

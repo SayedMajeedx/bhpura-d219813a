@@ -23,6 +23,14 @@ type TextField =
   | "total"
   | "stamp";
 
+/** The two beats of a before-and-after meme, each with a small line under it. */
+const MEME_PAIR_WORDS: Partial<Record<TextField, [string, string]>> = {
+  labelA: ["الجملة الأولى", "First line"],
+  lead: ["السطر الصغير تحت الأولى", "Small line under the first"],
+  labelB: ["الجملة الثانية", "Second line"],
+  foot: ["السطر الصغير تحت الثانية", "Small line under the second"],
+};
+
 /** A field's words where a layout uses it differently. */
 const FIELD_WORDS: Record<string, Partial<Record<TextField, [string, string]>>> = {
   split: {
@@ -38,6 +46,17 @@ const FIELD_WORDS: Record<string, Partial<Record<TextField, [string, string]>>> 
     label: ["اسم القطعة", "The piece"],
   },
   grid: { foot: ["السطر تحت", "Line below"] },
+  memeStack: MEME_PAIR_WORDS,
+  memeSide: MEME_PAIR_WORDS,
+  memeClassic: {
+    head: ["الكلام فوق", "Words at the top"],
+    foot: ["الكلام تحت", "Words at the foot"],
+  },
+  memeCaption: { head: ["الكلام فوق الصورة", "Words over the photo"] },
+  memeNoYes: {
+    labelA: ["كلام «لا»", 'The "no" words'],
+    labelB: ["كلام «إي»", 'The "yes" words'],
+  },
 };
 
 /** What a list field holds in each layout: a piece's traits and a paper's rows are "a name: a value". */
@@ -73,6 +92,7 @@ export function PostTextFields({
   const uid = useId();
   const fields = fieldsOf(post);
   const look = paperLook(post);
+  const pairMeme = post.tpl === "memeStack" || post.tpl === "memeSide";
 
   const textInput = (name: TextField, ar: string, en: string, multi = false) => {
     const id = `${uid}-${name}`;
@@ -122,7 +142,17 @@ export function PostTextFields({
           </div>
         </div>
       ) : null}
-      {fields.includes("lead") ? textInput("lead", "السطر الصغير فوق", "Small line above") : null}
+      {pairMeme ? (
+        <>
+          {textInput("labelA", "", "", true)}
+          {textInput("lead", "", "")}
+          {textInput("labelB", "", "", true)}
+          {textInput("foot", "", "")}
+        </>
+      ) : null}
+      {fields.includes("lead") && !pairMeme
+        ? textInput("lead", "السطر الصغير فوق", "Small line above")
+        : null}
       {fields.includes("head") ? (
         <div className="space-y-1">
           {textInput("head", "العنوان", "Headline", true)}
@@ -149,10 +179,12 @@ export function PostTextFields({
             "Total: a name, a colon and the words",
           )
         : null}
-      {fields.includes("foot") ? textInput("foot", "التعليق بخط اليد", "Handwritten note") : null}
+      {fields.includes("foot") && !pairMeme
+        ? textInput("foot", "التعليق بخط اليد", "Handwritten note")
+        : null}
       {fields.includes("stamp") ? textInput("stamp", "الختم", "Stamp") : null}
       {fields.includes("label") ? textInput("label", "ليبل المنتج", "Product label") : null}
-      {fields.includes("labelA") ? (
+      {fields.includes("labelA") && !pairMeme ? (
         <div className="grid gap-4 sm:grid-cols-2">
           {textInput("labelA", "اسم الخيار 1", "Option 1")}
           {textInput("labelB", "اسم الخيار 2", "Option 2")}

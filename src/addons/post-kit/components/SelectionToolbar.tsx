@@ -21,6 +21,7 @@ import {
   shadowOf,
 } from "../lib/photo-shape";
 import { STICKERS } from "../lib/stickers";
+import { StickerWordsTools, hasWordsTools } from "./StickerWordsTools";
 import type { Crop, PhotoBook, PhotoFrame, Sticker } from "../lib/types";
 
 const FRAME_WORDS: Record<PhotoFrame, { ar: string; en: string }> = {
@@ -121,7 +122,9 @@ export function SelectionToolbar({
   const crop: Required<Crop> = { z: 1, fx: 0.5, fy: 0.05, ...(sticker.crop ?? {}) };
   const name = isPhoto
     ? say("الصورة", "The photo")
-    : say(STICKERS[sticker.id]?.name.ar ?? "", STICKERS[sticker.id]?.name.en ?? "");
+    : sticker.id === "text"
+      ? say("الكلام", "The words")
+      : say(STICKERS[sticker.id]?.name.ar ?? "", STICKERS[sticker.id]?.name.en ?? "");
   const setCrop = (change: Crop) => onChange({ crop: { ...sticker.crop, ...change } });
 
   return (
@@ -153,6 +156,8 @@ export function SelectionToolbar({
           onChange={(r) => onChange({ r })}
         />
       </div>
+
+      {hasWordsTools(sticker) ? <StickerWordsTools sticker={sticker} onChange={onChange} /> : null}
 
       {isPhoto ? (
         <>
@@ -241,15 +246,17 @@ export function SelectionToolbar({
       ) : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => onChange({ flip: !sticker.flip })}
-        >
-          <FlipHorizontal className="size-4" />
-          {say("اقلب", "Flip")}
-        </Button>
+        {sticker.id !== "text" ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => onChange({ flip: !sticker.flip })}
+          >
+            <FlipHorizontal className="size-4" />
+            {say("اقلب", "Flip")}
+          </Button>
+        ) : null}
         <Button
           type="button"
           size="sm"

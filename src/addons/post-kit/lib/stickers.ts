@@ -4,6 +4,8 @@ import { edgeColorOf, edgeShare, frameOf, photoBox, shadowOf } from "./photo-sha
 import { roundRect } from "./text";
 import { HANGER_STICKERS } from "./stickers-hanger";
 import { OTHER_STICKERS } from "./stickers-other";
+import { COLLAGE_STICKERS } from "./stickers-collage";
+import { colorOf, drawTextSticker } from "./text-sticker";
 import { sceneHusband, sceneMind, scenePhone, sceneSign } from "./scenes";
 import { sceneCalc, sceneNote, sceneOwl, sceneSalary, sceneWell } from "./scenes-more";
 import type { Crop, Ctx, Geometry, PhotoBook, Post, Sticker, StickerDef, Tone } from "./types";
@@ -12,7 +14,9 @@ import type { Crop, Ctx, Geometry, PhotoBook, Post, Sticker, StickerDef, Tone } 
 export const STICKERS: Record<string, StickerDef> = {
   ...HANGER_STICKERS,
   ...OTHER_STICKERS,
+  ...COLLAGE_STICKERS,
   photo: { name: { ar: "صورة", en: "Photo" }, photoCard: true },
+  text: { name: { ar: "كلام", en: "Words" } },
   "scene-salary": {
     name: { ar: "رسمة: ع الراتب", en: "Scene: payday" },
     stitch: true,
@@ -68,13 +72,13 @@ const stickerCache: Record<string, HTMLCanvasElement> = {};
 export function stickerCanvas(id: string): HTMLCanvasElement {
   if (stickerCache[id]) return stickerCache[id];
   const def = STICKERS[id];
-  if (def.stitch) {
+  if (def.stitch || def.bare) {
     const thumb = document.createElement("canvas");
     thumb.width = thumb.height = 700;
     const tc = thumb.getContext("2d") as Ctx;
     tc.scale(0.7, 0.7);
     tc.direction = "rtl";
-    def.art?.(tc, TONES.wine, def.sample ?? "", false);
+    def.art?.(tc, TONES.wine, def.ownText ? "" : (def.sample ?? ""), false);
     stickerCache[id] = thumb;
     return thumb;
   }
@@ -219,8 +223,29 @@ export function drawSticker(
     drawLaidPhoto(ctx, st, g, photos);
     return;
   }
+  if (st.id === "text") {
+    ctx.save();
+    ctx.translate(st.x * g.W, st.y * g.H);
+    ctx.rotate(((st.r || 0) * Math.PI) / 180);
+    drawTextSticker(ctx, st, tone);
+    ctx.restore();
+    return;
+  }
   if (!STICKERS[st.id]) return;
   const def = STICKERS[st.id];
+  if (def.bare) {
+    // A mark takes the colour chosen for it; a piece's words are its own.
+    const inked = st.color ? { ...tone, ink: colorOf(tone, st.color) } : tone;
+    ctx.save();
+    ctx.translate(st.x * g.W, st.y * g.H);
+    ctx.rotate(((st.r || 0) * Math.PI) / 180);
+    const k = st.s / 1000;
+    ctx.scale(st.flip ? -k : k, k);
+    ctx.translate(-500, -500);
+    def.art?.(ctx, inked, def.ownText ? (st.text ?? def.sample ?? "") : "", !!st.flip);
+    ctx.restore();
+    return;
+  }
   if (def.stitch) {
     ctx.save();
     ctx.translate(st.x * g.W, st.y * g.H);

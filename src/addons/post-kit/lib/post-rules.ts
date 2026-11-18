@@ -2,6 +2,7 @@ import { photoCrop } from "./frame";
 import { STICKERS } from "./stickers";
 import { TEMPLATES } from "./layouts";
 import { topStickerAt } from "./photo-shape";
+import { newText } from "./text-sticker";
 import type { Crop, Photo, PhotoBook, Post, Sticker } from "./types";
 
 /** The pure rules behind the maker's buttons: each takes a post and returns the next one. */
@@ -87,6 +88,13 @@ export function withoutPhoto(post: Post, key: string, fallback: string): Post {
 }
 
 export function newSticker(id: string): Sticker {
+  if (id === "text") return newText();
+  const def = STICKERS[id];
+  if (def?.bare) {
+    return def.ownText
+      ? { id, x: 0.5, y: 0.55, s: 560, r: 0, text: def.sample ?? "" }
+      : { id, x: 0.5, y: 0.6, s: 420, r: 0 };
+  }
   return STICKERS[id]?.stitch
     ? { id, x: 0.45, y: 0.66, s: 680, r: 0 }
     : { id, x: 0.3, y: 0.7, s: 320, r: 0 };
