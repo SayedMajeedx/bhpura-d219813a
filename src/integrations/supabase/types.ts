@@ -1236,6 +1236,35 @@ export type Database = {
           },
         ];
       };
+      brand_code_numbering: {
+        Row: {
+          brand_id: string;
+          next_number: number;
+          prefix: string;
+          updated_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          next_number: number;
+          prefix?: string;
+          updated_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          next_number?: number;
+          prefix?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brand_code_numbering_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: true;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brand_email_notifications: {
         Row: {
           brand_id: string;
@@ -10786,6 +10815,10 @@ export type Database = {
         Args: { p_order_id: string; p_partner_id: string };
         Returns: undefined;
       };
+      assign_variant_codes: {
+        Args: { p_fill_partner_codes?: boolean; p_items: Json };
+        Returns: Json;
+      };
       award_past_order_loyalty_points: {
         Args: { p_brand_id: string };
         Returns: Json;
@@ -10901,6 +10934,10 @@ export type Database = {
         Returns: boolean;
       };
       bookings_enabled: { Args: { p_brand_id: string }; Returns: boolean };
+      brand_highest_code_number: {
+        Args: { p_brand_id: string };
+        Returns: number;
+      };
       brand_staff_two_factor: {
         Args: { p_brand_id: string };
         Returns: {
@@ -11950,6 +11987,7 @@ export type Database = {
       };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
+      next_variant_code_number: { Args: { p_brand_id: string }; Returns: Json };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };
       normalize_whatsapp_recipient: {
@@ -13421,6 +13459,7 @@ export type Database = {
         Args: { p_incubator_id?: string };
         Returns: number;
       };
+      take_variant_code: { Args: { p_brand_id: string }; Returns: string };
       transfer_cash_to_bank: {
         Args: { p_amount: number; p_brand_id: string; p_notes?: string };
         Returns: string;
@@ -13503,6 +13542,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      variant_code_key: { Args: { p_code: string }; Returns: string };
       variant_has_history: { Args: { p_variant_id: string }; Returns: boolean };
       void_gift_card: {
         Args: { p_card_id: string; p_reason: string };

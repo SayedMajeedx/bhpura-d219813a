@@ -36,7 +36,7 @@ import type { InventoryView } from "@/features/inventory/lib/list-view";
 import type { AttentionKey } from "@/features/inventory/lib/attention";
 import { useInventoryList } from "@/features/inventory/hooks/use-inventory-list";
 import { StockOverviewStrip } from "@/features/inventory/components/StockOverviewStrip";
-import { MissingCostsLine } from "@/features/inventory/components/MissingCostsLine";
+import { InventoryFixLines } from "@/features/inventory/components/InventoryFixLines";
 import { ArchivedProductsLine } from "@/features/inventory/components/ArchivedProductsLine";
 import { useVocabulary } from "@/hooks/use-vocabulary";
 import { useProductActions } from "@/features/inventory/hooks/use-product-actions";
@@ -285,18 +285,18 @@ export function ProductsSection({
         />
       )}
 
-      {canViewCosts && (
-        <MissingCostsLine
-          count={list.counts.missingCost}
-          products={products}
-          variantsByProduct={variantsByProduct}
-          lowestPrice={lowestPrice}
-          brandId={brandId}
-          currency={currency}
-          isAr={isAr}
-          onSaved={onChanged}
-        />
-      )}
+      <InventoryFixLines
+        canViewCosts={canViewCosts}
+        missingCost={list.counts.missingCost}
+        products={products}
+        variants={variants}
+        variantsByProduct={variantsByProduct}
+        lowestPrice={lowestPrice}
+        brandId={brandId}
+        currency={currency}
+        isAr={isAr}
+        onSaved={onChanged}
+      />
 
       <ArchivedProductsLine brandId={brandId} isAr={isAr} onRestored={onChanged} />
 

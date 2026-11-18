@@ -46,6 +46,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "assign_variant_codes(p_items jsonb, p_fill_partner_codes boolean)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, and manage_inventory to write)"
+    },
     "bookings_enabled(p_brand_id uuid)": {
       "anon": true,
       "authenticated": true,
@@ -340,6 +345,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_inventory)"
+    },
+    "next_variant_code_number(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand, and manage_inventory to write)"
     },
     "order_inventory_transition(p_order_id uuid)": {
       "anon": true,

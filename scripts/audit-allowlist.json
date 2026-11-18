@@ -1,0 +1,10 @@
+{
+  "advisories": [
+    {
+      "url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "reason": "ReDoS through repeated extglobs, widened on 2026-11-17 to every version up to 4.0.7 with no patched release. picomatch runs only at build and test time (Vite, the router generator, tinyglobby, Vitest) on the project's own file patterns; no shopper or staff input reaches it.",
+      "reviewBy": "2026-12-18"
+    }
+  ]
+}
