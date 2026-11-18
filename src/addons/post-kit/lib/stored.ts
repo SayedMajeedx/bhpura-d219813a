@@ -1,5 +1,6 @@
 import { livePost, type Catalogue } from "./photos";
 import { TEMPLATES } from "./layouts";
+import { PHOTO_FRAMES } from "./photo-shape";
 import { STICKERS } from "./stickers";
 import { TONES } from "./tones";
 import type { Post, Sticker } from "./types";
@@ -32,7 +33,11 @@ function readSticker(value: unknown): Sticker | null {
   const { id, x, y, s } = value;
   if (typeof id !== "string" || !STICKERS[id]) return null;
   if (![x, y, s].every((n) => typeof n === "number" && Number.isFinite(n))) return null;
-  return value as unknown as Sticker;
+  const sticker = { ...value } as unknown as Sticker;
+  // A frame this version does not know is drawn as a print, and is not kept as something else.
+  if (sticker.frame !== undefined && !PHOTO_FRAMES.includes(sticker.frame)) delete sticker.frame;
+  if (sticker.shadow !== undefined && typeof sticker.shadow !== "boolean") delete sticker.shadow;
+  return sticker;
 }
 
 /**

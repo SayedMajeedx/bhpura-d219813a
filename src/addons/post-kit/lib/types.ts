@@ -24,6 +24,9 @@ export type TextLayout = Wrapped & {
 
 export type Crop = { z?: number; fx?: number; fy?: number };
 
+/** How a photo laid on a post is shown: bare, cut out with a white edge, a print, or taped on. */
+export type PhotoFrame = "none" | "cut" | "polaroid" | "tape";
+
 export type Sticker = {
   id: string;
   x: number;
@@ -33,6 +36,10 @@ export type Sticker = {
   flip?: boolean;
   photo?: string;
   crop?: Crop;
+  /** A photo's frame. None written is a print, as every photo was before the frames. */
+  frame?: PhotoFrame;
+  /** A photo's shadow; none written is its frame's own. */
+  shadow?: boolean;
 };
 
 export type StickerDef = {
