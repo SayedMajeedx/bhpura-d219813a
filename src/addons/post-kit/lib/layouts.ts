@@ -5,6 +5,7 @@ import { drawBracket } from "./layout-bracket";
 import { drawPaper } from "./layout-paper";
 import { drawPiece } from "./layout-piece";
 import { drawGrid, drawProof, drawReply, drawSplit } from "./layout-series";
+import { MEME_DRAW, MEME_TEMPLATES } from "./layout-meme";
 import type { Ctx, Geometry, PhotoBook, Post, TextLayout, Tone } from "./types";
 
 /* The layouts a post can take. */
@@ -39,6 +40,7 @@ export const TEMPLATES: Record<string, { name: { ar: string; en: string }; field
     name: { ar: "كلام زبونة", en: "Customer words" },
     fields: ["lead", "head", "label", "photo1"],
   },
+  ...MEME_TEMPLATES,
 };
 
 function drawJoke(ctx: Ctx, s: Post, g: Geometry, tone: Tone, _photos: PhotoBook) {
@@ -270,6 +272,7 @@ export const DRAW: Record<
   split: (ctx, s, g, tone) => drawSplit(ctx, s, g, tone),
   reply: (ctx, s, g, tone) => drawReply(ctx, s, g, tone),
   proof: drawProof,
+  ...MEME_DRAW,
   // Drawn from the cup's results, never chosen as a layout in the maker.
   bracket: (ctx, s, g, tone) => drawBracket(ctx, s, g, tone),
 };

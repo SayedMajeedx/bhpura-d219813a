@@ -103,3 +103,44 @@ describe("taking a background off", () => {
     expect(screen.getByRole("dialog", { name: "شيل الخلفية" })).toBeInTheDocument();
   }, 20_000);
 });
+
+describe("words and collage pieces", () => {
+  it("lists the kit's stickers by kind, Shammoua's last", async () => {
+    await openMaker(withSticker);
+    const headings = ["فقاعات وكلام", "أسهم وعلامات", "ورق وشريط", "شمّوعة ورسماتها"];
+    for (const heading of headings) expect(screen.getByText(heading)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "أضف ستيكر ورقة ممزقة" })).toBeInTheDocument();
+  }, 20_000);
+
+  it("adds words with their look, colour and alignment, the colour gone for a meme", async () => {
+    await openMaker(withSticker);
+    fireEvent.click(screen.getByRole("button", { name: "أضف كلام" }));
+    const tools = screen.getByRole("region", { name: /تعديل الكلام/ });
+    expect(within(tools).getByLabelText("الكلام")).toHaveValue("اكتب هني");
+    fireEvent.change(within(tools).getByLabelText("الكلام"), { target: { value: "شلون صرت" } });
+    expect(within(tools).getByLabelText("الكلام")).toHaveValue("شلون صرت");
+    expect(within(tools).getByRole("button", { name: "لون الليبل" })).toBeInTheDocument();
+    fireEvent.click(within(tools).getByRole("button", { name: "ميم" }));
+    expect(within(tools).getByRole("button", { name: "ميم" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(tools).queryByRole("button", { name: "لون الليبل" })).toBeNull();
+    expect(within(tools).queryByRole("button", { name: "اقلب" })).toBeNull();
+  }, 20_000);
+
+  it("gives a mark a colour and a torn paper its words", async () => {
+    await openMaker(withSticker);
+    fireEvent.click(screen.getByRole("button", { name: "أضف ستيكر سهم منحني" }));
+    let tools = screen.getByRole("region", { name: /تعديل سهم منحني/ });
+    expect(within(tools).queryByLabelText("الكلام")).toBeNull();
+    fireEvent.click(within(tools).getByRole("button", { name: "أبيض" }));
+    expect(within(tools).getByRole("button", { name: "أبيض" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "أضف ستيكر ورقة ممزقة" }));
+    tools = screen.getByRole("region", { name: /تعديل ورقة ممزقة/ });
+    expect(within(tools).getByLabelText("الكلام")).toHaveValue("شلون صرت");
+  }, 20_000);
+});

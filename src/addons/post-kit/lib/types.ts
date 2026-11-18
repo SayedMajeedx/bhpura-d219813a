@@ -44,7 +44,20 @@ export type Sticker = {
   edge?: StickerEdge;
   /** A cut-out's edge in cream rather than white. */
   edgeColor?: EdgeColor;
+  /** The words of a words sticker or a piece that holds words (paper, bubble, burst, tag). */
+  text?: string;
+  /** How a words sticker is set. */
+  look?: TextLook;
+  /** A words sticker's or a drawn mark's colour, one of the cloth's. */
+  color?: TextColor;
+  align?: TextAlign;
 };
+
+export type TextLook = "plain" | "meme" | "box" | "hand";
+export type TextColor = "ink" | "tag" | "bg" | "white" | "black";
+export type TextAlign = "right" | "center" | "left";
+/** Where a drawn sticker is listed in the maker. */
+export type StickerGroup = "marks" | "paper" | "words";
 
 export type StickerEdge = "thin";
 export type EdgeColor = "cream";
@@ -56,6 +69,12 @@ export type StickerDef = {
   text?: boolean;
   sample?: string;
   photoCard?: boolean;
+  /** Drawn straight on the post in the cloth's colours, with no white cut edge. */
+  bare?: boolean;
+  /** Holds its own words (`Sticker.text`), not the post's. */
+  ownText?: boolean;
+  /** Its list in the maker; none is Shammoua and her drawings. */
+  group?: StickerGroup;
 };
 
 export type PaperLook = "receipt" | "circular" | "licence";

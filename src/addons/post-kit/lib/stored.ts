@@ -1,4 +1,5 @@
 import { livePost, type Catalogue } from "./photos";
+import { TEXT_ALIGNS, TEXT_COLORS, TEXT_LOOKS } from "./text-sticker";
 import { TEMPLATES } from "./layouts";
 import { PHOTO_FRAMES } from "./photo-shape";
 import { STICKERS } from "./stickers";
@@ -39,6 +40,15 @@ function readSticker(value: unknown): Sticker | null {
   if (sticker.shadow !== undefined && typeof sticker.shadow !== "boolean") delete sticker.shadow;
   if (sticker.edge !== undefined && sticker.edge !== "thin") delete sticker.edge;
   if (sticker.edgeColor !== undefined && sticker.edgeColor !== "cream") delete sticker.edgeColor;
+  if (
+    sticker.text !== undefined &&
+    (typeof sticker.text !== "string" || sticker.text.length > 400)
+  ) {
+    delete sticker.text;
+  }
+  if (sticker.look !== undefined && !TEXT_LOOKS.includes(sticker.look)) delete sticker.look;
+  if (sticker.color !== undefined && !TEXT_COLORS.includes(sticker.color)) delete sticker.color;
+  if (sticker.align !== undefined && !TEXT_ALIGNS.includes(sticker.align)) delete sticker.align;
   return sticker;
 }
 

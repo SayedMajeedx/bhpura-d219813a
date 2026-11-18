@@ -1,10 +1,22 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Type, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import type { PostKit } from "../hooks/use-post-kit";
 import { STICKERS, stickerCanvas } from "../lib/stickers";
+import type { StickerGroup } from "../lib/types";
+
+/** The kit's drawn stickers in their lists, in the order a meme reaches for them. */
+const GROUPS: { group: StickerGroup | "shammoua"; ar: string; en: string }[] = [
+  { group: "words", ar: "فقاعات وكلام", en: "Bubbles and words" },
+  { group: "marks", ar: "أسهم وعلامات", en: "Arrows and marks" },
+  { group: "paper", ar: "ورق وشريط", en: "Paper and tape" },
+  { group: "shammoua", ar: "شمّوعة ورسماتها", en: "Shammoua and drawings" },
+];
+
+/** A drawn sticker's list: none written is Shammoua's. */
+export const groupOf = (id: string) => STICKERS[id]?.group ?? "shammoua";
 
 function StickerThumb({ id }: { id: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -106,28 +118,34 @@ export function StickerPicker({
         )}
       </div>
 
-      <div className="space-y-2">
-        <p className="text-xs font-medium text-foreground">
-          {say("ستيكرات العدة: اضغط عشان تضيف", "Kit stickers: tap to add")}
-        </p>
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-2">
-          {Object.entries(STICKERS)
-            .filter(([, def]) => !def.photoCard)
-            .map(([id, def]) => (
-              <Button
-                key={id}
-                type="button"
-                variant="outline"
-                aria-label={`${say("أضف ستيكر", "Add sticker")} ${say(def.name.ar, def.name.en)}`}
-                title={say(def.name.ar, def.name.en)}
-                className="block h-auto min-h-11 w-full whitespace-normal rounded-lg bg-muted p-1"
-                onClick={() => onAddDrawn(id)}
-              >
-                <StickerThumb id={id} />
-              </Button>
-            ))}
+      {GROUPS.map(({ group, ar, en }) => (
+        <div key={group} className="space-y-2">
+          <p className="text-xs font-medium text-foreground">{say(ar, en)}</p>
+          {group === "words" ? (
+            <Button type="button" size="sm" variant="outline" onClick={() => onAddDrawn("text")}>
+              <Type className="size-4" />
+              {say("أضف كلام", "Add words")}
+            </Button>
+          ) : null}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(72px,1fr))] gap-2">
+            {Object.entries(STICKERS)
+              .filter(([id, def]) => !def.photoCard && id !== "text" && groupOf(id) === group)
+              .map(([id, def]) => (
+                <Button
+                  key={id}
+                  type="button"
+                  variant="outline"
+                  aria-label={`${say("أضف ستيكر", "Add sticker")} ${say(def.name.ar, def.name.en)}`}
+                  title={say(def.name.ar, def.name.en)}
+                  className="block h-auto min-h-11 w-full whitespace-normal rounded-lg bg-muted p-1"
+                  onClick={() => onAddDrawn(id)}
+                >
+                  <StickerThumb id={id} />
+                </Button>
+              ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }
