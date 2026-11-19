@@ -3,19 +3,17 @@ import { FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { Lang, SheetLang } from "@/features/orders/lib/job-sheet";
 import { useProfileOptional } from "@/lib/profile-context";
 import { usePrintPurchaseOrder } from "../hooks/use-purchase-order";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import type { SupplierOrder } from "../lib/order-state";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** The supplier order page's "Order" button: prints the order as a document. */
 export function PrintPurchaseOrderButton({
@@ -104,16 +102,23 @@ export function PurchaseOrderPrintDialog({
 
   const languageName = isAr ? "لغة الورقة" : "Page language";
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "طباعة طلبية المورّد" : "Print purchase order"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "كل قطعة بتفاصيلها من طلب الزبون: المقاس أو القياسات، الخيارات والملاحظات، ورقم الطلب بدون اسم الزبون."
-              : "Each piece with its details from the customer's order: the size or measurements, the options and notes, and the order's number without the customer's name."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="sm"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "طباعة طلبية المورّد" : "Print purchase order"}
+        description={
+          isAr
+            ? "كل قطعة بتفاصيلها من طلب الزبون: المقاس أو القياسات، الخيارات والملاحظات، ورقم الطلب بدون اسم الزبون."
+            : "Each piece with its details from the customer's order: the size or measurements, the options and notes, and the order's number without the customer's name."
+        }
+      />
+
+      <AppDialogBody>
         <div className="space-y-1.5">
           <p className="text-sm font-medium text-foreground">{languageName}</p>
           <div role="radiogroup" aria-label={languageName} className="flex flex-wrap gap-2">
@@ -145,23 +150,23 @@ export function PurchaseOrderPrintDialog({
             </Label>
           </div>
         )}
-        <DialogFooter className="flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              onPrint(chosen, canShowPrices && withPrices);
-              onOpenChange(false);
-            }}
-            className="gap-1.5"
-          >
-            <Printer className="h-4 w-4" aria-hidden="true" />
-            {isAr ? "طباعة" : "Print"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => {
+            onPrint(chosen, canShowPrices && withPrices);
+            onOpenChange(false);
+          }}
+          className="gap-1.5"
+        >
+          <Printer className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "طباعة" : "Print"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

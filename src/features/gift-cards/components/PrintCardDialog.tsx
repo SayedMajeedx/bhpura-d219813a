@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +12,7 @@ import type { CardDesign } from "@/features/gift-card-design/lib/design";
 import { cardPrintStart } from "../lib/card-print";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
 import { MESSAGE_SIZES, type MessageSize } from "@/features/gift-card-design/lib/message-card";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 const SIZE_WORDS: Record<MessageSize, { ar: string; en: string }> = {
   small: { ar: "أصغر", en: "Smaller" },
@@ -139,14 +139,16 @@ function PrintCardDialog({
   const [details, setDetails] = useState<CardDetails>(source.details);
   const editable = source.details.purpose === "message";
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="max-h-[92vh] overflow-y-auto sm:max-w-xl"
-      >
-        <DialogHeader>
-          <DialogTitle>{source.title ?? (isAr ? "بطاقة للطباعة" : "Card to print")}</DialogTitle>
-        </DialogHeader>
+    <AppDialog
+      open
+      onOpenChange={(next) => !next && onClose()}
+      kind="task"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader title={source.title ?? (isAr ? "بطاقة للطباعة" : "Card to print")} />
+
+      <AppDialogBody>
         <div className="space-y-4">
           <GiftCardDesigner
             kit={kit}
@@ -230,7 +232,7 @@ function PrintCardDialog({
             printing
           />
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

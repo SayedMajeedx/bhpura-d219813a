@@ -1,13 +1,6 @@
 import { useState } from "react";
 import { FolderOpen, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { defaultDraftName, readDraftFormat } from "@/features/content-studio/lib/drafts";
@@ -17,25 +10,32 @@ import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import { templateById, type TemplateId } from "@/features/content-studio/templates";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
 import { arNoun } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** The studio's design saved under a name, and the brand's drafts to reopen or delete. */
 export function DraftsDialog({ studio }: { studio: ContentStudio }) {
   const { isAr, draftsOpen, setDraftsOpen } = studio;
   return (
-    <Dialog open={draftsOpen} onOpenChange={setDraftsOpen}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-lg rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "المسودات" : "Drafts"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "احفظ التصميم الحالي لتعود إليه لاحقاً، أو افتح مسودة لفريقك."
-              : "Save this design to come back to it, or open one your team saved."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={draftsOpen}
+      onOpenChange={setDraftsOpen}
+      kind="task"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "المسودات" : "Drafts"}
+        description={
+          isAr
+            ? "احفظ التصميم الحالي لتعود إليه لاحقاً، أو افتح مسودة لفريقك."
+            : "Save this design to come back to it, or open one your team saved."
+        }
+      />
+
+      <AppDialogBody>
         {/* Mounted with the dialog, so each opening starts from the current design's name. */}
         <DraftsPanel studio={studio} />
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }
 
@@ -146,7 +146,7 @@ function DraftsPanel({ studio }: { studio: ContentStudio }) {
         ) : (
           <ul
             aria-labelledby="studio-drafts-label"
-            className="max-h-72 divide-y divide-border overflow-y-auto rounded-xl border border-border"
+            className="divide-y divide-border rounded-xl border border-border"
           >
             {drafts.map((draft) => (
               <li key={draft.id} className="flex items-center gap-2 px-3 py-2.5">

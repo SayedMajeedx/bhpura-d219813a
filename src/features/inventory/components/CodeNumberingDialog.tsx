@@ -4,20 +4,10 @@ import { ChevronRight, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { countOf } from "@/lib/arabic-count";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { useProfile } from "@/lib/profile-context";
-import { cn } from "@/lib/utils";
 import { assignVariantCodes, catalogKeys, codeNumberingQueries } from "@/lib/data/catalog";
 import { incubatorsKeys, incubatorsQueries } from "@/lib/data/incubators";
 import {
@@ -29,6 +19,12 @@ import {
   type NumberingVariant,
   type PartnerCode,
 } from "@/features/inventory/lib/code-numbering";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 type Props = {
   brandId: string;
@@ -149,20 +145,28 @@ function CodeNumberingDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className={cn("max-w-3xl", PHONE_SHEET)} dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open
+      onOpenChange={(next) => !next && onClose()}
+      kind="task"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <Hash className="h-4 w-4" aria-hidden />
             {isAr ? "ترقيم الأكواد" : "Number the codes"}
-          </DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? `كل مقاس له كود واحد يستخدمه المتجر والمحلات الشريكة. القطعة التي لها كود عند محل شريك تأخذه، والباقي يأخذ الأرقام التالية من ${prefix}${numbering.data?.nextNumber ?? "…"}. راجع وعدّل قبل الحفظ.`
-              : `Each size has one code, used by the store and its partner shops. A piece with a code at a partner shop keeps it, and the rest take the next numbers from ${prefix}${numbering.data?.nextNumber ?? "…"}. Check and change them before saving.`}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        description={
+          isAr
+            ? `كل مقاس له كود واحد يستخدمه المتجر والمحلات الشريكة. القطعة التي لها كود عند محل شريك تأخذه، والباقي يأخذ الأرقام التالية من ${prefix}${numbering.data?.nextNumber ?? "…"}. راجع وعدّل قبل الحفظ.`
+            : `Each size has one code, used by the store and its partner shops. A piece with a code at a partner shop keeps it, and the rest take the next numbers from ${prefix}${numbering.data?.nextNumber ?? "…"}. Check and change them before saving.`
+        }
+      />
 
+      <AppDialogBody>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
           <Option checked={restyle} onChange={setRestyle} id="code-restyle">
             {isAr
@@ -186,7 +190,7 @@ function CodeNumberingDialog({
             {isAr ? "كل المقاسات لها أكواد." : "Every size has a code."}
           </p>
         ) : (
-          <ul className="max-h-[50vh] divide-y divide-border-subtle overflow-y-auto rounded-xl border border-border text-sm">
+          <ul className="divide-y divide-border-subtle rounded-xl border border-border text-sm">
             {rows.map((row) => (
               <li
                 key={row.variantId}
@@ -231,29 +235,28 @@ function CodeNumberingDialog({
             ))}
           </ul>
         )}
-
-        <DialogFooter>
-          {problem && <p className="me-auto self-center text-xs text-destructive">{problem}</p>}
-          {!problem && rows.length > 0 && (
-            <p className="me-auto self-center text-xs text-muted-foreground">
-              {countOf(rows.length, "size", lang)}
-              {barcodes > 0 ? ` · ${isAr ? "باركود جديد" : "new barcodes"}: ${barcodes}` : ""}
-            </p>
-          )}
-          <Button variant="outline" onClick={onClose}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            onClick={() => void save()}
-            disabled={saving || loading || Boolean(problem) || rows.length === 0}
-          >
-            {isAr
-              ? `حفظ ${countOf(rows.length, "code", "ar")}`
-              : `Save ${countOf(rows.length, "code", "en")}`}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        {problem && <p className="me-auto self-center text-xs text-destructive">{problem}</p>}
+        {!problem && rows.length > 0 && (
+          <p className="me-auto self-center text-xs text-muted-foreground">
+            {countOf(rows.length, "size", lang)}
+            {barcodes > 0 ? ` · ${isAr ? "باركود جديد" : "new barcodes"}: ${barcodes}` : ""}
+          </p>
+        )}
+        <Button variant="outline" onClick={onClose}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          onClick={() => void save()}
+          disabled={saving || loading || Boolean(problem) || rows.length === 0}
+        >
+          {isAr
+            ? `حفظ ${countOf(rows.length, "code", "ar")}`
+            : `Save ${countOf(rows.length, "code", "en")}`}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
 

@@ -4,14 +4,6 @@ import { Copy, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
@@ -28,6 +20,12 @@ import { supplierOrderQueries } from "@/lib/data/supplier-orders";
 import { messageInLanguage, messagePieces, supplierMessage } from "../lib/supplier-message";
 import type { SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * The order written out for the supplier on WhatsApp: each piece with its size, measurements,
@@ -124,25 +122,20 @@ export function SupplierMessageDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="flex max-h-[92dvh] max-w-lg flex-col gap-3 overflow-hidden"
-      >
-        <DialogHeader>
-          <DialogTitle>
-            {isAr ? `رسالة إلى ${order.vendor_name}` : `Message to ${order.vendor_name}`}
-          </DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "القطع ومقاساتها وملاحظات التفصيل، بلا اسم الزبون ولا رقمه. أنت من يضغط إرسال."
-              : "The pieces with their sizes and making notes, with no customer name or number. You press send."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" dir={isAr ? "rtl" : "ltr"}>
+      <AppDialogHeader
+        title={isAr ? `رسالة إلى ${order.vendor_name}` : `Message to ${order.vendor_name}`}
+        description={
+          isAr
+            ? "القطع ومقاساتها وملاحظات التفصيل، بلا اسم الزبون ولا رقمه. أنت من يضغط إرسال."
+            : "The pieces with their sizes and making notes, with no customer name or number. You press send."
+        }
+      />
 
+      <AppDialogBody>
         <pre
           dir="auto"
-          className="min-h-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-muted/60 p-3 font-sans text-sm"
+          className="whitespace-pre-wrap break-words rounded-lg bg-muted/60 p-3 font-sans text-sm"
         >
           {message}
         </pre>
@@ -171,26 +164,25 @@ export function SupplierMessageDialog({
               : "This supplier has no number: copy the message, or add their number in the suppliers list."}
           </p>
         )}
-
-        <DialogFooter className="flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={copy} className="gap-1.5">
-            <Copy className="h-4 w-4" aria-hidden="true" />
-            {isAr ? "نسخ" : "Copy"}
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={copy} className="gap-1.5">
+          <Copy className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "نسخ" : "Copy"}
+        </Button>
+        {chat && (
+          <Button asChild className="gap-1.5">
+            <a
+              href={`${chat}?text=${encodeURIComponent(message)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+              {isAr ? "افتح واتساب" : "Open WhatsApp"}
+            </a>
           </Button>
-          {chat && (
-            <Button asChild className="gap-1.5">
-              <a
-                href={`${chat}?text=${encodeURIComponent(message)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                {isAr ? "افتح واتساب" : "Open WhatsApp"}
-              </a>
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

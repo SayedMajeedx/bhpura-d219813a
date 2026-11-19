@@ -3,14 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Wand as Wand2, Boxes, RefreshCw, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -49,6 +41,12 @@ import { arNounOblique } from "@/lib/arabic-count";
 import { becameMessage, firstSizes, leftoverMessage } from "@/features/inventory/lib/first-sizes";
 import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
 import { getFriendlyErrorMessage } from "@/lib/utils";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export function BulkVariantDialog({
   productId,
@@ -304,273 +302,276 @@ export function BulkVariantDialog({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(nextOpen) => {
-        setOpen(nextOpen);
-        if (nextOpen) {
-          setPlan({
-            ...blank,
-            base_sku: existingSku,
-            cost_price: Number(product?.cost_price ?? 0),
-            selling_price: Number(product?.base_price ?? 0),
-          });
-          setSalePriceText("");
-          setSizesText("");
-          setColorsText("");
-          setRows([]);
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Wand2 className="me-2 h-4 w-4" />
-          {isAr ? "إنشاء متغيرات متعددة" : "Bulk / AI variants"}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {isAr ? "منشئ متغيرات المنتج الذكي" : "Smart Product Variant Builder"}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Wand2 className="me-2 h-4 w-4" />
+        {isAr ? "إنشاء متغيرات متعددة" : "Bulk / AI variants"}
+      </Button>
+      <AppDialog
+        open={open}
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (nextOpen) {
+            setPlan({
+              ...blank,
+              base_sku: existingSku,
+              cost_price: Number(product?.cost_price ?? 0),
+              selling_price: Number(product?.base_price ?? 0),
+            });
+            setSalePriceText("");
+            setSizesText("");
+            setColorsText("");
+            setRows([]);
+          }
+        }}
+        kind="task"
+        size="xl"
+      >
+        <AppDialogHeader
+          title={isAr ? "منشئ متغيرات المنتج الذكي" : "Smart Product Variant Builder"}
+        />
 
-        {/* AI & NLP PROMPT BOX */}
-        <div className="rounded-lg border bg-secondary/30 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="font-semibold">
-              {isAr
-                ? "صف المتغيرات بالعربية أو الإنجليزية (الذكاء الاصطناعي)"
-                : "Describe variants in English or Arabic (AI Parser)"}
-            </Label>
-            <span className="text-xs text-muted-foreground">
-              {isAr
-                ? "يدعم المقاسات، الملابس، الألوان، الأسعار، والمخزون"
-                : "Supports Sizes, Colors, Prices & Stock"}
-            </span>
-          </div>
-          <textarea
-            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder={aiPromptPlaceholder}
-          />
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <Button type="button" onClick={parseWithAi} disabled={parsing}>
-              {parsing ? (
-                <>
-                  <Wand2 className="me-2 h-4 w-4 animate-spin" />
-                  {isAr ? "جاري التحليل..." : "Parsing..."}
-                </>
-              ) : (
-                <>
-                  <Wand2 className="me-2 h-4 w-4" />
-                  {isAr ? "تحليل فوري بالذكاء الاصطناعي" : "Instant AI / NLP Parse"}
-                </>
-              )}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "الذكاء الاصطناعي يعبئ الحقول للمراجعة. لن يتم حفظ شيء قبل المعاينة والتأكيد."
-                : "AI fills fields for review. Nothing is saved until you preview and confirm."}
-            </p>
-          </div>
-        </div>
-
-        {/* QUICK SIZING PRESET PILLS */}
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">
-            {isAr ? "قوالب مقاسات وخيارات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
-          </Label>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {orderedPresets.map((preset) => (
-              <Button
-                key={preset.id}
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs px-2.5 bg-background hover:bg-secondary"
-                onClick={() => applyPreset(preset)}
-              >
-                {isAr ? preset.labelAr : preset.labelEn}
+        <AppDialogBody>
+          {/* AI & NLP PROMPT BOX */}
+          <div className="rounded-lg border bg-secondary/30 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="font-semibold">
+                {isAr
+                  ? "صف المتغيرات بالعربية أو الإنجليزية (الذكاء الاصطناعي)"
+                  : "Describe variants in English or Arabic (AI Parser)"}
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {isAr
+                  ? "يدعم المقاسات، الملابس، الألوان، الأسعار، والمخزون"
+                  : "Supports Sizes, Colors, Prices & Stock"}
+              </span>
+            </div>
+            <textarea
+              className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder={aiPromptPlaceholder}
+            />
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <Button type="button" onClick={parseWithAi} disabled={parsing}>
+                {parsing ? (
+                  <>
+                    <Wand2 className="me-2 h-4 w-4 animate-spin" />
+                    {isAr ? "جاري التحليل..." : "Parsing..."}
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="me-2 h-4 w-4" />
+                    {isAr ? "تحليل فوري بالذكاء الاصطناعي" : "Instant AI / NLP Parse"}
+                  </>
+                )}
               </Button>
-            ))}
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "الذكاء الاصطناعي يعبئ الحقول للمراجعة. لن يتم حفظ شيء قبل المعاينة والتأكيد."
+                  : "AI fills fields for review. Nothing is saved until you preview and confirm."}
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* STRUCTURED VARIANT PLAN FIELDS */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <Label>{isAr ? "رمز المنتج الأساسي" : "Base SKU"}</Label>
-            <Input
-              value={plan.base_sku}
-              onChange={(e) => setPlan({ ...plan, base_sku: e.target.value })}
-              placeholder={existingSku || "e.g. DRS-01"}
-            />
-          </div>
-          <div>
-            <Label>
-              {sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+          {/* QUICK SIZING PRESET PILLS */}
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">
+              {isAr ? "قوالب مقاسات وخيارات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
             </Label>
-            <Input
-              value={sizesText}
-              onChange={(e) => setSizesText(e.target.value)}
-              placeholder={sizePlaceholder}
-            />
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {orderedPresets.map((preset) => (
+                <Button
+                  key={preset.id}
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs px-2.5 bg-background hover:bg-secondary"
+                  onClick={() => applyPreset(preset)}
+                >
+                  {isAr ? preset.labelAr : preset.labelEn}
+                </Button>
+              ))}
+            </div>
           </div>
-          {colorAxis.visible && (
+
+          {/* STRUCTURED VARIANT PLAN FIELDS */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <Label>{isAr ? "رمز المنتج الأساسي" : "Base SKU"}</Label>
+              <Input
+                value={plan.base_sku}
+                onChange={(e) => setPlan({ ...plan, base_sku: e.target.value })}
+                placeholder={existingSku || "e.g. DRS-01"}
+              />
+            </div>
             <div>
               <Label>
-                {colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+                {sizeAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
               </Label>
               <Input
-                value={colorsText}
-                onChange={(e) => setColorsText(e.target.value)}
-                placeholder={colorPlaceholder}
+                value={sizesText}
+                onChange={(e) => setSizesText(e.target.value)}
+                placeholder={sizePlaceholder}
               />
             </div>
-          )}
-          {resolveVariantAxis({
-            axis: "fabric",
-            product,
-            addonDefaults: addonAxisDefaults,
-            lang: isAr ? "ar" : "en",
-          }).visible && (
+            {colorAxis.visible && (
+              <div>
+                <Label>
+                  {colorAxis.label} {isAr ? "(بفاصلة)" : "(comma separated)"}
+                </Label>
+                <Input
+                  value={colorsText}
+                  onChange={(e) => setColorsText(e.target.value)}
+                  placeholder={colorPlaceholder}
+                />
+              </div>
+            )}
+            {resolveVariantAxis({
+              axis: "fabric",
+              product,
+              addonDefaults: addonAxisDefaults,
+              lang: isAr ? "ar" : "en",
+            }).visible && (
+              <div>
+                <Label>{isAr ? "الخامة" : "Fabric"}</Label>
+                <Input
+                  value={plan.fabric}
+                  onChange={(e) => setPlan({ ...plan, fabric: e.target.value })}
+                  placeholder={isAr ? "كريب ملكي / حرير" : "Silk / Linen / Crepe"}
+                />
+              </div>
+            )}
             <div>
-              <Label>{isAr ? "الخامة" : "Fabric"}</Label>
-              <Input
-                value={plan.fabric}
-                onChange={(e) => setPlan({ ...plan, fabric: e.target.value })}
-                placeholder={isAr ? "كريب ملكي / حرير" : "Silk / Linen / Crepe"}
-              />
+              <Label>{isAr ? "وحدة المقاس" : "Size unit"}</Label>
+              <select
+                className="h-10 w-full rounded-md border border-input bg-background px-3"
+                value={plan.size_unit}
+                onChange={(e) =>
+                  setPlan({
+                    ...plan,
+                    size_unit: e.target.value as VariantGenerationPlan["size_unit"],
+                  })
+                }
+              >
+                {SIZE_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {isAr
+                      ? SIZE_UNIT_LABELS[unit]?.ar || unit
+                      : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
-          <div>
-            <Label>{isAr ? "وحدة المقاس" : "Size unit"}</Label>
-            <select
-              className="h-10 w-full rounded-md border border-input bg-background px-3"
-              value={plan.size_unit}
-              onChange={(e) =>
-                setPlan({
-                  ...plan,
-                  size_unit: e.target.value as VariantGenerationPlan["size_unit"],
-                })
-              }
-            >
-              {SIZE_UNITS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {isAr
-                    ? SIZE_UNIT_LABELS[unit]?.ar || unit
-                    : SIZE_UNIT_LABELS[unit]?.en || unit || "—"}
-                </option>
-              ))}
-            </select>
-          </div>
-          {canViewFinancials && (
+            {canViewFinancials && (
+              <div>
+                <Label>{isAr ? "التكلفة الموروثة" : "Inherited cost"}</Label>
+                <Input
+                  className="bg-muted/50 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={Number(product?.cost_price ?? 0)}
+                  disabled
+                />
+              </div>
+            )}
             <div>
-              <Label>{isAr ? "التكلفة الموروثة" : "Inherited cost"}</Label>
+              <Label>{isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}</Label>
               <Input
-                className="bg-muted/50 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                 type="number"
                 min="0"
                 step="0.01"
-                value={Number(product?.cost_price ?? 0)}
-                disabled
+                max={Math.max(0, Number(product?.base_price ?? 0))}
+                placeholder={
+                  isAr
+                    ? `الأساسي ${Number(product?.base_price ?? 0)}`
+                    : `Regular ${Number(product?.base_price ?? 0)}`
+                }
+                value={salePriceText}
+                onChange={(e) => setSalePriceText(e.target.value)}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAr
+                  ? "السعر الفعلي للبيع. اتركه مطابقاً للأساسي أو فارغاً إذا لم يكن هناك تخفيض."
+                  : "The price customers actually pay. Leave blank if matching regular price."}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-1">
+                <Label>{isAr ? "مخزون المحل" : "Store stock"}</Label>
+                <TooltipProvider delayDuration={200}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground hover:text-foreground">
+                        <HelpCircle className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                      {isAr
+                        ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
+                        : "Physical stock in your primary store, ready for instant sale and shipping."}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                value={plan.stock_main}
+                onChange={(e) => setPlan({ ...plan, stock_main: Number(e.target.value) })}
               />
             </div>
-          )}
-          <div>
-            <Label>{isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}</Label>
-            <Input
-              type="number"
-              min="0"
-              step="0.01"
-              max={Math.max(0, Number(product?.base_price ?? 0))}
-              placeholder={
-                isAr
-                  ? `الأساسي ${Number(product?.base_price ?? 0)}`
-                  : `Regular ${Number(product?.base_price ?? 0)}`
-              }
-              value={salePriceText}
-              onChange={(e) => setSalePriceText(e.target.value)}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">
-              {isAr
-                ? "السعر الفعلي للبيع. اتركه مطابقاً للأساسي أو فارغاً إذا لم يكن هناك تخفيض."
-                : "The price customers actually pay. Leave blank if matching regular price."}
-            </p>
           </div>
-          <div>
-            <div className="flex items-center gap-1">
-              <Label>{isAr ? "مخزون المحل" : "Store stock"}</Label>
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="text-muted-foreground hover:text-foreground">
-                      <HelpCircle className="h-3 w-3" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
-                    {isAr
-                      ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
-                      : "Physical stock in your primary store, ready for instant sale and shipping."}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <Input
-              type="number"
-              min="0"
-              value={plan.stock_main}
-              onChange={(e) => setPlan({ ...plan, stock_main: Number(e.target.value) })}
-            />
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="secondary" onClick={buildPreview}>
-            <Boxes className="me-2 h-4 w-4" />
-            {isAr ? "إنشاء المعاينة وتوليد الباركود" : "Build Preview & Barcodes"}
-          </Button>
-          {rows.length > 0 && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground"
-              onClick={() => setRows([])}
-            >
-              <RefreshCw className="me-2 h-4 w-4" />
-              {isAr ? "إعادة تعيين" : "Reset"}
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="secondary" onClick={buildPreview}>
+              <Boxes className="me-2 h-4 w-4" />
+              {isAr ? "إنشاء المعاينة وتوليد الباركود" : "Build Preview & Barcodes"}
             </Button>
+            {rows.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => setRows([])}
+              >
+                <RefreshCw className="me-2 h-4 w-4" />
+                {isAr ? "إعادة تعيين" : "Reset"}
+              </Button>
+            )}
+          </div>
+
+          {/* PREVIEW TABLE WITH BATCH POWER TOOLS */}
+          {rows.length > 0 && (
+            <BulkVariantPreview
+              rows={rows}
+              onPatchRow={patchRow}
+              onRemoveRow={(index) => setRows((current) => current.filter((_, i) => i !== index))}
+              batch={batch}
+              axisLabels={{
+                size: sizeAxis.label,
+                color: colorAxis.label,
+                fabric: fabricAxis.label,
+              }}
+              basePricePlaceholder={String(product?.base_price ?? 0)}
+              canViewFinancials={canViewFinancials}
+              isAr={isAr}
+            />
           )}
-        </div>
 
-        {/* PREVIEW TABLE WITH BATCH POWER TOOLS */}
-        {rows.length > 0 && (
-          <BulkVariantPreview
-            rows={rows}
-            onPatchRow={patchRow}
-            onRemoveRow={(index) => setRows((current) => current.filter((_, i) => i !== index))}
-            batch={batch}
-            axisLabels={{ size: sizeAxis.label, color: colorAxis.label, fabric: fabricAxis.label }}
-            basePricePlaceholder={String(product?.base_price ?? 0)}
-            canViewFinancials={canViewFinancials}
-            isAr={isAr}
-          />
-        )}
-
-        {first.kind === "become" && rows.length > 0 && (
-          <FirstSizePiecesPicker
-            pieces={first.pieces}
-            options={rows.map(bulkRowLabel)}
-            chosen={becomeAt}
-            onChoose={setPiecesRow}
-            isAr={isAr}
-          />
-        )}
-
-        <DialogFooter>
+          {first.kind === "become" && rows.length > 0 && (
+            <FirstSizePiecesPicker
+              pieces={first.pieces}
+              options={rows.map(bulkRowLabel)}
+              chosen={becomeAt}
+              onChoose={setPiecesRow}
+              isAr={isAr}
+            />
+          )}
+        </AppDialogBody>
+        <AppDialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
             {isAr ? "إلغاء" : "Cancel"}
           </Button>
@@ -583,8 +584,8 @@ export function BulkVariantDialog({
                 ? `حفظ ${arNounOblique(rows.length, "variant")}`
                 : `Save ${rows.length} variants`}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </AppDialogFooter>
+      </AppDialog>
+    </>
   );
 }

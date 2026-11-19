@@ -3,14 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useBrand } from "@/lib/brand-context";
 import { moneyFractionDigits } from "@/lib/format";
@@ -22,6 +14,12 @@ import { PACK_SHEETS, monthPackSheets, readMonthPack } from "../lib/month-pack";
 import { localDay, readReceivables } from "../lib/receivables";
 import { monthLabel, monthsEnding, yearEarlier } from "../lib/statement";
 import { downloadWorkbook, workbookFileName } from "../lib/workbook";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * The accountant's month pack: a month chosen (the last one by default, the month a store
@@ -101,18 +99,17 @@ export function MonthPackDialog({
         <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
         {isAr ? "ملف الشهر للمحاسب" : "Month pack for the accountant"}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {isAr ? "ملف الشهر للمحاسب" : "Month pack for the accountant"}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "ملف Excel واحد بكل ما يحتاجه المحاسب للشهر، بعملة المتجر."
-                : `One Excel workbook with everything the accountant needs for the month, in ${currency}.`}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={open} onOpenChange={setOpen} kind="form" dir={isAr ? "rtl" : "ltr"}>
+        <AppDialogHeader
+          title={isAr ? "ملف الشهر للمحاسب" : "Month pack for the accountant"}
+          description={
+            isAr
+              ? "ملف Excel واحد بكل ما يحتاجه المحاسب للشهر، بعملة المتجر."
+              : `One Excel workbook with everything the accountant needs for the month, in ${currency}.`
+          }
+        />
+
+        <AppDialogBody>
           <div className="space-y-1">
             <Label htmlFor={`${uid}-month`}>{isAr ? "الشهر" : "Month"}</Label>
             <select
@@ -144,17 +141,17 @@ export function MonthPackDialog({
                 : "Customer balances and stock are as they stand today, not at the month's end."}
             </p>
           </div>
-          <DialogFooter className="flex-wrap gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" onClick={build} disabled={busy} className="gap-1.5">
-              <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
-              {busy ? (isAr ? "جارٍ الإعداد…" : "Preparing…") : isAr ? "تنزيل" : "Download"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={build} disabled={busy} className="gap-1.5">
+            <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+            {busy ? (isAr ? "جارٍ الإعداد…" : "Preparing…") : isAr ? "تنزيل" : "Download"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

@@ -3,16 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Archive, ChevronRight, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { catalogQueries, restoreProduct } from "@/lib/data/catalog";
 import { arNoun, countOf } from "@/lib/arabic-count";
 import { productDeleteError } from "@/features/inventory/lib/product-delete";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 type ArchivedProduct = {
   id: string;
@@ -90,22 +84,23 @@ export function ArchivedProductsLine({
           aria-hidden="true"
         />
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md gap-3">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "المنتجات المؤرشفة" : "Archived products"}</DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "منتجات حُذفت ولها سجل من المبيعات أو المخزون، فأُخفيت وبقي سجلها. استعادة المنتج تعيده إلى المخزون مخفياً حتى تُظهره."
-                : "Products removed with a record of sales or stock, hidden with their record kept. Restoring one puts it back in the inventory, hidden until you show it."}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={open} onOpenChange={setOpen} kind="task" dir={isAr ? "rtl" : "ltr"}>
+        <AppDialogHeader
+          title={isAr ? "المنتجات المؤرشفة" : "Archived products"}
+          description={
+            isAr
+              ? "منتجات حُذفت ولها سجل من المبيعات أو المخزون، فأُخفيت وبقي سجلها. استعادة المنتج تعيده إلى المخزون مخفياً حتى تُظهره."
+              : "Products removed with a record of sales or stock, hidden with their record kept. Restoring one puts it back in the inventory, hidden until you show it."
+          }
+        />
+
+        <AppDialogBody>
           {archived.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {isAr ? "لا توجد منتجات مؤرشفة." : "No archived products."}
             </p>
           ) : (
-            <ul className="max-h-80 divide-y divide-border overflow-y-auto">
+            <ul className="divide-y divide-border">
               {archived.map((product) => (
                 <li key={product.id} className="flex min-w-0 items-center gap-3 py-2.5">
                   <span
@@ -130,8 +125,8 @@ export function ArchivedProductsLine({
               ))}
             </ul>
           )}
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </>
   );
 }

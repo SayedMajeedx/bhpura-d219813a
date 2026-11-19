@@ -1,17 +1,16 @@
 import { Image as ImageIcon, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { BATCH_MAX } from "@/features/content-studio/lib/batch";
 import { FORMATS } from "@/features/content-studio/lib/studio-content";
 import { ProductTileGrid } from "@/features/content-studio/components/ProductTileGrid";
 import type { ContentStudio } from "@/features/content-studio/hooks/use-content-studio";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Runs the chosen template across several products: pick up to twelve,
@@ -57,17 +56,23 @@ export function BatchExportDialog({ studio }: { studio: ContentStudio }) {
   ];
 
   return (
-    <Dialog open={batchOpen} onOpenChange={(open) => !batchRunning && setBatchOpen(open)}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-2xl rounded-2xl">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "تصدير عدة منتجات" : "Export several products"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? `قالب «${templateName}» لكل منتج تختاره، باسمه وسعره وصورته، بنفس الشكل والمقاس.`
-              : `${templateName} for each product you pick, with its own name, price and photo, in this look and format.`}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={batchOpen}
+      onOpenChange={(open) => !batchRunning && setBatchOpen(open)}
+      kind="task"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "تصدير عدة منتجات" : "Export several products"}
+        description={
+          isAr
+            ? `قالب «${templateName}» لكل منتج تختاره، باسمه وسعره وصورته، بنفس الشكل والمقاس.`
+            : `${templateName} for each product you pick, with its own name, price and photo, in this look and format.`
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 min-w-0">
           <div className="flex items-center justify-between gap-3">
             <span id="studio-batch-label" className="text-xs font-bold text-foreground">
@@ -141,7 +146,10 @@ export function BatchExportDialog({ studio }: { studio: ContentStudio }) {
               );
             })}
           </div>
-
+        </div>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <div className="w-full sm:min-w-80">
           {batchRunning ? (
             <div className="flex items-center gap-2">
               <div
@@ -188,7 +196,7 @@ export function BatchExportDialog({ studio }: { studio: ContentStudio }) {
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

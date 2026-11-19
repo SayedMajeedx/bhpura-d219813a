@@ -4,18 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   suggestGroups,
   type GroupSuggestion,
 } from "@/features/instagram-import/lib/group-suggestions";
 import type { MergeableDraft } from "@/features/instagram-import/lib/merge-drafts";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * "Suggest groups": looks at when the posts were put up and what they say, and proposes which posts
@@ -79,21 +77,22 @@ export function SmartGrouping({
         <Sparkles className="h-3.5 w-3.5" />
         {isAr ? "اقتراح ذكي" : "Suggest groups"}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "اقتراح دمج المنشورات" : "Suggested merges"}</DialogTitle>
-            <DialogDescription>
-              {suggestions.length === 0
-                ? isAr
-                  ? "لم أجد منشورات تبدو كمنتج واحد. استخدم الدمج بالعدد أو حدد البطاقات بنفسك."
-                  : "No posts look like one product. Merge by count, or tick the cards yourself."
-                : isAr
-                  ? `وجدت ${suggestions.length} مجموعة (${sure} منها مؤكدة). راجعها ثم ادمج.`
-                  : `Found ${suggestions.length} groups (${sure} sure). Look them over, then merge.`}
-            </DialogDescription>
-          </DialogHeader>
-          <ul className="max-h-[50vh] space-y-2 overflow-y-auto pe-1">
+      <AppDialog open={open} onOpenChange={setOpen} kind="task" size="lg">
+        <AppDialogHeader
+          title={isAr ? "اقتراح دمج المنشورات" : "Suggested merges"}
+          description={
+            suggestions.length === 0
+              ? isAr
+                ? "لم أجد منشورات تبدو كمنتج واحد. استخدم الدمج بالعدد أو حدد البطاقات بنفسك."
+                : "No posts look like one product. Merge by count, or tick the cards yourself."
+              : isAr
+                ? `وجدت ${suggestions.length} مجموعة (${sure} منها مؤكدة). راجعها ثم ادمج.`
+                : `Found ${suggestions.length} groups (${sure} sure). Look them over, then merge.`
+          }
+        />
+
+        <AppDialogBody>
+          <ul className="space-y-2">
             {suggestions.map((suggestion, index) => {
               const members = suggestion.ids
                 .map((id) => byId.get(id))
@@ -147,16 +146,16 @@ export function SmartGrouping({
               );
             })}
           </ul>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" disabled={chosen.size === 0} onClick={apply}>
-              {isAr ? `دمج المحدد (${chosen.size})` : `Merge selected (${chosen.size})`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" disabled={chosen.size === 0} onClick={apply}>
+            {isAr ? `دمج المحدد (${chosen.size})` : `Merge selected (${chosen.size})`}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

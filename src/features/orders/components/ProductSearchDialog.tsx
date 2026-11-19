@@ -1,9 +1,9 @@
 import { Input } from "@/components/ui/input";
 import { Search, X, ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { isSoldFromStock } from "@/lib/product-availability";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** Search the catalog by name, SKU, barcode or size and add a variant to the order. */
 export function ProductSearchDialog({
@@ -28,15 +28,14 @@ export function ProductSearchDialog({
   onSelect: (variant: any) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden">
-        <DialogHeader className="p-4 pb-2 border-b">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Search className="h-4 w-4 text-primary" />
-            {lang === "ar" ? "البحث عن منتج أو SKU أو باركود" : "Search Product, SKU, or Barcode"}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="p-4 space-y-3">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="lg">
+      <AppDialogHeader
+        icon={<Search />}
+        title={lang === "ar" ? "البحث عن منتج أو SKU أو باركود" : "Search Product, SKU, or Barcode"}
+      />
+
+      <AppDialogBody
+        toolbar={
           <div className="relative">
             <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
@@ -60,8 +59,10 @@ export function ProductSearchDialog({
               </button>
             )}
           </div>
-
-          <div className="max-h-[380px] overflow-y-auto space-y-2 pe-1">
+        }
+      >
+        <div>
+          <div className="space-y-2">
             {results.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 {lang === "ar"
@@ -159,7 +160,7 @@ export function ProductSearchDialog({
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

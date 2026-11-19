@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 import { Check, Megaphone, Play, Pause, Square, ExternalLink, ShieldCheck } from "lucide-react";
 
 import type { BulkStatus } from "@/features/campaigns/lib/campaign-shared";
@@ -36,41 +36,33 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
   return (
     <>
       {/* IMMERSIVE BULK CAMPAIGN SENDER MODAL */}
-      <Dialog
+      <AppDialog
         open={bulkOpen}
-        onOpenChange={(v) => {
-          if (!bulkActive) setBulkOpen(v);
-        }}
+        onOpenChange={setBulkOpen}
+        kind="task"
+        size="lg"
+        busy={bulkActive}
+        dir={isAr ? "rtl" : "ltr"}
       >
-        <DialogContent
-          className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden"
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          <div className="p-6 border-b border-border flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="h-9 w-9 rounded bg-emerald-500/10 text-emerald-600 flex items-center justify-center animate-bounce">
-                <Megaphone className="h-4.5 w-4.5" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl font-display">
-                  {isAr ? "مساعد الإرسال الجماعي" : "Bulk Campaign Wizard"}
-                </DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {isAr
-                    ? `إرسال إلى العملاء المحددين: ${bulkQueue.length}.`
-                    : `Targeting ${bulkQueue.length} segments.`}
-                </p>
-              </div>
-            </div>
-            {bulkActive && (
-              <span className="flex items-center gap-1.5 text-xs bg-amber-500/15 text-amber-700 px-2 py-1 rounded-full font-medium animate-pulse">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <AppDialogHeader
+          icon={<Megaphone />}
+          title={isAr ? "مساعد الإرسال الجماعي" : "Bulk Campaign Wizard"}
+          description={
+            isAr
+              ? `إرسال إلى العملاء المحددين: ${bulkQueue.length}.`
+              : `Targeting ${bulkQueue.length} segments.`
+          }
+          meta={
+            bulkActive ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-2 py-1 font-medium text-foreground">
+                <span className="h-1.5 w-1.5 rounded-full bg-warning" />
                 {isAr ? "جارٍ البث..." : "Broadcasting..."}
               </span>
-            )}
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            ) : undefined
+          }
+        />
+        <AppDialogBody className="space-y-6">
+          <div className="space-y-6">
             {/* Mode selection tabs */}
             <div>
               <Label className="text-xs font-semibold text-muted-foreground">
@@ -295,8 +287,8 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
               )}
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </>
   );
 }

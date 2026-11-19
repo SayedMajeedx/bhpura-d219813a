@@ -22,15 +22,6 @@ import {
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
-import {
-  Dialog,
-  DialogContent,
-  PHONE_FULL_SCREEN,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,6 +48,12 @@ import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { countOf, arNounOblique } from "@/lib/arabic-count";
 import { TransferSizeRows } from "@/components/incubators/TransferSizeRows";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export type { BatchTransferProduct, BatchTransferVariant };
 
@@ -356,42 +353,28 @@ export function BatchIncubatorTransferModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="xl">
       {/* A fixed height, so nothing jumps while the sizes load; the whole screen on a phone. */}
-      <DialogContent
-        className={`flex h-[min(92dvh,56rem)] max-w-4xl flex-col gap-0 overflow-hidden rounded-2xl border border-border bg-card p-0 shadow-2xl ${PHONE_FULL_SCREEN}`}
-      >
-        {/* Header */}
-        <DialogHeader className="border-b border-border-strong bg-secondary/15 p-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:p-5 sm:pb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
-                <Building2 className="h-5 w-5" />
-              </div>
-              <div>
-                <DialogTitle className="flex flex-wrap items-center gap-2 font-heading text-base font-bold text-foreground sm:text-lg">
-                  <span>
-                    {isAr
-                      ? "تحويل وتعيين البضاعة إلى المحل الشريك"
-                      : "Transfer stock to a partner shop"}
-                  </span>
-                  <Badge variant="secondary" className="font-mono text-xs font-semibold px-2">
-                    {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} ·{" "}
-                    {countOf(rows.length, "size", isAr ? "ar" : "en")}
-                  </Badge>
-                </DialogTitle>
-                <DialogDescription className="mt-0.5 hidden text-xs text-muted-foreground sm:block">
-                  {isAr
-                    ? "نقل المخزون وتحديد أسعار الأمانة وعمولة المحل الشريك دفعة واحدة وبضغطة زر."
-                    : "Send pieces to a partner shop and set their prices, in one go."}
-                </DialogDescription>
-              </div>
-            </div>
-          </div>
-        </DialogHeader>
 
-        {/* One scrolling body: the controls scroll away, the search stays, the list has the room. */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <AppDialogHeader
+        icon={<Building2 />}
+        title={isAr ? "تحويل وتعيين البضاعة إلى المحل الشريك" : "Transfer stock to a partner shop"}
+        description={
+          isAr
+            ? "نقل المخزون وتحديد أسعار الأمانة وعمولة المحل الشريك دفعة واحدة وبضغطة زر."
+            : "Send pieces to a partner shop and set their prices, in one go."
+        }
+        meta={
+          <>
+            {countOf(targetProducts.length, "product", isAr ? "ar" : "en")} ·{" "}
+            {countOf(rows.length, "size", isAr ? "ar" : "en")}
+          </>
+        }
+      />
+
+      <AppDialogBody className="space-y-0 p-0 sm:p-0">
+        {/* The controls scroll away, the search stays, the list has the room. */}
+        <div>
           {/* Top Control Bar: Incubator Picker & Quick Presets */}
           <div className="space-y-3 border-b border-border-subtle bg-muted/20 p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
@@ -477,7 +460,7 @@ export function BatchIncubatorTransferModal({
           </div>
 
           {/* Search & Collapse Filter Bar: stays at the top while the list scrolls */}
-          <div className="sticky top-0 z-10 flex flex-col items-stretch gap-2 border-b border-border-subtle bg-card/95 px-4 py-2.5 backdrop-blur sm:flex-row sm:items-center">
+          <div className="sticky top-0 z-10 flex flex-col items-stretch gap-2 border-b border-border-subtle bg-background/95 px-4 py-2.5 backdrop-blur sm:flex-row sm:items-center">
             <div className="relative flex-1 w-full">
               <Search className="absolute end-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
@@ -744,10 +727,10 @@ export function BatchIncubatorTransferModal({
             </div>
           </div>
         </div>
-
-        {/* Footer: Summary Metrics & Action Buttons */}
-        <DialogFooter className="flex flex-col items-stretch justify-between gap-2.5 border-t border-border-strong bg-secondary/10 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:items-center sm:p-4">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs sm:justify-start">
+      </AppDialogBody>
+      <AppDialogFooter
+        summary={
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
             {tooMany.length > 0 && (
               <span role="alert" className="font-medium text-destructive">
                 {isAr
@@ -772,48 +755,42 @@ export function BatchIncubatorTransferModal({
               </span>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isSubmitting}
-              onClick={() => onOpenChange(false)}
-              className="h-11 flex-1 text-sm sm:h-9 sm:flex-none sm:text-xs"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              disabled={
-                isSubmitting ||
-                totalPieces === 0 ||
-                activeIncubators.length === 0 ||
-                tooMany.length > 0
-              }
-              onClick={handleExecuteTransfer}
-              className="h-11 flex-[2] gap-1.5 bg-primary text-sm font-bold text-primary-foreground hover:bg-primary/90 sm:h-9 sm:flex-none sm:text-xs"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>{isAr ? "جاري التحويل والتحديث..." : "Transferring..."}</span>
-                </>
-              ) : (
-                <>
-                  <ArrowRightLeft className="h-4 w-4" />
-                  <span>
-                    {isAr
-                      ? `تحويل ${arNounOblique(totalPieces, "piece")}`
-                      : `Transfer ${countOf(totalPieces, "piece", "en")}`}
-                  </span>
-                </>
-              )}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        }
+      >
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isSubmitting}
+          onClick={() => onOpenChange(false)}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          disabled={
+            isSubmitting || totalPieces === 0 || activeIncubators.length === 0 || tooMany.length > 0
+          }
+          onClick={handleExecuteTransfer}
+          className="gap-1.5"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>{isAr ? "جاري التحويل والتحديث..." : "Transferring..."}</span>
+            </>
+          ) : (
+            <>
+              <ArrowRightLeft className="h-4 w-4" />
+              <span>
+                {isAr
+                  ? `تحويل ${arNounOblique(totalPieces, "piece")}`
+                  : `Transfer ${countOf(totalPieces, "piece", "en")}`}
+              </span>
+            </>
+          )}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

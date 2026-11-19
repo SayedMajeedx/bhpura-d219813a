@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { arNounOblique } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Adds one customization preset (measurements, engraving, gift note...) to every selected product. */
 export function BulkPresetDialog({
@@ -32,13 +31,12 @@ export function BulkPresetDialog({
   isAr: boolean;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base font-bold">
-            {isAr ? "إضافة نموذج تخصيص للمنتجات المحددة" : "Add a customization preset"}
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={isAr ? "إضافة نموذج تخصيص للمنتجات المحددة" : "Add a customization preset"}
+      />
+
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           <p className="text-xs text-muted-foreground">
             {isAr
@@ -68,26 +66,26 @@ export function BulkPresetDialog({
             </select>
           </div>
         </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={applying}
-            onClick={() => onOpenChange(false)}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button type="button" disabled={applying || !value} onClick={onApply}>
-            {applying
-              ? isAr
-                ? "جاري الإضافة..."
-                : "Adding..."
-              : isAr
-                ? "إضافة للمنتجات"
-                : "Add to products"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={applying}
+          onClick={() => onOpenChange(false)}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button type="button" disabled={applying || !value} onClick={onApply}>
+          {applying
+            ? isAr
+              ? "جاري الإضافة..."
+              : "Adding..."
+            : isAr
+              ? "إضافة للمنتجات"
+              : "Add to products"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

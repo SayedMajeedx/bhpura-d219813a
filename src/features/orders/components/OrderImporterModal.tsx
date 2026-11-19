@@ -12,15 +12,9 @@ import { parseCSV } from "@/lib/csv-parser";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Sparkles, Upload, Loader2 } from "lucide-react";
 import { arNounOblique } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 export const ORDER_HEADER_MAPS = {
   order_number: ["name", "order number", "order_number", "رقم الطلب", "id"],
@@ -369,207 +363,214 @@ export function OrderImporterModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <>
       {controlledIsOpen === undefined && (
-        <DialogTrigger asChild>
-          <Button
-            variant="outline"
-            className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-xl border-primary/20 px-4 text-xs font-semibold shadow-sm transition-all hover:border-primary/50 sm:inline-flex"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-            {isAr ? "استيراد طلبات سابقة" : "Import Past Orders"}
-          </Button>
-        </DialogTrigger>
+        <Button
+          variant="outline"
+          className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-xl border-primary/20 px-4 text-xs font-semibold shadow-sm transition-all hover:border-primary/50 sm:inline-flex"
+          onClick={() => setIsOpen(true)}
+        >
+          <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+          {isAr ? "استيراد طلبات سابقة" : "Import Past Orders"}
+        </Button>
       )}
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl p-6 bg-card rounded-2xl border border-border shadow-2xl">
-        <DialogHeader className="pb-4 border-b border-border">
-          <DialogTitle className="text-lg font-bold font-display flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            {isAr ? "معالج ترحيل واستيراد الطلبات السابقة" : "Historical Orders Migration Engine"}
-          </DialogTitle>
-        </DialogHeader>
+      <AppDialog open={isOpen} onOpenChange={setIsOpen} kind="task" size="lg">
+        <AppDialogHeader
+          icon={<Sparkles />}
+          title={
+            isAr ? "معالج ترحيل واستيراد الطلبات السابقة" : "Historical Orders Migration Engine"
+          }
+        />
 
-        {step === "preset" && (
-          <div className="space-y-5 pt-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              {isAr
-                ? "ارفع ملفات الطلبات السابقة للتصدير من Shopify، WooCommerce، Salla، أو Zid مباشرة لتهيئة سجلات مبيعاتك بالكامل مع مطابقة العملاء."
-                : "Upload legacy order CSV exports from Shopify, WooCommerce, Salla, or Zid to populate sales history with zero downtime."}
-            </p>
-
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { id: "shopify", label: "Shopify Orders", desc: "orders_export.csv" },
-                { id: "woocommerce", label: "WooCommerce CSV", desc: "wc_orders.csv" },
-                { id: "salla", label: "Salla (سلة)", desc: "salla_orders.csv" },
-                { id: "zid", label: "Zid (زد)", desc: "zid_orders.csv" },
-              ].map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setPreset(p.id as any)}
-                  className={`p-4 rounded-xl border text-start transition-all ${
-                    preset === p.id
-                      ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
-                      : "border-border hover:border-border hover:bg-muted/30"
-                  }`}
-                >
-                  <p className="text-xs font-semibold">{p.label}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{p.desc}</p>
-                </button>
-              ))}
-            </div>
-
-            <div className="pt-4 border-t border-border flex justify-between items-center">
-              <Button
-                variant="ghost"
-                onClick={() => setPreset("custom")}
-                className="text-xs text-muted-foreground font-semibold"
-              >
-                {isAr ? "استخدام مطابقة مخصصة..." : "Use custom column mapper..."}
-              </Button>
-
-              <label className="bg-primary text-primary-foreground text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                {isAr ? "اختر ملف الـ CSV" : "Select CSV File"}
-                <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
-              </label>
-            </div>
-          </div>
-        )}
-
-        {step === "mapper" && (
-          <div className="space-y-4 pt-4">
-            <p className="text-xs text-muted-foreground">
-              {isAr
-                ? "طابق أعمدة ملف الـ CSV المخصص الخاص بك مع الحقول المطلوبة لترحيل مبيعاتك بنجاح."
-                : "Map your custom CSV file columns to match required fields in our historical sales engine."}
-            </p>
-
-            <div className="space-y-2.5 max-h-[300px] overflow-y-auto pe-1">
-              {[
-                { key: "order_number", label: isAr ? "رقم الطلب" : "Order Number", required: true },
-                { key: "order_date", label: isAr ? "تاريخ الطلب" : "Order Date", required: true },
-                {
-                  key: "customer_name",
-                  label: isAr ? "اسم العميل" : "Customer Name",
-                  required: false,
-                },
-                {
-                  key: "customer_phone",
-                  label: isAr ? "رقم جوال العميل" : "Customer Phone",
-                  required: false,
-                },
-                {
-                  key: "customer_email",
-                  label: isAr ? "البريد الإلكتروني" : "Customer Email",
-                  required: false,
-                },
-                {
-                  key: "total_price",
-                  label: isAr ? "إجمالي الطلب" : "Total Price",
-                  required: true,
-                },
-                { key: "item_name", label: isAr ? "اسم المنتج" : "Item Name", required: true },
-                {
-                  key: "item_quantity",
-                  label: isAr ? "كمية المنتج" : "Item Quantity",
-                  required: true,
-                },
-                { key: "item_price", label: isAr ? "سعر المنتج" : "Item Price", required: true },
-              ].map((field) => (
-                <div
-                  key={field.key}
-                  className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
-                >
-                  <span className="text-xs font-semibold text-foreground">
-                    {field.label} {field.required && <span className="text-rose-500">*</span>}
-                  </span>
-                  <Select
-                    value={mappings[field.key]?.toString() || "-1"}
-                    onValueChange={(val) =>
-                      setMappings((m) => ({ ...m, [field.key]: parseInt(val) }))
-                    }
-                  >
-                    <SelectTrigger className="w-[180px] h-8 text-xs">
-                      <SelectValue placeholder={isAr ? "اختر العمود..." : "Select..."} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="-1">-- {isAr ? "تجاوز" : "Skip"} --</SelectItem>
-                      {headers.map((h, idx) => (
-                        <SelectItem key={idx} value={idx.toString()}>
-                          {h}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-4 border-t border-border flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => setStep("preset")}
-                className="text-xs font-semibold"
-              >
-                {isAr ? "رجوع" : "Back"}
-              </Button>
-              <Button
-                onClick={() => {
-                  if (mappings.order_number === -1 || mappings.item_name === -1) {
-                    toast.error(
-                      isAr
-                        ? "رقم الطلب واسم المنتج حقول إلزامية للتجهيز."
-                        : "Order Number and Item Name are mandatory fields.",
-                    );
-                    return;
-                  }
-                  startImport(parsedRows, mappings);
-                }}
-                className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2"
-              >
-                {isAr ? "بدء الاستيراد" : "Start Import"}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === "importing" && (
-          <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-            <Loader2 className="h-10 w-10 text-primary animate-spin" />
-            <div className="space-y-1">
-              <p className="font-semibold text-sm">
-                {isAr ? "جاري استيراد تاريخ مبيعاتك..." : "Processing order database migration..."}
-              </p>
-              <p className="text-xs text-muted-foreground">{progress}</p>
-            </div>
-          </div>
-        )}
-
-        {step === "success" && (
-          <div className="py-8 flex flex-col items-center justify-center text-center space-y-5 pt-6">
-            <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 flex items-center justify-center border border-emerald-100 dark:border-emerald-900">
-              <Check className="h-6 w-6" />
-            </div>
-            <div className="space-y-1">
-              <p className="font-bold text-lg">
-                {isAr ? "اكتمل الترحيل بنجاح وافر!" : "Historical Migration Completed!"}
-              </p>
-              <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+        <AppDialogBody>
+          {step === "preset" && (
+            <div className="space-y-5 pt-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {isAr
-                  ? `تم بنجاح ترحيل واستيراد ${successCount} من أصل ${arNounOblique(totalCount, "order")} سابقة مع مطابقتها بالعملاء بنجاح.`
-                  : `Successfully imported ${successCount} out of ${totalCount} historical sales, matching billing phone entries directly.`}
+                  ? "ارفع ملفات الطلبات السابقة للتصدير من Shopify، WooCommerce، Salla، أو Zid مباشرة لتهيئة سجلات مبيعاتك بالكامل مع مطابقة العملاء."
+                  : "Upload legacy order CSV exports from Shopify, WooCommerce, Salla, or Zid to populate sales history with zero downtime."}
               </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "shopify", label: "Shopify Orders", desc: "orders_export.csv" },
+                  { id: "woocommerce", label: "WooCommerce CSV", desc: "wc_orders.csv" },
+                  { id: "salla", label: "Salla (سلة)", desc: "salla_orders.csv" },
+                  { id: "zid", label: "Zid (زد)", desc: "zid_orders.csv" },
+                ].map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPreset(p.id as any)}
+                    className={`p-4 rounded-xl border text-start transition-all ${
+                      preset === p.id
+                        ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
+                        : "border-border hover:border-border hover:bg-muted/30"
+                    }`}
+                  >
+                    <p className="text-xs font-semibold">{p.label}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{p.desc}</p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-border flex justify-between items-center">
+                <Button
+                  variant="ghost"
+                  onClick={() => setPreset("custom")}
+                  className="text-xs text-muted-foreground font-semibold"
+                >
+                  {isAr ? "استخدام مطابقة مخصصة..." : "Use custom column mapper..."}
+                </Button>
+
+                <label className="bg-primary text-primary-foreground text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2">
+                  <Upload className="h-4 w-4" />
+                  {isAr ? "اختر ملف الـ CSV" : "Select CSV File"}
+                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                </label>
+              </div>
             </div>
-            <Button
-              onClick={handleClose}
-              className="bg-primary text-xs font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/10"
-            >
-              {isAr ? "استمرار إلى اللوحة" : "Proceed to Dashboard"}
-            </Button>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+
+          {step === "mapper" && (
+            <div className="space-y-4 pt-4">
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "طابق أعمدة ملف الـ CSV المخصص الخاص بك مع الحقول المطلوبة لترحيل مبيعاتك بنجاح."
+                  : "Map your custom CSV file columns to match required fields in our historical sales engine."}
+              </p>
+
+              <div className="space-y-2.5 max-h-[300px] overflow-y-auto pe-1">
+                {[
+                  {
+                    key: "order_number",
+                    label: isAr ? "رقم الطلب" : "Order Number",
+                    required: true,
+                  },
+                  { key: "order_date", label: isAr ? "تاريخ الطلب" : "Order Date", required: true },
+                  {
+                    key: "customer_name",
+                    label: isAr ? "اسم العميل" : "Customer Name",
+                    required: false,
+                  },
+                  {
+                    key: "customer_phone",
+                    label: isAr ? "رقم جوال العميل" : "Customer Phone",
+                    required: false,
+                  },
+                  {
+                    key: "customer_email",
+                    label: isAr ? "البريد الإلكتروني" : "Customer Email",
+                    required: false,
+                  },
+                  {
+                    key: "total_price",
+                    label: isAr ? "إجمالي الطلب" : "Total Price",
+                    required: true,
+                  },
+                  { key: "item_name", label: isAr ? "اسم المنتج" : "Item Name", required: true },
+                  {
+                    key: "item_quantity",
+                    label: isAr ? "كمية المنتج" : "Item Quantity",
+                    required: true,
+                  },
+                  { key: "item_price", label: isAr ? "سعر المنتج" : "Item Price", required: true },
+                ].map((field) => (
+                  <div
+                    key={field.key}
+                    className="flex items-center justify-between gap-4 p-3 bg-muted/40 rounded-xl border border-border"
+                  >
+                    <span className="text-xs font-semibold text-foreground">
+                      {field.label} {field.required && <span className="text-rose-500">*</span>}
+                    </span>
+                    <Select
+                      value={mappings[field.key]?.toString() || "-1"}
+                      onValueChange={(val) =>
+                        setMappings((m) => ({ ...m, [field.key]: parseInt(val) }))
+                      }
+                    >
+                      <SelectTrigger className="w-[180px] h-8 text-xs">
+                        <SelectValue placeholder={isAr ? "اختر العمود..." : "Select..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">-- {isAr ? "تجاوز" : "Skip"} --</SelectItem>
+                        {headers.map((h, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>
+                            {h}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-border flex justify-end gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setStep("preset")}
+                  className="text-xs font-semibold"
+                >
+                  {isAr ? "رجوع" : "Back"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (mappings.order_number === -1 || mappings.item_name === -1) {
+                      toast.error(
+                        isAr
+                          ? "رقم الطلب واسم المنتج حقول إلزامية للتجهيز."
+                          : "Order Number and Item Name are mandatory fields.",
+                      );
+                      return;
+                    }
+                    startImport(parsedRows, mappings);
+                  }}
+                  className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2"
+                >
+                  {isAr ? "بدء الاستيراد" : "Start Import"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "importing" && (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+              <div className="space-y-1">
+                <p className="font-semibold text-sm">
+                  {isAr
+                    ? "جاري استيراد تاريخ مبيعاتك..."
+                    : "Processing order database migration..."}
+                </p>
+                <p className="text-xs text-muted-foreground">{progress}</p>
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="py-8 flex flex-col items-center justify-center text-center space-y-5 pt-6">
+              <div className="h-12 w-12 rounded-full bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 flex items-center justify-center border border-emerald-100 dark:border-emerald-900">
+                <Check className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-lg">
+                  {isAr ? "اكتمل الترحيل بنجاح وافر!" : "Historical Migration Completed!"}
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                  {isAr
+                    ? `تم بنجاح ترحيل واستيراد ${successCount} من أصل ${arNounOblique(totalCount, "order")} سابقة مع مطابقتها بالعملاء بنجاح.`
+                    : `Successfully imported ${successCount} out of ${totalCount} historical sales, matching billing phone entries directly.`}
+                </p>
+              </div>
+              <Button
+                onClick={handleClose}
+                className="bg-primary text-xs font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/10"
+              >
+                {isAr ? "استمرار إلى اللوحة" : "Proceed to Dashboard"}
+              </Button>
+            </div>
+          )}
+        </AppDialogBody>
+      </AppDialog>
+    </>
   );
 }
