@@ -23,13 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -48,6 +41,12 @@ import {
   updateGrantApplication,
 } from "@/lib/data/super-admin";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export type GrantApplication = {
   id: string;
@@ -564,27 +563,20 @@ export function SuperGrantsManager() {
       )}
 
       {/* Full Survey Details Modal */}
-      <Dialog open={Boolean(detailsApp)} onOpenChange={(open) => !open && setDetailsApp(null)}>
-        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto" dir="rtl">
-          {detailsApp && (
-            <div className="space-y-5">
-              <DialogHeader className="border-b border-border-subtle pb-3 text-right">
-                <div className="flex items-center justify-between gap-2">
-                  <DialogTitle className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                    <Store className="size-5 text-primary" />
-                    استبيان: {detailsApp.business_name}
-                  </DialogTitle>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs font-bold",
-                      (STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).color,
-                    )}
-                  >
-                    {(STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).label}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
+      <AppDialog
+        open={Boolean(detailsApp)}
+        onOpenChange={(open) => !open && setDetailsApp(null)}
+        kind="details"
+        size="lg"
+        dir="rtl"
+      >
+        {detailsApp && (
+          <>
+            <AppDialogHeader
+              icon={<Store />}
+              title={`استبيان: ${detailsApp.business_name}`}
+              description={
+                <>
                   تاريخ وتوقيت التقديم:{" "}
                   {new Date(detailsApp.created_at).toLocaleDateString("ar-BH-u-nu-latn", {
                     weekday: "long",
@@ -594,9 +586,21 @@ export function SuperGrantsManager() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                </p>
-              </DialogHeader>
-
+                </>
+              }
+              meta={
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-xs font-bold",
+                    (STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).color,
+                  )}
+                >
+                  {(STATUS_MAP[detailsApp.status] || STATUS_MAP.pending).label}
+                </Badge>
+              }
+            />
+            <AppDialogBody className="space-y-5">
               {/* Contact Information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-xl border border-border bg-card p-3.5 space-y-2">
@@ -805,19 +809,21 @@ export function SuperGrantsManager() {
                   إغلاق
                 </Button>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            </AppDialogBody>
+          </>
+        )}
+      </AppDialog>
 
       {/* Notes Dialog */}
-      <Dialog open={Boolean(selectedApp)} onOpenChange={(open) => !open && setSelectedApp(null)}>
-        <DialogContent className="sm:max-w-md" dir="rtl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold">
-              ملاحظات المشرف: {selectedApp?.business_name}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog
+        open={Boolean(selectedApp)}
+        onOpenChange={(open) => !open && setSelectedApp(null)}
+        kind="form"
+        dir="rtl"
+      >
+        <AppDialogHeader title={<>ملاحظات المشرف: {selectedApp?.business_name}</>} />
+
+        <AppDialogBody>
           <div className="space-y-3 py-2">
             <p className="text-xs text-muted-foreground">
               اكتب ملاحظاتك الداخلية حول جودة الحساب، ملائمة المنتجات، أو نتائج التواصل بالواتساب.
@@ -831,26 +837,26 @@ export function SuperGrantsManager() {
               className="text-xs sm:text-sm rounded-xl leading-relaxed text-right placeholder:text-muted-foreground placeholder:opacity-50"
             />
           </div>
-          <DialogFooter className="flex gap-2 sm:justify-start">
-            <Button
-              type="button"
-              onClick={handleSaveNotes}
-              disabled={updateMutation.isPending}
-              className="font-bold text-xs"
-            >
-              حفظ الملاحظة
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSelectedApp(null)}
-              className="text-xs font-bold"
-            >
-              إلغاء
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            onClick={handleSaveNotes}
+            disabled={updateMutation.isPending}
+            className="font-bold text-xs"
+          >
+            حفظ الملاحظة
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setSelectedApp(null)}
+            className="text-xs font-bold"
+          >
+            إلغاء
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

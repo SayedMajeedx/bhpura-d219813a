@@ -50,14 +50,14 @@ const BUDGETS = {
  */
 const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2433,
-  "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
+  "src/components/subscription/BrandSubscriptionHub.tsx": 1928,
   "src/lib/addons/addon-showcase-data.ts": 1859,
   "src/components/super/SuperPlansManager.tsx": 1716,
-  "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
+  "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1690,
   "src/lib/public-api/public-api-router.server.ts": 1271,
-  "src/routes/_authenticated/admin.brands.tsx": 794,
+  "src/routes/_authenticated/admin.brands.tsx": 791,
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1004,
-  "src/routes/onboard.tsx": 1056,
+  "src/routes/onboard.tsx": 1051,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1041,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1058,
 };

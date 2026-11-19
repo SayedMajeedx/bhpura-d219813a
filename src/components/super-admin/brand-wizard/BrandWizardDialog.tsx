@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useState } from "react";
 import {
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -44,6 +44,8 @@ import { provisionWhiteLabelApp } from "@/lib/data/super-admin";
 import { adminAddress, storeAddress } from "@/lib/platform-host";
 
 interface BrandWizardDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSaved: () => void;
   onClose?: () => void;
 }
@@ -81,7 +83,12 @@ const STEPS: { id: WizardStep; labelAr: string; labelEn: string; icon: React.Ele
   { id: "review", labelAr: "المراجعة والإطلاق", labelEn: "Review & Launch", icon: Rocket },
 ];
 
-export function BrandWizardDialog({ onSaved, onClose }: BrandWizardDialogProps) {
+export function BrandWizardDialog({
+  open,
+  onOpenChange,
+  onSaved,
+  onClose,
+}: BrandWizardDialogProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
@@ -289,74 +296,66 @@ Password: ${data.owner_password || "(as provided)"}`;
   };
 
   return (
-    <DialogContent className="max-w-3xl max-h-[92vh] overflow-hidden flex flex-col p-0 gap-0 border-border bg-background shadow-2xl rounded-2xl">
-      {/* Header */}
-      <div className="p-6 pb-4 border-b border-border bg-muted/10">
-        <DialogHeader className="text-start">
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary mb-1">
-            <Sparkles className="h-4 w-4" />
-            {isAr ? "معالج تجهيز وإطلاق البراندات" : "Brand Setup & Launch Wizard"}
-          </div>
-          <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-            {isAr ? "إطلاق متجر بوتيك جديد" : "Launch a New Boutique Store"}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            {isAr
-              ? "معالج ذكي لتأسيس هوية المتجر، استخراج لوحة الألوان، تجهيز الأقسام وحساب المدير في دقائق."
-              : "Smart wizard to establish brand identity, extract color palette, starter taxonomy, and admin account."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="lg" busy={isExecuting}>
+      <AppDialogHeader
+        icon={<Sparkles />}
+        title={isAr ? "إطلاق متجر بوتيك جديد" : "Launch a New Boutique Store"}
+        description={
+          isAr
+            ? "معالج ذكي لتأسيس هوية المتجر، استخراج لوحة الألوان، تجهيز الأقسام وحساب المدير في دقائق."
+            : "Smart wizard to establish brand identity, extract color palette, starter taxonomy, and admin account."
+        }
+        meta={isAr ? "معالج تجهيز وإطلاق البراندات" : "Brand Setup & Launch Wizard"}
+      />
+      <AppDialogBody
+        toolbar={
+          isExecuting ? undefined : (
+            <div className="grid grid-cols-4 gap-2">
+              {STEPS.map((step, idx) => {
+                const isCurrent = currentStep === step.id;
+                const isPassed = STEPS.findIndex((s) => s.id === currentStep) > idx;
 
-        {/* Stepper Navigation */}
-        {!isExecuting && (
-          <div className="grid grid-cols-4 gap-2 mt-5">
-            {STEPS.map((step, idx) => {
-              const isCurrent = currentStep === step.id;
-              const isPassed = STEPS.findIndex((s) => s.id === currentStep) > idx;
-
-              return (
-                <Button
-                  key={step.id}
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (isPassed) setCurrentStep(step.id);
-                  }}
-                  disabled={!isPassed && !isCurrent}
-                  className={`h-auto whitespace-normal rounded-md flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
-                    isCurrent
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
-                      : isPassed
-                        ? "border-border bg-card text-foreground cursor-pointer"
-                        : "border-transparent text-muted-foreground opacity-60 cursor-not-allowed"
-                  }`}
-                >
-                  <div
-                    className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
+                return (
+                  <Button
+                    key={step.id}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (isPassed) setCurrentStep(step.id);
+                    }}
+                    disabled={!isPassed && !isCurrent}
+                    className={`h-auto whitespace-normal rounded-md flex items-center gap-2 p-2 rounded-xl text-start transition-all border ${
                       isCurrent
-                        ? "bg-primary text-primary-foreground font-bold"
+                        ? "border-primary bg-primary/10 text-primary font-semibold"
                         : isPassed
-                          ? "bg-success/20 text-success font-bold"
-                          : "bg-muted text-muted-foreground"
+                          ? "border-border bg-card text-foreground cursor-pointer"
+                          : "border-transparent text-muted-foreground opacity-60 cursor-not-allowed"
                     }`}
                   >
-                    {isPassed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
-                  </div>
-                  <div className="hidden sm:block truncate">
-                    <div className="text-xs font-semibold truncate leading-tight">
-                      {isAr ? step.labelAr : step.labelEn}
+                    <div
+                      className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 text-xs ${
+                        isCurrent
+                          ? "bg-primary text-primary-foreground font-bold"
+                          : isPassed
+                            ? "bg-success/20 text-success font-bold"
+                            : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {isPassed ? <Check className="h-3.5 w-3.5" /> : idx + 1}
                     </div>
-                  </div>
-                </Button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Body / Scrollable Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+                    <div className="hidden sm:block truncate">
+                      <div className="text-xs font-semibold truncate leading-tight">
+                        {isAr ? step.labelAr : step.labelEn}
+                      </div>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+          )
+        }
+      >
         {isExecuting ? (
           <div className="space-y-6 py-4">
             <div className="text-center space-y-2">
@@ -512,10 +511,9 @@ Password: ${data.owner_password || "(as provided)"}`;
             {currentStep === "review" && <StepReview data={data} isAr={isAr} />}
           </>
         )}
-      </div>
+      </AppDialogBody>
 
-      {/* Footer / Controls */}
-      <div className="p-4 border-t border-border flex items-center justify-between bg-muted/10">
+      <AppDialogFooter>
         {isExecuting ? (
           <div className="w-full flex justify-end">
             {executionComplete && (
@@ -567,7 +565,7 @@ Password: ${data.owner_password || "(as provided)"}`;
             )}
           </>
         )}
-      </div>
-    </DialogContent>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

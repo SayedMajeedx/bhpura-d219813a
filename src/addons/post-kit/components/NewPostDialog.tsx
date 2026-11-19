@@ -1,16 +1,10 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import { STARTERS, postFromStarter, type Starter } from "../content/starters";
 import type { PostKit } from "../hooks/use-post-kit";
 import { livePost } from "../lib/photos";
 import { ownPostKey } from "../lib/own-posts";
 import { PostPicture } from "./PostPicture";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** The store's first piece on sale: what a new post with a photo starts on, changed in the maker. */
 const firstPiece = (kit: PostKit) =>
@@ -36,16 +30,17 @@ export function NewPostDialog({
     onOpenChange(false);
   };
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85dvh] max-w-3xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "بوست جديد" : "New post"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "اختار شكل البوست، وبعدها غيّر الكلام والصور والألوان."
-              : "Choose a layout, then change its words, photos and colours."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="lg">
+      <AppDialogHeader
+        title={isAr ? "بوست جديد" : "New post"}
+        description={
+          isAr
+            ? "اختار شكل البوست، وبعدها غيّر الكلام والصور والألوان."
+            : "Choose a layout, then change its words, photos and colours."
+        }
+      />
+
+      <AppDialogBody>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {open
             ? STARTERS.map((starter) => {
@@ -66,7 +61,7 @@ export function NewPostDialog({
               })
             : null}
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

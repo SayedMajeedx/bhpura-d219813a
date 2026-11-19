@@ -2,19 +2,17 @@ import { useState } from "react";
 import { Eraser, Paintbrush, RotateCcw, Scissors } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { useI18n } from "@/lib/i18n";
 import type { PostKit } from "../hooks/use-post-kit";
 import { useCutout } from "../hooks/use-cutout";
 import { cutoutPng } from "../lib/cutout-canvas";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Below this share of the picture kept, the fill has taken the subject too. */
 const TOO_LITTLE = 0.01;
@@ -118,18 +116,21 @@ export function CutoutDialog({
             );
 
   return (
-    <Dialog open={Boolean(photoKey)} onOpenChange={(open) => (open ? null : onClose())}>
-      <DialogContent className="max-h-[92dvh] max-w-2xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{say("شيل الخلفية", "Remove the background")}</DialogTitle>
-          <DialogDescription>
-            {say(
-              "تصير على جهازك، والصورة الأصل تظل مثل ما هي. الستيكر ينحفظ في «ستيكراتي».",
-              "It happens on this device, and the original stays as it is. The sticker goes in My stickers.",
-            )}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={Boolean(photoKey)}
+      onOpenChange={(open) => (open ? null : onClose())}
+      kind="task"
+      size="lg"
+    >
+      <AppDialogHeader
+        title={say("شيل الخلفية", "Remove the background")}
+        description={say(
+          "تصير على جهازك، والصورة الأصل تظل مثل ما هي. الستيكر ينحفظ في «ستيكراتي».",
+          "It happens on this device, and the original stays as it is. The sticker goes in My stickers.",
+        )}
+      />
 
+      <AppDialogBody>
         {photo && !cut.px ? (
           <p role="alert" className="text-sm text-destructive">
             {say(
@@ -208,17 +209,16 @@ export function CutoutDialog({
             ) : null}
           </div>
         ) : null}
-
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            {say("إلغاء", "Cancel")}
-          </Button>
-          <Button type="button" disabled={!cut.px || tooLittle || saving} onClick={save}>
-            <Scissors className="size-4" />
-            {saving ? say("نحفظ…", "Saving…") : say("احفظه ستيكر", "Save as a sticker")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {say("إلغاء", "Cancel")}
+        </Button>
+        <Button type="button" disabled={!cut.px || tooLittle || saving} onClick={save}>
+          <Scissors className="size-4" />
+          {saving ? say("نحفظ…", "Saving…") : say("احفظه ستيكر", "Save as a sticker")}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

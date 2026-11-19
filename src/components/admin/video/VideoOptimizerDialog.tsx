@@ -1,14 +1,6 @@
 "use client";
 
-import React, { useEffect, useId, useMemo, useRef, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -34,6 +26,12 @@ import {
   type OptimizedVideoResult,
 } from "@/lib/video-optimizer";
 import { toast } from "sonner";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export interface VideoOptimizerDialogProps {
   open: boolean;
@@ -65,7 +63,6 @@ export function VideoOptimizerDialog({
   const { lang, dir } = useI18n();
   const isAr = lang === "ar";
   const isRTL = dir === "rtl";
-  const dialogTitleId = useId();
 
   const [selectedPreset, setSelectedPreset] = useState<VideoPresetKey>(() =>
     getStoredVideoPreset(brandId),
@@ -233,29 +230,24 @@ export function VideoOptimizerDialog({
   }, [optimizedResult]);
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !isProcessing && !isUploading && onOpenChange(val)}>
-      <DialogContent
-        className="sm:max-w-xl max-h-[90vh] overflow-y-auto"
-        dir={isRTL ? "rtl" : "ltr"}
-      >
-        <DialogHeader>
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Film className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle id={dialogTitleId} className="text-lg font-semibold">
-                {title || (isAr ? "تحسين وتجهيز الفيديو للرفع" : "Optimize Video for Web Delivery")}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                {isAr
-                  ? "ترميز عالي الدقة (WebCodecs H.264) وبدء تشغيل فوري FastStart بأقل استهلاك للبيانات"
-                  : "WebCodecs H.264 encoding with FastStart for instant playback and minimal data usage"}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <AppDialog
+      open={open}
+      onOpenChange={(val) => !isProcessing && !isUploading && onOpenChange(val)}
+      kind="task"
+      size="lg"
+      dir={isRTL ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={title || (isAr ? "تحسين وتجهيز الفيديو للرفع" : "Optimize Video for Web Delivery")}
+        description={
+          isAr
+            ? "ترميز عالي الدقة (WebCodecs H.264) وبدء تشغيل فوري FastStart بأقل استهلاك للبيانات"
+            : "WebCodecs H.264 encoding with FastStart for instant playback and minimal data usage"
+        }
+        icon={<Film />}
+      />
 
+      <AppDialogBody>
         {file && (
           <div className="space-y-4 py-2">
             {/* File Info Bar */}
@@ -414,101 +406,100 @@ export function VideoOptimizerDialog({
             )}
           </div>
         )}
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isProcessing || isUploading}
+          onClick={() => {
+            onCancel?.();
+            onOpenChange(false);
+          }}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isProcessing || isUploading}
-            onClick={() => {
-              onCancel?.();
-              onOpenChange(false);
-            }}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
+        {!optimizedResult ? (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isProcessing || isUploading || !file}
+              onClick={handleOptimizeAndPreview}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {isAr ? "جارٍ التحسين…" : "Optimizing…"}
+                </>
+              ) : (
+                <>
+                  <Film className="me-2 h-4 w-4" />
+                  {isAr ? "معاينة الضغط" : "Preview Quality"}
+                </>
+              )}
+            </Button>
 
-          {!optimizedResult ? (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={isProcessing || isUploading || !file}
-                onClick={handleOptimizeAndPreview}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    {isAr ? "جارٍ التحسين…" : "Optimizing…"}
-                  </>
-                ) : (
-                  <>
-                    <Film className="me-2 h-4 w-4" />
-                    {isAr ? "معاينة الضغط" : "Preview Quality"}
-                  </>
-                )}
-              </Button>
+            <Button
+              type="button"
+              variant="default"
+              disabled={isProcessing || isUploading || !file}
+              onClick={handleConfirmUpload}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {isAr ? "جارٍ الرفع…" : "Uploading…"}
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="me-2 h-4 w-4" />
+                  {isAr ? "تحسين ورفع مباشر" : "Optimize & Upload"}
+                </>
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isProcessing || isUploading}
+              onClick={() => {
+                setOptimizedResult(null);
+                if (previewUrl) {
+                  URL.revokeObjectURL(previewUrl);
+                  setPreviewUrl(null);
+                }
+              }}
+            >
+              <RotateCcw className="me-1.5 h-3.5 w-3.5" />
+              {isAr ? "إعادة الضبط" : "Re-configure"}
+            </Button>
 
-              <Button
-                type="button"
-                variant="default"
-                disabled={isProcessing || isUploading || !file}
-                onClick={handleConfirmUpload}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    {isAr ? "جارٍ الرفع…" : "Uploading…"}
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="me-2 h-4 w-4" />
-                    {isAr ? "تحسين ورفع مباشر" : "Optimize & Upload"}
-                  </>
-                )}
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isProcessing || isUploading}
-                onClick={() => {
-                  setOptimizedResult(null);
-                  if (previewUrl) {
-                    URL.revokeObjectURL(previewUrl);
-                    setPreviewUrl(null);
-                  }
-                }}
-              >
-                <RotateCcw className="me-1.5 h-3.5 w-3.5" />
-                {isAr ? "إعادة الضبط" : "Re-configure"}
-              </Button>
-
-              <Button
-                type="button"
-                variant="default"
-                disabled={isUploading}
-                onClick={handleConfirmUpload}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    {isAr ? "جارٍ الرفع…" : "Uploading…"}
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="me-2 h-4 w-4" />
-                    {isAr ? "تأكيد ورفع الفيديو" : "Confirm & Upload"}
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Button
+              type="button"
+              variant="default"
+              disabled={isUploading}
+              onClick={handleConfirmUpload}
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  {isAr ? "جارٍ الرفع…" : "Uploading…"}
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="me-2 h-4 w-4" />
+                  {isAr ? "تأكيد ورفع الفيديو" : "Confirm & Upload"}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

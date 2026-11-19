@@ -3,13 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -30,6 +23,12 @@ import { createExpense } from "@/lib/data/expenses";
 
 import { type ScannedExpense, type ScannedLineItem } from "@/lib/scan-receipt.functions";
 import { getCurrentUser } from "@/lib/auth/session";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 // ============================================================================
 // AI Receipt Review Dialog — professional commercial-receipt layout
@@ -58,13 +57,8 @@ export function ReceiptReviewDialog({
     setForm(scanned);
   }, [scanned]);
 
-  if (!form) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent />
-      </Dialog>
-    );
-  }
+  // Nothing scanned yet: no empty box.
+  if (!form) return null;
 
   const setF = (patch: Partial<ScannedExpense>) =>
     setForm((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -125,19 +119,19 @@ export function ReceiptReviewDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" />
-            {lang === "ar" ? "مراجعة الفاتورة الممسوحة" : "Review scanned receipt"}
-            <Badge variant="secondary" className="gap-1 ms-2">
-              <Sparkles className="h-3 w-3" />
-              {lang === "ar" ? "مستخرج بالذكاء الاصطناعي" : "AI extracted"}
-            </Badge>
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="lg">
+      <AppDialogHeader
+        icon={<Receipt />}
+        title={lang === "ar" ? "مراجعة الفاتورة الممسوحة" : "Review scanned receipt"}
+        meta={
+          <Badge variant="secondary" className="gap-1">
+            <Sparkles className="h-3 w-3" />
+            {lang === "ar" ? "مستخرج بالذكاء الاصطناعي" : "AI extracted"}
+          </Badge>
+        }
+      />
 
+      <AppDialogBody>
         {/* Header block: store, date, time */}
         <div className="rounded-lg border bg-secondary/30 p-4 space-y-4">
           <div>
@@ -333,17 +327,16 @@ export function ReceiptReviewDialog({
             />
           </div>
         </div>
-
-        <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            {lang === "ar" ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button onClick={save} disabled={saving}>
-            {saving && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
-            {lang === "ar" ? "حفظ المصروف" : "Save expense"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          {lang === "ar" ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button onClick={save} disabled={saving}>
+          {saving && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+          {lang === "ar" ? "حفظ المصروف" : "Save expense"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

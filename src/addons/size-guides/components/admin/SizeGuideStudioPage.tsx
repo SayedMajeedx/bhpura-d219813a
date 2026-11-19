@@ -10,13 +10,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Ruler,
   Plus,
   Copy,
@@ -54,6 +47,12 @@ import { SizeGuidePanel } from "../storefront/size-guide/SizeGuidePanel";
 import { fetchSizeGuideUsage } from "@/addons/size-guides/lib/usage";
 import { studioNames } from "@/addons/size-guides/lib/studio-names";
 import { countOf, arNounOblique } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 type FormState = {
   id?: string;
@@ -1551,15 +1550,18 @@ export function SizeGuidesStudioPage() {
       </div>
 
       {/* Template Picker Dialog */}
-      <Dialog open={templateDialogOpen} onOpenChange={setTemplateDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <span>{isAr ? "اختيار قالب دليل مقاسات جاهز" : "Choose a Size Guide Template"}</span>
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        kind="form"
+        size="lg"
+      >
+        <AppDialogHeader
+          icon={<Sparkles />}
+          title={isAr ? "اختيار قالب دليل مقاسات جاهز" : "Choose a Size Guide Template"}
+        />
 
+        <AppDialogBody>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3">
             {ALL_SIZE_GUIDE_TEMPLATES.map((tmpl) => (
               <div
@@ -1596,21 +1598,17 @@ export function SizeGuidesStudioPage() {
               </div>
             ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
 
       {/* Paste from Sheets Dialog */}
-      <Dialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
-              <span>
-                {isAr ? "لصق من جدول بيانات (Excel / Google Sheets)" : "Paste from Spreadsheet"}
-              </span>
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={pasteDialogOpen} onOpenChange={setPasteDialogOpen} kind="form" size="lg">
+        <AppDialogHeader
+          icon={<FileSpreadsheet />}
+          title={isAr ? "لصق من جدول بيانات (Excel / Google Sheets)" : "Paste from Spreadsheet"}
+        />
 
+        <AppDialogBody>
           <div className="space-y-3 pt-2">
             <p className="text-xs text-muted-foreground leading-relaxed">
               {isAr
@@ -1626,33 +1624,31 @@ export function SizeGuidesStudioPage() {
               className="font-mono text-xs leading-relaxed"
             />
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPasteDialogOpen(false)}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" size="sm" onClick={handleApplyPaste} className="gap-1.5">
-              <Check className="h-4 w-4" />
-              <span>{isAr ? "تطبيق الجدول المستورد" : "Apply Imported Table"}</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setPasteDialogOpen(false)}
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" size="sm" onClick={handleApplyPaste} className="gap-1.5">
+            <Check className="h-4 w-4" />
+            <span>{isAr ? "تطبيق الجدول المستورد" : "Apply Imported Table"}</span>
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              <span>{isAr ? "تأكيد حذف دليل المقاسات" : "Confirm Deletion"}</span>
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen} kind="confirm">
+        <AppDialogHeader
+          icon={<AlertTriangle />}
+          title={isAr ? "تأكيد حذف دليل المقاسات" : "Confirm Deletion"}
+        />
+
+        <AppDialogBody>
           <div className="space-y-2 text-xs text-muted-foreground pt-1">
             <p>
               {isAr
@@ -1665,28 +1661,28 @@ export function SizeGuidesStudioPage() {
                 : "Any products or categories currently linked to this guide will automatically fallback to the store default."}
             </p>
           </div>
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setDeleteConfirmOpen(false)}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={handleDelete}
-              className="gap-1.5"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>{isAr ? "حذف نهائي" : "Delete Permanently"}</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setDeleteConfirmOpen(false)}
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={handleDelete}
+            className="gap-1.5"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span>{isAr ? "حذف نهائي" : "Delete Permanently"}</span>
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

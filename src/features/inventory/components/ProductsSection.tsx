@@ -1,7 +1,6 @@
 import { ServicePriceSummary } from "@/features/inventory/components/ServicePriceSummary";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
-import { Dialog } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -524,31 +523,28 @@ export function ProductsSection({
         isAr={isAr}
       />
 
-      <Dialog
+      <ProductDialog
+        key={`${editing?.id ?? "new"}-${dialogSession}`}
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
           if (!v) setEditing(null);
         }}
-      >
-        <ProductDialog
-          key={`${editing?.id ?? "new"}-${dialogSession}`}
-          product={editing}
-          onSaved={(newProductId?: string, kind?: "service" | "product") => {
-            setOpen(false);
-            setEditing(null);
-            onChanged();
-            if (newProductId) {
+        product={editing}
+        onSaved={(newProductId?: string, kind?: "service" | "product") => {
+          setOpen(false);
+          setEditing(null);
+          onChanged();
+          if (newProductId) {
+            setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
+            productCreatedNotice(kind ?? "product", isAr, () => {
               setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
-              productCreatedNotice(kind ?? "product", isAr, () => {
-                setExpandedProducts((prev) => ({ ...prev, [newProductId]: true }));
-                const el = document.getElementById(`product-row-${newProductId}`);
-                el?.scrollIntoView({ behavior: "smooth", block: "center" });
-              });
-            }
-          }}
-        />
-      </Dialog>
+              const el = document.getElementById(`product-row-${newProductId}`);
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            });
+          }
+        }}
+      />
 
       {bomTargetProduct && (
         <ProductBomModal

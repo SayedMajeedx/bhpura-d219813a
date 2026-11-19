@@ -115,7 +115,11 @@ export function GiftCardOrderSheet({
 
   return (
     <Sheet open onOpenChange={(open) => !open && onClose()}>
-      <SheetContent dir={isAr ? "rtl" : "ltr"} className="w-full overflow-y-auto sm:max-w-md">
+      <SheetContent
+        side={isAr ? "left" : "right"}
+        dir={isAr ? "rtl" : "ltr"}
+        className="w-full overflow-y-auto sm:max-w-md"
+      >
         <SheetHeader className="text-start">
           <SheetTitle>{amount}</SheetTitle>
           <SheetDescription>

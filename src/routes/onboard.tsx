@@ -20,7 +20,6 @@ import {
   Lock,
   Puzzle,
 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
 import {
   registerInstantTrial,
@@ -36,6 +35,7 @@ import { pickerVerticals } from "@/lib/verticals/registry";
 import { VerticalChoice } from "@/components/verticals/VerticalChoice";
 import { signInWithPassword } from "@/lib/auth/sign-in";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 function arabicToLatinSlug(text: string): string {
   const map: Record<string, string> = {
@@ -479,14 +479,13 @@ function OnboardPage() {
           </div>
 
           {/* Mobile Preview Modal */}
-          <Dialog open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-            <DialogContent className="max-w-md w-[95vw] sm:w-full p-2 sm:p-5 bg-card border-border max-h-[94vh] overflow-y-auto">
-              <DialogHeader className="pb-1">
-                <DialogTitle className="text-sm font-bold flex items-center gap-2">
-                  <Sparkles className="size-4 text-primary" />
-                  <span>{isAr ? "المعاينة الحية للمتجر" : "Storefront Live Preview"}</span>
-                </DialogTitle>
-              </DialogHeader>
+          <AppDialog open={showMobilePreview} onOpenChange={setShowMobilePreview} kind="form">
+            <AppDialogHeader
+              icon={<Sparkles />}
+              title={isAr ? "المعاينة الحية للمتجر" : "Storefront Live Preview"}
+            />
+
+            <AppDialogBody>
               <StorefrontLivePreview
                 slug="pura"
                 displaySlug={slug || (isAr ? "متجرك" : "your-brand")}
@@ -494,8 +493,8 @@ function OnboardPage() {
                 isAr={isAr}
                 onActionClick={() => setShowMobilePreview(false)}
               />
-            </DialogContent>
-          </Dialog>
+            </AppDialogBody>
+          </AppDialog>
         </div>
 
         {/* 3. Boutique Launch Form & Live Storefront Preview */}
