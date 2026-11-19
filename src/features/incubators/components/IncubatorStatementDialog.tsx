@@ -173,7 +173,17 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
           </p>
         </div>
       </AppDialogBody>
-      <AppDialogFooter>
+      <AppDialogFooter
+        summary={
+          whatsApp ? undefined : (
+            <span className="text-xs">
+              {isAr
+                ? "أضف هاتف المحل الشريك لإرسال الملخص واتساب."
+                : "Add the partner's phone to send the summary on WhatsApp."}
+            </span>
+          )
+        }
+      >
         {whatsApp ? (
           <Button type="button" variant="outline" asChild>
             <a href={whatsApp} target="_blank" rel="noopener noreferrer">
@@ -181,13 +191,7 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
               {isAr ? "إرسال الملخص واتساب" : "Send the summary on WhatsApp"}
             </a>
           </Button>
-        ) : (
-          <p className="me-auto self-center text-xs text-muted-foreground">
-            {isAr
-              ? "أضف هاتف المحل الشريك لإرسال الملخص واتساب."
-              : "Add the partner's phone to send the summary on WhatsApp."}
-          </p>
-        )}
+        ) : null}
         <Button type="button" onClick={print}>
           <Printer className="me-2 h-4 w-4" />
           {isAr ? "طباعة الكشف" : "Print the statement"}

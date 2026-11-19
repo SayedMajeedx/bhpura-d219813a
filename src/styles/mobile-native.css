@@ -146,3 +146,18 @@
     }
   }
 }
+
+/*
+ * A row that scrolls sideways moves sideways only (the owner's report of 2026-11-20: the partner
+ * page's tabs moved up and down under a finger, as if loose). A box that hides or scrolls one way
+ * scrolls the other too, and on a touch screen each control's 44px tap box (above) stands a few
+ * pixels past a slim row, so the row had a little height to scroll. Every `overflow-x-auto` box
+ * keeps its height, except one given a height to scroll in (`max-h-*`, unprefixed). In the base
+ * layer, so a box's own `overflow-y-auto` (at any width) wins. The table's wrapper is
+ * `overflow-x-auto` for the same reason.
+ */
+@layer base {
+  .overflow-x-auto:not([class^="max-h-"], [class*=" max-h-"]) {
+    overflow-y: hidden;
+  }
+}

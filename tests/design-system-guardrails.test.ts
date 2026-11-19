@@ -446,6 +446,22 @@ describe("design system guardrails", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  it("puts a pop-up's note in its footer's own place, never in the row of buttons", () => {
+    // The buttons' row does not shrink on a laptop: the partner statement's note ("Add the
+    // partner's phone…") beside its button ran past the pop-up's edge (2026-11-20). A note is the
+    // footer's `summary`, a problem its `error`; both wrap beside the buttons.
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const footer of source.matchAll(
+        /<AppDialogFooter\b[^>]*>([\s\S]*?)<\/AppDialogFooter>/g,
+      )) {
+        const outsideButtons = footer[1].replace(/<Button\b[\s\S]*?<\/Button>/g, "");
+        if (/<p\b/.test(outsideButtons)) offenders.push(rel);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("the phone layer (src/styles/mobile-native.css)", () => {
@@ -513,6 +529,17 @@ describe("the phone layer (src/styles/mobile-native.css)", () => {
     expect(touch).not.toMatch(/a\[class/);
     expect(touch).toMatch(/:not\([^)]*\[class\*="absolute"\]/);
     expect(touch).toMatch(/width: max\(100%, 44px\);\s*height: max\(100%, 44px\);/);
+  });
+
+  it("keeps a row that scrolls sideways from moving up and down", () => {
+    // The partner page's tabs and the product page's "Add with it" row moved up and down under a
+    // finger (2026-11-20): a tap box stood past the row, and a sideways scroller scrolls both
+    // ways. The audit's touch pass measures it (`findLooseBoxes`); this keeps the rule in place.
+    const rules = read("src/styles/mobile-native.css");
+    expect(rules).toMatch(
+      /@layer base\s*{\s*\.overflow-x-auto:not\(\[class\^="max-h-"\], \[class\*=" max-h-"\]\)\s*{\s*overflow-y: hidden;/,
+    );
+    expect(read("src/components/ui/table.tsx")).toContain('"relative w-full overflow-x-auto"');
   });
 
   it("makes an admin field, and a button in its row, 44px tall on a touch screen", () => {
