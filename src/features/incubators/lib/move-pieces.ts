@@ -41,16 +41,18 @@ export function moveTargets(partners: readonly Incubator[], fromId: string | nul
 }
 
 /**
- * The first partner's pieces, each starting chosen at all it holds, priced at the store's
- * selling price (else what the first partner sold it at) and coded with our SKU (the owner's
- * choice: the new partner's code is ours until changed).
+ * The first partner's pieces, each starting chosen at all it holds, at the price it has there
+ * (else the store's selling price) and coded with our SKU (the new partner's code is ours until
+ * changed). A move keeps a piece's price unless the merchant changes it (the owner's decision of
+ * 2026-11-19): priced at the store's selling price, the dialog said Dar Lulwa's 24 pieces were
+ * worth 622 BHD while its card said 610, two pieces being 24 there and 30 in the store.
  */
 export function moveRows(stock: readonly StockItem[], fromId: string, lang: Lang): MoveRow[] {
   return stock
     .filter((item) => item.incubator_id === fromId && Number(item.quantity) > 0)
     .map((item) => {
       const variant = item.product_variants;
-      const selling = Number(variant?.selling_price ?? 0);
+      const there = Number(item.consignment_price ?? 0);
       const parts = pieceParts(variant, lang);
       return {
         variantId: item.variant_id,
@@ -63,7 +65,7 @@ export function moveRows(stock: readonly StockItem[], fromId: string, lang: Lang
         held: Number(item.quantity),
         chosen: true,
         quantity: Number(item.quantity),
-        price: selling > 0 ? selling : Number(item.consignment_price ?? 0),
+        price: there > 0 ? there : Number(variant?.selling_price ?? 0),
         code: variant?.sku?.trim() ?? "",
       };
     })

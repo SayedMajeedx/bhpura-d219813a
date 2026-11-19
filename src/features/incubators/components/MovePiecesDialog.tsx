@@ -19,7 +19,7 @@ const SELECT_CLASS =
 /**
  * Moving pieces from the open partner shop to another, from the admin (the owner's request of
  * 2026-11-17), on the partner page's one stock flow (`StockMoveTask`): choose the partner and
- * the pieces (every piece chosen at all the partner holds, at the store's selling price and with
+ * the pieces (every piece chosen at all the partner holds, at the price it has there and with
  * our SKU as its code), read it all once more, move.
  */
 export function MovePiecesDialog({ page }: { page: IncubatorsPageState }) {
