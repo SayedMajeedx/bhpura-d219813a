@@ -8,13 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Wallet,
   Building,
   ArrowRightLeft,
@@ -38,6 +31,12 @@ import {
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const TRANSFER_REFUSAL_MESSAGES: Record<CashTransferRefusal, { ar: string; en: string }> = {
   INVALID_TRANSFER_AMOUNT: {
@@ -336,15 +335,13 @@ export function CashFlowLiquidityTab() {
       />
 
       {/* Inter-Account Transfer Modal */}
-      <Dialog open={transferModalOpen} onOpenChange={setTransferModalOpen}>
-        <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4 text-primary" />
-              {isAr ? "تحويل سيولة (من الصندوق إلى البنك)" : "Transfer Funds"}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={transferModalOpen} onOpenChange={setTransferModalOpen} kind="form">
+        <AppDialogHeader
+          icon={<ArrowRightLeft />}
+          title={isAr ? "تحويل سيولة (من الصندوق إلى البنك)" : "Transfer Funds"}
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-2 text-xs">
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
               <span className="text-xs text-muted-foreground block">
@@ -381,31 +378,30 @@ export function CashFlowLiquidityTab() {
               />
             </div>
           </div>
-
-          <DialogFooter className="gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setTransferModalOpen(false)}
-              className="h-9 text-xs"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={handleTransferFunds}
-              disabled={isSubmitting}
-              className="h-9 text-xs font-bold"
-            >
-              {isSubmitting
-                ? isAr
-                  ? "جاري التحويل..."
-                  : "Transferring..."
-                : isAr
-                  ? "تأكيد التحويل"
-                  : "Confirm Transfer"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setTransferModalOpen(false)}
+            className="h-9 text-xs"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            onClick={handleTransferFunds}
+            disabled={isSubmitting}
+            className="h-9 text-xs font-bold"
+          >
+            {isSubmitting
+              ? isAr
+                ? "جاري التحويل..."
+                : "Transferring..."
+              : isAr
+                ? "تأكيد التحويل"
+                : "Confirm Transfer"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

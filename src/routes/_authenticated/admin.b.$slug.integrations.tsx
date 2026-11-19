@@ -1,3 +1,4 @@
+import { useOpenSession } from "@/hooks/use-open-session";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -14,13 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Plug,
   Pencil,
@@ -67,6 +61,12 @@ import {
   PROVIDER_PRESETS,
   shownIntegration,
 } from "@/lib/integration-providers";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -112,6 +112,7 @@ function IntegrationsPage() {
   const { isAdmin, isSuperAdmin, isBrandAdmin } = useProfile();
   const canRotateKeys = isSuperAdmin || isAdmin || isBrandAdmin;
   const [open, setOpen] = useState(false);
+  const integrationSession = useOpenSession(open);
   const [editing, setEditing] = useState<Row | null>(null);
   const [rotatingIntegration, setRotatingIntegration] = useState<Row | null>(null);
   const [categoryScope, setCategoryScope] = useState<IntegrationsCategoryScope>("all");
@@ -200,23 +201,21 @@ function IntegrationsPage() {
         integrationCount={integrationsList.length}
       />
 
-      <Dialog
+      <IntegrationDialog
+        key={integrationSession}
         open={open}
         onOpenChange={(v) => {
           setOpen(v);
           if (!v) setEditing(null);
         }}
-      >
-        <IntegrationDialog
-          brandId={brandId}
-          row={editing}
-          onSaved={() => {
-            setOpen(false);
-            setEditing(null);
-            invalidateIntegrationCredentials(qc, brandId);
-          }}
-        />
-      </Dialog>
+        brandId={brandId}
+        row={editing}
+        onSaved={() => {
+          setOpen(false);
+          setEditing(null);
+          invalidateIntegrationCredentials(qc, brandId);
+        }}
+      />
 
       <RotateKeyDialog
         brandId={brandId}
@@ -620,10 +619,14 @@ function MaskedRow({ label, value }: { label: string; value: string | null }) {
 }
 
 function IntegrationDialog({
+  open,
+  onOpenChange,
   brandId,
   row,
   onSaved,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   brandId: string;
   row: Row | null;
   onSaved: () => void;
@@ -730,101 +733,102 @@ function IntegrationDialog({
   };
 
   return (
-    <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
-      <DialogHeader>
-        <DialogTitle>
-          {row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}
-        </DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
-        <div>
-          <Label>{t("integrations.provider")}</Label>
-          <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PROVIDER_PRESETS.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {form.provider === "custom" && (
-            <Input
-              className="mt-2"
-              placeholder={isAr ? "اسم الخدمة" : "Custom provider name"}
-              value={form.provider_custom}
-              onChange={(e) => setForm({ ...form, provider_custom: e.target.value })}
-            />
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}
+      />
+
+      <AppDialogBody>
+        <div className="space-y-4">
+          <div>
+            <Label>{t("integrations.provider")}</Label>
+            <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PROVIDER_PRESETS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {form.provider === "custom" && (
+              <Input
+                className="mt-2"
+                placeholder={isAr ? "اسم الخدمة" : "Custom provider name"}
+                value={form.provider_custom}
+                onChange={(e) => setForm({ ...form, provider_custom: e.target.value })}
+              />
+            )}
+          </div>
+          {fieldLabels.help && (
+            <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+              {fieldLabels.help}
+            </p>
           )}
+          <div>
+            <Label>{fieldLabels.base}</Label>
+            <Input
+              value={form.base_url}
+              onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+              placeholder={fieldLabels.basePlaceholder}
+            />
+          </div>
+          <div>
+            <Label>{fieldLabels.api}</Label>
+            <Input
+              type="password"
+              value={form.api_key}
+              onChange={(e) => setForm({ ...form, api_key: e.target.value })}
+              placeholder={
+                row?.has_api_key
+                  ? isAr
+                    ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي"
+                    : "Leave blank to keep the current key"
+                  : fieldLabels.apiPlaceholder
+              }
+            />
+          </div>
+          <div>
+            <Label>{fieldLabels.secret}</Label>
+            <Input
+              type="password"
+              value={form.webhook_secret}
+              onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })}
+              placeholder={
+                row?.has_webhook_secret
+                  ? isAr
+                    ? "اتركه فارغاً للاحتفاظ بالسر الحالي"
+                    : "Leave blank to keep the current secret"
+                  : fieldLabels.secretPlaceholder
+              }
+            />
+          </div>
+          <div>
+            <Label>{t("integrations.notes")}</Label>
+            <Textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+          </div>
+          <div className="flex items-center justify-between border border-border rounded-md p-3">
+            <p className="text-sm font-medium">{t("integrations.active")}</p>
+            <Switch
+              checked={form.is_active}
+              onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+            />
+          </div>
         </div>
-        {fieldLabels.help && (
-          <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
-            {fieldLabels.help}
-          </p>
-        )}
-        <div>
-          <Label>{fieldLabels.base}</Label>
-          <Input
-            value={form.base_url}
-            onChange={(e) => setForm({ ...form, base_url: e.target.value })}
-            placeholder={fieldLabels.basePlaceholder}
-          />
-        </div>
-        <div>
-          <Label>{fieldLabels.api}</Label>
-          <Input
-            type="password"
-            value={form.api_key}
-            onChange={(e) => setForm({ ...form, api_key: e.target.value })}
-            placeholder={
-              row?.has_api_key
-                ? isAr
-                  ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي"
-                  : "Leave blank to keep the current key"
-                : fieldLabels.apiPlaceholder
-            }
-          />
-        </div>
-        <div>
-          <Label>{fieldLabels.secret}</Label>
-          <Input
-            type="password"
-            value={form.webhook_secret}
-            onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })}
-            placeholder={
-              row?.has_webhook_secret
-                ? isAr
-                  ? "اتركه فارغاً للاحتفاظ بالسر الحالي"
-                  : "Leave blank to keep the current secret"
-                : fieldLabels.secretPlaceholder
-            }
-          />
-        </div>
-        <div>
-          <Label>{t("integrations.notes")}</Label>
-          <Textarea
-            rows={2}
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          />
-        </div>
-        <div className="flex items-center justify-between border border-border rounded-md p-3">
-          <p className="text-sm font-medium">{t("integrations.active")}</p>
-          <Switch
-            checked={form.is_active}
-            onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-          />
-        </div>
-      </div>
-      <DialogFooter>
+      </AppDialogBody>
+      <AppDialogFooter>
         <Button onClick={save} disabled={saving} className="min-h-11 w-full sm:w-auto">
           {t("common.save")}
         </Button>
-      </DialogFooter>
-    </DialogContent>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
 
@@ -915,26 +919,18 @@ function RotateKeyDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md p-5 sm:p-6">
-        <DialogHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shrink-0">
-              <RotateCw className="h-5 w-5" />
-            </div>
-            <div>
-              <DialogTitle className="text-base font-bold">
-                {isAr ? `تدوير مفاتيح ${providerLabel}` : `Rotate ${providerLabel} Keys`}
-              </DialogTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {isAr
-                  ? "تحديث وتجديد بيانات الاعتماد بأمان"
-                  : "Securely update and rotate active credentials"}
-              </p>
-            </div>
-          </div>
-        </DialogHeader>
+    <AppDialog open={isOpen} onOpenChange={(open) => !open && onClose()} kind="form">
+      <AppDialogHeader
+        title={isAr ? `تدوير مفاتيح ${providerLabel}` : `Rotate ${providerLabel} Keys`}
+        icon={<RotateCw />}
+        description={
+          isAr
+            ? "تحديث وتجديد بيانات الاعتماد بأمان"
+            : "Securely update and rotate active credentials"
+        }
+      />
 
+      <AppDialogBody>
         {/* Security Warning Notice */}
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 space-y-2 mt-2">
           <div className="flex items-start gap-2 text-destructive font-semibold text-xs">
@@ -979,30 +975,29 @@ function RotateKeyDialog({
             </div>
           )}
         </div>
-
-        <DialogFooter className="mt-4 gap-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleRotate}
-            disabled={submitting || (!newApiKey.trim() && !newWebhookSecret.trim())}
-            className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
-          >
-            {submitting ? (
-              <span className="flex items-center gap-1.5">
-                <RotateCw className="h-3.5 w-3.5 animate-spin" />
-                {isAr ? "جارٍ التدوير..." : "Rotating..."}
-              </span>
-            ) : isAr ? (
-              "تدوير وتفعيل الآن"
-            ) : (
-              "Rotate & Activate"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="ghost" onClick={onClose} disabled={submitting}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={handleRotate}
+          disabled={submitting || (!newApiKey.trim() && !newWebhookSecret.trim())}
+          className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-600 dark:hover:bg-amber-700"
+        >
+          {submitting ? (
+            <span className="flex items-center gap-1.5">
+              <RotateCw className="h-3.5 w-3.5 animate-spin" />
+              {isAr ? "جارٍ التدوير..." : "Rotating..."}
+            </span>
+          ) : isAr ? (
+            "تدوير وتفعيل الآن"
+          ) : (
+            "Rotate & Activate"
+          )}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

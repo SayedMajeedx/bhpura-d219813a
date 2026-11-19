@@ -18,14 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { VERTICAL_LABELS, type StoreVertical } from "@/lib/store-profile";
 import { resolveFitProfiles, type FitProfileDefinition } from "@/lib/addons/addon-presets";
 import { FitProfilesEditor } from "@/components/settings/FitProfilesEditor";
@@ -66,6 +58,7 @@ import { VerticalIcon } from "@/components/verticals/VerticalIcon";
 import { useBrandAddons } from "@/hooks/use-brand-addons";
 import { addonDataQueries } from "@/lib/data/addons";
 import { arNoun } from "@/lib/arabic-count";
+import { AppDialog, AppDialogFooter, AppDialogHeader } from "@/components/ui/app-dialog";
 
 function renderAddonIcon(iconName: string) {
   switch (iconName) {
@@ -655,43 +648,41 @@ export function StoreProfileCard({
       )}
 
       {/* Reset to Defaults Confirmation Dialog */}
-      <Dialog
+      <AppDialog
         open={showResetConfirmDialog}
         onOpenChange={(open) => setShowResetConfirmDialog(open)}
+        kind="confirm"
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <RotateCcw className="size-5 text-primary" />
-              <span>{isAr ? "إعادة ضبط الوحدات للافتراضيات" : "Reset Modules to Defaults"}</span>
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? `سيتم تثبيت وتفعيل إضافات حزمة البداية لنشاط "${VERTICAL_LABELS[vertical]?.ar}"، وتعطيل الوحدات التي لا تنتمي لهذا النشاط.`
-                : `This will install and enable starter pack add-ons for "${VERTICAL_LABELS[vertical]?.en}", and disable modules that do not belong to this vertical.`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setShowResetConfirmDialog(false)}
-              disabled={saving}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" onClick={handleConfirmResetDefaults} disabled={saving}>
-              {saving
-                ? isAr
-                  ? "جاري الاستعادة..."
-                  : "Resetting..."
-                : isAr
-                  ? "تأكيد الاستعادة"
-                  : "Confirm Reset"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <AppDialogHeader
+          icon={<RotateCcw />}
+          title={isAr ? "إعادة ضبط الوحدات للافتراضيات" : "Reset Modules to Defaults"}
+          description={
+            isAr
+              ? `سيتم تثبيت وتفعيل إضافات حزمة البداية لنشاط "${VERTICAL_LABELS[vertical]?.ar}"، وتعطيل الوحدات التي لا تنتمي لهذا النشاط.`
+              : `This will install and enable starter pack add-ons for "${VERTICAL_LABELS[vertical]?.en}", and disable modules that do not belong to this vertical.`
+          }
+        />
+
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowResetConfirmDialog(false)}
+            disabled={saving}
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={handleConfirmResetDefaults} disabled={saving}>
+            {saving
+              ? isAr
+                ? "جاري الاستعادة..."
+                : "Resetting..."
+              : isAr
+                ? "تأكيد الاستعادة"
+                : "Confirm Reset"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

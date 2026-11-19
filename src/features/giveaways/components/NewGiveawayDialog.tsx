@@ -3,13 +3,6 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { Loader2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBrand } from "@/lib/brand-context";
@@ -22,6 +15,12 @@ import {
 } from "@/lib/data/giveaways";
 import { DEFAULT_RULES } from "../lib/entry-rules";
 import { giveawayErrorMessage } from "../lib/messages";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 function postDate(iso: string | null, isAr: boolean) {
   if (!iso) return "";
@@ -86,18 +85,21 @@ export function NewGiveawayDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
-        dir={isAr ? "rtl" : "ltr"}
-      >
-        <DialogHeader>
-          <DialogTitle>{isAr ? "مسابقة جديدة" : "New giveaway"}</DialogTitle>
-          <DialogDescription>
-            {isAr ? "اختر البوست الذي تريد السحب من تعليقاته." : "Choose the post to draw from."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "مسابقة جديدة" : "New giveaway"}
+        description={
+          isAr ? "اختر البوست الذي تريد السحب من تعليقاته." : "Choose the post to draw from."
+        }
+      />
 
+      <AppDialogBody>
         {media.isLoading && (
           <div className="flex h-32 items-center justify-center" role="status">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
@@ -174,18 +176,17 @@ export function NewGiveawayDialog({
             />
           </div>
         )}
-
-        <div className="flex justify-end">
-          <Button
-            type="button"
-            disabled={!picked || create.isPending}
-            onClick={() => create.mutate()}
-          >
-            {create.isPending && <Loader2 className="size-4 animate-spin" />}
-            {isAr ? "إنشاء" : "Create"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          disabled={!picked || create.isPending}
+          onClick={() => create.mutate()}
+        >
+          {create.isPending && <Loader2 className="size-4 animate-spin" />}
+          {isAr ? "إنشاء" : "Create"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -4,13 +4,6 @@ import { ArrowDownRight, ArrowUpRight, Check, Clock, Target } from "lucide-react
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { formatDate, formatMoney, moneyFractionDigits } from "@/lib/format";
 import { currencyLabel } from "@/lib/currency-label";
@@ -22,6 +15,12 @@ import {
 } from "@/lib/data/expenses";
 import { categoryLabel, CATEGORY_WORDS } from "@/features/expenses/lib/expense-form";
 import { categoryMonths, repeatsInMonth } from "@/features/expenses/lib/expense-insights";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 type Lang = "ar" | "en";
 
@@ -284,11 +283,10 @@ function BudgetsDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "الميزانية الشهرية" : "Monthly budgets"}</DialogTitle>
-        </DialogHeader>
+    <AppDialog open onOpenChange={(open) => !open && onClose()} kind="form">
+      <AppDialogHeader title={isAr ? "الميزانية الشهرية" : "Monthly budgets"} />
+
+      <AppDialogBody>
         <p className="text-sm text-muted-foreground">
           {isAr
             ? `كم تنوي أن تصرف كل شهر على كل تصنيف (${currencyLabel(storeCurrency, "ar")}). اتركه فارغاً لتصنيف بلا ميزانية.`
@@ -313,15 +311,15 @@ function BudgetsDialog({
             </div>
           ))}
         </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button onClick={() => void save()} disabled={saving}>
-            {isAr ? "حفظ" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={onClose}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button onClick={() => void save()} disabled={saving}>
+          {isAr ? "حفظ" : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

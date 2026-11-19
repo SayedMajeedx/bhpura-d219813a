@@ -4,14 +4,6 @@ import { Flower2, ImagePlus, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -28,6 +20,12 @@ import {
 import { addonName, addonPriceFromText, type GiftAddonRow } from "@/lib/gift-addons";
 import { giftRefusal } from "@/lib/gift-order";
 import { GiftCostField } from "./GiftCostField";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * What a shopper may add to a gift order (a flower bouquet, chocolates), the store's own list
@@ -229,13 +227,14 @@ function AddonDialog({
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={PHONE_SHEET}>
-        <DialogHeader>
-          <DialogTitle>
-            {addon ? (isAr ? "تعديل الإضافة" : "Edit add-on") : isAr ? "إضافة جديدة" : "New add-on"}
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open onOpenChange={(open) => !open && onClose()} kind="form">
+      <AppDialogHeader
+        title={
+          addon ? (isAr ? "تعديل الإضافة" : "Edit add-on") : isAr ? "إضافة جديدة" : "New add-on"
+        }
+      />
+
+      <AppDialogBody>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted">
@@ -311,15 +310,15 @@ function AddonDialog({
             {addon && <GiftCostField brandId={brandId} addonId={addon.id} lang={lang} />}
           </div>
         </div>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button type="button" onClick={save} disabled={busy || parsed === null || !named}>
-            {isAr ? "حفظ" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={onClose}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button type="button" onClick={save} disabled={busy || parsed === null || !named}>
+          {isAr ? "حفظ" : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Plus, Search, Boxes, Check, Globe, Package, Target } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -21,6 +14,12 @@ import { InventoryDeleteAction } from "@/features/inventory/components/Inventory
 import { createCustomization, deleteCustomization, updateCustomization } from "@/lib/data/catalog";
 import { getCurrentUser } from "@/lib/auth/session";
 import { arNoun } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** The database's message, as the toasts showed before. */
 const errorMessage = (error: unknown) =>
@@ -364,17 +363,21 @@ export function CustomizationsSection({
         </div>
       </Card>
 
-      <Dialog open={!!editingAddon} onOpenChange={(open) => !open && setEditingAddon(null)}>
-        <DialogContent className="max-w-lg rounded-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <Boxes className="h-5 w-5 text-primary" />
-              {isAr
-                ? `تحديد المنتجات المتاحة للإضافة: ${editingAddon?.name ?? ""}`
-                : `Assign Products to: ${editingAddon?.name ?? ""}`}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog
+        open={!!editingAddon}
+        onOpenChange={(open) => !open && setEditingAddon(null)}
+        kind="form"
+      >
+        <AppDialogHeader
+          icon={<Boxes />}
+          title={
+            isAr
+              ? `تحديد المنتجات المتاحة للإضافة: ${editingAddon?.name ?? ""}`
+              : `Assign Products to: ${editingAddon?.name ?? ""}`
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-2">
             <div className="flex items-center justify-between gap-2">
               <div className="relative flex-1">
@@ -470,18 +473,17 @@ export function CustomizationsSection({
               )}
             </div>
           </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setEditingAddon(null)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={saveProductScope}>
-              <Check className="h-4 w-4 me-1" />
-              {isAr ? "حفظ التغييرات" : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setEditingAddon(null)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={saveProductScope}>
+            <Check className="h-4 w-4 me-1" />
+            {isAr ? "حفظ التغييرات" : "Save Changes"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

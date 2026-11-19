@@ -637,6 +637,6 @@ describe("the admin's pop-ups (the review of 2026-11-19)", () => {
   it("are drawn by AppDialog: the raw dialogs left only go down", () => {
     const raw = /<(?:Dialog|AlertDialog)Content\b/g;
     const admin = (rel: string) => !rel.startsWith("components/ui/") && !STOREFRONT.test(rel);
-    expect(countMatches(raw, admin)).toBeLessThanOrEqual(94);
+    expect(countMatches(raw, admin)).toBeLessThanOrEqual(51);
   });
 });

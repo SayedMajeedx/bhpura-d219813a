@@ -6,13 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { FileText, Loader2, Repeat, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -39,6 +32,12 @@ import {
   type ExpenseForm,
   type ExpenseKind,
 } from "@/features/expenses/lib/expense-form";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const UNITS = [
   { en: "Bags", ar: "أكياس" },
@@ -172,20 +171,14 @@ export function ExpenseFormDialog({
     ) : null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {expense
-              ? isAr
-                ? "تعديل المصروف"
-                : "Edit expense"
-              : isAr
-                ? "مصروف جديد"
-                : "New expense"}
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          expense ? (isAr ? "تعديل المصروف" : "Edit expense") : isAr ? "مصروف جديد" : "New expense"
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4">
           {showKinds && (
             <fieldset>
@@ -490,17 +483,16 @@ export function ExpenseFormDialog({
             />
           </div>
         </div>
-
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button onClick={() => void save()} disabled={saving}>
-            {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-            {isAr ? "حفظ" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button onClick={() => void save()} disabled={saving}>
+          {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+          {isAr ? "حفظ" : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

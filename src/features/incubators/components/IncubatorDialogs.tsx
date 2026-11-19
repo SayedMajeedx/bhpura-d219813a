@@ -1,12 +1,4 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  PHONE_SHEET,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,8 +8,13 @@ import { localDateTimeValue } from "@/features/incubators/lib/forms";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
 import type { Incubator, IncubatorDialog } from "@/features/incubators/types";
 import { useLastWhileClosing } from "@/hooks/use-last-while-closing";
-import { cn } from "@/lib/utils";
 import { AppConfirm } from "@/components/ui/app-confirm";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const SELECT_CLASS =
   "mt-2 h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -60,18 +57,22 @@ export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
   const held = Number(activeItem?.quantity ?? 0);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && closeDialog()}>
-      <DialogContent className={cn("max-w-lg", PHONE_SHEET)} dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle>{dialog ? TITLES[dialog]?.[lang] : ""}</DialogTitle>
-        </DialogHeader>
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void submit(event.currentTarget);
-          }}
-        >
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !next && closeDialog()}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader title={dialog ? TITLES[dialog]?.[lang] : ""} />
+
+      <form
+        className="flex min-h-0 flex-1 flex-col space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit(event.currentTarget);
+        }}
+      >
+        <AppDialogBody>
           {(dialog === "incubator" || dialog === "edit_incubator") && (
             <IncubatorFields isAr={isAr} editing={editing} />
           )}
@@ -162,18 +163,17 @@ export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
               <Field label={isAr ? "سبب أو ملاحظة" : "Reason or note"} name="notes" textarea />
             </>
           )}
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={closeDialog}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="submit" disabled={busy}>
-              {busy ? (isAr ? "جاري الحفظ..." : "Saving...") : dialog ? SAVE[dialog]?.[lang] : ""}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={closeDialog}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? (isAr ? "جاري الحفظ..." : "Saving...") : dialog ? SAVE[dialog]?.[lang] : ""}
+          </Button>
+        </AppDialogFooter>
+      </form>
+    </AppDialog>
   );
 }
 

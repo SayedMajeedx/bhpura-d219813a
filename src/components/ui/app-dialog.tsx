@@ -166,6 +166,9 @@ export function AppDialog({
           // title, an <h2>, fell to the storefront's heading face, a serif in English).
           className={cn("admin-typography", dialogFrameClass(kind, size), className)}
           style={{ "--app-dialog-kb": `${keyboard}px` } as React.CSSProperties}
+          // React carries a click out of a portal to the components around it: a pop-up opened
+          // from a table row would otherwise also click the row (and open the product).
+          onClick={(event) => event.stopPropagation()}
           onEscapeKeyDown={(event) => busy && event.preventDefault()}
           onPointerDownOutside={(event) => (busy || kind === "confirm") && event.preventDefault()}
           {...focus}

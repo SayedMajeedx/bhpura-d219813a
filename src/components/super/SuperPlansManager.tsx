@@ -48,14 +48,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -63,6 +55,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { systemSettingsKeys, systemSettingsQueries } from "@/lib/data/system-settings";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 type PlanFilter = "all" | "active" | "hidden" | "inactive";
 
@@ -980,20 +978,23 @@ export function SuperPlansManager() {
 
       {/* MODAL 1: Create New Plan Dialog Modal */}
       {isCreatingPlan && (
-        <Dialog open={isCreatingPlan} onOpenChange={(open) => !open && setIsCreatingPlan(false)}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Plus className="h-4 w-4 text-primary" />
-                <span>{isAr ? "إنشاء باقة سحابية جديدة" : "Create New SaaS Plan"}</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {isAr
-                  ? "قم بتحديد رمز الباقة والأسعار والحدود المبدئية للإصدار الأول v1."
-                  : "Define the plan code, localized titles, pricing, and initial v1 feature limits."}
-              </DialogDescription>
-            </DialogHeader>
+        <AppDialog
+          open={isCreatingPlan}
+          onOpenChange={(open) => !open && setIsCreatingPlan(false)}
+          kind="form"
+          size="lg"
+        >
+          <AppDialogHeader
+            icon={<Plus />}
+            title={isAr ? "إنشاء باقة سحابية جديدة" : "Create New SaaS Plan"}
+            description={
+              isAr
+                ? "قم بتحديد رمز الباقة والأسعار والحدود المبدئية للإصدار الأول v1."
+                : "Define the plan code, localized titles, pricing, and initial v1 feature limits."
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-4 py-3 text-xs">
               {/* Plan Code & Names */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1252,59 +1253,57 @@ export function SuperPlansManager() {
                 </div>
               </div>
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => setIsCreatingPlan(false)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                disabled={isSubmitting || !newPlanCode.trim() || !newPlanNameAr.trim()}
-                onClick={handleSaveCreatePlan}
-                className="gap-2 font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                <span>{isAr ? "حفظ وإنشاء الباقة" : "Create Plan"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setIsCreatingPlan(false)}
+              className="min-h-[44px]"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              disabled={isSubmitting || !newPlanCode.trim() || !newPlanNameAr.trim()}
+              onClick={handleSaveCreatePlan}
+              className="gap-2 font-bold min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              <span>{isAr ? "حفظ وإنشاء الباقة" : "Create Plan"}</span>
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
 
       {/* MODAL 2: Edit Plan Details Modal */}
       {editingPlanDetails && (
-        <Dialog
+        <AppDialog
           open={Boolean(editingPlanDetails)}
           onOpenChange={(open) => !open && setEditingPlanDetails(null)}
+          kind="form"
         >
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Edit3 className="h-4 w-4 text-primary" />
-                <span>
-                  {isAr
-                    ? `تعديل بيانات: ${editingPlanDetails.name_ar}`
-                    : `Edit Plan: ${editingPlanDetails.name_en}`}
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {isAr
-                  ? "تعديل المسميات والأوصاف وشارات العرض للباقة."
-                  : "Update localized names, descriptions, and badge colors."}
-              </DialogDescription>
-            </DialogHeader>
+          <AppDialogHeader
+            icon={<Edit3 />}
+            title={
+              isAr
+                ? `تعديل بيانات: ${editingPlanDetails.name_ar}`
+                : `Edit Plan: ${editingPlanDetails.name_en}`
+            }
+            description={
+              isAr
+                ? "تعديل المسميات والأوصاف وشارات العرض للباقة."
+                : "Update localized names, descriptions, and badge colors."
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-4 py-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -1418,121 +1417,117 @@ export function SuperPlansManager() {
                 </div>
               </div>
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => setEditingPlanDetails(null)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                disabled={isSubmitting || !editNameAr.trim()}
-                onClick={handleSavePlanDetails}
-                className="gap-2 font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                <span>{isAr ? "حفظ التعديلات" : "Save Changes"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setEditingPlanDetails(null)}
+              className="min-h-[44px]"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              disabled={isSubmitting || !editNameAr.trim()}
+              onClick={handleSavePlanDetails}
+              className="gap-2 font-bold min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              <span>{isAr ? "حفظ التعديلات" : "Save Changes"}</span>
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
 
       {/* MODAL 3: Delete Plan Confirmation Modal */}
       {deletingPlan && (
-        <Dialog
+        <AppDialog
           open={Boolean(deletingPlan)}
           onOpenChange={(open) => !open && setDeletingPlan(null)}
+          kind="confirm"
         >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2 text-destructive">
-                <AlertTriangle className="h-5 w-5 shrink-0" />
+          <AppDialogHeader
+            icon={<AlertTriangle />}
+            title={
+              isAr
+                ? `تأكيد حذف باقة: ${deletingPlan.name_ar}`
+                : `Delete Plan: ${deletingPlan.name_en}`
+            }
+            description={
+              (subscribersCountByPlan[deletingPlan.id] || 0) > 0 ? (
+                <span className="text-destructive font-bold block mt-2">
+                  {isAr
+                    ? `لا يمكن حذف هذه الخطة لوجود ${subscribersCountByPlan[deletingPlan.id]} متجر مشترك بها حالياً. يرجى تعطيل أو إخفاء الخطة بدلاً من حذفها لحماية استمرارية المتاجر.`
+                    : `Cannot delete plan because it has ${subscribersCountByPlan[deletingPlan.id]} active subscriber(s). Please deactivate or hide the plan instead.`}
+                </span>
+              ) : (
                 <span>
                   {isAr
-                    ? `تأكيد حذف باقة: ${deletingPlan.name_ar}`
-                    : `Delete Plan: ${deletingPlan.name_en}`}
+                    ? "هل أنت متأكد من رغبتك في حذف هذه الخطة نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء."
+                    : "Are you sure you want to permanently delete this plan and all its versions from the database? This action cannot be undone."}
                 </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {(subscribersCountByPlan[deletingPlan.id] || 0) > 0 ? (
-                  <span className="text-destructive font-bold block mt-2">
-                    {isAr
-                      ? `لا يمكن حذف هذه الخطة لوجود ${subscribersCountByPlan[deletingPlan.id]} متجر مشترك بها حالياً. يرجى تعطيل أو إخفاء الخطة بدلاً من حذفها لحماية استمرارية المتاجر.`
-                      : `Cannot delete plan because it has ${subscribersCountByPlan[deletingPlan.id]} active subscriber(s). Please deactivate or hide the plan instead.`}
-                  </span>
-                ) : (
-                  <span>
-                    {isAr
-                      ? "هل أنت متأكد من رغبتك في حذف هذه الخطة نهائياً من قاعدة البيانات؟ لا يمكن التراجع عن هذا الإجراء."
-                      : "Are you sure you want to permanently delete this plan and all its versions from the database? This action cannot be undone."}
-                  </span>
-                )}
-              </DialogDescription>
-            </DialogHeader>
+              )
+            }
+          />
 
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isSubmitting}
-                onClick={() => setDeletingPlan(null)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                disabled={isSubmitting || (subscribersCountByPlan[deletingPlan.id] || 0) > 0}
-                onClick={handleDeletePlan}
-                className="gap-2 font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="h-4 w-4" />
-                )}
-                <span>{isAr ? "حذف نهائي" : "Delete Plan"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isSubmitting}
+              onClick={() => setDeletingPlan(null)}
+              className="min-h-[44px]"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isSubmitting || (subscribersCountByPlan[deletingPlan.id] || 0) > 0}
+              onClick={handleDeletePlan}
+              className="gap-2 font-bold min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              <span>{isAr ? "حذف نهائي" : "Delete Plan"}</span>
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
 
       {/* MODAL 4: Create New Plan Version Dialog Modal */}
       {versioningPlan && (
-        <Dialog
+        <AppDialog
           open={Boolean(versioningPlan)}
           onOpenChange={(open) => !open && setVersioningPlan(null)}
+          kind="form"
+          size="lg"
         >
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span>
-                  {isAr
-                    ? `تحديث باقة: ${versioningPlan.name_ar}`
-                    : `Create New Version: ${versioningPlan.name_en}`}
-                </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {isAr
-                  ? "سيتم إنشاء إصدار جديد رقمي معتمد للمشتركين الجدد. المشتركون الحاليون لن تتأثر أسعارهم أو مزاياهم."
-                  : "A new immutable plan version will be created for new subscribers. Existing subscribers keep their contracted version."}
-              </DialogDescription>
-            </DialogHeader>
+          <AppDialogHeader
+            icon={<Sparkles />}
+            title={
+              isAr
+                ? `تحديث باقة: ${versioningPlan.name_ar}`
+                : `Create New Version: ${versioningPlan.name_en}`
+            }
+            description={
+              isAr
+                ? "سيتم إنشاء إصدار جديد رقمي معتمد للمشتركين الجدد. المشتركون الحاليون لن تتأثر أسعارهم أو مزاياهم."
+                : "A new immutable plan version will be created for new subscribers. Existing subscribers keep their contracted version."
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-5 py-3">
               {/* Pricing definition */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1685,36 +1680,35 @@ export function SuperPlansManager() {
                 </div>
               </div>
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                disabled={isSubmitting}
-                onClick={() => setVersioningPlan(null)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                size="default"
-                disabled={isSubmitting || !changeSummary.trim()}
-                onClick={handleSaveNewVersion}
-                className="gap-2 font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
-                <span>{isAr ? "نشر وتعميم الإصدار" : "Publish Version"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              disabled={isSubmitting}
+              onClick={() => setVersioningPlan(null)}
+              className="min-h-[44px]"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              size="default"
+              disabled={isSubmitting || !changeSummary.trim()}
+              onClick={handleSaveNewVersion}
+              className="gap-2 font-bold min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="h-4 w-4" />
+              )}
+              <span>{isAr ? "نشر وتعميم الإصدار" : "Publish Version"}</span>
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
     </div>
   );

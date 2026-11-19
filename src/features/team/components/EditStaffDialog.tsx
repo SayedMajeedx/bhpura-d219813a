@@ -2,13 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,6 +14,12 @@ import type { UserRole, UserStatus } from "@/lib/profile-context";
 
 import { AVAILABLE_PERMISSIONS, PERMISSION_PRESETS } from "@/features/team/lib/team-shared";
 import type { TeamPageState } from "@/features/team/hooks/use-team-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Changes a member's details, role, permissions or password. */
 export function EditStaffDialog({ page }: { page: TeamPageState }) {
@@ -44,7 +43,7 @@ export function EditStaffDialog({ page }: { page: TeamPageState }) {
   return (
     <>
       {/* Edit Dialog */}
-      <Dialog
+      <AppDialog
         open={editOpen}
         onOpenChange={(v) => {
           setEditOpen(v);
@@ -53,11 +52,11 @@ export function EditStaffDialog({ page }: { page: TeamPageState }) {
             setEditPassword("");
           }
         }}
+        kind="form"
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isAr ? "تعديل المستخدم" : "Edit User"}</DialogTitle>
-          </DialogHeader>
+        <AppDialogHeader title={isAr ? "تعديل المستخدم" : "Edit User"} />
+
+        <AppDialogBody>
           {editing && (
             <div className="space-y-4">
               <div>
@@ -280,40 +279,40 @@ export function EditStaffDialog({ page }: { page: TeamPageState }) {
               </div>
             </div>
           )}
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setEditOpen(false);
-                setEditing(null);
-              }}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              onClick={() => {
-                if (editing) {
-                  handleUpdate(editing.id, {
-                    name: editing.name || undefined,
-                    phone: editing.phone || null,
-                    role: editing.role,
-                    status: editing.status,
-                    permissions: editing.role === "staff" ? (editing as any).permissions : [],
-                    ...(editPassword.trim()
-                      ? {
-                          password: editPassword.trim(),
-                          must_change_password: editMustChangePassword,
-                        }
-                      : {}),
-                  });
-                }
-              }}
-            >
-              {t("common.save")}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setEditOpen(false);
+              setEditing(null);
+            }}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            onClick={() => {
+              if (editing) {
+                handleUpdate(editing.id, {
+                  name: editing.name || undefined,
+                  phone: editing.phone || null,
+                  role: editing.role,
+                  status: editing.status,
+                  permissions: editing.role === "staff" ? (editing as any).permissions : [],
+                  ...(editPassword.trim()
+                    ? {
+                        password: editPassword.trim(),
+                        must_change_password: editMustChangePassword,
+                      }
+                    : {}),
+                });
+              }
+            }}
+          >
+            {t("common.save")}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

@@ -1,17 +1,16 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import type { InventoryCategory } from "@/features/inventory/lib/product-list";
 import { assignableCategories } from "@/lib/smart-categories";
 import { arNounOblique, countOf } from "@/lib/arabic-count";
 import { removeProductsWarning } from "@/features/inventory/lib/product-delete";
 import { AppConfirm } from "@/components/ui/app-confirm";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Confirms deleting the selected products with their variants and stock. */
 export function BulkDeleteProductsDialog({
@@ -82,13 +81,12 @@ export function BulkCategoryDialog({
   isAr: boolean;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base font-bold">
-            {isAr ? "تغيير قسم المنتجات المحددة" : "Change Category for Selected Products"}
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={isAr ? "تغيير قسم المنتجات المحددة" : "Change Category for Selected Products"}
+      />
+
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           <p className="text-xs text-muted-foreground">
             {isAr
@@ -119,31 +117,31 @@ export function BulkCategoryDialog({
             </select>
           </div>
         </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={applying}
-            onClick={() => onOpenChange(false)}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            disabled={applying}
-            onClick={onApply}
-            className="bg-primary text-primary-foreground"
-          >
-            {applying
-              ? isAr
-                ? "جاري التحديث..."
-                : "Updating..."
-              : isAr
-                ? "تطبيق التغيير"
-                : "Apply Changes"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={applying}
+          onClick={() => onOpenChange(false)}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          disabled={applying}
+          onClick={onApply}
+          className="bg-primary text-primary-foreground"
+        >
+          {applying
+            ? isAr
+              ? "جاري التحديث..."
+              : "Updating..."
+            : isAr
+              ? "تطبيق التغيير"
+              : "Apply Changes"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
