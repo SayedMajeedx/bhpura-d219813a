@@ -11,14 +11,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Plus, Minus, Pencil } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { useProfileOptional } from "@/lib/profile-context";
@@ -28,6 +20,12 @@ import { useCustomerFitPassport } from "@/features/orders/hooks/use-customer-fit
 import type { Dispatch, SetStateAction } from "react";
 import type { OrderItem } from "@/features/orders/types";
 import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-data";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Edit one order line: variant, description, quantity, price, cost and specs. */
 export function OrderItemEditDialog({
@@ -68,21 +66,24 @@ export function OrderItemEditDialog({
   // Without a profile (none loaded) the figures stay hidden.
   const canViewFinancials = useProfileOptional()?.canViewFinancials ?? false;
   return (
-    <Dialog
+    <AppDialog
       open={editingItemSheetIdx === idx}
       onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
+      kind="form"
     >
-      <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border-strong bg-card shadow-2xl space-y-5">
-        <DialogHeader className="text-start pb-3 border-b border-border-subtle pe-8 ps-0 space-y-1">
-          <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
+      <AppDialogHeader
+        title={
+          <>
             <Pencil className="h-4.5 w-4.5 text-primary shrink-0" />
             <span>{isAr ? "تعديل المنتج" : "Edit Product"}</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground truncate">
-            {it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        description={
+          <>{it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}</>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 py-1">
           {/* Inventory Variant Picker */}
           <div>
@@ -226,25 +227,24 @@ export function OrderItemEditDialog({
             }}
           />
         </div>
-
-        <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border-subtle">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-10 px-4 rounded-xl text-xs font-semibold"
-            onClick={() => setEditingItemSheetIdx(null)}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            className="h-10 px-5 font-bold text-xs rounded-xl bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-            onClick={() => setEditingItemSheetIdx(null)}
-          >
-            {isAr ? "حفظ التعديلات" : "Save Changes"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 px-4 rounded-xl text-xs font-semibold"
+          onClick={() => setEditingItemSheetIdx(null)}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          className="h-10 px-5 font-bold text-xs rounded-xl bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+          onClick={() => setEditingItemSheetIdx(null)}
+        >
+          {isAr ? "حفظ التعديلات" : "Save Changes"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -4,13 +4,6 @@ import { ScrollText } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +21,7 @@ import {
   type PolicyForm,
 } from "@/lib/bookings/policies";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 function PolicyFormFields({
   initial,
@@ -187,19 +181,30 @@ export function BookingPoliciesDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <ScrollText className="size-4 text-primary" aria-hidden="true" />
             {isAr ? "شروط الحجز" : "Booking terms"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "تظهر للعميل في صفحة الحجز وبعد إرسال الطلب، ويمكنك إرسال تذكير بالرصيد من بطاقة الحجز."
               : "Shown to the customer on the booking page and after they send a request. You can send a balance reminder from a booking's card."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
+
+      <AppDialogBody>
         {query.isLoading ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             {isAr ? "جارٍ التحميل…" : "Loading…"}
@@ -213,7 +218,7 @@ export function BookingPoliciesDialog({
             onSave={(form) => save.mutate(form)}
           />
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

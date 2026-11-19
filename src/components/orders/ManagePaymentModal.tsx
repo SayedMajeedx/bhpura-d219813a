@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { CreditCard, CheckCircle2, Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +19,12 @@ import {
 } from "@/lib/payment-status";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ManagePaymentModalProps {
   open: boolean;
@@ -136,22 +134,24 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full p-5 sm:p-6 gap-4 font-sans text-start">
-        <DialogHeader className="space-y-1.5 text-start">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <span>{isAr ? "إدارة وتحديث حالة الدفع" : "Manage Order Payment"}</span>
-            </DialogTitle>
-          </div>
-          <DialogDescription className="text-xs text-muted-foreground">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          <>
+            <CreditCard className="h-5 w-5 text-primary" />
+            <span>{isAr ? "إدارة وتحديث حالة الدفع" : "Manage Order Payment"}</span>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "حدّث حالة الدفع، قناة التحصيل، والمبالغ المستلمة مع مزامنة فورية لسجل الطلب."
               : "Update payment status, channel, and advance collections with instant ledger audit."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 pt-1">
           {/* Quick Preset Buttons */}
           <div className="space-y-1.5">
@@ -273,32 +273,31 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
             </div>
           )}
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0 border-t border-border-subtle pt-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-            className="h-9 rounded-xl text-xs font-semibold"
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !hasChanges}
-            className="h-9 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-2xs gap-1.5"
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <CheckCircle2 className="h-4 w-4" />
-            )}
-            <span>{isAr ? "تأكيد وتحديث الدفع" : "Confirm & Save Payment"}</span>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+          className="h-9 rounded-xl text-xs font-semibold"
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !hasChanges}
+          className="h-9 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-2xs gap-1.5"
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4" />
+          )}
+          <span>{isAr ? "تأكيد وتحديث الدفع" : "Confirm & Save Payment"}</span>
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 };

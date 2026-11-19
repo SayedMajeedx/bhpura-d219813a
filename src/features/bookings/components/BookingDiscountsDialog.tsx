@@ -4,13 +4,6 @@ import { Pencil, Plus, Tag, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -35,6 +28,7 @@ import {
 } from "@/lib/bookings/discounts";
 import { weekdayNames } from "@/lib/bookings/format";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** One rule's form: its name, value, the days it covers, the services and the dates. */
 function RuleForm({
@@ -426,20 +420,30 @@ export function BookingDiscountsDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <Tag className="size-4 text-primary" aria-hidden="true" />
             {isAr ? "عروض الحجز" : "Booking offers"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "خصومات حسب موعد الحجز أو تاريخ الموعد: اللحظة الأخيرة، مبكراً، هدية مجانية، أو عند طلب خدمة أخرى. يُطبَّق أفضل عرض، وتُضاف إليه العروض القابلة للإضافة."
               : "Discounts by when a booking is made or the booking's date: last minute, early, a free gift, or with another service. The best offer applies, plus any that add to it."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {editing ? (
           <RuleForm
             initial={editing.form}
@@ -517,7 +521,7 @@ export function BookingDiscountsDialog({
             </Button>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

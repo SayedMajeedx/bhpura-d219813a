@@ -5,13 +5,11 @@ import { CalendarCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
@@ -99,18 +97,31 @@ export function BookingMoveDialog({
     : null;
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !page.movePending && onOpenChange(next)}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "نقل الحجز" : "Move the booking"}</DialogTitle>
-          <DialogDescription>
-            {booking.customer_name ? `${booking.customer_name} · ` : ""}
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      busy={page.movePending}
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "نقل الحجز" : "Move the booking"}
+        description={
+          <>
+            {booking.customer_name ? (
+              <>
+                <bdi>{booking.customer_name}</bdi>
+                {" · "}
+              </>
+            ) : null}
             <span dir="ltr">{booking.reference}</span>
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
-        {moved ? (
-          <div className="space-y-3 text-sm">
+      {moved ? (
+        <>
+          <AppDialogBody className="text-sm">
             <p className="flex items-start gap-2 rounded-lg bg-success-subtle p-3 text-foreground">
               <CalendarCheck className="mt-0.5 size-4 shrink-0 text-success" aria-hidden="true" />
               <span>
@@ -118,22 +129,24 @@ export function BookingMoveDialog({
                 {whenLabel}
               </span>
             </p>
-            <DialogFooter className="gap-2 sm:gap-2">
-              {tell && (
-                <Button asChild className="gap-1.5">
-                  <a href={tell} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="size-4" aria-hidden="true" />
-                    {isAr ? "أبلغ العميل واتساب" : "Tell the customer on WhatsApp"}
-                  </a>
-                </Button>
-              )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {isAr ? "تم" : "Done"}
+          </AppDialogBody>
+          <AppDialogFooter>
+            {tell && (
+              <Button asChild className="gap-1.5">
+                <a href={tell} target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="size-4" aria-hidden="true" />
+                  {isAr ? "أبلغ العميل واتساب" : "Tell the customer on WhatsApp"}
+                </a>
               </Button>
-            </DialogFooter>
-          </div>
-        ) : (
-          <div className="space-y-4 text-sm">
+            )}
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {isAr ? "تم" : "Done"}
+            </Button>
+          </AppDialogFooter>
+        </>
+      ) : (
+        <>
+          <AppDialogBody className="text-sm">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label htmlFor={ids.day}>{isAr ? "التاريخ الجديد" : "New date"}</Label>
@@ -202,29 +215,29 @@ export function BookingMoveDialog({
                 </span>
               </label>
             )}
+          </AppDialogBody>
 
-            <DialogFooter className="gap-2 sm:gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={page.movePending}
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                onClick={() => void submit()}
-                disabled={
-                  page.movePending || unchanged || !day || day < today || (canAnyway && !anyway)
-                }
-              >
-                {isAr ? "نقل الحجز" : "Move booking"}
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={page.movePending}
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submit()}
+              disabled={
+                page.movePending || unchanged || !day || day < today || (canAnyway && !anyway)
+              }
+            >
+              {isAr ? "نقل الحجز" : "Move booking"}
+            </Button>
+          </AppDialogFooter>
+        </>
+      )}
+    </AppDialog>
   );
 }

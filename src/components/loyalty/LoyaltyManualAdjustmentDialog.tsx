@@ -6,19 +6,17 @@ import {
   type PickedCustomer,
 } from "@/components/customers/CustomerSearchPicker";
 import { useI18n } from "@/lib/i18n";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Sparkles, Loader2, Coins } from "lucide-react";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface LoyaltyManualAdjustmentDialogProps {
   open: boolean;
@@ -84,20 +82,24 @@ export function LoyaltyManualAdjustmentDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          <>
             <Sparkles className="h-5 w-5 text-primary" />
             {isAr ? "تعديل رصيد ولاء يدوي" : "Manual Loyalty Adjustment"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "منح أو خصم نقاط مكافأة مباشرة مع تسجيل سبب العملية في سجل الرقابة."
               : "Directly award or deduct reward points for a customer with an audit note."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 pt-2">
           {/* Customer Selector */}
           <div className="space-y-1.5">
@@ -167,32 +169,31 @@ export function LoyaltyManualAdjustmentDialog({
             />
           </div>
         </div>
-
-        <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            className="min-h-[44px]"
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => adjustMutation.mutate()}
-            disabled={adjustMutation.isPending || !customer}
-            className="min-h-[44px] bg-primary text-primary-foreground"
-          >
-            {adjustMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : isAr ? (
-              "تنفيذ التعديل"
-            ) : (
-              "Apply Adjustment"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          className="min-h-[44px]"
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => adjustMutation.mutate()}
+          disabled={adjustMutation.isPending || !customer}
+          className="min-h-[44px] bg-primary text-primary-foreground"
+        >
+          {adjustMutation.isPending ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : isAr ? (
+            "تنفيذ التعديل"
+          ) : (
+            "Apply Adjustment"
+          )}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

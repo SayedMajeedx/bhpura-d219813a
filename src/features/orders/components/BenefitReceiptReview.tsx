@@ -2,14 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, CheckCircle2, ImageIcon } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useI18n } from "@/lib/i18n";
 import type { Order } from "@/features/orders/types";
 import { useBenefitReview } from "@/features/orders/hooks/use-benefit-review";
@@ -17,6 +9,12 @@ import type { OrderDetailData } from "@/features/orders/hooks/use-order-detail-d
 import { transferApproved } from "@/features/orders/lib/transfer-approval";
 import type { ExpectedAdvance } from "@/features/orders/lib/expected-advance";
 import { formatMoney } from "@/lib/format";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** BenefitPay transfer receipt: view it, approve the payment or reject it with a reason. */
 export function BenefitReceiptReview({
@@ -150,24 +148,26 @@ export function BenefitReceiptReview({
           </Button>
         </div>
       )}
-      <Dialog
+      <AppDialog
         open={rejectReasonOpen}
         onOpenChange={(open) => {
           setRejectReasonOpen(open);
           if (!open) setRejectReason("");
         }}
+        kind="form"
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>
-              {lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}
-            </DialogTitle>
-            <DialogDescription>
+        <AppDialogHeader
+          title={<>{lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}</>}
+          description={
+            <>
               {lang === "ar"
                 ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
                 : "The reason will be emailed to the customer and the private receipt image will be deleted immediately."}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+        />
+
+        <AppDialogBody>
           <div className="space-y-2">
             <Label htmlFor="benefit-rejection-reason">
               {lang === "ar" ? "سبب الرفض" : "Rejection reason"}
@@ -186,22 +186,22 @@ export function BenefitReceiptReview({
             />
             <p className="text-xs text-muted-foreground">{rejectReason.trim().length}/500</p>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setRejectReasonOpen(false)}>
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={rejectBenefitPayment}
-              disabled={rejectingBenefit || rejectReason.trim().length < 3}
-            >
-              {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "رفض الإيصال وإرسال السبب" : "Reject and notify customer"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => setRejectReasonOpen(false)}>
+            {lang === "ar" ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={rejectBenefitPayment}
+            disabled={rejectingBenefit || rejectReason.trim().length < 3}
+          >
+            {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+            {lang === "ar" ? "رفض الإيصال وإرسال السبب" : "Reject and notify customer"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

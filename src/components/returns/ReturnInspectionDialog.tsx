@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +28,12 @@ import {
 import { returnVariantLabel } from "@/lib/returns-variant";
 import { inspectionResultMessage } from "@/lib/returns-inspection-message";
 import { branchesQueries } from "@/lib/data/branches";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ReturnInspectionDialogProps {
   open: boolean;
@@ -105,15 +104,17 @@ export function ReturnInspectionDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          <>
             <PackageCheck className="h-5 w-5 text-primary" />
             {isAr ? "فحص الجودة وتحديد حالة المنتج" : "Inspect Item & Stock Recovery"}
-          </DialogTitle>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           {/* Item Snapshot */}
           <div className="p-3 rounded-lg border border-border bg-muted/30 flex items-center gap-3">
@@ -250,31 +251,30 @@ export function ReturnInspectionDialog({
             />
           </div>
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-            className="h-9 text-xs"
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={handleInspect}
-            disabled={submitting}
-            className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isAr ? "تأكيد الفحص وإعادة المخزون" : "Confirm & Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(false)}
+          disabled={submitting}
+          className="h-9 text-xs"
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={handleInspect}
+          disabled={submitting}
+          className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {isAr ? "تأكيد الفحص وإعادة المخزون" : "Confirm & Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

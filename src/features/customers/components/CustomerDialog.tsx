@@ -4,7 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
@@ -28,9 +33,13 @@ import { AddressManager } from "@/features/customers/components/AddressManager";
 
 export function CustomerDialog({
   customer,
+  open,
+  onOpenChange,
   onSaved,
 }: {
   customer: Customer | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
   const t = useT();
@@ -182,11 +191,17 @@ export function CustomerDialog({
   };
 
   return (
-    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-      <DialogHeader>
-        <DialogTitle>{customer ? t("customers.editTitle") : t("customers.newTitle")}</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dirty={
+        !customer && Boolean(f.name.trim() || f.phone.trim() || f.email.trim() || f.notes.trim())
+      }
+    >
+      <AppDialogHeader title={customer ? t("customers.editTitle") : t("customers.newTitle")} />
+      <AppDialogBody>
         <div>
           <Label>
             {t("customers.name")} <span className="text-destructive">*</span>
@@ -232,10 +247,13 @@ export function CustomerDialog({
             />
           )}
         </div>
-      </div>
-      <DialogFooter>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          {t("common.cancel")}
+        </Button>
         <Button onClick={save}>{t("common.save")}</Button>
-      </DialogFooter>
-    </DialogContent>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

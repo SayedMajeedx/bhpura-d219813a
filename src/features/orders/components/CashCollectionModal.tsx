@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2 } from "lucide-react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 
@@ -13,6 +12,12 @@ import type { Dispatch, SetStateAction } from "react";
 import type { Order } from "@/features/orders/types";
 import { currencyLabel } from "@/lib/currency-label";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 /** Confirm the cash a courier collected on delivery and complete the order. */
 export function CashCollectionModal({
   cashCollectedInput,
@@ -43,23 +48,24 @@ export function CashCollectionModal({
 }) {
   const orderNo = useOrderNumber();
   return (
-    <Dialog
+    <AppDialog
       open={Boolean(cashModalOrder)}
       onOpenChange={(open) => {
         if (!open) setCashModalOrder(null);
       }}
+      kind="form"
+      dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <DialogContent
-        className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-2xl shadow-xl"
-        dir={lang === "ar" ? "rtl" : "ltr"}
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+      <AppDialogHeader
+        title={
+          <>
             <CircleDollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             {lang === "ar" ? "تأكيد تحصيل المبلغ والتسليم" : "Confirm Cash & Delivery"}
-          </DialogTitle>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {cashModalOrder && (
           <div className="space-y-4 py-2">
             <div className="rounded-xl bg-muted/60 border p-3.5 space-y-1.5 text-sm">
@@ -137,42 +143,38 @@ export function CashCollectionModal({
                 }
               />
             </div>
-
-            <div className="flex justify-end gap-2 pt-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCashModalOrder(null)}
-                disabled={isSubmittingCash}
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
-                disabled={isSubmittingCash}
-                onClick={() => {
-                  const amt = Number(cashCollectedInput);
-                  if (isNaN(amt) || amt < 0) {
-                    toast.error(
-                      lang === "ar"
-                        ? "يرجى إدخال مبلغ صحيح (غير سالب)"
-                        : "Please enter a valid non-negative amount",
-                    );
-                    return;
-                  }
-                  handleCompleteDelivery(cashModalOrder, amt, cashModalNotes);
-                }}
-              >
-                {isSubmittingCash ? (
-                  <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" />
-                ) : null}
-                {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
-              </Button>
-            </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      {cashModalOrder && (
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setCashModalOrder(null)}
+            disabled={isSubmittingCash}
+          >
+            {lang === "ar" ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            disabled={isSubmittingCash}
+            onClick={() => {
+              const amt = Number(cashCollectedInput);
+              if (isNaN(amt) || amt < 0) {
+                toast.error(
+                  lang === "ar"
+                    ? "يرجى إدخال مبلغ صحيح (غير سالب)"
+                    : "Please enter a valid non-negative amount",
+                );
+                return;
+              }
+              handleCompleteDelivery(cashModalOrder, amt, cashModalNotes);
+            }}
+          >
+            {isSubmittingCash ? <Loader2 className="animate-spin h-4 w-4 me-1.5 inline" /> : null}
+            {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
+          </Button>
+        </AppDialogFooter>
+      )}
+    </AppDialog>
   );
 }

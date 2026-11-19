@@ -3,14 +3,6 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { saveBookingAreaFees, saveBookingSettings } from "@/lib/data/bookings";
@@ -23,6 +15,12 @@ import {
   travelFeesToSave,
 } from "@/features/bookings/components/TravelFeesFields";
 import { arNoun } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** What is wrong with a set of rules before the database would refuse them. */
 export function rulesProblem(rules: BookingRules, isAr: boolean): string | null {
@@ -141,20 +139,24 @@ export function BookingRulesDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !save.isPending && onOpenChange(next)}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
-      >
-        <DialogHeader>
-          <DialogTitle>{isAr ? "قواعد الحجز" : "Booking rules"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !save.isPending && onOpenChange(next)}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={<>{isAr ? "قواعد الحجز" : "Booking rules"}</>}
+        description={
+          <>
             {isAr
               ? "يطبّقها التقويم في متجرك والنظام عند كل حجز."
               : "Your storefront calendar and every booking follow these."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-2 gap-2">
             {number("daily_capacity", isAr ? "عدد الحجوزات في اليوم" : "Bookings per day", 1, 100)}
@@ -241,25 +243,24 @@ export function BookingRulesDialog({
             </p>
           )}
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={save.isPending}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => save.mutate()}
-            disabled={Boolean(problem) || save.isPending}
-          >
-            {isAr ? "حفظ" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={save.isPending}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => save.mutate()}
+          disabled={Boolean(problem) || save.isPending}
+        >
+          {isAr ? "حفظ" : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -13,14 +13,11 @@ import {
 } from "@/lib/data/message-templates";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -177,19 +174,20 @@ export function ManageTemplatesDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{ar ? "قوالب الرسائل" : "Message templates"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" size="lg">
+      <AppDialogHeader
+        title={ar ? "قوالب الرسائل" : "Message templates"}
+        description={
+          <>
             {ar ? "حقول تُملأ تلقائياً:" : "Fields filled in for you:"}{" "}
             <code>{"{{customer_name}}"}</code>, <code>{"{{business_name}}"}</code>,{" "}
             <code>{"{{invoice_number}}"}</code>, <code>{"{{date}}"}</code>,{" "}
             <code>{"{{total}}"}</code>, <code>{"{{invoice_link}}"}</code>,{" "}
             <code>{"{{notes}}"}</code>.
-          </DialogDescription>
-        </DialogHeader>
-
+          </>
+        }
+      />
+      <AppDialogBody>
         {!editing && (
           <div className="space-y-2">
             <div className="flex justify-end">
@@ -284,16 +282,18 @@ export function ManageTemplatesDialog({
               />
               {ar ? "القالب الافتراضي" : "Use as default template"}
             </label>
-            <DialogFooter>
-              <Button variant="ghost" onClick={() => setEditing(null)}>
-                {ar ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button onClick={save}>{ar ? "حفظ القالب" : "Save template"}</Button>
-            </DialogFooter>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      {editing && (
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setEditing(null)}>
+            {ar ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={save}>{ar ? "حفظ القالب" : "Save template"}</Button>
+        </AppDialogFooter>
+      )}
+    </AppDialog>
   );
 }
 
@@ -385,34 +385,37 @@ export default function SendInvoiceDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger asChild>
-          {asMenuItem ? (
-            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <Send className="h-4 w-4 me-2" /> {t("orderDetail.sendInvoiceWa")}
-            </DropdownMenuItem>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0"
-            >
-              <Send className="h-4 w-4 me-1.5" />
-              <span className="hidden sm:inline">{t("orderDetail.sendInvoiceWa")}</span>
-              <span className="inline sm:hidden">{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
-            </Button>
-          )}
-        </DialogTrigger>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{t("orderDetail.sendInvoiceWa")}</DialogTitle>
-            <DialogDescription>
-              {lang === "ar"
-                ? "اختر القالب، عدّل نص الرسالة، ثم افتح الواتساب للإرسال."
-                : "Pick a template, tweak the message, then open WhatsApp."}
-            </DialogDescription>
-          </DialogHeader>
-
+      {asMenuItem ? (
+        <DropdownMenuItem
+          onSelect={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          <Send className="h-4 w-4 me-2" /> {t("orderDetail.sendInvoiceWa")}
+        </DropdownMenuItem>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0"
+          onClick={() => setOpen(true)}
+        >
+          <Send className="h-4 w-4 me-1.5" />
+          <span className="hidden sm:inline">{t("orderDetail.sendInvoiceWa")}</span>
+          <span className="inline sm:hidden">{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
+        </Button>
+      )}
+      <AppDialog open={open} onOpenChange={setOpen} kind="form">
+        <AppDialogHeader
+          title={t("orderDetail.sendInvoiceWa")}
+          description={
+            lang === "ar"
+              ? "اختر القالب، عدّل نص الرسالة، ثم افتح الواتساب للإرسال."
+              : "Pick a template, tweak the message, then open WhatsApp."
+          }
+        />
+        <AppDialogBody>
           <div className="flex gap-2 items-end">
             <div className="flex-1">
               <Label>{lang === "ar" ? "قالب الرسالة" : "Template"}</Label>
@@ -438,7 +441,7 @@ export default function SendInvoiceDialog({
             </Button>
           </div>
 
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4">
             <div>
               <Label>
                 {lang === "ar" ? "رقم الهاتف (مع رمز الدولة)" : "Phone (country code + number)"}
@@ -454,15 +457,15 @@ export default function SendInvoiceDialog({
                 ? "سيتم فتح تطبيق الواتساب مجهّزاً بنص الفاتورة لإرساله للعميل بنقرة واحدة."
                 : "Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually."}
             </p>
-            <DialogFooter>
-              <Button onClick={openWhatsApp}>
-                <Send className="h-4 w-4 me-2" />{" "}
-                {lang === "ar" ? "فتح الواتساب للإرسال" : "Open WhatsApp"}
-              </Button>
-            </DialogFooter>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button onClick={openWhatsApp}>
+            <Send className="h-4 w-4 me-2" />{" "}
+            {lang === "ar" ? "فتح الواتساب للإرسال" : "Open WhatsApp"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       <ManageTemplatesDialog
         open={manageOpen}

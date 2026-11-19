@@ -10,13 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   ArrowLeft,
   RotateCcw,
   CheckCircle2,
@@ -49,6 +42,12 @@ import { returnsKeys, returnsQueries } from "@/lib/data/returns";
 import { returnVariantLabel } from "@/lib/returns-variant";
 import { activityLogsQueries } from "@/lib/data/activity-logs";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** The shared return type over the typed row (JSON and status columns narrowed). */
 const asReturnRequest = (row: unknown) => row as ReturnRequest;
@@ -721,15 +720,17 @@ function ReturnDetailPage() {
       />
 
       {/* Rejection Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-base font-bold text-destructive">
+      <AppDialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen} kind="form">
+        <AppDialogHeader
+          title={
+            <>
               <ShieldAlert className="h-5 w-5" />
               {isAr ? "رفض طلب الإرجاع" : "Reject Return Request"}
-            </DialogTitle>
-          </DialogHeader>
+            </>
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-3 py-2">
             <Label className="text-xs font-semibold text-foreground">
               {isAr ? "سبب الرفض (يصل للعميل)" : "Rejection Reason (Visible to customer)"}
@@ -745,32 +746,31 @@ function ReturnDetailPage() {
               className="text-xs"
             />
           </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setRejectDialogOpen(false)}
-              disabled={actionLoading}
-              className="h-9 text-xs"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="button"
-              variant="default"
-              size="sm"
-              onClick={() => handleStatusChange("rejected", { rejectionReason })}
-              disabled={actionLoading || !rejectionReason.trim()}
-              className="h-9 text-xs gap-1.5 bg-destructive text-white hover:bg-destructive/90"
-            >
-              {actionLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {isAr ? "تأكيد الرفض" : "Confirm Rejection"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setRejectDialogOpen(false)}
+            disabled={actionLoading}
+            className="h-9 text-xs"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            onClick={() => handleStatusChange("rejected", { rejectionReason })}
+            disabled={actionLoading || !rejectionReason.trim()}
+            className="h-9 text-xs gap-1.5 bg-destructive text-white hover:bg-destructive/90"
+          >
+            {actionLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {isAr ? "تأكيد الرفض" : "Confirm Rejection"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

@@ -1,14 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,6 +21,12 @@ import {
   saveAbandonedCartSettings,
 } from "@/lib/data/abandoned-carts";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface AbandonedCartSettingsDialogProps {
   open: boolean;
@@ -96,21 +94,25 @@ export function AbandonedCartSettingsDialog({
   const offersCode = form.default_discount_type !== "none";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display text-xl">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" size="lg">
+      <AppDialogHeader
+        title={
+          <>
             <ShoppingCart className="h-5 w-5 text-primary" />
             {isAr ? "إعدادات السلات المتروكة" : "Abandoned cart settings"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "لا يُرسل النظام أي رسالة بنفسه: ترسل أنت التذكير عبر واتساب لمن وافق على ذلك."
               : "Nothing is sent automatically: you send a reminder on WhatsApp to shoppers who agreed to hear from you."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col space-y-5 pt-2">
+        <AppDialogBody>
           <div className="flex items-center justify-between gap-4 p-4 rounded-xl border border-border bg-card">
             <div className="space-y-0.5">
               <Label htmlFor="cart-tracking" className="text-base font-semibold">
@@ -236,32 +238,31 @@ export function AbandonedCartSettingsDialog({
               )}
             </div>
           </Card>
-
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="min-h-[44px]"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveMutation.isPending}
-              className="min-h-[44px] bg-primary text-primary-foreground"
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isAr ? (
-                "حفظ الإعدادات"
-              ) : (
-                "Save settings"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="min-h-[44px]"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="submit"
+            disabled={saveMutation.isPending}
+            className="min-h-[44px] bg-primary text-primary-foreground"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isAr ? (
+              "حفظ الإعدادات"
+            ) : (
+              "Save settings"
+            )}
+          </Button>
+        </AppDialogFooter>
+      </form>
+    </AppDialog>
   );
 }

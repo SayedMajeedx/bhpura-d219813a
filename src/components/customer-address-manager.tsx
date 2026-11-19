@@ -19,16 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { getCurrentUser } from "@/lib/auth/session";
 import { AppConfirm } from "@/components/ui/app-confirm";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export type ManagedCustomerAddress = {
   id: string;
@@ -482,19 +481,19 @@ export function CustomerAddressManager({
         </div>
       )}
 
-      <Dialog
+      <AppDialog
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
           if (!next) setEditing(null);
         }}
+        kind="form"
+        size="lg"
+        dir={isAr ? "rtl" : "ltr"}
       >
-        <DialogContent
-          className="max-h-[90vh] max-w-2xl overflow-y-auto"
-          dir={isAr ? "rtl" : "ltr"}
-        >
-          <DialogHeader>
-            <DialogTitle>
+        <AppDialogHeader
+          title={
+            <>
               {editing
                 ? isAr
                   ? "تعديل العنوان"
@@ -502,8 +501,11 @@ export function CustomerAddressManager({
                 : isAr
                   ? "إضافة عنوان"
                   : "Add Address"}
-            </DialogTitle>
-          </DialogHeader>
+            </>
+          }
+        />
+
+        <AppDialogBody>
           <div className="grid gap-4 py-2 sm:grid-cols-2">
             <Field label={isAr ? "اسم العنوان" : "Address Label"} required>
               <Input
@@ -565,16 +567,16 @@ export function CustomerAddressManager({
               </Field>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" onClick={() => void save()} disabled={saving}>
-              {saving ? (isAr ? "جاري الحفظ…" : "Saving…") : isAr ? "حفظ العنوان" : "Save Address"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={() => void save()} disabled={saving}>
+            {saving ? (isAr ? "جاري الحفظ…" : "Saving…") : isAr ? "حفظ العنوان" : "Save Address"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       <AppConfirm
         open={!!deleting}

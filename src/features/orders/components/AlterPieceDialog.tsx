@@ -3,14 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Home, Scissors, Store, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +31,12 @@ import {
   type AlterationKind,
   type AlterForm,
 } from "../lib/alterations";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export type AlterLine = {
   id: string;
@@ -240,42 +238,44 @@ export function AlterPieceDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-lg">
-        {done ? (
-          <AfterSendPanel
-            lang={lang}
-            where={done.where}
-            orderIds={[order.id]}
-            sheetLang={done.sheetLang}
-            onPrint={onPrint ? (sheetLang) => onPrint(done, sheetLang) : undefined}
-            printLabel={
-              done.kind === "fix"
-                ? isAr
-                  ? "اطبع أمر التصليح"
-                  : "Print fix sheet"
-                : isAr
-                  ? "اطبع أمر التعديل"
-                  : "Print alteration sheet"
-            }
-            supplierPhone={done.phone}
-            supplierMessage={done.message || undefined}
-            onTellCustomer={onTellCustomer ? () => onTellCustomer(done) : undefined}
-            tellLabel={isAr ? "أبلغ العميل باستلام القطعة" : "Tell the customer it was received"}
-            onClose={() => onOpenChange(false)}
-          />
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle>{isAr ? "تعديل قطعة" : "Alter a piece"}</DialogTitle>
-              <DialogDescription>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      {done ? (
+        <AfterSendPanel
+          lang={lang}
+          where={done.where}
+          orderIds={[order.id]}
+          sheetLang={done.sheetLang}
+          onPrint={onPrint ? (sheetLang) => onPrint(done, sheetLang) : undefined}
+          printLabel={
+            done.kind === "fix"
+              ? isAr
+                ? "اطبع أمر التصليح"
+                : "Print fix sheet"
+              : isAr
+                ? "اطبع أمر التعديل"
+                : "Print alteration sheet"
+          }
+          supplierPhone={done.phone}
+          supplierMessage={done.message || undefined}
+          onTellCustomer={onTellCustomer ? () => onTellCustomer(done) : undefined}
+          tellLabel={isAr ? "أبلغ العميل باستلام القطعة" : "Tell the customer it was received"}
+          onClose={() => onOpenChange(false)}
+        />
+      ) : (
+        <>
+          <AppDialogHeader
+            title={<>{isAr ? "تعديل قطعة" : "Alter a piece"}</>}
+            description={
+              <>
                 {isAr
                   ? "ما يتغيّر، ومن يعمله ومتى، وسعره للعميل. ثم تطبع الورقة وتراسل المورد والعميل من هنا."
                   : "What changes, who does it and by when, and its price for the customer. Then print the sheet and message the supplier and the customer from here."}
-              </DialogDescription>
-            </DialogHeader>
+              </>
+            }
+          />
 
-            <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
+          <AppDialogBody>
+            <div className="space-y-4">
               {offered.length > 1 && (
                 <div className="space-y-1">
                   <Label htmlFor={`${uid}-piece`}>{isAr ? "القطعة" : "Piece"}</Label>
@@ -462,24 +462,23 @@ export function AlterPieceDialog({
                 </div>
               )}
             </div>
-
-            <DialogFooter className="flex-wrap gap-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button type="button" onClick={save} disabled={saving || !piece}>
-                {form.madeBy === "supplier"
-                  ? isAr
-                    ? "أرسل للمورد"
-                    : "Send to the supplier"
-                  : isAr
-                    ? "إلى ورشتنا"
-                    : "To our workshop"}
-              </Button>
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button type="button" onClick={save} disabled={saving || !piece}>
+              {form.madeBy === "supplier"
+                ? isAr
+                  ? "أرسل للمورد"
+                  : "Send to the supplier"
+                : isAr
+                  ? "إلى ورشتنا"
+                  : "To our workshop"}
+            </Button>
+          </AppDialogFooter>
+        </>
+      )}
+    </AppDialog>
   );
 }

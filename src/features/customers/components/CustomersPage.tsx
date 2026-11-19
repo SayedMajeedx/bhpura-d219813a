@@ -13,7 +13,7 @@ import {
 } from "@/features/customers/components/CustomerValueStrip";
 import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { businessSettingsQueries } from "@/lib/data/business-settings";
-import { Dialog } from "@/components/ui/dialog";
+import { useOpenSession } from "@/hooks/use-open-session";
 import { Users, Download } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -55,6 +55,8 @@ export function CustomersPage({ slug }: { slug: string }) {
   const brandId = brand.id;
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  // The new-customer form starts blank each time it opens.
+  const customerSession = useOpenSession(open);
   const [isCustomerImporterOpen, setIsCustomerImporterOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const {
@@ -395,15 +397,16 @@ export function CustomersPage({ slug }: { slug: string }) {
       />
 
       {/* Customer Creation Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <CustomerDialog
-          customer={null}
-          onSaved={() => {
-            setOpen(false);
-            qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
-          }}
-        />
-      </Dialog>
+      <CustomerDialog
+        key={customerSession}
+        customer={null}
+        open={open}
+        onOpenChange={setOpen}
+        onSaved={() => {
+          setOpen(false);
+          qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
+        }}
+      />
 
       <CustomerImporterModal
         brandId={brandId}

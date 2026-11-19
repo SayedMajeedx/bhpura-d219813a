@@ -17,14 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +40,12 @@ import {
 } from "../lib/courier-delivery";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
 import { orderNumberLabel } from "@/lib/order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * One delivery, for the courier it is assigned to: who to reach, where to go, what to hand
@@ -388,11 +386,15 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
         </ul>
       </Card>
 
-      <Dialog open={handingOver} onOpenChange={(open) => !working && setHandingOver(open)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "تأكيد التسليم" : "Confirm the delivery"}</DialogTitle>
-            <DialogDescription>
+      <AppDialog
+        open={handingOver}
+        onOpenChange={(open) => !working && setHandingOver(open)}
+        kind="form"
+      >
+        <AppDialogHeader
+          title={<>{isAr ? "تأكيد التسليم" : "Confirm the delivery"}</>}
+          description={
+            <>
               {delivery.toCollect > 0
                 ? isAr
                   ? `المطلوب تحصيله ${money(delivery.toCollect)}. اكتب ما استلمته فعلاً.`
@@ -400,8 +402,11 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
                 : isAr
                   ? "الطلب مدفوع بالكامل. أكّد أنك سلّمته للعميل."
                   : "The order is paid in full. Confirm you handed it to the customer."}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+        />
+
+        <AppDialogBody>
           <div className="space-y-3">
             {delivery.toCollect > 0 && (
               <div className="space-y-1.5">
@@ -440,26 +445,26 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
               />
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              className="h-12"
-              disabled={working}
-              onClick={() => setHandingOver(false)}
-            >
-              {isAr ? "رجوع" : "Back"}
-            </Button>
-            <Button
-              className="h-12 gap-2 font-bold"
-              disabled={working || !amountValid}
-              onClick={completeDelivery}
-            >
-              {working && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isAr ? "تأكيد التسليم" : "Confirm delivery"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            className="h-12"
+            disabled={working}
+            onClick={() => setHandingOver(false)}
+          >
+            {isAr ? "رجوع" : "Back"}
+          </Button>
+          <Button
+            className="h-12 gap-2 font-bold"
+            disabled={working || !amountValid}
+            onClick={completeDelivery}
+          >
+            {working && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isAr ? "تأكيد التسليم" : "Confirm delivery"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

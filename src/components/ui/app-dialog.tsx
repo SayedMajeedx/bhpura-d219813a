@@ -256,7 +256,10 @@ export function AppDialogHeader({
         <div className="min-w-0 flex-1">
           <DialogPrimitive.Title className="flex min-w-0 items-center gap-2 text-base font-semibold leading-snug text-foreground sm:text-lg">
             {icon && <span className="shrink-0 text-muted-foreground [&_svg]:size-4">{icon}</span>}
-            <span className="min-w-0 break-words">{title}</span>
+            {/* An icon written into the title sits on its line, as `icon` does. */}
+            <span className="min-w-0 break-words [&>svg]:me-2 [&>svg]:inline [&>svg]:size-4 [&>svg]:align-[-0.125em] [&>svg]:text-muted-foreground">
+              {title}
+            </span>
           </DialogPrimitive.Title>
           {description && (
             <DialogPrimitive.Description className="mt-1 break-words text-sm text-muted-foreground">

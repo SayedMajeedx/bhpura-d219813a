@@ -1,12 +1,4 @@
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +12,12 @@ import {
 import { updateProfile } from "@/lib/data/profiles";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
 import { orderNumberLabel } from "@/lib/order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface CourierWhatsAppModalProps {
   isOpen: boolean;
@@ -135,26 +133,25 @@ export function CourierWhatsAppModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-lg p-6 sm:p-7 gap-5" dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader className="space-y-2">
-          <div className="flex items-center gap-3 text-emerald-600 dark:text-emerald-400">
-            <div className="p-2.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-              <MessageSquare className="h-6 w-6" />
-            </div>
-            <div>
-              <DialogTitle className="text-xl font-bold text-foreground">
-                {isAr ? "إشعار المندوب عبر الواتساب" : "Notify Courier via WhatsApp"}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                {isAr
-                  ? `إرسال التفاصيل إلى ${courierName} للطلب ${invNum}`
-                  : `Send details to ${courierName} for Order ${invNum}`}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+    <AppDialog
+      open={isOpen}
+      onOpenChange={(v) => !v && onClose()}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={<>{isAr ? "إشعار المندوب عبر الواتساب" : "Notify Courier via WhatsApp"}</>}
+        description={
+          <>
+            {isAr
+              ? `إرسال التفاصيل إلى ${courierName} للطلب ${invNum}`
+              : `Send details to ${courierName} for Order ${invNum}`}
+          </>
+        }
+        icon={<MessageSquare />}
+      />
 
+      <AppDialogBody>
         <div className="space-y-4">
           {/* Notification status badge if already notified */}
           {notifiedAgo && (
@@ -208,29 +205,28 @@ export function CourierWhatsAppModal({
             </div>
           </div>
         </div>
-
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isSaving}
-            className="w-full sm:w-auto"
-          >
-            {isAr ? "تخطي الآن" : "Skip for now"}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSend}
-            disabled={isSaving}
-            className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md gap-2"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span>{isAr ? "إرسال عبر الواتساب الآن" : "Send WhatsApp Message Now"}</span>
-            <ExternalLink className="h-3.5 w-3.5 opacity-80" />
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClose}
+          disabled={isSaving}
+          className="w-full sm:w-auto"
+        >
+          {isAr ? "تخطي الآن" : "Skip for now"}
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSend}
+          disabled={isSaving}
+          className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-md gap-2"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>{isAr ? "إرسال عبر الواتساب الآن" : "Send WhatsApp Message Now"}</span>
+          <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -2,14 +2,6 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +18,12 @@ import {
   type IssueForm,
 } from "../lib/gift-cards";
 import { GiftCardShare } from "./GiftCardShare";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Issuing a card: sold (and how it was paid) or given, its amount, who it is for and from, a note
@@ -85,10 +83,10 @@ export function IssueGiftCardDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={close}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <AppDialog open={open} onOpenChange={close} kind="form" dir={isAr ? "rtl" : "ltr"}>
+      <AppDialogHeader
+        title={
+          <>
             {issued
               ? isAr
                 ? "صدرت البطاقة"
@@ -96,8 +94,10 @@ export function IssueGiftCardDialog({
               : isAr
                 ? "إصدار بطاقة هدية"
                 : "Issue a gift card"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {issued
               ? isAr
                 ? "أرسل الرمز للعميل: يُدفع به عند الطلب."
@@ -105,9 +105,11 @@ export function IssueGiftCardDialog({
               : isAr
                 ? "بطاقة الهدية دفعة مقدمة يحتفظ بها المتجر حتى تُستخدم، وليست خصمًا."
                 : "A gift card is money the store holds until it is used, not a discount."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {issued ? (
           <GiftCardShare card={issued} lang={lang} />
         ) : (
@@ -215,30 +217,29 @@ export function IssueGiftCardDialog({
             </div>
           </div>
         )}
-
-        <DialogFooter>
-          {issued ? (
-            <Button type="button" onClick={() => close(false)}>
-              {isAr ? "تم" : "Done"}
+      </AppDialogBody>
+      <AppDialogFooter>
+        {issued ? (
+          <Button type="button" onClick={() => close(false)}>
+            {isAr ? "تم" : "Done"}
+          </Button>
+        ) : (
+          <>
+            <Button type="button" variant="outline" onClick={() => close(false)}>
+              {isAr ? "إلغاء" : "Cancel"}
             </Button>
-          ) : (
-            <>
-              <Button type="button" variant="outline" onClick={() => close(false)}>
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button type="button" onClick={submit} disabled={saving}>
-                {saving
-                  ? isAr
-                    ? "جارٍ الإصدار…"
-                    : "Issuing…"
-                  : isAr
-                    ? "إصدار البطاقة"
-                    : "Issue card"}
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            <Button type="button" onClick={submit} disabled={saving}>
+              {saving
+                ? isAr
+                  ? "جارٍ الإصدار…"
+                  : "Issuing…"
+                : isAr
+                  ? "إصدار البطاقة"
+                  : "Issue card"}
+            </Button>
+          </>
+        )}
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

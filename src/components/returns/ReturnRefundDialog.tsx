@@ -1,11 +1,4 @@
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -21,6 +14,12 @@ import { toast } from "sonner";
 import { processReturnRefund } from "@/lib/returns.functions";
 import { formatMoney } from "@/lib/format";
 import type { ReturnRequest } from "@/lib/returns.types";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ReturnRefundDialogProps {
   open: boolean;
@@ -108,15 +107,17 @@ export function ReturnRefundDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          <>
             <CircleDollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             {isAr ? "معالجة الاسترداد المالي والتعويض" : "Process Return Refund"}
-          </DialogTitle>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           {/* Financial Summary Card */}
           <div className="p-3.5 rounded-xl border border-border bg-muted/30 space-y-2 text-xs">
@@ -292,31 +293,30 @@ export function ReturnRefundDialog({
             </span>
           </div>
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-            className="h-9 text-xs"
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={handleProcess}
-            disabled={submitting || isExceeding || numRefundAmount <= 0}
-            className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isAr ? "تأكيد وصرف الاسترداد" : "Confirm & Process Refund"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(false)}
+          disabled={submitting}
+          className="h-9 text-xs"
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={handleProcess}
+          disabled={submitting || isExceeding || numRefundAmount <= 0}
+          className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {isAr ? "تأكيد وصرف الاسترداد" : "Confirm & Process Refund"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

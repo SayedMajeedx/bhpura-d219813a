@@ -8,13 +8,6 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { Printer, Receipt, Link as LinkIcon, MoreHorizontal } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
@@ -71,6 +64,7 @@ import { OrderFinancialCard } from "@/features/orders/components/OrderFinancialC
 import { PendingTransferReview } from "@/features/orders/components/PendingTransferReview";
 import { assignOrderCourier } from "@/lib/data/orders";
 import { OrderForRole } from "@/features/courier-delivery/components/OrderForRole";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -854,19 +848,19 @@ function OrderEditor() {
         {/* Activity Trail Section Anchor */}
         <OrderActivitySection brand={brand} mobileTab={mobileTab} order={order} />
 
-        <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
-          <DialogContent
-            closeLabel={lang === "ar" ? "إغلاق" : "Close"}
-            className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden"
-          >
-            <DialogHeader>
-              <DialogTitle>{lang === "ar" ? "إجراءات الطلب" : "Order actions"}</DialogTitle>
-              <DialogDescription>
+        <AppDialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen} kind="form">
+          <AppDialogHeader
+            title={<>{lang === "ar" ? "إجراءات الطلب" : "Order actions"}</>}
+            description={
+              <>
                 {lang === "ar"
                   ? "أدوات الفاتورة والمشاركة والطباعة"
                   : "Invoice, sharing and printing tools"}
-              </DialogDescription>
-            </DialogHeader>
+              </>
+            }
+          />
+
+          <AppDialogBody>
             <div className="grid gap-2 py-2">
               {order.public_invoice_token && (
                 <Button
@@ -916,8 +910,8 @@ function OrderEditor() {
                 {lang === "ar" ? "عرض سجل النشاطات" : "View activity history"}
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+        </AppDialog>
 
         <CourierWhatsAppModal
           isOpen={waModalOpen}

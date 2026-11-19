@@ -2,15 +2,6 @@ import { useEffect, useId, useState } from "react";
 import { Gift, Percent, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
@@ -26,6 +17,12 @@ import { OfferPiecesField } from "@/features/offers/components/OfferPiecesField"
 import { OfferWordingField } from "@/features/offers/components/OfferWordingField";
 import type { PartnerChoice } from "@/features/offers/lib/partner-pick";
 import { emptyOfferForm, offerFormProblem, type OfferForm } from "@/features/offers/lib/offer-form";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const KINDS: Array<{
   kind: OfferKind;
@@ -103,26 +100,28 @@ export function StoreOfferDialog({
   const field = (name: string) => `${id}-${name}`;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("max-h-[90dvh] max-w-2xl overflow-y-auto", PHONE_SHEET)}>
-        <DialogHeader>
-          <DialogTitle>
-            {isNew ? (isAr ? "عرض جديد" : "New offer") : isAr ? "تعديل العرض" : "Edit offer"}
-          </DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" size="lg">
+      <AppDialogHeader
+        title={
+          <>{isNew ? (isAr ? "عرض جديد" : "New offer") : isAr ? "تعديل العرض" : "Edit offer"}</>
+        }
+        description={
+          <>
             {isAr
               ? "يُطبّق العرض تلقائيًا على طلبات المتجر دون رمز."
               : "The offer applies to the store's orders by itself, with no code."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
-        <form
-          className="space-y-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!problem) onSave(form);
-          }}
-        >
+      <form
+        className="flex min-h-0 flex-1 flex-col space-y-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!problem) onSave(form);
+        }}
+      >
+        <AppDialogBody>
           {isNew && (
             <div
               role="group"
@@ -446,17 +445,16 @@ export function StoreOfferDialog({
             money={money}
             problem={problem}
           />
-
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="submit" disabled={Boolean(problem) || saving}>
-              {isAr ? "حفظ العرض" : "Save offer"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="submit" disabled={Boolean(problem) || saving}>
+            {isAr ? "حفظ العرض" : "Save offer"}
+          </Button>
+        </AppDialogFooter>
+      </form>
+    </AppDialog>
   );
 }

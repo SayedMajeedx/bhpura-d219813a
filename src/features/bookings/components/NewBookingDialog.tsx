@@ -3,14 +3,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +23,12 @@ import {
   type NewBookingForm,
 } from "@/features/bookings/lib/new-booking";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const PROBLEM_TEXT = {
   day: { ar: "اختر التاريخ.", en: "Choose a date." },
@@ -139,16 +137,18 @@ export function NewBookingDialog({
     }));
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !save.isPending && onOpenChange(next)}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
-      >
-        <DialogHeader>
-          <DialogTitle>{isAr ? "حجز جديد" : "New booking"}</DialogTitle>
-          <DialogDescription>{dayTitle(form.day, isAr)}</DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !save.isPending && onOpenChange(next)}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={<>{isAr ? "حجز جديد" : "New booking"}</>}
+        description={<>{dayTitle(form.day, isAr)}</>}
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 text-sm">
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
@@ -366,31 +366,30 @@ export function NewBookingDialog({
             </p>
           )}
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={save.isPending}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => save.mutate()}
-            disabled={problems.length > 0 || save.isPending}
-          >
-            {save.isPending
-              ? isAr
-                ? "جارٍ الحفظ…"
-                : "Saving…"
-              : isAr
-                ? "حفظ الحجز"
-                : "Save booking"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={save.isPending}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => save.mutate()}
+          disabled={problems.length > 0 || save.isPending}
+        >
+          {save.isPending
+            ? isAr
+              ? "جارٍ الحفظ…"
+              : "Saving…"
+            : isAr
+              ? "حفظ الحجز"
+              : "Save booking"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
