@@ -8,7 +8,7 @@ import {
 } from "./helpers/overflow";
 
 /**
- * Nothing on a storefront page may be cut off at the side of a phone screen.
+ * Nothing on a storefront page may be cut off: at the side of the screen, or by the box that holds it.
  *
  * Every storefront page is opened in Arabic and in English at the narrowest phone still in use
  * (320px) and at a common one (390px), with a cart that stresses the layout: a very long product
@@ -23,7 +23,10 @@ const SLUGS = (process.env.OVERFLOW_AUDIT_SLUGS ?? "pura")
   .split(",")
   .map((slug) => slug.trim())
   .filter(Boolean);
-const WIDTHS = [320, 390];
+/** Phones, a tablet, a small and a wide laptop. */
+const WIDTHS = [320, 390, 768, 1024, 1280, 1440];
+/** The cart drawer, the menu, search, filters and pickers: the narrowest phone and a laptop. */
+const PRESS_WIDTHS = [320, 1280];
 const LANGS = ["ar", "en"] as const;
 const FIXED_PAGES = new Set([
   "account",
@@ -149,8 +152,8 @@ for (const slug of SLUGS) {
     test.skip(!process.env.OVERFLOW_AUDIT, "On demand: npm run audit:overflow");
     test.skip(!SUPABASE_URL || !ANON_KEY, "Needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
 
-    test("no page cuts content off at the side of a phone", async ({ page }) => {
-      test.setTimeout(1_200_000);
+    test("no page cuts content off, phone to laptop", async ({ page }) => {
+      test.setTimeout(7_200_000);
       const item = await liveItem(slug);
       test.skip(!item, `The store "${slug}" has no product to put in a cart`);
 
@@ -188,23 +191,22 @@ for (const slug of SLUGS) {
           await page.goto(`${path}${path.includes("?") ? "&" : "?"}lang=${lang}`);
           await settle(page);
           for (const width of WIDTHS) {
-            await page.setViewportSize({ width, height: 844 });
+            await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
             await page.waitForTimeout(250);
             const cut = await findCutOffContent(page);
             if (cut.length > 0) {
               problems.push(`${path} (${lang}, ${width}px)\n${describeCutOff(cut)}`);
             }
           }
-          // The cart drawer, the menu, search, filters and pickers, on the narrowest phone.
-          await page.setViewportSize({ width: 320, height: 844 });
-          problems.push(...(await auditOverlays(page, `${path} (${lang}, 320px)`)));
+          for (const width of PRESS_WIDTHS) {
+            await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+            await page.waitForTimeout(250);
+            problems.push(...(await auditOverlays(page, `${path} (${lang}, ${width}px)`)));
+          }
         }
       }
 
-      expect(
-        problems,
-        `Content cut off at the side of the screen:\n${problems.join("\n")}`,
-      ).toEqual([]);
+      expect(problems, `Content cut off:\n${problems.join("\n")}`).toEqual([]);
     });
   });
 }

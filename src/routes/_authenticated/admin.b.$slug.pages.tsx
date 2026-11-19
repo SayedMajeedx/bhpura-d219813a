@@ -572,7 +572,8 @@ function PagesAndPolicies() {
                   : "Manage store content, return terms, shipping policies, and footer links."}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            {/* Two buttons wrap on a narrow phone instead of pushing "New page" off the screen. */}
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"

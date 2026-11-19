@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * The overflow audits, on demand: every storefront page and every admin screen at phone width,
- * in Arabic and English, pressing buttons to open dialogs, drawers, menus and tabs, and measuring
- * that nothing is cut off at the side. Long (about half an hour for everything), so it is not part
- * of the pull-request checks.
+ * The overflow audits, on demand: every storefront page and every admin screen from a phone to
+ * a laptop (320px to 1440px), in Arabic and English, pressing buttons to open dialogs, drawers,
+ * menus and tabs, and measuring that nothing is cut off, by the screen or by the box that holds
+ * it. Long (about an hour for everything), so it is not part of the pull-request checks.
  *
  *   npm run audit:overflow                         everything, the Pura store
  *   npm run audit:overflow -- --stores=zh,pura     other stores

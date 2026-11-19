@@ -256,9 +256,11 @@ export function OrderLineCard({
             </div>
           )}
         </div>
-        <div className="sm:col-span-2">
+        {/* Three of the twelve columns (the row used eleven): the stepper's two buttons and its
+            number did not fit in two on a laptop, and the card cut them off. */}
+        <div className="min-w-0 sm:col-span-3">
           <Label htmlFor={`${fieldId}-qty`}>{t("orderDetail.qty")}</Label>
-          <div className="flex items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 pointer-coarse:h-auto shadow-2xs mt-1">
+          <div className="flex w-full max-w-36 items-center rounded-lg border border-border-strong bg-background overflow-hidden h-9 pointer-coarse:h-auto shadow-2xs mt-1">
             <Button
               type="button"
               variant="ghost"
@@ -279,7 +281,7 @@ export function OrderLineCard({
               min={1}
               value={it.quantity}
               onChange={(e) => updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })}
-              className="h-9 w-12 border-0 p-0 text-center font-bold text-xs focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="h-9 min-w-0 flex-1 border-0 p-0 text-center font-bold text-xs focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
             <Button
               type="button"

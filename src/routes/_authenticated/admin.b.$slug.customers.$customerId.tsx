@@ -242,7 +242,7 @@ function CustomerProfilePage() {
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
+        <div className="min-w-0">
           <button
             type="button"
             onClick={(e) => {
@@ -258,15 +258,20 @@ function CustomerProfilePage() {
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
           </button>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{customer.name}</h1>
+          <h1
+            dir="auto"
+            className="text-page-start break-words text-2xl font-bold tracking-tight text-foreground"
+          >
+            {customer.name}
+          </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {lang === "ar"
               ? `طلبات هذا العميل: ${orders.length}`
               : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* Create Order Quick Action */}
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {/* The actions wrap beside the name on a tablet (they ran off the screen). */}
           <Button
             asChild
             className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3 bg-primary text-primary-foreground font-bold"
@@ -285,7 +290,7 @@ function CustomerProfilePage() {
           </Button>
 
           {/* Desktop Actions */}
-          <div className="hidden sm:flex items-center gap-2">
+          <div className="hidden sm:flex flex-wrap items-center gap-2">
             {customer.phone && (
               <Button asChild variant="outline" className="min-h-11 px-3">
                 <a

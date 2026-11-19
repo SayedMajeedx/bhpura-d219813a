@@ -23,7 +23,9 @@ export function RecommendationRail({
   const photoClass = PRODUCT_PHOTO_CLASS[productCardRatio(settings)];
 
   return (
-    <section aria-label={title} className="w-full overflow-x-clip">
+    // No clip here: on a phone the rail reaches the screen's edges (-mx-4 over the page's px-4),
+    // and a clip on the section cut those edges off.
+    <section aria-label={title} className="w-full">
       <div className="mb-4 flex items-end justify-between gap-3">
         <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
         <span className="hidden text-xs text-muted-foreground sm:block">

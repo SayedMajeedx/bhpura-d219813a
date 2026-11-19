@@ -265,8 +265,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           )}
         </div>
 
-        {/* Right: Desktop Actions (Mobile uses sticky bottom action bar) */}
-        <div className="hidden sm:flex items-center gap-2 shrink-0 ms-auto">
+        {/* The order's steps, from a tablet up (a phone has its bar at the foot). They wrap: on a
+            tablet four buttons with English labels ran 650px wide, past the screen. */}
+        <div className="hidden sm:flex flex-wrap items-center justify-end gap-2 ms-auto">
           {/* Custom dialog triggers like SendInvoiceDialog */}
           {children}
 

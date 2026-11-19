@@ -43,7 +43,7 @@ export function OsPageHeader({
       </div>
 
       {(primaryAction || secondaryActions) && (
-        <div className="flex items-center gap-2.5 flex-wrap shrink-0">
+        <div className="flex items-center gap-2.5 flex-wrap">
           {secondaryActions}
           {primaryAction}
         </div>

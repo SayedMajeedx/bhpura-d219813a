@@ -423,7 +423,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             </div>
 
             {/* Quick Action CTAs */}
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 type="button"
                 variant="default"

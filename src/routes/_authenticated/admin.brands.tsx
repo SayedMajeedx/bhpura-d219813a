@@ -247,15 +247,15 @@ function BrandsPage() {
         </div>
       </div>
 
-      {/* Modern SaaS KPI Stats Grid */}
+      {/* The figures. On a tablet three cards share a narrow row: their words wrap, not clip. */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* KPI: Total Brands */}
-        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
-          <div className="p-3 rounded-full bg-primary/5 text-primary">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-4 lg:p-6 flex items-center gap-3 lg:gap-4 relative">
+          <div className="shrink-0 p-3 rounded-full bg-primary/5 text-primary">
             <Users className="h-6 w-6" />
           </div>
-          <div>
-            <span className="text-xs font-bold text-muted-foreground block">
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-muted-foreground block break-words">
               {lang === "ar" ? "إجمالي البوتيكات" : "Total Boutique Tenants"}
             </span>
             <span className="text-2xl font-bold font-display mt-0.5 block">{brands.length}</span>
@@ -263,12 +263,12 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: Active SaaS Subscriptions */}
-        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
-          <div className="p-3 rounded-full bg-emerald-500/5 text-emerald-500">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-4 lg:p-6 flex items-center gap-3 lg:gap-4 relative">
+          <div className="shrink-0 p-3 rounded-full bg-emerald-500/5 text-emerald-500">
             <TrendingUp className="h-6 w-6" />
           </div>
-          <div>
-            <span className="text-xs font-bold text-muted-foreground block">
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-muted-foreground block break-words">
               {lang === "ar" ? "الاشتراكات النشطة" : "Active SaaS Subscriptions"}
             </span>
             <span className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-500 mt-0.5 block">
@@ -278,12 +278,12 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: annual subscription revenue */}
-        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-6 flex items-center gap-4 relative">
-          <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
+        <Card className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-4 lg:p-6 flex items-center gap-3 lg:gap-4 relative">
+          <div className="shrink-0 p-3 rounded-full bg-blue-500/5 text-blue-500">
             <DollarSign className="h-6 w-6" />
           </div>
-          <div>
-            <span className="text-xs font-bold text-muted-foreground block">
+          <div className="min-w-0">
+            <span className="text-xs font-bold text-muted-foreground block break-words">
               {lang === "ar" ? "إيراد الاشتراكات السنوية" : "Annual Subscription Revenue"}
             </span>
             <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">

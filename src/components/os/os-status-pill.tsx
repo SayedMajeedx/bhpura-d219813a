@@ -42,7 +42,9 @@ export function OsStatusPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border shadow-2xs transition-colors select-none shrink-0",
+        // Never wider than the box it sits in: a long stage ("Sent to the tailor") in a narrow
+        // column is cut with an ellipsis, not pushed past the card.
+        "inline-flex max-w-full items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border shadow-2xs transition-colors select-none shrink-0",
         variantClasses[variant],
         className,
       )}
@@ -50,7 +52,7 @@ export function OsStatusPill({
     >
       {dot && <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotClasses[variant])} />}
       {icon && <span className="shrink-0">{icon}</span>}
-      <span className="truncate">{children}</span>
+      <span className="min-w-0 truncate">{children}</span>
     </span>
   );
 }

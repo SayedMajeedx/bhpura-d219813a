@@ -8,14 +8,19 @@ import {
 import { BRAND, signInWithStressData } from "./helpers/admin-stress";
 
 /**
- * Nothing on an admin page may be cut off at the side of a phone screen.
+ * Nothing on an admin page may be cut off: at the side of the screen, or by the card or box that
+ * holds it (a table of six columns in two fifths of a laptop's row was, 2026-11-19).
  *
- * Every admin screen of a store is opened in Arabic and in English at 320px and 390px, signed in
+ * Every admin screen of a store is opened in Arabic and in English from the narrowest phone to a
+ * wide laptop (320px to 1440px), signed in
  * with a faked session and with every Supabase call answered in the browser. The data is made to
  * push on the layout: long names, a long email, notes with a word that cannot wrap.
  */
 
-const WIDTHS = [320, 390];
+/** Phones, a tablet, a small and a wide laptop: a box beside another is narrowest on a laptop. */
+const WIDTHS = [320, 390, 768, 1024, 1280, 1440];
+/** Dialogs, drawers and menus are opened on the narrowest phone and on a laptop. */
+const PRESS_WIDTHS = [320, 1280];
 
 const SCREENS = [
   "dashboard",
@@ -88,8 +93,8 @@ async function settle(page: Page) {
 test.skip(!process.env.OVERFLOW_AUDIT, "On demand: npm run audit:overflow");
 
 for (const lang of ["ar", "en"] as const) {
-  test(`no admin screen cuts content off at the side of a phone (${lang})`, async ({ page }) => {
-    test.setTimeout(1_500_000);
+  test(`no admin screen cuts content off, phone to laptop (${lang})`, async ({ page }) => {
+    test.setTimeout(7_200_000);
     await signInWithStressData(page, lang);
     await blockAppWrites(page);
     await page.setViewportSize({ width: 390, height: 844 });
@@ -102,19 +107,19 @@ for (const lang of ["ar", "en"] as const) {
       await page.goto(screenPath(screen));
       await settle(page);
       for (const width of WIDTHS) {
-        await page.setViewportSize({ width, height: 844 });
+        await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
         await page.waitForTimeout(250);
         const cut = await findCutOffContent(page);
         if (cut.length > 0)
           problems.push(`${screen} (${lang}, ${width}px)\n${describeCutOff(cut)}`);
       }
-      // Dialogs, drawers and menus, on the narrowest phone.
-      await page.setViewportSize({ width: 320, height: 844 });
-      problems.push(...(await auditOverlays(page, `${screen} (${lang}, 320px)`)));
+      for (const width of PRESS_WIDTHS) {
+        await page.setViewportSize({ width, height: width < 768 ? 844 : 900 });
+        await page.waitForTimeout(250);
+        problems.push(...(await auditOverlays(page, `${screen} (${lang}, ${width}px)`)));
+      }
     }
 
-    expect(problems, `Content cut off at the side of the screen:\n${problems.join("\n")}`).toEqual(
-      [],
-    );
+    expect(problems, `Content cut off:\n${problems.join("\n")}`).toEqual([]);
   });
 }
