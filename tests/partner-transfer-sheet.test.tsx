@@ -233,8 +233,9 @@ describe("on the partner's page", () => {
     render(<IncubatorTransfersTab page={page()} />);
     expect(screen.getByText("TR-0003")).toBeInTheDocument();
     expect(screen.queryByText("TR-0009")).toBeNull();
+    // Each name is isolated (FSI … PDI), so a Latin name does not reorder an Arabic sentence.
     expect(
-      screen.getByText(/Moved from دار لولوة to RA Boutique · 3 pieces · BHD 94.000/),
+      screen.getByText(/Moved from ⁨دار لولوة⁩ to ⁨RA Boutique⁩ · 3 pieces · BHD 94.000/),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /WhatsApp/ }).getAttribute("href")).toContain(
       "wa.me/97333000000",

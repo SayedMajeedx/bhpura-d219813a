@@ -94,11 +94,12 @@ describe("the dialog", () => {
     expect(state.endPartnership).toHaveBeenCalled();
   });
 
-  it("holds the button while pieces are there, and offers to move them", async () => {
+  it("makes moving the pieces the step to take while pieces are there", async () => {
     holds.rows = [];
     const state = page({ summary: { units: 5, due: 0 } });
     show(state);
-    expect(screen.getByRole("button", { name: "End the partnership" })).toBeDisabled();
+    // Ending waits for the pieces: the main button moves them instead.
+    expect(screen.queryByRole("button", { name: "End the partnership" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Move the pieces" }));
     expect(state.openDialog).toHaveBeenCalledWith("move");
   });

@@ -2,14 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, CircleSlash, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { cn } from "@/lib/utils";
 import { incubatorsQueries } from "@/lib/data/incubators";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
@@ -41,23 +38,33 @@ export function EndPartnershipDialog({ page }: { page: IncubatorsPageState }) {
   });
   const ready = !holds.isPending && checklist.canEnd;
 
-  return (
-    <Dialog open={open} onOpenChange={(next) => !next && page.closeDialog()}>
-      <DialogContent className={cn("max-w-lg", PHONE_SHEET)} dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CircleSlash className="h-4 w-4" aria-hidden />
-            {isAr
-              ? `إنهاء الشراكة مع ${current?.name ?? ""}`
-              : `End the partnership with ${current?.name ?? ""}`}
-          </DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "يصير المحل موقوفاً: لا تُرسل أو تُنقل إليه قطع، ولا يظهر كمكان استلام. صفحته ومبيعاته ودفعاته وكشف حسابه تبقى، وتقدر ترجّعه فعّالاً من إعداداته."
-              : "The partner becomes inactive: no pieces are sent or moved to it, and it is no longer a pickup point. Its page, sales, payments and statement stay, and it can be turned back on in its settings."}
-          </DialogDescription>
-        </DialogHeader>
+  // While pieces are still there, moving them is the step to take; ending waits for it.
+  const movesFirst = summary.units > 0;
 
+  return (
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !next && page.closeDialog()}
+      kind="confirm"
+      size="md"
+      busy={busy}
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        icon={<CircleSlash />}
+        title={
+          <>
+            {isAr ? "إنهاء الشراكة مع " : "End the partnership with "}
+            <bdi>{current?.name ?? ""}</bdi>
+          </>
+        }
+        description={
+          isAr
+            ? "يصير المحل موقوفاً: لا تُرسل أو تُنقل إليه قطع، ولا يظهر كمكان استلام. صفحته ومبيعاته ودفعاته وكشف حسابه تبقى، وتقدر ترجّعه فعّالاً من إعداداته."
+            : "The partner becomes inactive: no pieces are sent or moved to it, and it is no longer a pickup point. Its page, sales, payments and statement stay, and it can be turned back on in its settings."
+        }
+      />
+      <AppDialogBody>
         <ul className="space-y-2">
           {checklist.items.map((item) => {
             const Icon = item.clear ? CheckCircle2 : item.blocks ? AlertTriangle : Info;
@@ -85,16 +92,16 @@ export function EndPartnershipDialog({ page }: { page: IncubatorsPageState }) {
             );
           })}
         </ul>
-
-        <DialogFooter className="gap-2">
-          {summary.units > 0 && (
-            <Button variant="outline" onClick={() => page.openDialog("move")} className="me-auto">
-              {isAr ? "نقل القطع لمحل آخر" : "Move the pieces"}
-            </Button>
-          )}
-          <Button variant="outline" onClick={page.closeDialog}>
-            {isAr ? "إلغاء" : "Cancel"}
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={page.closeDialog} disabled={busy}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        {movesFirst ? (
+          <Button onClick={() => page.openDialog("move")}>
+            {isAr ? "نقل القطع لمحل آخر" : "Move the pieces"}
           </Button>
+        ) : (
           <Button
             variant="destructive"
             disabled={!ready || busy}
@@ -102,8 +109,8 @@ export function EndPartnershipDialog({ page }: { page: IncubatorsPageState }) {
           >
             {isAr ? "إنهاء الشراكة" : "End the partnership"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

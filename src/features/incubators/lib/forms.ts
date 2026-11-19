@@ -73,17 +73,6 @@ export function returnDetails(
   };
 }
 
-export function paymentDetails(values: Values, incubatorId: string) {
-  return {
-    incubatorId,
-    amount: number(values.amount),
-    paymentDate: text(values.payment_date),
-    paymentMethod: optional(values.payment_method),
-    reference: optional(values.reference),
-    notes: optional(values.notes),
-  };
-}
-
 /** Why a partner's details cannot be saved, or null. */
 export function incubatorDetailsProblem(
   details: ReturnType<typeof incubatorDetails>,

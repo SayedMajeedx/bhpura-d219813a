@@ -31,7 +31,6 @@ import {
   incubatorDetailsProblem,
   itemTerms,
   newIncubatorCurrency,
-  paymentDetails,
   returnDetails,
   saleDetails,
   saleProblem,
@@ -287,9 +286,6 @@ export function useIncubatorsPage() {
         closeDialog();
         await invalidateData();
         return;
-      } else if (dialog === "payment" && currentId) {
-        setBusy(true);
-        await recordIncubatorPayment(paymentDetails(values, currentId));
       } else {
         return;
       }
@@ -298,6 +294,37 @@ export function useIncubatorsPage() {
       await invalidateData();
     } catch (error) {
       toast.error(incubatorErrorMessage(error, language));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Records money the open partner paid; the database spreads it on its oldest unpaid sales.
+   * Answers whether it went; a refusal is said in words and the dialog stays open.
+   */
+  async function recordPayment(payment: {
+    amount: number;
+    paymentDate: string;
+    paymentMethod: string;
+    reference: string | null;
+    notes: string | null;
+  }) {
+    if (!currentId) return false;
+    setBusy(true);
+    try {
+      await recordIncubatorPayment({ incubatorId: currentId, ...payment });
+      toast.success(
+        isAr
+          ? `سُجّلت دفعة ${money(payment.amount)}`
+          : `Payment of ${money(payment.amount)} recorded`,
+      );
+      closeDialog();
+      await invalidateData();
+      return true;
+    } catch (error) {
+      toast.error(incubatorErrorMessage(error, language));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -466,6 +493,7 @@ export function useIncubatorsPage() {
     setPaymentToVoid,
     voidPayment,
     movePieces,
+    recordPayment,
     endPartnership,
     transfers: transfersQ.data ?? [],
     transfersLoading: transfersQ.isLoading,

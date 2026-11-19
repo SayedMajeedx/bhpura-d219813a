@@ -38,7 +38,6 @@ const FORM_DIALOGS: IncubatorDialog[] = [
   "edit_item",
   "sale",
   "return",
-  "payment",
 ];
 
 const TITLES: Record<string, { en: string; ar: string }> = {
@@ -47,12 +46,20 @@ const TITLES: Record<string, { en: string; ar: string }> = {
   edit_item: { en: "Edit item code and terms", ar: "تعديل كود وشروط القطعة" },
   sale: { en: "Record sale", ar: "تسجيل قطعة مباعة" },
   return: { en: "Return to main stock", ar: "إرجاع للمخزون الرئيسي" },
-  payment: { en: "Record payment", ar: "تسجيل دفعة" },
+};
+
+/** What each form's button does, in its own words (all of them once said "save and update stock"). */
+const SAVE: Record<string, { en: string; ar: string }> = {
+  incubator: { en: "Add the partner", ar: "إضافة المحل" },
+  edit_incubator: { en: "Save changes", ar: "حفظ التغييرات" },
+  edit_item: { en: "Save the terms", ar: "حفظ الشروط" },
+  sale: { en: "Record the sale", ar: "تسجيل البيع" },
+  return: { en: "Return to the store", ar: "إرجاع للمحل" },
 };
 
 /** The page's forms, one dialog at a time: a partner, a piece's terms, a sale, a return, a payment. */
 export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
-  const { busy, closeDialog, current, isAr, lang, money, submit, summary } = page;
+  const { busy, closeDialog, current, isAr, lang, submit } = page;
   const open = FORM_DIALOGS.includes(page.dialog);
   // What the dialog shows stays while it fades out (it emptied at once and flashed).
   const dialog = useLastWhileClosing(open ? page.dialog : null);
@@ -165,56 +172,12 @@ export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
             </>
           )}
 
-          {dialog === "payment" && (
-            <>
-              <p className="rounded-md bg-muted p-3 text-sm">
-                {isAr ? "المستحق حاليًا" : "Currently due"}:{" "}
-                <b className="text-primary">{money(summary.due)}</b>
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={isAr ? "المبلغ المستلم" : "Amount"}
-                  name="amount"
-                  type="number"
-                  min="0.001"
-                  max={String(summary.due)}
-                  step="0.001"
-                  required
-                />
-                <Field
-                  label={isAr ? "تاريخ الاستلام" : "Payment date"}
-                  name="payment_date"
-                  type="date"
-                  defaultValue={localDateTimeValue().slice(0, 10)}
-                  max={localDateTimeValue().slice(0, 10)}
-                  required
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={isAr ? "طريقة الدفع" : "Method"} name="payment_method" />
-                <Field label={isAr ? "رقم المرجع" : "Reference"} name="reference" />
-              </div>
-              <Field label={isAr ? "ملاحظات" : "Notes"} name="notes" textarea />
-              <p className="text-xs text-muted-foreground">
-                {isAr
-                  ? "تُوزَّع الدفعة تلقائياً على أقدم المبيعات غير المسددة."
-                  : "The payment is applied to the oldest unpaid sales first."}
-              </p>
-            </>
-          )}
-
           <DialogFooter>
             <Button type="button" variant="outline" onClick={closeDialog}>
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
             <Button type="submit" disabled={busy}>
-              {busy
-                ? isAr
-                  ? "جاري الحفظ..."
-                  : "Saving..."
-                : isAr
-                  ? "حفظ وتحديث المخزون"
-                  : "Save and update"}
+              {busy ? (isAr ? "جاري الحفظ..." : "Saving...") : dialog ? SAVE[dialog]?.[lang] : ""}
             </Button>
           </DialogFooter>
         </form>
