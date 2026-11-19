@@ -277,7 +277,8 @@ export function ProductExportSection({
       <Card className="border-border bg-card">
         <CardContent className="p-4 sm:p-5 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-3">
+            {/* min-w-0: a row that wraps must be allowed to be narrower than its one long line. */}
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
               <div className="min-w-0 max-w-full space-y-1">
                 <Label className="text-xs text-muted-foreground">
                   {isAr ? "تصفية حسب القسم:" : "Filter by Category:"}
@@ -296,14 +297,14 @@ export function ProductExportSection({
                 </select>
               </div>
 
-              <div className="space-y-1">
+              <div className="min-w-0 max-w-full space-y-1">
                 <Label className="text-xs text-muted-foreground">
                   {productListFilterLabel(stock, isAr)}
                 </Label>
                 <select
                   value={stockFilter}
                   onChange={(e) => setStockFilter(e.target.value)}
-                  className="h-9 px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
+                  className="block h-9 max-w-full px-3 text-xs rounded-lg border border-border bg-background focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <option value="all">{isAr ? "كل المنتجات" : "All Products"}</option>
                   {productListFilterOptions(stock, lowStockUnits).map((o) => (
@@ -316,7 +317,7 @@ export function ProductExportSection({
             </div>
 
             {/* Format Selector */}
-            <div className="flex items-center gap-2 self-end sm:self-auto">
+            <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
               <Button
                 type="button"
                 onClick={() => setFormat("xlsx")}

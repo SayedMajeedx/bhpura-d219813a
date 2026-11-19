@@ -57,9 +57,11 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
   }
 
   return (
-    <div className="space-y-3">
-      {/* Desktop Work Queue Table */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    // Table or cards by the box's own width, not the screen's: on a laptop the list sits in two
+    // fifths of the row beside the chart, where six columns were cut off by the card's edge.
+    <div className="@container space-y-3">
+      {/* A wide box: the table. */}
+      <div className="hidden overflow-x-auto rounded-2xl border border-border bg-card shadow-sm @2xl:block">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40 text-muted-foreground font-semibold">
@@ -87,7 +89,12 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                   <td className="py-3 px-4 text-muted-foreground font-mono">
                     {formatDate(o.created_at, locale)}
                   </td>
-                  <td className="py-3 px-4 font-semibold text-foreground">{custName}</td>
+                  <td
+                    dir="auto"
+                    className="text-page-start py-3 px-4 font-semibold text-foreground break-words"
+                  >
+                    {custName}
+                  </td>
                   <td className="py-3 px-4">
                     <OsStatusPill variant={displayStatus.variant} dot>
                       {displayStatus.label}
@@ -113,8 +120,8 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
         </table>
       </div>
 
-      {/* Mobile Touch Cards (375px Viewport) */}
-      <div className="grid grid-cols-1 gap-2.5 md:hidden">
+      {/* A narrow box (a phone, or beside the chart): a card per order. */}
+      <div className="grid grid-cols-1 gap-2.5 @2xl:hidden">
         {orders.map((o) => {
           const custName = getOrderCustomerName(o) || (isAr ? "عميل جديد" : "Guest Customer");
           const displayStatus = getDashboardOrderStatus(o, lang, vocabulary);
@@ -124,8 +131,8 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
               key={o.id}
               className="p-3.5 border border-border bg-card rounded-2xl space-y-2 shadow-2xs"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono font-bold text-xs text-primary">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <span className="shrink-0 font-mono font-bold text-xs text-primary">
                   {orderNo(o.invoice_number)}
                 </span>
                 <OsStatusPill variant={displayStatus.variant} dot>
@@ -133,17 +140,20 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
                 </OsStatusPill>
               </div>
 
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-border-subtle">
-                <div className="space-y-0.5">
-                  <p className="font-semibold text-foreground flex items-center gap-1">
-                    <User className="h-3 w-3 text-muted-foreground" /> {custName}
+              <div className="flex items-center justify-between gap-3 text-xs pt-1 border-t border-border-subtle">
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <p className="font-semibold text-foreground flex min-w-0 items-center gap-1">
+                    <User className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span dir="auto" className="text-page-start line-clamp-2 min-w-0 break-words">
+                      {custName}
+                    </span>
                   </p>
                   <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
                     <Calendar className="h-2.5 w-2.5" /> {formatDate(o.created_at, locale)}
                   </p>
                 </div>
 
-                <div className="text-end">
+                <div className="shrink-0 text-end">
                   <p className="font-bold text-sm tabular-nums text-foreground">
                     {formatMoney(Number(o.total || 0), o.currency || currency, locale)}
                   </p>

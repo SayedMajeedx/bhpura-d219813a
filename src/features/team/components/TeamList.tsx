@@ -72,7 +72,7 @@ export function TeamList({ page }: { page: TeamPageState }) {
                       {member.email}
                     </span>
                   </div>
-                  <div className="shrink-0 flex items-center gap-1.5 flex-wrap justify-end">
+                  <div className="flex items-center gap-1.5 flex-wrap justify-end">
                     {twoFactorIds.has(member.id) && (
                       <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                         <Shield className="h-3 w-3" />

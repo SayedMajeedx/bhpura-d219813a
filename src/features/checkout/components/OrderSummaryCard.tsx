@@ -236,9 +236,9 @@ export function OrderSummaryCard({
                         {formattedFields.map((field) => (
                           <div
                             key={field.key}
-                            className="flex items-center justify-between gap-2 text-muted-foreground"
+                            className="flex items-start justify-between gap-2 text-muted-foreground"
                           >
-                            <span>{field.label}:</span>
+                            <span className="min-w-0 break-words">{field.label}:</span>
                             {field.isUrl ? (
                               <a
                                 href={field.value}
@@ -250,7 +250,7 @@ export function OrderSummaryCard({
                                 {lang === "ar" ? "عرض الملف" : "View File"}
                               </a>
                             ) : (
-                              <span className="font-medium text-foreground dir-ltr text-end">
+                              <span className="min-w-0 break-words font-medium text-foreground dir-ltr text-end">
                                 {field.value}
                               </span>
                             )}

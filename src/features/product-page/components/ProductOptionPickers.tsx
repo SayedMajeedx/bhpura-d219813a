@@ -113,7 +113,8 @@ export function ProductOptionPickers({
     <div ref={optionsRef} className="mb-6 space-y-4 scroll-mt-24">
       {showSizeModeToggle && (
         // A slim two-part switch, named for screen readers (the product page review of
-        // 2026-11-15: two large boxes under a heading).
+        // 2026-11-15: two large boxes under a heading). A long word for tailoring wraps to two
+        // lines on a 320px phone instead of being cut ("تفصيل حسب الطلب").
         <div>
           <div
             role="group"
@@ -135,11 +136,11 @@ export function ProductOptionPickers({
                   isMeasurement: isMeasurementField,
                 })
               }
-              className={`t-tab h-10 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
+              className={`t-tab h-auto min-h-10 min-w-0 whitespace-normal px-2 py-1.5 leading-tight sm:px-4 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
                 sizeMode === "ready" ? "" : "bg-transparent hover:bg-muted/60"
               }`}
             >
-              <Ruler className="h-4 w-4" strokeWidth={1.75} />
+              <Ruler className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span>{t("مقاس جاهز", "Ready Size")}</span>
             </Button>
             <Button
@@ -150,11 +151,11 @@ export function ProductOptionPickers({
                 setSizeMode("custom");
                 setErrorMsg(null);
               }}
-              className={`t-tab h-10 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
+              className={`t-tab h-auto min-h-10 min-w-0 whitespace-normal px-2 py-1.5 leading-tight sm:px-4 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
                 sizeMode === "custom" ? "" : "bg-transparent hover:bg-muted/60"
               }`}
             >
-              <Scissors className="h-4 w-4" strokeWidth={1.75} />
+              <Scissors className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span>{vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}</span>
             </Button>
           </div>

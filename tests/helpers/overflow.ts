@@ -88,6 +88,59 @@ export async function findCutOffContent(page: Page): Promise<CutOff[]> {
       cut.add(el);
     }
 
+    /**
+     * The box inside the page that cuts this one: the nearest holder that hides its sideways
+     * overflow, when nothing between them scrolls or moves (a rail, a carousel's track). A table
+     * of six columns in a card two fifths of a laptop wide was cut by the card, in the middle of
+     * the screen, and the check at the screen's edge never saw it.
+     */
+    const cuttingBox = (el: Element): Element | null => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const ps = getComputedStyle(p);
+        if (ps.overflowX === "auto" || ps.overflowX === "scroll") return null;
+        if (ps.transform !== "none" || ps.position === "fixed") {
+          // A moving track or a layer: what it holds is placed on purpose.
+          if (ps.overflowX !== "hidden" && ps.overflowX !== "clip") return null;
+        }
+        if (ps.overflowX === "hidden" || ps.overflowX === "clip") {
+          if (ps.textOverflow === "ellipsis") return null;
+          return isPageShell(p, p.getBoundingClientRect()) ? null : p;
+        }
+      }
+      return null;
+    };
+    for (const el of Array.from(document.body.querySelectorAll("*"))) {
+      if (cut.has(el)) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      if (/^(img|video|canvas|svg|picture|iframe|path|g|circle|rect|line)$/i.test(el.tagName))
+        continue;
+      const style = getComputedStyle(el);
+      if (style.position === "absolute" || style.position === "fixed") continue;
+      if (style.transform !== "none") continue;
+      if (!(el.textContent ?? "").trim() && !el.matches("input, select, textarea, button"))
+        continue;
+      const box = cuttingBox(el);
+      if (!box) continue;
+      const b = box.getBoundingClientRect();
+      const left = b.left + box.clientLeft;
+      const right = left + box.clientWidth;
+      if (r.left >= left - 1 && r.right <= right + 1) continue;
+      // What it holds, not its own box: a row pulled to a card's edges (-mx-5) loses only padding.
+      let held = r;
+      if (!el.matches("input, select, textarea, button")) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        held = range.getBoundingClientRect();
+        if (held.width === 0) continue;
+      }
+      if (held.left >= left - 1 && held.right <= right + 1) continue;
+      // Wholly outside its box: a slide waiting its turn, not content cut in two.
+      if (held.right <= left || held.left >= right) continue;
+      if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+      cut.add(el);
+    }
+
     return Array.from(cut)
       .filter((el) => !el.parentElement || !cut.has(el.parentElement))
       .filter((el) => !clippedOnPurpose(el))

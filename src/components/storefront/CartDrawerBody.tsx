@@ -192,9 +192,11 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
                           {formattedFields.map((field) => (
                             <div
                               key={field.key}
-                              className="flex items-center justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
+                              className="flex items-start justify-between gap-2 py-0.5 border-b border-border-subtle last:border-b-0"
                             >
-                              <span className="text-muted-foreground font-medium">
+                              {/* min-w-0 and break-words: a long answer (a link, a note with no
+                                  space) wraps inside the drawer instead of running out of it. */}
+                              <span className="min-w-0 break-words text-muted-foreground font-medium">
                                 {field.label}:
                               </span>
                               {field.isLink ? (
@@ -208,7 +210,10 @@ export default function CartDrawerBody({ onClose }: { onClose: () => void }) {
                                   {lang === "ar" ? "عرض الملف" : "View File"}
                                 </a>
                               ) : (
-                                <span className="font-semibold text-foreground" dir="auto">
+                                <span
+                                  className="min-w-0 break-words text-end font-semibold text-foreground"
+                                  dir="auto"
+                                >
                                   {field.value}
                                 </span>
                               )}

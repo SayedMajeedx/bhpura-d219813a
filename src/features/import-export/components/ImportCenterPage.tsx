@@ -64,7 +64,7 @@ export function ImportCenterPage() {
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6" dir={isAr ? "rtl" : "ltr"}>
       {/* Header & Command Banner */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border pb-6">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Upload className="h-5 w-5" />
@@ -82,7 +82,8 @@ export function ImportCenterPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+        {/* Not shrink-0: the buttons wrap beside the title instead of running off a tablet. */}
+        <div className="flex flex-wrap items-center gap-2">
           <Link to="/admin/b/$slug/export" params={{ slug: brandSlug }}>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs font-semibold">
               <Download className="h-3.5 w-3.5" />

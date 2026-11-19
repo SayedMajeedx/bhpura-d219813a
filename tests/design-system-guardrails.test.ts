@@ -410,6 +410,42 @@ describe("design system guardrails", () => {
     expect(guards).toMatch(/@layer base\s*{[\s\S]*\.grid:not\(/);
     expect(guards).toContain("grid-auto-columns: minmax(0, 1fr);");
   });
+
+  it("lets a row that wraps be narrower than its one long line", () => {
+    // `flex-wrap` with `shrink-0` never wraps in a row: the box is never narrower than all its
+    // buttons in one line, so on a tablet they ran off the screen (import, export, the customer
+    // page, the shared page header). Leave `shrink-0` out: the row then shrinks to its widest
+    // button and wraps the rest (`min-w-0` would let one lone button spill out of its card).
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/className="([^"]*)"/g)) {
+        const classes = match[1].split(/\s+/);
+        if (classes.includes("flex-wrap") && classes.includes("shrink-0")) {
+          offenders.push(`${rel}: ${match[1]}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("never draws a table inside a box that cuts its sideways overflow", () => {
+    // The dashboard's latest orders drew six columns in a card that hides its overflow, two
+    // fifths of a laptop wide: the status was cut in two and the total and the link were gone
+    // (the owner's report of 2026-11-19). A table sits in a box that scrolls sideways
+    // (`overflow-x-auto`, or the ui `Table`), or is chosen only where it fits (`@container`).
+    const offenders: string[] = [];
+    for (const { rel, source } of FILES) {
+      for (const match of source.matchAll(/<table\b/g)) {
+        const before = source.slice(Math.max(0, (match.index ?? 0) - 700), match.index);
+        const holders = [...before.matchAll(/<(?:div|Card|section)\b[^>]*?className="([^"]*)"/g)];
+        const nearest = holders.at(-1)?.[1].split(/\s+/) ?? [];
+        if (nearest.includes("overflow-hidden") && !nearest.includes("overflow-x-auto")) {
+          offenders.push(`${rel}: <table> in "${holders.at(-1)?.[1]}"`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("the phone layer (src/styles/mobile-native.css)", () => {
