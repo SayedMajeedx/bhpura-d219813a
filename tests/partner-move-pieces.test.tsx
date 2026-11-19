@@ -157,12 +157,17 @@ describe("the move dialog", () => {
     // The only other active partner is chosen, with its commission said.
     expect(screen.getByLabelText("To the partner shop")).toHaveValue("ra");
     expect(screen.getByText(/Commission from the partner's settings: 15%/)).toBeInTheDocument();
-    expect(screen.getByText("3 pieces · BHD 96.000")).toBeInTheDocument();
+    // The total is in the list's bar and in the footer, beside the button.
+    expect(screen.getAllByText("3 pieces · BHD 96.000")).toHaveLength(2);
+    expect(screen.getByText("Step 1 of 2 · Choose the pieces")).toBeInTheDocument();
+    // Each product's sizes are under it.
+    expect(screen.getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Review the move" }));
-    expect(
-      screen.getByText(/From دار لولوة to RA Boutique: 3 pieces worth BHD 96.000/),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Step 2 of 2 · Review")).toBeInTheDocument();
+    // From and to are each in their own box, so a Latin name never reorders the Arabic.
+    expect(screen.getByText("From").nextElementSibling).toHaveTextContent("دار لولوة");
+    expect(screen.getByText("To").nextElementSibling).toHaveTextContent("RA Boutique");
     fireEvent.click(screen.getByRole("button", { name: "Move 3 pieces" }));
     expect(state.movePieces).toHaveBeenCalledWith(
       "ra",
@@ -174,6 +179,7 @@ describe("the move dialog", () => {
   it("says so when there is no other partner to move to", () => {
     render(<MovePiecesDialog page={page({ incubators: [lulwa, ended] })} />);
     expect(screen.getByText(/no other active partner shop/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Review the move" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Review the move" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Close" }).length).toBeGreaterThan(0);
   });
 });

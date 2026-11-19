@@ -262,7 +262,7 @@ describe("a partner's details and stock", () => {
     fireEvent.change(dialog.querySelector('select[name="is_active"]')!, {
       target: { value: "false" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save and update" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save changes" }));
     await waitFor(() => expect(incubatorData.updateIncubator).toHaveBeenCalledTimes(1));
     expect(incubatorData.updateIncubator).toHaveBeenCalledWith(
       "b1",
@@ -279,7 +279,7 @@ describe("a partner's details and stock", () => {
     const policy = dialog.querySelector('select[name="packaging_policy"]') as HTMLSelectElement;
     expect(policy.value).toBe("incubator");
     fireEvent.change(within(dialog).getByLabelText("Name"), { target: { value: "Marina Mall" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save and update" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add the partner" }));
     await waitFor(() => expect(incubatorData.createIncubator).toHaveBeenCalledTimes(1));
     expect(incubatorData.createIncubator).toHaveBeenCalledWith(
       "b1",
@@ -338,7 +338,7 @@ describe("a partner's details and stock", () => {
     fireEvent.change(within(dialog).getByLabelText("Consignment price"), {
       target: { value: "6.5" },
     });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Save and update" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save the terms" }));
     await waitFor(() => expect(incubatorData.updateIncubatorItem).toHaveBeenCalledTimes(1));
     expect(incubatorData.updateIncubatorItem).toHaveBeenCalledWith({
       inventoryId: "s1",
@@ -487,13 +487,32 @@ describe("a partner's payments and history", () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Record payment" }));
     const dialog = await screen.findByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Amount"), { target: { value: "4.5" } });
-    fireEvent.submit(dialog.querySelector("form")!);
+    fireEvent.change(within(dialog).getByLabelText("Amount received"), {
+      target: { value: "4.5" },
+    });
+    fireEvent.click(within(dialog).getByRole("radio", { name: "BenefitPay" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: /^Record / }));
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("The payment is more than the partner owes"),
     );
+    expect(incubatorData.recordIncubatorPayment).toHaveBeenCalledWith(
+      expect.objectContaining({ incubatorId: "i1", amount: 4.5, paymentMethod: "benefit" }),
+    );
     // The form stays open so the amount can be corrected.
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("are recorded with how they were paid, all owed in one tap, never more than owed", async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Record payment" }));
+    const dialog = await screen.findByRole("dialog");
+    const amount = within(dialog).getByLabelText("Amount received") as HTMLInputElement;
+    fireEvent.click(within(dialog).getByRole("button", { name: "All owed" }));
+    expect(Number(amount.value)).toBeGreaterThan(0);
+    fireEvent.change(amount, { target: { value: "999999" } });
+    expect(within(dialog).getByText(/That is more than they owe/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Record payment" }));
+    expect(incubatorData.recordIncubatorPayment).not.toHaveBeenCalled();
   });
 
   it("read the history only when its tab is opened, with a link to the order behind a line", async () => {
@@ -573,7 +592,9 @@ describe("a partner's figures and settlement", () => {
     // The payment dialog offers what is really owed.
     fireEvent.click(screen.getByRole("button", { name: "Record payment" }));
     const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByLabelText("Amount")).toHaveAttribute("max", "9.5");
+    expect(within(dialog).getByText("BHD 9.500")).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole("button", { name: "All owed" }));
+    expect(within(dialog).getByLabelText("Amount received")).toHaveValue("9.5");
   });
 
   it("say when the next settlement is, and what is late", async () => {

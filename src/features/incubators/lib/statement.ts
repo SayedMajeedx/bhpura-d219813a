@@ -1,5 +1,6 @@
 import { incubatorAmountDue } from "@/features/incubators/lib/amount-due";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
+import { paymentMethodWords } from "@/features/incubators/lib/payment";
 import type { Incubator, Payment, Sale } from "@/features/incubators/types";
 
 /**
@@ -102,7 +103,7 @@ export function buildStatement(input: {
     .map((payment) => ({
       id: payment.id,
       date: String(payment.payment_date).slice(0, 10),
-      method: payment.payment_method,
+      method: paymentMethodWords(payment.payment_method, input.lang),
       reference: payment.reference,
       amount: Number(payment.amount),
     }))

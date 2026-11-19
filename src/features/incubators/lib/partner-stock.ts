@@ -54,6 +54,15 @@ export function holdIsOpen(hold: PartnerHold): boolean {
 
 /** A piece in words: its product, then the options that tell it apart (the default size is none). */
 export function pieceName(variant: PartnerHold["product_variants"], lang: Lang): string {
+  const { product, option } = pieceParts(variant, lang);
+  return option ? `${product} · ${option}` : product;
+}
+
+/** A piece's product and its options apart ("52 / أسود"; none for the default size). */
+export function pieceParts(
+  variant: PartnerHold["product_variants"],
+  lang: Lang,
+): { product: string; option: string | null } {
   const product = variant?.products;
   const name =
     (lang === "ar" ? product?.name_ar || product?.name : product?.name || product?.name_ar) ||
@@ -62,7 +71,7 @@ export function pieceName(variant: PartnerHold["product_variants"], lang: Lang):
   const options = [realSize(variant?.size), variant?.color?.trim()].filter(
     (option): option is string => Boolean(option),
   );
-  return options.length > 0 ? `${name} · ${options.join(" / ")}` : name;
+  return { product: name, option: options.length > 0 ? options.join(" / ") : null };
 }
 
 export type PickupLine = {

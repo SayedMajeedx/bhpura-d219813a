@@ -64,8 +64,10 @@ const DialogContent = React.forwardRef<
 });
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
+// The title starts where the fields start (an inset of 16px put every title off their edge);
+// the end is kept clear of the close button.
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col space-y-1.5 text-start pe-12 ps-4", className)} {...props} />
+  <div className={cn("flex flex-col space-y-1.5 text-start pe-10", className)} {...props} />
 );
 DialogHeader.displayName = "DialogHeader";
 

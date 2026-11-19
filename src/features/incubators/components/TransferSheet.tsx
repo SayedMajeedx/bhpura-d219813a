@@ -129,14 +129,22 @@ export function TransferSheetButtons({
   );
 }
 
-/** "Sent to RA Boutique", "Returned from دار لولوة", "Moved from دار لولوة to RA Boutique". */
-function transferWhat(context: SheetContext, kind: TransferRow["kind"], isAr: boolean) {
-  if (kind === "send") return isAr ? `إرسال إلى ${context.to}` : `Sent to ${context.to}`;
-  if (kind === "return") return isAr ? `إرجاع من ${context.from}` : `Returned from ${context.from}`;
-  return isAr
-    ? `نقل من ${context.from} إلى ${context.to}`
-    : `Moved from ${context.from} to ${context.to}`;
+/**
+ * "Sent to RA Boutique", "Returned from دار لولوة", "Moved from دار لولوة to RA Boutique".
+ * Each name is isolated (FSI … PDI), so a Latin name in an Arabic sentence, or an Arabic one in
+ * an English sentence, does not pull the words and numbers around it out of order.
+ */
+export function transferWhat(context: SheetContext, kind: TransferRow["kind"], isAr: boolean) {
+  const from = isolate(context.from);
+  const to = isolate(context.to);
+  if (kind === "send") return isAr ? `إرسال إلى ${to}` : `Sent to ${to}`;
+  if (kind === "return") return isAr ? `إرجاع من ${from}` : `Returned from ${from}`;
+  return isAr ? `نقل من ${from} إلى ${to}` : `Moved from ${from} to ${to}`;
 }
+
+const FSI = String.fromCharCode(0x2068);
+const PDI = String.fromCharCode(0x2069);
+const isolate = (text: string) => `${FSI}${text}${PDI}`;
 
 /** The sheet of one batch, opened after a send or a move, or from the Transfers tab. */
 export function TransferSheetDialog({ page }: { page: IncubatorsPageState }) {
@@ -254,9 +262,10 @@ export function IncubatorTransfersTab({ page }: { page: IncubatorsPageState }) {
                 className="flex flex-wrap items-center justify-between gap-3 p-4"
               >
                 <div className="min-w-0">
-                  <p className="text-sm font-bold">
-                    {transferLabel(transfer.number)}
-                    <span className="ms-2 font-normal text-muted-foreground">{context.date}</span>
+                  {/* The number is its own run: beside an Arabic date it read "TR-00031 نوفمبر". */}
+                  <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                    <bdi className="font-bold">{transferLabel(transfer.number)}</bdi>
+                    <span className="text-muted-foreground">{context.date}</span>
                   </p>
                   <p className="break-words text-xs text-muted-foreground" dir="auto">
                     {transferWhat(context, transfer.kind, isAr)} ·{" "}

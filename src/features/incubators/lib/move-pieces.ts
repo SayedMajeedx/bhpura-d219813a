@@ -1,4 +1,4 @@
-import { pieceName } from "@/features/incubators/lib/partner-stock";
+import { pieceName, pieceParts } from "@/features/incubators/lib/partner-stock";
 import type { Incubator, StockItem } from "@/features/incubators/types";
 import type { MoveItem } from "@/lib/data/incubators";
 
@@ -19,6 +19,10 @@ export function transferLabel(number: number): string {
 export type MoveRow = {
   variantId: string;
   name: string;
+  /** The product, to group a product's sizes under it, and the size and colour that tell it apart. */
+  productKey: string;
+  product: string;
+  option: string | null;
   sku: string | null;
   /** The code it carries at the partner it leaves. */
   currentCode: string | null;
@@ -47,9 +51,13 @@ export function moveRows(stock: readonly StockItem[], fromId: string, lang: Lang
     .map((item) => {
       const variant = item.product_variants;
       const selling = Number(variant?.selling_price ?? 0);
+      const parts = pieceParts(variant, lang);
       return {
         variantId: item.variant_id,
         name: pieceName(variant, lang),
+        productKey: variant?.products?.id ?? parts.product,
+        product: parts.product,
+        option: parts.option,
         sku: variant?.sku?.trim() || null,
         currentCode: item.external_code?.trim() || null,
         held: Number(item.quantity),
@@ -60,6 +68,19 @@ export function moveRows(stock: readonly StockItem[], fromId: string, lang: Lang
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, lang));
+}
+
+/** A product's sizes together, in the list's order, with how many of them the partner holds. */
+export function moveGroups(rows: readonly MoveRow[]) {
+  const groups: Array<{ key: string; product: string; held: number; rows: MoveRow[] }> = [];
+  for (const row of rows) {
+    const group = groups.find((item) => item.key === row.productKey);
+    if (group) {
+      group.rows.push(row);
+      group.held += row.held;
+    } else groups.push({ key: row.productKey, product: row.product, held: row.held, rows: [row] });
+  }
+  return groups;
 }
 
 /** The pieces chosen to go, each at least one piece. */

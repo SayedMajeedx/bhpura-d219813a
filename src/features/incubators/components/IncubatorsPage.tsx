@@ -28,6 +28,7 @@ import {
 } from "@/features/incubators/components/IncubatorDialogs";
 import { IncubatorStatementDialog } from "@/features/incubators/components/IncubatorStatementDialog";
 import { PartnerStockNotices } from "@/features/incubators/components/PartnerStockNotices";
+import { PartnerPaymentDialog } from "@/features/incubators/components/PartnerPaymentDialog";
 
 /**
  * Incubators and consignment: the partners that hold the store's pieces, what each holds,
@@ -136,6 +137,7 @@ export function IncubatorsPage() {
       <IncubatorFormDialog page={page} />
       <ReverseSaleDialog page={page} />
       <VoidPaymentDialog page={page} />
+      <PartnerPaymentDialog page={page} />
       <IncubatorStatementDialog page={page} />
       <MovePiecesDialog page={page} />
       <EndPartnershipDialog page={page} />

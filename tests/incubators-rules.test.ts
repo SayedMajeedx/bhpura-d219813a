@@ -6,7 +6,6 @@ import {
   itemTerms,
   localDateTimeValue,
   newIncubatorCurrency,
-  paymentDetails,
   returnDetails,
   saleDetails,
   saleProblem,
@@ -313,16 +312,6 @@ describe("the forms", () => {
       incubatorId: "i1",
       variantId: "v1",
       quantity: 1,
-      notes: null,
-    });
-    expect(
-      paymentDetails({ amount: "20", payment_date: "2026-09-20", payment_method: " cash " }, "i1"),
-    ).toEqual({
-      incubatorId: "i1",
-      amount: 20,
-      paymentDate: "2026-09-20",
-      paymentMethod: "cash",
-      reference: null,
       notes: null,
     });
   });

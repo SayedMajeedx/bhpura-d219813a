@@ -8,6 +8,7 @@ import { ListPagination } from "@/components/list-pagination";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { movementLines } from "@/features/incubators/lib/movements";
 import { pieceName } from "@/features/incubators/lib/partner-stock";
+import { paymentMethodWords } from "@/features/incubators/lib/payment";
 import {
   saleCanBeReversed,
   saleMissingCost,
@@ -164,19 +165,18 @@ export function IncubatorPaymentsTab({ page }: { page: IncubatorsPageState }) {
       <Card className="divide-y divide-border border-border">
         {pagedPayments.map((payment) => {
           const settled = settlements.get(payment.id) ?? [];
+          const method = paymentMethodWords(payment.payment_method, lang);
           const voided = Boolean(payment.voided_at);
           return (
             <div key={payment.id} className={`p-4 ${voided ? "opacity-60" : ""}`}>
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="break-words text-sm font-bold" dir="auto">
-                    {payment.reference || payment.payment_method || (isAr ? "دفعة" : "Payment")}
+                    {payment.reference || method || (isAr ? "دفعة" : "Payment")}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {day(payment.payment_date, locale)}
-                    {payment.reference && payment.payment_method
-                      ? ` · ${payment.payment_method}`
-                      : ""}
+                    {payment.reference && method ? ` · ${method}` : ""}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-start gap-2">
