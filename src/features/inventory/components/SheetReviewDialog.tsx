@@ -1,15 +1,13 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { countOf } from "@/lib/arabic-count";
 import { formatMoney } from "@/lib/format";
 import type { SheetChange } from "@/features/inventory/lib/bulk-sheet";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const FIELD_WORDS: Record<SheetChange["field"], [string, string]> = {
   price: ["السعر", "Price"],
@@ -61,11 +59,16 @@ export function SheetReviewDialog({
   const lang = isAr ? "ar" : "en";
   const stockChanges = changes.filter((change) => change.field === "stock").length;
   return (
-    <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "مراجعة التغييرات" : "Review changes"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !saving && onOpenChange(next)}
+      kind="task"
+      size="lg"
+    >
+      <AppDialogHeader
+        title={isAr ? "مراجعة التغييرات" : "Review changes"}
+        description={
+          <>
             {isAr
               ? `سيُحفظ: ${countOf(changes.length, "change", "ar")}.`
               : `${countOf(changes.length, "change", "en")} will be saved.`}
@@ -73,9 +76,12 @@ export function SheetReviewDialog({
               (isAr
                 ? " يُسجَّل المخزون في سجل المخزون كتصحيح جرد: الرقم المكتوب هو ما على الرف الآن."
                 : " Stock goes into the stock history as a count correction: the number typed is what is on the shelf now.")}
-          </DialogDescription>
-        </DialogHeader>
-        <ul className="max-h-[50vh] divide-y divide-border overflow-y-auto rounded-lg border border-border">
+          </>
+        }
+      />
+
+      <AppDialogBody>
+        <ul className="divide-y divide-border rounded-lg border border-border">
           {changes.map((change) => {
             const { from, to } = changeValues(change, currency, isAr);
             return (
@@ -104,21 +110,21 @@ export function SheetReviewDialog({
             );
           })}
         </ul>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            {isAr ? "رجوع" : "Back"}
-          </Button>
-          <Button onClick={onSave} disabled={saving || changes.length === 0}>
-            {saving
-              ? isAr
-                ? "جارٍ الحفظ..."
-                : "Saving..."
-              : isAr
-                ? `حفظ ${countOf(changes.length, "change", "ar")}`
-                : `Save ${countOf(changes.length, "change", "en")}`}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+          {isAr ? "رجوع" : "Back"}
+        </Button>
+        <Button onClick={onSave} disabled={saving || changes.length === 0}>
+          {saving
+            ? isAr
+              ? "جارٍ الحفظ..."
+              : "Saving..."
+            : isAr
+              ? `حفظ ${countOf(changes.length, "change", "ar")}`
+              : `Save ${countOf(changes.length, "change", "en")}`}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

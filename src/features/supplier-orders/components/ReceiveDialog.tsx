@@ -3,14 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, PackageCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney } from "@/lib/format";
@@ -21,6 +13,12 @@ import { customerOrderName } from "../lib/customer-pieces";
 import { piecesLabel, type SupplierOrder } from "../lib/order-state";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** One press of "Receive": sent again (a retry, a double tap), it changes nothing. */
 const newRequestId = () => crypto.randomUUID();
@@ -92,24 +90,26 @@ export function ReceiveDialog({
   };
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(next) => {
         if (next) reset();
         onOpenChange(next);
       }}
+      kind="task"
+      dir={isAr ? "rtl" : "ltr"}
     >
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-lg gap-3">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "استلام القطع" : "Receive pieces"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "كم وصل من كل مقاس؟ تُضاف للمخزون وتُحفظ تكلفة كل مقاس."
-              : "How many of each size arrived? They join the stock and each size's cost is recorded."}
-          </DialogDescription>
-        </DialogHeader>
+      <AppDialogHeader
+        title={isAr ? "استلام القطع" : "Receive pieces"}
+        description={
+          isAr
+            ? "كم وصل من كل مقاس؟ تُضاف للمخزون وتُحفظ تكلفة كل مقاس."
+            : "How many of each size arrived? They join the stock and each size's cost is recorded."
+        }
+      />
 
-        <ul className="max-h-[55vh] min-w-0 space-y-2 overflow-y-auto">
+      <AppDialogBody>
+        <ul className="min-w-0 space-y-2">
           {rows.map((row) => {
             const fieldId = `${uid}-${row.itemId}`;
             const preview = previews.get(row.itemId);
@@ -205,24 +205,23 @@ export function ReceiveDialog({
               : "Type how many arrived of at least one size."}
           </p>
         )}
-
-        <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button type="button" onClick={receive} disabled={!plan.ok || saving} className="gap-1.5">
-            <PackageCheck className="h-4 w-4" aria-hidden="true" />
-            {isAr
-              ? `إضافة ${piecesLabel(pieces, "ar")} للمخزون`
-              : `Add ${piecesLabel(pieces, "en")} to stock`}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button type="button" onClick={receive} disabled={!plan.ok || saving} className="gap-1.5">
+          <PackageCheck className="h-4 w-4" aria-hidden="true" />
+          {isAr
+            ? `إضافة ${piecesLabel(pieces, "ar")} للمخزون`
+            : `Add ${piecesLabel(pieces, "en")} to stock`}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

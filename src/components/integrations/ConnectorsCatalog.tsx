@@ -11,14 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -43,6 +35,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ConnectorsCatalogProps {
   brandId: string;
@@ -266,22 +264,29 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
       </div>
 
       {/* Configure Connector Modal */}
-      <Dialog open={!!selectedConnector} onOpenChange={() => setSelectedConnector(null)}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-xl font-bold">
+      <AppDialog
+        open={!!selectedConnector}
+        onOpenChange={() => setSelectedConnector(null)}
+        kind="task"
+        size="lg"
+      >
+        <AppDialogHeader
+          title={
+            <>
               {selectedConnector && getConnectorIcon(selectedConnector.type)}
               {isAr
                 ? `إعداد موصل ${selectedConnector?.nameAr}`
                 : `Configure ${selectedConnector?.nameEn}`}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "أدخل بيانات الاعتماد واتجاه المزامنة وخريطة الحقول لتكامل سلس."
-                : "Enter credentials, sync direction, and custom field mappings."}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+          description={
+            isAr
+              ? "أدخل بيانات الاعتماد واتجاه المزامنة وخريطة الحقول لتكامل سلس."
+              : "Enter credentials, sync direction, and custom field mappings."
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-3">
             {/* Auth Fields */}
             <div className="space-y-3">
@@ -355,25 +360,24 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
               </div>
             </div>
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSelectedConnector(null)}
-              className="min-h-[44px]"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={() => saveMutation.mutate()}
-              disabled={saveMutation.isPending}
-              className="min-h-[44px]"
-            >
-              {isAr ? "حفظ وتفعيل الموصل" : "Save & Activate"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setSelectedConnector(null)}
+            className="min-h-[44px]"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+            className="min-h-[44px]"
+          >
+            {isAr ? "حفظ وتفعيل الموصل" : "Save & Activate"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

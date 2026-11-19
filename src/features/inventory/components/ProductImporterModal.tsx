@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { importProductCatalog } from "@/lib/universal-importer";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectTrigger,
@@ -24,6 +23,7 @@ import {
 import { importExportQueries } from "@/lib/data/import-export";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { arNounOblique, countOf } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 type ImportIssueItem = { row: number; code: string; name: string };
 
@@ -198,15 +198,13 @@ export function ProductImporterModal(props: {
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-xl border-border bg-card/95 backdrop-blur-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display text-xl">
-              <Sparkles className="h-5 w-5 text-amber-500" />
-              {isAr ? "استيراد ونقل المنتجات" : "Import Product Catalog"}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={isOpen} onOpenChange={setIsOpen} kind="task" size="lg">
+        <AppDialogHeader
+          icon={<Sparkles />}
+          title={isAr ? "استيراد ونقل المنتجات" : "Import Product Catalog"}
+        />
 
+        <AppDialogBody>
           {step === "preset" && (
             <div className="space-y-4 pt-2 select-none">
               <p className="text-xs text-muted-foreground">
@@ -489,8 +487,8 @@ export function ProductImporterModal(props: {
               </Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </>
   );
 }

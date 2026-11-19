@@ -1,13 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, Search, Compass, X, Layers, Puzzle } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -16,6 +9,12 @@ import {
   type AdminNavItemConfig,
   type AdminWorkspaceId,
 } from "@/config/admin-navigation";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export interface OsAppsHubModalProps {
   open: boolean;
@@ -95,29 +94,27 @@ export function OsAppsHubModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border-strong bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
-      >
-        <DialogHeader className="border-b border-border-strong px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-              <Layers className="h-5 w-5" />
-            </div>
-            <div className="min-w-0 pt-0.5">
-              <DialogTitle className="font-heading text-xl font-bold tracking-tight sm:text-2xl">
-                {isAr ? "كل الأدوات" : "All tools"}
-              </DialogTitle>
-              <DialogDescription className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                {isAr
-                  ? "دليل شامل لجميع مساحات العمل والأدوات التشغيلية في متجرك."
-                  : "Comprehensive directory for all workspaces and operational tools in your store."}
-              </DialogDescription>
-            </div>
-          </div>
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="task"
+      size="xl"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "كل الأدوات" : "All tools"}
+        description={
+          isAr
+            ? "دليل شامل لجميع مساحات العمل والأدوات التشغيلية في متجرك."
+            : "Comprehensive directory for all workspaces and operational tools in your store."
+        }
+        icon={<Layers />}
+      />
 
-          <div className="relative mt-5">
+      <AppDialogBody
+        className="space-y-0 p-0 sm:p-0"
+        toolbar={
+          <div className="relative">
             <Search className="pointer-events-none absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
@@ -137,10 +134,10 @@ export function OsAppsHubModal({
               </button>
             )}
           </div>
-        </DialogHeader>
-
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <aside className="shrink-0 border-b border-border-strong bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
+        }
+      >
+        <div className="flex flex-col md:flex-row">
+          <aside className="shrink-0 border-b border-border-strong bg-muted/15 p-3 md:sticky md:top-0 md:w-60 md:self-start md:border-b-0 md:border-e md:p-4">
             <div className="flex gap-1 overflow-x-auto scrollbar-none md:flex-col md:overflow-visible">
               {categories.map((cat) => {
                 const Icon = cat.icon;
@@ -187,7 +184,7 @@ export function OsAppsHubModal({
             )}
           </aside>
 
-          <main className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
+          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 sm:py-6">
             <div className="mb-4 flex items-end justify-between gap-4">
               <div>
                 <h3 className="text-sm font-bold text-foreground">
@@ -260,25 +257,21 @@ export function OsAppsHubModal({
             )}
           </main>
         </div>
-
-        <footer className="flex min-h-14 items-center justify-between border-t border-border-strong bg-background px-5 sm:px-7">
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+      </AppDialogBody>
+      <AppDialogFooter
+        summary={
+          <span className="flex items-center gap-2 text-xs">
             <Compass className="h-3.5 w-3.5 text-primary" />
             {isAr
               ? "اختر أي أداة للانتقال الفوري إلى مساحة العمل الخاصة بها"
               : "Select any tool to navigate directly to its workspace"}
-          </p>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="h-9 rounded-lg px-4 text-xs font-semibold"
-          >
-            {isAr ? "إغلاق" : "Close"}
-          </Button>
-        </footer>
-      </DialogContent>
-    </Dialog>
+          </span>
+        }
+      >
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {isAr ? "إغلاق" : "Close"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

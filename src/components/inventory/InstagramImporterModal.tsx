@@ -1,11 +1,4 @@
 import * as React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +17,6 @@ import {
   Info,
   ExternalLink,
   Check,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -60,6 +52,7 @@ import {
 } from "@/features/instagram-import";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 export interface InstagramImporterModalProps {
   brandId: string;
@@ -360,59 +353,26 @@ export function InstagramImporterModal({
         </Button>
       ) : null}
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent
-          onPointerDownOutside={(e) => {
-            // Prevent accidental outside-click modal dismissal
-            e.preventDefault();
-          }}
-          onInteractOutside={(e) => {
-            e.preventDefault();
-          }}
-          className="max-w-5xl max-h-[92vh] flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl p-0"
-        >
-          {/* Header */}
-          <DialogHeader className="border-b border-border p-4 sm:p-5 shrink-0 bg-muted/20">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shrink-0">
-                  <Instagram className="h-5 w-5" />
-                </div>
-                <div>
-                  <DialogTitle className="text-base sm:text-lg font-bold">
-                    {isAr
-                      ? "استيراد منتجات إنستغرام (Apify + Gemini)"
-                      : "Instagram Product Importer"}
-                  </DialogTitle>
-                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    {isAr
-                      ? "سحب المنشورات، فحص سلامة الصور وتخزينها على R2، والتحقق المستقل من الأسعار كمسودات آمنة."
-                      : "Extract posts, verify images onto R2, and reconcile prices into safe catalog drafts."}
-                  </DialogDescription>
-                </div>
-              </div>
+      <AppDialog open={isOpen} onOpenChange={setIsOpen} kind="task" size="xl">
+        <AppDialogHeader
+          title={isAr ? "استيراد منتجات إنستغرام (Apify + Gemini)" : "Instagram Product Importer"}
+          description={
+            isAr
+              ? "سحب المنشورات، فحص سلامة الصور وتخزينها على R2، والتحقق المستقل من الأسعار كمسودات آمنة."
+              : "Extract posts, verify images onto R2, and reconcile prices into safe catalog drafts."
+          }
+          icon={<Instagram />}
+          meta={
+            step === "review" ? (
+              <Badge variant="outline" className="border-primary/30 text-primary font-bold">
+                {drafts.length} {isAr ? "منشور مستورد" : "Imported"}
+              </Badge>
+            ) : undefined
+          }
+        />
 
-              <div className="flex items-center gap-2">
-                {step === "review" && (
-                  <Badge variant="outline" className="border-primary/30 text-primary font-bold">
-                    {drafts.length} {isAr ? "منشور مستورد" : "Imported"}
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsOpen(false)}
-                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                  aria-label={isAr ? "إغلاق" : "Close"}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </DialogHeader>
-
-          {/* Modal Body */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-[300px]">
+        <AppDialogBody>
+          <div className="min-h-[300px]">
             {/* STEP 1: Input Form */}
             {step === "input" && (
               <div className="max-w-2xl mx-auto space-y-6 py-2">
@@ -948,8 +908,8 @@ export function InstagramImporterModal({
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </>
   );
 }

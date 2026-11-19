@@ -2,15 +2,6 @@ import { useMemo, useState } from "react";
 import { MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  PHONE_SHEET,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
@@ -24,6 +15,12 @@ import {
   type StatementPreset,
 } from "@/features/incubators/lib/statement";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const PRESETS: Array<{ id: StatementPreset | "custom"; en: string; ar: string }> = [
   { id: "this_month", en: "This month", ar: "هذا الشهر" },
@@ -96,15 +93,22 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
   ];
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && closeDialog()}>
-      <DialogContent className={`max-w-lg ${PHONE_SHEET}`} dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle>{isAr ? "كشف حساب المحل الشريك" : "Partner statement"}</DialogTitle>
-          <DialogDescription className="break-words" dir="auto">
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !next && closeDialog()}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "كشف حساب المحل الشريك" : "Partner statement"}
+        description={
+          <>
             {current.name} · {periodText(period, lang)}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4">
           <div
             className="flex flex-wrap gap-2"
@@ -168,28 +172,27 @@ export function IncubatorStatementDialog({ page }: { page: IncubatorsPageState }
               : `The printed statement lists ${statement.sales.length} sales and ${statement.payments.length} payments in detail. Reversed sales are not counted.`}
           </p>
         </div>
-
-        <DialogFooter className="gap-2">
-          {whatsApp ? (
-            <Button type="button" variant="outline" asChild>
-              <a href={whatsApp} target="_blank" rel="noopener noreferrer">
-                <MessageCircle className="me-2 h-4 w-4" />
-                {isAr ? "إرسال الملخص واتساب" : "Send the summary on WhatsApp"}
-              </a>
-            </Button>
-          ) : (
-            <p className="me-auto self-center text-xs text-muted-foreground">
-              {isAr
-                ? "أضف هاتف المحل الشريك لإرسال الملخص واتساب."
-                : "Add the partner's phone to send the summary on WhatsApp."}
-            </p>
-          )}
-          <Button type="button" onClick={print}>
-            <Printer className="me-2 h-4 w-4" />
-            {isAr ? "طباعة الكشف" : "Print the statement"}
+      </AppDialogBody>
+      <AppDialogFooter>
+        {whatsApp ? (
+          <Button type="button" variant="outline" asChild>
+            <a href={whatsApp} target="_blank" rel="noopener noreferrer">
+              <MessageCircle className="me-2 h-4 w-4" />
+              {isAr ? "إرسال الملخص واتساب" : "Send the summary on WhatsApp"}
+            </a>
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        ) : (
+          <p className="me-auto self-center text-xs text-muted-foreground">
+            {isAr
+              ? "أضف هاتف المحل الشريك لإرسال الملخص واتساب."
+              : "Add the partner's phone to send the summary on WhatsApp."}
+          </p>
+        )}
+        <Button type="button" onClick={print}>
+          <Printer className="me-2 h-4 w-4" />
+          {isAr ? "طباعة الكشف" : "Print the statement"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

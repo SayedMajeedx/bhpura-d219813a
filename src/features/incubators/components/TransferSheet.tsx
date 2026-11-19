@@ -2,18 +2,9 @@ import { useState } from "react";
 import { FileSpreadsheet, MessageCircle, Printer, ArrowLeftRight } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
 import { moneyFractionDigits, westernNumeralLocale } from "@/lib/format";
 import { countOf } from "@/lib/arabic-count";
-import { cn } from "@/lib/utils";
 import { downloadWorkbook } from "@/features/finance-reports/lib/workbook";
 import type { IncubatorsPageState } from "@/features/incubators/hooks/use-incubators-page";
 import { transferLabel } from "@/features/incubators/lib/move-pieces";
@@ -28,6 +19,7 @@ import {
   type SheetContext,
   type TransferRow,
 } from "@/features/incubators/lib/transfer-sheet";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /**
  * A transfer's sheet on the partner's page: the Excel, the A4 delivery note and the WhatsApp
@@ -156,21 +148,29 @@ export function TransferSheetDialog({ page }: { page: IncubatorsPageState }) {
   const totals = transfer ? sheetTotals(sheetLines(transfer, money, lang)) : null;
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !next && page.showTransfer(null)}>
-      <DialogContent className={cn("max-w-md", PHONE_SHEET)} dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !next && page.showTransfer(null)}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <ArrowLeftRight className="h-4 w-4" aria-hidden />
             {transfer ? transferLabel(transfer.number) : isAr ? "التحويل" : "Transfer"}
-          </DialogTitle>
-          <DialogDescription>
-            {transfer && context
-              ? transferWhat(context, transfer.kind, isAr)
-              : isAr
-                ? "جارٍ تحميل التحويل…"
-                : "Loading the transfer…"}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        description={
+          transfer && context
+            ? transferWhat(context, transfer.kind, isAr)
+            : isAr
+              ? "جارٍ تحميل التحويل…"
+              : "Loading the transfer…"
+        }
+      />
+
+      <AppDialogBody>
         {transfer && totals && (
           <div className="space-y-4">
             <p className="text-sm">
@@ -184,8 +184,8 @@ export function TransferSheetDialog({ page }: { page: IncubatorsPageState }) {
             <TransferSheetButtons page={page} transfer={transfer} size="default" />
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }
 

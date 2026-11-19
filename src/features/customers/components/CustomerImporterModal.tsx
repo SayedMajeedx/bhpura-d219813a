@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -18,6 +17,7 @@ import { sanitizeGCCPhone } from "@/lib/os-formatting";
 import { parseVCard } from "@/features/customers/lib/vcard";
 import { CUSTOMER_HEADER_MAPS } from "@/features/customers/lib/customer-header-maps";
 import { arNounOblique } from "@/lib/arabic-count";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 export function CustomerImporterModal({
   brandId,
@@ -334,15 +334,13 @@ export function CustomerImporterModal({
         </Button>
       )}
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-xl border-border bg-card/95 backdrop-blur-xl">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display text-xl">
-              <Users className="h-5 w-5 text-primary" />
-              {isAr ? "مساعد هجرة العملاء الفاخر" : "Universal Customer Migration Suite"}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={isOpen} onOpenChange={setIsOpen} kind="task" size="lg">
+        <AppDialogHeader
+          icon={<Users />}
+          title={isAr ? "مساعد هجرة العملاء الفاخر" : "Universal Customer Migration Suite"}
+        />
 
+        <AppDialogBody>
           {step === "preset" && (
             <div className="space-y-4 pt-2 select-none">
               <p className="text-xs text-muted-foreground">
@@ -564,8 +562,8 @@ export function CustomerImporterModal({
               </Button>
             </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </>
   );
 }

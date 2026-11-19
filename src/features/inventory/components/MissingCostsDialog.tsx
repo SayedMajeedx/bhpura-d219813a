@@ -3,14 +3,6 @@ import { ListPlus, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -24,6 +16,12 @@ import {
   type CostEntry,
   type MissingCostProduct,
 } from "@/features/inventory/lib/missing-costs";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Every product with no cost, on one sheet: type each one's cost (or its parts) down the list
@@ -114,26 +112,29 @@ export function MissingCostsDialog<P extends MissingCostProduct>({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="flex max-h-[92dvh] max-w-2xl flex-col gap-3 overflow-hidden"
-      >
-        <DialogHeader>
-          <DialogTitle>{isAr ? "منتجات بلا تكلفة" : "Products with no cost"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "اكتب تكلفة القطعة لكل منتج، أو قسّمها إلى أجزاء، ثم احفظ مرة واحدة. بدونها يُحسب سعر البيع كله ربحاً."
-              : "Type what a piece of each costs you, or break it into parts, then save once. Without it, the whole price counts as profit."}
-          </DialogDescription>
-        </DialogHeader>
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="task"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "منتجات بلا تكلفة" : "Products with no cost"}
+        description={
+          isAr
+            ? "اكتب تكلفة القطعة لكل منتج، أو قسّمها إلى أجزاء، ثم احفظ مرة واحدة. بدونها يُحسب سعر البيع كله ربحاً."
+            : "Type what a piece of each costs you, or break it into parts, then save once. Without it, the whole price counts as profit."
+        }
+      />
 
+      <AppDialogBody>
         {rows.length === 0 ? (
           <p className="rounded-lg bg-success-subtle p-4 text-center text-sm text-success">
             {isAr ? "كل منتجاتك لها تكلفة." : "Every product has a cost."}
           </p>
         ) : (
-          <ul className="-mx-1 min-h-0 flex-1 space-y-2 overflow-y-auto px-1">
+          <ul className="space-y-2">
             {rows.map((product) => {
               const entry = entries[product.id] ?? { amount: "", parts: null };
               const cost = entryCost(entry);
@@ -252,31 +253,30 @@ export function MissingCostsDialog<P extends MissingCostProduct>({
             })}
           </ul>
         )}
-
-        <DialogFooter className="gap-2 border-t border-border-subtle pt-3">
-          {invalid.length > 0 && (
-            <p className="me-auto self-center text-xs text-destructive">
-              {isAr ? "صحّح المبالغ المعلّمة قبل الحفظ." : "Fix the marked amounts before saving."}
-            </p>
-          )}
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {isAr ? "إغلاق" : "Close"}
-          </Button>
-          <Button
-            type="button"
-            onClick={saveAll}
-            disabled={saving || save.length === 0 || invalid.length > 0}
-          >
-            {isAr
-              ? save.length > 0
-                ? `حفظ التكاليف (${save.length})`
-                : "حفظ"
-              : save.length > 0
-                ? `Save ${save.length} ${save.length === 1 ? "cost" : "costs"}`
-                : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        {invalid.length > 0 && (
+          <p className="me-auto self-center text-xs text-destructive">
+            {isAr ? "صحّح المبالغ المعلّمة قبل الحفظ." : "Fix the marked amounts before saving."}
+          </p>
+        )}
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {isAr ? "إغلاق" : "Close"}
+        </Button>
+        <Button
+          type="button"
+          onClick={saveAll}
+          disabled={saving || save.length === 0 || invalid.length > 0}
+        >
+          {isAr
+            ? save.length > 0
+              ? `حفظ التكاليف (${save.length})`
+              : "حفظ"
+            : save.length > 0
+              ? `Save ${save.length} ${save.length === 1 ? "cost" : "costs"}`
+              : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

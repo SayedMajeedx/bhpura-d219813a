@@ -2,19 +2,10 @@ import { useMemo, useState, useId } from "react";
 import { FileSpreadsheet, MessageCircle, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  PHONE_FULL_SCREEN,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney, moneyFractionDigits } from "@/lib/format";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
-import { cn } from "@/lib/utils";
 import { downloadWorkbook, workbookFileName } from "@/features/finance-reports/lib/workbook";
 import type { SupplierOrder } from "../lib/order-state";
 import { pendingPrices, type AccountPayment } from "../lib/supplier-account";
@@ -31,6 +22,12 @@ import {
   type StatementRange,
 } from "../lib/supplier-statement";
 import { statementHtml, statementSheet } from "../lib/supplier-statement-files";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * A supplier's statement of account for a period: the balance before it, each order and payment
@@ -108,18 +105,23 @@ export function SupplierStatementDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className={cn("max-h-[90dvh] max-w-2xl gap-3 overflow-y-auto", PHONE_FULL_SCREEN)}
-      >
-        <DialogHeader>
-          <DialogTitle>{isAr ? "كشف حساب المورد" : "Supplier statement"}</DialogTitle>
-          <DialogDescription dir="auto" className="text-page-start break-words">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="task"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "كشف حساب المورد" : "Supplier statement"}
+        description={
+          <>
             {supplier.name} · {rangeText(range, lang)}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div
           role="radiogroup"
           aria-label={isAr ? "الفترة" : "Period"}
@@ -229,30 +231,29 @@ export function SupplierStatementDialog({
             ))}
           </ul>
         )}
-
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" className="gap-1.5" onClick={excel}>
-            <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
-            Excel
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" className="gap-1.5" onClick={excel}>
+          <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
+          Excel
+        </Button>
+        <Button type="button" variant="outline" className="gap-1.5" onClick={print}>
+          <Printer className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "طباعة أو PDF" : "Print or PDF"}
+        </Button>
+        {chat && (
+          <Button asChild variant="outline" className="gap-1.5">
+            <a
+              href={`${chat}?text=${encodeURIComponent(message)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="h-4 w-4 text-success" aria-hidden="true" />
+              {isAr ? "إرسال الملخص على واتساب" : "Send the summary on WhatsApp"}
+            </a>
           </Button>
-          <Button type="button" variant="outline" className="gap-1.5" onClick={print}>
-            <Printer className="h-4 w-4" aria-hidden="true" />
-            {isAr ? "طباعة أو PDF" : "Print or PDF"}
-          </Button>
-          {chat && (
-            <Button asChild variant="outline" className="gap-1.5">
-              <a
-                href={`${chat}?text=${encodeURIComponent(message)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle className="h-4 w-4 text-success" aria-hidden="true" />
-                {isAr ? "إرسال الملخص على واتساب" : "Send the summary on WhatsApp"}
-              </a>
-            </Button>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+        )}
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

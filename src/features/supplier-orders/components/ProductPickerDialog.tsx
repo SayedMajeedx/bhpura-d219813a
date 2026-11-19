@@ -1,15 +1,9 @@
 import { useId, useMemo, useState } from "react";
 import { Package, Plus, Search } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { productLabel, searchProducts, sizesLine } from "../lib/catalog";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** Most products listed at once: a search narrows a long catalog. */
 const SHOWN = 60;
@@ -42,22 +36,25 @@ export function ProductPickerDialog({
   );
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(next) => {
         if (!next) setQuery("");
         onOpenChange(next);
       }}
+      kind="task"
+      dir={isAr ? "rtl" : "ltr"}
     >
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-lg gap-3">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "إضافة منتج للطلبية" : "Add a product to the order"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "اختر منتجاً من متجرك، أو أنشئ منتجاً جديداً لم يدخل المتجر بعد."
-              : "Choose a product from your store, or make a new one that is not in it yet."}
-          </DialogDescription>
-        </DialogHeader>
+      <AppDialogHeader
+        title={isAr ? "إضافة منتج للطلبية" : "Add a product to the order"}
+        description={
+          isAr
+            ? "اختر منتجاً من متجرك، أو أنشئ منتجاً جديداً لم يدخل المتجر بعد."
+            : "Choose a product from your store, or make a new one that is not in it yet."
+        }
+      />
+
+      <AppDialogBody>
         <button
           type="button"
           onClick={() => {
@@ -102,7 +99,7 @@ export function ProductPickerDialog({
             autoFocus
           />
         </div>
-        <ul className="max-h-[55vh] min-w-0 space-y-1 overflow-y-auto">
+        <ul className="min-w-0 space-y-1">
           {found.length === 0 ? (
             <li className="p-4 text-center text-sm text-muted-foreground">
               {isAr ? "لا توجد منتجات بهذا الاسم." : "No products match."}
@@ -156,7 +153,7 @@ export function ProductPickerDialog({
             </li>
           )}
         </ul>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

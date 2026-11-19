@@ -199,7 +199,9 @@ describe("the transfer screen on a phone", () => {
     renderModal(true);
     expect(await screen.findByText("2 of 2 sizes")).toBeInTheDocument();
     const dialog = screen.getByRole("dialog");
-    expect(dialog.className).toContain("max-sm:h-[100dvh]");
+    // A task on the shell: the whole screen of a phone.
+    expect(dialog).toHaveAttribute("data-kind", "task");
+    expect(dialog.className).toContain("max-sm:h-[calc(100dvh-var(--app-dialog-kb))]");
     // No table on a phone, and each size's box once (both layouts once drew every field twice).
     expect(within(dialog).queryByRole("table")).toBeNull();
     expect(screen.getAllByRole("checkbox", { name: /Transfer Abaya Sabeeka 52/ })).toHaveLength(1);

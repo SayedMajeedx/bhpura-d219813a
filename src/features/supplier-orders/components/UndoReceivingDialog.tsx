@@ -2,14 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   invalidateAfterReceipt,
@@ -20,6 +12,12 @@ import { supplierOrderError } from "../lib/errors";
 import { piecesLabel } from "../lib/order-state";
 import { undoneMessage, undoStock, type UndoMode } from "../lib/undo-receiving";
 import type { SupplierCatalog } from "../hooks/use-supplier-catalog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Takes receipts of a supplier order back: one, or all that can be (`receipts`). Their pieces
@@ -102,19 +100,24 @@ export function UndoReceivingDialog({
   ];
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {receipts.length > 1
-              ? isAr
-                ? "إلغاء استلام الطلبية؟"
-                : "Undo this order's receiving?"
-              : isAr
-                ? "إلغاء هذا الاستلام؟"
-                : "Undo this receipt?"}
-          </DialogTitle>
-          <DialogDescription>
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !saving && onOpenChange(next)}
+      kind="task"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          receipts.length > 1
+            ? isAr
+              ? "إلغاء استلام الطلبية؟"
+              : "Undo this order's receiving?"
+            : isAr
+              ? "إلغاء هذا الاستلام؟"
+              : "Undo this receipt?"
+        }
+        description={
+          <>
             {stock.short
               ? isAr
                 ? `القطع المستلمة: ${piecesLabel(stock.pieces, lang)}، وما بقي منها في المتجر: ${piecesLabel(stock.held, lang)}. الباقي خرج من قبل (بيع أو جُرد أو نُقل).`
@@ -125,9 +128,11 @@ export function UndoReceivingDialog({
             {isAr
               ? "تبقى الطلبية بدفعاتها، وتعود بانتظار الاستلام حين لا يبقى منها شيء مستلم: تُعدّل أو تُلغى أو تُحذف."
               : "The order keeps its payments, and once nothing of it is received it awaits delivery again: it can be changed, cancelled or deleted."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {stock.short && (
           <fieldset className="space-y-2">
             <legend className="sr-only">
@@ -157,26 +162,25 @@ export function UndoReceivingDialog({
             ))}
           </fieldset>
         )}
-
-        <DialogFooter className="flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            {isAr ? "تراجع" : "Keep it"}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() => void undo()}
-            disabled={saving || receipts.length === 0}
-          >
-            {isAr ? "إلغاء الاستلام" : "Undo receiving"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {isAr ? "تراجع" : "Keep it"}
+        </Button>
+        <Button
+          type="button"
+          variant="destructive"
+          onClick={() => void undo()}
+          disabled={saving || receipts.length === 0}
+        >
+          {isAr ? "إلغاء الاستلام" : "Undo receiving"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
