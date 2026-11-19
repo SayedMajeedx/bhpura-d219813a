@@ -3,19 +3,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { accountingQueries, createVendor, invalidateVendors } from "@/lib/data/accounting";
 import { cn } from "@/lib/utils";
 import { SheetLanguageChoice } from "@/features/orders/components/SheetLanguageChoice";
 import type { SheetLang } from "@/features/orders/lib/job-sheet";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Who the order is from: one of the store's suppliers, or a new one added on the spot. Staff who
@@ -113,11 +112,16 @@ export function SupplierField({
         </p>
       )}
 
-      <Dialog open={adding} onOpenChange={setAdding}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "مورد جديد" : "New supplier"}</DialogTitle>
-          </DialogHeader>
+      <AppDialog
+        open={adding}
+        onOpenChange={setAdding}
+        kind="form"
+        size="sm"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <AppDialogHeader title={isAr ? "مورد جديد" : "New supplier"} />
+
+        <AppDialogBody>
           <div className="space-y-3">
             <div className="space-y-1">
               <Label htmlFor={`${id}-name`}>{isAr ? "الاسم" : "Name"}</Label>
@@ -148,16 +152,16 @@ export function SupplierField({
               label={isAr ? "لغة أوامر التشغيل والرسائل" : "Language for job sheets and messages"}
             />
           </div>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setAdding(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button type="button" onClick={save} disabled={!name.trim() || saving}>
-              {isAr ? "إضافة" : "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => setAdding(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button type="button" onClick={save} disabled={!name.trim() || saving}>
+            {isAr ? "إضافة" : "Add"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

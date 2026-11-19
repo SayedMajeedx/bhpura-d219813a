@@ -4,14 +4,6 @@ import { Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -23,6 +15,12 @@ import {
 import { paymentOf, type SupplierOrder } from "../lib/order-state";
 import { entryLabel, paymentsOnOrder, type AccountPayment } from "../lib/supplier-account";
 import { supplierOrderError } from "../lib/errors";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * What was paid to the supplier on this order: each payment with its day, how it was paid and
@@ -160,24 +158,31 @@ export function PaymentsCard({
         </ul>
       )}
 
-      <Dialog open={undoing !== null} onOpenChange={(next) => !next && setUndoing(null)}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-sm gap-3">
-          <DialogHeader>
-            <DialogTitle>
-              {isAr
-                ? `إلغاء دفعة ${undoing ? money(undoing.payment.amount) : ""}؟`
-                : `Take back the payment of ${undoing ? money(undoing.payment.amount) : ""}?`}
-            </DialogTitle>
-            <DialogDescription>
-              {undoing && undoing.others.length > 0
-                ? isAr
-                  ? `هذه الدفعة دفعت أيضاً ${undoing.others.join("، ")}، فتُلغى منها كلها. تبقى في السجل مع السبب، ولا تُحسب من المدفوع.`
-                  : `This payment also paid ${undoing.others.join(", ")}, so it is taken back from all of them. It stays on record with the reason, and no longer counts as paid.`
-                : isAr
-                  ? "تبقى في السجل مع السبب، ولا تُحسب من المدفوع."
-                  : "It stays on record with the reason, and no longer counts as paid."}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog
+        open={undoing !== null}
+        onOpenChange={(next) => !next && setUndoing(null)}
+        kind="form"
+        size="sm"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <AppDialogHeader
+          title={
+            isAr
+              ? `إلغاء دفعة ${undoing ? money(undoing.payment.amount) : ""}؟`
+              : `Take back the payment of ${undoing ? money(undoing.payment.amount) : ""}?`
+          }
+          description={
+            undoing && undoing.others.length > 0
+              ? isAr
+                ? `هذه الدفعة دفعت أيضاً ${undoing.others.join("، ")}، فتُلغى منها كلها. تبقى في السجل مع السبب، ولا تُحسب من المدفوع.`
+                : `This payment also paid ${undoing.others.join(", ")}, so it is taken back from all of them. It stays on record with the reason, and no longer counts as paid.`
+              : isAr
+                ? "تبقى في السجل مع السبب، ولا تُحسب من المدفوع."
+                : "It stays on record with the reason, and no longer counts as paid."
+          }
+        />
+
+        <AppDialogBody>
           <div className="space-y-1">
             <Label htmlFor={`${uid}-reason`}>{isAr ? "السبب" : "Reason"}</Label>
             <Input
@@ -189,26 +194,21 @@ export function PaymentsCard({
               autoFocus
             />
           </div>
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setUndoing(null)}
-              disabled={busy}
-            >
-              {isAr ? "تراجع" : "Keep it"}
-            </Button>
-            <Button
-              type="button"
-              onClick={undo}
-              disabled={!reason.trim() || busy}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isAr ? "إلغاء الدفعة" : "Take it back"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button type="button" variant="outline" onClick={() => setUndoing(null)} disabled={busy}>
+            {isAr ? "تراجع" : "Keep it"}
+          </Button>
+          <Button
+            type="button"
+            onClick={undo}
+            disabled={!reason.trim() || busy}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            {isAr ? "إلغاء الدفعة" : "Take it back"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </Card>
   );
 }

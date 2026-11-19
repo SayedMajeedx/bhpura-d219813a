@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -27,6 +20,12 @@ import {
   type CashEntryRefusal,
 } from "@/lib/data/accounting";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const ENTRY_REFUSAL_MESSAGES: Record<CashEntryRefusal, { ar: string; en: string }> = {
   INVALID_ENTRY_AMOUNT: { ar: "يرجى إدخال مبلغ صحيح", en: "Please enter a valid amount" },
@@ -103,14 +102,10 @@ export function CashEntryDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-base font-bold text-foreground">
-            {isAr ? "تسجيل حركة نقدية" : "Record cash in / out"}
-          </DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader title={isAr ? "تسجيل حركة نقدية" : "Record cash in / out"} />
 
+      <AppDialogBody>
         <div className="space-y-4 py-2 text-xs">
           <p className="text-muted-foreground">
             {isAr
@@ -184,16 +179,15 @@ export function CashEntryDialog({
             />
           </div>
         </div>
-
-        <DialogFooter className="gap-2 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button onClick={save} disabled={saving} className="h-9 text-xs font-bold">
-            {saving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "تسجيل" : "Record"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button onClick={save} disabled={saving} className="h-9 text-xs font-bold">
+          {saving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "تسجيل" : "Record"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

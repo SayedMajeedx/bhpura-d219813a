@@ -2,14 +2,6 @@ import { useId, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { countOf } from "@/lib/arabic-count";
@@ -34,6 +26,12 @@ import {
   type PaymentMethod,
 } from "../lib/supplier-account";
 import { supplierOrderError } from "../lib/errors";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * A payment to a supplier, as it happened: one amount on one day, by one means, spread on the
@@ -179,26 +177,25 @@ export function SupplierPaymentDialog({
 
   const typed = amount.trim() !== "";
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(next) => {
         if (next) reset();
         onOpenChange(next);
       }}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
     >
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="max-h-[90dvh] max-w-md gap-3 overflow-y-auto"
-      >
-        <DialogHeader>
-          <DialogTitle dir="auto" className="text-page-start break-words">
-            {isAdjustment
-              ? `${kindLabel(kind, lang)} · ${vendor.name}`
-              : isAr
-                ? `دفعة لـ ${vendor.name}`
-                : `Payment to ${vendor.name}`}
-          </DialogTitle>
-          <DialogDescription>
+      <AppDialogHeader
+        title={
+          isAdjustment
+            ? `${kindLabel(kind, lang)} · ${vendor.name}`
+            : isAr
+              ? `دفعة لـ ${vendor.name}`
+              : `Payment to ${vendor.name}`
+        }
+        description={
+          <>
             {owedTotal > 0
               ? isAr
                 ? `عليك ${money(owedTotal)} لهذا المورد.`
@@ -210,9 +207,11 @@ export function SupplierPaymentDialog({
               (isAr
                 ? ` ولك عنده رصيد ${money(credit)}.`
                 : ` You have ${money(credit)} credit with them.`)}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {waiting > 0 && <PricesWaitingNote count={waiting} lang={lang} />}
 
         <div
@@ -437,23 +436,22 @@ export function SupplierPaymentDialog({
               : `${money(spread.credit)} stays as your credit with the supplier, taken off their next order by itself.`}
           </p>
         )}
-
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button type="button" onClick={save} disabled={Boolean(problem) || saving}>
-            {isAdjustment
-              ? isAr
-                ? "تسجيل التسوية"
-                : "Record adjustment"
-              : isAr
-                ? "تسجيل الدفعة"
-                : "Record payment"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button type="button" onClick={save} disabled={Boolean(problem) || saving}>
+          {isAdjustment
+            ? isAr
+              ? "تسجيل التسوية"
+              : "Record adjustment"
+            : isAr
+              ? "تسجيل الدفعة"
+              : "Record payment"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
 

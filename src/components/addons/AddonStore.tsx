@@ -17,14 +17,6 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Puzzle,
   Search,
   Settings as SettingsIcon,
@@ -40,6 +32,12 @@ import { AddonStoreHero } from "./AddonStoreHero";
 import { AddonCardMicrosoftStore } from "./AddonCardMicrosoftStore";
 import { AddonDetailPage } from "./AddonDetailPage";
 import { arNoun, arNounOblique } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface AddonStoreProps {
   brandId: string;
@@ -350,7 +348,7 @@ export function AddonStore({
         />
 
         {/* Purge Modal reusable across views */}
-        <Dialog
+        <AppDialog
           open={Boolean(purgeModalAddon)}
           onOpenChange={(open) => {
             if (!open) {
@@ -358,22 +356,19 @@ export function AddonStore({
               setPurgeConfirmationText("");
             }
           }}
+          kind="form"
         >
-          <DialogContent className="max-w-md rounded-2xl border-destructive/30 bg-card">
-            <DialogHeader>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-2">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <DialogTitle className="text-lg font-bold text-destructive">
-                {isAr ? "تأكيد حذف بيانات الإضافة نهائياً" : "Confirm Permanent Data Purge"}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-                {isAr
-                  ? `أنت على وشك حذف جميع البيانات والجداول المرتبطة بـ (${purgeModalAddon ? purgeModalAddon.name.ar : ""}) نهائياً من متجرك. هذا الإجراء لا يمكن التراجع عنه.`
-                  : `You are about to permanently delete all stored data associated with this add-on from your store. This cannot be undone.`}
-              </DialogDescription>
-            </DialogHeader>
+          <AppDialogHeader
+            title={isAr ? "تأكيد حذف بيانات الإضافة نهائياً" : "Confirm Permanent Data Purge"}
+            description={
+              isAr
+                ? `أنت على وشك حذف جميع البيانات والجداول المرتبطة بـ (${purgeModalAddon ? purgeModalAddon.name.ar : ""}) نهائياً من متجرك. هذا الإجراء لا يمكن التراجع عنه.`
+                : `You are about to permanently delete all stored data associated with this add-on from your store. This cannot be undone.`
+            }
+            icon={<AlertTriangle className="text-destructive" />}
+          />
 
+          <AppDialogBody>
             <div className="space-y-3 py-2">
               <p className="text-xs font-medium text-foreground">
                 {isAr ? (
@@ -399,29 +394,28 @@ export function AddonStore({
                 className="h-10 rounded-xl border-destructive/40 bg-background"
               />
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setPurgeModalAddon(null);
-                  setPurgeConfirmationText("");
-                }}
-                className="rounded-xl border-border"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={handleConfirmPurge}
-                disabled={isMutating}
-                className="rounded-xl"
-              >
-                {isAr ? "تأكيد وحذف البيانات نهائياً" : "Confirm Permanent Purge"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPurgeModalAddon(null);
+                setPurgeConfirmationText("");
+              }}
+              className="rounded-xl border-border"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmPurge}
+              disabled={isMutating}
+              className="rounded-xl"
+            >
+              {isAr ? "تأكيد وحذف البيانات نهائياً" : "Confirm Permanent Purge"}
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       </div>
     );
   }
@@ -762,27 +756,30 @@ export function AddonStore({
       )}
 
       {/* Settings Modal (if opened via dropdown menu) */}
-      <Dialog
+      <AppDialog
         open={Boolean(settingsModalAddon)}
         onOpenChange={(open) => !open && setSettingsModalAddon(null)}
+        kind="form"
       >
-        <DialogContent className="max-w-lg rounded-2xl border-border bg-card">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+        <AppDialogHeader
+          title={
+            <>
               <SettingsIcon className="size-5 text-primary" />
               <span>
                 {isAr ? "إعدادات الإضافة:" : "Configure Add-on:"}{" "}
                 {settingsModalAddon &&
                   (isAr ? settingsModalAddon.name.ar : settingsModalAddon.name.en)}
               </span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {isAr
-                ? "تخصيص سلوك الإضافة وخيارات العرض للعملاء والواجهة."
-                : "Customize add-on behavior and options for customers and storefront."}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+          description={
+            isAr
+              ? "تخصيص سلوك الإضافة وخيارات العرض للعملاء والواجهة."
+              : "Customize add-on behavior and options for customers and storefront."
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-3">
             {settingsModalAddon?.settingsSchema?.map((field: AddonSettingsField) => {
               const val = settingsForm[field.key] ?? field.default;
@@ -850,24 +847,23 @@ export function AddonStore({
               );
             })}
           </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setSettingsModalAddon(null)}
-              className="rounded-xl border-border"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleSaveSettings} disabled={isMutating} className="rounded-xl">
-              {isAr ? "حفظ التغييرات" : "Save Settings"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setSettingsModalAddon(null)}
+            className="rounded-xl border-border"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={handleSaveSettings} disabled={isMutating} className="rounded-xl">
+            {isAr ? "حفظ التغييرات" : "Save Settings"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       {/* Purge Confirmation Dialog */}
-      <Dialog
+      <AppDialog
         open={Boolean(purgeModalAddon)}
         onOpenChange={(open) => {
           if (!open) {
@@ -875,22 +871,19 @@ export function AddonStore({
             setPurgeConfirmationText("");
           }
         }}
+        kind="form"
       >
-        <DialogContent className="max-w-md rounded-2xl border-destructive/30 bg-card">
-          <DialogHeader>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-destructive/10 text-destructive mb-2">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-            <DialogTitle className="text-lg font-bold text-destructive">
-              {isAr ? "تأكيد حذف بيانات الإضافة نهائياً" : "Confirm Permanent Data Purge"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-              {isAr
-                ? `أنت على وشك حذف جميع البيانات والجداول المرتبطة بـ (${purgeModalAddon ? purgeModalAddon.name.ar : ""}) نهائياً من قاعدة بيانات متجرك. هذا الإجراء لا يمكن التراجع عنه.`
-                : `You are about to permanently delete all stored data associated with this add-on from your store. This cannot be undone.`}
-            </DialogDescription>
-          </DialogHeader>
+        <AppDialogHeader
+          title={isAr ? "تأكيد حذف بيانات الإضافة نهائياً" : "Confirm Permanent Data Purge"}
+          description={
+            isAr
+              ? `أنت على وشك حذف جميع البيانات والجداول المرتبطة بـ (${purgeModalAddon ? purgeModalAddon.name.ar : ""}) نهائياً من قاعدة بيانات متجرك. هذا الإجراء لا يمكن التراجع عنه.`
+              : `You are about to permanently delete all stored data associated with this add-on from your store. This cannot be undone.`
+          }
+          icon={<AlertTriangle className="text-destructive" />}
+        />
 
+        <AppDialogBody>
           <div className="space-y-3 py-2">
             <p className="text-xs font-medium text-foreground">
               {isAr ? (
@@ -916,45 +909,42 @@ export function AddonStore({
               className="h-10 rounded-xl border-destructive/40 bg-background"
             />
           </div>
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setPurgeModalAddon(null);
-                setPurgeConfirmationText("");
-              }}
-              className="rounded-xl border-border"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleConfirmPurge}
-              disabled={isMutating}
-              className="rounded-xl"
-            >
-              {isAr ? "تأكيد وحذف البيانات نهائياً" : "Confirm Permanent Purge"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setPurgeModalAddon(null);
+              setPurgeConfirmationText("");
+            }}
+            className="rounded-xl border-border"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmPurge}
+            disabled={isMutating}
+            className="rounded-xl"
+          >
+            {isAr ? "تأكيد وحذف البيانات نهائياً" : "Confirm Permanent Purge"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       {/* Events / Audit Log Dialog */}
-      <Dialog open={showEventsDialog} onOpenChange={setShowEventsDialog}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-2xl border-border bg-card">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
-              <History className="size-5 text-primary" />
-              <span>{isAr ? "سجل نشاطات وإضافات المتجر" : "Add-on Events & Audit Log"}</span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {isAr
-                ? "سجل توثيقي لجميع عمليات التثبيت والتحديث والتعطيل والإزالة."
-                : "A verified record of all add-on installs, upgrades, and status updates."}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={showEventsDialog} onOpenChange={setShowEventsDialog} kind="form" size="lg">
+        <AppDialogHeader
+          icon={<History />}
+          title={isAr ? "سجل نشاطات وإضافات المتجر" : "Add-on Events & Audit Log"}
+          description={
+            isAr
+              ? "سجل توثيقي لجميع عمليات التثبيت والتحديث والتعطيل والإزالة."
+              : "A verified record of all add-on installs, upgrades, and status updates."
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-2 py-3">
             {events.length === 0 ? (
               <div className="py-8 text-center text-xs text-muted-foreground">
@@ -993,8 +983,8 @@ export function AddonStore({
               ))
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </div>
   );
 }

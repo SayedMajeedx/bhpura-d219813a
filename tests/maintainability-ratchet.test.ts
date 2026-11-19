@@ -33,7 +33,7 @@ const BUDGETS = {
   // API cuts such a read at its row limit without saying so. What is left is settings-sized
   // tables and one parent's rows (an order's history, a customer's addresses).
   unboundedListReads: 94,
-  filesOver1000: 11,
+  filesOver1000: 10,
   maxLinesForNewFile: 600,
   maxLinesForExistingFile: 1000,
 } as const;
@@ -52,11 +52,11 @@ const GIANT_FILES_BUDGETS: Record<string, number> = {
   "src/features/settings/registry.ts": 2433,
   "src/components/subscription/BrandSubscriptionHub.tsx": 1954,
   "src/lib/addons/addon-showcase-data.ts": 1859,
-  "src/components/super/SuperPlansManager.tsx": 1721,
+  "src/components/super/SuperPlansManager.tsx": 1716,
   "src/addons/size-guides/components/admin/SizeGuideStudioPage.tsx": 1703,
   "src/lib/public-api/public-api-router.server.ts": 1271,
-  "src/routes/_authenticated/admin.brands.tsx": 1024,
-  "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1172,
+  "src/routes/_authenticated/admin.brands.tsx": 794,
+  "src/routes/_authenticated/admin.b.$slug.integrations.tsx": 1004,
   "src/routes/onboard.tsx": 1056,
   "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": 1041,
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": 1058,

@@ -4,14 +4,6 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getAddon } from "@/lib/addons/addon-registry";
@@ -27,6 +19,12 @@ import {
   invalidateAfterVerticalChange,
   verticalQueries,
 } from "@/lib/data/verticals";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const REASON_MIN = 5;
 
@@ -105,25 +103,27 @@ export function VerticalChangeDialog({
   const Arrow = isAr ? ArrowLeft : ArrowRight;
 
   return (
-    <Dialog open={to !== null} onOpenChange={(open) => !open && !change.isPending && onClose()}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="max-h-[90dvh] overflow-y-auto sm:max-w-lg"
-      >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="size-5 text-primary" />
-            {isAr ? "تغيير نشاط المتجر" : "Change store vertical"}
-          </DialogTitle>
-          <DialogDescription className="flex flex-wrap items-center gap-1.5">
+    <AppDialog
+      open={to !== null}
+      onOpenChange={(open) => !open && !change.isPending && onClose()}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        icon={<Sparkles />}
+        title={isAr ? "تغيير نشاط المتجر" : "Change store vertical"}
+        description={
+          <>
             <span>{VERTICAL_LABELS[from][lang]}</span>
             <Arrow className="size-3.5" aria-hidden="true" />
             <span className="font-semibold text-foreground">
               {to ? VERTICAL_LABELS[to][lang] : ""}
             </span>
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         {preview.isLoading || !plan ? (
           <p className="flex items-center gap-2 py-6 text-xs text-muted-foreground" role="status">
             <Loader2 className="size-4 animate-spin" />
@@ -282,26 +282,25 @@ export function VerticalChangeDialog({
             </section>
           </div>
         )}
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button type="button" variant="outline" onClick={onClose} disabled={change.isPending}>
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => change.mutate()}
-            disabled={!plan || !reasonOk || change.isPending}
-          >
-            {change.isPending
-              ? isAr
-                ? "جارٍ التطبيق…"
-                : "Applying…"
-              : isAr
-                ? "تأكيد وتطبيق"
-                : "Confirm & apply"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button type="button" variant="outline" onClick={onClose} disabled={change.isPending}>
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          onClick={() => change.mutate()}
+          disabled={!plan || !reasonOk || change.isPending}
+        >
+          {change.isPending
+            ? isAr
+              ? "جارٍ التطبيق…"
+              : "Applying…"
+            : isAr
+              ? "تأكيد وتطبيق"
+              : "Confirm & apply"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

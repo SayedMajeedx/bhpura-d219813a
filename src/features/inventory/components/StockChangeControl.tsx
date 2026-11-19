@@ -4,14 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   STOCK_CHANGE_KINDS,
   planStockChange,
   stockChangeLabels,
@@ -19,6 +11,12 @@ import {
   type StockChangeKind,
   type StockChangeRequest,
 } from "@/features/inventory/lib/stock-change";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * A variant's stock in the store: the number, and a button that opens the change. A change is
@@ -80,19 +78,18 @@ export function StockChangeControl({
         <PencilLine className="h-3 w-3 text-muted-foreground" />
       </button>
 
-      <Dialog open={open} onOpenChange={(next) => !saving && setOpen(next)}>
-        <DialogContent
-          className="max-w-[calc(100vw-2rem)] sm:max-w-md"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <DialogHeader>
-            <DialogTitle>{isAr ? "تغيير مخزون المحل" : "Change store stock"}</DialogTitle>
-            <DialogDescription className="break-words">
+      <AppDialog open={open} onOpenChange={(next) => !saving && setOpen(next)} kind="form">
+        <AppDialogHeader
+          title={isAr ? "تغيير مخزون المحل" : "Change store stock"}
+          description={
+            <>
               {pieceName ? `${pieceName} · ` : ""}
               {isAr ? `الموجود الآن: ${current}` : `In the store now: ${current}`}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4">
             <div
               role="radiogroup"
@@ -167,18 +164,17 @@ export function StockChangeControl({
               </span>
             </p>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" disabled={saving} onClick={() => setOpen(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button disabled={!plan.ok || saving} onClick={() => void save()}>
-              {saving && <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" />}
-              {isAr ? "حفظ التغيير" : "Save change"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" disabled={saving} onClick={() => setOpen(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button disabled={!plan.ok || saving} onClick={() => void save()}>
+            {saving && <Loader2 className="h-3.5 w-3.5 me-1.5 animate-spin" />}
+            {isAr ? "حفظ التغيير" : "Save change"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

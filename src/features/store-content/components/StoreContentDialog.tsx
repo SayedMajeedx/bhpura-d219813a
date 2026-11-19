@@ -1,15 +1,9 @@
 import { useState } from "react";
 import { Images } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { FaqEditor } from "@/features/store-content/components/FaqEditor";
 import { GalleryEditor } from "@/features/store-content/components/GalleryEditor";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 /** The store's gallery pictures and FAQ, edited in one place. */
 export function StoreContentDialog({
@@ -25,19 +19,28 @@ export function StoreContentDialog({
 }) {
   const [tab, setTab] = useState<"gallery" | "faq">("gallery");
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <Images className="size-4 text-primary" aria-hidden="true" />
             {isAr ? "المعرض والأسئلة الشائعة" : "Gallery and FAQ"}
-          </DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "صور مناسباتك السابقة وأسئلة عملائك المتكررة، تظهر في صفحة الحجز."
-              : "Pictures of your past events and the questions customers ask; they show on the booking page."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+        description={
+          isAr
+            ? "صور مناسباتك السابقة وأسئلة عملائك المتكررة، تظهر في صفحة الحجز."
+            : "Pictures of your past events and the questions customers ask; they show on the booking page."
+        }
+      />
+
+      <AppDialogBody>
         <div className="flex gap-2" role="tablist" aria-label={isAr ? "القسم" : "Section"}>
           {(["gallery", "faq"] as const).map((id) => (
             <Button
@@ -58,7 +61,7 @@ export function StoreContentDialog({
         ) : (
           <FaqEditor brandId={brandId} isAr={isAr} />
         )}
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

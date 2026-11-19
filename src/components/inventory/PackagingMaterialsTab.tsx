@@ -16,13 +16,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Package,
   Plus,
   Pencil,
@@ -47,6 +40,12 @@ import {
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
@@ -485,20 +484,20 @@ export function PackagingMaterialsTab() {
       )}
 
       {/* Add / Edit Dialog */}
-      <Dialog open={modalOpen} onOpenChange={setOpenModal}>
-        <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground">
-              {editingItem
-                ? isAr
-                  ? "تعديل مادة التغليف"
-                  : "Edit Packaging Material"
-                : isAr
-                  ? "إضافة مادة تغليف جديدة"
-                  : "Add Packaging Material"}
-            </DialogTitle>
-          </DialogHeader>
+      <AppDialog open={modalOpen} onOpenChange={setOpenModal} kind="form">
+        <AppDialogHeader
+          title={
+            editingItem
+              ? isAr
+                ? "تعديل مادة التغليف"
+                : "Edit Packaging Material"
+              : isAr
+                ? "إضافة مادة تغليف جديدة"
+                : "Add Packaging Material"
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-2 text-xs">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">
@@ -630,17 +629,16 @@ export function PackagingMaterialsTab() {
               </div>
             </div>
           </div>
-
-          <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" onClick={() => setOpenModal(false)} className="h-9 text-xs">
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
-              {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "حفظ" : "Save Material"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setOpenModal(false)} className="h-9 text-xs">
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
+            {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "حفظ" : "Save Material"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

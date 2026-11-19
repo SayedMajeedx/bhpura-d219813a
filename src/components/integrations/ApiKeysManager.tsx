@@ -10,14 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   KeyRound,
@@ -36,6 +28,12 @@ import { useI18n } from "@/lib/i18n";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { IconSwap } from "@/components/motion/IconSwap";
 import { MorphText } from "@/components/motion/MorphText";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ApiKeysManagerProps {
   brandId: string;
@@ -264,20 +262,18 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
       </div>
 
       {/* Create Key Modal */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-              <KeyRound className="h-5 w-5 text-primary" />
-              {isAr ? "إنشاء مفتاح API جديد" : "Create New API Key"}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "حدد اسماً واضحاً ومجموعة الصلاحيات (Scopes) اللازمة لهذا المفتاح."
-                : "Provide a descriptive name and select the minimal required scopes for this API key."}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={createOpen} onOpenChange={setCreateOpen} kind="form" size="lg">
+        <AppDialogHeader
+          icon={<KeyRound />}
+          title={isAr ? "إنشاء مفتاح API جديد" : "Create New API Key"}
+          description={
+            isAr
+              ? "حدد اسماً واضحاً ومجموعة الصلاحيات (Scopes) اللازمة لهذا المفتاح."
+              : "Provide a descriptive name and select the minimal required scopes for this API key."
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="key-name">{isAr ? "اسم المفتاح" : "Key Name"}</Label>
@@ -391,55 +387,52 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
               </div>
             </div>
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateOpen(false)} className="min-h-[44px]">
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={() => {
-                if (!name.trim()) {
-                  toast.error(isAr ? "يرجى كتابة اسم للمفتاح" : "Please enter a key name");
-                  return;
-                }
-                createMutation.mutate({
-                  name,
-                  scopes: selectedScopes,
-                  rateLimitPerMinute: rateLimit,
-                  environment,
-                });
-              }}
-              disabled={createMutation.isPending}
-              className="min-h-[44px] gap-2"
-            >
-              <Sparkles className="h-4 w-4" />
-              {createMutation.isPending
-                ? isAr
-                  ? "جاري الإنشاء والتشفير..."
-                  : "Creating & Hashing..."
-                : isAr
-                  ? "إنشاء المفتاح وحفظه"
-                  : "Create API Key"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setCreateOpen(false)} className="min-h-[44px]">
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            onClick={() => {
+              if (!name.trim()) {
+                toast.error(isAr ? "يرجى كتابة اسم للمفتاح" : "Please enter a key name");
+                return;
+              }
+              createMutation.mutate({
+                name,
+                scopes: selectedScopes,
+                rateLimitPerMinute: rateLimit,
+                environment,
+              });
+            }}
+            disabled={createMutation.isPending}
+            className="min-h-[44px] gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {createMutation.isPending
+              ? isAr
+                ? "جاري الإنشاء والتشفير..."
+                : "Creating & Hashing..."
+              : isAr
+                ? "إنشاء المفتاح وحفظه"
+                : "Create API Key"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       {/* Secret Reveal Modal (One-time Display) */}
-      <Dialog open={secretModalOpen} onOpenChange={setSecretModalOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-              <ShieldAlert className="h-5 w-5 text-amber-500" />
-              {isAr ? "انسخ مفتاح الـ API الآن" : "Save Your API Secret Key"}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? `تم إنشاء المفتاح "${revealedKeyName}" وتشفيره بنجاح. لن تتمكن من رؤية هذا السر مرة أخرى!`
-                : `Key "${revealedKeyName}" created. For security, you will NEVER be able to see this secret again!`}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={secretModalOpen} onOpenChange={setSecretModalOpen} kind="form">
+        <AppDialogHeader
+          icon={<ShieldAlert />}
+          title={isAr ? "انسخ مفتاح الـ API الآن" : "Save Your API Secret Key"}
+          description={
+            isAr
+              ? `تم إنشاء المفتاح "${revealedKeyName}" وتشفيره بنجاح. لن تتمكن من رؤية هذا السر مرة أخرى!`
+              : `Key "${revealedKeyName}" created. For security, you will NEVER be able to see this secret again!`
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-3">
             <div className="p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2.5">
               <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -476,20 +469,19 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
               </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                setSecretModalOpen(false);
-                setRevealedSecret(null);
-              }}
-              className="w-full min-h-[44px]"
-            >
-              {isAr ? "لقد حفظت المفتاح بأمان، إغلاق" : "I have securely stored the key, Close"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            onClick={() => {
+              setSecretModalOpen(false);
+              setRevealedSecret(null);
+            }}
+            className="w-full min-h-[44px]"
+          >
+            {isAr ? "لقد حفظت المفتاح بأمان، إغلاق" : "I have securely stored the key, Close"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

@@ -1,14 +1,6 @@
 import { useId, useMemo, useState } from "react";
 import { EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SizeChoicesField } from "@/components/inventory/SizeChoicesField";
@@ -19,6 +11,12 @@ import {
   type NewProductForm,
 } from "../lib/new-product";
 import { useCreateOrderProduct } from "../hooks/use-create-order-product";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * A product the store is ordering for the first time (a new collection): its name, its sizes in
@@ -78,23 +76,25 @@ export function NewProductDialog({
   if (!isAr) nameFields.reverse();
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(next) => {
         if (next) reset();
         onOpenChange(next);
       }}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
     >
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md gap-3">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "منتج جديد" : "New product"}</DialogTitle>
-          <DialogDescription>
-            {isAr
-              ? "منتج لم يدخل متجرك بعد، مثل تشكيلة جديدة طلبتها. التكلفة تكتبها في الطلبية."
-              : "A product that is not in your store yet, like a new collection you ordered. Its cost goes on the order."}
-          </DialogDescription>
-        </DialogHeader>
+      <AppDialogHeader
+        title={isAr ? "منتج جديد" : "New product"}
+        description={
+          isAr
+            ? "منتج لم يدخل متجرك بعد، مثل تشكيلة جديدة طلبتها. التكلفة تكتبها في الطلبية."
+            : "A product that is not in your store yet, like a new collection you ordered. Its cost goes on the order."
+        }
+      />
 
+      <AppDialogBody>
         {nameFields.map((field, index) => (
           <div key={field.key} className="space-y-1">
             <Label htmlFor={`${uid}-${field.key}`}>
@@ -169,21 +169,20 @@ export function NewProductDialog({
             ? "يُضاف للمخزون مخفياً عن المتجر بلا كمية. عند استلام الطلبية تُضاف قطعه وتكلفتها، وتُظهره أنت متى أضفت صوره."
             : "It joins your inventory hidden from the store, with no stock. Receiving the order adds its pieces and cost; you show it once its photos are in."}
         </p>
-
-        <DialogFooter className="gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button type="button" onClick={save} disabled={saving}>
-            {isAr ? "إنشاء وإضافته للطلبية" : "Create and add to the order"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button type="button" onClick={save} disabled={saving}>
+          {isAr ? "إنشاء وإضافته للطلبية" : "Create and add to the order"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

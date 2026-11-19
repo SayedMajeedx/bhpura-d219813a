@@ -21,16 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Puzzle, Shield, Edit2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export function SuperAddonPoliciesManager() {
   const { lang } = useI18n();
@@ -219,25 +217,28 @@ export function SuperAddonPoliciesManager() {
 
       {/* Edit Policy Dialog */}
       {editingPolicy && (
-        <Dialog
+        <AppDialog
           open={Boolean(editingPolicy)}
           onOpenChange={(open) => !open && setEditingPolicy(null)}
+          kind="form"
         >
-          <DialogContent className="max-w-md rounded-2xl border-border bg-card">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
+          <AppDialogHeader
+            title={
+              <>
                 <Shield className="size-4 text-primary" />
                 <span>
                   {isAr ? "تعديل سياسة إتاحة الإضافة:" : "Edit Policy:"} {editingPolicy.addonId}
                 </span>
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                {isAr
-                  ? "تحديد مستوى الظهور والمفتاح المطلوب لتثبيت هذه الإضافة على مستوى النظام."
-                  : "Set global availability tier and plan entitlement requirements."}
-              </DialogDescription>
-            </DialogHeader>
+              </>
+            }
+            description={
+              isAr
+                ? "تحديد مستوى الظهور والمفتاح المطلوب لتثبيت هذه الإضافة على مستوى النظام."
+                : "Set global availability tier and plan entitlement requirements."
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-4 py-2">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">
@@ -324,33 +325,32 @@ export function SuperAddonPoliciesManager() {
                 </div>
               </div>
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setEditingPolicy(null)}
-                className="rounded-xl border-border"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!editingPolicy) return;
-                  updateMut.mutate({
-                    addonId: editingPolicy.addonId,
-                    availability: editingPolicy.availability,
-                    entitlementKey: editingPolicy.entitlementKey.trim() || null,
-                    defaultForActivities: editingPolicy.defaultForActivities,
-                  });
-                }}
-                disabled={updateMut.isPending}
-                className="rounded-xl"
-              >
-                {isAr ? "حفظ التغييرات" : "Save Policy"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditingPolicy(null)}
+              className="rounded-xl border-border"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              onClick={() => {
+                if (!editingPolicy) return;
+                updateMut.mutate({
+                  addonId: editingPolicy.addonId,
+                  availability: editingPolicy.availability,
+                  entitlementKey: editingPolicy.entitlementKey.trim() || null,
+                  defaultForActivities: editingPolicy.defaultForActivities,
+                });
+              }}
+              disabled={updateMut.isPending}
+              className="rounded-xl"
+            >
+              {isAr ? "حفظ التغييرات" : "Save Policy"}
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
     </div>
   );

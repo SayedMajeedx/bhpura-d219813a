@@ -17,14 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Webhook,
@@ -40,6 +32,12 @@ import {
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface WebhooksManagerProps {
   brandId: string;
@@ -386,20 +384,18 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
       </div>
 
       {/* Add Webhook Endpoint Modal */}
-      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold">
-              <Webhook className="h-5 w-5 text-primary" />
-              {isAr ? "إضافة رابط Webhook جديد" : "Add Webhook Endpoint"}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "أدخل رابط HTTPS الخاص بسيرفرك، واختر الأحداث التي ترغب في الاستماع إليها."
-                : "Specify an HTTPS destination URL and select event triggers to subscribe to."}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={createOpen} onOpenChange={setCreateOpen} kind="form" size="lg">
+        <AppDialogHeader
+          icon={<Webhook />}
+          title={isAr ? "إضافة رابط Webhook جديد" : "Add Webhook Endpoint"}
+          description={
+            isAr
+              ? "أدخل رابط HTTPS الخاص بسيرفرك، واختر الأحداث التي ترغب في الاستماع إليها."
+              : "Specify an HTTPS destination URL and select event triggers to subscribe to."
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-3">
             <div className="space-y-2">
               <Label htmlFor="webhook-url">
@@ -465,44 +461,50 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
               </div>
             </div>
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCreateOpen(false)} className="min-h-[44px]">
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={() => {
-                if (!url.startsWith("https://") && !url.startsWith("http://localhost")) {
-                  toast.error(
-                    isAr ? "يجب أن يبدأ الرابط بـ https://" : "URL must start with https://",
-                  );
-                  return;
-                }
-                createMutation.mutate();
-              }}
-              disabled={createMutation.isPending}
-              className="min-h-[44px]"
-            >
-              {isAr ? "حفظ وتفعيل الرابط" : "Save Endpoint"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setCreateOpen(false)} className="min-h-[44px]">
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            onClick={() => {
+              if (!url.startsWith("https://") && !url.startsWith("http://localhost")) {
+                toast.error(
+                  isAr ? "يجب أن يبدأ الرابط بـ https://" : "URL must start with https://",
+                );
+                return;
+              }
+              createMutation.mutate();
+            }}
+            disabled={createMutation.isPending}
+            className="min-h-[44px]"
+          >
+            {isAr ? "حفظ وتفعيل الرابط" : "Save Endpoint"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
       {/* Payload Inspection Modal */}
-      <Dialog open={!!selectedLog} onOpenChange={() => setSelectedLog(null)}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-base font-bold">
+      <AppDialog
+        open={!!selectedLog}
+        onOpenChange={() => setSelectedLog(null)}
+        kind="form"
+        size="lg"
+      >
+        <AppDialogHeader
+          title={
+            <>
               {selectedLog?.event_name} • {selectedLog?.event_id}
-            </DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "تفاصيل حمولة الحدث واستجابة السيرفر"
-                : "Dispatched JSON payload and target server response"}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+          description={
+            isAr
+              ? "تفاصيل حمولة الحدث واستجابة السيرفر"
+              : "Dispatched JSON payload and target server response"
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">
@@ -523,14 +525,13 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
               </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedLog(null)} className="min-h-[44px]">
-              {isAr ? "إغلاق" : "Close"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setSelectedLog(null)} className="min-h-[44px]">
+            {isAr ? "إغلاق" : "Close"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

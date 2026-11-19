@@ -1,15 +1,14 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { KeyRound, Copy, CheckCheck, ShieldCheck, MessageCircle } from "lucide-react";
 import { formatTeamInviteMessage } from "@/lib/team-credentials-utils";
 
 import type { TeamPageState } from "@/features/team/hooks/use-team-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** The sign-in details of an account just made or reset, to copy or send to the member. */
 export function StaffCredentialsDialog({ page }: { page: TeamPageState }) {
@@ -17,23 +16,26 @@ export function StaffCredentialsDialog({ page }: { page: TeamPageState }) {
   return (
     <>
       {/* Team Member Credentials Card Modal */}
-      <Dialog
+      <AppDialog
         open={Boolean(credentialsModal?.isOpen)}
         onOpenChange={(v) => {
           if (!v) setCredentialsModal(null);
         }}
+        kind="form"
       >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-1">
-              <ShieldCheck className="h-4 w-4" />
-              {isAr ? "بطاقة بيانات الدخول الآمنة" : "Secure Member Credentials"}
-            </div>
-            <DialogTitle className="text-xl font-bold font-display">
-              {isAr ? "بيانات تسجيل الدخول للعضو" : "Member Login Credentials"}
-            </DialogTitle>
-          </DialogHeader>
+        <AppDialogHeader
+          title={isAr ? "بيانات تسجيل الدخول للعضو" : "Member Login Credentials"}
+          meta={
+            <>
+              <div className="flex items-center gap-2 text-primary font-semibold text-xs mb-1">
+                <ShieldCheck className="h-4 w-4" />
+                {isAr ? "بطاقة بيانات الدخول الآمنة" : "Secure Member Credentials"}
+              </div>
+            </>
+          }
+        />
 
+        <AppDialogBody>
           {credentialsModal && (
             <div className="space-y-4 py-2">
               <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2.5">
@@ -215,18 +217,13 @@ export function StaffCredentialsDialog({ page }: { page: TeamPageState }) {
               </div>
             </div>
           )}
-
-          <DialogFooter>
-            <Button
-              variant="secondary"
-              className="w-full"
-              onClick={() => setCredentialsModal(null)}
-            >
-              {isAr ? "إغلاق" : "Done"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="secondary" className="w-full" onClick={() => setCredentialsModal(null)}>
+            {isAr ? "إغلاق" : "Done"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

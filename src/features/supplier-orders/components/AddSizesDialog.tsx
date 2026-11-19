@@ -1,13 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { SizeChoicesField } from "@/components/inventory/SizeChoicesField";
 import { FirstSizePiecesPicker } from "@/features/inventory/components/FirstSizePiecesPicker";
 import { useInventoryAxisDefaults } from "@/features/inventory/hooks/use-inventory-axis-defaults";
@@ -23,6 +15,12 @@ import {
   wantedSizes,
   type SizeChoice,
 } from "../lib/new-sizes";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 const choiceLabel = (choice: SizeChoice) => [choice.size, choice.color].filter(Boolean).join(" / ");
 
@@ -132,11 +130,16 @@ export function AddSizesDialog({
   ];
 
   return (
-    <Dialog open={open} onOpenChange={(next) => !saving && onOpenChange(next)}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-lg gap-4">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "إضافة مقاس أو لون" : "Add a size or colour"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog
+      open={open}
+      onOpenChange={(next) => !saving && onOpenChange(next)}
+      kind="form"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "إضافة مقاس أو لون" : "Add a size or colour"}
+        description={
+          <>
             <span dir="auto" className="break-words">
               {catalog.productName(productId)}
             </span>
@@ -144,9 +147,11 @@ export function AddSizesDialog({
             {isAr
               ? "تُضاف إلى المنتج بسعره وبلا مخزون، وتدخل القطع والتكلفة عند الاستلام."
               : "They join the product at its price with no stock; pieces and cost come with the receiving."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <SizeChoicesField
           legend={words.size}
           offered={usualSizes(catalog.variants)}
@@ -198,21 +203,20 @@ export function AddSizesDialog({
             isAr={isAr}
           />
         )}
-
-        <DialogFooter className="flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            {isAr ? "تراجع" : "Cancel"}
-          </Button>
-          <Button type="button" onClick={() => void save()} disabled={saving || plan.length === 0}>
-            {isAr ? "إضافة إلى الطلبية" : "Add to the order"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {isAr ? "تراجع" : "Cancel"}
+        </Button>
+        <Button type="button" onClick={() => void save()} disabled={saving || plan.length === 0}>
+          {isAr ? "إضافة إلى الطلبية" : "Add to the order"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

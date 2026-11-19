@@ -18,13 +18,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export function SuperAddonsManager() {
   const { lang } = useI18n();
@@ -258,31 +256,30 @@ export function SuperAddonsManager() {
 
           {/* Add / Edit Add-on Dialog Modal */}
           {editingAddon && (
-            <Dialog
+            <AppDialog
               open={Boolean(editingAddon)}
               onOpenChange={(open) => !open && setEditingAddon(null)}
+              kind="form"
             >
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-base font-bold flex items-center gap-2">
-                    <PackagePlus className="h-4 w-4 text-primary" />
-                    <span>
-                      {editingAddon.id
-                        ? isAr
-                          ? "تعديل الإضافة السحابية"
-                          : "Edit SaaS Add-on"
-                        : isAr
-                          ? "إنشاء إضافة سحابية جديدة"
-                          : "Create New SaaS Add-on"}
-                    </span>
-                  </DialogTitle>
-                  <DialogDescription className="text-xs">
-                    {isAr
-                      ? "تحديد أسعار الإضافة والميزة المستهدفة والكمية الممنوحة."
-                      : "Configure add-on pricing, target feature key, and granted boost amount."}
-                  </DialogDescription>
-                </DialogHeader>
+              <AppDialogHeader
+                icon={<PackagePlus />}
+                title={
+                  editingAddon.id
+                    ? isAr
+                      ? "تعديل الإضافة السحابية"
+                      : "Edit SaaS Add-on"
+                    : isAr
+                      ? "إنشاء إضافة سحابية جديدة"
+                      : "Create New SaaS Add-on"
+                }
+                description={
+                  isAr
+                    ? "تحديد أسعار الإضافة والميزة المستهدفة والكمية الممنوحة."
+                    : "Configure add-on pricing, target feature key, and granted boost amount."
+                }
+              />
 
+              <AppDialogBody>
                 <div className="space-y-4 py-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1.5">
@@ -397,36 +394,35 @@ export function SuperAddonsManager() {
                     />
                   </div>
                 </div>
-
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="default"
-                    disabled={isSubmitting}
-                    onClick={() => setEditingAddon(null)}
-                    className="min-h-[44px]"
-                  >
-                    {isAr ? "إلغاء" : "Cancel"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="default"
-                    disabled={isSubmitting || !editingAddon.name_en || !editingAddon.name_ar}
-                    onClick={handleSaveAddon}
-                    className="gap-2 font-bold min-h-[44px]"
-                  >
-                    {isSubmitting ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Check className="h-4 w-4" />
-                    )}
-                    <span>{isAr ? "حفظ الإضافة" : "Save Add-on"}</span>
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              </AppDialogBody>
+              <AppDialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  disabled={isSubmitting}
+                  onClick={() => setEditingAddon(null)}
+                  className="min-h-[44px]"
+                >
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="default"
+                  size="default"
+                  disabled={isSubmitting || !editingAddon.name_en || !editingAddon.name_ar}
+                  onClick={handleSaveAddon}
+                  className="gap-2 font-bold min-h-[44px]"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="h-4 w-4" />
+                  )}
+                  <span>{isAr ? "حفظ الإضافة" : "Save Add-on"}</span>
+                </Button>
+              </AppDialogFooter>
+            </AppDialog>
           )}
         </>
       )}

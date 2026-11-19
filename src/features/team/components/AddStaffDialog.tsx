@@ -2,13 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,6 +14,12 @@ import type { UserRole } from "@/lib/profile-context";
 
 import { AVAILABLE_PERMISSIONS, PERMISSION_PRESETS } from "@/features/team/lib/team-shared";
 import type { TeamPageState } from "@/features/team/hooks/use-team-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Adds a member of staff: who they are, their role and permissions, a first password. */
 export function AddStaffDialog({ page }: { page: TeamPageState }) {
@@ -40,18 +39,19 @@ export function AddStaffDialog({ page }: { page: TeamPageState }) {
   } = page;
   return (
     <>
-      <Dialog
+      <AppDialog
         open={addOpen}
         onOpenChange={(v) => {
           setAddOpen(v);
           if (!v) resetForm();
         }}
+        kind="form"
       >
         {/* Opened by the page heading's action and the empty list's: no third button. */}
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{isAr ? "إضافة موظف جديد" : "Add New Staff Member"}</DialogTitle>
-          </DialogHeader>
+
+        <AppDialogHeader title={isAr ? "إضافة موظف جديد" : "Add New Staff Member"} />
+
+        <AppDialogBody>
           <div className="space-y-4">
             <div>
               <Label>{t("customers.name")}</Label>
@@ -262,20 +262,20 @@ export function AddStaffDialog({ page }: { page: TeamPageState }) {
                 : "The new member will receive dashboard access and will be prompted to create their permanent password on first sign-in."}
             </p>
           </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setAddOpen(false);
-                resetForm();
-              }}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button onClick={handleAdd}>{t("common.save")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setAddOpen(false);
+              resetForm();
+            }}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={handleAdd}>{t("common.save")}</Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

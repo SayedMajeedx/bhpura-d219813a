@@ -2,13 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +16,12 @@ import {
 } from "@/lib/data/catalog";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { useProfile } from "@/lib/profile-context";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 // One list for "no lines yet": a new list on every render would look like new data to the effect
 // below, which then set the state again, and again, for as long as the lines were loading (and
@@ -197,20 +196,18 @@ export function ProductBomModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg font-bold text-foreground">
-            <Box className="h-5 w-5 text-primary" />
-            {isAr ? "تكلفة التغليف ومواد العلب (BOM)" : "Packaging & BOM Materials"}
-          </DialogTitle>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? `تحديد مواد التغليف المرفقة للمنتج (${productName}) لخصمها من المخزون وحساب تكلفة الطلب تلقائياً.`
-              : `Choose the packaging that goes with ${productName}: it is taken from stock and counted in each order's cost.`}
-          </p>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        icon={<Box />}
+        title={isAr ? "تكلفة التغليف ومواد العلب (BOM)" : "Packaging & BOM Materials"}
+        description={
+          isAr
+            ? `تحديد مواد التغليف المرفقة للمنتج (${productName}) لخصمها من المخزون وحساب تكلفة الطلب تلقائياً.`
+            : `Choose the packaging that goes with ${productName}: it is taken from stock and counted in each order's cost.`
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-5 py-2">
           {/* Direct Packaging Cost Fallback */}
           {canViewFinancials && (
@@ -338,35 +335,34 @@ export function ProductBomModal({
             </div>
           )}
         </div>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={handleApplyToAllProducts}
+          disabled={isSaving}
+          className="w-full sm:w-auto h-9 text-xs font-semibold gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          {isAr ? "تطبيق على جميع منتجات المتجر" : "Apply to All Products"}
+        </Button>
 
-        <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 justify-between items-center w-full">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleApplyToAllProducts}
-            disabled={isSaving}
-            className="w-full sm:w-auto h-9 text-xs font-semibold gap-1.5"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary" />
-            {isAr ? "تطبيق على جميع منتجات المتجر" : "Apply to All Products"}
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
+            {isAr ? "إلغاء" : "Cancel"}
           </Button>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
-              {isSaving
-                ? isAr
-                  ? "جاري الحفظ..."
-                  : "Saving..."
-                : isAr
-                  ? "حفظ لهذا المنتج"
-                  : "Save for Product"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
+            {isSaving
+              ? isAr
+                ? "جاري الحفظ..."
+                : "Saving..."
+              : isAr
+                ? "حفظ لهذا المنتج"
+                : "Save for Product"}
+          </Button>
+        </div>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }
