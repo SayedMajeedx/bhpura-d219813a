@@ -27,16 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 interface InventoryMobileCardProps {
   lang: "en" | "ar";
@@ -254,27 +245,20 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
           </div>
         )}
       </div>
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isAr ? "حذف المنتج" : "Delete product"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? `هل أنت متأكد من حذف ${product.name_ar || product.name || "هذا المنتج"}؟ لا يمكن التراجع عن هذا الإجراء.`
-                : `Delete ${product.name_en || product.name || "this product"}? This action cannot be undone.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => onDelete(product.id)}
-            >
-              {isAr ? "حذف" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AppConfirm
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title={isAr ? "حذف المنتج" : "Delete product"}
+        description={
+          isAr
+            ? `هل أنت متأكد من حذف ${product.name_ar || product.name || "هذا المنتج"}؟ لا يمكن التراجع عن هذا الإجراء.`
+            : `Delete ${product.name_en || product.name || "this product"}? This action cannot be undone.`
+        }
+        destructive
+        confirmLabel={isAr ? "حذف" : "Delete"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={() => onDelete(product.id)}
+      />
       <CampaignLinkDialog
         open={Boolean(linkFor)}
         onOpenChange={(open) => !open && setLinkFor(null)}

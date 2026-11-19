@@ -1,13 +1,3 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,6 +17,7 @@ import { pieceName } from "@/features/incubators/lib/partner-stock";
 import type { Incubator, IncubatorDialog } from "@/features/incubators/types";
 import { useLastWhileClosing } from "@/hooks/use-last-while-closing";
 import { cn } from "@/lib/utils";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 const SELECT_CLASS =
   "mt-2 h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm";
@@ -419,40 +410,43 @@ export function ReverseSaleDialog({ page }: { page: IncubatorsPageState }) {
   const { busy, isAr, lang, money, reverseSale, setSaleToReverse } = page;
   const saleToReverse = useLastWhileClosing(page.saleToReverse);
   return (
-    <AlertDialog
+    <AppConfirm
       open={Boolean(page.saleToReverse)}
       onOpenChange={(open) => !open && setSaleToReverse(null)}
-    >
-      <AlertDialogContent className={PHONE_SHEET} dir={isAr ? "rtl" : "ltr"}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{isAr ? "إلغاء عملية البيع؟" : "Reverse this sale?"}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {saleToReverse && (
-              <span className="mb-2 block break-words font-semibold text-foreground" dir="auto">
-                {saleToReverse.quantity} × {pieceName(saleToReverse.product_variants, lang)} ·{" "}
-                {money(Number(saleToReverse.net_due))}
-              </span>
-            )}
-            {isAr
-              ? "ستعود القطع إلى مخزون المحل الشريك ولن يُحتسب مبلغها ضمن المستحق. لا يمكن إلغاء بيعة سُجّلت عليها دفعة."
-              : "The pieces go back to the partner's stock and their amount is no longer owed. A sale with a payment against it cannot be reversed."}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>{isAr ? "تراجع" : "Keep the sale"}</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={busy}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={(event) => {
-              event.preventDefault();
-              void reverseSale();
-            }}
-          >
-            {isAr ? "إلغاء البيع" : "Reverse the sale"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      dir={isAr ? "rtl" : "ltr"}
+      title={isAr ? "إلغاء عملية البيع؟" : "Reverse this sale?"}
+      description={
+        isAr
+          ? "ستعود القطع إلى مخزون المحل الشريك ولن يُحتسب مبلغها ضمن المستحق. لا يمكن إلغاء بيعة سُجّلت عليها دفعة."
+          : "The pieces go back to the partner's stock and their amount is no longer owed. A sale with a payment against it cannot be reversed."
+      }
+      facts={
+        saleToReverse
+          ? [
+              {
+                label: isAr ? "القطعة" : "Piece",
+                value: (
+                  <bdi>
+                    {saleToReverse.quantity} × {pieceName(saleToReverse.product_variants, lang)}
+                  </bdi>
+                ),
+              },
+              {
+                label: isAr ? "المستحق لنا" : "Due to us",
+                value: money(Number(saleToReverse.net_due)),
+              },
+            ]
+          : undefined
+      }
+      destructive
+      busy={busy}
+      cancelLabel={isAr ? "تراجع" : "Keep the sale"}
+      confirmLabel={isAr ? "إلغاء البيع" : "Reverse the sale"}
+      onConfirm={async () => {
+        await reverseSale();
+        return false;
+      }}
+    />
   );
 }
 
@@ -467,52 +461,51 @@ export function VoidPaymentDialog({ page }: { page: IncubatorsPageState }) {
   useEffect(() => setReason(""), [paymentToVoid?.id]);
   const ready = reason.trim().length >= 3;
   return (
-    <AlertDialog
+    <AppConfirm
       open={Boolean(page.paymentToVoid)}
       onOpenChange={(open) => !open && setPaymentToVoid(null)}
+      dir={isAr ? "rtl" : "ltr"}
+      title={isAr ? "إلغاء هذه الدفعة؟" : "Void this payment?"}
+      description={
+        isAr
+          ? "ستعود المبيعات التي سدّدتها هذه الدفعة مستحقة، وتبقى الدفعة في السجل كملغاة مع السبب."
+          : "The sales it settled become due again, and the payment stays on record as voided with the reason."
+      }
+      facts={
+        paymentToVoid
+          ? [
+              { label: isAr ? "المبلغ" : "Amount", value: money(Number(paymentToVoid.amount)) },
+              ...(paymentToVoid.reference
+                ? [
+                    {
+                      label: isAr ? "المرجع" : "Reference",
+                      value: <bdi>{paymentToVoid.reference}</bdi>,
+                    },
+                  ]
+                : []),
+            ]
+          : undefined
+      }
+      destructive
+      busy={busy}
+      confirmDisabled={!ready}
+      cancelLabel={isAr ? "تراجع" : "Keep the payment"}
+      confirmLabel={isAr ? "إلغاء الدفعة" : "Void the payment"}
+      onConfirm={async () => {
+        await voidPayment(reason.trim());
+        return false;
+      }}
     >
-      <AlertDialogContent className={PHONE_SHEET} dir={isAr ? "rtl" : "ltr"}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{isAr ? "إلغاء هذه الدفعة؟" : "Void this payment?"}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {paymentToVoid && (
-              <span className="mb-2 block break-words font-semibold text-foreground" dir="auto">
-                {money(Number(paymentToVoid.amount))}
-                {paymentToVoid.reference ? ` · ${paymentToVoid.reference}` : ""}
-              </span>
-            )}
-            {isAr
-              ? "ستعود المبيعات التي سدّدتها هذه الدفعة مستحقة، وتبقى الدفعة في السجل كملغاة مع السبب."
-              : "The sales it settled become due again, and the payment stays on record as voided with the reason."}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <div>
-          <Label htmlFor="void-reason">{isAr ? "سبب الإلغاء" : "Reason"}</Label>
-          <Textarea
-            id="void-reason"
-            className="mt-2"
-            value={reason}
-            maxLength={300}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder={isAr ? "مثال: سُجّلت مرتين" : "For example: recorded twice"}
-          />
-        </div>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>
-            {isAr ? "تراجع" : "Keep the payment"}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            disabled={busy || !ready}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={(event) => {
-              event.preventDefault();
-              void voidPayment(reason.trim());
-            }}
-          >
-            {isAr ? "إلغاء الدفعة" : "Void the payment"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      <div className="space-y-1.5">
+        <Label htmlFor="void-reason">{isAr ? "سبب الإلغاء" : "Reason"}</Label>
+        <Textarea
+          id="void-reason"
+          value={reason}
+          maxLength={300}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder={isAr ? "مثال: سُجّلت مرتين" : "For example: recorded twice"}
+        />
+      </div>
+    </AppConfirm>
   );
 }

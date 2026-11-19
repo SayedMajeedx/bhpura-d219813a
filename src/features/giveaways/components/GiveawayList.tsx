@@ -3,19 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { useBrand } from "@/lib/brand-context";
 import { deleteGiveaway, giveawaysQueries, invalidateGiveaways } from "@/lib/data/giveaways";
+import { AppConfirm } from "@/components/ui/app-confirm";
+import { useState } from "react";
 
 const STATUS_LABEL: Record<string, { en: string; ar: string }> = {
   draft: { en: "Draft", ar: "مسودة" },
@@ -90,39 +81,43 @@ export function GiveawayList({ isAr, onOpen }: { isAr: boolean; onOpen: (id: str
                 {isAr ? label.ar : label.en}
               </Badge>
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={isAr ? "حذف المسابقة" : "Delete giveaway"}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {isAr ? "حذف المسابقة؟" : "Delete this giveaway?"}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {isAr
-                      ? "تُحذف التعليقات المسحوبة والفائزون المحفوظون ولا يمكن التراجع."
-                      : "The pulled comments and the saved winners are deleted. This cannot be undone."}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => remove.mutate(row.id)}>
-                    {isAr ? "حذف" : "Delete"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <DeleteGiveawayButton isAr={isAr} onDelete={() => remove.mutate(row.id)} />
           </li>
         );
       })}
     </ul>
+  );
+}
+
+/** The bin on a giveaway's row, which asks first: its comments and winners go with it. */
+function DeleteGiveawayButton({ isAr, onDelete }: { isAr: boolean; onDelete: () => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label={isAr ? "حذف المسابقة" : "Delete giveaway"}
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="size-4" />
+      </Button>
+      <AppConfirm
+        open={open}
+        onOpenChange={setOpen}
+        dir={isAr ? "rtl" : "ltr"}
+        title={isAr ? "حذف المسابقة؟" : "Delete this giveaway?"}
+        description={
+          isAr
+            ? "تُحذف التعليقات المسحوبة والفائزون المحفوظون ولا يمكن التراجع."
+            : "The pulled comments and the saved winners are deleted. This cannot be undone."
+        }
+        destructive
+        confirmLabel={isAr ? "حذف" : "Delete"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={onDelete}
+      />
+    </>
   );
 }

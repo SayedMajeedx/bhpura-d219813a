@@ -29,6 +29,9 @@ import {
   SendToTailorButton,
 } from "@/features/supplier-orders/components/TailorButtons";
 import type { SheetLang, SheetWhere } from "@/features/orders/lib/job-sheet";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { transferApprovalAsk } from "@/features/orders/lib/transfer-approval";
+import { formatMoney } from "@/lib/format";
 
 export type OrderPrimaryActionContext = {
   approveBenefitPayment: () => Promise<void>;
@@ -440,7 +443,15 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
       <Button
         className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
         disabled={approvingBenefit}
-        onClick={approveBenefitPayment}
+        onClick={async () => {
+          // An approval cannot be rejected afterwards: say the amount first.
+          if (order) {
+            const money = (n: number) => formatMoney(n, order.currency || "BHD", lang);
+            const ask = transferApprovalAsk(order, lang === "ar" ? "ar" : "en", money);
+            if (!(await confirmDialog(ask))) return;
+          }
+          await approveBenefitPayment();
+        }}
       >
         {approvingBenefit ? (
           <Loader2 className="h-4 w-4 me-1.5 animate-spin" />

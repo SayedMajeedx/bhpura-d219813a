@@ -38,18 +38,9 @@ import {
   type PaymentBadge,
 } from "@/lib/payment-status";
 import { cn } from "@/lib/utils";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 interface OrderUnifiedHeaderProps {
   lang: "en" | "ar";
@@ -387,64 +378,55 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
         </div>
       )}
 
-      <AlertDialog
+      <AppConfirm
         open={Boolean(pendingStatus)}
         onOpenChange={(open) => !open && setPendingStatus(null)}
+        title={isAr ? "تأكيد تغيير حالة الطلب" : "Confirm order status change"}
+        description={
+          isAr
+            ? "سيتم تسجيل هذا التغيير في سجل نشاط الطلب وقد يؤثر في خطوات التنفيذ التالية."
+            : "This change will be recorded in the order activity log and may affect the next fulfillment steps."
+        }
+        facts={
+          pendingStatus
+            ? [
+                {
+                  label: isAr ? "من" : "From",
+                  value: getFulfillmentLabel(order?.fulfillment_status, lang, vocabulary),
+                },
+                {
+                  label: isAr ? "إلى" : "To",
+                  value: getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang, vocabulary),
+                },
+              ]
+            : undefined
+        }
+        destructive={pendingStatus?.fulfillmentStatus === "CANCELLED"}
+        busy={confirmingStatus}
+        cancelLabel={isAr ? "رجوع" : "Go Back"}
+        confirmLabel={
+          confirmingStatus
+            ? isAr
+              ? "جارٍ التحديث…"
+              : "Updating…"
+            : isAr
+              ? "تأكيد التغيير"
+              : "Confirm Change"
+        }
+        onConfirm={async () => {
+          await confirmStatusChange();
+          return false;
+        }}
       >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isAr ? "تأكيد تغيير حالة الطلب" : "Confirm order status change"}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <span className="block">
-                {isAr
-                  ? "سيتم تسجيل هذا التغيير في سجل نشاط الطلب وقد يؤثر في خطوات التنفيذ التالية."
-                  : "This change will be recorded in the order activity log and may affect the next fulfillment steps."}
-              </span>
-              {pendingStatus && (
-                <span className="block rounded-lg border border-border bg-muted/50 px-3 py-2 font-semibold text-foreground">
-                  {getFulfillmentLabel(order?.fulfillment_status, lang, vocabulary)}
-                  {" → "}
-                  {getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang, vocabulary)}
-                </span>
-              )}
-              {pendingStatusWarning && (
-                <span
-                  role="alert"
-                  className="block rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200"
-                >
-                  {pendingStatusWarning}
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={confirmingStatus}>
-              {isAr ? "رجوع" : "Go Back"}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(event) => {
-                event.preventDefault();
-                void confirmStatusChange();
-              }}
-              disabled={confirmingStatus}
-              className={cn(
-                pendingStatus?.fulfillmentStatus === "CANCELLED" &&
-                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-              )}
-            >
-              {confirmingStatus
-                ? isAr
-                  ? "جارٍ التحديث…"
-                  : "Updating…"
-                : isAr
-                  ? "تأكيد التغيير"
-                  : "Confirm Change"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {pendingStatusWarning && (
+          <p
+            role="alert"
+            className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm font-medium text-foreground"
+          >
+            {pendingStatusWarning}
+          </p>
+        )}
+      </AppConfirm>
     </header>
   );
 };

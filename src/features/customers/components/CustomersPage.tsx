@@ -18,16 +18,6 @@ import { Users, Download } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { buildCustomerCrmStats } from "@/lib/commerce-metrics";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import { queryKeys } from "@/lib/query-keys";
@@ -52,6 +42,8 @@ import { useCustomerDeletion } from "@/features/customers/hooks/use-customer-del
 import type { Customer, Address } from "@/features/customers/lib/customers-shared";
 import { CustomerImporterModal } from "@/features/customers/components/CustomerImporterModal";
 import { CustomerDialog } from "@/features/customers/components/CustomerDialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
+import { arNounOblique, countOf } from "@/lib/arabic-count";
 
 /** The customers list. `slug` is the store in the address (the route passes it). */
 export function CustomersPage({ slug }: { slug: string }) {
@@ -354,75 +346,53 @@ export function CustomersPage({ slug }: { slug: string }) {
         }}
       />
 
-      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isAr
-                ? `حذف ${selectedCustomerIds.size} عميل؟`
-                : `Delete ${selectedCustomerIds.size} customers?`}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? "سيتم حذف العملاء المحددين نهائياً. تبقى الطلبات والفواتير التاريخية محفوظة بسجلاتها الحالية، ولا يمكن التراجع عن الحذف."
-                : "The selected customers will be permanently deleted. Historical orders and invoices remain preserved with their current records. This cannot be undone."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={bulkDeleting}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              disabled={bulkDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={(event) => {
-                event.preventDefault();
-                void deleteSelectedCustomers();
-              }}
-            >
-              {bulkDeleting
-                ? isAr
-                  ? "جاري الحذف..."
-                  : "Deleting..."
-                : isAr
-                  ? "تأكيد الحذف"
-                  : "Confirm delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AppConfirm
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        title={
+          isAr
+            ? `حذف ${arNounOblique(selectedCustomerIds.size, "customer")}؟`
+            : `Delete ${countOf(selectedCustomerIds.size, "customer", "en")}?`
+        }
+        description={
+          isAr
+            ? "سيتم حذف العملاء المحددين نهائياً. تبقى الطلبات والفواتير التاريخية محفوظة بسجلاتها الحالية، ولا يمكن التراجع عن الحذف."
+            : "The selected customers will be permanently deleted. Historical orders and invoices remain preserved with their current records. This cannot be undone."
+        }
+        destructive
+        busy={bulkDeleting}
+        confirmLabel={
+          bulkDeleting
+            ? isAr
+              ? "جاري الحذف..."
+              : "Deleting..."
+            : isAr
+              ? "تأكيد الحذف"
+              : "Confirm delete"
+        }
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={async () => {
+          await deleteSelectedCustomers();
+          return false;
+        }}
+      />
 
-      <AlertDialog
+      <AppConfirm
         open={!!customerToDelete}
         onOpenChange={(open) => !open && setCustomerToDelete(null)}
-      >
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? `هل أنت متأكد من رغبتك في حذف العميل "${customerToDelete?.name || ""}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.`
-                : `Are you sure you want to permanently delete customer "${customerToDelete?.name || ""}"? This action cannot be undone.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>
-              {t("common.cancel")}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (customerToDelete) {
-                  void del(customerToDelete.id);
-                  setCustomerToDelete(null);
-                }
-              }}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t("common.delete")}
+        description={
+          isAr
+            ? `هل أنت متأكد من رغبتك في حذف العميل "${customerToDelete?.name || ""}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.`
+            : `Are you sure you want to permanently delete customer "${customerToDelete?.name || ""}"? This action cannot be undone.`
+        }
+        destructive
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        onConfirm={() => {
+          if (customerToDelete) void del(customerToDelete.id);
+        }}
+      />
 
       {/* Customer Creation Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

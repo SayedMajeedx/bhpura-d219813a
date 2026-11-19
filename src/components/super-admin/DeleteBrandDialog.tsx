@@ -5,7 +5,12 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { useI18n, useT } from "@/lib/i18n";
 import { deleteBrand, superAdminQueries } from "@/lib/data/super-admin";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
@@ -18,9 +23,13 @@ import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
  */
 export function DeleteBrandDialog({
   brand,
+  open,
+  onOpenChange,
   onDone,
 }: {
   brand: { id: string; slug: string; name_en: string };
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onDone: () => void;
 }) {
   const t = useT();
@@ -92,13 +101,24 @@ export function DeleteBrandDialog({
   };
 
   return (
-    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
-      <DialogHeader>
-        <DialogTitle className="text-destructive flex items-center gap-2 font-display font-bold text-lg">
-          <AlertTriangle className="h-5 w-5" /> {t("brands.delete")} — {brand.name_en}
-        </DialogTitle>
-      </DialogHeader>
-      <div className="space-y-4">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="confirm"
+      size="md"
+      busy={working}
+      dirty={confirm.trim() !== "" && !databasePurged}
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        icon={<AlertTriangle className="text-destructive" />}
+        title={
+          <>
+            {t("brands.delete")} — <bdi>{brand.name_en}</bdi>
+          </>
+        }
+      />
+      <AppDialogBody>
         <p className="text-sm text-muted-foreground">
           {hard
             ? isAr
@@ -139,12 +159,19 @@ export function DeleteBrandDialog({
             placeholder={brand.slug}
           />
         </div>
-      </div>
-      <DialogFooter>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={working}
+          onClick={() => onOpenChange(false)}
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
         <Button
           variant="destructive"
           onClick={run}
-          className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
           disabled={working || confirm.trim().toLowerCase() !== brand.slug.toLowerCase()}
         >
           {working
@@ -161,7 +188,7 @@ export function DeleteBrandDialog({
                   ? "تعطيل ومسح"
                   : "Deactivate and remove"}
         </Button>
-      </DialogFooter>
-    </DialogContent>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

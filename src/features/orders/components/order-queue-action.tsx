@@ -15,6 +15,7 @@ import {
   type OrderListRow,
 } from "@/lib/data/orders";
 import {
+  transferApprovalAsk,
   transferApprovedMessage,
   transferRefusedMessage,
 } from "@/features/orders/lib/transfer-approval";
@@ -59,6 +60,8 @@ export type OrderQueueActionContext = {
 
 import type { Order } from "@/features/orders/types";
 import { workshopActionLabels } from "@/lib/store-vocabulary";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { formatMoney } from "@/lib/format";
 /** What an order row's action button depends on, plus the status-update call it makes. */
 export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
   const { brandId, hasMadeToOrder, lang, qc, setUpdatingOrderId, updatingOrderId } = ctx;
@@ -138,6 +141,11 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
    * Resolves to whether the transfer is approved, so a caller can carry on with a next step.
    */
   const approveTransfer = async (): Promise<boolean> => {
+    // An approval cannot be rejected afterwards: say the amount first.
+    const money = (n: number) => formatMoney(n, o.currency || "BHD", lang);
+    if (!(await confirmDialog(transferApprovalAsk(o, lang === "ar" ? "ar" : "en", money)))) {
+      return false;
+    }
     setUpdatingOrderId(o.id);
     try {
       const result = await approveBenefitPayment(o.id);

@@ -1,16 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -21,6 +11,7 @@ import type { InventoryCategory } from "@/features/inventory/lib/product-list";
 import { assignableCategories } from "@/lib/smart-categories";
 import { arNounOblique, countOf } from "@/lib/arabic-count";
 import { removeProductsWarning } from "@/features/inventory/lib/product-delete";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 /** Confirms deleting the selected products with their variants and stock. */
 export function BulkDeleteProductsDialog({
@@ -39,37 +30,32 @@ export function BulkDeleteProductsDialog({
   isAr: boolean;
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {isAr
-              ? `حذف ${arNounOblique(count, "product")}؟`
-              : `Delete ${countOf(count, "product", "en")}?`}
-          </AlertDialogTitle>
-          <AlertDialogDescription>{removeProductsWarning(count, isAr)}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleting}>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={deleting}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={(event) => {
-              event.preventDefault();
-              onConfirm();
-            }}
-          >
-            {deleting
-              ? isAr
-                ? "جاري الحذف..."
-                : "Deleting..."
-              : isAr
-                ? "تأكيد الحذف"
-                : "Confirm Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AppConfirm
+      open={open}
+      onOpenChange={onOpenChange}
+      title={
+        isAr
+          ? `حذف ${arNounOblique(count, "product")}؟`
+          : `Delete ${countOf(count, "product", "en")}?`
+      }
+      description={removeProductsWarning(count, isAr)}
+      destructive
+      busy={deleting}
+      cancelLabel={isAr ? "إلغاء" : "Cancel"}
+      confirmLabel={
+        deleting
+          ? isAr
+            ? "جاري الحذف..."
+            : "Deleting..."
+          : isAr
+            ? "تأكيد الحذف"
+            : "Confirm Delete"
+      }
+      onConfirm={() => {
+        onConfirm();
+        return false;
+      }}
+    />
   );
 }
 

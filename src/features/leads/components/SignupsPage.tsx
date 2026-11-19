@@ -2,16 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellRing } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsLoadFailedState, combinedLoadState } from "@/components/os/os-load-failed-state";
@@ -41,6 +31,7 @@ import {
 } from "@/features/leads/lib/leads";
 import { WaitingListTab } from "@/features/leads/components/WaitingListTab";
 import { NewsletterTab } from "@/features/leads/components/NewsletterTab";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 /**
  * What shoppers left for the store on its storefront: requests to be told when a product is
@@ -225,37 +216,30 @@ export function SignupsPage() {
         </Tabs>
       )}
 
-      <AlertDialog open={Boolean(removing)} onOpenChange={(open) => !open && setRemoving(null)}>
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isAr ? "إزالة من قائمة المشتركين" : "Remove from the newsletter list"}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="break-all">
-              {isAr
-                ? `لن يكون ${removing?.contact ?? ""} ضمن القائمة بعد الآن.`
-                : `${removing?.contact ?? ""} will no longer be on the list.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                const subscriber = removing;
-                setRemoving(null);
-                if (!subscriber) return;
-                void run(
-                  () => deleteNewsletterSubscriber(brandId, subscriber.id),
-                  isAr ? "تمت الإزالة." : "Removed.",
-                );
-              }}
-            >
-              {isAr ? "إزالة" : "Remove"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AppConfirm
+        open={Boolean(removing)}
+        onOpenChange={(open) => !open && setRemoving(null)}
+        title={isAr ? "إزالة من قائمة المشتركين" : "Remove from the newsletter list"}
+        description={
+          <span className="break-all">
+            {isAr
+              ? `لن يكون ${removing?.contact ?? ""} ضمن القائمة بعد الآن.`
+              : `${removing?.contact ?? ""} will no longer be on the list.`}
+          </span>
+        }
+        destructive
+        confirmLabel={isAr ? "إزالة" : "Remove"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={() => {
+          const subscriber = removing;
+          setRemoving(null);
+          if (!subscriber) return;
+          void run(
+            () => deleteNewsletterSubscriber(brandId, subscriber.id),
+            isAr ? "تمت الإزالة." : "Removed.",
+          );
+        }}
+      />
     </div>
   );
 }

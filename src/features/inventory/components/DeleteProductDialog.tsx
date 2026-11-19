@@ -1,13 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
 import { useT } from "@/lib/i18n";
 import { removeProductsWarning } from "@/features/inventory/lib/product-delete";
 
@@ -25,32 +16,17 @@ export function DeleteProductDialog({
 }) {
   const t = useT();
   return (
-    <AlertDialog
+    <AppConfirm
       open={!!productToDelete}
       onOpenChange={(open) => !open && setProductToDelete(null)}
-    >
-      <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-          <AlertDialogDescription>{removeProductsWarning(1, isAr)}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setProductToDelete(null)}>
-            {t("common.cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={() => {
-              if (productToDelete) {
-                void onDelete(productToDelete);
-                setProductToDelete(null);
-              }
-            }}
-          >
-            {t("common.delete")}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title={t("common.delete")}
+      description={removeProductsWarning(1, isAr)}
+      destructive
+      confirmLabel={t("common.delete")}
+      cancelLabel={t("common.cancel")}
+      onConfirm={() => {
+        if (productToDelete) void onDelete(productToDelete);
+      }}
+    />
   );
 }
