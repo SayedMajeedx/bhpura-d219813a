@@ -1,12 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -25,6 +18,12 @@ import type { ReturnRequest } from "@/lib/returns.types";
 import { returnsQueries } from "@/lib/data/returns";
 import { returnVariantLabel } from "@/lib/returns-variant";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface ReturnExchangeDialogProps {
   open: boolean;
@@ -154,15 +153,17 @@ export function ReturnExchangeDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base font-bold">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={
+          <>
             <ArrowLeftRight className="h-5 w-5 text-primary" />
             {isAr ? "إنشاء طلب استبدال بديل مرتبط" : "Create Exchange Replacement Order"}
-          </DialogTitle>
-        </DialogHeader>
+          </>
+        }
+      />
 
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           {/* Returned Value Header */}
           <div className="p-3 rounded-lg border border-border bg-muted/30 flex items-center justify-between text-xs">
@@ -334,31 +335,30 @@ export function ReturnExchangeDialog({
             </p>
           </div>
         </div>
-
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-            className="h-9 text-xs"
-          >
-            {isAr ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            variant="default"
-            size="sm"
-            onClick={handleCreateExchange}
-            disabled={submitting || items.length === 0}
-            className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {isAr ? "تأكيد وإنشاء طلب الاستبدال" : "Confirm Exchange Order"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(false)}
+          disabled={submitting}
+          className="h-9 text-xs"
+        >
+          {isAr ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          onClick={handleCreateExchange}
+          disabled={submitting || items.length === 0}
+          className="h-9 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {isAr ? "تأكيد وإنشاء طلب الاستبدال" : "Confirm Exchange Order"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

@@ -4,14 +4,11 @@ import { Ruler } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PHONE_SHEET,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,12 +74,10 @@ export function ChangeDetailsDialog({
   onSaved?: (result: AmendResult) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`flex max-h-[90dvh] flex-col sm:max-w-lg ${PHONE_SHEET}`}>
-        {/* Mounted while open: each opening starts from the line as it is now. */}
-        <ChangeForm {...form} close={() => onOpenChange(false)} />
-      </DialogContent>
-    </Dialog>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      {/* Mounted while open: each opening starts from the line as it is now. */}
+      <ChangeForm {...form} close={() => onOpenChange(false)} />
+    </AppDialog>
   );
 }
 
@@ -154,15 +149,13 @@ function ChangeForm({
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <Ruler className="h-5 w-5 text-primary" aria-hidden="true" />
-          {isAr ? "تغيير المقاسات والتفاصيل" : "Change measurements"}
-        </DialogTitle>
-        <DialogDescription dir="auto">{line.title}</DialogDescription>
-      </DialogHeader>
+      <AppDialogHeader
+        icon={<Ruler aria-hidden="true" />}
+        title={isAr ? "تغيير المقاسات والتفاصيل" : "Change measurements"}
+        description={<bdi>{line.title}</bdi>}
+      />
 
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pe-1">
+      <AppDialogBody>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {fields.map((field, index) => {
             const id = `${baseId}-f${index}`;
@@ -223,16 +216,16 @@ function ChangeForm({
             </ul>
           </div>
         )}
-      </div>
+      </AppDialogBody>
 
-      <DialogFooter className="flex-wrap gap-2">
+      <AppDialogFooter>
         <Button type="button" variant="outline" onClick={close}>
           {isAr ? "إلغاء" : "Cancel"}
         </Button>
         <Button type="button" onClick={save} disabled={!sent.length || saving}>
           {saving ? (isAr ? "جارٍ الحفظ…" : "Saving…") : isAr ? "احفظ التغيير" : "Save the change"}
         </Button>
-      </DialogFooter>
+      </AppDialogFooter>
     </>
   );
 }

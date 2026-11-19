@@ -6,17 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, UserPlus } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { getFriendlyErrorMessage } from "@/lib/utils";
 import { PhoneInput } from "@/components/phone-input";
 import { getCurrentUser } from "@/lib/auth/session";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * Creates a customer (and a default address when one is typed) and assigns it
@@ -134,26 +132,32 @@ export function NewCustomerDialog({
   };
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(next) => {
         // Closing after the customer exists still assigns it (without the address).
         if (!next && createdCustomer) finish(createdCustomer, null);
         else onOpenChange(next);
       }}
+      kind="form"
     >
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] p-4 sm:p-6 rounded-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+      <AppDialogHeader
+        title={
+          <>
             <UserPlus className="h-5 w-5 text-primary shrink-0" />
             {lang === "ar" ? "إضافة زبون جديد" : "Create New Customer"}
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          </>
+        }
+        description={
+          <>
             {lang === "ar"
               ? "أدخل بيانات الزبون وسيتم تعيينه مباشرة لهذا الطلب بدون فقدان التغييرات."
               : "Enter customer details. They will be assigned to this order draft immediately."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
+
+      <AppDialogBody>
         <div className="space-y-4 py-2">
           <div>
             <Label className="text-xs font-semibold">
@@ -238,52 +242,52 @@ export function NewCustomerDialog({
             </div>
           </div>
         </div>
-        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 pt-2">
-          {createdCustomer ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => finish(createdCustomer, null)}
-              className="w-full sm:w-auto h-11"
-            >
-              {lang === "ar" ? "متابعة بدون عنوان" : "Continue without address"}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="w-full sm:w-auto h-11"
-            >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-          )}
+      </AppDialogBody>
+      <AppDialogFooter>
+        {createdCustomer ? (
           <Button
             type="button"
-            onClick={handleCreateInlineCustomer}
-            disabled={creatingCustomer || !newCustName.trim()}
-            className="w-full sm:w-auto h-11 bg-primary text-primary-foreground font-medium"
+            variant="outline"
+            onClick={() => finish(createdCustomer, null)}
+            className="w-full sm:w-auto h-11"
           >
-            {creatingCustomer ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin me-2" />
-                {lang === "ar" ? "جاري الحفظ..." : "Creating..."}
-              </>
-            ) : (
-              <>
-                <UserPlus className="h-4 w-4 me-2" />
-                {createdCustomer
-                  ? lang === "ar"
-                    ? "إعادة حفظ العنوان"
-                    : "Retry address"
-                  : lang === "ar"
-                    ? "حفظ وتعين الزبون"
-                    : "Save & Assign Customer"}
-              </>
-            )}
+            {lang === "ar" ? "متابعة بدون عنوان" : "Continue without address"}
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="w-full sm:w-auto h-11"
+          >
+            {lang === "ar" ? "إلغاء" : "Cancel"}
+          </Button>
+        )}
+        <Button
+          type="button"
+          onClick={handleCreateInlineCustomer}
+          disabled={creatingCustomer || !newCustName.trim()}
+          className="w-full sm:w-auto h-11 bg-primary text-primary-foreground font-medium"
+        >
+          {creatingCustomer ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin me-2" />
+              {lang === "ar" ? "جاري الحفظ..." : "Creating..."}
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-4 w-4 me-2" />
+              {createdCustomer
+                ? lang === "ar"
+                  ? "إعادة حفظ العنوان"
+                  : "Retry address"
+                : lang === "ar"
+                  ? "حفظ وتعين الزبون"
+                  : "Save & Assign Customer"}
+            </>
+          )}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

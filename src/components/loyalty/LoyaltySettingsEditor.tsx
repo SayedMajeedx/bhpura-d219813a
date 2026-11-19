@@ -2,14 +2,6 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invalidateLoyalty, saveLoyaltyProgram } from "@/lib/data/loyalty";
 import { useI18n } from "@/lib/i18n";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +13,12 @@ import type { BrandLoyaltyProgram } from "@/lib/loyalty.types";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { formatMoney } from "@/lib/format";
 import { currencyLabel } from "@/lib/currency-label";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface LoyaltySettingsEditorProps {
   open: boolean;
@@ -87,21 +85,25 @@ export function LoyaltySettingsEditor({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 font-display text-xl">
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" size="lg">
+      <AppDialogHeader
+        title={
+          <>
             <Coins className="h-5 w-5 text-primary" />
             {isAr ? "إعدادات برنامج الولاء والمكافآت" : "Loyalty Program Settings"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "تخصيص قواعد كسب واسترداد النقاط، فترات الانتظار، واستثناءات الضريبة والشحن."
               : "Configure earning and redemption rules, holding periods, and spend inclusions."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-6 pt-2">
+      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col space-y-6 pt-2">
+        <AppDialogBody>
           {/* Main Program Toggle */}
           <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-card">
             <div className="space-y-0.5">
@@ -347,32 +349,31 @@ export function LoyaltySettingsEditor({
               </p>
             </div>
           </Card>
-
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="min-h-[44px]"
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveMutation.isPending}
-              className="min-h-[44px] bg-primary text-primary-foreground"
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isAr ? (
-                "حفظ التغييرات"
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            className="min-h-[44px]"
+          >
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            type="submit"
+            disabled={saveMutation.isPending}
+            className="min-h-[44px] bg-primary text-primary-foreground"
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : isAr ? (
+              "حفظ التغييرات"
+            ) : (
+              "Save Changes"
+            )}
+          </Button>
+        </AppDialogFooter>
+      </form>
+    </AppDialog>
   );
 }

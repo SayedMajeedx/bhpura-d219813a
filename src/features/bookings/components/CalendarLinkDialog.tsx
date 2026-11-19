@@ -3,18 +3,16 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarSync, Copy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { bookingsKeys, bookingsQueries, setCalendarToken } from "@/lib/data/bookings";
 import { calendarFeedUrl } from "@/lib/bookings/ics";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /**
  * The store's bookings in its own calendar app: a private link to subscribe
@@ -81,19 +79,24 @@ export function CalendarLinkDialog({
           {isAr ? "ربط بالتقويم" : "Calendar link"}
         </Button>
       )}
-      <Dialog open={open} onOpenChange={(next) => !renew.isPending && setOpen(next)}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {isAr ? "حجوزاتك في تقويمك" : "Your bookings in your calendar"}
-            </DialogTitle>
-            <DialogDescription>
+      <AppDialog
+        open={open}
+        onOpenChange={(next) => !renew.isPending && setOpen(next)}
+        kind="form"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <AppDialogHeader
+          title={<>{isAr ? "حجوزاتك في تقويمك" : "Your bookings in your calendar"}</>}
+          description={
+            <>
               {isAr
                 ? "اشترك بهذا الرابط في تقويم Google أو Apple أو Outlook لترى الحجوزات المؤكدة وتتحدث تلقائياً."
                 : "Subscribe to this link in Google, Apple or Outlook calendar to see confirmed bookings, kept up to date."}
-            </DialogDescription>
-          </DialogHeader>
+            </>
+          }
+        />
 
+        <AppDialogBody>
           {url ? (
             <div className="space-y-3 text-sm">
               <div className="flex gap-2">
@@ -132,27 +135,26 @@ export function CalendarLinkDialog({
               {isAr ? "لا يوجد رابط بعد." : "There is no link yet."}
             </p>
           )}
-
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant={url ? "outline" : "default"}
-              className="gap-1.5"
-              disabled={renew.isPending}
-              onClick={() => renew.mutate()}
-            >
-              <RefreshCw className="size-4" aria-hidden="true" />
-              {url
-                ? isAr
-                  ? "رابط جديد (يوقف القديم)"
-                  : "New link (stops the old one)"
-                : isAr
-                  ? "إنشاء الرابط"
-                  : "Make the link"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button
+            type="button"
+            variant={url ? "outline" : "default"}
+            className="gap-1.5"
+            disabled={renew.isPending}
+            onClick={() => renew.mutate()}
+          >
+            <RefreshCw className="size-4" aria-hidden="true" />
+            {url
+              ? isAr
+                ? "رابط جديد (يوقف القديم)"
+                : "New link (stops the old one)"
+              : isAr
+                ? "إنشاء الرابط"
+                : "Make the link"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

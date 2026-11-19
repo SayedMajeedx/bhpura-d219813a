@@ -3,14 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { EyeOff, Home, Scissors, Store } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -49,6 +41,12 @@ import { useSupplierCatalog } from "../hooks/use-supplier-catalog";
 import { SupplierField } from "./SupplierField";
 import { SendPiecesList } from "./SendPiecesList";
 import { AfterSendPanel } from "./AfterSendPanel";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** What was just sent: where the pieces are, and what the panel after the send needs. */
 type Sent = {
@@ -294,48 +292,47 @@ export function SendToTailorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        dir={isAr ? "rtl" : "ltr"}
-        className="flex max-h-[92dvh] max-w-lg flex-col gap-3 overflow-hidden"
-      >
-        {done ? (
-          <AfterSendPanel
-            lang={lang}
-            where={done.where}
-            orderIds={done.orderIds}
-            sheetLang={done.language}
-            onPrint={
-              onPrintSheet
-                ? (sheetLang) =>
-                    onPrintSheet(sheetLang, done.where, {
-                      poId: done.poId,
-                      orderItemIds: done.orderItemIds,
-                    })
-                : undefined
-            }
-            supplierPhone={done.phone}
-            supplierMessage={done.message}
-            onTellCustomer={onTellCustomer}
-            onOpenOrder={
-              done.poId && prices && onOpenSupplierOrder
-                ? () => onOpenSupplierOrder(done.poId as string)
-                : undefined
-            }
-            onClose={() => onOpenChange(false)}
-          />
-        ) : (
-          <>
-            <DialogHeader>
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" dir={isAr ? "rtl" : "ltr"}>
+      {done ? (
+        <AfterSendPanel
+          lang={lang}
+          where={done.where}
+          orderIds={done.orderIds}
+          sheetLang={done.language}
+          onPrint={
+            onPrintSheet
+              ? (sheetLang) =>
+                  onPrintSheet(sheetLang, done.where, {
+                    poId: done.poId,
+                    orderItemIds: done.orderItemIds,
+                  })
+              : undefined
+          }
+          supplierPhone={done.phone}
+          supplierMessage={done.message}
+          onTellCustomer={onTellCustomer}
+          onOpenOrder={
+            done.poId && prices && onOpenSupplierOrder
+              ? () => onOpenSupplierOrder(done.poId as string)
+              : undefined
+          }
+          onClose={() => onOpenChange(false)}
+        />
+      ) : (
+        <>
+          <AppDialogHeader
+            title={<>{title}</>}
+            description={
+              <>
                 {isAr
                   ? "تنضاف القطع لطلبية المورد، ثم تطبع ورقة الشغل وتراسل المورد والعميل من هنا."
                   : "The pieces go on the supplier's order; then print the job sheet and message the supplier and the customer from here."}
-              </DialogDescription>
-            </DialogHeader>
+              </>
+            }
+          />
 
-            <div className="-mx-1 min-h-0 flex-1 space-y-3 overflow-y-auto px-1">
+          <AppDialogBody>
+            <div className="space-y-4">
               {onPlainSend && (
                 <div
                   role="radiogroup"
@@ -469,42 +466,41 @@ export function SendToTailorDialog({
                   : "The supplier gets no customer name or number. The piece never joins the stock when it arrives: it is sold to the customer."}
               </p>
             </div>
-
-            <DialogFooter className="flex-wrap gap-2 border-t border-border-subtle pt-3">
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={saving}
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            {maker === "in_house" ? (
+              <Button type="button" onClick={inHouse} disabled={saving} className="gap-1.5">
+                <Home className="h-4 w-4" aria-hidden="true" />
+                {isAr ? "حوّل لورشتنا" : "Move to our workshop"}
+              </Button>
+            ) : (
               <Button
                 type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={saving}
+                onClick={send}
+                disabled={saving || toSend.length === 0}
+                className="gap-1.5"
               >
-                {isAr ? "إلغاء" : "Cancel"}
+                <Scissors className="h-4 w-4" aria-hidden="true" />
+                {prices && chosen.length > 0 && total > 0
+                  ? isAr
+                    ? `أرسل (${formatMoney(total, currency, lang)})`
+                    : `Send (${formatMoney(total, currency, lang)})`
+                  : isAr
+                    ? "أرسل"
+                    : "Send"}
               </Button>
-              {maker === "in_house" ? (
-                <Button type="button" onClick={inHouse} disabled={saving} className="gap-1.5">
-                  <Home className="h-4 w-4" aria-hidden="true" />
-                  {isAr ? "حوّل لورشتنا" : "Move to our workshop"}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  onClick={send}
-                  disabled={saving || toSend.length === 0}
-                  className="gap-1.5"
-                >
-                  <Scissors className="h-4 w-4" aria-hidden="true" />
-                  {prices && chosen.length > 0 && total > 0
-                    ? isAr
-                      ? `أرسل (${formatMoney(total, currency, lang)})`
-                      : `Send (${formatMoney(total, currency, lang)})`
-                    : isAr
-                      ? "أرسل"
-                      : "Send"}
-                </Button>
-              )}
-            </DialogFooter>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+            )}
+          </AppDialogFooter>
+        </>
+      )}
+    </AppDialog>
   );
 }

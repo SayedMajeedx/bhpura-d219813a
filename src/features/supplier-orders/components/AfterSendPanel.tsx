@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, ExternalLink, MessageCircle, Printer, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AppDialogBody, AppDialogFooter, AppDialogHeader } from "@/components/ui/app-dialog";
 import { whatsappChatUrl } from "@/lib/whatsapp-phone";
 import { logActivity } from "@/lib/activity-log";
 import { JobSheetPrintDialog } from "@/features/orders/components/JobSheetPrintDialog";
@@ -78,21 +78,21 @@ export function AfterSendPanel({
 
   return (
     <>
-      <DialogHeader>
-        <DialogTitle className="flex items-center gap-2">
-          <CheckCircle2 className="h-5 w-5 text-success" aria-hidden="true" />
-          {inHouse
+      <AppDialogHeader
+        icon={<CheckCircle2 className="text-success" aria-hidden="true" />}
+        title={
+          inHouse
             ? isAr
               ? "القطع في ورشتنا"
               : "The pieces are in our workshop"
             : isAr
               ? "أُرسلت القطع"
-              : "The pieces were sent"}
-        </DialogTitle>
-        <DialogDescription>{whereSentence(where, lang)}</DialogDescription>
-      </DialogHeader>
+              : "The pieces were sent"
+        }
+        description={whereSentence(where, lang)}
+      />
 
-      <div className="flex flex-col gap-2">
+      <AppDialogBody className="flex flex-col gap-2 space-y-0">
         {actions.includes("print") && (
           <Button type="button" onClick={() => setPrinting(true)} className="justify-start gap-2">
             <Printer className="h-4 w-4" aria-hidden="true" />
@@ -134,13 +134,13 @@ export function AfterSendPanel({
               : `Open supplier order ${where.poNumber ?? ""}`.trim()}
           </Button>
         )}
-      </div>
+      </AppDialogBody>
 
-      <DialogFooter>
+      <AppDialogFooter>
         <Button type="button" variant="outline" onClick={onClose}>
           {isAr ? "تم" : "Done"}
         </Button>
-      </DialogFooter>
+      </AppDialogFooter>
 
       {onPrint && (
         <JobSheetPrintDialog

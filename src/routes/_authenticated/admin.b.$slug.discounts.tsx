@@ -34,7 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 import { DiscountsCommandHeader } from "@/components/discounts/DiscountsCommandHeader";
@@ -53,6 +52,12 @@ import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Redemptions and revenue per promo code, leaving out cancelled and draft orders. */
 function promoUsageFrom(orders: OrderPromoRow[]) {
@@ -534,13 +539,10 @@ function DiscountCodes() {
       )}
 
       {/* Editor Modal Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="max-h-[90vh] overflow-y-auto sm:max-w-xl rounded-2xl p-6"
-          dir={ar ? "rtl" : "ltr"}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold tracking-tight border-b pb-3 flex items-center gap-2">
+      <AppDialog open={open} onOpenChange={setOpen} kind="form" size="lg" dir={ar ? "rtl" : "ltr"}>
+        <AppDialogHeader
+          title={
+            <>
               <Tags className="h-5 w-5 text-primary" />
               {editing
                 ? ar
@@ -549,9 +551,11 @@ function DiscountCodes() {
                 : ar
                   ? "إنشاء رمز خصم جديد"
                   : "Create Promo Code"}
-            </DialogTitle>
-          </DialogHeader>
+            </>
+          }
+        />
 
+        <AppDialogBody>
           <div className="space-y-5 pt-2">
             {/* Promo Code Name */}
             <div className="space-y-1.5">
@@ -896,29 +900,23 @@ function DiscountCodes() {
                 className="data-[state=checked]:bg-emerald-500"
               />
             </div>
-
-            {/* Footer Buttons */}
-            <div className="flex justify-end gap-2.5 pt-3 border-t">
-              <Button
-                variant="outline"
-                onClick={() => setOpen(false)}
-                className="rounded-xl h-11 px-5"
-              >
-                {ar ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button onClick={save} disabled={saving} className="rounded-xl h-11 px-6 shadow">
-                {saving
-                  ? ar
-                    ? "جاري الحفظ..."
-                    : "Saving..."
-                  : ar
-                    ? "حفظ رمز الخصم"
-                    : "Save Promo Code"}
-              </Button>
-            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {ar ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={save} disabled={saving}>
+            {saving
+              ? ar
+                ? "جاري الحفظ..."
+                : "Saving..."
+              : ar
+                ? "حفظ رمز الخصم"
+                : "Save Promo Code"}
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

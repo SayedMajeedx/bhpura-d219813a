@@ -1,15 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 
 import type { CampaignsPageState } from "@/features/campaigns/hooks/use-campaigns-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** Saves the message as a new template, or over the chosen one. */
 export function SaveTemplateDialog({ page }: { page: CampaignsPageState }) {
@@ -18,10 +17,10 @@ export function SaveTemplateDialog({ page }: { page: CampaignsPageState }) {
   return (
     <>
       {/* Save Template Modal */}
-      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
+      <AppDialog open={saveOpen} onOpenChange={setSaveOpen} kind="form">
+        <AppDialogHeader
+          title={
+            <>
               {saveMode === "update"
                 ? isAr
                   ? "تحديث القالب"
@@ -29,8 +28,11 @@ export function SaveTemplateDialog({ page }: { page: CampaignsPageState }) {
                 : isAr
                   ? "حفظ قالب جديد"
                   : "Save new template"}
-            </DialogTitle>
-          </DialogHeader>
+            </>
+          }
+        />
+
+        <AppDialogBody>
           <div className="space-y-4">
             <div>
               <Label>{isAr ? "اسم القالب" : "Template name"}</Label>
@@ -48,14 +50,14 @@ export function SaveTemplateDialog({ page }: { page: CampaignsPageState }) {
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setSaveOpen(false)}>
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button onClick={saveTemplate}>{isAr ? "حفظ" : "Save"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="ghost" onClick={() => setSaveOpen(false)}>
+            {isAr ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button onClick={saveTemplate}>{isAr ? "حفظ" : "Save"}</Button>
+        </AppDialogFooter>
+      </AppDialog>
     </>
   );
 }

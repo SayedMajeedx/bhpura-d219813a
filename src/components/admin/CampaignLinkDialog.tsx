@@ -4,16 +4,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useBrandOptional } from "@/lib/brand-context";
 import { storefrontCanonical } from "@/lib/seo/canonical";
 import { campaignLink, campaignWord, LINK_PLATFORMS, type LinkPlatform } from "@/lib/funnel";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 const PLATFORM_WORDS: Record<LinkPlatform, [string, string]> = {
   instagram: ["انستقرام", "Instagram"],
@@ -61,17 +55,20 @@ export function CampaignLinkDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "رابط لمنشور" : "Link for a post"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form">
+      <AppDialogHeader
+        title={<>{isAr ? "رابط لمنشور" : "Link for a post"}</>}
+        description={
+          <>
             {isAr
               ? "ضع هذا الرابط في البايو أو الستوري، وتظهر في لوحة التحكم الزيارات والطلبات التي جاءت منه."
               : "Put this link in your bio or story, and the dashboard shows the visits and orders the post brought."}
             {pageName ? ` · ${pageName}` : ""}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
+
+      <AppDialogBody>
         <div className="space-y-4">
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium">{isAr ? "أين سيُنشر" : "Where it goes"}</legend>
@@ -132,8 +129,8 @@ export function CampaignLinkDialog({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }
 

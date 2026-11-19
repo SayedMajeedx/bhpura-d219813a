@@ -54,20 +54,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PhoneInput } from "@/components/phone-input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { CustomerAddressManager } from "@/components/customer-address-manager";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { useStoreCurrency } from "@/hooks/use-store-currency";
 import { CustomerConsentCard } from "@/features/outreach/components/CustomerConsentCard";
 import { useOrderNumber } from "@/hooks/use-order-number";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -773,17 +771,13 @@ function CustomerProfilePage() {
         }}
       />
 
-      <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
-        <DialogContent
-          closeLabel={lang === "ar" ? "إغلاق" : "Close"}
-          className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden"
-        >
-          <DialogHeader>
-            <DialogTitle>{lang === "ar" ? "إجراءات العميل" : "Customer actions"}</DialogTitle>
-            <DialogDescription>
-              {lang === "ar" ? "أدوات التواصل مع العميل" : "Communication tools"}
-            </DialogDescription>
-          </DialogHeader>
+      <AppDialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen} kind="form">
+        <AppDialogHeader
+          title={<>{lang === "ar" ? "إجراءات العميل" : "Customer actions"}</>}
+          description={<>{lang === "ar" ? "أدوات التواصل مع العميل" : "Communication tools"}</>}
+        />
+
+        <AppDialogBody>
           <div className="grid gap-2 py-2">
             <Button
               className="min-h-12 justify-start rounded-xl font-bold bg-primary text-primary-foreground"
@@ -826,8 +820,8 @@ function CustomerProfilePage() {
               </Button>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+      </AppDialog>
     </div>
   );
 }
@@ -985,11 +979,12 @@ function EditCustomerDialog({
   saveRef.current = save;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{lang === "ar" ? "تعديل ملف العميل" : "Edit Customer Profile"}</DialogTitle>
-        </DialogHeader>
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="form" size="lg">
+      <AppDialogHeader
+        title={<>{lang === "ar" ? "تعديل ملف العميل" : "Edit Customer Profile"}</>}
+      />
+
+      <AppDialogBody>
         <div className="space-y-4">
           <div>
             <Label>{lang === "ar" ? "الاسم" : "Name"}</Label>
@@ -1021,21 +1016,21 @@ function EditCustomerDialog({
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {lang === "ar" ? "إلغاء" : "Cancel"}
-          </Button>
-          <Button onClick={save} disabled={saving}>
-            {saving
-              ? lang === "ar"
-                ? "جاري الحفظ…"
-                : "Saving…"
-              : lang === "ar"
-                ? "حفظ التغييرات"
-                : "Save changes"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          {lang === "ar" ? "إلغاء" : "Cancel"}
+        </Button>
+        <Button onClick={save} disabled={saving}>
+          {saving
+            ? lang === "ar"
+              ? "جاري الحفظ…"
+              : "Saving…"
+            : lang === "ar"
+              ? "حفظ التغييرات"
+              : "Save changes"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

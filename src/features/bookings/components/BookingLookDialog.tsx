@@ -3,13 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Gem, Palette, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
   bookingPageOptionsKeys,
@@ -25,6 +18,12 @@ import {
   type PackageStyle,
 } from "@/lib/bookings/package-style";
 import type { BookingsPage } from "@/features/bookings/hooks/use-bookings-page";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 /** A small live sample of a package card in one look (the same classes the storefront uses). */
 function Sample({ style, isAr }: { style: PackageStyle; isAr: boolean }) {
@@ -94,19 +93,30 @@ export function BookingLookDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto" dir={isAr ? "rtl" : "ltr"}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      size="lg"
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={
+          <>
             <Palette className="size-4 text-primary" aria-hidden="true" />
             {isAr ? "شكل الباقات" : "Package look"}
-          </DialogTitle>
-          <DialogDescription>
+          </>
+        }
+        description={
+          <>
             {isAr
               ? "كيف تظهر الباقات مميّزة عن الخدمات في صفحة الحجز وصفحتك الرئيسية. الألوان من لون علامتك."
               : "How packages stand out from services on your booking page and home page. Colours come from your brand colour."}
-          </DialogDescription>
-        </DialogHeader>
+          </>
+        }
+      />
+
+      <AppDialogBody>
         <div
           role="radiogroup"
           aria-label={isAr ? "الشكل" : "Look"}
@@ -150,6 +160,8 @@ export function BookingLookDialog({
               : "Could not load the current look. Try again."}
           </p>
         )}
+      </AppDialogBody>
+      <AppDialogFooter>
         <Button
           type="button"
           disabled={!ready || save.isPending}
@@ -157,7 +169,7 @@ export function BookingLookDialog({
         >
           {isAr ? "حفظ الشكل" : "Save look"}
         </Button>
-      </DialogContent>
-    </Dialog>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

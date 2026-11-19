@@ -7,20 +7,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Award, Sparkles, Edit2, Truck, Loader2 } from "lucide-react";
 import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { starterLoyaltyTiers } from "@/lib/loyalty-program";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
 import { useMoneyLabel, useStoreCurrency } from "@/hooks/use-store-currency";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface LoyaltyTiersManagerProps {
   brandId: string;
@@ -191,20 +189,28 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
 
       {/* Edit Tier Dialog */}
       {editingTier && (
-        <Dialog open={!!editingTier} onOpenChange={(open) => !open && setEditingTier(null)}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 font-display">
+        <AppDialog
+          open={!!editingTier}
+          onOpenChange={(open) => !open && setEditingTier(null)}
+          kind="form"
+        >
+          <AppDialogHeader
+            title={
+              <>
                 <Award className="h-5 w-5 text-primary" />
                 {isAr ? `تعديل ${editingTier.name_ar}` : `Edit ${editingTier.name_en}`}
-              </DialogTitle>
-              <DialogDescription>
+              </>
+            }
+            description={
+              <>
                 {isAr
                   ? "تعديل مسميات المستوى، حد الإنفاق ومضاعف النقاط."
                   : "Customize tier names, qualification spend and multipliers."}
-              </DialogDescription>
-            </DialogHeader>
+              </>
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-4 pt-2">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -289,31 +295,26 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                 </div>
               )}
             </div>
-
-            <DialogFooter className="gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setEditingTier(null)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                onClick={() => saveTierMutation.mutate(editingTier)}
-                disabled={saveTierMutation.isPending}
-                className="min-h-[44px] bg-primary text-primary-foreground"
-              >
-                {saveTierMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : isAr ? (
-                  "حفظ التغييرات"
-                ) : (
-                  "Save Tier"
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button variant="outline" onClick={() => setEditingTier(null)} className="min-h-[44px]">
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              onClick={() => saveTierMutation.mutate(editingTier)}
+              disabled={saveTierMutation.isPending}
+              className="min-h-[44px] bg-primary text-primary-foreground"
+            >
+              {saveTierMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isAr ? (
+                "حفظ التغييرات"
+              ) : (
+                "Save Tier"
+              )}
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
     </div>
   );
