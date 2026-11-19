@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Check, Crop, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-react";
@@ -14,6 +7,12 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { getImageCropPreset, type ImageCropPresetKey } from "@/lib/image-crop-presets";
 import { cn } from "@/lib/utils";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export type ContainBgStyle = "transparent" | "blur" | "white" | "neutral";
 export type FitMode = "cover" | "contain";
@@ -387,44 +386,40 @@ export function ImageCropperDialog({
   };
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(o) => {
         if (!o && !isBusy) onCancel();
       }}
+      kind="task"
+      size="lg"
     >
-      <DialogContent className="max-h-[94dvh] max-w-3xl overflow-y-auto overscroll-contain p-0">
-        <DialogHeader>
-          <div className="flex items-start gap-3 border-b px-5 pb-4 pt-5 pe-12 sm:px-6 sm:pe-14">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-              <Crop className="h-5 w-5" />
-            </span>
-            <div className="min-w-0">
-              <DialogTitle>
-                {title ||
-                  (preset === "logo"
-                    ? isAr
-                      ? "ضبط وتجهيز شعار المتجر"
-                      : "Frame & Crop Store Logo"
-                    : isAr
-                      ? "قص وضبط الصورة"
-                      : "Frame & Crop Image")}
-              </DialogTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {description ||
-                  (preset === "logo"
-                    ? isAr
-                      ? "تم تفعيل وضع الشفافية تلقائياً للحفاظ على شعارك مفرغاً بدون خلفية وبكامل دقته."
-                      : "Transparency mode active: your logo is preserved with transparent background and full quality."
-                    : isAr
-                      ? "اختر ملء الإطار أو احتواء كامل لمنع قص أي تفاصيل، أو تخطّ القص لاستخدام الصورة الأصلية."
-                      : "Choose cover to crop, contain to preserve full height, or skip crop to keep original.")}
-              </p>
-            </div>
-          </div>
-        </DialogHeader>
+      <AppDialogHeader
+        title={
+          title ||
+          (preset === "logo"
+            ? isAr
+              ? "ضبط وتجهيز شعار المتجر"
+              : "Frame & Crop Store Logo"
+            : isAr
+              ? "قص وضبط الصورة"
+              : "Frame & Crop Image")
+        }
+        icon={<Crop />}
+        description={
+          description ||
+          (preset === "logo"
+            ? isAr
+              ? "تم تفعيل وضع الشفافية تلقائياً للحفاظ على شعارك مفرغاً بدون خلفية وبكامل دقته."
+              : "Transparency mode active: your logo is preserved with transparent background and full quality."
+            : isAr
+              ? "اختر ملء الإطار أو احتواء كامل لمنع قص أي تفاصيل، أو تخطّ القص لاستخدام الصورة الأصلية."
+              : "Choose cover to crop, contain to preserve full height, or skip crop to keep original.")
+        }
+      />
 
-        <div className="space-y-4 px-5 sm:px-6">
+      <AppDialogBody>
+        <div className="space-y-4">
           {/* Mode Switcher: Cover vs Contain */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
             <div className="inline-flex rounded-xl border bg-muted/40 p-1">
@@ -738,58 +733,55 @@ export function ImageCropperDialog({
             </details>
           )}
         </div>
-
-        <DialogFooter className="sticky -bottom-1 z-10 mt-1 border-t bg-background/95 px-5 py-4 backdrop-blur sm:px-6">
-          <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="outline" className="min-h-11" onClick={onCancel} disabled={isBusy}>
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="min-h-11 gap-1.5 font-medium border"
-                onClick={handleSkip}
-                disabled={isBusy}
-                title={
-                  isAr
-                    ? "رفع الصورة الأصلية بدون أي قص أو تعديل"
-                    : "Upload original without cropping"
-                }
-              >
-                <Maximize2 className="h-4 w-4" />
-                {isAr
-                  ? preset === "logo" || allowTransparency
-                    ? "استخدام الشعار الأصلي (شفاف)"
-                    : "تخطي القص (الأصلية)"
-                  : "Skip crop (Original)"}
-              </Button>
-            </div>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" className="min-h-11" onClick={onCancel} disabled={isBusy}>
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
             <Button
-              className="min-h-11 min-w-36"
-              onClick={handleConfirm}
-              disabled={isBusy || (fitMode === "cover" && !area)}
+              type="button"
+              variant="secondary"
+              className="min-h-11 gap-1.5 font-medium border"
+              onClick={handleSkip}
+              disabled={isBusy}
+              title={
+                isAr ? "رفع الصورة الأصلية بدون أي قص أو تعديل" : "Upload original without cropping"
+              }
             >
-              {isBusy && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {processing
-                ? isAr
-                  ? "جاري تجهيز الصورة…"
-                  : "Preparing image…"
-                : isAr
-                  ? preset === "logo" || containBg === "transparent"
-                    ? "اعتماد الشعار (بدون خلفية)"
-                    : fitMode === "contain"
-                      ? "اعتماد الصورة (كاملة)"
-                      : "اعتماد الصورة"
-                  : preset === "logo" || containBg === "transparent"
-                    ? "Use Logo (Transparent)"
-                    : fitMode === "contain"
-                      ? "Use full image"
-                      : "Use this crop"}
+              <Maximize2 className="h-4 w-4" />
+              {isAr
+                ? preset === "logo" || allowTransparency
+                  ? "استخدام الشعار الأصلي (شفاف)"
+                  : "تخطي القص (الأصلية)"
+                : "Skip crop (Original)"}
             </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button
+            className="min-h-11 min-w-36"
+            onClick={handleConfirm}
+            disabled={isBusy || (fitMode === "cover" && !area)}
+          >
+            {isBusy && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+            {processing
+              ? isAr
+                ? "جاري تجهيز الصورة…"
+                : "Preparing image…"
+              : isAr
+                ? preset === "logo" || containBg === "transparent"
+                  ? "اعتماد الشعار (بدون خلفية)"
+                  : fitMode === "contain"
+                    ? "اعتماد الصورة (كاملة)"
+                    : "اعتماد الصورة"
+                : preset === "logo" || containBg === "transparent"
+                  ? "Use Logo (Transparent)"
+                  : fitMode === "contain"
+                    ? "Use full image"
+                    : "Use this crop"}
+          </Button>
+        </div>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

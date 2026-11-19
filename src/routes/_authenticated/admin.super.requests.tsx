@@ -27,13 +27,6 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 import { SuperCommandHeader } from "@/components/super/SuperCommandHeader";
 import { SuperScopeSwitcher, type SuperScope } from "@/components/super/SuperScopeSwitcher";
@@ -45,6 +38,12 @@ import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 import { getCurrentUser } from "@/lib/auth/session";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/super/requests")({
   beforeLoad: async () => {
@@ -92,6 +91,7 @@ function SuperRequestsPage() {
   const [, setSelectedReceiptKey] = useState<string | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptViewUrl, setReceiptViewUrl] = useState<string | null>(null);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   // Approval Dialog States
   const [approvingRequest, setApprovingRequest] = useState<TenantRequest | null>(null);
@@ -425,53 +425,18 @@ function SuperRequestsPage() {
 
                           <td className="p-4 text-center">
                             {request.benefit_receipt_url ? (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    size="xs"
-                                    onClick={() => handleViewReceipt(request.benefit_receipt_url!)}
-                                    className="text-xs gap-1 h-8 border-dashed border-primary/35 hover:bg-primary/[0.04]"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md bg-card text-foreground border-border">
-                                  <DialogHeader>
-                                    <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
-                                      <ClockIcon className="h-4.5 w-4.5 text-primary" />
-                                      <span>
-                                        {lang === "ar" ? "إيصال سداد الدفع" : "Proof of Payment"}
-                                      </span>
-                                    </DialogTitle>
-                                  </DialogHeader>
-                                  <div className="py-4 flex justify-center items-center min-h-[300px]">
-                                    {receiptLoading ? (
-                                      <div className="flex flex-col items-center gap-2">
-                                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                        <span className="text-xs text-muted-foreground">
-                                          {lang === "ar"
-                                            ? "جاري فك تشفير رابط الإيصال..."
-                                            : "Generating secure viewer..."}
-                                        </span>
-                                      </div>
-                                    ) : receiptViewUrl ? (
-                                      <img
-                                        src={receiptViewUrl}
-                                        alt="Benefit Payment Receipt"
-                                        className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
-                                      />
-                                    ) : (
-                                      <div className="text-xs text-muted-foreground">
-                                        {lang === "ar"
-                                          ? "تعذر تحميل الإيصال"
-                                          : "Receipt unavailable"}
-                                      </div>
-                                    )}
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                onClick={() => {
+                                  setReceiptOpen(true);
+                                  void handleViewReceipt(request.benefit_receipt_url!);
+                                }}
+                                className="text-xs gap-1 h-8 border-dashed border-primary/35 hover:bg-primary/[0.04]"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                <span>{lang === "ar" ? "معاينة الإيصال" : "View Receipt"}</span>
+                              </Button>
                             ) : (
                               <span className="text-xs text-muted-foreground">-</span>
                             )}
@@ -512,17 +477,52 @@ function SuperRequestsPage() {
       )}
 
       {/* Interactive Deployment Configuration Dialog */}
-      <Dialog open={!!approvingRequest} onOpenChange={(open) => !open && setApprovingRequest(null)}>
-        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border-subtle text-foreground p-6 rounded-2xl shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-display font-medium flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary shrink-0" />
-              <span>
-                {lang === "ar" ? "تأكيد تفعيل المتجر ونشر المساحة" : "Approve & Deploy Workspace"}
-              </span>
-            </DialogTitle>
-          </DialogHeader>
+      {/* One receipt viewer for the table: each row's button opens it on its receipt. */}
+      <AppDialog
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        kind="details"
+        dir={lang === "ar" ? "rtl" : "ltr"}
+      >
+        <AppDialogHeader
+          icon={<ClockIcon />}
+          title={lang === "ar" ? "إيصال سداد الدفع" : "Proof of Payment"}
+        />
+        <AppDialogBody>
+          <div className="py-4 flex justify-center items-center min-h-[300px]">
+            {receiptLoading ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <span className="text-xs text-muted-foreground">
+                  {lang === "ar" ? "جاري فك تشفير رابط الإيصال..." : "Generating secure viewer..."}
+                </span>
+              </div>
+            ) : receiptViewUrl ? (
+              <img
+                src={receiptViewUrl}
+                alt="Benefit Payment Receipt"
+                className="max-h-[400px] w-auto rounded-lg object-contain border border-border"
+              />
+            ) : (
+              <div className="text-xs text-muted-foreground">
+                {lang === "ar" ? "تعذر تحميل الإيصال" : "Receipt unavailable"}
+              </div>
+            )}
+          </div>
+        </AppDialogBody>
+      </AppDialog>
 
+      <AppDialog
+        open={!!approvingRequest}
+        onOpenChange={(open) => !open && setApprovingRequest(null)}
+        kind="form"
+      >
+        <AppDialogHeader
+          icon={<Sparkles />}
+          title={lang === "ar" ? "تأكيد تفعيل المتجر ونشر المساحة" : "Approve & Deploy Workspace"}
+        />
+
+        <AppDialogBody>
           <div className="space-y-4 py-4">
             <div className="p-3.5 bg-muted/50 rounded-lg border border-border text-xs space-y-1 font-mono">
               <p className="flex justify-between">
@@ -615,31 +615,25 @@ function SuperRequestsPage() {
               )}
             </div>
           </div>
-
-          <div className="flex justify-end gap-2 mt-4 sm:flex-row flex-col">
-            <Button
-              variant="outline"
-              onClick={() => setApprovingRequest(null)}
-              disabled={deploying}
-              className="text-xs h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            >
-              {lang === "ar" ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={executeApproval}
-              disabled={deploying || (approvingRequest?.request_type === "paid" && !selectedPlanId)}
-              className="text-xs h-9 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            >
-              {deploying ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <CheckCircle2 className="h-3.5 w-3.5" />
-              )}
-              <span>{lang === "ar" ? "تأكيد ونشر" : "Confirm & Deploy"}</span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setApprovingRequest(null)} disabled={deploying}>
+            {lang === "ar" ? "إلغاء" : "Cancel"}
+          </Button>
+          <Button
+            onClick={executeApproval}
+            disabled={deploying || (approvingRequest?.request_type === "paid" && !selectedPlanId)}
+            className="gap-1.5"
+          >
+            {deploying ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+            <span>{lang === "ar" ? "تأكيد ونشر" : "Confirm & Deploy"}</span>
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
     </div>
   );
 }

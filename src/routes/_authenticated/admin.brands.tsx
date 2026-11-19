@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { useOpenSession } from "@/hooks/use-open-session";
 import {
   Select,
   SelectContent,
@@ -77,6 +77,8 @@ function BrandsPage() {
   const qc = useQueryClient();
   useNavigate();
   const [open, setOpen] = useState(false);
+  // The wizard starts afresh each time it opens.
+  const wizardSession = useOpenSession(open);
 
   const handleImpersonate = async (brandId: string, slug: string) => {
     // A stale read-only session must not block the super admin from starting a
@@ -228,24 +230,20 @@ function BrandsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-              >
-                <Plus className="h-4 w-4 me-2" />{" "}
-                {lang === "ar" ? "معالج إطلاق متجر" : "Launch Brand Wizard"}
-              </Button>
-            </DialogTrigger>
-            <BrandWizardDialog
-              onSaved={() => {
-                setOpen(false);
-                refresh();
-              }}
-              onClose={() => setOpen(false)}
-            />
-          </Dialog>
+          <Button variant="outline" className="h-11" onClick={() => setOpen(true)}>
+            <Plus className="h-4 w-4 me-2" />{" "}
+            {lang === "ar" ? "معالج إطلاق متجر" : "Launch Brand Wizard"}
+          </Button>
+          <BrandWizardDialog
+            key={wizardSession}
+            open={open}
+            onOpenChange={setOpen}
+            onSaved={() => {
+              setOpen(false);
+              refresh();
+            }}
+            onClose={() => setOpen(false)}
+          />
         </div>
       </div>
 

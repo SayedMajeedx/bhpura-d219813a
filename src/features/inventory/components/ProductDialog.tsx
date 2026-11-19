@@ -12,7 +12,12 @@ import {
   servicePackagesQueries,
 } from "@/lib/data/service-packages";
 import { Button } from "@/components/ui/button";
-import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { FileText, Image as ImageIcon, Sliders } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -36,9 +41,13 @@ import { ProductMediaTab } from "@/features/inventory/components/ProductMediaTab
 import { ProductCustomizerTab } from "@/features/inventory/components/ProductCustomizerTab";
 
 export function ProductDialog({
+  open,
+  onOpenChange,
   product,
   onSaved,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   product: Product | null;
   onSaved: (newProductId?: string, kind?: "service" | "product") => void;
 }) {
@@ -140,93 +149,89 @@ export function ProductDialog({
   });
 
   return (
-    // On a phone the editor is the whole screen: a centred box left a strip of the page around
-    // it and its tab labels wrapped to two lines.
-    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border-strong shadow-2xl bg-background overflow-hidden max-sm:inset-0 max-sm:h-[100dvh] max-sm:max-h-[100dvh] max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-none max-sm:border-0">
-      {/* Header with gradient bar and stepper indicators */}
-      <div className="relative border-b border-border-subtle bg-secondary/20 p-5 pb-4 max-sm:px-4 max-sm:pt-[max(1.25rem,env(safe-area-inset-top))]">
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <span>
-              {isService
-                ? product
+    // On a phone the editor is the whole screen (a centred box left a strip of the page around
+    // it); its tabs stay above the step and its buttons at the foot.
+    <AppDialog open={open} onOpenChange={onOpenChange} kind="task" size="lg">
+      <AppDialogHeader
+        title={
+          isService
+            ? product
+              ? isAr
+                ? "تعديل الخدمة"
+                : "Edit service"
+              : isAr
+                ? "خدمة جديدة"
+                : "New service"
+            : product
+              ? t("inventory.editProduct")
+              : t("inventory.newProduct")
+        }
+      />
+
+      {/* The tabs stay above the step being filled in. */}
+      <AppDialogBody
+        className="space-y-5"
+        toolbar={
+          <div className="flex items-center gap-2 bg-muted/60 p-1 rounded-xl overflow-x-auto no-scrollbar overscroll-x-contain">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveDialogTab("basic");
+              }}
+              aria-pressed={activeDialogTab === "basic"}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+                activeDialogTab === "basic"
+                  ? "bg-background text-primary shadow-sm scale-[0.98]"
+                  : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+              }`}
+            >
+              <FileText className="h-4 w-4" />
+              <span>{isAr ? "التفاصيل الأساسية" : "Basic Details"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveDialogTab("media");
+              }}
+              aria-pressed={activeDialogTab === "media"}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+                activeDialogTab === "media"
+                  ? "bg-background text-primary shadow-sm scale-[0.98]"
+                  : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+              }`}
+            >
+              <ImageIcon className="h-4 w-4" />
+              <span>{isAr ? "معرض الصور" : "Media Gallery"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveDialogTab("customizer");
+              }}
+              aria-pressed={activeDialogTab === "customizer"}
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+                activeDialogTab === "customizer"
+                  ? "bg-background text-primary shadow-sm scale-[0.98]"
+                  : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
+              }`}
+            >
+              <Sliders className="h-4 w-4" />
+              <span>
+                {isService
                   ? isAr
-                    ? "تعديل الخدمة"
-                    : "Edit service"
+                    ? "أسئلة للعميل"
+                    : "Customer questions"
                   : isAr
-                    ? "خدمة جديدة"
-                    : "New service"
-                : product
-                  ? t("inventory.editProduct")
-                  : t("inventory.newProduct")}
-            </span>
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Stepper Tabs Bar */}
-        <div className="flex items-center gap-2 mt-4 bg-muted/60 p-1 rounded-xl overflow-x-auto no-scrollbar overscroll-x-contain">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveDialogTab("basic");
-            }}
-            aria-pressed={activeDialogTab === "basic"}
-            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
-              activeDialogTab === "basic"
-                ? "bg-background text-primary shadow-sm scale-[0.98]"
-                : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span>{isAr ? "التفاصيل الأساسية" : "Basic Details"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveDialogTab("media");
-            }}
-            aria-pressed={activeDialogTab === "media"}
-            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
-              activeDialogTab === "media"
-                ? "bg-background text-primary shadow-sm scale-[0.98]"
-                : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
-            }`}
-          >
-            <ImageIcon className="h-4 w-4" />
-            <span>{isAr ? "معرض الصور" : "Media Gallery"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              setActiveDialogTab("customizer");
-            }}
-            aria-pressed={activeDialogTab === "customizer"}
-            className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
-              activeDialogTab === "customizer"
-                ? "bg-background text-primary shadow-sm scale-[0.98]"
-                : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
-            }`}
-          >
-            <Sliders className="h-4 w-4" />
-            <span>
-              {isService
-                ? isAr
-                  ? "أسئلة للعميل"
-                  : "Customer questions"
-                : isAr
-                  ? "محرك التخصيص"
-                  : "Customization"}
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* Wizard Content Block */}
-      <div className="flex-1 p-6 space-y-5 overflow-y-auto overscroll-contain max-sm:p-4">
+                    ? "محرك التخصيص"
+                    : "Customization"}
+              </span>
+            </button>
+          </div>
+        }
+      >
         {activeDialogTab === "basic" && (
           <ProductBasicTab
             t={t}
@@ -274,10 +279,10 @@ export function ProductDialog({
             setForm={setForm}
           />
         )}
-      </div>
+      </AppDialogBody>
 
-      {/* Persistent Footer with back/next and global save actions */}
-      <div className="border-t border-border-subtle bg-secondary/20 px-6 py-4.5 flex items-center justify-between gap-2 max-sm:px-4 max-sm:pb-[max(1rem,env(safe-area-inset-bottom))]">
+      {/* Back and next, and saving, always in view. */}
+      <AppDialogFooter>
         <div className="flex items-center gap-2">
           {activeDialogTab !== "basic" && (
             <Button
@@ -315,7 +320,7 @@ export function ProductDialog({
         >
           {t("common.save")}
         </Button>
-      </div>
+      </AppDialogFooter>
       <ImageCropperDialog
         open={Boolean(cropSrc)}
         imageSrc={cropSrc}
@@ -344,6 +349,6 @@ export function ProductDialog({
         onConfirm={handleConfirmProductVideo}
         onCancel={() => setPendingVideo(null)}
       />
-    </DialogContent>
+    </AppDialog>
   );
 }

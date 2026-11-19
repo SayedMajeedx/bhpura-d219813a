@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IScannerControls } from "@zxing/browser";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
-import { Camera, Keyboard, RefreshCw, Upload, X, ZoomIn } from "lucide-react";
+import { Camera, Keyboard, RefreshCw, Upload, ZoomIn } from "lucide-react";
+import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
 
 type Props = {
   open: boolean;
@@ -263,7 +263,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   };
 
   return (
-    <Dialog
+    <AppDialog
       open={open}
       onOpenChange={(value) => {
         if (!value) {
@@ -274,19 +274,11 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
         }
         onOpenChange(value);
       }}
+      kind="task"
     >
-      <DialogContent className="max-w-md overflow-hidden p-0">
-        <DialogHeader className="flex-row items-center justify-between p-4 pb-2">
-          <DialogTitle>{isAr ? "مسح الباركود" : "Scan barcode"}</DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onOpenChange(false)}
-            aria-label="close"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
+      <AppDialogHeader title={isAr ? "مسح الباركود" : "Scan barcode"} />
+
+      <AppDialogBody>
         <div className="space-y-3 p-4 pt-0">
           <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black">
             <video
@@ -427,7 +419,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
             </Button>
           </form>
         </div>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+    </AppDialog>
   );
 }

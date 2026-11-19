@@ -50,18 +50,17 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
 import { purchasablePlans } from "@/lib/saas-billing/purchasable-plans";
 import { systemSettingsQueries } from "@/lib/data/system-settings";
 import { arNoun } from "@/lib/arabic-count";
+import {
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 
 interface BrandSubscriptionHubProps {
   brandId: string;
@@ -1329,7 +1328,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
       {/* Upgrade / Change Plan & BenefitPay Payment Dialog */}
       {isUpgradeModalOpen && (
-        <Dialog
+        <AppDialog
+          kind="task"
+          size="lg"
           open={isUpgradeModalOpen}
           onOpenChange={(open) => {
             if (!open) {
@@ -1340,22 +1341,54 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
             setIsUpgradeModalOpen(open);
           }}
         >
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <AppDialogHeader
+            icon={selectedPlanForUpgrade ? <CreditCard /> : <TrendingUp />}
+            title={
+              !selectedPlanForUpgrade
+                ? isAr
+                  ? "ترقية خطة المتجر والمزايا"
+                  : "Upgrade / Select Plan"
+                : isAr
+                  ? "الدفع وتفعيل ترقية الباقة"
+                  : "Pay & Activate Plan Upgrade"
+            }
+            description={
+              !selectedPlanForUpgrade
+                ? isAr
+                  ? "اختر الباقة المناسبة لحجم أعمالك. يتم تفعيل المزايا فوراً دون أي انقطاع في الخدمة."
+                  : "Select the plan that fits your growth. New quotas apply immediately without store downtime."
+                : isAr
+                  ? "سدد إلكترونياً عبر PayPal أو البطاقة البنكية للتفعيل الفوري، أو حوّل عبر BenefitPay وارفع الإشعار للاعتماد."
+                  : "Pay online via PayPal / Card for instant activation, or transfer via BenefitPay with receipt upload."
+            }
+            meta={
+              selectedPlanForUpgrade ? (
+                <span className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedPlanForUpgrade(null)}
+                    className="h-8 gap-1 px-2 text-xs"
+                  >
+                    {isAr ? (
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    ) : (
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                    )}
+                    <span>{isAr ? "العودة لتغيير الباقة" : "Change Plan"}</span>
+                  </Button>
+                  <Badge variant="outline" className="font-mono text-xs">
+                    {selectedPlanForUpgrade.code}
+                  </Badge>
+                </span>
+              ) : undefined
+            }
+          />
+          <AppDialogBody>
             {!selectedPlanForUpgrade ? (
               // STEP 1: Plan Selection & Billing Interval Switcher
               <>
-                <DialogHeader>
-                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    <span>{isAr ? "ترقية خطة المتجر والمزايا" : "Upgrade / Select Plan"}</span>
-                  </DialogTitle>
-                  <DialogDescription className="text-xs">
-                    {isAr
-                      ? "اختر الباقة المناسبة لحجم أعمالك. يتم تفعيل المزايا فوراً دون أي انقطاع في الخدمة."
-                      : "Select the plan that fits your growth. New quotas apply immediately without store downtime."}
-                  </DialogDescription>
-                </DialogHeader>
-
                 {/* Billing Interval Switcher */}
                 <div className="flex items-center justify-center p-1 bg-muted/60 rounded-xl max-w-xs mx-auto my-2 border border-border">
                   <button
@@ -1508,40 +1541,6 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                 return (
                   <div className="space-y-4">
-                    <DialogHeader>
-                      <div className="flex items-center justify-between">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedPlanForUpgrade(null)}
-                          className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                        >
-                          {isAr ? (
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          ) : (
-                            <ArrowLeft className="h-3.5 w-3.5" />
-                          )}
-                          <span>{isAr ? "العودة لتغيير الباقة" : "Change Plan"}</span>
-                        </Button>
-                        <Badge variant="outline" className="font-mono text-xs">
-                          {selectedPlanForUpgrade.code}
-                        </Badge>
-                      </div>
-
-                      <DialogTitle className="text-lg font-bold flex items-center gap-2 mt-2">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                        <span>
-                          {isAr ? "الدفع وتفعيل ترقية الباقة" : "Pay & Activate Plan Upgrade"}
-                        </span>
-                      </DialogTitle>
-                      <DialogDescription className="text-xs">
-                        {isAr
-                          ? "سدد إلكترونياً عبر PayPal أو البطاقة البنكية للتفعيل الفوري، أو حوّل عبر BenefitPay وارفع الإشعار للاعتماد."
-                          : "Pay online via PayPal / Card for instant activation, or transfer via BenefitPay with receipt upload."}
-                      </DialogDescription>
-                    </DialogHeader>
-
                     {/* Order Summary Card */}
                     <div className="p-3.5 rounded-2xl bg-muted/40 border border-border-strong flex items-center justify-between">
                       <div>
@@ -1859,26 +1858,24 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 );
               })()
             )}
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+        </AppDialog>
       )}
 
       {/* Safe Cancellation Dialog */}
       {isCancelModalOpen && (
-        <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                <span>{isAr ? "طلب إلغاء تجديد الاشتراك" : "Cancel Auto-Renewal"}</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {isAr
-                  ? "نحن نضمن حماية بياناتك بالكامل عند إلغاء التجديد."
-                  : "Your data and store are fully preserved when cancelling renewal."}
-              </DialogDescription>
-            </DialogHeader>
+        <AppDialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen} kind="confirm">
+          <AppDialogHeader
+            icon={<AlertTriangle />}
+            title={isAr ? "طلب إلغاء تجديد الاشتراك" : "Cancel Auto-Renewal"}
+            description={
+              isAr
+                ? "نحن نضمن حماية بياناتك بالكامل عند إلغاء التجديد."
+                : "Your data and store are fully preserved when cancelling renewal."
+            }
+          />
 
+          <AppDialogBody>
             <div className="space-y-3 py-3 text-xs text-muted-foreground leading-relaxed">
               <p>
                 {isAr
@@ -1896,36 +1893,35 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   : "• Post-expiry, excess resources gracefully become read-only until you resubscribe."}
               </p>
             </div>
-
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                disabled={isSubmitting}
-                onClick={() => setIsCancelModalOpen(false)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "التراجع والبقاء" : "Keep Subscription"}
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                size="default"
-                disabled={isSubmitting}
-                onClick={handleCancelSubscription}
-                className="font-bold min-h-[44px]"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <XCircle className="h-4 w-4" />
-                )}
-                <span>{isAr ? "تأكيد إيقاف التجديد" : "Stop Auto-Renewal"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </AppDialogBody>
+          <AppDialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              size="default"
+              disabled={isSubmitting}
+              onClick={() => setIsCancelModalOpen(false)}
+              className="min-h-[44px]"
+            >
+              {isAr ? "التراجع والبقاء" : "Keep Subscription"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="default"
+              disabled={isSubmitting}
+              onClick={handleCancelSubscription}
+              className="font-bold min-h-[44px]"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4" />
+              )}
+              <span>{isAr ? "تأكيد إيقاف التجديد" : "Stop Auto-Renewal"}</span>
+            </Button>
+          </AppDialogFooter>
+        </AppDialog>
       )}
     </div>
   );

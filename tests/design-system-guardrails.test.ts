@@ -629,14 +629,15 @@ describe("icons are icons, not emoji", () => {
 describe("the admin's pop-ups (the review of 2026-11-19)", () => {
   // AppDialog (src/components/ui/app-dialog.tsx) is the one frame: pinned header and footer,
   // a sheet or the whole screen on a phone, no keyboard on open, a guard while saving. The
-  // pop-ups still built on the raw parts move onto it workspace by workspace; this ceiling
-  // only goes down, to 0, and a new admin pop-up starts on AppDialog.
+  // admin's 169 pop-ups moved onto it over six pull requests (2026-11-19), and a new admin
+  // pop-up starts on it: AppDialog, AppConfirm or confirmDialog.
+  // The storefront's pop-ups are the shopper's, in the store's look: not the admin's shell.
   const STOREFRONT =
-    /^(components\/storefront|features\/(storefront|checkout|product-page|services-home|gift-card-shop|order-receipt|storefront-booking|storefront-home|storefront-account|storefront-shell)|routes\/\$slug|routes\/invoice)/;
+    /^(components\/storefront|features\/(storefront|checkout|product-page|services-home|gift-card-shop|order-receipt|storefront-booking|storefront-home|storefront-account|storefront-shell)|features\/store-content\/components\/Store(Gallery|Faq)|addons\/[^/]+\/components\/storefront|routes\/\$slug|routes\/invoice)/;
 
-  it("are drawn by AppDialog: the raw dialogs left only go down", () => {
+  it("are all drawn by AppDialog: no admin pop-up is built on the raw parts", () => {
     const raw = /<(?:Dialog|AlertDialog)Content\b/g;
     const admin = (rel: string) => !rel.startsWith("components/ui/") && !STOREFRONT.test(rel);
-    expect(countMatches(raw, admin)).toBeLessThanOrEqual(22);
+    expect(countMatches(raw, admin)).toBe(0);
   });
 });
