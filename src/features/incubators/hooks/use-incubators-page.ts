@@ -16,7 +16,7 @@ import {
   moveStockBetweenIncubators,
   recordIncubatorPayment,
   recordIncubatorSale,
-  returnStockFromIncubator,
+  returnStockToStore,
   reverseIncubatorSale,
   syncIncubatorPrices,
   updateIncubator,
@@ -25,13 +25,13 @@ import {
 } from "@/lib/data/incubators";
 import { incubatorErrorMessage } from "@/features/incubators/lib/errors";
 import { movePayload, transferLabel, type MoveRow } from "@/features/incubators/lib/move-pieces";
+import { returnPayload, type ReturnRow } from "@/features/incubators/lib/return-pieces";
 import type { TransferRow } from "@/features/incubators/lib/transfer-sheet";
 import {
   incubatorDetails,
   incubatorDetailsProblem,
   itemTerms,
   newIncubatorCurrency,
-  returnDetails,
   saleDetails,
   saleProblem,
 } from "@/features/incubators/lib/forms";
@@ -275,17 +275,6 @@ export function useIncubatorsPage() {
         if (problem) return void toast.error(problem);
         setBusy(true);
         await recordIncubatorSale(sale);
-      } else if (dialog === "return" && activeItem && currentId) {
-        setBusy(true);
-        const back = await returnStockFromIncubator(returnDetails(values, currentId, activeItem));
-        toast.success(
-          isAr
-            ? `رجعت القطع إلى المحل · ${transferLabel(back.number)}`
-            : `Pieces back in the store · ${transferLabel(back.number)}`,
-        );
-        closeDialog();
-        await invalidateData();
-        return;
       } else {
         return;
       }
@@ -373,6 +362,38 @@ export function useIncubatorsPage() {
       await invalidateData();
       // The partner's sheet for the batch opens at once, ready to hand over.
       setShownTransferId(moved.transferId);
+      return true;
+    } catch (error) {
+      toast.error(incubatorErrorMessage(error, language));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Brings the chosen pieces back from the open partner to the store, in one step (a numbered
+   * batch), and opens its sheet. Answers whether it went; a refusal is said in words and the
+   * dialog stays open.
+   */
+  async function returnPieces(rows: readonly ReturnRow[], notes: string) {
+    if (!currentId) return false;
+    setBusy(true);
+    try {
+      const back = await returnStockToStore({
+        incubatorId: currentId,
+        items: returnPayload(rows),
+        notes: notes.trim() || null,
+      });
+      toast.success(
+        isAr
+          ? `رجعت القطع إلى المحل · ${transferLabel(back.number)}`
+          : `Pieces back in the store · ${transferLabel(back.number)}`,
+      );
+      closeDialog();
+      await invalidateData();
+      // The batch's sheet opens at once, to sign with the partner.
+      setShownTransferId(back.transferId);
       return true;
     } catch (error) {
       toast.error(incubatorErrorMessage(error, language));
@@ -493,6 +514,7 @@ export function useIncubatorsPage() {
     setPaymentToVoid,
     voidPayment,
     movePieces,
+    returnPieces,
     recordPayment,
     endPartnership,
     transfers: transfersQ.data ?? [],

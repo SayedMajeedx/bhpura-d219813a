@@ -1,4 +1,5 @@
 import { defaultVariantLabel, realSize } from "@/lib/default-variant";
+import type { PickRow } from "@/features/incubators/lib/stock-move";
 
 /**
  * Which sizes a transfer to a partner moves, and how many. Pure, so the batch transfer's
@@ -163,4 +164,54 @@ export function transferRows(
       ...startingChoice(totalAvailable, preselect),
     };
   });
+}
+
+/** A size of the transfer as the partner page's shared picker reads it (`StockMovePicker`). */
+export function transferPick(row: TransferRowState): PickRow {
+  return {
+    variantId: row.variantId,
+    productKey: row.productId,
+    product: row.productName,
+    option: row.variantLabel,
+    available: row.totalAvailable,
+    note: row.sku || null,
+    chosen: row.selected,
+    quantity: row.transferQty,
+    price: row.consignmentPrice,
+    code: row.externalCode,
+  };
+}
+
+/** A change made in the shared picker, in the transfer's own words. */
+export function fromPickPatch(patch: Partial<PickRow>): Partial<TransferRowState> {
+  const next: Partial<TransferRowState> = {};
+  if (patch.quantity !== undefined) next.transferQty = patch.quantity;
+  if (patch.price !== undefined) next.consignmentPrice = patch.price;
+  if (patch.code !== undefined) next.externalCode = patch.code;
+  if (patch.chosen !== undefined) next.selected = patch.chosen;
+  return next;
+}
+
+/** What stops the transfer, in the reader's words; null when it can go. */
+export function transferProblem(
+  rows: readonly TransferRowState[],
+  partnerChosen: boolean,
+  lang: "ar" | "en",
+): string | null {
+  const ar = lang === "ar";
+  if (!partnerChosen) {
+    return ar
+      ? "اختر المحل الشريك الذي ستُرسل إليه القطع"
+      : "Choose the partner shop the pieces go to";
+  }
+  if (!rows.some((row) => row.selected && row.transferQty > 0)) {
+    return ar ? "اختر قطعة واحدة على الأقل" : "Choose at least one piece";
+  }
+  const over = overAvailable(rows);
+  if (over.length > 0) {
+    return ar
+      ? `مقاسات تطلب أكثر من المتوفر: ${over.length}`
+      : `${over.length} ${over.length === 1 ? "size asks" : "sizes ask"} for more than is in stock`;
+  }
+  return null;
 }

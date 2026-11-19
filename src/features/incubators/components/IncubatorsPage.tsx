@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 import { MovePiecesDialog } from "@/features/incubators/components/MovePiecesDialog";
+import { ReturnPiecesDialog } from "@/features/incubators/components/ReturnPiecesDialog";
 import { EndPartnershipDialog } from "@/features/incubators/components/EndPartnershipDialog";
 import {
   IncubatorTransfersTab,
@@ -140,6 +141,7 @@ export function IncubatorsPage() {
       <PartnerPaymentDialog page={page} />
       <IncubatorStatementDialog page={page} />
       <MovePiecesDialog page={page} />
+      <ReturnPiecesDialog page={page} />
       <EndPartnershipDialog page={page} />
       <TransferSheetDialog page={page} />
       <BatchIncubatorTransferModal

@@ -126,29 +126,25 @@ describe("the transfer screen", () => {
   it("opens from the partner's page with nothing ticked, and a sold-out size cannot be", async () => {
     renderModal();
     expect(await screen.findByText("0 of 2 sizes")).toBeInTheDocument();
-    expect(
-      screen.getByRole("checkbox", { name: /Abaya Sabeeka 55: nothing to transfer/ }),
-    ).toBeDisabled();
-    expect(screen.queryByText("More than is in stock")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Transfer 0 pieces/ })).toBeDisabled();
+    expect(screen.getByRole("checkbox", { name: "Abaya Sabeeka · 55" })).toBeDisabled();
+    // Nothing chosen: the next step waits and says why.
+    expect(screen.getByRole("button", { name: "Review the transfer" })).toBeDisabled();
+    expect(await screen.findByText("Choose at least one piece")).toBeInTheDocument();
   });
 
   it("selects and deselects everything shown, and only what the search shows", async () => {
     renderModal();
     fireEvent.click(await screen.findByRole("button", { name: "Select all" }));
     expect(screen.getByText("2 of 2 sizes")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Transfer 5 pieces/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Review the transfer" })).toBeEnabled();
     fireEvent.click(screen.getByRole("button", { name: "Deselect all" }));
     expect(screen.getByText("0 of 2 sizes")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByPlaceholderText(/Search by product name/), {
-      target: { value: "Layla" },
-    });
+    const search = screen.getByRole("searchbox", { name: "Search products" });
+    fireEvent.change(search, { target: { value: "Layla" } });
     fireEvent.click(screen.getByRole("button", { name: "Select all" }));
     expect(screen.getByText("1 of 1 sizes")).toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText(/Search by product name/), {
-      target: { value: "" },
-    });
+    fireEvent.change(search, { target: { value: "" } });
     expect(screen.getByText("1 of 2 sizes")).toBeInTheDocument();
   });
 
@@ -157,66 +153,42 @@ describe("the transfer screen", () => {
     expect(await screen.findByText("2 of 2 sizes")).toBeInTheDocument();
   });
 
-  it("holds the transfer while a size asks for more than it has, then sends one batch", async () => {
+  it("never asks for more than a size has, reviews the batch, then sends it in one call", async () => {
     renderModal(true);
-    const field = (await screen.findAllByRole("spinbutton")).find(
-      (input) => (input as HTMLInputElement).value === "3",
-    ) as HTMLInputElement;
+    const field = await screen.findByRole("spinbutton", { name: "Quantity of Abaya Sabeeka · 52" });
     fireEvent.change(field, { target: { value: "9" } });
-    expect(screen.getByRole("alert")).toHaveTextContent("1 size asks for more than is in stock");
-    const confirm = screen.getByRole("button", { name: /^Transfer \d+ pieces?/ });
-    expect(confirm).toBeDisabled();
-    fireEvent.change(field, { target: { value: "3" } });
-    await waitFor(() => expect(confirm).toBeEnabled());
-    fireEvent.click(confirm);
+    expect(field).toHaveValue(3);
+
+    fireEvent.click(screen.getByRole("button", { name: "Review the transfer" }));
+    expect(screen.getByText("Step 2 of 2 · Review")).toBeInTheDocument();
+    expect(screen.getByText("To").nextElementSibling).toHaveTextContent("Dar Lulwa");
+    fireEvent.click(screen.getByRole("button", { name: "Send 5 pieces" }));
     await waitFor(() => expect(transfer.batch).toHaveBeenCalledTimes(1));
     const sent = (
       transfer.batch.mock.calls[0] as unknown as [{ items: Array<{ variantId: string }> }]
     )[0];
     expect(sent.items.map((item) => item.variantId).sort()).toEqual(["v52", "v54"]);
-    expect(within(document.body).queryByText("More than is in stock")).not.toBeInTheDocument();
   });
 });
 
 describe("the transfer screen on a phone", () => {
-  const asPhone = () =>
-    vi.mocked(window.matchMedia).mockImplementation(
-      (query: string) =>
-        ({
-          matches: query.includes("max-width"),
-          media: query,
-          onchange: null,
-          addListener: vi.fn(),
-          removeListener: vi.fn(),
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          dispatchEvent: vi.fn(),
-        }) as unknown as MediaQueryList,
-    );
-
-  it("is the full screen, with a card per size and one field each", async () => {
-    asPhone();
+  it("is the whole screen, each size once with its own fields", async () => {
     renderModal(true);
     expect(await screen.findByText("2 of 2 sizes")).toBeInTheDocument();
     const dialog = screen.getByRole("dialog");
     // A task on the shell: the whole screen of a phone.
     expect(dialog).toHaveAttribute("data-kind", "task");
     expect(dialog.className).toContain("max-sm:h-[calc(100dvh-var(--app-dialog-kb))]");
-    // No table on a phone, and each size's box once (both layouts once drew every field twice).
     expect(within(dialog).queryByRole("table")).toBeNull();
-    expect(screen.getAllByRole("checkbox", { name: /Transfer Abaya Sabeeka 52/ })).toHaveLength(1);
+    expect(screen.getAllByRole("checkbox", { name: "Abaya Sabeeka · 52" })).toHaveLength(1);
   });
 
   it("steps a size's quantity with its buttons, never past its pieces", async () => {
-    asPhone();
     renderModal(true);
-    const field = (await screen.findAllByRole("spinbutton", { name: "Quantity" })).find(
-      (input) => (input as HTMLInputElement).value === "3",
-    ) as HTMLInputElement;
-    expect(screen.getByRole("button", { name: "One more 52" })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "One less 52" }));
-    expect(field.value).toBe("2");
-    fireEvent.change(field, { target: { value: "9" } });
-    expect(field.value).toBe("3");
+    const field = await screen.findByRole("spinbutton", { name: "Quantity of Abaya Sabeeka · 52" });
+    expect(field).toHaveValue(3);
+    expect(screen.getByRole("button", { name: "One more Abaya Sabeeka · 52" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "One less Abaya Sabeeka · 52" }));
+    expect(field).toHaveValue(2);
   });
 });
