@@ -1,19 +1,10 @@
 import { Loader2, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import type { GiveawayDetail } from "../hooks/use-giveaway-detail";
 import { REJECT_REASONS } from "../lib/entry-rules";
 import { rejectLabel } from "../lib/messages";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
@@ -83,24 +74,20 @@ export function EntriesSummary({ detail }: { detail: GiveawayDetail }) {
         {hasDraw ? (isAr ? "إعادة السحب" : "Draw again") : isAr ? "اسحب الفائزين" : "Draw winners"}
       </Button>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isAr ? "إعادة السحب؟" : "Draw again?"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? "يُستبدل الفائزون الحاليون بنتيجة جديدة وتُحذف ملاحظات التحقق."
-                : "The current winners are replaced by a new result and the checks are cleared."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction onClick={detail.draw}>
-              {isAr ? "اسحب من جديد" : "Draw again"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AppConfirm
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        dir={isAr ? "rtl" : "ltr"}
+        title={isAr ? "إعادة السحب؟" : "Draw again?"}
+        description={
+          isAr
+            ? "يُستبدل الفائزون الحاليون بنتيجة جديدة وتُحذف ملاحظات التحقق."
+            : "The current winners are replaced by a new result and the checks are cleared."
+        }
+        confirmLabel={isAr ? "اسحب من جديد" : "Draw again"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={() => detail.draw()}
+      />
     </section>
   );
 }

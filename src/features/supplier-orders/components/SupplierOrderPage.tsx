@@ -21,16 +21,6 @@ import { toast } from "sonner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { combinedLoadState, OsLoadFailedState } from "@/components/os/os-load-failed-state";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -67,6 +57,7 @@ import { usePrintSupplierSheets } from "../hooks/use-print-supplier-sheets";
 import { PrintPurchaseOrderButton } from "./PurchaseOrderPrintDialog";
 import { UndoReceivingDialog } from "./UndoReceivingDialog";
 import { undoableReceipts } from "../lib/undo-receiving";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 // "received": cancel or delete was asked for an order with pieces received; the dialog says to
 // undo the receiving first.
@@ -412,88 +403,87 @@ export function SupplierOrderPage({
 
       {/* An order with payments is not deleted (their record would be lost): the database refuses
           it, so the dialog says why and offers to cancel it instead, which keeps it on record. */}
-      <AlertDialog open={confirming !== null} onOpenChange={(next) => !next && setConfirming(null)}>
-        <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirming === "received"
+      <AppConfirm
+        open={confirming !== null}
+        onOpenChange={(next) => !next && setConfirming(null)}
+        dir={isAr ? "rtl" : "ltr"}
+        title={
+          confirming === "received"
+            ? isAr
+              ? "وصلت قطع من هذه الطلبية"
+              : "Pieces of this order arrived"
+            : heldByPayments
+              ? isAr
+                ? "لا تُحذف طلبية عليها دفعات"
+                : "An order with payments is not deleted"
+              : confirming === "delete"
                 ? isAr
-                  ? "وصلت قطع من هذه الطلبية"
-                  : "Pieces of this order arrived"
-                : heldByPayments
-                  ? isAr
-                    ? "لا تُحذف طلبية عليها دفعات"
-                    : "An order with payments is not deleted"
-                  : confirming === "delete"
-                    ? isAr
-                      ? "حذف الطلبية؟"
-                      : "Delete this order?"
-                    : isAr
-                      ? "إلغاء الطلبية؟"
-                      : "Cancel this order?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirming === "received"
-                ? canReceive && undoable.length > 0
-                  ? isAr
-                    ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. ألغِ الاستلام أولاً، ثم ألغِ الطلبية أو احذفها."
-                    : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Undo the receiving first, then cancel or delete the order."
-                  : isAr
-                    ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. يلغي الاستلام من يدير المخزون."
-                    : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Someone who manages the stock can undo the receiving."
-                : heldByPayments && pay
-                  ? isAr
-                    ? `دفعت ${formatMoney(pay.paid, currency, lang)} على هذه الطلبية، وحذفها يمحو سجل الدفعة. ${cancelInstead ? "ألغِ الطلبية لتبقى في السجل ملغاة، أو " : ""}ألغِ الدفعة أولاً من قائمة الدفعات ثم احذفها.`
-                    : `You paid ${formatMoney(pay.paid, currency, lang)} on this order, and deleting it would erase that payment's record. ${cancelInstead ? "Cancel the order to keep it on record, or take" : "Take"} the payment back first in the payments list, then delete it.`
-                  : confirming === "delete"
-                    ? isAr
-                      ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
-                      : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
-                    : isAr
-                      ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
-                      : "The order stays on record as cancelled, and nothing is awaited from it."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>{isAr ? "تراجع" : "Keep it"}</AlertDialogCancel>
-            {confirming === "received" && canReceive && undoable.length > 0 && (
-              <AlertDialogAction
+                  ? "حذف الطلبية؟"
+                  : "Delete this order?"
+                : isAr
+                  ? "إلغاء الطلبية؟"
+                  : "Cancel this order?"
+        }
+        description={
+          confirming === "received"
+            ? canReceive && undoable.length > 0
+              ? isAr
+                ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. ألغِ الاستلام أولاً، ثم ألغِ الطلبية أو احذفها."
+                : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Undo the receiving first, then cancel or delete the order."
+              : isAr
+                ? "لا تُلغى طلبية ولا تُحذف وفيها قطع مستلمة: دخلت المخزون وتغيرت بها التكلفة. يلغي الاستلام من يدير المخزون."
+                : "An order with pieces received is not cancelled or deleted: they joined the stock and set its cost. Someone who manages the stock can undo the receiving."
+            : heldByPayments && pay
+              ? isAr
+                ? `دفعت ${formatMoney(pay.paid, currency, lang)} على هذه الطلبية، وحذفها يمحو سجل الدفعة. ${cancelInstead ? "ألغِ الطلبية لتبقى في السجل ملغاة، أو " : ""}ألغِ الدفعة أولاً من قائمة الدفعات ثم احذفها.`
+                : `You paid ${formatMoney(pay.paid, currency, lang)} on this order, and deleting it would erase that payment's record. ${cancelInstead ? "Cancel the order to keep it on record, or take" : "Take"} the payment back first in the payments list, then delete it.`
+              : confirming === "delete"
+                ? isAr
+                  ? "تُحذف الطلبية وسطورها نهائياً. لم يصل منها شيء، فلا يتغير المخزون."
+                  : "The order and its lines are deleted for good. Nothing of it arrived, so the stock does not change."
+                : isAr
+                  ? "تبقى الطلبية في السجل ملغاة، ولا يُنتظر منها شيء."
+                  : "The order stays on record as cancelled, and nothing is awaited from it."
+        }
+        busy={busy}
+        cancelLabel={isAr ? "تراجع" : "Keep it"}
+        action={
+          confirming === "received" ? (
+            canReceive && undoable.length > 0 ? (
+              <Button
+                type="button"
+                className="gap-1.5"
                 onClick={() => {
                   setConfirming(null);
                   setUndoing(undoable);
                 }}
-                className="gap-1.5"
               >
                 <Undo2 className="h-4 w-4" aria-hidden="true" />
                 {isAr ? "إلغاء الاستلام" : "Undo receiving"}
-              </AlertDialogAction>
-            )}
-            {confirming !== "received" && (!heldByPayments || cancelInstead) && (
-              <AlertDialogAction
-                disabled={busy}
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (confirming === "delete" && !heldByPayments) void remove();
-                  else void cancel();
-                }}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {heldByPayments
-                  ? isAr
-                    ? "إلغاء الطلبية بدلاً من ذلك"
-                    : "Cancel the order instead"
-                  : confirming === "delete"
-                    ? isAr
-                      ? "حذف"
-                      : "Delete"
-                    : isAr
-                      ? "إلغاء الطلبية"
-                      : "Cancel order"}
-              </AlertDialogAction>
-            )}
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              </Button>
+            ) : null
+          ) : heldByPayments && !cancelInstead ? null : undefined
+        }
+        destructive
+        confirmLabel={
+          heldByPayments
+            ? isAr
+              ? "إلغاء الطلبية بدلاً من ذلك"
+              : "Cancel the order instead"
+            : confirming === "delete"
+              ? isAr
+                ? "حذف"
+                : "Delete"
+              : isAr
+                ? "إلغاء الطلبية"
+                : "Cancel order"
+        }
+        onConfirm={async () => {
+          if (confirming === "delete" && !heldByPayments) await remove();
+          else await cancel();
+          return false;
+        }}
+      />
     </div>
   );
 }

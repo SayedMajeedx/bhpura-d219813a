@@ -1,25 +1,16 @@
 import * as React from "react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
+import { AppConfirm, type ConfirmFact } from "@/components/ui/app-confirm";
+import { useLastWhileClosing } from "@/hooks/use-last-while-closing";
 import { pageLanguage } from "@/lib/page-language";
-import { cn } from "@/lib/utils";
 
 /**
  * "Are you sure?" in the app's own dialog, asked from anywhere: `await confirmDialog({ title })`
  * resolves true when the person confirms. Sixteen places once used the browser's grey
  * `window.confirm`, which looks like a website, ignores the theme and the language's direction,
  * and may not show inside the phone app's web view. The dialog is drawn by the one
- * `ConfirmDialogHost` mounted in the root; with none mounted (a test rendering one screen) it
- * falls back to `window.confirm`.
+ * `ConfirmDialogHost` mounted in the root, on the admin's pop-up frame (`AppConfirm`: a sheet
+ * from the foot of a phone); with none mounted (a test rendering one screen) it falls back to
+ * `window.confirm`.
  */
 export type ConfirmOptions = {
   title: string;
@@ -29,6 +20,8 @@ export type ConfirmOptions = {
   cancelLabel?: string;
   /** A delete or another step that cannot be undone: the button is drawn in the danger colour. */
   destructive?: boolean;
+  /** The figures the step turns on, one a line: "Amount to approve 72.000 BHD". */
+  facts?: readonly ConfirmFact[];
 };
 
 type Request = ConfirmOptions & { resolve: (ok: boolean) => void };
@@ -64,31 +57,20 @@ export function ConfirmDialogHost() {
   };
 
   const ar = pageLanguage() === "ar";
-  const confirmLabel =
-    request?.confirmLabel ??
-    (request?.destructive ? (ar ? "حذف" : "Delete") : ar ? "تأكيد" : "Confirm");
-
+  // What the box says stays while it fades out.
+  const shown = useLastWhileClosing(request);
   return (
-    <AlertDialog open={request !== null} onOpenChange={(open) => !open && finish(false)}>
-      <AlertDialogContent dir={ar ? "rtl" : "ltr"} className="max-w-md">
-        <AlertDialogHeader className="text-start sm:text-start">
-          <AlertDialogTitle>{request?.title}</AlertDialogTitle>
-          {request?.description ? (
-            <AlertDialogDescription>{request.description}</AlertDialogDescription>
-          ) : null}
-        </AlertDialogHeader>
-        <AlertDialogFooter className="gap-2">
-          <AlertDialogCancel onClick={() => finish(false)}>
-            {request?.cancelLabel ?? (ar ? "إلغاء" : "Cancel")}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => finish(true)}
-            className={cn(request?.destructive && buttonVariants({ variant: "destructive" }))}
-          >
-            {confirmLabel}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <AppConfirm
+      open={request !== null}
+      onOpenChange={(open) => !open && finish(false)}
+      dir={ar ? "rtl" : "ltr"}
+      title={shown?.title}
+      description={shown?.description}
+      facts={shown?.facts}
+      destructive={shown?.destructive}
+      confirmLabel={shown?.confirmLabel}
+      cancelLabel={shown?.cancelLabel}
+      onConfirm={() => finish(true)}
+    />
   );
 }

@@ -3,13 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogBody,
+  AppDialogFooter,
+  AppDialogHeader,
+} from "@/components/ui/app-dialog";
 import { cn } from "@/lib/utils";
 import {
   invalidateAfterReceipt,
@@ -108,11 +106,17 @@ export function CancelledPieceDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isAr ? "ألغى الزبون طلبه" : "The customer cancelled"}</DialogTitle>
-          <DialogDescription>
+    <AppDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      kind="form"
+      busy={saving}
+      dir={isAr ? "rtl" : "ltr"}
+    >
+      <AppDialogHeader
+        title={isAr ? "ألغى الزبون طلبه" : "The customer cancelled"}
+        description={
+          <>
             <span dir="auto" className="break-words">
               {line.description}
             </span>
@@ -124,9 +128,10 @@ export function CancelledPieceDialog({
               : isAr
                 ? "ما زالت عند المورد."
                 : "It is still with the supplier."}
-          </DialogDescription>
-        </DialogHeader>
-
+          </>
+        }
+      />
+      <AppDialogBody>
         <fieldset className="space-y-2">
           <legend className="sr-only">{isAr ? "ماذا تفعل بها" : "What to do with it"}</legend>
           {options.map((option) => (
@@ -164,21 +169,20 @@ export function CancelledPieceDialog({
             </p>
           )}
         </fieldset>
-
-        <DialogFooter className="flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={saving}
-          >
-            {isAr ? "لاحقاً" : "Later"}
-          </Button>
-          <Button type="button" onClick={save} disabled={saving || !choice}>
-            {isAr ? "احفظ" : "Save"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </AppDialogBody>
+      <AppDialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={saving}
+        >
+          {isAr ? "لاحقاً" : "Later"}
+        </Button>
+        <Button type="button" onClick={save} disabled={saving || !choice}>
+          {isAr ? "احفظ" : "Save"}
+        </Button>
+      </AppDialogFooter>
+    </AppDialog>
   );
 }

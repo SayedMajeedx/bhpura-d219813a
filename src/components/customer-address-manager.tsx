@@ -26,18 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { getCurrentUser } from "@/lib/auth/session";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 export type ManagedCustomerAddress = {
   id: string;
@@ -585,32 +576,21 @@ export function CustomerAddressManager({
         </DialogContent>
       </Dialog>
 
-      <AlertDialog
+      <AppConfirm
         open={!!deleting}
-        onOpenChange={(next) => {
-          if (!next) setDeleting(null);
-        }}
-      >
-        <AlertDialogContent dir={isAr ? "rtl" : "ltr"}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isAr ? "حذف العنوان؟" : "Delete address?"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? "سيتم حذف هذا العنوان نهائياً من ملف العميل."
-                : "This address will be permanently removed from the customer profile."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => void remove()}
-            >
-              {isAr ? "حذف" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={(next) => !next && setDeleting(null)}
+        dir={isAr ? "rtl" : "ltr"}
+        title={isAr ? "حذف العنوان؟" : "Delete address?"}
+        description={
+          isAr
+            ? "سيتم حذف هذا العنوان نهائياً من ملف العميل."
+            : "This address will be permanently removed from the customer profile."
+        }
+        destructive
+        confirmLabel={isAr ? "حذف" : "Delete"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={() => remove()}
+      />
     </>
   );
 }

@@ -33,7 +33,6 @@ vi.mock("../src/lib/benefit-receipt.functions", () => receipts);
 vi.mock("@/lib/benefit-receipt.functions", () => receipts);
 
 const { DeleteBrandDialog } = await import("../src/components/super-admin/DeleteBrandDialog");
-const { Dialog } = await import("../src/components/ui/dialog");
 const { I18nProvider } = await import("../src/lib/i18n");
 
 beforeEach(() => {
@@ -48,12 +47,12 @@ const hardDelete = () => {
   render(
     <QueryClientProvider client={new QueryClient()}>
       <I18nProvider>
-        <Dialog open>
-          <DeleteBrandDialog
-            brand={{ id: "b1", slug: "qoffee", name_en: "Qoffee" }}
-            onDone={onDone}
-          />
-        </Dialog>
+        <DeleteBrandDialog
+          brand={{ id: "b1", slug: "qoffee", name_en: "Qoffee" }}
+          open
+          onOpenChange={() => undefined}
+          onDone={onDone}
+        />
       </I18nProvider>
     </QueryClientProvider>,
   );

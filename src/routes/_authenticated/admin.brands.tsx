@@ -806,15 +806,15 @@ function BrandsPage() {
         </Dialog>
       )}
       {deleting && (
-        <Dialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
-          <DeleteBrandDialog
-            brand={deleting}
-            onDone={() => {
-              setDeleting(null);
-              refresh();
-            }}
-          />
-        </Dialog>
+        <DeleteBrandDialog
+          brand={deleting}
+          open={!!deleting}
+          onOpenChange={(v) => !v && setDeleting(null)}
+          onDone={() => {
+            setDeleting(null);
+            refresh();
+          }}
+        />
       )}
     </div>
   );

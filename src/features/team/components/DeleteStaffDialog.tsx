@@ -1,65 +1,33 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
+import { AppConfirm } from "@/components/ui/app-confirm";
 import type { TeamPageState } from "@/features/team/hooks/use-team-page";
 
 /** Asks before a member is removed. */
 export function DeleteStaffDialog({ page }: { page: TeamPageState }) {
   const { t, isAr, deleteConfirm, setDeleteConfirm, handleDelete } = page;
+  const who = deleteConfirm?.name || deleteConfirm?.email || "";
   return (
-    <>
-      {/* Delete Confirmation */}
-      <AlertDialog
-        open={!!deleteConfirm}
-        onOpenChange={(v) => {
-          if (!v) setDeleteConfirm(null);
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isAr ? "حذف المستخدم" : "Delete User"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteConfirm && (
-                <>
-                  {isAr ? (
-                    <>
-                      هل أنت متأكد من إزالة صلاحية الفريق عن{" "}
-                      <strong>{deleteConfirm.name || deleteConfirm.email}</strong>؟
-                      <br />
-                      إذا كان لديه حساب عميل فسيتم الاحتفاظ بملفه وكلمة مروره وطلباته وعناوينه.
-                    </>
-                  ) : (
-                    <>
-                      Are you sure you want to delete{" "}
-                      <strong>{deleteConfirm.name || deleteConfirm.email}</strong>?
-                      <br />
-                      Team access will be removed. If this person also has a customer account, their
-                      password, orders, addresses, and customer data will be preserved.
-                    </>
-                  )}
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => deleteConfirm && handleDelete(deleteConfirm.id)}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <AppConfirm
+      open={!!deleteConfirm}
+      onOpenChange={(open) => !open && setDeleteConfirm(null)}
+      title={isAr ? "حذف المستخدم" : "Delete User"}
+      description={
+        isAr ? (
+          <>
+            هل أنت متأكد من إزالة صلاحية الفريق عن <bdi className="font-semibold">{who}</bdi>؟ إذا
+            كان لديه حساب عميل فسيتم الاحتفاظ بملفه وكلمة مروره وطلباته وعناوينه.
+          </>
+        ) : (
+          <>
+            Are you sure you want to delete <bdi className="font-semibold">{who}</bdi>? Team access
+            will be removed. If this person also has a customer account, their password, orders,
+            addresses, and customer data will be preserved.
+          </>
+        )
+      }
+      destructive
+      confirmLabel={t("common.delete")}
+      cancelLabel={t("common.cancel")}
+      onConfirm={() => deleteConfirm && handleDelete(deleteConfirm.id)}
+    />
   );
 }

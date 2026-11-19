@@ -19,7 +19,12 @@ const mocks = vi.hoisted(() => ({
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
   fetch: vi.fn(),
+  // Approving a transfer asks first, with the amount (an approval cannot be rejected later).
+  confirmDialog: vi.fn(async (_options: { facts?: { label: unknown; value: unknown }[] }) => true),
 }));
+const confirmModule = { confirmDialog: mocks.confirmDialog };
+vi.mock("../src/components/ui/confirm-dialog", () => confirmModule);
+vi.mock("@/components/ui/confirm-dialog", () => confirmModule);
 vi.mock("sonner", () => ({ toast: { success: mocks.toastSuccess, error: mocks.toastError } }));
 const ordersData = {
   approveBenefitPayment: mocks.approveBenefitPayment,
@@ -111,12 +116,23 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockClear());
   handleCompleteDelivery.mockClear();
   mocks.approveBenefitPayment.mockResolvedValue({ advanceOnly: true, alreadyPaid: false });
+  mocks.confirmDialog.mockResolvedValue(true);
   mocks.courierCompleteDelivery.mockResolvedValue(null);
   mocks.fetch.mockResolvedValue({ ok: true, json: async () => ({ order: {} }) });
   vi.stubGlobal("fetch", mocks.fetch);
 });
 
 describe("'Validate payment' on the orders list", () => {
+  it("asks first, saying the amount, and approves nothing when told not yet", async () => {
+    mocks.confirmDialog.mockResolvedValueOnce(false);
+    listRow();
+    fireEvent.click(screen.getByRole("button", { name: /validate payment/i }));
+    await waitFor(() => expect(mocks.confirmDialog).toHaveBeenCalledTimes(1));
+    const facts = mocks.confirmDialog.mock.calls[0][0].facts ?? [];
+    expect(facts.map((fact) => fact.label)).toContain("Amount to approve");
+    expect(mocks.approveBenefitPayment).not.toHaveBeenCalled();
+  });
+
   it("approves the transfer, and never writes a payment status itself", async () => {
     listRow();
     fireEvent.click(screen.getByRole("button", { name: /validate payment/i }));

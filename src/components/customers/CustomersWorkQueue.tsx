@@ -19,17 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { regionLabel } from "@/lib/bahrain-regions";
 import { maskPhoneForList } from "@/lib/privacy";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 interface CustomersWorkQueueProps {
   lang: "en" | "ar";
@@ -283,40 +273,11 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                   {/* Row actions */}
                   <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-center gap-1">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 text-destructive hover:text-destructive"
-                            aria-label={isAr ? `حذف العميل ${c.name}` : `Delete customer ${c.name}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {isAr ? "حذف العميل" : "Delete customer"}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {isAr
-                                ? `هل أنت متأكد من حذف ${c.name}؟ لا يمكن التراجع عن هذا الإجراء.`
-                                : `Delete ${c.name}? This action cannot be undone.`}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-                            <AlertDialogAction
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              onClick={() => onDeleteCustomer(c)}
-                            >
-                              {isAr ? "حذف" : "Delete"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <DeleteCustomerButton
+                        name={c.name}
+                        isAr={isAr}
+                        onDelete={() => onDeleteCustomer(c)}
+                      />
                       <ChevronRight
                         className={`h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform ${isAr ? "rotate-180" : ""}`}
                       />
@@ -331,3 +292,44 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
     </div>
   );
 };
+
+/** The bin on a customer's row, which asks first. */
+function DeleteCustomerButton({
+  name,
+  isAr,
+  onDelete,
+}: {
+  name: string;
+  isAr: boolean;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-10 w-10 text-destructive hover:text-destructive"
+        aria-label={isAr ? `حذف العميل ${name}` : `Delete customer ${name}`}
+        onClick={() => setOpen(true)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+      <AppConfirm
+        open={open}
+        onOpenChange={setOpen}
+        title={isAr ? "حذف العميل" : "Delete customer"}
+        description={
+          isAr
+            ? `هل أنت متأكد من حذف ${name}؟ لا يمكن التراجع عن هذا الإجراء.`
+            : `Delete ${name}? This action cannot be undone.`
+        }
+        destructive
+        confirmLabel={isAr ? "حذف" : "Delete"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={onDelete}
+      />
+    </>
+  );
+}

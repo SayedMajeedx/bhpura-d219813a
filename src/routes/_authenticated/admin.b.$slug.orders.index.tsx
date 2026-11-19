@@ -20,16 +20,6 @@ import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState, useDeferredValue } from "react";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
 import { BulkDeleteOrdersDialog } from "@/features/orders/components/BulkDeleteOrdersDialog";
 import { orderDeletable, orderKeptMessage } from "@/lib/order-deletion";
@@ -68,6 +58,7 @@ import { authenticatedJsonHeaders, copyInvoiceLink } from "@/features/orders/act
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { arNounOblique } from "@/lib/arabic-count";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
+import { AppConfirm } from "@/components/ui/app-confirm";
 type OrdersSearch = {
   tab?: string;
   queue?: string;
@@ -782,34 +773,18 @@ function OrdersList() {
         </>
       )}
       {isAdmin && (
-        <AlertDialog
+        <AppConfirm
           open={deleteTarget !== null}
-          onOpenChange={(open) => {
-            if (!open) {
-              setDeleteTarget(null);
-            } else {
-              setInspectOrder(null);
-            }
+          onOpenChange={(open) => !open && setDeleteTarget(null)}
+          title={t("common.delete")}
+          description={t("orders.deleteConfirm")}
+          destructive
+          confirmLabel={t("common.delete")}
+          cancelLabel={t("common.cancel")}
+          onConfirm={() => {
+            if (deleteTarget) void del(deleteTarget);
           }}
-        >
-          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg z-[100]">
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-              <AlertDialogDescription>{t("orders.deleteConfirm")}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={() => {
-                  if (deleteTarget) void del(deleteTarget);
-                }}
-              >
-                {t("common.delete")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        />
       )}
 
       {isAdmin && (

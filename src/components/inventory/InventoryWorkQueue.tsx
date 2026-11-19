@@ -29,16 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 interface InventoryWorkQueueProps {
   lang: "en" | "ar";
@@ -474,33 +465,22 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
           </table>
         </div>
       </div>
-      <AlertDialog
+      <AppConfirm
         open={Boolean(pendingDelete)}
         onOpenChange={(open) => !open && setPendingDelete(null)}
-      >
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{isAr ? "حذف المنتج" : "Delete product"}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {isAr
-                ? `هل أنت متأكد من حذف ${pendingDelete?.name_ar || pendingDelete?.name || "هذا المنتج"}؟ لا يمكن التراجع عن هذا الإجراء.`
-                : `Delete ${pendingDelete?.name_en || pendingDelete?.name || "this product"}? This action cannot be undone.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (pendingDelete) onDelete(pendingDelete.id);
-                setPendingDelete(null);
-              }}
-            >
-              {isAr ? "حذف" : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={isAr ? "حذف المنتج" : "Delete product"}
+        description={
+          isAr
+            ? `هل أنت متأكد من حذف ${pendingDelete?.name_ar || pendingDelete?.name || "هذا المنتج"}؟ لا يمكن التراجع عن هذا الإجراء.`
+            : `Delete ${pendingDelete?.name_en || pendingDelete?.name || "this product"}? This action cannot be undone.`
+        }
+        destructive
+        confirmLabel={isAr ? "حذف" : "Delete"}
+        cancelLabel={isAr ? "إلغاء" : "Cancel"}
+        onConfirm={() => {
+          if (pendingDelete) onDelete(pendingDelete.id);
+        }}
+      />
       <CampaignLinkDialog
         open={Boolean(linkFor)}
         onOpenChange={(open) => !open && setLinkFor(null)}

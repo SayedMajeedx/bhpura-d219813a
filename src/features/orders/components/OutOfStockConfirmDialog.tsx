@@ -1,13 +1,4 @@
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AppConfirm } from "@/components/ui/app-confirm";
 
 /** Asks before adding a variant with no stock to the order. */
 export function OutOfStockConfirmDialog({
@@ -21,41 +12,23 @@ export function OutOfStockConfirmDialog({
   onConfirm: (variant: any) => void;
   lang: string;
 }) {
+  const ar = lang === "ar";
   return (
-    <AlertDialog
+    <AppConfirm
       open={Boolean(variant)}
-      onOpenChange={(open) => {
-        if (!open) onClose();
+      onOpenChange={(open) => !open && onClose()}
+      title={ar ? "تنبيه: الصنف نافد من المخزون" : "Notice: Item is Out of Stock"}
+      description={
+        ar
+          ? "هذا الصنف رصيده الحالي 0 في المخزون. هل ترغب في إضافته إلى الطلب على أي حال؟"
+          : "This item currently has 0 units in stock. Do you want to add it to the order anyway?"
+      }
+      destructive
+      confirmLabel={ar ? "إضافة على أي حال" : "Add Anyway"}
+      cancelLabel={ar ? "إلغاء" : "Cancel"}
+      onConfirm={() => {
+        if (variant) onConfirm(variant);
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>
-            {lang === "ar" ? "تنبيه: الصنف نافد من المخزون" : "Notice: Item is Out of Stock"}
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            {lang === "ar"
-              ? "هذا الصنف رصيده الحالي 0 في المخزون. هل ترغب في إضافته إلى الطلب على أي حال؟"
-              : "This item currently has 0 units in stock. Do you want to add it to the order anyway?"}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>
-            {lang === "ar" ? "إلغاء" : "Cancel"}
-          </AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={() => {
-              if (variant) {
-                onConfirm(variant);
-                onClose();
-              }
-            }}
-          >
-            {lang === "ar" ? "إضافة على أي حال" : "Add Anyway"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    />
   );
 }
