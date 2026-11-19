@@ -9,6 +9,7 @@ import {
   moveTotals,
   transferLabel,
 } from "../src/features/incubators/lib/move-pieces";
+import { incubatorSummary } from "../src/features/incubators/lib/summary";
 import type { Incubator, StockItem } from "../src/features/incubators/types";
 
 // Moving pieces from one partner shop to another from the admin (the owner's request of
@@ -63,7 +64,7 @@ describe("what can move", () => {
     expect(moveTargets([lulwa, ra, ended], "lulwa").map((p) => p.id)).toEqual(["ra"]);
   });
 
-  it("offers the first partner's pieces, all chosen, at the store's price and our SKU", () => {
+  it("offers the first partner's pieces, all chosen, at their price there and our SKU", () => {
     const rows = moveRows(
       [item("a", 2), item("b", 0), { ...item("c", 1), incubator_id: "ra" }],
       "lulwa",
@@ -75,24 +76,32 @@ describe("what can move", () => {
         held: 2,
         chosen: true,
         quantity: 2,
-        price: 32,
+        // Its price at the first partner (30), not the store's (32): a move keeps the price.
+        price: 30,
         code: "S-a",
         currentCode: "LUL-1",
       }),
     ]);
   });
 
-  it("keeps the first partner's price when the size has no selling price", () => {
-    const [row] = moveRows(
-      [
-        item("a", 1, {
-          product_variants: { ...item("a", 1).product_variants!, selling_price: 0 },
-        }),
-      ],
-      "lulwa",
-      "en",
-    );
-    expect(row.price).toBe(30);
+  it("takes the store's price for a piece with no price at the first partner", () => {
+    const [row] = moveRows([item("a", 1, { consignment_price: 0 })], "lulwa", "en");
+    expect(row.price).toBe(32);
+  });
+
+  it("is worth what the partner's card says, until a price is changed", () => {
+    // Dar Lulwa (2026-11-19): two pieces at 24 there and 30 in the store made the move say 622
+    // against the card's 610.
+    const stock = [
+      item("a", 22, { consignment_price: 25 }),
+      item("b", 2, {
+        consignment_price: 24,
+        product_variants: { ...item("b", 1).product_variants!, selling_price: 30 },
+      }),
+    ];
+    const card = incubatorSummary(stock, [], []).stockValue;
+    expect(moveTotals(moveRows(stock, "lulwa", "en")).value).toBe(card);
+    expect(card).toBe(598);
   });
 });
 
@@ -123,9 +132,9 @@ describe("what stops a move, and what is sent", () => {
       r.variantId === "b" ? { ...r, chosen: false } : { ...r, quantity: 1, code: " " },
     );
     expect(movePayload(edited)).toEqual([
-      { variantId: "a", quantity: 1, price: 32, externalCode: null },
+      { variantId: "a", quantity: 1, price: 30, externalCode: null },
     ]);
-    expect(moveTotals(edited)).toEqual({ lines: 1, pieces: 1, value: 32 });
+    expect(moveTotals(edited)).toEqual({ lines: 1, pieces: 1, value: 30 });
   });
 
   it("numbers a batch as staff and partners read it", () => {
@@ -157,8 +166,9 @@ describe("the move dialog", () => {
     // The only other active partner is chosen, with its commission said.
     expect(screen.getByLabelText("To the partner shop")).toHaveValue("ra");
     expect(screen.getByText(/Commission from the partner's settings: 15%/)).toBeInTheDocument();
-    // The total is in the list's bar and in the footer, beside the button.
-    expect(screen.getAllByText("3 pieces · BHD 96.000")).toHaveLength(2);
+    // The total is in the list's bar and in the footer, beside the button: at the pieces' price
+    // at Dar Lulwa (30), the figure the partner's card shows.
+    expect(screen.getAllByText("3 pieces · BHD 90.000")).toHaveLength(2);
     expect(screen.getByText("Step 1 of 2 · Choose the pieces")).toBeInTheDocument();
     // Each product's sizes are under it.
     expect(screen.getAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0);
