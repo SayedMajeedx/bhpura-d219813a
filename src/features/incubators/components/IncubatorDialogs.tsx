@@ -20,20 +20,13 @@ const SELECT_CLASS =
   "mt-2 h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm";
 
 /** The forms: the ones the batch transfer and the statement do not own. */
-const FORM_DIALOGS: IncubatorDialog[] = [
-  "incubator",
-  "edit_incubator",
-  "edit_item",
-  "sale",
-  "return",
-];
+const FORM_DIALOGS: IncubatorDialog[] = ["incubator", "edit_incubator", "edit_item", "sale"];
 
 const TITLES: Record<string, { en: string; ar: string }> = {
   incubator: { en: "Add partner shop", ar: "إضافة محل شريك" },
   edit_incubator: { en: "Edit partner shop details", ar: "تعديل بيانات المحل الشريك" },
   edit_item: { en: "Edit item code and terms", ar: "تعديل كود وشروط القطعة" },
   sale: { en: "Record sale", ar: "تسجيل قطعة مباعة" },
-  return: { en: "Return to main stock", ar: "إرجاع للمخزون الرئيسي" },
 };
 
 /** What each form's button does, in its own words (all of them once said "save and update stock"). */
@@ -42,7 +35,6 @@ const SAVE: Record<string, { en: string; ar: string }> = {
   edit_incubator: { en: "Save changes", ar: "حفظ التغييرات" },
   edit_item: { en: "Save the terms", ar: "حفظ الشروط" },
   sale: { en: "Record the sale", ar: "تسجيل البيع" },
-  return: { en: "Return to the store", ar: "إرجاع للمحل" },
 };
 
 /** The page's forms, one dialog at a time: a partner, a piece's terms, a sale, a return, a payment. */
@@ -143,24 +135,6 @@ export function IncubatorFormDialog({ page }: { page: IncubatorsPageState }) {
                 max={localDateTimeValue()}
                 required
               />
-            </>
-          )}
-
-          {dialog === "return" && activeItem && (
-            <>
-              <p className="break-words rounded-md bg-muted p-3 text-sm font-bold" dir="auto">
-                {piece} · {isAr ? "المتوفر" : "available"}: {held}
-              </p>
-              <Field
-                label={isAr ? "الكمية المرجعة" : "Return quantity"}
-                name="quantity"
-                type="number"
-                min="1"
-                max={String(Math.max(1, held))}
-                defaultValue="1"
-                required
-              />
-              <Field label={isAr ? "سبب أو ملاحظة" : "Reason or note"} name="notes" textarea />
             </>
           )}
         </AppDialogBody>

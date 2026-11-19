@@ -6,7 +6,6 @@ import {
   itemTerms,
   localDateTimeValue,
   newIncubatorCurrency,
-  returnDetails,
   saleDetails,
   saleProblem,
 } from "../src/features/incubators/lib/forms";
@@ -308,12 +307,6 @@ describe("the forms", () => {
         variant_id: "v1",
       }),
     ).toMatchObject({ incubatorId: "i1", variantId: "v1", quantity: 2, unitPrice: 28 });
-    expect(returnDetails({ quantity: "1", notes: "" }, "i1", { variant_id: "v1" })).toEqual({
-      incubatorId: "i1",
-      variantId: "v1",
-      quantity: 1,
-      notes: null,
-    });
   });
 
   it("refuse a sale of pieces the partner does not hold, or dated in the future", () => {

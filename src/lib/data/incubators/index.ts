@@ -415,16 +415,18 @@ function transferDone(data: unknown): TransferDone {
   };
 }
 
-/** Brings a partner's pieces back to the store, as one numbered batch. */
-export async function returnStockFromIncubator(args: {
+/**
+ * Brings a partner's pieces back to the store, as one numbered batch: every size named, or none
+ * (the database refuses the whole batch when one size is more than the partner holds).
+ */
+export async function returnStockToStore(args: {
   incubatorId: string;
-  variantId: string;
-  quantity: number;
+  items: ReadonlyArray<{ variantId: string; quantity: number }>;
   notes?: string | null;
 }): Promise<TransferDone> {
   const { data, error } = await supabase.rpc("return_stock_to_store", {
     p_incubator_id: args.incubatorId,
-    p_items: [{ variant_id: args.variantId, quantity: args.quantity }],
+    p_items: args.items.map((item) => ({ variant_id: item.variantId, quantity: item.quantity })),
     p_notes: args.notes ?? undefined,
   });
   if (error) throw error;

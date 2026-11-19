@@ -262,7 +262,10 @@ describe("writes", () => {
   it("throw the server's error so the page can map its code", async () => {
     respond = () => ({ data: null, error: denied });
     await expect(
-      incubators.returnStockFromIncubator({ incubatorId: "i1", variantId: "v1", quantity: 1 }),
+      incubators.returnStockToStore({
+        incubatorId: "i1",
+        items: [{ variantId: "v1", quantity: 1 }],
+      }),
     ).rejects.toBe(denied);
     await expect(incubators.reverseIncubatorSale("s1", "Manual")).rejects.toBe(denied);
   });
@@ -341,16 +344,25 @@ describe("writes", () => {
 
   it("return pieces to the store and move them between partners as numbered batches", async () => {
     respond = () => ({ data: { transfer_id: "t2", number: 8, pieces: 1 }, error: null });
-    const back = await incubators.returnStockFromIncubator({
+    const back = await incubators.returnStockToStore({
       incubatorId: "i1",
-      variantId: "v1",
-      quantity: 1,
+      items: [
+        { variantId: "v1", quantity: 1 },
+        { variantId: "v2", quantity: 3 },
+      ],
     });
     expect(back.number).toBe(8);
+    // Many sizes come back in one call, one numbered batch.
     expect(requests[0]).toMatchObject({
       table: "return_stock_to_store",
       op: "rpc",
-      payload: { p_incubator_id: "i1", p_items: [{ variant_id: "v1", quantity: 1 }] },
+      payload: {
+        p_incubator_id: "i1",
+        p_items: [
+          { variant_id: "v1", quantity: 1 },
+          { variant_id: "v2", quantity: 3 },
+        ],
+      },
     });
     await incubators.moveStockBetweenIncubators({
       fromIncubatorId: "i1",

@@ -70,19 +70,6 @@ export function moveRows(stock: readonly StockItem[], fromId: string, lang: Lang
     .sort((a, b) => a.name.localeCompare(b.name, lang));
 }
 
-/** A product's sizes together, in the list's order, with how many of them the partner holds. */
-export function moveGroups(rows: readonly MoveRow[]) {
-  const groups: Array<{ key: string; product: string; held: number; rows: MoveRow[] }> = [];
-  for (const row of rows) {
-    const group = groups.find((item) => item.key === row.productKey);
-    if (group) {
-      group.rows.push(row);
-      group.held += row.held;
-    } else groups.push({ key: row.productKey, product: row.product, held: row.held, rows: [row] });
-  }
-  return groups;
-}
-
 /** The pieces chosen to go, each at least one piece. */
 export function chosenRows(rows: readonly MoveRow[]) {
   return rows.filter((row) => row.chosen && row.quantity > 0);

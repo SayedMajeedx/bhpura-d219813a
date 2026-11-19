@@ -11,6 +11,7 @@ import {
   ArrowLeftRight,
   CircleSlash,
   MoreHorizontal,
+  Undo2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,6 +147,14 @@ export function IncubatorOverview({ page }: { page: IncubatorsPageState }) {
           >
             <ArrowLeftRight className="me-2 h-4 w-4" />
             {isAr ? "نقل لمحل شريك آخر" : "Move to another partner"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => openDialog("return")}
+            disabled={summary.units <= 0}
+          >
+            <Undo2 className="me-2 h-4 w-4" />
+            {isAr ? "إرجاع للمحل" : "Return to the store"}
           </Button>
           <Button onClick={() => openDialog("transfer")} disabled={!current.is_active}>
             <Package className="me-2 h-4 w-4" />

@@ -60,19 +60,6 @@ export function saleDetails(
   };
 }
 
-export function returnDetails(
-  values: Values,
-  incubatorId: string,
-  item: Pick<StockItem, "variant_id">,
-) {
-  return {
-    incubatorId,
-    variantId: item.variant_id,
-    quantity: number(values.quantity),
-    notes: optional(values.notes),
-  };
-}
-
 /** Why a partner's details cannot be saved, or null. */
 export function incubatorDetailsProblem(
   details: ReturnType<typeof incubatorDetails>,
