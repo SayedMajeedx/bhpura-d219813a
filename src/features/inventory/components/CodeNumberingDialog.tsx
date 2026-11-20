@@ -236,14 +236,17 @@ function CodeNumberingDialog({
           </ul>
         )}
       </AppDialogBody>
-      <AppDialogFooter>
-        {problem && <p className="me-auto self-center text-xs text-destructive">{problem}</p>}
-        {!problem && rows.length > 0 && (
-          <p className="me-auto self-center text-xs text-muted-foreground">
-            {countOf(rows.length, "size", lang)}
-            {barcodes > 0 ? ` · ${isAr ? "باركود جديد" : "new barcodes"}: ${barcodes}` : ""}
-          </p>
-        )}
+      <AppDialogFooter
+        error={problem || undefined}
+        summary={
+          !problem && rows.length > 0 ? (
+            <span className="text-xs">
+              {countOf(rows.length, "size", lang)}
+              {barcodes > 0 ? ` · ${isAr ? "باركود جديد" : "new barcodes"}: ${barcodes}` : ""}
+            </span>
+          ) : undefined
+        }
+      >
         <Button variant="outline" onClick={onClose}>
           {isAr ? "إلغاء" : "Cancel"}
         </Button>

@@ -5,6 +5,7 @@ import {
   blockAppWrites,
   describeCutOff,
   findCutOffContent,
+  findLooseBoxes,
 } from "./helpers/overflow";
 
 /**
@@ -146,44 +147,76 @@ async function settle(page: Page) {
   await page.waitForTimeout(300);
 }
 
+/** The store with a cart that stresses the layout, and the pages to open in it. */
+async function openStore(page: Page, slug: string, item: LiveItem): Promise<string[]> {
+  await guardWrites(page);
+  await blockAppWrites(page);
+  await page.addInitScript(
+    ({ slug, cart }) => {
+      window.localStorage.setItem(`storefront-cart:${slug}`, JSON.stringify(cart));
+    },
+    { slug, cart: stressCart(item) },
+  );
+
+  await page.goto(`/${slug}?lang=ar`);
+  await settle(page);
+  const linked = await linkedPages(page, slug);
+
+  return [
+    `/${slug}`,
+    linked.category,
+    linked.product,
+    `/${slug}/checkout`,
+    `/${slug}/search?q=a`,
+    `/${slug}/wishlist`,
+    `/${slug}/auth`,
+    `/${slug}/size-guide`,
+    `/${slug}/custom-order`,
+    `/${slug}/book`,
+    `/${slug}/page/0`,
+  ].filter((path): path is string => Boolean(path));
+}
+
 for (const slug of SLUGS) {
   test.describe(`Storefront overflow audit: ${slug}`, () => {
     // Long (it presses every button of every page), so it runs on demand: npm run audit:overflow
     test.skip(!process.env.OVERFLOW_AUDIT, "On demand: npm run audit:overflow");
     test.skip(!SUPABASE_URL || !ANON_KEY, "Needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
 
+    test("no row moves up and down under a finger", async ({ browser }) => {
+      test.setTimeout(1_800_000);
+      const item = await liveItem(slug);
+      test.skip(!item, `The store "${slug}" has no product to put in a cart`);
+      // A touch phone: each button takes its 44px tap box, which is what made a row loose.
+      const context = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        hasTouch: true,
+        isMobile: true,
+      });
+      const page = await context.newPage();
+      const paths = await openStore(page, slug, item!);
+
+      const problems: string[] = [];
+      for (const path of paths) {
+        for (const lang of LANGS) {
+          await page.goto(`${path}${path.includes("?") ? "&" : "?"}lang=${lang}`);
+          await settle(page);
+          const loose = await findLooseBoxes(page);
+          if (loose.length > 0) problems.push(`${path} (${lang})\n${loose.join("\n")}`);
+        }
+      }
+      await context.close();
+
+      expect(problems, `Loose rows:\n${problems.join("\n")}`).toEqual([]);
+    });
+
     test("no page cuts content off, phone to laptop", async ({ page }) => {
       test.setTimeout(7_200_000);
       const item = await liveItem(slug);
       test.skip(!item, `The store "${slug}" has no product to put in a cart`);
 
-      await guardWrites(page);
-      await blockAppWrites(page);
-      await page.addInitScript(
-        ({ slug, cart }) => {
-          window.localStorage.setItem(`storefront-cart:${slug}`, JSON.stringify(cart));
-        },
-        { slug, cart: stressCart(item!) },
-      );
-
       await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(`/${slug}?lang=ar`);
-      await settle(page);
-      const linked = await linkedPages(page, slug);
-
-      const paths = [
-        `/${slug}`,
-        linked.category,
-        linked.product,
-        `/${slug}/checkout`,
-        `/${slug}/search?q=a`,
-        `/${slug}/wishlist`,
-        `/${slug}/auth`,
-        `/${slug}/size-guide`,
-        `/${slug}/custom-order`,
-        `/${slug}/book`,
-        `/${slug}/page/0`,
-      ].filter((path): path is string => Boolean(path));
+      const paths = await openStore(page, slug, item!);
 
       const problems: string[] = [];
       for (const path of paths) {

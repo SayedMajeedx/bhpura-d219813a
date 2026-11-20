@@ -254,12 +254,15 @@ export function MissingCostsDialog<P extends MissingCostProduct>({
           </ul>
         )}
       </AppDialogBody>
-      <AppDialogFooter>
-        {invalid.length > 0 && (
-          <p className="me-auto self-center text-xs text-destructive">
-            {isAr ? "صحّح المبالغ المعلّمة قبل الحفظ." : "Fix the marked amounts before saving."}
-          </p>
-        )}
+      <AppDialogFooter
+        error={
+          invalid.length > 0
+            ? isAr
+              ? "صحّح المبالغ المعلّمة قبل الحفظ."
+              : "Fix the marked amounts before saving."
+            : undefined
+        }
+      >
         <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
           {isAr ? "إغلاق" : "Close"}
         </Button>

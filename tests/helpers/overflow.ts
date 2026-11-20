@@ -263,3 +263,31 @@ export async function auditOverlays(
   }
   return problems;
 }
+
+/**
+ * Boxes that scroll up and down by a few pixels they were never given: a row that scrolls
+ * sideways, under a finger, moved up and down too, as if loose (the partner page's tabs,
+ * 2026-11-20). A control's 44px tap box on a touch screen stands past a slim row, and a box that
+ * scrolls one way scrolls the other. Measured on a touch phone; a box with a height to scroll in
+ * (`max-height`), one that says it scrolls up and down (`overflow-y-auto`: a page, a list) and one
+ * that scrolls by more than a row's slack are left alone.
+ */
+export async function findLooseBoxes(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const found: string[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>("body *"))) {
+      if (el.clientHeight === 0) continue;
+      const style = getComputedStyle(el);
+      if (!/auto|scroll/.test(style.overflowY) || style.maxHeight !== "none") continue;
+      // A box that says it scrolls up and down (a page, a list) may have any height to scroll.
+      if (/\boverflow-(y-)?(auto|scroll)\b/.test(String(el.className))) continue;
+      const slack = el.scrollHeight - el.clientHeight;
+      if (slack < 1 || slack > 24) continue;
+      const words = (el.innerText || el.getAttribute("aria-label") || "").trim().slice(0, 60);
+      found.push(
+        `  <${el.tagName.toLowerCase()} class="${el.className}"> moves ${slack}px up and down: "${words}"`,
+      );
+    }
+    return found;
+  });
+}

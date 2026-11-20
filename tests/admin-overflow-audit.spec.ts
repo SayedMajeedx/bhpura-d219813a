@@ -4,6 +4,7 @@ import {
   blockAppWrites,
   describeCutOff,
   findCutOffContent,
+  findLooseBoxes,
 } from "./helpers/overflow";
 import { BRAND, signInWithStressData } from "./helpers/admin-stress";
 
@@ -121,5 +122,34 @@ for (const lang of ["ar", "en"] as const) {
     }
 
     expect(problems, `Content cut off:\n${problems.join("\n")}`).toEqual([]);
+  });
+}
+
+for (const lang of ["ar", "en"] as const) {
+  test(`no row moves up and down under a finger (${lang})`, async ({ browser }) => {
+    test.setTimeout(1_800_000);
+    // A touch phone: each control takes its 44px tap box, which is what made a row loose.
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    const page = await context.newPage();
+    await signInWithStressData(page, lang);
+    await blockAppWrites(page);
+
+    const requested = process.env.AUDIT_SCREENS?.split(",").map((screen) => screen.trim());
+    const screens = requested?.length ? SCREENS.filter((s) => requested.includes(s)) : SCREENS;
+
+    const problems: string[] = [];
+    for (const screen of screens) {
+      await page.goto(screenPath(screen));
+      await settle(page);
+      const loose = await findLooseBoxes(page);
+      if (loose.length > 0) problems.push(`${screen} (${lang})\n${loose.join("\n")}`);
+    }
+    await context.close();
+
+    expect(problems, `Loose rows:\n${problems.join("\n")}`).toEqual([]);
   });
 }

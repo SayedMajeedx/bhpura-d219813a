@@ -119,6 +119,22 @@ const orders = [
   },
 ];
 const vendors = [{ id: "vendor-1", brand_id: BRAND, name: LONG_PERSON, phone: "97312345678" }];
+
+/** A partner shop, so the partner page draws its figures and its tabs. */
+const incubators = [
+  {
+    id: "incubator-1",
+    brand_id: BRAND,
+    name: LONG_PERSON,
+    commission_type: "percentage",
+    commission_value: 20,
+    currency: "BHD",
+    settlement_day: 1,
+    is_active: true,
+    pickup_enabled: false,
+    created_at: "2026-07-20T12:00:00Z",
+  },
+];
 /** A tailor's order, partly received, late and part paid, with a cost of the whole order. */
 const purchaseOrders = [
   {
@@ -312,6 +328,7 @@ export async function signInWithStressData(
     if (url.includes("/purchase_order_payments")) return answer(purchasePayments);
     if (url.includes("/purchase_orders")) return answer(purchaseOrders);
     if (url.includes("/vendors")) return answer(vendors);
+    if (url.includes("/incubators")) return answer(incubators);
     if (url.includes("/order_items")) return answer(orders[0].order_items);
     if (url.includes("/orders")) {
       return answer(tweaks.order ? orders.map(tweaks.order) : orders, { "content-range": "0-0/1" });
