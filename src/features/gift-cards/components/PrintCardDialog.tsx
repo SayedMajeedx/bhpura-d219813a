@@ -1,10 +1,20 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { GiftCard, GiftCardPurchase } from "@/lib/data/gift-cards";
+import {
+  cardDesignQueries,
+  type CardFontChoice,
+  type CardFontChoices,
+} from "@/lib/data/gift-cards/designs";
+import { useBrand } from "@/lib/brand-context";
+import { useCardFontsReady } from "@/features/gift-card-design/hooks/use-card-kit";
+import { choiceValue } from "@/features/gift-card-design/lib/card-faces";
+import { isArabic } from "@/features/gift-card-design/lib/type";
 import { GiftCardDesigner } from "@/features/gift-card-design/components/GiftCardDesigner";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
 import type { CardDetails } from "@/features/gift-card-design/lib/content";
@@ -13,6 +23,8 @@ import { cardPrintStart } from "../lib/card-print";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
 import { MESSAGE_SIZES, type MessageSize } from "@/features/gift-card-design/lib/message-card";
 import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
+import { fontSample } from "../lib/card-font-choices";
+import { CardFontField } from "./CardFontPicker";
 
 const SIZE_WORDS: Record<MessageSize, { ar: string; en: string }> = {
   small: { ar: "أصغر", en: "Smaller" },
@@ -132,12 +144,41 @@ function PrintCardDialog({
   onClose: () => void;
 }) {
   const isAr = lang === "ar";
-  const kit = useAdminCardKit();
+  const brand = useBrand();
+  const storeKit = useAdminCardKit();
   const [design, setDesign] = useState<CardDesign>(source.initial);
   // A gift message card's words can be written or put right before printing; a gift card's are
   // its own record.
   const [details, setDetails] = useState<CardDetails>(source.details);
   const editable = source.details.purpose === "message";
+  // A message card's font for this card only, in the message's language (the settings' until
+  // chosen): the owner's request of 2026-11-21.
+  const stored = useQuery(cardDesignQueries.store(brand.id));
+  const library = useQuery({
+    ...cardDesignQueries.fontLibrary(brand.id),
+    enabled: editable && Boolean(brand.id),
+  });
+  const [cardFonts, setCardFonts] = useState<CardFontChoices>({ ar: null, en: null });
+  const words = (details.message || details.to || "").trim();
+  const script: "ar" | "en" = words ? (isArabic(words) ? "ar" : "en") : lang;
+  const settingsFont: CardFontChoice | null =
+    stored.data?.message_fonts[script] ?? stored.data?.fonts[script] ?? null;
+  const chosen = cardFonts[script];
+  const printKit = useMemo(
+    () =>
+      chosen
+        ? {
+            ...storeKit,
+            messageFonts: { ...storeKit.messageFonts, [script]: choiceValue(chosen) },
+          }
+        : storeKit,
+    [storeKit, chosen, script],
+  );
+  const chosenReady = useCardFontsReady(printKit.messageFonts);
+  const kit = useMemo(
+    () => ({ ...printKit, ready: printKit.ready && chosenReady }),
+    [printKit, chosenReady],
+  );
   return (
     <AppDialog
       open
@@ -179,10 +220,31 @@ function PrintCardDialog({
                   value={details.message ?? ""}
                   onChange={(e) => setDetails((d) => ({ ...d, message: e.target.value || null }))}
                   maxLength={400}
-                  rows={3}
+                  rows={4}
                   dir="auto"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {isAr
+                    ? "كل سطر تبدأه هنا يبدأ سطرًا جديدًا في البطاقة."
+                    : "Each line you start here starts a new line on the card."}
+                </p>
               </div>
+              <CardFontField
+                lang={lang}
+                script={script}
+                title={isAr ? "خط هذه البطاقة" : "This card's font"}
+                description={
+                  isAr
+                    ? "لهذه البطاقة فقط، ولا يتغير خط بطاقات الإهداء في الإعدادات."
+                    : "For this card only: the gift message cards' font in the settings stays as it is."
+                }
+                value={chosen}
+                onChange={(choice) => setCardFonts((fonts) => ({ ...fonts, [script]: choice }))}
+                base="settings"
+                inherited={settingsFont}
+                library={library.data ?? []}
+                sample={fontSample(script, storeKit.storeName)}
+              />
               <div className="space-y-1.5">
                 <p className="text-sm font-medium">{isAr ? "حجم خط الرسالة" : "Message size"}</p>
                 <div

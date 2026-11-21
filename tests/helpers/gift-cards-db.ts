@@ -13,6 +13,7 @@ import printFees from "../../supabase/migrations/20261125100000_gift_card_print_
 import printInSales from "../../supabase/migrations/20261126100000_gift_card_print_fee_in_sales.sql?raw";
 import giftLink from "../../supabase/migrations/20261201100000_gift_card_gift_link.sql?raw";
 import rangeAndAddons from "../../supabase/migrations/20261206100000_gift_card_amount_range_and_addons.sql?raw";
+import fontChoices from "../../supabase/migrations/20261215100000_gift_card_font_choices.sql?raw";
 
 /**
  * A real Postgres (PGlite) with the gift cards' four migrations and the live payment state
@@ -126,6 +127,7 @@ export async function giftCardDb(): Promise<PGlite> {
     printInSales,
     giftLink,
     rangeAndAddons,
+    fontChoices,
   ]) {
     await db.exec(step);
   }

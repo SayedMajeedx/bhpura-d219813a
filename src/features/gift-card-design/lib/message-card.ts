@@ -12,6 +12,8 @@ import {
   oneLine,
   textLines,
   wrap,
+  wrapWritten,
+  writtenLines,
   type Measure,
 } from "./type";
 
@@ -74,9 +76,22 @@ function framed(w: number, h: number, pal: Palette): Shape[] {
 /**
  * Lines of even length: the same number of lines as the widest wrap gives, at the narrowest width
  * that still holds them, so a short message reads as two or three balanced lines (as written on a
- * card by hand), never one long line over a short last word.
+ * card by hand), never one long line over a short last word. Each line the writer started is
+ * balanced on its own and keeps its place (`writtenLines`).
  */
 export function balancedLines(
+  text: string,
+  font: ReturnType<typeof display>,
+  width: number,
+  measure: Measure,
+): string[] {
+  return writtenLines(text).flatMap((line) =>
+    line ? balancedLine(line, font, width, measure) : [""],
+  );
+}
+
+/** One written line in lines of even length. */
+function balancedLine(
   text: string,
   font: ReturnType<typeof display>,
   width: number,
@@ -113,7 +128,7 @@ export function messageFit(
 ) {
   for (let size = max; size >= MESSAGE_MIN; size -= 0.2) {
     const f = font(size);
-    const lines = wrap(message, f, width, measure);
+    const lines = wrapWritten(message, f, width, measure);
     const height = (lines.length - 1) * size * LINE + size;
     if (height <= room && lines.every((line) => measure(line, f) <= width)) {
       return { font: f, lines: balancedLines(message, f, width, measure) };
@@ -121,7 +136,7 @@ export function messageFit(
   }
   const f = font(MESSAGE_MIN);
   const fits = Math.max(1, Math.floor((room - MESSAGE_MIN) / (MESSAGE_MIN * LINE)) + 1);
-  return { font: f, lines: clampLines(wrap(message, f, width, measure), fits) };
+  return { font: f, lines: clampLines(wrapWritten(message, f, width, measure), fits) };
 }
 
 export function messageFront(

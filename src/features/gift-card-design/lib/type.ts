@@ -1,5 +1,6 @@
 import type { Align, CardFont, Shape } from "./geometry";
 import type { CardLanguage } from "./design";
+import { cardFontFamily, faceWeight } from "./card-faces";
 
 /**
  * The card's type: two faces per script, set as a typographer would (a display face for the
@@ -48,28 +49,26 @@ export const isArabic = (text: string) => /\p{Script=Arabic}/u.test(text);
 export const lineDir = (text: string): "ltr" | "rtl" =>
   /^[^\p{L}]*\p{Script=Arabic}/u.test(text) ? "rtl" : "ltr";
 
-/** The families of the store's own card fonts, by language (null: the cards' own faces). */
+/** The families of the store's chosen card fonts, by language (null: the cards' own faces). */
 export type CardFamilies = { ar: string | null; en: string | null };
 
-/** A short, stable name for an uploaded font, so a font changed later is never mistaken for it. */
-export function cardFontFamily(lang: "ar" | "en", url: string): string {
-  let hash = 5381;
-  for (const ch of url) hash = ((hash * 33) ^ ch.charCodeAt(0)) >>> 0;
-  return `BoutqCard${lang === "ar" ? "Ar" : "En"}${hash.toString(36)}`;
-}
-
-const isCustom = (family: string) => family.startsWith('"BoutqCard');
-const isArabicFamily = (family: string) => family.startsWith('"BoutqCardAr');
+export { cardFontFamily };
 
 /**
- * The greeting's face: the store's own font for that language when it uploaded one, else
- * extra-light when large and a touch heavier when small, never bold.
+ * The greeting's face: the font the store chose for that language (one of the platform's or its
+ * own upload), else extra-light when large and a touch heavier when small, never bold.
  */
 export function display(lang: "ar" | "en", size: number, fonts?: CardFamilies | null): CardFont {
   const custom = fonts?.[lang];
   if (custom) {
     const fallback = lang === "ar" ? CARD_FONTS.displayAr : CARD_FONTS.displayEn;
-    return { family: `"${custom}", ${fallback}`, weight: 400, size };
+    return {
+      family: `"${custom}", ${fallback}`,
+      weight: faceWeight(custom),
+      size,
+      // Arabic letters reach far above and below; a chosen Latin face sets close.
+      lead: lang === "ar" ? 1.45 : 1.15,
+    };
   }
   if (lang === "ar") {
     return size >= LIGHT_FROM
@@ -92,7 +91,7 @@ export function label(lang: "ar" | "en", size: number): CardFont {
 
 /** The line height a face needs: Arabic display letters reach far above and below. */
 export function leading(font: CardFont): number {
-  if (isCustom(font.family)) return font.size * (isArabicFamily(font.family) ? 1.45 : 1.15);
+  if (font.lead) return font.size * font.lead;
   if (font.family === CARD_FONTS.displayAr || font.family === CARD_FONTS.displayArSmall) {
     return font.size * 1.42;
   }
@@ -130,11 +129,42 @@ export function wrap(text: string, font: CardFont, maxW: number, measure: Measur
   return lines;
 }
 
+/**
+ * A text's lines as its writer set them out (the owner's report of 2026-11-21: a message typed on
+ * three lines was set as one paragraph): each line they started stays a line of its own, in their
+ * order, and a blank line between two is kept (one, however many were typed).
+ */
+export function writtenLines(text: string): string[] {
+  const lines: string[] = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/\s+/g, " ").trim();
+    if (line || (lines.length > 0 && lines[lines.length - 1] !== "")) lines.push(line);
+  }
+  while (lines.length > 0 && !lines[lines.length - 1]) lines.pop();
+  return lines;
+}
+
+/**
+ * A written text broken into lines no wider than `maxW`, the writer's own lines kept: each is
+ * wrapped on its own, so what they started on a new line starts on a new line on the card.
+ */
+export function wrapWritten(
+  text: string,
+  font: CardFont,
+  maxW: number,
+  measure: Measure,
+): string[] {
+  return writtenLines(text).flatMap((line) => (line ? wrap(line, font, maxW, measure) : [""]));
+}
+
 /** At most `max` lines; the last one closed with an ellipsis when text is left over. */
 export function clampLines(lines: string[], max: number): string[] {
   if (lines.length <= max) return lines;
   const kept = lines.slice(0, max);
-  kept[max - 1] = `${kept[max - 1].replace(/[\s.,،]+$/, "")}…`;
+  // Never end on a blank line: the ellipsis goes on the last line with words.
+  while (kept.length > 1 && !kept[kept.length - 1]) kept.pop();
+  const last = kept.length - 1;
+  kept[last] = `${kept[last].replace(/[\s.,،]+$/, "")}…`;
   return kept;
 }
 

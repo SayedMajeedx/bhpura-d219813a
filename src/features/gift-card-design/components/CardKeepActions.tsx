@@ -6,7 +6,7 @@ import { cardBack } from "../lib/back";
 import { cardFront } from "../lib/front";
 import { cardSize } from "../lib/geometry";
 import { cardPng, loadCardFonts, pageMeasure } from "../lib/canvas";
-import { cardContent, type CardDetails } from "../lib/content";
+import { cardContent, cardFontsFor, type CardDetails } from "../lib/content";
 import type { CardDesign } from "../lib/design";
 import { cardPrintHtml, type PrintFormat } from "../lib/print";
 import type { CardKit } from "../hooks/use-card-kit";
@@ -37,9 +37,11 @@ export function CardKeepActions({
 }) {
   const isAr = lang === "ar";
   const [saving, setSaving] = useState(false);
+  // A gift message card is set in its own fonts, a gift card in the gift cards'.
+  const fonts = cardFontsFor(kit, details.purpose);
 
   const faces = async () => {
-    await loadCardFonts(kit.fonts);
+    await loadCardFonts(fonts);
     const measure = pageMeasure();
     const content = cardContent(kit, design.photo, details, primary);
     return {
@@ -54,10 +56,10 @@ export function CardKeepActions({
     try {
       const { front, back, size } = await faces();
       const files = [
-        new File([await cardPng(front, size, kit.fonts)], `${fileName}-front.png`, {
+        new File([await cardPng(front, size, fonts)], `${fileName}-front.png`, {
           type: "image/png",
         }),
-        new File([await cardPng(back, size, kit.fonts)], `${fileName}-back.png`, {
+        new File([await cardPng(back, size, fonts)], `${fileName}-back.png`, {
           type: "image/png",
         }),
       ];
@@ -102,7 +104,7 @@ export function CardKeepActions({
         format,
         lang,
         origin: window.location.origin,
-        fonts: kit.fonts,
+        fonts,
       }),
     );
     sheet.document.close();
