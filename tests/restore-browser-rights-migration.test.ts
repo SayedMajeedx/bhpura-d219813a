@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import migration from "../supabase/migrations/20261216100000_restore_browser_rights_lost_in_the_move.sql?raw";
+import columnFix from "../supabase/migrations/20261216110000_restore_column_rights.sql?raw";
 import functionGrants from "../supabase/function-grants.json";
 import { missingCredentials } from "../scripts/database/credentials.mjs";
 
@@ -121,6 +122,60 @@ describe("restoring the rights lost in the move", () => {
       ...tableRevokes.map((r) => r.table),
     ].filter((name) => made.has(name));
     expect(touched).toEqual([]);
+  });
+});
+
+describe("the column rights the table revokes took with them", () => {
+  // REVOKE on a table also revokes that right on each of its columns, so 20261216100000 left
+  // visitors and staff reading no column of the catalog or of brands until 20261216110000.
+  const grants = columnFix
+    .split("\n")
+    .filter((line) => line.startsWith("GRANT "))
+    .map((line) => {
+      const m = line.match(/^GRANT ([A-Z]+) \((.+)\) ON TABLE public\.([a-z_]+) TO ([a-z]+);$/);
+      if (!m) throw new Error(`unexpected line: ${line}`);
+      return { right: m[1], columns: m[2].split(", "), table: m[3], role: m[4] };
+    });
+  const columnsOf = (table: string, role: string, right = "SELECT") =>
+    grants.find((g) => g.table === table && g.role === role && g.right === right)?.columns ?? [];
+
+  it("gives back every table whose column rights the revokes took", () => {
+    const tablesHit = new Set(
+      tableRevokes
+        .filter((r) =>
+          [
+            "products",
+            "product_variants",
+            "brands",
+            "gift_card_purchases",
+            "shared_carts",
+          ].includes(r.table),
+        )
+        .map((r) => r.table),
+    );
+    expect([...tablesHit].sort()).toEqual([...new Set(grants.map((g) => g.table))].sort());
+    expect(columnsOf("products", "anon")).toContain("name_ar");
+    expect(columnsOf("products", "authenticated")).toContain("archived_at");
+    expect(columnsOf("product_variants", "anon")).toContain("selling_price");
+    expect(columnsOf("brands", "anon")).toContain("slug");
+    expect(columnsOf("shared_carts", "anon", "INSERT")).toEqual([
+      "brand_id",
+      "brand_slug",
+      "code",
+      "items",
+    ]);
+  });
+
+  it("never gives a browser a cost, nor a visitor who entered a row or a barcode", () => {
+    for (const g of grants) {
+      expect(g.columns).not.toContain("cost_price");
+      expect(g.columns).not.toContain("direct_packaging_cost");
+      expect(g.columns).not.toContain("vendor_id");
+      if (g.role === "anon" && (g.table === "products" || g.table === "product_variants")) {
+        expect(g.columns).not.toContain("user_id");
+        expect(g.columns).not.toContain("barcode");
+      }
+    }
   });
 });
 
