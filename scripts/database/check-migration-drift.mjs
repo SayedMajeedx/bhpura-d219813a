@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { SUPABASE_CLI } from "./supabase-cli.mjs";
+import { onMissingCredentials } from "./credentials.mjs";
 
 export function checkMigrationDrift() {
   console.log("Checking Supabase migration drift between local and linked database...");
@@ -20,9 +21,7 @@ export function checkMigrationDrift() {
       stdout.includes("Access token not provided") ||
       stderr.includes("not linked")
     ) {
-      console.warn(
-        "Supabase credentials not configured in this environment; skipping remote drift verification.",
-      );
+      onMissingCredentials("the remote drift verification");
       return;
     }
     console.error("Failed to run supabase migration list:", stderr || err.message);
