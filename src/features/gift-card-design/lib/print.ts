@@ -1,6 +1,5 @@
 import { BLEED, type Shape } from "./geometry";
-import type { CardFontFiles } from "./content";
-import { cardFontFamily } from "./type";
+import { printFaceRules, type CardFontSet } from "./card-faces";
 import { cardSvg } from "./svg";
 
 /**
@@ -37,27 +36,10 @@ export function foldSheet(size: { w: number; h: number }) {
   };
 }
 
+/** The faces every print page declares (`fontFaces`): a chosen one of them needs no rule. */
+const DECLARED = new Set(["29LT Azer", "29LT Kaff", "Readex Pro", "Plus Jakarta Sans"]);
+
 /** The card's faces as the print page loads them (`/fonts/...` on the page's own host). */
-/** A font address made safe to write inside CSS's url("..."). */
-const cssUrl = (url: string) => url.replace(/["'()\\\s<>]/g, "");
-
-/** The store's own card fonts, as @font-face rules under the names the card's text asks for. */
-function customFaces(fonts: CardFontFiles | null | undefined): { css: string; loads: string[] } {
-  const faces = (["ar", "en"] as const).flatMap((lang) => {
-    const url = fonts?.[lang];
-    return url ? [{ family: cardFontFamily(lang, url), url: cssUrl(url) }] : [];
-  });
-  return {
-    css: faces
-      .map(
-        (f) =>
-          `@font-face{font-family:"${f.family}";src:url("${f.url}");font-weight:100 900;font-style:normal;font-display:block}`,
-      )
-      .join(""),
-    loads: faces.map((f) => `400 40px "${f.family}"`),
-  };
-}
-
 function fontFaces(origin: string): string {
   const face = (family: string, file: string, weight: string, format = "woff2") =>
     `@font-face{font-family:"${family}";src:url("${origin}/fonts/${file}") format("${format}");font-weight:${weight};font-style:normal;font-display:block}`;
@@ -170,11 +152,11 @@ export function cardPrintHtml(opts: {
   format: PrintFormat;
   lang: "ar" | "en";
   origin: string;
-  /** The store's own card fonts, when it uploaded them. */
-  fonts?: CardFontFiles | null;
+  /** The fonts the store chose for this card, an upload or one of the platform's faces. */
+  fonts?: CardFontSet | null;
 }): string {
   const { size, format, lang } = opts;
-  const custom = customFaces(opts.fonts);
+  const custom = printFaceRules(opts.fonts, opts.origin, DECLARED);
   const words = WORDS[lang];
   let pageCss: string;
   let pages: string;
@@ -216,7 +198,7 @@ export function cardPrintHtml(opts: {
   var faces=['200 40px "29LT Azer"','300 40px "29LT Kaff"','400 40px "Readex Pro"','300 40px "Plus Jakarta Sans"','600 40px "Plus Jakarta Sans"'].concat(${JSON.stringify(
     custom.loads,
   )});
-  var loads=faces.map(function(f){return document.fonts?document.fonts.load(f).catch(function(){}):null;});
+  var loads=faces.map(function(f){return document.fonts?document.fonts.load(f,'هدية Gift 0123').catch(function(){}):null;});
   var pics=Array.prototype.map.call(document.querySelectorAll('image'),function(el){
     return new Promise(function(done){var im=new Image();im.onload=im.onerror=function(){done();};im.src=el.getAttribute('href');});
   });

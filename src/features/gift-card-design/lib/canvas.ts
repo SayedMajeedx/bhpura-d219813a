@@ -1,6 +1,7 @@
 import type { CardFont, Shape } from "./geometry";
-import { CARD_FACES, cardFontFamily, roughMeasure, type Measure } from "./type";
-import type { CardFontFiles, LogoInfo } from "./content";
+import { CARD_FACES, roughMeasure, type Measure } from "./type";
+import type { LogoInfo } from "./content";
+import { cardFontFamily, cssUrl, faceLoad, readPick, type CardFontSet } from "./card-faces";
 
 /**
  * The browser's side of a card (never run on the server): measuring text in the card's faces,
@@ -31,29 +32,66 @@ export function pageMeasure(): Measure {
   };
 }
 
-/** A font address made safe to write inside CSS's url("..."). */
-export const cssUrl = (url: string) => url.replace(/["'()\\\s<>]/g, "");
+export { cssUrl };
 
 const registered = new Set<string>();
 
+/** Letters in both scripts, so a face split by script loads both of its files. */
+const BOTH_SCRIPTS = "هدية Gift 0123";
+
 /**
- * Loads the card's faces, and the store's own card fonts when it uploaded them (a canvas does not
- * wait for web fonts). A font that cannot load leaves the cards' own face in its place.
+ * Makes an uploaded font known to the page under the name a card asks for it by, once. Returns
+ * that name.
  */
-export async function loadCardFonts(files?: CardFontFiles | null): Promise<void> {
+export function registerCardFont(lang: "ar" | "en", url: string): string {
+  const family = cardFontFamily(lang, url);
+  const fonts = globalThis.document?.fonts;
+  if (fonts && !registered.has(family) && typeof FontFace !== "undefined") {
+    registered.add(family);
+    fonts.add(new FontFace(family, `url("${cssUrl(url)}")`, { weight: "100 900" }));
+  }
+  return family;
+}
+
+/**
+ * Loads the card's faces and the fonts the store chose, an upload or one of the platform's (a
+ * canvas does not wait for web fonts). A font that cannot load leaves the cards' own face in its
+ * place.
+ */
+export async function loadCardFonts(...sets: Array<CardFontSet | null | undefined>): Promise<void> {
   const fonts = globalThis.document?.fonts;
   if (!fonts) return;
-  const custom = (["ar", "en"] as const).flatMap((lang) => {
-    const url = files?.[lang];
-    if (!url) return [];
-    const family = cardFontFamily(lang, url);
-    if (!registered.has(family) && typeof FontFace !== "undefined") {
-      registered.add(family);
-      fonts.add(new FontFace(family, `url("${cssUrl(url)}")`, { weight: "100 900" }));
-    }
-    return [`400 40px "${family}"`];
-  });
-  await Promise.all([...CARD_FACES, ...custom].map((face) => fonts.load(face).catch(() => [])));
+  const chosen = sets.flatMap((set) =>
+    (["ar", "en"] as const).flatMap((lang) => {
+      const pick = readPick(set?.[lang], lang);
+      if (pick.kind === "file") registerCardFont(lang, pick.url);
+      const load = faceLoad(lang, set?.[lang]);
+      return load ? [load] : [];
+    }),
+  );
+  const faces = [...new Set([...CARD_FACES, ...chosen])];
+  await Promise.all(faces.map((face) => fonts.load(face, BOTH_SCRIPTS).catch(() => [])));
+}
+
+/**
+ * Whether a font has the letters of a text (an uploaded English font has no Arabic): set with two
+ * different fallbacks, a text the font holds measures the same, one it lacks takes each
+ * fallback's width. Null when the page cannot tell.
+ */
+export async function fontHasLetters(family: string, text: string): Promise<boolean | null> {
+  const fonts = globalThis.document?.fonts;
+  const ctx =
+    typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
+  if (!fonts || !ctx) return null;
+  const fallbacks = ["Readex Pro", "Tajawal"];
+  await Promise.all(
+    [family, ...fallbacks].map((f) => fonts.load(`400 40px "${f}"`, text).catch(() => [])),
+  );
+  const width = (fallback: string) => {
+    ctx.font = `400 40px "${family}", "${fallback}"`;
+    return ctx.measureText(text).width;
+  };
+  return Math.abs(width(fallbacks[0]) - width(fallbacks[1])) < 0.5;
 }
 
 const images = new Map<string, Promise<HTMLImageElement | null>>();
@@ -266,7 +304,7 @@ async function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, s: number)
 export async function cardPng(
   shapes: Shape[],
   size: { w: number; h: number },
-  fonts?: CardFontFiles | null,
+  fonts?: CardFontSet | null,
 ): Promise<Blob> {
   await loadCardFonts(fonts);
   const canvas = document.createElement("canvas");

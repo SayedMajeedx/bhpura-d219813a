@@ -19,6 +19,7 @@ import {
   startOf,
   textLines,
   wrap,
+  wrapWritten,
   type Measure,
 } from "./type";
 
@@ -187,7 +188,8 @@ function personalBlock(
     const lh = leading(font);
     const room = Math.max(Math.floor((floor - y) / lh), 0);
     if (room > 0) {
-      const lines = clampLines(wrap(content.message.trim(), font, width, measure), room);
+      // The buyer's note keeps the lines they started, as a message card does.
+      const lines = clampLines(wrapWritten(content.message, font, width, measure), room);
       shapes.push(...textLines(lines, font, x, y + 1, align, ink.ink));
     }
   }

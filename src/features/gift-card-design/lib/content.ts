@@ -2,14 +2,8 @@ import type { VerticalKind } from "./design";
 import type { CardContact } from "./contact";
 import type { MessageSize } from "./message-card";
 import type { Align, Shape } from "./geometry";
-import {
-  cardFontFamily,
-  display,
-  fitText,
-  isArabic,
-  type CardFamilies,
-  type Measure,
-} from "./type";
+import { display, fitText, isArabic, type CardFamilies, type Measure } from "./type";
+import { familyOf, type CardFontSet } from "./card-faces";
 
 /**
  * The store's logo as a card draws it: its address, and the part of the picture the mark really
@@ -24,8 +18,15 @@ export type LogoInfo = {
   crop: { x: number; y: number; w: number; h: number };
 };
 
-/** The fonts a store uploaded for its cards' large words, by language (their addresses). */
-export type CardFontFiles = { ar: string | null; en: string | null };
+export type { CardFontSet };
+
+/** The fonts a card of this kind is set in: a gift message card's own, else the gift cards'. */
+export function cardFontsFor(
+  kit: { fonts?: CardFontSet; messageFonts?: CardFontSet },
+  purpose: CardPurpose | undefined,
+): CardFontSet | undefined {
+  return purpose === "message" ? (kit.messageFonts ?? kit.fonts) : kit.fonts;
+}
 
 /**
  * What a card says besides its design: the store, the amount and code, who it is for and from,
@@ -238,7 +239,9 @@ export function cardContent(
     storeName: CardContent["storeName"];
     logo: LogoInfo | null;
     logoScale?: number;
-    fonts?: CardFontFiles;
+    fonts?: CardFontSet;
+    /** A gift message card's fonts (its own choice, else the gift cards'). */
+    messageFonts?: CardFontSet;
     photos: string[];
     currency: string;
     storeLink: string;
@@ -249,14 +252,12 @@ export function cardContent(
   details: CardDetails,
   primary: "ar" | "en",
 ): CardContent {
+  const fonts = cardFontsFor(kit, details.purpose);
   return {
     storeName: kit.storeName,
     logo: kit.logo,
     logoScale: kit.logoScale ?? 1,
-    fonts: {
-      ar: kit.fonts?.ar ? cardFontFamily("ar", kit.fonts.ar) : null,
-      en: kit.fonts?.en ? cardFontFamily("en", kit.fonts.en) : null,
-    },
+    fonts: { ar: familyOf("ar", fonts?.ar), en: familyOf("en", fonts?.en) },
     photo: photo && kit.photos.includes(photo) ? photo : (kit.photos[0] ?? null),
     currency: kit.currency,
     storeLink: kit.storeLink,

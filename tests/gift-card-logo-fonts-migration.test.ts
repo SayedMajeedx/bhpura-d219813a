@@ -74,6 +74,9 @@ describe("the cards' fonts", () => {
       photo_products: [],
       logo_scale: 0.8,
       fonts: { en: { url: font(BRAND, "otf"), name: "Brand Serif" } },
+      // Migration 20261215100000: the message card's fonts, and the uploads kept to choose again.
+      message_fonts: {},
+      font_library: [{ url: font(BRAND, "otf"), name: "Brand Serif" }],
     });
     expect(await read()).toMatchObject({
       off: ["block:white"],

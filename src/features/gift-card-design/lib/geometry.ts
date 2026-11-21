@@ -24,6 +24,8 @@ export type CardFont = {
   size: number;
   /** Tracking in millimetres; never set on Arabic, which it would break apart. */
   spacing?: number;
+  /** Line height over size, for a face the store chose (the cards' own faces have theirs). */
+  lead?: number;
 };
 
 export type Shape =

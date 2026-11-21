@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Palette, Star } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +11,8 @@ import {
   invalidateCardDesigns,
   saveCardDesigns,
   type CardDesignsRow,
+  type CardFontChoices,
+  type CardFontUpload,
 } from "@/lib/data/gift-cards/designs";
 import { cn } from "@/lib/utils";
 import { GiftCardFace } from "@/features/gift-card-design/components/GiftCardFace";
@@ -20,11 +22,14 @@ import {
   designName,
   type DesignId,
 } from "@/features/gift-card-design/lib/design";
-import { loadCardFonts } from "@/features/gift-card-design/lib/canvas";
 import { designsFor } from "@/features/gift-card-design/lib/design";
+import { useCardFontsReady } from "@/features/gift-card-design/hooks/use-card-kit";
+import { fontSetOf, messageFontSet } from "@/features/gift-card-design/lib/card-faces";
 import { giftCardError } from "../lib/gift-cards";
+import { libraryWith, uploadsInUse } from "../lib/card-font-choices";
 import { useAdminCardKit } from "../hooks/use-admin-card-kit";
-import { CardBrandControls, type CardFonts } from "./CardBrandControls";
+import { CardBrandControls } from "./CardBrandControls";
+import { MessageCardFonts } from "./MessageCardFonts";
 
 /** How many product photos a store may choose for its photo designs. */
 const MAX_PHOTOS = 12;
@@ -37,7 +42,8 @@ const MAX_PHOTOS = 12;
 export function CardDesignsSection({ lang }: { lang: "ar" | "en" }) {
   const brand = useBrand();
   const stored = useQuery(cardDesignQueries.store(brand.id));
-  if (!stored.isFetched || !stored.data) return null;
+  const library = useQuery(cardDesignQueries.fontLibrary(brand.id));
+  if (!stored.isFetched || !stored.data || !library.isFetched) return null;
   return (
     <CardDesignsEditor
       key={JSON.stringify([
@@ -46,14 +52,25 @@ export function CardDesignsSection({ lang }: { lang: "ar" | "en" }) {
         stored.data.photo_products,
         stored.data.logo_scale,
         stored.data.fonts,
+        stored.data.message_fonts,
+        library.data,
       ])}
       initial={stored.data}
+      initialLibrary={library.data ?? []}
       lang={lang}
     />
   );
 }
 
-function CardDesignsEditor({ initial, lang }: { initial: CardDesignsRow; lang: "ar" | "en" }) {
+function CardDesignsEditor({
+  initial,
+  initialLibrary,
+  lang,
+}: {
+  initial: CardDesignsRow;
+  initialLibrary: CardFontUpload[];
+  lang: "ar" | "en";
+}) {
   const isAr = lang === "ar";
   const brand = useBrand();
   const qc = useQueryClient();
@@ -63,33 +80,33 @@ function CardDesignsEditor({ initial, lang }: { initial: CardDesignsRow; lang: "
   const [signature, setSignature] = useState<string | null>(initial.signature);
   const [photos, setPhotos] = useState<string[]>(initial.photo_products);
   const [logoScale, setLogoScale] = useState(initial.logo_scale);
-  const [fonts, setFonts] = useState<CardFonts>({
-    ar: initial.fonts.ar ?? null,
-    en: initial.fonts.en ?? null,
-  });
+  const [fonts, setFonts] = useState<CardFontChoices>(initial.fonts);
+  const [messageFonts, setMessageFonts] = useState<CardFontChoices>(initial.message_fonts);
+  // The store's uploads, to choose again (an upload chosen before the list is among them).
+  const [library, setLibrary] = useState<CardFontUpload[]>(() =>
+    libraryWith(initialLibrary, initial.fonts, initial.message_fonts),
+  );
   const [saving, setSaving] = useState(false);
-  // The cards are drawn as they will be once saved: the size chosen and the fonts uploaded, each
-  // font drawn with only once the browser has it.
-  const fontAr = fonts.ar?.url ?? null;
-  const fontEn = fonts.en?.url ?? null;
-  const fontKey = `${fontAr ?? ""}|${fontEn ?? ""}`;
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    void loadCardFonts({ ar: fontAr, en: fontEn }).finally(() => live && setLoadedKey(fontKey));
-    return () => {
-      live = false;
-    };
-  }, [fontAr, fontEn, fontKey]);
+  // The cards are drawn as they will be once saved: the size and fonts chosen, each font drawn
+  // with only once the browser has it.
+  const giftSet = useMemo(() => fontSetOf(fonts), [fonts]);
+  const messageSet = useMemo(() => messageFontSet(messageFonts, giftSet), [messageFonts, giftSet]);
+  const fontsReady = useCardFontsReady(giftSet, messageSet);
   const previewKit = useMemo(
     () => ({
       ...kit,
       logoScale,
-      fonts: { ar: fontAr, en: fontEn },
-      ready: kit.ready && loadedKey === fontKey,
+      fonts: giftSet,
+      messageFonts: messageSet,
+      ready: kit.ready && fontsReady,
     }),
-    [kit, logoScale, fontAr, fontEn, loadedKey, fontKey],
+    [kit, logoScale, giftSet, messageSet, fontsReady],
   );
+  const fontLibrary = {
+    library,
+    onLibrary: setLibrary,
+    inUse: uploadsInUse(fonts, messageFonts),
+  };
   const sample =
     designsFor({
       occasion: "gift",
@@ -127,6 +144,8 @@ function CardDesignsEditor({ initial, lang }: { initial: CardDesignsRow; lang: "
         photoProducts: photos,
         logoScale,
         fonts,
+        messageFonts,
+        library,
       });
       await invalidateCardDesigns(qc, brand.id);
       toast.success(isAr ? "حُفظت التصاميم" : "Designs saved");
@@ -157,6 +176,15 @@ function CardDesignsEditor({ initial, lang }: { initial: CardDesignsRow; lang: "
           onLogoScale={setLogoScale}
           fonts={fonts}
           onFonts={setFonts}
+          fontLibrary={fontLibrary}
+        />
+        <MessageCardFonts
+          kit={previewKit}
+          lang={lang}
+          value={messageFonts}
+          onChange={setMessageFonts}
+          giftFonts={fonts}
+          fontLibrary={fontLibrary}
         />
         <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
           {ALL_DESIGNS.map((id) => {

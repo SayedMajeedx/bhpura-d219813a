@@ -12,7 +12,8 @@ import {
   type VerticalKind,
 } from "../lib/design";
 import { inspectLogo, loadCardFonts, photoUsable } from "../lib/canvas";
-import type { CardFontFiles, LogoInfo } from "../lib/content";
+import type { LogoInfo } from "../lib/content";
+import { fontSetOf, messageFontSet, type CardFontSet } from "../lib/card-faces";
 import type { CardContact } from "../lib/contact";
 
 /**
@@ -27,8 +28,10 @@ export type CardKit = {
   logo: LogoInfo | null;
   /** How large the store's mark is drawn (1 as designed). */
   logoScale: number;
-  /** The store's own card fonts by language, as uploaded (null: the cards' own faces). */
-  fonts: CardFontFiles;
+  /** The gift cards' fonts by language, an upload or a platform face (null: the cards' own). */
+  fonts: CardFontSet;
+  /** A gift message card's fonts by language: its own choice, else the gift cards'. */
+  messageFonts: CardFontSet;
   photos: string[];
   store: StoreDesigns;
   kind: VerticalKind;
@@ -52,23 +55,34 @@ export type CardKitInput = {
   contact?: CardContact;
 };
 
-export function useCardKit(input: CardKitInput): CardKit {
-  const designsQ = useQuery(cardDesignQueries.store(input.brandId));
-  const [loadedFonts, setLoadedFonts] = useState<string | null>(null);
-  const [logo, setLogo] = useState<LogoInfo | null>(null);
-  const [photos, setPhotos] = useState<string[]>([]);
-  const fontAr = designsQ.data?.fonts?.ar?.url ?? null;
-  const fontEn = designsQ.data?.fonts?.en?.url ?? null;
-  const fontKey = `${fontAr ?? ""}|${fontEn ?? ""}`;
-
-  // The card is measured in its faces: drawn again once they (and the store's own) have loaded.
+/**
+ * Whether the card's faces and these chosen fonts have loaded: a card is measured in them, so it
+ * is drawn again once they have.
+ */
+export function useCardFontsReady(...sets: CardFontSet[]): boolean {
+  const key = JSON.stringify(sets);
+  const [loaded, setLoaded] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    void loadCardFonts({ ar: fontAr, en: fontEn }).finally(() => live && setLoadedFonts(fontKey));
+    void loadCardFonts(...(JSON.parse(key) as CardFontSet[])).finally(() => live && setLoaded(key));
     return () => {
       live = false;
     };
-  }, [fontAr, fontEn, fontKey]);
+  }, [key]);
+  return loaded === key;
+}
+
+export function useCardKit(input: CardKitInput): CardKit {
+  const designsQ = useQuery(cardDesignQueries.store(input.brandId));
+  const [logo, setLogo] = useState<LogoInfo | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const stored = designsQ.data;
+  const fonts = useMemo(() => fontSetOf(stored?.fonts), [stored?.fonts]);
+  const messageFonts = useMemo(
+    () => messageFontSet(stored?.message_fonts, fonts),
+    [stored?.message_fonts, fonts],
+  );
+  const ready = useCardFontsReady(fonts, messageFonts);
 
   useEffect(() => {
     let live = true;
@@ -97,14 +111,15 @@ export function useCardKit(input: CardKitInput): CardKit {
       storeName: { ar: nameAr ?? null, en: nameEn ?? null },
       logo,
       logoScale: designsQ.data?.logo_scale ?? 1,
-      fonts: { ar: fontAr, en: fontEn },
+      fonts,
+      messageFonts,
       photos,
       store: readStoreDesigns(designsQ.data),
       kind: verticalKind(vertical ? verticalLineage(vertical as StoreVertical) : []),
       storeLink: storeAddress(slug).replace(/^https?:\/\//, ""),
       currency: (currency || "BHD").toUpperCase(),
       contact,
-      ready: loadedFonts === fontKey,
+      ready,
     }),
     [
       colours,
@@ -117,10 +132,9 @@ export function useCardKit(input: CardKitInput): CardKit {
       slug,
       currency,
       contact,
-      fontAr,
-      fontEn,
-      loadedFonts,
-      fontKey,
+      fonts,
+      messageFonts,
+      ready,
     ],
   );
 }

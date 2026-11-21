@@ -14,8 +14,10 @@ const data = vi.hoisted(() => ({
     photo_products: [] as string[],
     photos: [] as string[],
     logo_scale: 1,
-    fonts: {} as Record<string, { url: string; name: string | null } | null>,
+    fonts: { ar: null, en: null } as Record<string, unknown>,
+    message_fonts: { ar: null, en: null } as Record<string, unknown>,
   },
+  library: [] as Array<{ url: string; name: string | null }>,
   save: vi.fn(async () => null),
   upload: vi.fn(
     async () =>
@@ -35,6 +37,7 @@ const designs = {
         { id: "p2", name_en: "Linen abaya", name_ar: null, photo: "https://media.test/p2.jpg" },
       ],
     }),
+    fontLibrary: () => ({ queryKey: ["font-library"], queryFn: async () => data.library }),
   },
   saveCardDesigns: data.save,
   invalidateCardDesigns: vi.fn(async () => undefined),
@@ -72,7 +75,8 @@ const { GiftCardDesigner } =
   await import("../src/features/gift-card-design/components/GiftCardDesigner");
 const { CardDesignsSection } =
   await import("../src/features/gift-cards/components/CardDesignsSection");
-const { PrintCardButton } = await import("../src/features/gift-cards/components/PrintCardDialog");
+const { PrintButton, PrintCardButton } =
+  await import("../src/features/gift-cards/components/PrintCardDialog");
 const { useAdminCardKit } = await import("../src/features/gift-cards/hooks/use-admin-card-kit");
 const { DEFAULT_DESIGN } = await import("../src/features/gift-card-design/lib/design");
 type CardDesign = typeof DEFAULT_DESIGN;
@@ -88,8 +92,10 @@ beforeEach(() => {
     photo_products: [],
     photos: [],
     logo_scale: 1,
-    fonts: {},
+    fonts: { ar: null, en: null },
+    message_fonts: { ar: null, en: null },
   };
+  data.library = [];
 });
 
 function Picker({ onChange }: { onChange: (d: CardDesign) => void }) {
@@ -118,6 +124,9 @@ describe("the buyer's picker", () => {
       signature: "block:white",
       photo_products: [],
       photos: [],
+      logo_scale: 1,
+      fonts: { ar: null, en: null },
+      message_fonts: { ar: null, en: null },
     };
     const onChange = vi.fn();
     wrap(<Picker onChange={onChange} />);
@@ -160,6 +169,8 @@ describe("the store's designs", () => {
         photoProducts: ["p2", "p1"],
         logoScale: 1,
         fonts: { ar: null, en: null },
+        messageFonts: { ar: null, en: null },
+        library: [],
       }),
     );
   });
@@ -174,33 +185,171 @@ describe("the store's designs", () => {
       "110%",
     );
     expect(screen.getByRole("img", { name: "Back preview" })).toBeInTheDocument();
+    expect(container.textContent).toContain("The cards' own");
+    const gift = screen.getByRole("group", { name: "Gift card fonts" });
+    fireEvent.click(within(gift).getByRole("button", { name: "Change Arabic font" }));
     const file = new File(["font"], "Zain-Display.woff2", { type: "font/woff2" });
-    fireEvent.change(screen.getByLabelText("Upload the arabic font"), {
+    fireEvent.change(await screen.findByLabelText("Upload a font"), {
       target: { files: [file] },
     });
-    expect(await screen.findByText("Zain Display")).toBeInTheDocument();
+    await waitFor(() => expect(within(gift).getByText("Zain Display")).toBeInTheDocument());
     expect(data.upload).toHaveBeenCalledWith("b1", file, "font");
-    expect(container.textContent).toContain("The cards' own");
     fireEvent.click(screen.getByRole("button", { name: "Save designs" }));
+    const zain = {
+      url: "https://media.boutq.store/brands/b1/font/0f8e2b8c-7a3d-4e55-9a0b-2c4d6e8f1a3b.woff2",
+      name: "Zain Display",
+    };
     await waitFor(() =>
       expect(data.save).toHaveBeenCalledWith(
         "b1",
         expect.objectContaining({
           logoScale: 1.1,
-          fonts: {
-            ar: {
-              url: "https://media.boutq.store/brands/b1/font/0f8e2b8c-7a3d-4e55-9a0b-2c4d6e8f1a3b.woff2",
-              name: "Zain Display",
-            },
-            en: null,
-          },
+          fonts: { ar: zain, en: null },
+          // Uploaded once, kept in the store's list to choose again.
+          library: [zain],
         }),
       ),
+    );
+  });
+
+  it("choose a font from the list, each shown in itself, with no upload", async () => {
+    const hand = {
+      url: "https://media.boutq.store/brands/b1/font/1a2b3c4d-7a3d-4e55-9a0b-2c4d6e8f1a3b.otf",
+      name: "Hand",
+    };
+    data.library = [hand];
+    wrap(<CardDesignsSection lang="en" />);
+    const gift = await screen.findByRole("group", { name: "Gift card fonts" });
+    fireEvent.click(within(gift).getByRole("button", { name: "Change English font" }));
+    const list = await screen.findByRole("radiogroup", { name: "English font" });
+    // The cards' own, the platform's faces (Inter has Latin letters only), then the store's own.
+    expect(within(list).getByRole("radio", { name: /The cards' own/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(within(list).getByRole("radio", { name: /Inter/ })).toBeInTheDocument();
+    expect(within(list).getByRole("radio", { name: /Hand/ })).toBeInTheDocument();
+    fireEvent.click(within(list).getByRole("radio", { name: /29LT Zarid Display/ }));
+    await waitFor(() =>
+      expect(screen.queryByRole("radiogroup", { name: "English font" })).toBeNull(),
+    );
+    expect(within(gift).getByText("29LT Zarid Display")).toBeInTheDocument();
+
+    // The Arabic list has no Inter.
+    fireEvent.click(within(gift).getByRole("button", { name: "Change Arabic font" }));
+    const arabic = await screen.findByRole("radiogroup", { name: "Arabic font" });
+    expect(within(arabic).queryByRole("radio", { name: /Inter/ })).toBeNull();
+    fireEvent.click(within(arabic).getByRole("radio", { name: /Hand/ }));
+
+    fireEvent.click(screen.getByRole("button", { name: "Save designs" }));
+    await waitFor(() =>
+      expect(data.save).toHaveBeenCalledWith(
+        "b1",
+        expect.objectContaining({
+          fonts: { ar: hand, en: { face: "zarid" } },
+          messageFonts: { ar: null, en: null },
+          library: [hand],
+        }),
+      ),
+    );
+  });
+
+  it("give the gift message card its own font, the gift cards' until chosen", async () => {
+    data.stored.fonts = { ar: { face: "bukra" }, en: null };
+    wrap(<CardDesignsSection lang="en" />);
+    const message = await screen.findByRole("group", { name: "Gift message card fonts" });
+    expect(within(message).getAllByText("Same as the gift cards")).toHaveLength(2);
+    expect(screen.getByRole("img", { name: "Gift message card preview" })).toBeInTheDocument();
+    fireEvent.click(within(message).getByRole("button", { name: "Change Arabic font" }));
+    const list = await screen.findByRole("radiogroup", { name: "Arabic font" });
+    fireEvent.click(within(list).getByRole("radio", { name: /The cards' own/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save designs" }));
+    await waitFor(() =>
+      expect(data.save).toHaveBeenCalledWith(
+        "b1",
+        expect.objectContaining({
+          fonts: { ar: { face: "bukra" }, en: null },
+          messageFonts: { ar: { face: "own" }, en: null },
+        }),
+      ),
+    );
+  });
+
+  it("keep an upload chosen somewhere, and let one chosen nowhere be removed", async () => {
+    const used = {
+      url: "https://media.boutq.store/brands/b1/font/1a2b3c4d-7a3d-4e55-9a0b-2c4d6e8f1a3b.otf",
+      name: "Used",
+    };
+    const spare = {
+      url: "https://media.boutq.store/brands/b1/font/2a2b3c4d-7a3d-4e55-9a0b-2c4d6e8f1a3b.otf",
+      name: "Spare",
+    };
+    data.stored.message_fonts = { ar: used, en: null };
+    data.library = [used, spare];
+    wrap(<CardDesignsSection lang="en" />);
+    const gift = await screen.findByRole("group", { name: "Gift card fonts" });
+    fireEvent.click(within(gift).getByRole("button", { name: "Change English font" }));
+    await screen.findByRole("radiogroup", { name: "English font" });
+    expect(screen.queryByRole("button", { name: "Remove Used" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Remove Spare" }));
+    expect(screen.queryByRole("radio", { name: /Spare/ })).toBeNull();
+    fireEvent.click(screen.getByRole("radio", { name: /The cards' own/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save designs" }));
+    await waitFor(() =>
+      expect(data.save).toHaveBeenCalledWith("b1", expect.objectContaining({ library: [used] })),
     );
   });
 });
 
 describe("printing a card in the store", () => {
+  it("sets one gift message card in a font of its own, the settings kept, its lines as typed", async () => {
+    data.stored.message_fonts = { ar: { face: "kaff" }, en: null };
+    const sheet = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() } };
+    const open = vi.spyOn(window, "open").mockReturnValue(sheet as unknown as Window);
+    wrap(
+      <PrintButton
+        lang="en"
+        label="Print the gift card"
+        source={() => ({
+          id: "gift-message-7",
+          code: "7",
+          details: {
+            amount: null,
+            code: null,
+            to: "نورة",
+            message: "هدية بسيطة جداً\n(عيد ميلاد سعيد)",
+            expiresOn: null,
+            purpose: "message",
+          },
+          initial: { ...DEFAULT_DESIGN, language: "ar" },
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Print the gift card" }));
+    // The message is Arabic: its font starts as the settings' (Kaff), for this card only.
+    const change = await screen.findByRole("button", { name: "Change This card's font" });
+    expect(screen.getByText("As in the settings")).toBeInTheDocument();
+    fireEvent.click(change);
+    const list = await screen.findByRole("radiogroup", { name: "This card's font" });
+    fireEvent.click(within(list).getByRole("radio", { name: /Tajawal/ }));
+    await waitFor(() => expect(screen.getByText("Tajawal")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Print to fold and glue" }));
+    await waitFor(() => expect(sheet.document.write).toHaveBeenCalled());
+    const html = String(sheet.document.write.mock.calls[0][0]);
+    // The page declares Tajawal from the store's own host and sets the message in it.
+    expect(html).toContain('@font-face{font-family:"Tajawal"');
+    expect(html).toContain("tajawal-400-arabic.woff2");
+    expect(html).toMatch(/font-family="[^"]*Tajawal/);
+    // Each line the writer started is a line of its own on the card, in their order (a long one
+    // may still wrap).
+    const lines = [...html.matchAll(/<text[^>]*>([^<]*)</g)].map((m) => m[1]);
+    const first = lines.indexOf("هدية بسيطة جداً");
+    expect(first).toBeGreaterThan(-1);
+    expect(lines[first + 1]).toMatch(/^\(عيد/);
+    expect(data.save).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
   it("opens the card in the store's designs and prints it on A4 with cut marks", async () => {
     const sheet = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() } };
     const open = vi.spyOn(window, "open").mockReturnValue(sheet as unknown as Window);
