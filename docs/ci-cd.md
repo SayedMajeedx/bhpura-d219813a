@@ -47,6 +47,8 @@ The CI pipeline is implemented via GitHub Actions in [`.github/workflows/ci.yml`
      - Executes `scripts/database/check-migration-drift.mjs` against the linked Supabase project.
      - Verifies zero discrepancy between committed migration versions and remote applied migrations.
      - Automatically alerts on uncommitted remote migrations or unapplied local versions.
+     - Then checks which functions and catalog columns a browser can reach (`db:function-grants:check`, `db:catalog-columns:check`).
+     - Needs the repository secrets `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD` for the live project, and **fails without them** (`scripts/database/credentials.mjs`): it once skipped for a week while the live database was open.
    - **Local Command**: `npm run db:migrations:drift`
 
 6. **`security-scan` (Vulnerability & Secret Scanning)**

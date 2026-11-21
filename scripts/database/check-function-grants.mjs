@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import { SUPABASE_CLI } from "./supabase-cli.mjs";
+import { onMissingCredentials } from "./credentials.mjs";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -94,10 +95,8 @@ function readLive(query = LIVE_GRANTS_QUERY) {
     );
   } catch (err) {
     const text = `${err.stderr ?? ""}${err.stdout ?? ""}`;
-    if (/access token|not linked|login/i.test(text)) {
-      console.warn(
-        "Supabase credentials are not configured here; skipping the function grants check.",
-      );
+    if (/access token not provided|not linked|supabase login/i.test(text)) {
+      onMissingCredentials("the function grants check");
       return null;
     }
     console.error(

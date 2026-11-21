@@ -123,8 +123,9 @@ jobs:
       - name: Validate migration history integrity
         run: npm run db:migrations:check
 
-      - name: Verify migration drift
-        run: npm run db:migrations:drift
+      # Drift against the live database is the job "Supabase Linked Migration Drift Check", which
+      # has the credentials. Here it had none and always skipped, until a check with no credentials
+      # began to fail in CI (scripts/database/credentials.mjs, PR #611).
 
       - name: Apply & Validate Migrations Against Local Postgres
         env:
