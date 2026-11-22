@@ -44,7 +44,10 @@ function builder(table: string) {
 const client = {
   supabase: {
     from: (table: string) => builder(table),
-    auth: { getUser: async () => ({ data: { user: { id: "u1" } } }) },
+    auth: {
+      getClaims: async () => ({ data: { claims: { sub: "u1" } }, error: null }),
+      getSession: async () => ({ data: { session: { user: { id: "u1" } } }, error: null }),
+    },
   },
 };
 vi.mock("../src/integrations/supabase/client", () => client);

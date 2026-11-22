@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser } from "@/lib/auth/session";
 import { insertActivityLogs } from "@/lib/data/activity-logs";
 
 export type ActivityLog = {
@@ -25,9 +25,7 @@ type LogInput = {
 };
 
 export async function logActivity(input: LogInput) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   await insertActivityLogs([
     {
@@ -46,9 +44,7 @@ export async function logActivity(input: LogInput) {
 
 export async function logActivityBatch(inputs: LogInput[]) {
   if (inputs.length === 0) return;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   await insertActivityLogs(
     inputs.map((i) => ({

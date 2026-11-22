@@ -1,3 +1,4 @@
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { releaseNativePushDevice } from "@/lib/native-push";
 
@@ -10,12 +11,40 @@ import { releaseNativePushDevice } from "@/lib/native-push";
  * throw), and callers decide what "none" means (redirect, skip, sign in).
  */
 
+/**
+ * The signed-in user, checked on this device: the session's token is verified against the
+ * project's signing key (ES256; the key is fetched once and kept), and the user is the session's
+ * own. `getUser()` asked Supabase Auth in Mumbai every time, 0.4-0.6 s on the admin's opening and
+ * before every save (the speed review of 2026-11-22). The database checks the token on every read
+ * and write anyway. Throws when the check could not be made (a network failure fetching the key),
+ * so a guard can try again; null when there is no session or the token does not verify.
+ */
+export async function verifiedUser(): Promise<User | null> {
+  const { data, error } = await supabase.auth.getClaims();
+  if (error) {
+    if (isAuthTransportError(error)) throw error;
+    return null;
+  }
+  const subject = data?.claims?.sub;
+  if (!subject) return null;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id === subject ? session.user : null;
+}
+
+/** A failure to reach Auth (retryable), as opposed to a session that is not valid. */
+function isAuthTransportError(error: { name?: string; status?: number }) {
+  return error.name === "AuthRetryableFetchError" || (error.status ?? 0) >= 500;
+}
+
 /** The signed-in user, or null when there is none (or it cannot be read). */
 export async function getCurrentUser() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  try {
+    return await verifiedUser();
+  } catch {
+    return null;
+  }
 }
 
 /** The current session (with its access token), or null. */

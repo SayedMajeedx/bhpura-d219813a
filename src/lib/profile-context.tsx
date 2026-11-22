@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { signOut } from "@/lib/auth/session";
+import { getCurrentUser, signOut } from "@/lib/auth/session";
 import { useNavigate } from "@tanstack/react-router";
 import { keepIfSame, profileAuthAction } from "@/lib/profile-refresh";
 
@@ -111,8 +111,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
   const fetchProfile = useCallback(
     async (userId: string): Promise<Profile | null> => {
-      const { data: authData } = await supabase.auth.getUser();
-      const email = authData.user?.email || "";
+      const email = (await getCurrentUser())?.email || "";
       return ensureProfile(userId, email);
     },
     [ensureProfile],
@@ -137,9 +136,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, [navigate]);
 
   const refreshProfile = useCallback(async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUser();
     if (!user) {
       setProfile(null);
       return;
@@ -153,9 +150,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     mountedRef.current = true;
 
     const init = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!mounted) return;
       if (!user) {
         setIsLoading(false);

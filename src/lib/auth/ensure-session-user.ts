@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { verifiedUser } from "@/lib/auth/session";
 
 /**
  * Resolves the signed-in user for a route guard, or null when there is no
@@ -23,12 +23,9 @@ export async function ensureSessionUser(queryClient: QueryClient): Promise<User 
   try {
     return await queryClient.ensureQueryData({
       queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        // Thrown, not returned: let the retry policy handle transient failures.
-        if (error) throw error;
-        return data.user ?? null;
-      },
+      // Checked on this device (`verifiedUser`): a network failure is thrown, not returned, so
+      // the retry policy handles it.
+      queryFn: () => verifiedUser(),
       staleTime: 1000 * 60 * 5,
     });
   } catch {

@@ -37,6 +37,14 @@ describe("the dashboard's period", () => {
     expect(new Date(quarter.ordersSince).getTime()).toBe(new Date(2026, 7, 4).getTime());
   });
 
+  it("is the same all day, so a second visit reads nothing again", () => {
+    // It ended at this moment, so each visit was a new period and every report was read afresh.
+    const morning = periodBounds(30, new Date(2026, 10, 16, 9, 0));
+    const evening = periodBounds(30, new Date(2026, 10, 16, 21, 30));
+    expect(evening).toEqual(morning);
+    expect(morning.end).toEqual(new Date(2026, 10, 16, 23, 59, 59, 999));
+  });
+
   it("is said with the right Arabic count", () => {
     expect(periodWords(7, "ar")).toMatchObject({
       last: "آخر 7 أيام",
