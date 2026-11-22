@@ -35,6 +35,7 @@ import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as BSlugRouteImport } from './routes/b.$slug'
 import { Route as InvoiceIdRouteImport } from './routes/invoice.$id'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as PlatformFilenameRouteImport } from './routes/platform.$filename'
 import { Route as ReviewTokenRouteImport } from './routes/review.$token'
 import { Route as SlugGiftCardPurchaseIdRouteImport } from './routes/$slug.gift-card.$purchaseId'
@@ -242,6 +243,11 @@ const BSlugRoute = BSlugRouteImport.update({
 const InvoiceIdRoute = InvoiceIdRouteImport.update({
   id: '/invoice/$id',
   path: '/invoice/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlatformFilenameRoute = PlatformFilenameRouteImport.update({
@@ -725,6 +731,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/b/$slug': typeof BSlugRoute
   '/invoice/$id': typeof InvoiceIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
@@ -828,6 +835,7 @@ export interface FileRoutesByTo {
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/b/$slug': typeof BSlugRoute
   '/invoice/$id': typeof InvoiceIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug': typeof SlugIndexRoute
@@ -934,6 +942,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/b/$slug': typeof BSlugRoute
   '/invoice/$id': typeof InvoiceIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/platform/$filename': typeof PlatformFilenameRoute
   '/review/$token': typeof ReviewTokenRoute
   '/$slug/': typeof SlugIndexRoute
@@ -1041,6 +1050,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/b/$slug'
     | '/invoice/$id'
+    | '/p/$slug'
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug/'
@@ -1144,6 +1154,7 @@ export interface FileRouteTypes {
     | '/$slug/wishlist'
     | '/b/$slug'
     | '/invoice/$id'
+    | '/p/$slug'
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug'
@@ -1249,6 +1260,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/b/$slug'
     | '/invoice/$id'
+    | '/p/$slug'
     | '/platform/$filename'
     | '/review/$token'
     | '/$slug/'
@@ -1343,6 +1355,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   BSlugRoute: typeof BSlugRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
+  PSlugRoute: typeof PSlugRoute
   PlatformFilenameRoute: typeof PlatformFilenameRoute
   ReviewTokenRoute: typeof ReviewTokenRoute
   ApiAdminNabdaOtpRoute: typeof ApiAdminNabdaOtpRoute
@@ -1541,6 +1554,13 @@ declare module '@tanstack/react-router' {
       path: '/invoice/$id'
       fullPath: '/invoice/$id'
       preLoaderRoute: typeof InvoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/platform/$filename': {
@@ -2369,6 +2389,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   BSlugRoute: BSlugRoute,
   InvoiceIdRoute: InvoiceIdRoute,
+  PSlugRoute: PSlugRoute,
   PlatformFilenameRoute: PlatformFilenameRoute,
   ReviewTokenRoute: ReviewTokenRoute,
   ApiAdminNabdaOtpRoute: ApiAdminNabdaOtpRoute,

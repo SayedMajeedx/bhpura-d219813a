@@ -396,6 +396,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "platform_page_public(p_slug text)": {
+      "anon": true,
+      "authenticated": true,
+      "reason": "Public: a published or closed platform page (boutq.store/p/<slug>), never a draft; read-only"
+    },
     "receive_purchase_order(p_po_id uuid, p_lines jsonb, p_request_id uuid, p_note text)": {
       "anon": false,
       "authenticated": true,
