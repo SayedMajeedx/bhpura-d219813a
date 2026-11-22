@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { SUPABASE_CLI } from "./supabase-cli.mjs";
+import { SUPABASE_CLI, queryRows } from "./supabase-cli.mjs";
 import { onMissingCredentials } from "./credentials.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,8 +72,7 @@ function readLive() {
     );
     process.exit(1);
   }
-  const start = output.indexOf("{");
-  return JSON.parse(output.slice(start)).rows;
+  return queryRows(output);
 }
 
 export function checkCatalogColumnGrants() {

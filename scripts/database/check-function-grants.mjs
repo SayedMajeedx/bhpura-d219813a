@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { SUPABASE_CLI } from "./supabase-cli.mjs";
+import { SUPABASE_CLI, queryRows } from "./supabase-cli.mjs";
 import { onMissingCredentials } from "./credentials.mjs";
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -105,8 +105,7 @@ function readLive(query = LIVE_GRANTS_QUERY) {
     );
     process.exit(1);
   }
-  const start = output.indexOf("{");
-  return JSON.parse(output.slice(start)).rows;
+  return queryRows(output);
 }
 
 export function checkFunctionGrants() {

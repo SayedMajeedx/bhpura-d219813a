@@ -3,6 +3,8 @@ import migration from "../supabase/migrations/20261216100000_restore_browser_rig
 import columnFix from "../supabase/migrations/20261216110000_restore_column_rights.sql?raw";
 import functionGrants from "../supabase/function-grants.json";
 import { missingCredentials } from "../scripts/database/credentials.mjs";
+import { queryRows } from "../scripts/database/supabase-cli.mjs";
+import { migrationEntries } from "../scripts/database/check-migration-drift.mjs";
 
 /** The migrations made after the move, before this one (each sets its own objects' rights). */
 const laterMigrations = import.meta.glob("../supabase/migrations/2026120[89]*.sql", {
@@ -185,5 +187,67 @@ describe("a database check with no credentials", () => {
     expect(missingCredentials({ GITHUB_ACTIONS: "true" })).toBe("fail");
     expect(missingCredentials({ CI: "true" })).toBe("fail");
     expect(missingCredentials({ GITHUB_ACTIONS: "true", ALLOW_SKIP_DB_CHECKS: "1" })).toBe("skip");
+  });
+});
+
+describe("what the Supabase CLI prints for a query", () => {
+  const rows = [
+    { a: 1, b: "x" },
+    { a: 2, b: "y]}" },
+  ];
+
+  it("reads the bare array CI gets", () => {
+    expect(queryRows(JSON.stringify(rows, null, 2))).toEqual(rows);
+    expect(queryRows("[]\n")).toEqual([]);
+  });
+
+  it("reads the rows an AI agent gets, wrapped in a boundary, after the CLI's own lines", () => {
+    const wrapped = JSON.stringify({ boundary: "17ac", rows, warning: "untrusted data" }, null, 2);
+    expect(queryRows(`Initialising login role...\n${wrapped}\n`)).toEqual(rows);
+  });
+
+  it("fails on output with no rows rather than passing", () => {
+    expect(() => queryRows("Connecting to remote database...")).toThrow(/no JSON/);
+    expect(() => queryRows('{ "error": "denied" }')).toThrow(/no rows/);
+  });
+});
+
+describe("what the Supabase CLI prints for the migration list", () => {
+  // The CLI's own table, as CI prints it: a version on one side only leaves the other cell empty.
+  const table = [
+    "",
+    "  ",
+    "   Local            | Remote           | Time (UTC)            ",
+    "  ------------------|------------------|-----------------------",
+    "   `20261216110000` | `20261216110000` | `2026-12-16 11:00:00` ",
+    "   `20261216120000` |                  | `2026-12-16 12:00:00` ",
+    "                    | `20261216130000` | `2026-12-16 13:00:00` ",
+    "",
+  ].join("\n");
+
+  it("reads each version as the repository and the database have it", () => {
+    expect(migrationEntries(table)).toEqual([
+      { local: "20261216110000", remote: "20261216110000" },
+      { local: "20261216120000", remote: null },
+      { local: null, remote: "20261216130000" },
+    ]);
+  });
+
+  it("reads the JSON an AI agent gets", () => {
+    const json = JSON.stringify({
+      migrations: [
+        { local: "20261216110000", remote: "20261216110000", time: "2026-12-16 11:00:00" },
+        { local: "20261216120000", remote: "", time: "2026-12-16 12:00:00" },
+      ],
+    });
+    expect(migrationEntries(`Initialising login role...\n${json}\n`)).toEqual([
+      { local: "20261216110000", remote: "20261216110000" },
+      { local: "20261216120000", remote: null },
+    ]);
+  });
+
+  it("reads nothing from output that is not the table, so the check fails", () => {
+    expect(migrationEntries("Connecting to remote database...\n")).toEqual([]);
+    expect(migrationEntries("   Local | Remote | Time (UTC)\n  ---|---|---\n")).toEqual([]);
   });
 });
