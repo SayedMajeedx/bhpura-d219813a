@@ -6844,6 +6844,80 @@ export type Database = {
         };
         Relationships: [];
       };
+      platform_page_responses: {
+        Row: {
+          admin_notes: string | null;
+          answers: Json;
+          created_at: string;
+          id: string;
+          page_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          admin_notes?: string | null;
+          answers: Json;
+          created_at?: string;
+          id?: string;
+          page_id: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          admin_notes?: string | null;
+          answers?: Json;
+          created_at?: string;
+          id?: string;
+          page_id?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "platform_page_responses_page_id_fkey";
+            columns: ["page_id"];
+            isOneToOne: false;
+            referencedRelation: "platform_pages";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      platform_pages: {
+        Row: {
+          content: Json;
+          created_at: string;
+          form: Json;
+          id: string;
+          settings: Json;
+          slug: string;
+          status: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          content?: Json;
+          created_at?: string;
+          form?: Json;
+          id?: string;
+          settings?: Json;
+          slug: string;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          content?: Json;
+          created_at?: string;
+          form?: Json;
+          id?: string;
+          settings?: Json;
+          slug?: string;
+          status?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
+      };
       post_kit_edits: {
         Row: {
           brand_id: string;
@@ -11686,6 +11760,15 @@ export type Database = {
         Args: { p_brand_id: string; p_design: Json };
         Returns: Json;
       };
+      gift_card_font_choice: {
+        Args: {
+          p_brand_id: string;
+          p_lang: string;
+          p_own: boolean;
+          p_value: Json;
+        };
+        Returns: Json;
+      };
       gift_card_issue_internal: {
         Args: {
           p_amount: number;
@@ -12184,6 +12267,11 @@ export type Database = {
         };
         Returns: Json;
       };
+      platform_page_clean_answers: {
+        Args: { p_answers: Json; p_form: Json };
+        Returns: Json;
+      };
+      platform_page_public: { Args: { p_slug: string }; Returns: Json };
       post_kit_may_write: { Args: { p_brand: string }; Returns: boolean };
       product_has_history: { Args: { p_product_id: string }; Returns: boolean };
       prune_system_health_events: {
@@ -13445,6 +13533,10 @@ export type Database = {
           p_readiness_status: string;
           p_whatsapp_number: string;
         };
+        Returns: string;
+      };
+      submit_platform_page_response: {
+        Args: { p_answers: Json; p_slug: string };
         Returns: string;
       };
       submit_public_order_review: {
