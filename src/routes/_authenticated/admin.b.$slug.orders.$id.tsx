@@ -105,7 +105,7 @@ function OrderEditor() {
   const qc = useQueryClient();
   const router = useRouter();
   const brand = useBrand();
-  const { isAdmin, isCourier } = useProfile();
+  const { isAdmin, isCourier, hasPermission } = useProfile();
   const brandId = brand.id;
   const { profile: storeProfile } = useAdminStoreProfile(brandId);
   const addonDefaults = variantAxisDefaultsFrom(storeProfile.addons, storeProfile.vertical);
@@ -123,7 +123,13 @@ function OrderEditor() {
     branchesQ,
     customQ,
     settingsQ,
-  } = useOrderDetailData({ id, brandId, isCourier, isAdmin });
+  } = useOrderDetailData({
+    id,
+    brandId,
+    isCourier,
+    isAdmin,
+    canManageOrders: hasPermission("manage_orders"),
+  });
   const benefit = useBenefitReview({ id, brandId, lang, orderQ });
 
   const [waModalOpen, setWaModalOpen] = useState(false);
