@@ -801,6 +801,11 @@
       "authenticated": true,
       "reason": "Signed-in person setting their own device's alert choices: only the caller's own subscription, known kinds and true/false only"
     },
+    "staff_brand_id()": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the caller's own store (an active profile that is not a courier, once two-factor is given when on), read by the row rules once per request; it names only the caller's own store"
+    },
     "storefront_active_offers(p_brand_slug text)": {
       "anon": true,
       "authenticated": true,
