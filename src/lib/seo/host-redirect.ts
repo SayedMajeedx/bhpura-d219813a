@@ -23,6 +23,7 @@ export const PLATFORM_ROUTE_SEGMENTS: ReadonlySet<string> = new Set([
   "grant",
   "hero-preview",
   "onboard",
+  "p",
   "platform",
   "reset-password",
   "review",

@@ -12,6 +12,8 @@ const RESERVED = new Set([
   "brands",
   "app-builds",
   "mobile-releases",
+  // Boutq's own pages, made in the super admin (`/p/<slug>`).
+  "p",
 ]);
 
 export function isReservedStorefrontSlug(slug: string): boolean {
