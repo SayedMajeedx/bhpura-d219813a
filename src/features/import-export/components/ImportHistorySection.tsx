@@ -64,7 +64,7 @@ export function ImportHistorySection({
           {importRuns.map((run) => (
             <div
               key={run.id}
-              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 transition-all"
+              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-muted/20 transition"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">

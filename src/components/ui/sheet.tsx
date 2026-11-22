@@ -25,7 +25,7 @@ const SheetOverlay = React.forwardRef<
     className={cn(
       // It fades with the panel, on its curve and timing, and blurs nothing: a blurred page
       // behind a sliding panel is redrawn on every frame, and the drawer stuttered on phones.
-      "fixed inset-0 z-40 bg-black/40 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:duration-400 data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-40 bg-black/40 ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=open]:duration-(--motion-slow) data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className,
     )}
     {...props}
@@ -38,7 +38,7 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 // 300ms out. At 300 and 200 the cart drawer read as a jump rather than a slide; at 500ms
 // ease-in-out it had been slow off the mark and closed slower than the shopper's tap.
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform data-[state=closed]:duration-300 data-[state=open]:duration-400 data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform data-[state=closed]:duration-300 data-[state=open]:duration-(--motion-slow) data-[state=open]:animate-in data-[state=closed]:animate-out",
   {
     variants: {
       side: {
@@ -93,7 +93,7 @@ const SheetContent = React.forwardRef<
           {!hideDefaultClose && (
             <SheetPrimitive.Close
               aria-label={closeLabel()}
-              className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
+              className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-11 w-11 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
             >
               <X className="h-5 w-5" strokeWidth={2} />
             </SheetPrimitive.Close>

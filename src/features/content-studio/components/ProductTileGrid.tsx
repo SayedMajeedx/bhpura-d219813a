@@ -47,7 +47,7 @@ export function ProductTileGrid({
               if (!locked) onToggle(product.id);
             }}
             className={cn(
-              "group relative block aspect-[3/4] h-auto min-w-0 overflow-hidden rounded-xl border-2 p-0 text-start font-normal whitespace-normal transition-all hover:bg-transparent",
+              "group relative block aspect-[3/4] h-auto min-w-0 overflow-hidden rounded-xl border-2 p-0 text-start font-normal whitespace-normal transition hover:bg-transparent",
               picked
                 ? "border-primary ring-2 ring-primary/25 shadow-xs"
                 : "border-border hover:border-primary/40",

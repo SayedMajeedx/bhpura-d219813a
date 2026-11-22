@@ -137,7 +137,7 @@ export function OsQuickActions({
           variant="default"
           size="sm"
           className={cn(
-            "h-7.5 px-2.5 gap-1.5 text-xs font-bold rounded-lg shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 transition-all select-none",
+            "h-7.5 px-2.5 gap-1.5 text-xs font-bold rounded-lg shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 transition select-none",
             className,
           )}
           aria-label={isAr ? "إجراء سريع جديد" : "New Quick Action"}
@@ -151,7 +151,7 @@ export function OsQuickActions({
       <DropdownMenuContent
         align={isAr ? "start" : "end"}
         sideOffset={6}
-        className="w-64 p-1.5 rounded-xl border border-[var(--os-border)] os-glass shadow-xl select-none z-50 animate-in fade-in zoom-in-95 duration-150"
+        className="w-64 p-1.5 rounded-xl border border-[var(--os-border)] os-glass shadow-xl select-none z-50 animate-in fade-in zoom-in-95 duration-(--motion-quick)"
       >
         <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground">
           {isAr ? "إجراءات سريعة" : "Quick actions"}

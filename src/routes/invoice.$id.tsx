@@ -318,7 +318,7 @@ function PublicInvoice() {
                   );
                 }
               }}
-              className="px-3.5 py-2 text-xs rounded-md font-semibold hover:opacity-90 transition-all shadow-xs"
+              className="px-3.5 py-2 text-xs rounded-md font-semibold hover:opacity-90 transition shadow-xs"
               style={{
                 backgroundColor: color,
                 color: getReadableTextColor(color),

@@ -34,7 +34,7 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
                 key={key}
                 onClick={() => setFormat(key as keyof typeof FORMATS)}
                 className={cn(
-                  "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
+                  "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                   isSelected
                     ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                     : "border-border hover:border-primary/40 bg-card/60",
@@ -78,7 +78,7 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
                 key={key}
                 onClick={() => setTheme(key)}
                 className={cn(
-                  "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
+                  "relative flex flex-col justify-between rounded-xl border p-2 sm:p-3 text-start transition cursor-pointer min-h-[58px] sm:min-h-[66px] min-w-0",
                   isSelected
                     ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                     : "border-border hover:border-primary/40 bg-card/60",
@@ -121,7 +121,7 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
               type="button"
               onClick={() => setImageFit("cover")}
               className={cn(
-                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
+                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                 imageFit === "cover"
                   ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                   : "border-border hover:border-primary/40 bg-card/60",
@@ -145,7 +145,7 @@ export function FormatStylePicker({ studio }: { studio: ContentStudio }) {
               type="button"
               onClick={() => setImageFit("contain")}
               className={cn(
-                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition-all cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
+                "relative flex flex-col justify-between rounded-xl border p-2.5 sm:p-3 text-start transition cursor-pointer min-h-[58px] sm:min-h-[64px] min-w-0",
                 imageFit === "contain"
                   ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                   : "border-border hover:border-primary/40 bg-card/60",

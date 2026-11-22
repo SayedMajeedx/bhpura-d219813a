@@ -30,7 +30,7 @@ export function VariantTableHead({
         <th className="w-10 px-2 py-3 text-center align-middle">
           <input
             type="checkbox"
-            className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
+            className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition"
             checked={isAllSelected}
             onChange={onToggleSelectAll}
           />

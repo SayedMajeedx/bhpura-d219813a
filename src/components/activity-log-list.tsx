@@ -43,7 +43,7 @@ export function ActivityLogList({
   const logs = q.data ?? [];
 
   return (
-    <Card className="p-4 sm:p-5 transition-all">
+    <Card className="p-4 sm:p-5 transition">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}

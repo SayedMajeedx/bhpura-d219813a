@@ -427,7 +427,7 @@ export function ImageCropperDialog({
                 type="button"
                 onClick={() => setFitMode("cover")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
                   fitMode === "cover"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
@@ -440,7 +440,7 @@ export function ImageCropperDialog({
                 type="button"
                 onClick={() => setFitMode("contain")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition",
                   fitMode === "contain"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground",
@@ -459,7 +459,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("transparent")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition",
                       containBg === "transparent"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -471,7 +471,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("white")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition",
                       containBg === "white"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -483,7 +483,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("neutral")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition",
                       containBg === "neutral"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
@@ -495,7 +495,7 @@ export function ImageCropperDialog({
                     type="button"
                     onClick={() => setContainBg("blur")}
                     className={cn(
-                      "rounded-md px-2 py-1 text-xs font-medium transition-all",
+                      "rounded-md px-2 py-1 text-xs font-medium transition",
                       containBg === "blur"
                         ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",

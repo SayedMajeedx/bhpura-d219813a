@@ -123,7 +123,7 @@ export function ProductMediaTab({
               </div>
             </div>
           ))}
-          <label className="relative aspect-[3/4] rounded-xl border-2 border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 p-4 text-center cursor-pointer transition-all shadow-sm touch-manipulation group">
+          <label className="relative aspect-[3/4] rounded-xl border-2 border-dashed border-border hover:border-primary/60 bg-muted/20 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 p-4 text-center cursor-pointer transition shadow-sm touch-manipulation group">
             {uploading ? (
               <>
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />

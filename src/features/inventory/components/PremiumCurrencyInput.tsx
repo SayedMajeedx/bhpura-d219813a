@@ -33,7 +33,7 @@ export function PremiumCurrencyInput({
         type="number"
         step="0.001"
         placeholder={placeholder}
-        className={`w-full h-9.5 ${onClear && value ? "ps-7" : "ps-2.5"} pe-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+        className={`w-full h-9.5 ${onClear && value ? "ps-7" : "ps-2.5"} pe-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}

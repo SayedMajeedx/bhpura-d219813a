@@ -337,7 +337,7 @@ function SuperAdminSettings() {
               <div className="flex-1 w-full">
                 <Label
                   htmlFor="logo-uploader"
-                  className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-6 cursor-pointer bg-card hover:bg-muted/30 transition-all text-center relative"
+                  className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-6 cursor-pointer bg-card hover:bg-muted/30 transition text-center relative"
                 >
                   {uploadingLogo ? (
                     <div className="space-y-2 flex flex-col items-center">
@@ -515,7 +515,7 @@ function SuperAdminSettings() {
                 <div className="flex-1 w-full">
                   <Label
                     htmlFor="qr-uploader"
-                    className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-5 cursor-pointer bg-card hover:bg-muted/30 transition-all text-center relative"
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-border hover:border-primary/50 rounded-lg p-5 cursor-pointer bg-card hover:bg-muted/30 transition text-center relative"
                   >
                     {uploadingQr ? (
                       <div className="space-y-2 flex flex-col items-center">
@@ -635,7 +635,7 @@ function SuperAdminSettings() {
           <Button
             type="submit"
             disabled={submitting}
-            className="h-11 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 shrink-0"
+            className="h-11 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95 shrink-0"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

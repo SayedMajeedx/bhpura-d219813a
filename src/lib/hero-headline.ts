@@ -306,3 +306,13 @@ export function storeNameHeadlineNote(
     ? "العنوان هو اسم المتجر، والشعار يقوله فوقه. جملة عمّا تبيعه أو عن الجديد تشدّ الزائر أكثر."
     : "The headline is the store's name, which the logo above already says. A phrase about what you sell, or what is new, does more.";
 }
+
+/**
+ * The wait between two words rising, in ms: 80 for a few words, less for more, so the last word
+ * starts within 300 ms (transitions.dev's stagger rule). It was 90 ms whatever the count, so a
+ * six-word headline's last word waited 450 ms.
+ */
+export function wordStagger(words: number): number {
+  if (words <= 1) return 0;
+  return Math.round(Math.min(80, 300 / (words - 1)));
+}

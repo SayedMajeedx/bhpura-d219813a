@@ -60,7 +60,7 @@ export function OnboardingChecklist({
   const text = (value: { ar: string; en: string }) => (isAr ? value.ar : value.en);
   return (
     <Card
-      className={`p-5 sm:p-6 border-2 transition-all duration-300 rounded-3xl shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 ${
+      className={`p-5 sm:p-6 border-2 transition duration-300 rounded-3xl shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 ${
         isAllStepsCompleted
           ? "border-success/30 bg-success/5"
           : "border-primary/25 bg-gradient-to-br from-primary/5 via-background to-secondary/15"
@@ -132,7 +132,7 @@ export function OnboardingChecklist({
       {/* Real Progress Bar */}
       <div className="w-full h-1.5 bg-muted/60 rounded-full overflow-hidden">
         <div
-          className={`h-full transition-all duration-500 rounded-full ${
+          className={`h-full transition-[width] duration-(--motion-very-slow) rounded-full ${
             isAllStepsCompleted ? "bg-success" : "bg-primary"
           }`}
           style={{ width: `${Math.max(6, (completedStepsCount / 3) * 100)}%` }}
@@ -142,7 +142,7 @@ export function OnboardingChecklist({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
         {/* Step 1: Add First Product */}
         <div
-          className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+          className={`p-4 rounded-2xl border transition flex flex-col justify-between space-y-3 ${
             step1Done
               ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"
@@ -189,7 +189,7 @@ export function OnboardingChecklist({
 
         {/* Step 2: Preview & Share Storefront */}
         <div
-          className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+          className={`p-4 rounded-2xl border transition flex flex-col justify-between space-y-3 ${
             step2Done
               ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"
@@ -277,7 +277,7 @@ export function OnboardingChecklist({
 
         {/* Step 3: First Sale */}
         <div
-          className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+          className={`p-4 rounded-2xl border transition flex flex-col justify-between space-y-3 ${
             step3Done
               ? "bg-success/5 border-success/20 text-foreground"
               : "bg-card border-border shadow-2xs hover:border-primary/40"

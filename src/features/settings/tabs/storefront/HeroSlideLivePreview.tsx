@@ -102,7 +102,7 @@ export function HeroSlideLivePreview({
             borderRadius: radius,
           } as React.CSSProperties
         }
-        className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden border border-border bg-card shadow-md transition-all"
+        className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden border border-border bg-card shadow-md transition"
       >
         {/* Sample Sale Badge preview */}
         <div

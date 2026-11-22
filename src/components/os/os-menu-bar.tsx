@@ -64,7 +64,7 @@ export function OsMenuBar({
   return (
     <header
       className={cn(
-        "no-print hidden md:flex h-11 border border-border bg-card/80 backdrop-blur-md shadow-xs shrink-0 items-center justify-between px-4 my-2 ms-3.5 me-4 rounded-xl transition-all select-none z-30",
+        "no-print hidden md:flex h-11 border border-border bg-card/80 backdrop-blur-md shadow-xs shrink-0 items-center justify-between px-4 my-2 ms-3.5 me-4 rounded-xl transition select-none z-30",
         className,
       )}
     >
@@ -137,7 +137,7 @@ export function OsMenuBar({
           type="button"
           onClick={onOpenSpotlight}
           aria-label={`${lang === "ar" ? "البحث السريع" : "Quick Search"} (${shortcutLabel})`}
-          className="h-8 px-2.5 gap-2 text-xs text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background border border-border rounded-lg flex items-center transition-all shadow-2xs"
+          className="h-8 px-2.5 gap-2 text-xs text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background border border-border rounded-lg flex items-center transition shadow-2xs"
         >
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="hidden lg:inline text-xs font-medium">

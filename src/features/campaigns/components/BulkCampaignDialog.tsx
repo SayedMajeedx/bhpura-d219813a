@@ -74,7 +74,7 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
                     if (!bulkActive) setBulkMode("guided");
                   }}
                   disabled={bulkActive}
-                  className={`py-2 px-3 text-sm rounded-md font-medium transition-all ${bulkMode === "guided" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`py-2 px-3 text-sm rounded-md font-medium transition ${bulkMode === "guided" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {isAr ? "توجيه خطوة بخطوة" : "Guided Step-by-Step"}
                 </button>
@@ -83,7 +83,7 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
                     if (!bulkActive) setBulkMode("auto");
                   }}
                   disabled={bulkActive}
-                  className={`py-2 px-3 text-sm rounded-md font-medium transition-all ${bulkMode === "auto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`py-2 px-3 text-sm rounded-md font-medium transition ${bulkMode === "auto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {isAr ? "إرسال تلقائي متسلسل" : "Automated Queue Loop"}
                 </button>
@@ -152,7 +152,7 @@ export function BulkCampaignDialog({ page }: { page: CampaignsPageState }) {
               </div>
               <div className="h-3 w-full bg-secondary rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-500 transition-all duration-300 rounded-full"
+                  className="h-full bg-emerald-500 transition-[width] duration-300 rounded-full"
                   style={{ width: `${(bulkIndex / bulkQueue.length) * 100}%` }}
                 />
               </div>

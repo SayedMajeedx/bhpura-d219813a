@@ -189,7 +189,7 @@ export function OrderFulfillmentModal({
                               }))
                             }
                             className={cn(
-                              "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
+                              "flex items-center gap-3 p-2.5 rounded-xl border transition cursor-pointer select-none",
                               isChecked
                                 ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800"
                                 : "bg-card border-border hover:border-primary/50",

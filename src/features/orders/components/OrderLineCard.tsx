@@ -124,7 +124,7 @@ export function OrderLineCard({
   return (
     <div
       key={idx}
-      className="space-y-3 rounded-xl border border-border-strong bg-card p-3.5 shadow-xs transition-all"
+      className="space-y-3 rounded-xl border border-border-strong bg-card p-3.5 shadow-xs transition"
     >
       {/* Item Thumbnail & SKU Header */}
       <div className="flex items-center gap-3 pb-2.5 border-b border-border-subtle">

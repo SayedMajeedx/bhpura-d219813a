@@ -225,7 +225,7 @@ function CustomerProfilePage() {
           </h1>
           <Button
             asChild
-            className="mt-5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            className="mt-5 shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
           >
             <Link to="/admin/b/$slug/customers" params={{ slug }}>
               {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
@@ -274,7 +274,7 @@ function CustomerProfilePage() {
           {/* The actions wrap beside the name on a tablet (they ran off the screen). */}
           <Button
             asChild
-            className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3 bg-primary text-primary-foreground font-bold"
+            className="min-h-11 shadow-sm transition duration-200 hover:shadow active:scale-95 px-3 bg-primary text-primary-foreground font-bold"
           >
             <Link
               to="/admin/b/$slug/orders/$id"
@@ -326,7 +326,7 @@ function CustomerProfilePage() {
           <Button
             onClick={() => setEditing(true)}
             variant="outline"
-            className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3"
+            className="min-h-11 shadow-sm transition duration-200 hover:shadow active:scale-95 px-3"
           >
             <Pencil className="h-4 w-4 sm:me-2" />
             <span className="hidden sm:inline">

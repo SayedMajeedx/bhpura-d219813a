@@ -234,7 +234,7 @@ export function OsAppsHubModal({
                           handleLaunch(item);
                         }
                       }}
-                      className="group relative flex min-h-24 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="group relative flex min-h-24 cursor-pointer items-start gap-4 rounded-2xl border border-border-strong bg-card p-4 text-start shadow-xs transition hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
                       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-foreground transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                         <Icon className="h-5 w-5" />
@@ -242,7 +242,7 @@ export function OsAppsHubModal({
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <h4 className="text-sm font-bold leading-6 text-foreground">{title}</h4>
-                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 text-muted-foreground transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
+                          <ArrowUpRight className="h-3.5 w-3.5 shrink-0 opacity-0 text-muted-foreground transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary rtl:rotate-[-90deg]" />
                         </div>
                         {description && (
                           <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">

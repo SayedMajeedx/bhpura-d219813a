@@ -592,7 +592,7 @@ function SuperRequestsPage() {
                         key={plan.id}
                         type="button"
                         onClick={() => setSelectedPlanId(plan.id)}
-                        className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}
+                        className={`w-full rounded-xl border p-4 text-start transition ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <span className="flex items-center gap-2 text-sm font-semibold">

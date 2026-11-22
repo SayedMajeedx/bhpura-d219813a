@@ -108,7 +108,7 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
           return (
             <Card
               key={tier.tier_key}
-              className="p-5 border-border bg-card flex flex-col justify-between relative overflow-hidden transition-all hover:border-primary/50 shadow-xs"
+              className="p-5 border-border bg-card flex flex-col justify-between relative overflow-hidden transition hover:border-primary/50 shadow-xs"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

@@ -141,7 +141,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             }
           }}
           className={cn(
-            "relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all min-h-[44px]",
+            "relative flex flex-col p-4 rounded-xl border cursor-pointer transition min-h-[44px]",
             !isCatalog
               ? "border-primary bg-primary/5 ring-1 ring-primary"
               : "border-border hover:border-muted-foreground/40 bg-card",
@@ -190,7 +190,7 @@ export function ModeGroup({ onNavigateTab }: { onNavigateTab?: (tab: string) => 
             }
           }}
           className={cn(
-            "relative flex flex-col p-4 rounded-xl border cursor-pointer transition-all min-h-[44px]",
+            "relative flex flex-col p-4 rounded-xl border cursor-pointer transition min-h-[44px]",
             isCatalog
               ? "border-primary bg-primary/5 ring-1 ring-primary"
               : "border-border hover:border-muted-foreground/40 bg-card",

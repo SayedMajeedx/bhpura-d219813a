@@ -70,7 +70,7 @@ function FirstVisitIntroBanner() {
   if (!identityGuideShown(items)) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-5 shadow-xs transition-all animate-in fade-in duration-300">
+    <div className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 sm:p-5 shadow-xs transition animate-in fade-in duration-300">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-3">
           <div className="flex items-center gap-2">

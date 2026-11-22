@@ -46,7 +46,7 @@ export function VariantAddRow({
   } = axes;
 
   return (
-    <tr className="border-t border-border bg-secondary/30 animate-in fade-in duration-150">
+    <tr className="border-t border-border bg-secondary/30 animate-in fade-in duration-(--motion-quick)">
       <td className="w-10 px-2 py-3 text-center align-middle"></td>
 
       {/* Variant & Identity (Col 2) */}

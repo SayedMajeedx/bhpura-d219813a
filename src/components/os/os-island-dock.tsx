@@ -47,7 +47,7 @@ export function OsIslandDock({
         // Sleek ergonomic pill layout
         "flex items-center gap-1 p-1.5 rounded-full select-none touch-manipulation",
         // Smooth slide-in / slide-out when hidden on detail pages
-        "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "transition duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         "motion-reduce:transition-none motion-reduce:transform-none",
         isHidden
           ? "translate-y-[calc(100%+2.5rem)] opacity-0 pointer-events-none scale-95"
@@ -68,7 +68,7 @@ export function OsIslandDock({
               // Apple touch target compliance & ergonomic pill sizing
               "relative flex flex-col items-center justify-center min-w-[54px] sm:min-w-[62px] h-[52px] px-2 pt-1.5 pb-2 rounded-full outline-none select-none",
               // Refined native touch feedback
-              "transition-all duration-200 ease-out active:scale-95",
+              "transition duration-200 ease-out active:scale-95",
               "motion-reduce:transition-none motion-reduce:transform-none motion-reduce:active:scale-100",
               // Accessible focus
               "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",

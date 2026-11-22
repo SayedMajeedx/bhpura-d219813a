@@ -184,7 +184,7 @@ export function CustomizationsSection({
             <button
               type="button"
               onClick={() => setScope("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 scope === "all"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-background border border-border hover:bg-muted"
@@ -196,7 +196,7 @@ export function CustomizationsSection({
             <button
               type="button"
               onClick={() => setScope("selected")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                 scope === "selected"
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-background border border-border hover:bg-muted"

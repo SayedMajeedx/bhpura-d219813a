@@ -43,7 +43,7 @@ export function CampaignsScopeSwitcher({
             type="button"
             onClick={() => onSegmentChange(s.id)}
             className={cn(
-              "flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap min-h-10 sm:justify-start",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition duration-200 cursor-pointer whitespace-nowrap min-h-10 sm:justify-start",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

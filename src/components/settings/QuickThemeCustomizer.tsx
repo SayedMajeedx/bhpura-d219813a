@@ -395,17 +395,14 @@ export function QuickThemeCustomizer({
                 variant={isSelected ? "default" : "outline"}
                 onClick={() => onRadiusChange(preset.value)}
                 className={cn(
-                  "h-12 flex-col gap-1 items-center justify-center transition-all",
+                  "h-12 flex-col gap-1 items-center justify-center transition",
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-sm ring-2 ring-primary/20"
                     : "border-border hover:bg-muted/40",
                 )}
               >
                 <div
-                  className={cn(
-                    "size-4 border-2 border-current transition-all",
-                    preset.previewClass,
-                  )}
+                  className={cn("size-4 border-2 border-current transition", preset.previewClass)}
                 />
                 <span className="text-xs font-medium">
                   {isAr ? preset.labelAr : preset.labelEn}
@@ -436,7 +433,7 @@ export function QuickThemeCustomizer({
                     type="button"
                     onClick={() => onBadgeAccentChange(b.id)}
                     className={cn(
-                      "flex items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-all",
+                      "flex items-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition",
                       isBadgeSelected
                         ? "border-primary bg-primary/10 font-medium text-primary"
                         : "border-border hover:bg-muted/40",

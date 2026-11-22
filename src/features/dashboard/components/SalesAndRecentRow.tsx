@@ -84,7 +84,7 @@ export function SalesAndRecentRow({
               {catalogInquiriesQ.data?.productInquiries.slice(0, 5).map((p, idx) => (
                 <div
                   key={p.productId}
-                  className="p-3 bg-background/80 border border-border-subtle rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
+                  className="p-3 bg-background/80 border border-border-subtle rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition shadow-2xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs">

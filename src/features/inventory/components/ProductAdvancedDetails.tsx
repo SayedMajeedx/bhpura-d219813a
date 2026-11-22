@@ -68,7 +68,7 @@ export function ProductAdvancedDetails({
       </button>
 
       {advancedOpen && (
-        <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-150">
+        <div className="p-4 space-y-4 border-t border-border-subtle animate-in fade-in duration-(--motion-quick)">
           {/* Fabric & Occasion */}
           {!isService &&
             resolveVariantAxis({

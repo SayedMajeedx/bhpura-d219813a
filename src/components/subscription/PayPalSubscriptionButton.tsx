@@ -310,7 +310,7 @@ export function PayPalSubscriptionButton({
       <div
         ref={containerRef}
         dir={isAr ? "rtl" : "ltr"}
-        className="w-full min-h-[44px] transition-all"
+        className="w-full min-h-[44px] transition"
       />
     </div>
   );

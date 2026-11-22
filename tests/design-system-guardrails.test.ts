@@ -228,10 +228,12 @@ describe("design system guardrails", () => {
     // One motion system (src/styles/motion.css): a duration says what the motion does
     // (duration-(--motion-fast)), never a number of its own, and a transition names what it
     // moves (transition-all animates layout too, and stutters). The storefront moved over on
-    // 2026-10-30; the admin's remain. Lower these as screens move; never raise them.
+    // 2026-10-30, and the admin's transition-all on 2026-11-22 (a bar that grows names its width).
+    // The durations left are 200 and 300 ms, which match no token: each moves to the token its
+    // motion's kind calls for. Lower this as screens move; never raise it.
     const tsx = (rel: string) => rel.endsWith(".tsx");
-    expect(countMatches(/\bduration-\d+\b/g, tsx)).toBeLessThanOrEqual(157);
-    expect(countMatches(/\btransition-all\b/g, tsx)).toBeLessThanOrEqual(267);
+    expect(countMatches(/\bduration-\d+\b/g, tsx)).toBeLessThanOrEqual(88);
+    expect(countMatches(/\btransition-all\b/g, tsx)).toBe(0);
     const storefront = (rel: string) =>
       tsx(rel) &&
       /^(components\/storefront|features\/(product-page|checkout|storefront-home|storefront-shell|services-home|storefront-booking|storefront-account))\//.test(

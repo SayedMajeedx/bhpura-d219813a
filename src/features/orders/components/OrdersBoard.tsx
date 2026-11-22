@@ -98,7 +98,7 @@ export function OrdersBoard<T extends BoardCard>({
             drop(column.id);
           }}
           className={cn(
-            "flex w-[85vw] max-w-80 shrink-0 snap-start flex-col rounded-2xl border border-border bg-muted/30 transition-colors duration-150 sm:w-72",
+            "flex w-[85vw] max-w-80 shrink-0 snap-start flex-col rounded-2xl border border-border bg-muted/30 transition-colors duration-(--motion-quick) sm:w-72",
             over === column.id &&
               dragging &&
               (canDrop(dragging, column.id, madeToOrder)
@@ -137,7 +137,7 @@ export function OrdersBoard<T extends BoardCard>({
                     setOver(null);
                   }}
                   className={cn(
-                    "space-y-2 rounded-xl border border-border bg-card p-3 shadow-2xs transition-[opacity,scale,box-shadow] duration-150 ease-(--motion-ease-smooth)",
+                    "space-y-2 rounded-xl border border-border bg-card p-3 shadow-2xs transition-[opacity,scale,box-shadow] duration-(--motion-quick) ease-(--motion-ease-smooth)",
                     "[@media(hover:hover)_and_(pointer:fine)]:cursor-grab [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-sm",
                     // The card being carried stays behind as a lighter, smaller outline.
                     dragging?.id === order.id && "scale-[0.98] opacity-50",

@@ -164,7 +164,7 @@ export function VariantDesktopRow({
 
   return (
     <tr
-      className={`border-t border-border transition-all ${
+      className={`border-t border-border transition ${
         isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-secondary/15"
       }`}
     >
@@ -172,7 +172,7 @@ export function VariantDesktopRow({
       <td className="w-10 px-2 py-3 text-center align-middle" onClick={(e) => e.stopPropagation()}>
         <input
           type="checkbox"
-          className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
+          className="h-4 w-4 rounded border-input text-primary focus:ring-primary cursor-pointer transition"
           checked={isSelected}
           onChange={onToggleSelect}
         />

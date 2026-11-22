@@ -19,7 +19,7 @@ export function StepReview({ data, isAr }: StepReviewProps) {
     <div className="space-y-6">
       {/* Visual Live Preview Banner */}
       <div
-        className="p-5 rounded-2xl border shadow-sm transition-all overflow-hidden relative"
+        className="p-5 rounded-2xl border shadow-sm transition overflow-hidden relative"
         style={{
           backgroundColor: data.backgroundColor || "#ffffff",
           color: data.textColor || "#1c1917",

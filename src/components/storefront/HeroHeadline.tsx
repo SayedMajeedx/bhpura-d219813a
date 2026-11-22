@@ -1,5 +1,10 @@
 import * as React from "react";
-import { headlinePieces, headlineStep, type HeroTextAnimation } from "@/lib/hero-headline";
+import {
+  headlinePieces,
+  headlineStep,
+  wordStagger,
+  type HeroTextAnimation,
+} from "@/lib/hero-headline";
 
 /**
  * The hero's headline, live over the slide: its phrases one after another with the chosen
@@ -117,7 +122,7 @@ function RisingWords({ phrase, dir }: { phrase: string; dir: "rtl" | "ltr" }) {
           <span
             dir={piece.dir}
             className="hero-phrase-rise inline-block"
-            style={{ animationDelay: `${i * 90}ms` }}
+            style={{ animationDelay: `${i * wordStagger(all.length)}ms` }}
           >
             {piece.text}
           </span>

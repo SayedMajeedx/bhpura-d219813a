@@ -70,7 +70,7 @@ export function SuperScopeSwitcher({
             type="button"
             onClick={() => onScopeChange(s.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0 min-h-[44px]",
+              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition duration-200 cursor-pointer shrink-0 min-h-[44px]",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

@@ -208,7 +208,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 disabled={isReadOnly || !onOpenPaymentModal}
                 title={isAr ? "انقر لإدارة حالة وسجل الدفع" : "Click to manage payment lifecycle"}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80",
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80",
                   PAYMENT_BADGE_CLASSES[paymentBadge],
                 )}
               >
@@ -235,7 +235,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                         : "Click to change order fulfillment status"
                     }
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-tight transition hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
                       getFulfillmentBadgeClasses(shownStatus),
                     )}
                   >

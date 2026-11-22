@@ -12,6 +12,7 @@ const {
   headlineStep,
   headlinePieces,
   heroScrim,
+  wordStagger,
   HERO_TEXT_ALIGN_CLASS,
   HERO_TEXT_POSITION_CLASS,
 } = await import("../src/lib/hero-headline");
@@ -20,6 +21,16 @@ const { HeroHeadlineFields } =
   await import("../src/features/settings/tabs/storefront/HeroHeadlineFields");
 
 afterEach(() => vi.useRealTimers());
+
+describe("rising words", () => {
+  it("start the last word within 300 ms, 80 ms apart at most", () => {
+    expect(wordStagger(1)).toBe(0);
+    expect(wordStagger(3)).toBe(80);
+    expect(wordStagger(6)).toBe(60);
+    expect(wordStagger(11)).toBe(30);
+    for (const n of [2, 4, 7, 12]) expect(wordStagger(n) * (n - 1)).toBeLessThanOrEqual(300);
+  });
+});
 
 describe("a slide's phrases", () => {
   it("are its own in the reader's language, else the other language's, else its title", () => {

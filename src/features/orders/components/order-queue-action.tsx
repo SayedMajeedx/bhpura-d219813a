@@ -342,7 +342,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
           orderId={o.id}
           lines={(o.order_items ?? []).map(orderItemFromRow)}
           lang={lang === "ar" ? "ar" : "en"}
-          className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition-all dark:bg-purple-700 dark:hover:bg-purple-800"
+          className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition dark:bg-purple-700 dark:hover:bg-purple-800"
           title={workshopActionLabels(vocabulary, lang).send}
           onPlainSend={() => handleStatusUpdate({ fulfillment_status: "SENT_TO_TAILOR" }, sent)}
           onSent={async () => {
@@ -370,7 +370,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
           brandId={brandId}
           lines={(o.order_items ?? []).map(orderItemFromRow)}
           lang={lang === "ar" ? "ar" : "en"}
-          className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition-all dark:bg-teal-700 dark:hover:bg-teal-800"
+          className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition dark:bg-teal-700 dark:hover:bg-teal-800"
           onPlainReceive={() =>
             handleStatusUpdate({ fulfillment_status: "RECEIVED_FROM_TAILOR" }, received)
           }
@@ -389,7 +389,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-2xs transition-all dark:bg-amber-700 dark:hover:bg-amber-800"
+        className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-2xs transition dark:bg-amber-700 dark:hover:bg-amber-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
@@ -421,7 +421,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs transition-all dark:bg-indigo-700 dark:hover:bg-indigo-800"
+        className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs transition dark:bg-indigo-700 dark:hover:bg-indigo-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
@@ -446,7 +446,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-2xs transition-all"
+        className="h-8 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-2xs transition"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
@@ -471,7 +471,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+        className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition dark:bg-emerald-700 dark:hover:bg-emerald-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
@@ -502,7 +502,7 @@ export function renderOrderQueueAction(ctx: OrderQueueActionContext, o: Order) {
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+        className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition dark:bg-emerald-700 dark:hover:bg-emerald-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
