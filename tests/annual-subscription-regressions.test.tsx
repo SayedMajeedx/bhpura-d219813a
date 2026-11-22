@@ -186,13 +186,13 @@ describe("annual subscription lifecycle", () => {
       }),
     ];
     await renderBrandsPage();
-    fireEvent.mouseDown(await screen.findByRole("tab", { name: /Receipt Approvals/ }), {
+    fireEvent.mouseDown(await screen.findByRole("tab", { name: /Receipts/ }), {
       button: 0,
       ctrlKey: false,
     });
     fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
-    const dialog = await screen.findByRole("dialog", { name: "Approve SaaS Subscription" });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Authorize & Activate" }));
+    const dialog = await screen.findByRole("dialog", { name: "Approve the subscription" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Approve and activate" }));
     await waitFor(() =>
       expect(saas.approveSubscriptionSaaS).toHaveBeenCalledWith({
         data: expect.objectContaining({ brandId: BRAND, billingInterval: "annual" }),

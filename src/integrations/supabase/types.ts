@@ -12272,6 +12272,26 @@ export type Database = {
         Returns: Json;
       };
       platform_page_public: { Args: { p_slug: string }; Returns: Json };
+      platform_store_stats: {
+        Args: never;
+        Returns: {
+          brand_id: string;
+          currency: string;
+          last_order_at: string;
+          orders_30d: number;
+          orders_total: number;
+          products: number;
+          sales_30d: number;
+          store_vertical: string;
+          sub_currency: string;
+          sub_interval: string;
+          sub_period_end: string;
+          sub_plan_code: string;
+          sub_price_annual: number;
+          sub_price_monthly: number;
+          sub_status: string;
+        }[];
+      };
       post_kit_may_write: { Args: { p_brand: string }; Returns: boolean };
       product_has_history: { Args: { p_product_id: string }; Returns: boolean };
       prune_system_health_events: {

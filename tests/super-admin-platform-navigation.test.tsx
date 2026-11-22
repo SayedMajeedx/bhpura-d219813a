@@ -133,7 +133,7 @@ describe("super-admin platform navigation", () => {
 
   it("uses a clean non-technical dashboard title", async () => {
     await renderBrandsPage();
-    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Boutq Dashboard");
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent("Boutq platform");
     expect(screen.queryByText(/SaaS Dashboard/)).not.toBeInTheDocument();
   });
 

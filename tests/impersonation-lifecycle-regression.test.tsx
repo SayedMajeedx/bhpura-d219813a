@@ -145,12 +145,13 @@ describe("impersonation lifecycle", () => {
     page.brands = [brandRow()];
     document.cookie = "boutq_impersonation_token=stale-read-only; path=/";
     await renderBrandsPage();
-    fireEvent.click(await screen.findByRole("button", { name: "Impersonate" }));
+    // The store is drawn as a table row and as a phone card; either opens its admin.
+    fireEvent.click((await screen.findAllByRole("button", { name: "Open admin" }))[0]);
     await waitFor(() => expect(impersonation.startImpersonationSession).toHaveBeenCalledTimes(1));
     expect(page.cookieAtStart).not.toContain("stale-read-only");
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith(
-        "Unable to start store impersonation. Verify support access and try again.",
+        "Unable to open the store's admin. Check the store allows support access and try again.",
         { id: "toast-1" },
       ),
     );

@@ -74,7 +74,7 @@ beforeEach(() => {
 describe("brand owner provisioning contract", () => {
   it("launches brand creation through the setup wizard", async () => {
     await renderBrandsPage();
-    fireEvent.click(await screen.findByRole("button", { name: /Launch Brand Wizard/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Launch a store/ }));
     expect(await screen.findByText("Brand setup wizard")).toBeInTheDocument();
   });
 
