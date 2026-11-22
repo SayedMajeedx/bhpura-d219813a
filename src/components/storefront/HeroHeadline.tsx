@@ -38,6 +38,11 @@ export function HeroHeadline({
   const [step, setStep] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const [still, setStill] = React.useState(false);
+  // The first phrase of the slide showing when the page opens is there at once: it is the page's
+  // heading, and it played its entrance (fully clear, 14 px of blur on large text) while the
+  // video started and the page woke, the phone's busiest second (the speed review of
+  // 2026-11-22). Every phrase after it, and a slide shown again, has its entrance.
+  const [calmFirst, setCalmFirst] = React.useState(active);
   const { index, done } = headlineStep(step, phrases.length, loops);
 
   React.useEffect(() => {
@@ -51,17 +56,23 @@ export function HeroHeadline({
 
   // A slide shown again starts from its first phrase.
   React.useEffect(() => {
-    if (!active) setStep(0);
+    if (!active) {
+      setStep(0);
+      setCalmFirst(false);
+    }
   }, [active]);
 
   React.useEffect(() => {
     if (!active || paused || still || done) return;
-    const timer = window.setTimeout(() => setStep((current) => current + 1), seconds * 1000);
+    const timer = window.setTimeout(() => {
+      setCalmFirst(false);
+      setStep((current) => current + 1);
+    }, seconds * 1000);
     return () => window.clearTimeout(timer);
   }, [active, paused, still, done, step, seconds]);
 
   if (phrases.length === 0) return null;
-  const motion = still ? "none" : animation;
+  const motion = still || (calmFirst && step === 0) ? "none" : animation;
   const Tag = heading ? "h1" : "p";
 
   return (
@@ -133,7 +144,7 @@ function HeroHeadlineStyles() {
   return (
     <style>{`
       @keyframes hero-phrase-blur {
-        from { opacity: 0; filter: blur(14px); transform: translateY(0.12em) scale(1.02); }
+        from { opacity: 0; filter: blur(4px); transform: translateY(0.12em) scale(1.02); }
         to { opacity: 1; filter: blur(0); transform: none; }
       }
       @keyframes hero-phrase-rise {
