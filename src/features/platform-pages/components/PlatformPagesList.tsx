@@ -138,7 +138,13 @@ export function PlatformPagesList({ lang }: { lang: Lang }) {
                   <span dir="ltr" className="font-mono">
                     /p/{page.slug}
                   </span>
-                  <span>{countOf(page.responses, "response", lang)}</span>
+                  <Link
+                    to="/admin/super/responses/$id"
+                    params={{ id: page.id }}
+                    className="font-semibold text-primary hover:underline"
+                  >
+                    {countOf(page.responses, "response", lang)}
+                  </Link>
                 </p>
               </div>
               <Button asChild variant="outline" size="sm" className="h-9 gap-1.5">

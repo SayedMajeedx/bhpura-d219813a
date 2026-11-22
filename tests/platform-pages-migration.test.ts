@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import migration from "../supabase/migrations/20261218100000_platform_pages.sql?raw";
+import grantTable from "../supabase/migrations/20260922130000_merchant_grant_applications.sql?raw";
+import grantMove from "../supabase/migrations/20261219100000_grant_applications_to_platform_page.sql?raw";
 import { cleanAnswers, problemFromRefusal } from "../src/lib/platform-pages/answers";
 import { readPage, type PlatformPage } from "../src/lib/platform-pages/page";
 
@@ -185,5 +187,69 @@ describe("what a visitor sends", () => {
 
   it("refuses answers that are not an object", async () => {
     expect(await send([1, 2])).toEqual({ error: "ANSWERS_INVALID" });
+  });
+});
+
+describe("the grant survey moving into its page (migration 20261219100000)", () => {
+  it("copies every application once, publishes the page and sends new ones through it", async () => {
+    await db.exec(grantTable);
+    await db.exec(`
+      INSERT INTO public.merchant_grant_applications
+        (id, business_name, instagram_handle, whatsapp_number, product_category,
+         readiness_status, current_sales_channel, biggest_challenge, status, offered_grant, admin_notes)
+      VALUES
+        ('00000000-0000-4000-8000-0000000000a1', 'لافندر', 'lavender.bh', '+97339000000', 'fashion',
+         'ready_with_photos', 'whatsapp_dm', '  ', 'pending', 'none', NULL),
+        ('00000000-0000-4000-8000-0000000000a2', 'سكر', 'sukkar', '+97336000000', 'food_sweets',
+         'products_only', 'physical_store', 'الطلبات كثيرة', 'offered_3_months', '3_months_free', 'متجر جاد');
+    `);
+    await setGrant("status = 'draft'");
+    await db.exec(grantMove);
+    await db.exec(grantMove); // twice: the copy runs once
+
+    const { rows } = await db.query<{
+      id: string;
+      answers: Record<string, string>;
+      status: string;
+      admin_notes: string | null;
+    }>(
+      "SELECT id, answers, status, admin_notes FROM public.platform_page_responses WHERE id IN ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000a2') ORDER BY id",
+    );
+    expect(rows).toEqual([
+      {
+        id: "00000000-0000-4000-8000-0000000000a1",
+        answers: {
+          business_name: "لافندر",
+          instagram_handle: "lavender.bh",
+          whatsapp_number: "+97339000000",
+          product_category: "fashion",
+          readiness_status: "ready_with_photos",
+          current_sales_channel: "whatsapp_dm",
+        },
+        status: "new",
+        admin_notes: null,
+      },
+      {
+        id: "00000000-0000-4000-8000-0000000000a2",
+        answers: expect.objectContaining({ biggest_challenge: "الطلبات كثيرة" }),
+        status: "accepted",
+        admin_notes: "متجر جاد\nالعرض: 3 أشهر مجاناً",
+      },
+    ]);
+    expect(await readPublic()).toMatchObject({ status: "published" });
+
+    const sent = await as("anon", () =>
+      db.query<{ id: string }>(
+        "SELECT public.submit_grant_application('نخلة', '@nakhla', '+966 50 000 0000', 'other', 'idea_stage', 'not_started') AS id",
+      ),
+    );
+    const stored = await db.query<{ answers: Record<string, string> }>(
+      "SELECT answers FROM public.platform_page_responses WHERE id = $1",
+      [sent.rows[0].id],
+    );
+    expect(stored.rows[0].answers).toMatchObject({
+      instagram_handle: "nakhla",
+      whatsapp_number: "+966500000000",
+    });
   });
 });

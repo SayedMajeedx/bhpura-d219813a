@@ -33,7 +33,7 @@ import { SuperScopeSwitcher, type SuperScope } from "@/components/super/SuperSco
 import { SuperPlansManager } from "@/components/super/SuperPlansManager";
 import { SuperAddonsManager } from "@/components/super/SuperAddonsManager";
 import { SuperOverridesManager } from "@/components/super/SuperOverridesManager";
-import { SuperGrantsManager } from "@/components/super/SuperGrantsManager";
+import { GrantResponsesLink } from "@/features/platform-pages/components/GrantResponsesLink";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { superAdminKeys, superAdminQueries } from "@/lib/data/super-admin";
 import { getCurrentUser } from "@/lib/auth/session";
@@ -274,7 +274,7 @@ function SuperRequestsPage() {
       />
 
       {activeScope === "grants" ? (
-        <SuperGrantsManager />
+        <GrantResponsesLink lang={lang === "ar" ? "ar" : "en"} />
       ) : activeScope === "plans" ? (
         <SuperPlansManager />
       ) : activeScope === "addons" ? (
