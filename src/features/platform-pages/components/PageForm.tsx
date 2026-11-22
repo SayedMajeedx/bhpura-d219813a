@@ -21,10 +21,13 @@ type Answers = Record<string, string | string[]>;
 export function PageForm({
   page,
   lang,
+  preview = false,
   onClosed,
 }: {
   page: PlatformPage;
   lang: Lang;
+  /** The editor's preview: the last step shows the thank-you card and sends nothing. */
+  preview?: boolean;
   onClosed: () => void;
 }) {
   const steps = page.form.steps;
@@ -56,6 +59,10 @@ export function PageForm({
     if (!last) {
       setIndex(index + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    if (preview) {
+      setSent(true);
       return;
     }
     setSending(true);

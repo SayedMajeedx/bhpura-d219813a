@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Activity, Crown, Store, Clock as ClockIcon, Settings } from "lucide-react";
+import { Activity, Crown, FileText, Store, Clock as ClockIcon, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { startImpersonationSession } from "@/lib/impersonation.functions";
@@ -142,6 +142,18 @@ export function OsBrandSwitcher({
         >
           <Crown className="h-3.5 w-3.5" />
           {lang === "ar" ? "مبادرة الـ 6 شهور" : "Grant Surveys"}
+        </Link>
+        <Link
+          to="/admin/super/pages"
+          className={cn(
+            "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            pathname.startsWith("/admin/super/pages")
+              ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+              : "hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <FileText className="h-3.5 w-3.5" />
+          {lang === "ar" ? "صفحات المنصة" : "Platform pages"}
         </Link>
         <Link
           to="/admin/super/health"

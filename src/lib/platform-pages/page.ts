@@ -98,11 +98,18 @@ function words(value: unknown): Words | undefined {
 const url = (value: unknown) =>
   typeof value === "string" && /^(https:\/\/|\/)[^\s"'<>]*$/.test(value) ? value : undefined;
 
-function block(raw: unknown): Block | null {
+/**
+ * Words a piece needs (a title, a label): the visitor's reading drops a piece without them; the
+ * editor's (`keep`) keeps it with empty words, so a half-written section survives a save.
+ */
+const needed = (value: unknown, keep: boolean): Words | undefined =>
+  words(value) ?? (keep ? { ar: "", en: "" } : undefined);
+
+function block(raw: unknown, keep = false): Block | null {
   if (!isObject(raw)) return null;
   switch (raw.kind) {
     case "hero": {
-      const title = words(raw.title);
+      const title = needed(raw.title, keep);
       if (!title) return null;
       return {
         kind: "hero",
@@ -116,39 +123,39 @@ function block(raw: unknown): Block | null {
       };
     }
     case "text": {
-      const body = words(raw.body);
+      const body = needed(raw.body, keep);
       return body ? { kind: "text", title: words(raw.title), body } : null;
     }
     case "benefits": {
       const items = list(raw.items).flatMap((item) => {
-        const title = isObject(item) ? words(item.title) : undefined;
+        const title = isObject(item) ? needed(item.title, keep) : undefined;
         return title && isObject(item) ? [{ title, body: words(item.body) }] : [];
       });
-      return items.length ? { kind: "benefits", title: words(raw.title), items } : null;
+      return items.length || keep ? { kind: "benefits", title: words(raw.title), items } : null;
     }
     case "faq": {
       const items = list(raw.items).flatMap((item) => {
         if (!isObject(item)) return [];
-        const question = words(item.question);
-        const answer = words(item.answer);
+        const question = needed(item.question, keep);
+        const answer = needed(item.answer, keep);
         return question && answer ? [{ question, answer }] : [];
       });
-      return items.length ? { kind: "faq", title: words(raw.title), items } : null;
+      return items.length || keep ? { kind: "faq", title: words(raw.title), items } : null;
     }
     default:
       return null;
   }
 }
 
-function question(raw: unknown): Question | null {
+function question(raw: unknown, keep = false): Question | null {
   if (!isObject(raw)) return null;
   const key = typeof raw.key === "string" ? raw.key : "";
   const type = QUESTION_TYPES.find((t) => t === raw.type);
-  const label = words(raw.label);
+  const label = needed(raw.label, keep);
   if (!/^[a-z0-9_]{1,40}$/.test(key) || !type || !label) return null;
   const options = list(raw.options).flatMap((option) => {
     if (!isObject(option) || typeof option.id !== "string") return [];
-    const title = words(option.title);
+    const title = needed(option.title, keep);
     if (!title) return [];
     return [
       {
@@ -160,7 +167,7 @@ function question(raw: unknown): Question | null {
       },
     ];
   });
-  if ((type === "cards" || type === "choices") && options.length === 0) return null;
+  if (!keep && (type === "cards" || type === "choices") && options.length === 0) return null;
   const layout = (["tiles", "list", "grid"] as const).find((l) => l === raw.layout);
   return {
     key,
@@ -179,27 +186,35 @@ function question(raw: unknown): Question | null {
 export function readPage(raw: unknown): PlatformPage | null {
   if (!isObject(raw) || typeof raw.slug !== "string") return null;
   if (raw.status !== "published" && raw.status !== "closed") return null;
-  const content = isObject(raw.content) ? raw.content : {};
-  const form = isObject(raw.form) ? raw.form : {};
-  const settings = isObject(raw.settings) ? raw.settings : {};
+  return { slug: raw.slug, status: raw.status, ...readParts(raw) };
+}
+
+/** A stored page's blocks, form and settings, whatever its status (the editor reads drafts). */
+export function readParts(
+  raw: unknown,
+  keep = false,
+): Pick<PlatformPage, "blocks" | "form" | "settings"> {
+  if (!isObject(raw)) raw = {};
+  const row = raw as Raw;
+  const content = isObject(row.content) ? row.content : {};
+  const form = isObject(row.form) ? row.form : {};
+  const settings = isObject(row.settings) ? row.settings : {};
   const thankYou = isObject(settings.thank_you) ? settings.thank_you : {};
   const closed = isObject(settings.closed_message) ? settings.closed_message : {};
   const share = isObject(settings.share) ? settings.share : {};
   return {
-    slug: raw.slug,
-    status: raw.status,
     blocks: list(content.blocks)
-      .map(block)
+      .map((b) => block(b, keep))
       .filter((b): b is Block => b !== null),
     form: {
       submit_label: words(form.submit_label),
       steps: list(form.steps).flatMap((step) => {
         if (!isObject(step)) return [];
-        const title = words(step.title);
+        const title = needed(step.title, keep);
         const questions = list(step.questions)
-          .map(question)
+          .map((q) => question(q, keep))
           .filter((q): q is Question => q !== null);
-        return title && questions.length
+        return title && (questions.length || keep)
           ? [{ title, short: words(step.short), lead: words(step.lead), questions }]
           : [];
       }),
