@@ -99,6 +99,12 @@ export async function handleR2MediaRequest(
       });
       if (object) {
         const headers = new Headers(corsHeaders);
+        // A condition the browser sent held (If-None-Match matched): R2 answers the object's
+        // facts without its body, which is "not modified", never an empty 200.
+        if (request.method !== "HEAD" && !("body" in object)) {
+          if (object.httpEtag) headers.set("ETag", object.httpEtag);
+          return new Response(null, { status: 304, headers });
+        }
         const mime = getMimeType(key, object.httpMetadata?.contentType);
         headers.set("Content-Type", mime);
         headers.set("Accept-Ranges", "bytes");

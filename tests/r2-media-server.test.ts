@@ -87,4 +87,21 @@ describe("handleR2MediaRequest range and streaming", () => {
     expect(response.headers.get("Content-Length")).toBe("200");
     expect(response.headers.get("Content-Range")).toBe("bytes 100-299/500000");
   });
+  it("answers 304 when the browser's copy is current (the binding sends no body)", async () => {
+    const env = {
+      R2_PUBLIC_BUCKET: {
+        get: vi.fn().mockResolvedValue({
+          size: 1000,
+          httpMetadata: { contentType: "image/jpeg" },
+          httpEtag: '"same"',
+        }),
+      },
+    } as unknown as Cloudflare.Env;
+    const request = new Request("https://media.boutq.store/brands/brand-1/product/a.jpg", {
+      headers: { "If-None-Match": '"same"' },
+    });
+    const response = await handleR2MediaRequest(request, env);
+    expect(response.status).toBe(304);
+    expect(response.headers.get("ETag")).toBe('"same"');
+  });
 });

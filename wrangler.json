@@ -4,6 +4,12 @@
   "main": "src/server.ts",
   "compatibility_date": "2026-07-24",
   "compatibility_flags": ["nodejs_compat"],
+  "r2_buckets": [
+    {
+      "binding": "R2_PUBLIC_BUCKET",
+      "bucket_name": "boutq-media"
+    }
+  ],
   "assets": {
     "directory": "dist/client",
     "binding": "ASSETS"
