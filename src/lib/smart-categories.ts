@@ -5,6 +5,9 @@
  */
 export type SmartKind = "all" | "new" | "best" | "offers";
 
+/** How far back "New arrivals" looks: its page lists the products added in this window. */
+export const NEW_ARRIVALS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
 export function smartKindOf(slug: string | null | undefined): SmartKind | null {
   const s = (slug ?? "").trim().toLowerCase();
   // Every active product: the new-look footer's "All Products" link opened "Category unavailable".

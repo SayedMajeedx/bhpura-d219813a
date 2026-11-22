@@ -12,6 +12,7 @@ import {
   RECOMMENDATION_SELECT,
 } from "./selects";
 import { searchFilters } from "@/lib/search-terms";
+import { NEW_ARRIVALS_WINDOW_MS } from "@/lib/smart-categories";
 import type {
   BestSellerRow,
   ProductRow,
@@ -322,8 +323,6 @@ export function categoryScopeKey(scope: CategoryProductsScope): string {
     : scope.kind;
 }
 
-const NEW_ARRIVALS_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
-
 export async function fetchCategoryProducts(
   brand: StorefrontBrandRef,
   scope: CategoryProductsScope,
@@ -514,6 +513,15 @@ export const storefrontQueries = {
       queryKey: storefrontKeys.productsByIds(brand.slug, list, ids),
       queryFn: () => fetchProductsByIds(brand.id, ids),
       staleTime: 5 * 60_000,
+    }),
+
+  /** The store's page data as its layout reads it (the admin reads the storefront's own facts). */
+  pageData: (slug: string, enabled = true) =>
+    queryOptions({
+      queryKey: storefrontKeys.pageData(slug),
+      queryFn: () => fetchStorefrontPageData(slug),
+      enabled: Boolean(slug) && enabled,
+      staleTime: 60_000,
     }),
 
   categories: (brand: StorefrontBrandRef) =>

@@ -153,7 +153,7 @@ function MobileStorefrontDropdown() {
       ? settings.menu_title_ar || settings.menu_title_en
       : settings.menu_title_en || settings.menu_title_ar;
 
-  const { data: categories = [] } = useStorefrontCategories({ enabled: isOpen });
+  const { data: categories = [] } = useStorefrontCategories({ enabled: isOpen, menu: true });
   const sellsGiftCards = Boolean(
     useQuery({ ...giftCardOnlineQueries.offer(brand.slug), enabled: isOpen }).data,
   );
@@ -433,7 +433,7 @@ function DesktopStoreNavigation({
   className?: string;
 }) {
   const { brand, lang } = useStorefront();
-  const { data = [] } = useStorefrontCategories();
+  const { data = [] } = useStorefrontCategories({ menu: true });
   const { pathname } = useLocation();
 
   const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);

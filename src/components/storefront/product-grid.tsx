@@ -8,6 +8,8 @@ import { OsEmptyState } from "@/components/os/os-empty-state";
 import { type ProductRow } from "@/lib/data/storefront";
 import { ProductCard } from "./product-card";
 import { catalogCount } from "@/lib/catalog-count";
+import type { SmartKind } from "@/lib/smart-categories";
+import { emptyCollectionWords } from "@/lib/smart-collections";
 
 /**
  * A list up to SHOW_ALL_UP_TO products is shown whole (images load lazily as they come into
@@ -29,10 +31,16 @@ export function ProductGrid({
   toolbar,
   total,
   footer,
+  emptyCollection,
 }: {
   products: ProductRow[];
   loading: boolean;
   categoryEmpty: boolean;
+  /**
+   * The page is this automatic collection and it lists nothing before the shopper's filters: the
+   * empty state says why in the collection's own words (`emptyCollectionWords`).
+   */
+  emptyCollection?: SmartKind | null;
   onViewAll: () => void;
   /**
    * The page has a filter sidebar beside the grid. The grid then has about 1,000px, and four
@@ -129,6 +137,10 @@ export function ProductGrid({
   }
 
   if (products.length === 0) {
+    // An automatic collection with nothing in it says why (nothing on sale, nothing new).
+    const collectionWords = categoryEmpty
+      ? emptyCollectionWords(emptyCollection ?? null, services)
+      : null;
     // The page's controls stay: a filter that left nothing can be undone from here.
     return (
       <div className="space-y-4">
@@ -140,34 +152,38 @@ export function ProductGrid({
         <OsEmptyState
           icon={PackageSearch}
           title={
-            categoryEmpty
-              ? services
-                ? t("لا توجد خدمات متاحة", "No services available")
-                : t("لا توجد منتجات متاحة", "No products available")
-              : services
-                ? t("لا توجد خدمات بعد", "No services yet")
-                : t("لا توجد منتجات بعد", "No products yet")
+            collectionWords
+              ? t(collectionWords.title.ar, collectionWords.title.en)
+              : categoryEmpty
+                ? services
+                  ? t("لا توجد خدمات متاحة", "No services available")
+                  : t("لا توجد منتجات متاحة", "No products available")
+                : services
+                  ? t("لا توجد خدمات بعد", "No services yet")
+                  : t("لا توجد منتجات بعد", "No products yet")
           }
           description={
-            categoryEmpty
-              ? services
-                ? t(
-                    "لا توجد خدمات متاحة في هذا القسم حالياً. يمكنك تصفح كافة الخدمات الأخرى.",
-                    "No services are currently available in this category. You can browse all other services.",
-                  )
-                : t(
-                    "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
-                    "No products are currently available in this category. You can browse all other products.",
-                  )
-              : services
-                ? t(
-                    "لم تتم إضافة أي خدمات إلى هذا المتجر حتى الآن.",
-                    "No services have been added to this store yet.",
-                  )
-                : t(
-                    "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
-                    "No products have been added to this store yet.",
-                  )
+            collectionWords
+              ? t(collectionWords.body.ar, collectionWords.body.en)
+              : categoryEmpty
+                ? services
+                  ? t(
+                      "لا توجد خدمات متاحة في هذا القسم حالياً. يمكنك تصفح كافة الخدمات الأخرى.",
+                      "No services are currently available in this category. You can browse all other services.",
+                    )
+                  : t(
+                      "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
+                      "No products are currently available in this category. You can browse all other products.",
+                    )
+                : services
+                  ? t(
+                      "لم تتم إضافة أي خدمات إلى هذا المتجر حتى الآن.",
+                      "No services have been added to this store yet.",
+                    )
+                  : t(
+                      "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
+                      "No products have been added to this store yet.",
+                    )
           }
           action={
             categoryEmpty ? (

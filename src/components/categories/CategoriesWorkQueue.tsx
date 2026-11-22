@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { OsSkeleton } from "@/components/os/os-skeleton";
 import { countOf } from "@/lib/arabic-count";
+import { smartKindOf, type SmartKind } from "@/lib/smart-categories";
+import { collectionShownNote } from "@/lib/smart-collections";
 
 interface CategoriesWorkQueueProps {
   lang: "en" | "ar";
@@ -12,6 +14,8 @@ interface CategoriesWorkQueueProps {
   onEdit: (category: any) => void;
   onDelete: (id: string) => void;
   onReorder: (id: string, dir: "up" | "down") => void;
+  /** The automatic collections the store's menus leave out now (null: not read yet). */
+  emptyCollections?: ReadonlySet<SmartKind> | null;
 }
 
 /** An automatic collection whose count is not known (the counts were worked out here) says so. */
@@ -44,8 +48,18 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
   onEdit,
   onDelete,
   onReorder,
+  emptyCollections = null,
 }) => {
   const isAr = lang === "ar";
+  // When the store shows an automatic collection, and whether it does now (`emptyCollections`).
+  const shownNote = (slug: string | null | undefined) => {
+    const kind = smartKindOf(slug);
+    return collectionShownNote(
+      kind,
+      kind && emptyCollections ? emptyCollections.has(kind) : null,
+      lang,
+    );
+  };
 
   if (isLoading) {
     return (
@@ -117,6 +131,9 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                   <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground" dir="ltr">
                     /{cat.slug || cat.id.slice(0, 8)}
                   </p>
+                  {shownNote(cat.slug) && (
+                    <p className="mt-1 text-xs text-muted-foreground">{shownNote(cat.slug)}</p>
+                  )}
                 </div>
                 <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
                   {countText}
@@ -204,6 +221,11 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                         </span>
                       )}
                     </div>
+                    {shownNote(cat.slug) && (
+                      <p className="mt-0.5 text-xs font-normal text-muted-foreground">
+                        {shownNote(cat.slug)}
+                      </p>
+                    )}
                   </td>
                   <td className="p-3 align-middle font-mono text-xs text-muted-foreground">
                     {cat.slug || cat.id.slice(0, 8)}
