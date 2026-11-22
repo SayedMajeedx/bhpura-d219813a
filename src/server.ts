@@ -87,6 +87,11 @@ function withSecurityHeaders(response: Response, correlationId?: string): Respon
   });
 }
 
+/** The Worker's version id (wrangler.json's `version_metadata` binding): the page cache keeps pages per release. */
+function workerRelease(env: Cloudflare.Env): string {
+  return (env as { CF_VERSION_METADATA?: { id?: string } }).CF_VERSION_METADATA?.id ?? "";
+}
+
 async function runScheduledTasks(
   cron: string,
   env: Cloudflare.Env,
@@ -320,7 +325,7 @@ export default {
       const pageKey =
         (env as { STOREFRONT_PAGE_CACHE?: string }).STOREFRONT_PAGE_CACHE === "off"
           ? null
-          : storePageCacheKey(request);
+          : storePageCacheKey(request, workerRelease(env));
       const response = pageKey
         ? await serveStorePageWithEdgeCache(pageKey, renderPage, ctx)
         : await renderPage();

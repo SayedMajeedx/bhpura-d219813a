@@ -8,19 +8,26 @@ vi.stubGlobal("fetch", () => {
 const calls: string[] = [];
 let user: { id: string } | null = { id: "u1" };
 let session: { access_token: string } | null = { access_token: "tok" };
+let claimsError: { name: string; status?: number } | null = null;
 
 const client = {
   supabase: {
     auth: {
       getUser: async () => {
         calls.push("getUser");
+        return { data: { user }, error: null };
+      },
+      // The token is checked on this device: its claims, then the session's own user.
+      getClaims: async () => {
+        calls.push("getClaims");
+        if (claimsError) return { data: null, error: claimsError };
         return user
-          ? { data: { user }, error: null }
-          : { data: { user: null }, error: { message: "Auth session missing" } };
+          ? { data: { claims: { sub: user.id } }, error: null }
+          : { data: null, error: null };
       },
       getSession: async () => {
         calls.push("getSession");
-        return { data: { session }, error: null };
+        return { data: { session: session && user ? { ...session, user } : session }, error: null };
       },
       signOut: async () => {
         calls.push("signOut");
@@ -38,6 +45,7 @@ beforeEach(() => {
   calls.length = 0;
   user = { id: "u1" };
   session = { access_token: "tok" };
+  claimsError = null;
 });
 
 describe("session helpers", () => {
@@ -47,8 +55,21 @@ describe("session helpers", () => {
     expect(await auth.getCurrentUser()).toBeNull();
   });
 
+  it("check the signed-in user on this device, never asking Auth", async () => {
+    expect(await auth.verifiedUser()).toEqual({ id: "u1" });
+    expect(calls).not.toContain("getUser");
+  });
+
+  it("let a guard try again when Auth could not be reached, and read a bad token as none", async () => {
+    claimsError = { name: "AuthRetryableFetchError", status: 0 };
+    await expect(auth.verifiedUser()).rejects.toBeTruthy();
+    expect(await auth.getCurrentUser()).toBeNull();
+    claimsError = { name: "AuthInvalidJwtError", status: 400 };
+    expect(await auth.verifiedUser()).toBeNull();
+  });
+
   it("give the session and its access token, none when signed out", async () => {
-    expect(await auth.getCurrentSession()).toEqual({ access_token: "tok" });
+    expect(await auth.getCurrentSession()).toEqual({ access_token: "tok", user: { id: "u1" } });
     expect(await auth.getAccessToken()).toBe("tok");
     session = null;
     expect(await auth.getAccessToken()).toBeNull();

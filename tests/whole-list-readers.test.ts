@@ -59,7 +59,10 @@ function builder(table: string) {
 
 const fake = {
   from: (table: string) => builder(table),
-  auth: { getUser: async () => ({ data: { user: { id: "courier-1" } } }) },
+  auth: {
+    getClaims: async () => ({ data: { claims: { sub: "courier-1" } }, error: null }),
+    getSession: async () => ({ data: { session: { user: { id: "courier-1" } } }, error: null }),
+  },
 };
 const client = { supabase: fake, publicSupabase: fake };
 vi.mock("../src/integrations/supabase/client", () => client);

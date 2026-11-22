@@ -58,7 +58,18 @@ function builder(table: string) {
 vi.mock("../src/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
-    auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    auth: {
+      getClaims: () =>
+        Promise.resolve({
+          data: signedInUser ? { claims: { sub: signedInUser.id } } : null,
+          error: null,
+        }),
+      getSession: () =>
+        Promise.resolve({
+          data: { session: signedInUser ? { user: signedInUser } : null },
+          error: null,
+        }),
+    },
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcCalls.push([fn, args]);
       return Promise.resolve(rpcReply(fn));
@@ -68,7 +79,18 @@ vi.mock("../src/integrations/supabase/client", () => ({
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
-    auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    auth: {
+      getClaims: () =>
+        Promise.resolve({
+          data: signedInUser ? { claims: { sub: signedInUser.id } } : null,
+          error: null,
+        }),
+      getSession: () =>
+        Promise.resolve({
+          data: { session: signedInUser ? { user: signedInUser } : null },
+          error: null,
+        }),
+    },
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcCalls.push([fn, args]);
       return Promise.resolve(rpcReply(fn));

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { localDayRange } from "@/lib/day-range";
+import { getCurrentUser } from "@/lib/auth/session";
 import { readAll } from "../read-all";
 import { NOT_SOLD_ORDER_FILTER } from "./sold-orders";
 import { ordersKeys } from "./keys";
@@ -40,10 +41,7 @@ const pollingFor = (scope: OrderScope) =>
   }) as const;
 
 async function currentUserId(): Promise<string | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  return (await getCurrentUser())?.id ?? null;
 }
 
 /** The brand's orders, newest first; a courier gets only their assigned deliveries. */
