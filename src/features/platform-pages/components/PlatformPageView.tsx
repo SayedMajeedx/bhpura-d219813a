@@ -15,7 +15,16 @@ import { PageForm } from "./PageForm";
  * A closed page (closed by the super admin, or past its closing day) shows its closed message in
  * place of the form, and a form refused as closed while open turns into it.
  */
-export function PlatformPageView({ page, lang }: { page: PlatformPage; lang: Lang }) {
+export function PlatformPageView({
+  page,
+  lang,
+  preview = false,
+}: {
+  page: PlatformPage;
+  lang: Lang;
+  /** Drawn inside the super admin's editor: no page-wide glow, and the form sends nothing. */
+  preview?: boolean;
+}) {
   const [closed, setClosed] = useState(page.status === "closed");
   const hero = page.blocks.find((b): b is HeroBlock => b.kind === "hero");
   const rest = page.blocks.filter((b) => b.kind !== "hero");
@@ -23,9 +32,19 @@ export function PlatformPageView({ page, lang }: { page: PlatformPage; lang: Lan
     <main
       dir={lang === "ar" ? "rtl" : "ltr"}
       lang={lang}
-      className="min-h-screen bg-muted/30 text-foreground"
+      className={
+        preview
+          ? "relative overflow-hidden bg-muted/30 text-foreground"
+          : "min-h-screen bg-muted/30 text-foreground"
+      }
     >
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+      <div
+        className={
+          preview
+            ? "pointer-events-none absolute inset-0 overflow-hidden"
+            : "pointer-events-none fixed inset-0 overflow-hidden"
+        }
+      >
         <div className="absolute start-1/2 top-0 h-[350px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px] rtl:translate-x-1/2" />
       </div>
       <div className="relative mx-auto max-w-2xl space-y-8 px-4 py-8 sm:py-14">
@@ -36,7 +55,7 @@ export function PlatformPageView({ page, lang }: { page: PlatformPage; lang: Lan
         {closed ? (
           <ClosedCard page={page} lang={lang} />
         ) : page.form.steps.length > 0 ? (
-          <PageForm page={page} lang={lang} onClosed={() => setClosed(true)} />
+          <PageForm page={page} lang={lang} preview={preview} onClosed={() => setClosed(true)} />
         ) : null}
         {page.settings.footer.length > 0 && (
           <footer className="space-y-1 border-t border-border-subtle pt-4 text-center text-xs text-muted-foreground">
