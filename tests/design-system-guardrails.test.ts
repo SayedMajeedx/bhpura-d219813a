@@ -203,6 +203,27 @@ describe("design system guardrails", () => {
     );
   });
 
+  it("leaves a face of its own to what names one in the admin: a card's SVG text, a font's sample", () => {
+    // The owner's report of 2026-11-22: the admin's important face drew every gift card's words
+    // whatever font was chosen, wider than they were measured, so a message ran past its frame.
+    // Every admin rule that sets a font-family must step aside for both.
+    const css = fs.readFileSync(path.resolve(__dirname, "../src/styles.css"), "utf-8");
+    const rules = [...css.matchAll(/([^{}]*\.admin-typography[^{}]*)\{([^{}]*)\}/g)].filter(
+      ([, , body]) => /font-family:/.test(body),
+    );
+    expect(rules.length).toBeGreaterThanOrEqual(2);
+    for (const [, selector] of rules) {
+      const parts = selector
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .split(/,(?![^(]*\))/)
+        .map((part) => part.replace(/\s+/g, " ").trim())
+        .filter((part) => part && part !== ".admin-typography");
+      for (const part of parts) {
+        expect(part).toContain(':not(svg *, [style*="font-family"], [style*="font-family"] *)');
+      }
+    }
+  });
+
   it("times motion with the motion tokens: hand-written durations and transition-all only go down", () => {
     // One motion system (src/styles/motion.css): a duration says what the motion does
     // (duration-(--motion-fast)), never a number of its own, and a transition names what it

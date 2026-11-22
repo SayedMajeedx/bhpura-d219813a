@@ -419,8 +419,14 @@ html.lang-ar .font-display {
     letter-spacing: var(--type-tracking, 0);
   }
 
+  /* What draws in a face of its own keeps it (the owner's report of 2026-11-22: every font chosen
+     for a gift card looked the same, and the message ran past the card's frame): an SVG's text,
+     which names its font in its own attribute (a gift card, measured in that font), and an
+     element whose inline style names a font (a font's sample, the invoice preview), with what is
+     inside it. An important rule beats both, so the admin's face once drew all of them, wider
+     than they were measured. `:where` keeps the rule's weight as it was. */
   .admin-typography,
-  .admin-typography * {
+  .admin-typography :where(:not(svg *, [style*="font-family"], [style*="font-family"] *)) {
     font-family: var(
       --type-body,
       "Inter",
@@ -436,7 +442,10 @@ html.lang-ar .font-display {
     font-variation-settings: var(--type-body-variation, normal);
   }
 
-  .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
+  .admin-typography
+    :is(h1, h2, h3, .font-display, .font-heading):where(
+      :not(svg *, [style*="font-family"], [style*="font-family"] *)
+    ) {
     font-family: var(
       --type-display,
       var(

@@ -269,6 +269,17 @@ export function designsFor({
   return offered.length ? offered : ["signature:brand"];
 }
 
+/**
+ * A gift message card's choices (the owner's report of 2026-11-22: its picker showed the same card
+ * four times): its frame and the store's mark are the same whatever the composition, so only the
+ * tone changes it, and each tone is offered once, on the composition the card already has (so
+ * what it opened on stays chosen).
+ */
+export function messageCardDesigns(current: DesignId): DesignId[] {
+  const { composition } = designParts(current);
+  return TONES.map((tone) => `${composition}:${tone}` as DesignId);
+}
+
 /** The design names staff read in the settings. */
 export const COMPOSITION_WORDS: Record<Composition, { ar: string; en: string }> = {
   signature: { ar: "الشعار", en: "Signature" },
@@ -289,3 +300,6 @@ export function designName(id: DesignId, lang: "ar" | "en"): string {
   const { composition, tone } = designParts(id);
   return `${COMPOSITION_WORDS[composition][lang]} · ${TONE_WORDS[tone][lang]}`;
 }
+
+/** A gift message card's choice by its tone alone, the one thing that changes it. */
+export const toneName = (id: DesignId, lang: "ar" | "en") => TONE_WORDS[designParts(id).tone][lang];
