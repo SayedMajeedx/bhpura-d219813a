@@ -665,7 +665,6 @@ describe("icons are icons, not emoji", () => {
     // 🎉 on a finished checklist, ⚠️ before a warning): each platform draws them its own way and
     // they read as a template. Typographic marks (→ ← ✓ ★) are text and stay.
     const MESSAGES_AND_CAPTIONS = new Set([
-      "../src/components/super/SuperGrantsManager.tsx", // the WhatsApp message a person sends
       "../src/routes/review.$token.tsx", // the WhatsApp message a shopper sends
       "../src/features/content-studio/components/CopyPanel.tsx", // a post's caption presets
     ]);

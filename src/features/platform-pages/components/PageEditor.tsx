@@ -8,6 +8,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
+  Inbox,
   Loader2,
   Lock,
   RotateCcw,
@@ -268,6 +269,12 @@ function EditorBody({ page, lang }: { page: AdminPage; lang: "ar" | "en" }) {
             </a>
           </Button>
         )}
+        <Button asChild variant="ghost" size="sm" className="h-8 gap-1">
+          <Link to="/admin/super/responses/$id" params={{ id: page.id }}>
+            <Inbox className="size-3.5" />
+            {ar ? "الردود" : "Responses"}
+          </Link>
+        </Button>
         {status !== "draft" && (
           <Button
             type="button"

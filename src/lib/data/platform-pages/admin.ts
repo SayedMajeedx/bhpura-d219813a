@@ -15,6 +15,7 @@ import { platformPagesKeys } from "./index";
 export const platformPagesAdminKeys = {
   list: () => [...platformPagesKeys.all, "admin", "list"] as const,
   page: (id: string) => [...platformPagesKeys.all, "admin", "page", id] as const,
+  idBySlug: (slug: string) => [...platformPagesKeys.all, "admin", "id-by-slug", slug] as const,
 };
 
 const PAGE_COLUMNS = "id, slug, status, content, form, settings, created_at, updated_at";
@@ -169,10 +170,26 @@ export const platformPagesAdminQueries = {
       queryKey: platformPagesAdminKeys.page(id),
       queryFn: () => fetchAdminPage(id),
     }),
+  idBySlug: (slug: string) =>
+    queryOptions({
+      queryKey: platformPagesAdminKeys.idBySlug(slug),
+      queryFn: () => fetchPageIdBySlug(slug),
+    }),
 };
 
 /** A slug the database refused as taken. */
 export function slugTaken(error: unknown): boolean {
   const e = error as { code?: string; message?: string } | null;
   return e?.code === "23505" || /duplicate key/i.test(e?.message ?? "");
+}
+
+/** The id of the page at this address, for a link that knows only its address. */
+export async function fetchPageIdBySlug(slug: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("platform_pages")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id ?? null;
 }

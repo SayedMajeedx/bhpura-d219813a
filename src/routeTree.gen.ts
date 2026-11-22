@@ -98,6 +98,7 @@ import { Route as AuthenticatedAdminBSlugSizeGuidesRouteImport } from './routes/
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
 import { Route as AuthenticatedAdminSuperPagesIndexRouteImport } from './routes/_authenticated/admin.super.pages.index'
 import { Route as AuthenticatedAdminSuperPagesIdRouteImport } from './routes/_authenticated/admin.super.pages.$id'
+import { Route as AuthenticatedAdminSuperResponsesIdRouteImport } from './routes/_authenticated/admin.super.responses.$id'
 import { Route as ApiPublicBookingsCalendarTokenRouteImport } from './routes/api.public.bookings.calendar.$token'
 import { Route as AuthenticatedAdminBSlugContentStudioPostsRouteImport } from './routes/_authenticated/admin.b.$slug.content-studio.posts'
 import { Route as AuthenticatedAdminBSlugCustomersCustomerIdRouteImport } from './routes/_authenticated/admin.b.$slug.customers.$customerId'
@@ -611,6 +612,12 @@ const AuthenticatedAdminSuperPagesIdRoute =
     path: '/super/pages/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSuperResponsesIdRoute =
+  AuthenticatedAdminSuperResponsesIdRouteImport.update({
+    id: '/super/responses/$id',
+    path: '/super/responses/$id',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const ApiPublicBookingsCalendarTokenRoute =
   ApiPublicBookingsCalendarTokenRouteImport.update({
     id: '/api/public/bookings/calendar/$token',
@@ -808,6 +815,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
+  '/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/admin/super/pages/': typeof AuthenticatedAdminSuperPagesIndexRoute
   '/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
@@ -913,6 +921,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
+  '/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/admin/super/pages': typeof AuthenticatedAdminSuperPagesIndexRoute
   '/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
@@ -1023,6 +1032,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
   '/_authenticated/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/_authenticated/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
+  '/_authenticated/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
   '/api/public/bookings/calendar/$token': typeof ApiPublicBookingsCalendarTokenRoute
   '/_authenticated/admin/super/pages/': typeof AuthenticatedAdminSuperPagesIndexRoute
   '/_authenticated/admin/b/$slug/content-studio/posts': typeof AuthenticatedAdminBSlugContentStudioPostsRoute
@@ -1133,6 +1143,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/admin/super/pages/$id'
+    | '/admin/super/responses/$id'
     | '/api/public/bookings/calendar/$token'
     | '/admin/super/pages/'
     | '/admin/b/$slug/content-studio/posts'
@@ -1238,6 +1249,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/size-guides'
     | '/admin/b/$slug/team'
     | '/admin/super/pages/$id'
+    | '/admin/super/responses/$id'
     | '/api/public/bookings/calendar/$token'
     | '/admin/super/pages'
     | '/admin/b/$slug/content-studio/posts'
@@ -1347,6 +1359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/size-guides'
     | '/_authenticated/admin/b/$slug/team'
     | '/_authenticated/admin/super/pages/$id'
+    | '/_authenticated/admin/super/responses/$id'
     | '/api/public/bookings/calendar/$token'
     | '/_authenticated/admin/super/pages/'
     | '/_authenticated/admin/b/$slug/content-studio/posts'
@@ -2023,6 +2036,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSuperPagesIdRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/super/responses/$id': {
+      id: '/_authenticated/admin/super/responses/$id'
+      path: '/super/responses/$id'
+      fullPath: '/admin/super/responses/$id'
+      preLoaderRoute: typeof AuthenticatedAdminSuperResponsesIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/api/public/bookings/calendar/$token': {
       id: '/api/public/bookings/calendar/$token'
       path: '/api/public/bookings/calendar/$token'
@@ -2383,6 +2403,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSuperRequestsRoute: typeof AuthenticatedAdminSuperRequestsRoute
   AuthenticatedAdminSuperSettingsRoute: typeof AuthenticatedAdminSuperSettingsRoute
   AuthenticatedAdminSuperPagesIdRoute: typeof AuthenticatedAdminSuperPagesIdRoute
+  AuthenticatedAdminSuperResponsesIdRoute: typeof AuthenticatedAdminSuperResponsesIdRoute
   AuthenticatedAdminSuperPagesIndexRoute: typeof AuthenticatedAdminSuperPagesIndexRoute
 }
 
@@ -2403,6 +2424,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSuperRequestsRoute: AuthenticatedAdminSuperRequestsRoute,
   AuthenticatedAdminSuperSettingsRoute: AuthenticatedAdminSuperSettingsRoute,
   AuthenticatedAdminSuperPagesIdRoute: AuthenticatedAdminSuperPagesIdRoute,
+  AuthenticatedAdminSuperResponsesIdRoute:
+    AuthenticatedAdminSuperResponsesIdRoute,
   AuthenticatedAdminSuperPagesIndexRoute:
     AuthenticatedAdminSuperPagesIndexRoute,
 }
