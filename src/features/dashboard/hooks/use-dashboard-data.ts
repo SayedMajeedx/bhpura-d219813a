@@ -54,22 +54,16 @@ export function useDashboardData({
 
   const currency = businessSettings.data?.currency ?? "BHD";
 
-  // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
+  // The Reports' own figures (the same accounting engine, so the KPIs cannot drift), for the
+  // period and the one before it in one request (`rpc_reporting_periods`): they were two
+  // overviews of six requests each.
   const reportingOverviewQ = useQuery({
-    ...reportingQueries.overview(
+    ...reportingQueries.periods(
       slug,
-      { from: dashboardPeriods.start, to: dashboardPeriods.end },
-      reportingTimezone,
-      false,
-    ),
-    staleTime: 60_000,
-    enabled: Boolean(canViewFinancials && slug),
-    refetchOnWindowFocus: false,
-  });
-  const previousReportingOverviewQ = useQuery({
-    ...reportingQueries.overview(
-      slug,
-      { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
+      [
+        { from: dashboardPeriods.start, to: dashboardPeriods.end },
+        { from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd },
+      ],
       reportingTimezone,
       false,
     ),
@@ -129,24 +123,21 @@ export function useDashboardData({
       { table: "product_variants", brandId, queryKey: catalogKeys.variants(brandId) },
       // A new order, expense or return moves the Reports figures the cards read.
       { table: "orders", brandId, queryKey: reportingKeys.all(slug) },
-      { table: "expenses", brandId, queryKey: reportingKeys.overviews(slug) },
-      { table: "return_requests", brandId, queryKey: reportingKeys.overviews(slug) },
-      { table: "product_bom_items", brandId, queryKey: reportingKeys.overviews(slug) },
-      { table: "packaging_materials", brandId, queryKey: reportingKeys.overviews(slug) },
+      { table: "expenses", brandId, queryKey: reportingKeys.all(slug) },
+      { table: "return_requests", brandId, queryKey: reportingKeys.all(slug) },
+      { table: "product_bom_items", brandId, queryKey: reportingKeys.all(slug) },
+      { table: "packaging_materials", brandId, queryKey: reportingKeys.all(slug) },
       { table: "business_settings", brandId, queryKey: businessSettingsKeys.detail(brandId) },
     ],
     `dashboard-realtime:${brandId}`,
   );
 
-  const figuresLoading = canViewFinancials
-    ? reportingOverviewQ.isPending || previousReportingOverviewQ.isPending
-    : false;
-  const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
+  const figuresLoading = canViewFinancials ? reportingOverviewQ.isPending : false;
+  const [periodRows, previousPeriodRows] = reportingOverviewQ.data ?? [];
+  const accountingRows = Array.isArray(periodRows) ? periodRows : [];
   const accountingRow: any =
     accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
-  const previousAccountingRows = Array.isArray(previousReportingOverviewQ.data)
-    ? previousReportingOverviewQ.data
-    : [];
+  const previousAccountingRows = Array.isArray(previousPeriodRows) ? previousPeriodRows : [];
   const previousAccountingRow: any =
     previousAccountingRows.find(
       (row: any) => row.currency === (accountingRow?.currency || currency),

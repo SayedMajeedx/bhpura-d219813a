@@ -97,6 +97,21 @@ describe("which store pages are kept", () => {
     );
   });
 
+  it("keeps a page per release, so a page never names a build that is gone", () => {
+    // A release removes the last build's script files: a page kept from before it would show and
+    // do nothing. Each release reads its own pages.
+    const before = storePageCacheKey(page("/pura"), "release-a");
+    const after = storePageCacheKey(page("/pura"), "release-b");
+    expect(before).not.toBeNull();
+    expect(after).not.toBe(before);
+    expect(storePageCacheKey(page("/pura"), "release-a")).toBe(before);
+  });
+
+  it("keeps a page an hour, served at once while it is drawn again", () => {
+    expect(STALE_SECONDS).toBe(60 * 60);
+    expect(keptPageState(0, 30 * 60 * 1000)).toBe("stale");
+  });
+
   it("keeps a whole HTML page that sets no cookie and is not private", () => {
     const html = (headers: Record<string, string> = {}, status = 200) =>
       new Response("<html></html>", {
