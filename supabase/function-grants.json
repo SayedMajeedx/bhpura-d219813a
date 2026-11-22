@@ -567,7 +567,7 @@
       "reason": "Storefront: closes only the caller's own cart session (the session id is the browser's secret); writes nothing new"
     },
     "rpc_create_exchange_replacement_order(p_brand_id uuid, p_return_id uuid, p_replacement_items jsonb)": {
-      "anon": true,
+      "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
@@ -592,7 +592,7 @@
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
     "rpc_manual_adjust_loyalty_points(p_brand_id uuid, p_customer_id uuid, p_points_delta integer, p_reason_ar text, p_reason_en text)": {
-      "anon": true,
+      "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
@@ -602,7 +602,7 @@
       "reason": "Storefront: only for an order of that store placed on the storefront in the last hour; closes that session's carts and the order's own customer's, never by a contact the caller names (migration 20261021130000)"
     },
     "rpc_process_return_refund(p_brand_id uuid, p_return_id uuid, p_refund_method text, p_refund_amount numeric, p_refund_reference text, p_notes text)": {
-      "anon": true,
+      "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },

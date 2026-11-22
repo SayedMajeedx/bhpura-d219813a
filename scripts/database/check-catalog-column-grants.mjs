@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
-import { SUPABASE_CLI } from "./supabase-cli.mjs";
+import { SUPABASE_CLI, queryRows } from "./supabase-cli.mjs";
+import { onMissingCredentials } from "./credentials.mjs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -61,10 +62,8 @@ function readLive() {
     );
   } catch (err) {
     const text = `${err.stderr ?? ""}${err.stdout ?? ""}`;
-    if (/access token|not linked|login/i.test(text)) {
-      console.warn(
-        "Supabase credentials are not configured here; skipping the catalog columns check.",
-      );
+    if (/access token not provided|not linked|supabase login/i.test(text)) {
+      onMissingCredentials("the catalog columns check");
       return null;
     }
     console.error(
@@ -73,8 +72,7 @@ function readLive() {
     );
     process.exit(1);
   }
-  const start = output.indexOf("{");
-  return JSON.parse(output.slice(start)).rows;
+  return queryRows(output);
 }
 
 export function checkCatalogColumnGrants() {
