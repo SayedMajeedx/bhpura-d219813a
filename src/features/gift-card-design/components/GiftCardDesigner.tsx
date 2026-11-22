@@ -7,6 +7,8 @@ import {
   designName,
   designParts,
   designsFor,
+  messageCardDesigns,
+  toneName,
   type CardDesign,
   type CardLanguage,
 } from "../lib/design";
@@ -19,7 +21,8 @@ import { GiftCardPreview } from "./GiftCardPreview";
  * Choosing a card, as on the cards the owner named: the occasion first (what is in season leads),
  * then a handful of designs for it (the store's signature card first), which way it stands and
  * its language; the card is shown as it will be, front and back. The store's own choices decide
- * what is offered (`designsFor`).
+ * what is offered (`designsFor`). A gift message card has no occasion and looks the same in every
+ * composition, so it is offered its colours, each once (`messageCardDesigns`).
  */
 export function GiftCardDesigner({
   kit,
@@ -41,10 +44,15 @@ export function GiftCardDesigner({
   const isAr = lang === "ar";
   const occasions = useMemo(() => occasionsInOrder(today, kit.currency), [today, kit.currency]);
   const hasPhoto = kit.photos.length > 0;
+  const message = details.purpose === "message";
   const options = useMemo(
-    () => designsFor({ occasion: value.occasion, kind: kit.kind, store: kit.store, hasPhoto }),
-    [value.occasion, kit.kind, kit.store, hasPhoto],
+    () =>
+      message
+        ? messageCardDesigns(value.design)
+        : designsFor({ occasion: value.occasion, kind: kit.kind, store: kit.store, hasPhoto }),
+    [message, value.design, value.occasion, kit.kind, kit.store, hasPhoto],
   );
+  const optionName = message ? toneName : designName;
 
   // A design the store turned off, or a photo design with no photo, gives way to the first offered.
   useEffect(() => {
@@ -61,7 +69,7 @@ export function GiftCardDesigner({
     });
     choose({ occasion, design: next.includes(value.design) ? value.design : next[0] });
   };
-  const isPhoto = designParts(value.design).composition === "photo";
+  const isPhoto = !message && designParts(value.design).composition === "photo";
   const languages: Array<{ id: CardLanguage; label: string }> = [
     { id: "ar", label: "عربي" },
     { id: "en", label: "English" },
@@ -72,43 +80,49 @@ export function GiftCardDesigner({
     <div className="space-y-5">
       <GiftCardPreview kit={kit} design={value} details={details} primary={primary} lang={lang} />
 
-      <div className="space-y-2">
-        <p id="card-occasion-label" className="text-sm font-semibold">
-          {isAr ? "المناسبة" : "Occasion"}
-        </p>
-        <div
-          role="radiogroup"
-          aria-labelledby="card-occasion-label"
-          className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1"
-        >
-          {occasions.map((occasion) => (
-            <Button
-              key={occasion.id}
-              type="button"
-              role="radio"
-              aria-checked={value.occasion === occasion.id}
-              variant={value.occasion === occasion.id ? "default" : "outline"}
-              size="sm"
-              // A sideways row clips a button's wider tap area, so on a finger the chip is 44px itself.
-              className="shrink-0 snap-start rounded-full pointer-coarse:h-11"
-              onClick={() => pickOccasion(occasion.id)}
-            >
-              {occasion.name[lang]}
-            </Button>
-          ))}
+      {!message && (
+        <div className="space-y-2">
+          <p id="card-occasion-label" className="text-sm font-semibold">
+            {isAr ? "المناسبة" : "Occasion"}
+          </p>
+          <div
+            role="radiogroup"
+            aria-labelledby="card-occasion-label"
+            className="-mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1 pb-1"
+          >
+            {occasions.map((occasion) => (
+              <Button
+                key={occasion.id}
+                type="button"
+                role="radio"
+                aria-checked={value.occasion === occasion.id}
+                variant={value.occasion === occasion.id ? "default" : "outline"}
+                size="sm"
+                // A sideways row clips a button's wider tap area, so on a finger the chip is 44px itself.
+                className="shrink-0 snap-start rounded-full pointer-coarse:h-11"
+                onClick={() => pickOccasion(occasion.id)}
+              >
+                {occasion.name[lang]}
+              </Button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-2">
         <p id="card-design-label" className="text-sm font-semibold">
-          {isAr ? "التصميم" : "Design"}
+          {message ? (isAr ? "ألوان البطاقة" : "Card colours") : isAr ? "التصميم" : "Design"}
         </p>
         <div
           role="radiogroup"
           aria-labelledby="card-design-label"
           className={cn(
             "grid gap-3",
-            value.orientation === "landscape" ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3",
+            message
+              ? "grid-cols-2 sm:grid-cols-4"
+              : value.orientation === "landscape"
+                ? "grid-cols-2 sm:grid-cols-3"
+                : "grid-cols-3",
           )}
         >
           {options.map((id) => {
@@ -119,7 +133,7 @@ export function GiftCardDesigner({
                 type="button"
                 role="radio"
                 aria-checked={chosen}
-                aria-label={designName(id, lang)}
+                aria-label={optionName(id, lang)}
                 variant="ghost"
                 className={cn(
                   "h-auto rounded-lg p-1.5 ring-offset-2 ring-offset-background",
@@ -132,7 +146,7 @@ export function GiftCardDesigner({
                   design={{ ...value, design: id }}
                   details={details}
                   primary={primary}
-                  label={designName(id, lang)}
+                  label={optionName(id, lang)}
                   className="w-full shadow-sm"
                 />
               </Button>

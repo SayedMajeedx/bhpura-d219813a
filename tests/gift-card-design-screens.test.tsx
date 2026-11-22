@@ -350,6 +350,56 @@ describe("printing a card in the store", () => {
     open.mockRestore();
   });
 
+  it("offers a gift message card its colours, each once, and no occasion", async () => {
+    // The owner's report of 2026-11-22: the picker showed one card four times, as a message
+    // card's frame and mark are the same in every composition; only its paper and ink change.
+    const sheet = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() } };
+    const open = vi.spyOn(window, "open").mockReturnValue(sheet as unknown as Window);
+    wrap(
+      <PrintButton
+        lang="en"
+        label="Print the gift card"
+        source={() => ({
+          id: "gift-message-8",
+          code: "8",
+          details: {
+            amount: null,
+            code: null,
+            to: "Noura",
+            message: "Happy birthday",
+            expiresOn: null,
+            purpose: "message",
+          },
+          initial: { ...DEFAULT_DESIGN, design: "pattern:cream", language: "en" },
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Print the gift card" }));
+    const colours = await screen.findByRole("radiogroup", { name: "Card colours" });
+    const names = within(colours)
+      .getAllByRole("radio")
+      .map((radio) => radio.getAttribute("aria-label"));
+    expect(names).toEqual(["Store colour", "Black", "Nude", "Light store colour"]);
+    // What the card opened on stays chosen.
+    expect(within(colours).getByRole("radio", { name: "Nude" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.queryByRole("radiogroup", { name: "Occasion" })).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Design" })).toBeNull();
+    fireEvent.click(within(colours).getByRole("radio", { name: "Black" }));
+    expect(within(colours).getByRole("radio", { name: "Black" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Print to fold and glue" }));
+    await waitFor(() => expect(sheet.document.write).toHaveBeenCalled());
+    // Printed in black ink on white paper.
+    const html = String(sheet.document.write.mock.calls[0][0]);
+    expect(html).toContain('fill="#1C1B1A"');
+    open.mockRestore();
+  });
+
   it("opens the card in the store's designs and prints it on A4 with cut marks", async () => {
     const sheet = { document: { open: vi.fn(), write: vi.fn(), close: vi.fn() } };
     const open = vi.spyOn(window, "open").mockReturnValue(sheet as unknown as Window);
