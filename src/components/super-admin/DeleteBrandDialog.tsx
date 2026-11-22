@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { brandDeleteFailure } from "./brand-delete-failure";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -60,7 +61,7 @@ export function DeleteBrandDialog({
           setDatabasePurged(true);
         } else {
           setWorking(false);
-          return toast.error(error.message);
+          return toast.error(brandDeleteFailure(error.message, isAr), { duration: 10000 });
         }
       }
       if (hard) setDatabasePurged(true);
