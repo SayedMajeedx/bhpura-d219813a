@@ -626,6 +626,7 @@ function CategoryPage() {
                 categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading
               }
               categoryEmpty
+              emptyCollection={categoryProducts.length === 0 ? smartKind : null}
               onViewAll={() => {
                 void navigate({ to: "/$slug", params: { slug: brand.slug } });
               }}

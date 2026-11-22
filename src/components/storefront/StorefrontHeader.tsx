@@ -60,7 +60,7 @@ function StoreHeader() {
   const logoSize = settings.logo_size || 40;
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
   const openSearch = () => setSearchOverlayOpen(true);
-  const { data: categories = [] } = useStorefrontCategories();
+  const { data: categories = [] } = useStorefrontCategories({ menu: true });
   const centred = align === "center";
   const oneRow = menuFitsOneRow(
     categories

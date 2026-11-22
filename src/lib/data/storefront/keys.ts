@@ -21,6 +21,7 @@ export const storefrontKeys = {
     [...storefrontKeys.all(slug), list, ids.join(",")] as const,
 
   categories: (slug: string) => [...storefrontKeys.all(slug), "categories"] as const,
+  pageData: (slug: string) => [...storefrontKeys.all(slug), "page-data"] as const,
   category: (slug: string, categorySlug: string) =>
     [...storefrontKeys.all(slug), "category", categorySlug] as const,
   categoryProducts: (slug: string, categorySlug: string, scope: string) =>

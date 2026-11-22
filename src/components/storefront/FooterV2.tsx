@@ -93,7 +93,7 @@ export function FooterV2() {
   // Shown while the store sells gift cards online (step four).
   const sellsGiftCards = Boolean(useQuery(giftCardOnlineQueries.offer(brand.slug)).data);
   // New arrivals and sale only while the store shows those categories, as the header does.
-  const { data: categories = [] } = useStorefrontCategories();
+  const { data: categories = [] } = useStorefrontCategories({ menu: true });
   const collections = footerCollections(categories, isAr);
 
   const footerLogoSize = Math.max(20, Math.min(120, Number(settings.footer_logo_size ?? 32)));

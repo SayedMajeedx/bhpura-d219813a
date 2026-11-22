@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import React from "react";
 import { StorefrontProvider, type Brand, type PublicSettings } from "@/lib/storefront-context";
 import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
+import { StoreCollectionsProvider } from "@/lib/store-collections";
 import { useDynamicFavicon } from "@/lib/favicon";
 import { isReservedStorefrontSlug } from "@/lib/seo/reserved-slugs";
 import { fetchBrandCustomDomain, fetchStorefrontPageData } from "@/lib/data/storefront";
@@ -85,7 +86,12 @@ function StorefrontLayout() {
       categories={bootstrapData?.categories ?? undefined}
       addons={bootstrapData?.addons ?? []}
     >
-      <StoreShell />
+      <StoreCollectionsProvider
+        products={bootstrapData?.products ?? null}
+        bestSellerCount={bootstrapData?.bestSellerRows?.length ?? null}
+      >
+        <StoreShell />
+      </StoreCollectionsProvider>
     </StorefrontProvider>
   );
 }

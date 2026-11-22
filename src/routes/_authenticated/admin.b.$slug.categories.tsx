@@ -26,6 +26,8 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
+import { useEmptyCollections } from "@/components/categories/use-empty-collections";
+import { smartKindOf } from "@/lib/smart-categories";
 import { CategorySeoFields } from "@/components/categories/CategorySeoFields";
 import { CategoryOffSaleField } from "@/components/categories/CategoryOffSaleField";
 import { CropUploadButton } from "@/components/crop-upload-button";
@@ -77,6 +79,11 @@ function CategoriesPage() {
   );
 
   const { data, isLoading } = useQuery(categoriesQueries.overview(brandId));
+  // Sale, new arrivals and best sellers show on the store only while they hold something.
+  const hasAutoCollection = (data ?? []).some((c) =>
+    ["offers", "new", "best"].includes(smartKindOf(c.slug) ?? ""),
+  );
+  const emptyCollections = useEmptyCollections(brand?.slug, hasAutoCollection);
 
   const move = async (c: Category, dir: -1 | 1) => {
     const order = moveCategory(
@@ -174,6 +181,7 @@ function CategoriesPage() {
         lang={lang}
         categories={data ?? []}
         isLoading={isLoading}
+        emptyCollections={emptyCollections}
         onEdit={(cat) => {
           setEditing(cat);
           setOpen(true);
