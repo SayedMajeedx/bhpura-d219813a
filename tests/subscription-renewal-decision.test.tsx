@@ -208,8 +208,9 @@ describe("annual renewal decision window", () => {
       brandRow({ id: "b2", slug: "b", renewal_intent: "cancel" }),
     ];
     await renderBrandsPage();
-    expect(await screen.findByText("يرغب بالتجديد")).toBeInTheDocument();
-    expect(screen.getByText("لن يجدد")).toBeInTheDocument();
+    // Each store says its decision under its state (in the table row and the phone card).
+    expect((await screen.findAllByText("يرغب بالتجديد")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("لن يجدد").length).toBeGreaterThan(0);
   });
 
   it("stores only renew or cancel decisions in the database", () => {

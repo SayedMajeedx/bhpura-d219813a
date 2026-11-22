@@ -76,6 +76,7 @@ export const AR_NOUNS = {
   movement: noun("حركة واحدة", "حركتان", "حركات", "حركة", "حركة"),
   area: noun("منطقة واحدة", "منطقتان", "مناطق", "منطقة", "منطقة"),
   return: noun("مرتجع واحد", "مرتجعان", "مرتجعات", "مرتجعًا", "مرتجع"),
+  store: noun("متجر واحد", "متجران", "متاجر", "متجرًا", "متجر"),
 } as const;
 
 export type CountedNoun = keyof typeof AR_NOUNS;
@@ -140,6 +141,7 @@ const EN_NOUNS: Record<CountedNoun, [string, string]> = {
   movement: ["movement", "movements"],
   area: ["area", "areas"],
   return: ["return", "returns"],
+  store: ["store", "stores"],
 };
 
 /** A count in the reader's language: "12 منتجًا" or "12 products". */
