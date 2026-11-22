@@ -59,6 +59,7 @@ vi.mock("../src/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
     auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    realtime: { isConnected: () => false },
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcCalls.push([fn, args]);
       return Promise.resolve(rpcReply(fn));
@@ -69,6 +70,7 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: (table: string) => builder(table),
     auth: { getUser: () => Promise.resolve({ data: { user: signedInUser } }) },
+    realtime: { isConnected: () => false },
     rpc: (fn: string, args: Record<string, unknown>) => {
       rpcCalls.push([fn, args]);
       return Promise.resolve(rpcReply(fn));
@@ -124,8 +126,11 @@ describe("orders query keys", () => {
     const office = ordersQueries.list("b1", "office");
     const courier = ordersQueries.list("b1", "assigned-courier");
     expect(office.queryKey).not.toEqual(courier.queryKey);
-    expect(office.refetchInterval).toBe(30_000);
-    expect(courier.refetchInterval).toBe(10_000);
+    // With the live connection down (the mock has none), couriers are polled faster.
+    const every = (options: { refetchInterval?: unknown }) =>
+      (options.refetchInterval as () => number)();
+    expect(every(office)).toBe(30_000);
+    expect(every(courier)).toBe(10_000);
   });
 });
 
