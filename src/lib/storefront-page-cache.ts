@@ -9,13 +9,21 @@ import { PLATFORM_ROUTE_SEGMENTS } from "@/lib/seo/host-redirect";
  * answer is not kept by Cloudflare unless the Worker keeps it. Now the data centre keeps a page:
  *
  * - fresh for `FRESH_SECONDS` (30 s), served as kept;
- * - up to `STALE_SECONDS` (5 min) old, served as kept at once while it is drawn again behind it;
+ * - up to `STALE_SECONDS` (an hour) old, served as kept at once while it is drawn again behind it;
  * - older, or not kept, drawn as before.
  *
- * Five minutes is the store's own freshness: a shopper's browser already holds a catalogue read for
- * five minutes (`CATALOG_CACHE` in `src/lib/data/storefront/queries.ts`), and the page carries the
- * time its data was read, so the browser reads it again when that is older. Nothing is paid,
- * reserved or placed from a page: the order engine prices and checks every order itself.
+ * A kept page older than five minutes is still right for the shopper: it carries the time its data
+ * was read, and the browser reads the catalogue again once that is older than its own five minutes
+ * (`CATALOG_CACHE` in `src/lib/data/storefront/queries.ts`). An hour lets a quiet store's visitor
+ * get the kept page (about 25 ms from Bahrain) instead of one drawn afresh (0.4-1.1 s): at five
+ * minutes, most visits to a store with a visitor every few minutes found nothing kept (the speed
+ * review of 2026-11-22). Nothing is paid, reserved or placed from a page: the order engine prices
+ * and checks every order itself.
+ *
+ * **A kept page belongs to its release** (`release`, the Worker's version id): a page names the
+ * script files of the build that drew it, and a release removes the last build's files, so a page
+ * kept from before a release arrived with scripts that answered "not found" (the page showed, and
+ * nothing on it worked). The release is in the key, so a new release starts with nothing kept.
  *
  * Only what is the same for every visitor is kept (`storePageCacheKey`):
  * - a store's home, a category and a product page; never checkout, the account, sign-in, a gift
@@ -31,7 +39,7 @@ import { PLATFORM_ROUTE_SEGMENTS } from "@/lib/seo/host-redirect";
  */
 
 export const FRESH_SECONDS = 30;
-export const STALE_SECONDS = 5 * 60;
+export const STALE_SECONDS = 60 * 60;
 
 /** Second parts of a store's address that are its own pages, not a category. */
 export const STORE_PAGES: ReadonlySet<string> = new Set([
@@ -87,8 +95,11 @@ export function isPublicStorePage(pathname: string): boolean {
   return parts.length === 3 && second === "product" && Boolean(third);
 }
 
-/** The address a page is kept under, or null when this request's page must be drawn for it. */
-export function storePageCacheKey(request: Request): string | null {
+/**
+ * The address a page is kept under, or null when this request's page must be drawn for it.
+ * `release` is the Worker's version id: pages are kept per release (see above).
+ */
+export function storePageCacheKey(request: Request, release = ""): string | null {
   if (request.method !== "GET") return null;
   if (!(request.headers.get("Accept") ?? "").includes("text/html")) return null;
   if (request.headers.has("Authorization")) return null;
@@ -104,6 +115,7 @@ export function storePageCacheKey(request: Request): string | null {
     .sort(([a, x], [b, y]) => a.localeCompare(b) || x.localeCompare(y));
   const query = new URLSearchParams(params);
   query.set("__lang_cookie", lang === "ar" || lang === "en" ? lang : "");
+  query.set("__release", release);
   return `https://${url.host}/__store-page-cache${url.pathname}?${query}`;
 }
 
