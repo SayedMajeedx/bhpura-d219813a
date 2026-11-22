@@ -213,7 +213,7 @@ describe("the grant survey moving into its page (migration 20261219100000)", () 
       status: string;
       admin_notes: string | null;
     }>(
-      "SELECT id, answers, status, admin_notes FROM public.platform_page_responses WHERE id::text LIKE '%a_' ORDER BY id",
+      "SELECT id, answers, status, admin_notes FROM public.platform_page_responses WHERE id IN ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-4000-8000-0000000000a2') ORDER BY id",
     );
     expect(rows).toEqual([
       {
