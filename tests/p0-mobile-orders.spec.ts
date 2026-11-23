@@ -7,7 +7,8 @@ test.describe("P0 - Runtime & Mobile Orders Correctness", () => {
     // Mock authentication and brand session
     await page.addInitScript(() => {
       const session = {
-        access_token: "mock-access-token",
+        access_token:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDAsImFhbCI6ImFhbDEifQ.test-signature",
         token_type: "bearer",
         expires_in: 3600,
         refresh_token: "mock-refresh-token",
