@@ -21,7 +21,7 @@ describe("Phase 7C responsive growth and content workspaces", () => {
     // truncated on narrow screens: every label is rendered whole and reachable.
     const switcher = container.firstElementChild as HTMLElement;
     expect(switcher.className).toContain("overflow-x-auto");
-    expect(switcher.className).toContain("no-scrollbar");
+    expect(switcher.className).toContain("scrollbar-none");
     expect(switcher.className).not.toContain("grid-cols-2");
     const buttons = screen.getAllByRole("button");
     expect(buttons).toHaveLength(4);

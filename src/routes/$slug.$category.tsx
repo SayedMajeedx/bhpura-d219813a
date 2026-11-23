@@ -524,15 +524,15 @@ function CategoryPage() {
             {rows.length > 0 && (
               <div className="w-full space-y-3">
                 <style>{`
-                  .no-scrollbar::-webkit-scrollbar { display: none; }
-                  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                  .scrollbar-none::-webkit-scrollbar { display: none; }
+                  .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
                 `}</style>
                 {rows.map((row) => (
                   <div
                     key={`row-level-${row.levelIndex}`}
                     className={`w-full ${row.levelIndex > 0 ? "border-t border-border pt-2 animate-in fade-in slide-in-from-top-1 duration-(--motion-fast)" : "mt-4"}`}
                   >
-                    <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
+                    <div className="flex flex-wrap gap-2 items-center overflow-x-auto scrollbar-none py-1">
                       <Button
                         type="button"
                         variant={row.activeSlug === null ? "default" : "secondary"}

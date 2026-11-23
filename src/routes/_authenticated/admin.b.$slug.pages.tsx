@@ -419,19 +419,9 @@ function PagesAndPolicies() {
         dir="ltr"
         className="shrink-0"
       >
-        <TabsList className="grid h-11 w-full grid-cols-2 rounded-xl border border-border bg-muted p-1 sm:w-64">
-          <TabsTrigger
-            value="en"
-            className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            English (EN)
-          </TabsTrigger>
-          <TabsTrigger
-            value="ar"
-            className="rounded-lg text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-          >
-            العربية (AR)
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:w-64">
+          <TabsTrigger value="en">English (EN)</TabsTrigger>
+          <TabsTrigger value="ar">العربية (AR)</TabsTrigger>
         </TabsList>
       </Tabs>
 

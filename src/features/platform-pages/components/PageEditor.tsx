@@ -308,7 +308,7 @@ function EditorBody({ page, lang }: { page: AdminPage; lang: "ar" | "en" }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <Tabs defaultValue="content" className="min-w-0">
-          <TabsList className="mb-3 flex w-full overflow-x-auto">
+          <TabsList className="mb-3 w-full">
             <TabsTrigger value="content">{ar ? "المحتوى" : "Content"}</TabsTrigger>
             <TabsTrigger value="form">{ar ? "النموذج" : "Form"}</TabsTrigger>
             <TabsTrigger value="settings">{ar ? "الإعدادات" : "Settings"}</TabsTrigger>

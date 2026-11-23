@@ -1,4 +1,5 @@
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentTab } from "@/components/ui/segmented";
 import { cn } from "@/lib/utils";
 import {
   DASHBOARD_PERIODS,
@@ -24,7 +25,7 @@ export function PeriodSwitch({
     <div
       role="radiogroup"
       aria-label={isAr ? "فترة الأرقام" : "Period of the figures"}
-      className="t-tabs relative inline-flex gap-1 rounded-xl border border-border-subtle bg-muted/40 p-1"
+      className={SEGMENT_TRACK}
     >
       <TabsPill />
       {DASHBOARD_PERIODS.map((option) => {
@@ -38,12 +39,7 @@ export function PeriodSwitch({
             data-active={active ? "true" : "false"}
             aria-label={periodWords(option, lang).last}
             onClick={() => onChange(option)}
-            className={cn(
-              "t-tab h-8 rounded-lg px-2.5 text-xs font-semibold transition-colors duration-(--motion-quick) pointer-coarse:min-h-11",
-              active
-                ? "bg-background text-foreground shadow-xs"
-                : "text-muted-foreground hover:text-foreground",
-            )}
+            className={cn(segmentTab(active), "min-h-8 px-2.5")}
           >
             {periodWords(option, lang).span}
           </button>

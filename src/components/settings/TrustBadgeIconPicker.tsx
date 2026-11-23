@@ -144,7 +144,7 @@ export function TrustBadgeIconPicker({
           </div>
 
           {/* Category Pills */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-xs">
             {CATEGORIES.map((cat) => (
               <Button
                 key={cat.id}

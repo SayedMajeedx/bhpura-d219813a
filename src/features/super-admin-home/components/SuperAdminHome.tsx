@@ -144,14 +144,14 @@ export function SuperAdminHome({ lang }: { lang: Lang }) {
 
       <div ref={tabsRef} className="scroll-mt-4">
         <Tabs value={tab} onValueChange={(value) => setTab(value as Tab)} className="min-w-0">
-          <TabsList className="mb-3 flex w-full justify-start overflow-x-auto sm:w-auto">
+          <TabsList className="mb-3 w-full sm:w-auto">
             <TabsTrigger value="stores">
               {ar ? "المتاجر" : "Stores"} ({rows.length})
             </TabsTrigger>
             <TabsTrigger value="receipts">
               {ar ? "الإيصالات" : "Receipts"} ({pending.length})
             </TabsTrigger>
-            <TabsTrigger value="apps" className="gap-1.5">
+            <TabsTrigger value="apps">
               <Smartphone className="size-3.5" aria-hidden="true" />
               {ar ? "تطبيقات المتاجر" : "Store apps"}
             </TabsTrigger>

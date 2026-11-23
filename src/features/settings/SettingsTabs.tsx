@@ -7,6 +7,8 @@ import { OrdersTab } from "@/features/settings/tabs/orders/OrdersTab";
 import { NotificationsTab } from "@/features/settings/tabs/notifications/NotificationsTab";
 import { AccountTab } from "@/features/settings/tabs/account/AccountTab";
 import { Bell, CreditCard, Palette, Shield, Store } from "lucide-react";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentTab } from "@/components/ui/segmented";
 
 export interface SettingsTabsProps {
   activeTab: SettingsTabId;
@@ -74,14 +76,16 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
     }
   }, [activeTab]);
 
-  // Mobile: smooth horizontal scroll rail with 100% visible labels; Desktop (sm+): full card flex bar
+  // The admin's one tab bar look (segmented.ts), scrolling sideways with whole labels when it does
+  // not fit; each section's description is its tab's tooltip.
   return (
     <div
       ref={tabListRef}
       role="tablist"
       aria-label={isAr ? "أقسام الإعدادات" : "Settings sections"}
-      className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth p-1.5 rounded-2xl border border-border bg-card shadow-xs overscroll-contain sm:flex sm:items-center sm:gap-1.5"
+      className={`${SEGMENT_TRACK} scroll-smooth overscroll-contain`}
     >
+      <TabsPill />
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -96,31 +100,10 @@ export function SettingsTabBar({ activeTab, onTabChange }: SettingsTabsProps) {
             aria-label={tab.label}
             title={tab.description}
             onClick={() => onTabChange(tab.id)}
-            className={`min-h-11 shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition duration-(--motion-quick) select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-1 sm:flex-row sm:items-center sm:gap-2.5 sm:px-3 sm:py-2.5 sm:text-xs sm:text-start ${
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            }`}
+            className={segmentTab(isActive)}
           >
-            <div
-              className={`size-7 rounded-lg flex items-center justify-center shrink-0 ${
-                isActive
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
-              }`}
-            >
-              <Icon className="size-3.5" />
-            </div>
-            <div className="min-w-0 max-w-full sm:flex-1">
-              <div className="whitespace-nowrap font-semibold">{tab.label}</div>
-              <div
-                className={`hidden sm:block text-xs font-normal truncate ${
-                  isActive ? "text-primary-foreground/80" : "text-muted-foreground"
-                }`}
-              >
-                {tab.description}
-              </div>
-            </div>
+            <Icon className="size-3.5 shrink-0" aria-hidden />
+            <span>{tab.label}</span>
           </button>
         );
       })}

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { newOrderSoundOn, playNewOrderChime, setNewOrderSound } from "@/lib/new-order-sound";
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentTab } from "@/components/ui/segmented";
 
 export type OrdersView = "list" | "board";
 
@@ -26,32 +27,23 @@ export function OrdersViewControls({
   return (
     // In the search row (the admin review of 2026-11-15: a row of its own above the orders).
     <div className="flex shrink-0 items-center gap-1.5">
-      <div
-        role="group"
-        aria-label={isAr ? "طريقة العرض" : "View"}
-        className="t-tabs relative inline-flex rounded-lg border border-border p-0.5"
-      >
+      <div role="group" aria-label={isAr ? "طريقة العرض" : "View"} className={SEGMENT_TRACK}>
         <TabsPill />
         {(["list", "board"] as const).map((option) => {
           const Icon = option === "list" ? List : Columns3;
           return (
-            <Button
+            <button
               key={option}
               type="button"
-              size="sm"
-              variant="ghost"
               aria-pressed={view === option}
-              className={cn(
-                "t-tab h-8 gap-1.5 px-3 text-xs",
-                view === option && "bg-muted font-semibold",
-              )}
+              className={cn(segmentTab(view === option), "min-h-7")}
               onClick={() => onView(option)}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="sr-only lg:not-sr-only">
                 {option === "list" ? (isAr ? "قائمة" : "List") : isAr ? "لوحة" : "Board"}
               </span>
-            </Button>
+            </button>
           );
         })}
       </div>

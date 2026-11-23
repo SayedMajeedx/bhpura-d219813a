@@ -291,7 +291,7 @@ function PostKitBody() {
       />
       <NewPostDialog open={starting} onOpenChange={setStarting} kit={kit} onCreated={open} />
       <Tabs defaultValue="posts" className="space-y-4">
-        <TabsList className="h-auto max-w-full flex-wrap justify-start">
+        <TabsList className="flex-wrap">
           <TabsTrigger value="posts">{isAr ? "البوستات" : "Posts"}</TabsTrigger>
           <TabsTrigger value="reels">{isAr ? "الريلز" : "Reels"}</TabsTrigger>
           <TabsTrigger value="stickers">{isAr ? "ملصقات للطباعة" : "Print stickers"}</TabsTrigger>

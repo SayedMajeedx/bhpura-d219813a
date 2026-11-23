@@ -189,22 +189,16 @@ function LoyaltyDashboardPage() {
 
       {/* Main Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex w-full items-center justify-start gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted border border-border rounded-xl overscroll-contain sm:w-auto">
-          <TabsTrigger
-            value="members"
-            className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3"
-          >
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="members">
             <Users className="h-4 w-4" />
             <span>{isAr ? "الأعضاء" : "Members"}</span>
           </TabsTrigger>
-          <TabsTrigger value="tiers" className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3">
+          <TabsTrigger value="tiers">
             <Award className="h-4 w-4" />
             <span>{isAr ? "المستويات" : "Tiers"}</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="ledger"
-            className="shrink-0 whitespace-nowrap gap-2 min-h-[38px] px-3"
-          >
+          <TabsTrigger value="ledger">
             <Coins className="h-4 w-4" />
             <span>{isAr ? "سجل النقاط" : "Points ledger"}</span>
           </TabsTrigger>

@@ -172,7 +172,7 @@ export function ProductDialog({
       <AppDialogBody
         className="space-y-5"
         toolbar={
-          <div className="flex items-center gap-2 bg-muted/60 p-1 rounded-xl overflow-x-auto no-scrollbar overscroll-x-contain">
+          <div className="flex items-center gap-2 bg-muted/60 p-1 rounded-xl overflow-x-auto scrollbar-none overscroll-x-contain">
             <button
               type="button"
               onClick={(e) => {

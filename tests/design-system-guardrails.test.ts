@@ -485,6 +485,37 @@ describe("design system guardrails", () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  it("draws every admin tab bar in the one look of segmented.ts", () => {
+    // Each page drew its own bar (dark pills, outlined chips, a white card), the size guide's sat
+    // off-centre in a track fixed at 40px, and the orders' and products' filters cut their focus
+    // ring at the top (the owner's reports of 2026-11-23). A bar is `TabsList` / `TabsTrigger` or
+    // takes `SEGMENT_TRACK` / `segmentTab` and writes only its layout. The storefront's own bars
+    // (the product page's choices, the home page's categories and menu) are the store's look.
+    // The look, and the sliding fill that reads it.
+    const ownLook = new Set([
+      "components/ui/segmented.ts",
+      "components/motion/TabsPill.tsx",
+      "lib/motion/pill.ts",
+    ]);
+    const storefront = ["features/product-page/", "features/storefront-home/"];
+    const offenders = FILES.filter(
+      ({ rel, source }) =>
+        !ownLook.has(rel) &&
+        !storefront.some((dir) => rel.startsWith(dir)) &&
+        /["'`\s]t-tabs?["'`\s]/.test(source),
+    ).map(({ rel }) => rel);
+    expect(offenders).toEqual([]);
+  });
+
+  it("names only scrollbar classes that exist", () => {
+    // `no-scrollbar` was written in 14 files and defined nowhere, so the products' filters showed
+    // a scrollbar under their tabs (2026-11-23). The class is `scrollbar-none` (styles.css).
+    const offenders = FILES.filter(({ source }) => /\bno-scrollbar\b/.test(source)).map(
+      ({ rel }) => rel,
+    );
+    expect(offenders).toEqual([]);
+  });
 });
 
 describe("the phone layer (src/styles/mobile-native.css)", () => {
