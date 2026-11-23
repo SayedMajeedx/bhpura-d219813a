@@ -1,5 +1,5 @@
 import React from "react";
-import { ExternalLink, ReceiptText, Calendar, User } from "lucide-react";
+import { ExternalLink, ReceiptText } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -120,57 +120,49 @@ export const DashboardActivityQueue = React.memo(function DashboardActivityQueue
         </table>
       </div>
 
-      {/* A narrow box (a phone, or beside the chart): a card per order. */}
-      <div className="grid grid-cols-1 gap-2.5 @2xl:hidden">
+      {/* A narrow box (a phone, or beside the chart): a row per order, the whole row its link.
+          A bordered card per order made five of them about 790px, beside a chart a third that tall. */}
+      <ul className="divide-y divide-border-subtle @2xl:hidden">
         {orders.map((o) => {
           const custName = getOrderCustomerName(o) || (isAr ? "عميل جديد" : "Guest Customer");
           const displayStatus = getDashboardOrderStatus(o, lang, vocabulary);
 
           return (
-            <Card
-              key={o.id}
-              className="p-3.5 border border-border bg-card rounded-2xl space-y-2 shadow-2xs"
-            >
-              <div className="flex min-w-0 items-center justify-between gap-2">
-                <span className="shrink-0 font-mono font-bold text-xs text-primary">
-                  {orderNo(o.invoice_number)}
-                </span>
-                <OsStatusPill variant={displayStatus.variant} dot>
-                  {displayStatus.label}
-                </OsStatusPill>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 text-xs pt-1 border-t border-border-subtle">
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  <p className="font-semibold text-foreground flex min-w-0 items-center gap-1">
-                    <User className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span dir="auto" className="text-page-start line-clamp-2 min-w-0 break-words">
+            <li key={o.id}>
+              <Link
+                to="/admin/b/$slug/orders/$id"
+                params={{ slug, id: o.id }}
+                className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5 text-xs transition-colors duration-(--motion-quick) hover:bg-muted/40"
+              >
+                <span className="min-w-0 flex-1 space-y-0.5">
+                  <span className="flex min-w-0 items-baseline gap-2">
+                    <span className="shrink-0 font-mono font-bold text-primary">
+                      {orderNo(o.invoice_number)}
+                    </span>
+                    <span
+                      dir="auto"
+                      className="text-page-start line-clamp-2 min-w-0 break-words font-semibold text-foreground"
+                    >
                       {custName}
                     </span>
-                  </p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 font-mono">
-                    <Calendar className="h-2.5 w-2.5" /> {formatDate(o.created_at, locale)}
-                  </p>
-                </div>
-
-                <div className="shrink-0 text-end">
-                  <p className="font-bold text-sm tabular-nums text-foreground">
+                  </span>
+                  <span className="block font-mono text-muted-foreground">
+                    {formatDate(o.created_at, locale)}
+                  </span>
+                </span>
+                <span className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="font-bold tabular-nums text-foreground">
                     {formatMoney(Number(o.total || 0), o.currency || currency, locale)}
-                  </p>
-                  <Link
-                    to="/admin/b/$slug/orders/$id"
-                    params={{ slug, id: o.id }}
-                    className="inline-flex items-center gap-0.5 text-xs font-bold text-primary hover:underline mt-0.5"
-                  >
-                    <span>{isAr ? "عرض الطلب" : "View"}</span>
-                    <ExternalLink className="h-2.5 w-2.5" />
-                  </Link>
-                </div>
-              </div>
-            </Card>
+                  </span>
+                  <OsStatusPill variant={displayStatus.variant} dot>
+                    {displayStatus.label}
+                  </OsStatusPill>
+                </span>
+              </Link>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 });
