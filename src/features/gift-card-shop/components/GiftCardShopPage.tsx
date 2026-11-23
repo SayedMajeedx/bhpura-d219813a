@@ -233,7 +233,7 @@ function BuyForm({
       {/* On a laptop the card sits beside the form and stays in view while it is filled in; on a
           phone they follow each other. One narrow column in a wide page read as unfinished. */}
       <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:items-start lg:gap-8 lg:space-y-0">
-        <section className="space-y-3 rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-[calc(var(--sf-header-offset,0px)+1rem)]">
+        <section className="sf-under-header space-y-3 rounded-2xl border border-border bg-card p-5 lg:sticky lg:top-[calc(var(--sf-header-offset,0px)+1rem)]">
           <h2 className="text-sm font-semibold">{t("اختر البطاقة", "Choose the card")}</h2>
           <GiftCardDesigner
             kit={kit}
