@@ -27,7 +27,7 @@ export function DailySalesChart({
   if (!isMounted) return <div className="h-full w-full animate-pulse rounded-xl bg-muted" />;
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={series} margin={{ top: 15, right: 15, left: -10, bottom: 5 }}>
+      <AreaChart data={series} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
         <XAxis
           dataKey="date"
           tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}

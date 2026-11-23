@@ -3,12 +3,12 @@ import { render, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 // The admin's motion (the animation review of 2026-11-22): what waited for its data fades in
-// instead of popping, an order arriving live slides into the list instead of jumping it, a page
-// cross-fades briefly (never a filter), and the save bar's label changes in place.
+// instead of popping, an order arriving live slides into the list instead of jumping it, and the save
+// bar's label changes in place. Pages do not cross-fade: a view transition held each page back
+// about 270ms (tests/navigation-perf.spec.ts).
 
 const { newArrivals, useArrivals, useArrivedAfterWait } =
   await import("../src/lib/motion/use-arrived");
-const { pageViewTransition } = await import("../src/lib/motion/page-transition");
 const { SettingsStickySaveBar } = await import("../src/components/settings/SettingsStickySaveBar");
 
 describe("a part that waited for its data", () => {
@@ -43,21 +43,6 @@ describe("an order arriving live", () => {
     expect([...list.result.current]).toEqual(["o3"]);
     list.rerender({ ids: ["o3", "o1"] });
     expect([...list.result.current]).toEqual([]);
-  });
-});
-
-describe("moving to another page", () => {
-  it("cross-fades when the path changes, never for a filter in the address", () => {
-    const transition = pageViewTransition(true);
-    if (!transition || typeof transition.types !== "function") throw new Error("no transition");
-    const change = (pathChanged: boolean) =>
-      (transition.types as (info: { pathChanged: boolean }) => string[] | false)({ pathChanged });
-    expect(change(true)).toEqual(["page"]);
-    expect(change(false)).toBe(false);
-  });
-
-  it("does not fade where the browser cannot tell a page from a filter", () => {
-    expect(pageViewTransition(false)).toBe(false);
   });
 });
 

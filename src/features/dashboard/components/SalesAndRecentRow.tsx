@@ -50,7 +50,7 @@ export function SalesAndRecentRow({
   const recentArrived = useArrivedAfterWait(recentOrdersQ.isPending);
   const salesArrived = useArrivedAfterWait(figuresLoading);
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
       {isCatalog ? (
         <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-4 h-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border-subtle">
@@ -128,10 +128,10 @@ export function SalesAndRecentRow({
             className="min-w-0 space-y-3 rounded-2xl border border-border bg-card p-5 lg:col-span-3"
           >
             <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-40 w-full sm:h-44" />
           </div>
         ) : !hasSales ? (
-          <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
+          <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[200px]">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <TrendingUp className="h-6 w-6" />
             </div>
@@ -150,7 +150,7 @@ export function SalesAndRecentRow({
           </Card>
         ) : (
           <Card
-            className={`min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full${salesArrived ? " t-skel-reveal" : ""}`}
+            className={`min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col space-y-3${salesArrived ? " t-skel-reveal" : ""}`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -160,11 +160,11 @@ export function SalesAndRecentRow({
                     ? `صافي المبيعات يومًا بيوم (${periodLast})`
                     : `Net sales day by day (${periodLast})`}
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  {isAr
-                    ? "صافي المبيعات يومًا بيوم، المتجر والمحلات الشريكة"
-                    : "Net sales day by day, the store's and the partner shops'"}
-                </p>
+                {(figures?.sales.partners ?? 0) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {isAr ? "المتجر والمحلات الشريكة" : "The store and the partner shops"}
+                  </p>
+                )}
               </div>
               <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
                 {formatMoney(figures?.sales.total ?? 0, currency, locale)}
@@ -172,7 +172,7 @@ export function SalesAndRecentRow({
               </span>
             </div>
 
-            <div className="h-56 min-w-0 w-full overflow-hidden pt-1">
+            <div className="h-40 min-w-0 w-full overflow-hidden sm:h-44">
               <DailySalesChart
                 series={figures?.dailySeries ?? []}
                 currency={currency}
