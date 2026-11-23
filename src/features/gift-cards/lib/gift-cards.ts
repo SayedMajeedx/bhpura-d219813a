@@ -169,6 +169,10 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
   },
   ORDER_NOTHING_OWED: { ar: "لا شيء متبقٍ على هذا الطلب.", en: "Nothing is owed on this order." },
   ORDER_NOT_FOUND: { ar: "لم يُعثر على الطلب.", en: "The order was not found." },
+  GIFT_CARD_NOTHING_TO_UNDO: {
+    ar: "لم تدفع هذه البطاقة شيئاً على هذا الطلب، أو أُلغي دفعها من قبل.",
+    en: "This card paid nothing on this order, or its payment was undone already.",
+  },
   INSUFFICIENT_STOCK: {
     ar: "لا يكفي المخزون لتأكيد الطلب: عدّل الكميات أو المخزون ثم أعد المحاولة.",
     en: "There is not enough stock to confirm the order: change the quantities or the stock, then try again.",
@@ -215,10 +219,18 @@ export function giftCardError(error: unknown, lang: "ar" | "en"): string {
   return lang === "ar" ? "تعذّر إتمام العملية." : "That could not be done.";
 }
 
+/** A move's note in the reader's words, for the notes the database writes itself. */
+export function moveNote(note: string, lang: "ar" | "en"): string {
+  const known: Record<string, { ar: string; en: string }> = {
+    "Payment undone": { ar: "أُلغي الدفع بها", en: "Payment undone" },
+  };
+  return known[note]?.[lang] ?? note;
+}
+
 export const MOVE_WORDS: Record<string, { ar: string; en: string }> = {
   issued: { ar: "أُصدرت", en: "Issued" },
   redeemed: { ar: "دُفع بها طلب", en: "Paid an order" },
-  returned: { ar: "أُعيد إليها من طلب أُلغي", en: "Returned from a released order" },
+  returned: { ar: "أُعيد إليها من طلب", en: "Returned from an order" },
   voided: { ar: "أُلغيت", en: "Voided" },
 };
 
