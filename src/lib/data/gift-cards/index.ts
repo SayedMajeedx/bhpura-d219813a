@@ -2,6 +2,7 @@ import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { readAll } from "../read-all";
+import type { OrderCardMove } from "@/features/gift-cards/lib/card-payments";
 
 /**
  * A store's gift cards (migration 20261101100000). Staff read them; every change goes through
@@ -44,11 +45,36 @@ export async function fetchGiftCardMoves(brandId: string, cardId: string): Promi
   return (data ?? []) as GiftCardMove[];
 }
 
+/** The card moves that name one order (payments and what was given back), with each card's code. */
+export async function fetchOrderGiftCardMoves(
+  brandId: string,
+  orderId: string,
+): Promise<OrderCardMove[]> {
+  const { data, error } = await supabase
+    .from("gift_card_movements")
+    .select("gift_card_id, kind, amount, created_at, gift_cards(code, status)")
+    .eq("brand_id", brandId)
+    .eq("order_id", orderId)
+    .in("kind", ["redeemed", "returned"])
+    .order("created_at", { ascending: true })
+    .limit(200);
+  if (error) throw error;
+  return (data ?? []).map((row) => ({
+    gift_card_id: row.gift_card_id,
+    kind: row.kind,
+    amount: Number(row.amount),
+    code: row.gift_cards?.code ?? null,
+    status: row.gift_cards?.status ?? null,
+  }));
+}
+
 export const giftCardKeys = {
   all: (brandId: string) => ["gift-cards", brandId] as const,
   list: (brandId: string) => [...giftCardKeys.all(brandId), "list"] as const,
   moves: (brandId: string, cardId: string) =>
     [...giftCardKeys.all(brandId), "moves", cardId] as const,
+  order: (brandId: string, orderId: string) =>
+    [...giftCardKeys.all(brandId), "order", orderId] as const,
 };
 
 export const giftCardQueries = {
@@ -63,6 +89,12 @@ export const giftCardQueries = {
       queryKey: giftCardKeys.moves(brandId, cardId),
       queryFn: () => fetchGiftCardMoves(brandId, cardId),
       enabled: Boolean(brandId && cardId),
+    }),
+  order: (brandId: string, orderId: string) =>
+    queryOptions({
+      queryKey: giftCardKeys.order(brandId, orderId),
+      queryFn: () => fetchOrderGiftCardMoves(brandId, orderId),
+      enabled: Boolean(brandId && orderId),
     }),
 };
 
@@ -138,6 +170,24 @@ export async function redeemGiftCardOnOrder(
     balance: Number(reply.balance ?? 0),
     owed: Number(reply.owed ?? 0),
     confirmed: reply.confirmed === true,
+  };
+}
+
+/** A card's payment on an order given back to the card (migration 20261223100000). */
+export async function undoGiftCardPayment(
+  orderId: string,
+  cardId: string,
+): Promise<{ amount: number; balance: number; owed: number }> {
+  const { data, error } = await supabase.rpc("undo_gift_card_payment", {
+    p_order_id: orderId,
+    p_card_id: cardId,
+  });
+  if (error) throw error;
+  const reply = (data ?? {}) as Record<string, unknown>;
+  return {
+    amount: Number(reply.amount ?? 0),
+    balance: Number(reply.balance ?? 0),
+    owed: Number(reply.owed ?? 0),
   };
 }
 

@@ -10,6 +10,7 @@ import { useProfileOptional } from "@/lib/profile-context";
 import { invalidateOrders } from "@/lib/data/orders/mutations";
 import { invalidateGiftCards, redeemGiftCardOnOrder } from "@/lib/data/gift-cards";
 import { giftCardError, orderGiftCardOffer } from "../lib/gift-cards";
+import { OrderGiftCardsPaid } from "./OrderGiftCardsPaid";
 
 type PayableOrder = {
   id: string;
@@ -65,6 +66,14 @@ export function OrderGiftCardPayment({
             {money(paid)}
           </span>
         </p>
+      )}
+      {paid > 0 && order.id && (
+        <OrderGiftCardsPaid
+          order={order}
+          canUndo={canTake && !waiting}
+          currency={currency}
+          lang={lang}
+        />
       )}
       {offer && canTake && (!open || waiting) && (
         <>

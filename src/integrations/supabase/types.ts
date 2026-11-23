@@ -12668,6 +12668,10 @@ export type Database = {
         Args: { p_reason: string; p_sale_id: string };
         Returns: undefined;
       };
+      rls_expression_once_per_request: {
+        Args: { expr: string };
+        Returns: string;
+      };
       rpc_adjust_variant_stock: {
         Args: {
           p_location: string;
@@ -13369,6 +13373,7 @@ export type Database = {
         Args: { p_order_id: string };
         Returns: undefined;
       };
+      staff_brand_id: { Args: never; Returns: string };
       staff_session_verified: { Args: never; Returns: boolean };
       store_offer_reaches: {
         Args: { p_get?: boolean; p_line: Json; p_offer: Json };
@@ -13611,6 +13616,10 @@ export type Database = {
       transfer_stock_to_incubator_batch: {
         Args: { p_incubator_id: string; p_items: Json; p_notes?: string };
         Returns: number;
+      };
+      undo_gift_card_payment: {
+        Args: { p_card_id: string; p_order_id: string };
+        Returns: Json;
       };
       undo_purchase_order_receipts: {
         Args: {

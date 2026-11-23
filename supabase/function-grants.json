@@ -461,6 +461,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
+    "undo_gift_card_payment(p_order_id uuid, p_card_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
     "register_customer_push_device(p_brand_slug text, p_token text, p_enabled boolean, p_order_updates boolean, p_marketing boolean, p_platform text, p_device_name text, p_token_provider text)": {
       "anon": false,
       "authenticated": true,

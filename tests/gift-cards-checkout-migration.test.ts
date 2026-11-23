@@ -4,12 +4,14 @@ import paymentState from "../supabase/migrations/20261012130000_payment_state_is
 import stepOne from "../supabase/migrations/20261101100000_gift_cards.sql?raw";
 import stepTwo from "../supabase/migrations/20261102100000_gift_cards_checkout.sql?raw";
 import draftConfirms from "../supabase/migrations/20261222100000_gift_card_confirms_draft_order.sql?raw";
+import undoPayment from "../supabase/migrations/20261223100000_undo_gift_card_payment.sql?raw";
 
 // Gift cards, step two (migration 20261102100000), run in a real Postgres with step one and the
 // live payment state trigger: a shopper's card on the order they have just placed, the checkout's
 // balance preview, staff taking a part on a transfer order, and the transfer approval counting what
 // cards paid instead of writing over it. With migration 20261222100000: staff taking a card on an
-// admin draft confirm it in the same step, and a card that cannot be taken leaves it a draft.
+// admin draft confirm it in the same step, and a card that cannot be taken leaves it a draft. With
+// migration 20261223100000: staff undo a card's payment on an order, the card getting it back.
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const BRAND = "00000000-0000-4000-8000-0000000000b1";
@@ -57,6 +59,8 @@ const SCHEMA = `
   CREATE FUNCTION public.order_advance_due(p uuid) RETURNS numeric LANGUAGE sql
     AS $$ SELECT advance_due FROM public.orders WHERE id = p $$;
   CREATE TABLE public.bookings (order_id uuid, deposit_amount numeric, late_payment_slot_taken_at timestamptz);
+  CREATE TABLE public.activity_logs (brand_id uuid NOT NULL, user_id uuid, action text NOT NULL,
+    message_en text NOT NULL, message_ar text NOT NULL, order_id uuid);
 `;
 
 let db: PGlite;
@@ -125,6 +129,7 @@ beforeAll(async () => {
   await db.exec(stepOne);
   await db.exec(stepTwo);
   await db.exec(draftConfirms);
+  await db.exec(undoPayment);
 });
 
 describe("a card at checkout", () => {
@@ -282,6 +287,100 @@ describe("staff taking a card on an order typed in the admin", () => {
     const card = await issue(20);
     const draft = await order(20, { status: "draft" });
     expect((await atCheckout(draft, card.code)).error).toMatch(/ORDER_NOT_PAYABLE/);
+  });
+});
+
+describe("undoing a card's payment on an order", () => {
+  const take = async (id: string, code: string, amount?: number) => {
+    await staff();
+    const reply = await as(
+      "authenticated",
+      "SELECT public.redeem_gift_card_on_order($1, $2, $3) AS r",
+      [id, code, amount ?? null],
+    );
+    if (reply.error) throw new Error(reply.error);
+  };
+  const undo = async (id: string, cardId: string) => {
+    await staff();
+    return as("authenticated", "SELECT public.undo_gift_card_payment($1, $2) AS r", [id, cardId]);
+  };
+  const balanceOf = async (cardId: string) =>
+    Number(
+      (
+        await db.query<{ b: string }>("SELECT balance AS b FROM public.gift_cards WHERE id = $1", [
+          cardId,
+        ])
+      ).rows[0].b,
+    );
+
+  it("gives the card back what it paid, and the order owes it again", async () => {
+    const card = await issue(50);
+    const id = await order(37, { channel: "admin", status: "draft", payment_method: "cod" });
+    await take(id, card.code);
+    const reply = await undo(id, card.id);
+    expect(reply.error).toBeNull();
+    expect(reply.rows[0].r).toEqual({ amount: 37, balance: 50, owed: 37 });
+    expect(await balanceOf(card.id)).toBe(50);
+    expect(await row(id)).toEqual({ advance_paid: 0, gift_card_paid: 0, payment_status: "unpaid" });
+    // The order a card confirmed stays confirmed, and its activity says what was undone.
+    const status = (
+      await db.query<{ status: string }>("SELECT status FROM public.orders WHERE id = $1", [id])
+    ).rows[0].status;
+    expect(status).toBe("confirmed");
+    const log = (
+      await db.query<{ action: string; message_en: string }>(
+        "SELECT action, message_en FROM public.activity_logs WHERE order_id = $1",
+        [id],
+      )
+    ).rows;
+    expect(log).toEqual([
+      {
+        action: "gift_card_payment_undone",
+        message_en: expect.stringContaining(card.code.slice(-4)),
+      },
+    ]);
+  });
+
+  it("keeps the other card's and the staff's payments, and undoes once", async () => {
+    const wrong = await issue(20);
+    const right = await issue(30);
+    const id = await order(80, { channel: "admin", payment_method: "cod", advance_paid: 10 });
+    await take(id, wrong.code);
+    await take(id, right.code);
+    expect(await row(id)).toMatchObject({ advance_paid: 60, gift_card_paid: 50 });
+    expect((await undo(id, wrong.id)).rows[0].r).toEqual({ amount: 20, balance: 20, owed: 40 });
+    expect(await row(id)).toEqual({
+      advance_paid: 40,
+      gift_card_paid: 30,
+      payment_status: "partially_paid",
+    });
+    expect((await undo(id, wrong.id)).error).toMatch(/GIFT_CARD_NOTHING_TO_UNDO/);
+    // The card can pay again, and the moves still add up to its balance.
+    const sum = (
+      await db.query<{ s: string }>(
+        "SELECT sum(amount) AS s FROM public.gift_card_movements WHERE gift_card_id = $1",
+        [wrong.id],
+      )
+    ).rows[0].s;
+    expect(Number(sum)).toBe(20);
+  });
+
+  it("is refused for a voided card, another store's staff and a card that never paid it", async () => {
+    const card = await issue(20);
+    const id = await order(50, { channel: "admin", payment_method: "cod" });
+    await take(id, card.code);
+    const unused = await issue(10);
+    expect((await undo(id, unused.id)).error).toMatch(/GIFT_CARD_NOTHING_TO_UNDO/);
+    await db.exec(`SET test.staff_of = '${OTHER}'`);
+    expect(
+      (await as("authenticated", "SELECT public.undo_gift_card_payment($1, $2)", [id, card.id]))
+        .error,
+    ).toMatch(/ORDER_NOT_FOUND/);
+    await db.exec(`UPDATE public.gift_cards SET status = 'voided' WHERE id = '${card.id}'`);
+    expect((await undo(id, card.id)).error).toMatch(/GIFT_CARD_VOIDED/);
+    expect(await row(id)).toMatchObject({ gift_card_paid: 20 });
+    const anon = await as("anon", "SELECT public.undo_gift_card_payment($1, $2)", [id, card.id]);
+    expect(anon.error).toMatch(/permission denied/);
   });
 });
 

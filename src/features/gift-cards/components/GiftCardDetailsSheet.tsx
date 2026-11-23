@@ -12,10 +12,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { formatMoney } from "@/lib/format";
+import { useProfileOptional } from "@/lib/profile-context";
+import { invalidateOrders } from "@/lib/data/orders/mutations";
 import {
   giftCardQueries,
   invalidateGiftCards,
+  undoGiftCardPayment,
   voidGiftCard,
   type GiftCard,
   type GiftCardPurchase,
@@ -28,10 +32,16 @@ import {
   cardOrigin,
   cardState,
   giftCardError,
+  moveNote,
 } from "../lib/gift-cards";
+import { undoableOrders } from "../lib/card-payments";
 import { GiftCardShare } from "./GiftCardShare";
 
-/** One card: what it holds, its code and message, its moves, and voiding it with a reason. */
+/**
+ * One card: what it holds, its code and message, its moves, voiding it with a reason, and undoing
+ * a payment it made on an order by mistake (on that order's latest payment, while it still holds
+ * money there: `undo_gift_card_payment`).
+ */
 export function GiftCardDetailsSheet({
   card,
   brandId,
@@ -55,11 +65,14 @@ export function GiftCardDetailsSheet({
   const qc = useQueryClient();
   const [reason, setReason] = useState("");
   const [voiding, setVoiding] = useState(false);
+  const [undoing, setUndoing] = useState(false);
+  const canUndo = useProfileOptional()?.hasPermission?.("manage_orders") ?? false;
   const moves = useQuery({
     ...giftCardQueries.moves(brandId, card?.id ?? ""),
     enabled: Boolean(card),
   }).data;
   if (!card) return null;
+  const undoable = undoableOrders(moves ?? []);
   const state = cardState(card, localToday());
   const money = (n: number) => formatMoney(n, card.currency, lang);
 
@@ -74,6 +87,39 @@ export function GiftCardDetailsSheet({
       toast.error(giftCardError(error, lang));
     } finally {
       setVoiding(false);
+    }
+  };
+
+  const undoPayment = async (orderId: string, held: number) => {
+    const ok = await confirmDialog({
+      title: isAr ? "إلغاء دفع البطاقة على هذا الطلب؟" : "Undo this card's payment on the order?",
+      description: isAr
+        ? "يعود المبلغ إلى البطاقة، ويعود الطلب مستحقاً له."
+        : "The amount goes back to the card, and the order owes it again.",
+      confirmLabel: isAr ? "إلغاء الدفع" : "Undo payment",
+      destructive: true,
+      facts: [
+        { label: isAr ? "البطاقة" : "Card", value: <bdi dir="ltr">{card.code}</bdi> },
+        {
+          label: isAr ? "يعود إلى البطاقة" : "Back to the card",
+          value: <bdi dir="ltr">{money(held)}</bdi>,
+        },
+      ],
+    });
+    if (!ok) return;
+    setUndoing(true);
+    try {
+      const result = await undoGiftCardPayment(orderId, card.id);
+      await Promise.all([invalidateGiftCards(qc, brandId), invalidateOrders(qc, brandId)]);
+      toast.success(
+        isAr
+          ? `أُعيد ${money(result.amount)} إلى البطاقة.`
+          : `${money(result.amount)} went back to the card.`,
+      );
+    } catch (error) {
+      toast.error(giftCardError(error, lang));
+    } finally {
+      setUndoing(false);
     }
   };
 
@@ -142,7 +188,11 @@ export function GiftCardDetailsSheet({
                     <span className="text-muted-foreground" dir="ltr">
                       {new Date(move.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-GB")}
                     </span>
-                    {move.note && <span className="block text-muted-foreground">{move.note}</span>}
+                    {move.note && (
+                      <span className="block text-muted-foreground">
+                        {moveNote(move.note, lang)}
+                      </span>
+                    )}
                     {move.order_id && (
                       <Link
                         to="/admin/b/$slug/orders/$id"
@@ -152,6 +202,26 @@ export function GiftCardDetailsSheet({
                         {isAr ? "عرض الطلب" : "View order"}
                       </Link>
                     )}
+                    {move.order_id &&
+                      canUndo &&
+                      card.status !== "voided" &&
+                      undoable.get(move.order_id)?.moveId === move.id && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="mt-1 h-7 px-2 text-xs"
+                          disabled={undoing}
+                          onClick={() =>
+                            void undoPayment(
+                              move.order_id as string,
+                              undoable.get(move.order_id as string)?.held ?? 0,
+                            )
+                          }
+                        >
+                          {isAr ? "إلغاء الدفع على هذا الطلب" : "Undo this payment"}
+                        </Button>
+                      )}
                   </span>
                   <span className="shrink-0 font-mono" dir="ltr">
                     {Number(move.amount) > 0 ? "+" : "−"}
