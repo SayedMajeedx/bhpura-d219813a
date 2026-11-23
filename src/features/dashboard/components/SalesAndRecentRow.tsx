@@ -50,7 +50,7 @@ export function SalesAndRecentRow({
   const recentArrived = useArrivedAfterWait(recentOrdersQ.isPending);
   const salesArrived = useArrivedAfterWait(figuresLoading);
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+    <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-5">
       {isCatalog ? (
         <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-4 h-full">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-border-subtle">
@@ -150,7 +150,7 @@ export function SalesAndRecentRow({
           </Card>
         ) : (
           <Card
-            className={`min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col space-y-3${salesArrived ? " t-skel-reveal" : ""}`}
+            className={`min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex h-full flex-col space-y-3${salesArrived ? " t-skel-reveal" : ""}`}
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -172,7 +172,8 @@ export function SalesAndRecentRow({
               </span>
             </div>
 
-            <div className="h-40 min-w-0 w-full overflow-hidden sm:h-44">
+            {/* At least 160px, and as tall as the latest orders beside it: the two cards end level. */}
+            <div className="min-h-40 min-w-0 w-full flex-1 overflow-hidden sm:min-h-44">
               <DailySalesChart
                 series={figures?.dailySeries ?? []}
                 currency={currency}
