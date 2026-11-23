@@ -40,7 +40,7 @@ export function ProductGallery({
   // On a wide screen the photos stay in view under what is shown of the header while the options,
   // details and reviews beside them scroll (they scrolled away with the page).
   return (
-    <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0 [overflow-anchor:none] md:sticky md:top-[calc(var(--sf-header-offset,0px)+1.5rem)] md:self-start md:transition-[top] md:duration-(--motion-medium) md:ease-(--motion-ease-smooth)">
+    <div className="sf-under-header md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full min-w-0 [overflow-anchor:none] md:sticky md:top-[calc(var(--sf-header-offset,0px)+1.5rem)] md:self-start md:transition-[top] md:duration-(--motion-medium) md:ease-(--motion-ease-smooth)">
       {/* The frame and its thumbnails share one width, centred in the column. */}
       <div
         className="mx-auto w-full"

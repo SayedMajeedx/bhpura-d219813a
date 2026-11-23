@@ -16,12 +16,24 @@ type ResponsiveImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet"> 
   mobileSrc?: string | null;
 };
 
+/**
+ * A photo that has nothing drawn yet when the page wakes fades in once it has loaded, instead of
+ * painting in bands over a grey box (the animation review of 2026-11-22; the fade is
+ * storefront-motion.css's `img[data-photo]`, in the store only). One already drawn, or the hero's
+ * (high priority), is left as it is: nothing is hidden that a shopper could already see.
+ */
+export function waitToFadeIn(img: HTMLImageElement | null) {
+  if (!img || img.dataset.photo) return;
+  if (!img.complete && img.naturalWidth === 0) img.dataset.photo = "loading";
+}
+
 export function ResponsiveImage({
   src,
   preset = "card",
   quality,
   sizes,
   onError,
+  onLoad,
   mobileSrc,
   ...props
 }: ResponsiveImageProps) {
@@ -92,6 +104,13 @@ export function ResponsiveImage({
       fetchPriority={isHighPriority ? "high" : props.fetchPriority}
       loading={isHighPriority ? "eager" : (props.loading ?? "lazy")}
       decoding={isHighPriority ? "sync" : (props.decoding ?? "async")}
+      ref={isHighPriority ? undefined : waitToFadeIn}
+      onLoad={(event) => {
+        if (event.currentTarget.dataset.photo === "loading") {
+          event.currentTarget.dataset.photo = "loaded";
+        }
+        onLoad?.(event);
+      }}
       onError={(event) => {
         if (!fallback) {
           setFallback(true);

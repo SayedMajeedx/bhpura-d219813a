@@ -88,10 +88,14 @@ export function StoreShell() {
         {
           ...style,
           "--sf-header-h": `${headerHeight}px`,
-          // What sticks under the header (the gallery, a menu's tabs) sits under what is shown of it.
-          "--sf-header-offset": headerHidden ? "0px" : `${headerHeight}px`,
         } as React.CSSProperties
       }
+      // What sticks under the header (`.sf-under-header`: the gallery, a menu's tabs) reads
+      // `--sf-header-offset`, which this attribute sets to 0 while the header is away
+      // (storefront-motion.css). Writing the offset on this element itself restyled every
+      // element of the page each time the header left or came back, at the start of a scroll
+      // (the animation review of 2026-11-22); the attribute restyles those few alone.
+      data-header-hidden={headerHidden ? "true" : undefined}
     >
       {/* Note: `html.lang-ar body` in styles.css pins the admin Arabic stack
           (Readex Pro first) and outspecifies anything set here. It is harmless
@@ -126,9 +130,7 @@ export function StoreShell() {
         }}
       >
         {/* Checkout keeps the logo and a way back; whether the store takes orders now stays. */}
-        {!isCheckout && <AnnouncementBar />}
-        <StoreStatusBanner />
-        {isCheckout ? <CheckoutHeader /> : <StoreHeader />}
+        <HeaderContent isCheckout={isCheckout} />
       </div>
       {/* At least the first screen under the header: while a page draws its loading state the
           footer (about 700px on a phone) would fill the screen and then be pushed down, which
@@ -151,3 +153,14 @@ export function StoreShell() {
     </div>
   );
 }
+
+/** The header's contents: not drawn again when the header only leaves or comes back. */
+const HeaderContent = React.memo(function HeaderContent({ isCheckout }: { isCheckout: boolean }) {
+  return (
+    <>
+      {!isCheckout && <AnnouncementBar />}
+      <StoreStatusBanner />
+      {isCheckout ? <CheckoutHeader /> : <StoreHeader />}
+    </>
+  );
+});

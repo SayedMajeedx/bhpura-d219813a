@@ -105,7 +105,7 @@ export function MenuHome({
       {sections.length > 1 && (
         <nav
           aria-label={t("أقسام القائمة", "Menu sections")}
-          className="sticky z-30 mt-4 border-b border-border bg-background/95 backdrop-blur transition-[top] duration-(--motion-medium) ease-(--motion-ease-smooth)"
+          className="sf-under-header sticky z-30 mt-4 border-b border-border bg-background/95 backdrop-blur transition-[top] duration-(--motion-medium) ease-(--motion-ease-smooth)"
           // Under what is shown of the header: it leaves on a scroll down (useAutoHideHeader).
           style={{ top: "var(--sf-header-offset, 0px)" }}
         >

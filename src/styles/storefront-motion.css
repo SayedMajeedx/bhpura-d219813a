@@ -42,6 +42,30 @@
   transition-delay: 320ms;
 }
 
+/* A photo with nothing drawn when the page woke fades in once loaded (`waitToFadeIn` in
+   responsive-media.tsx). An animation, not a transition: a card's photo keeps its own. */
+.storefront-shell img[data-photo="loading"] {
+  opacity: 0;
+}
+.storefront-shell img[data-photo="loaded"] {
+  animation: sf-photo-in var(--motion-fast) var(--motion-ease-smooth);
+}
+@keyframes sf-photo-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* What sticks under the store's header sits under what is shown of it: the header's height, or
+   0 while it is away (StoreShell's `data-header-hidden`). Set here, on these few, so the header
+   leaving restyles them alone and not every element of the page. */
+.sf-under-header {
+  --sf-header-offset: var(--sf-header-h, 0px);
+}
+.storefront-shell[data-header-hidden="true"] .sf-under-header {
+  --sf-header-offset: 0px;
+}
+
 /* Subtle fade in for floating elements / modals: a modal's open (motion.css). */
 .sf-fade-in {
   animation: sfFadeIn var(--motion-fast) var(--motion-ease-smooth) forwards;
