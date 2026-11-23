@@ -63,10 +63,9 @@ const confirm = vi.hoisted(() => ({ confirmDialog: vi.fn(async () => true) }));
 vi.mock("../src/components/ui/confirm-dialog", () => confirm);
 vi.mock("@/components/ui/confirm-dialog", () => confirm);
 vi.mock("@/lib/data/gift-cards", async () => await import("../src/lib/data/gift-cards"));
-vi.mock("../src/lib/data/orders/mutations", () => ({
-  invalidateOrders: vi.fn(async () => undefined),
-}));
-vi.mock("@/lib/data/orders/mutations", () => ({ invalidateOrders: vi.fn(async () => undefined) }));
+const orders = vi.hoisted(() => ({ invalidateOrders: vi.fn(async () => undefined) }));
+vi.mock("../src/lib/data/orders/mutations", () => orders);
+vi.mock("@/lib/data/orders/mutations", () => orders);
 const brand = { id: "b1", slug: "pura", name_en: "Pura Line", name_ar: "بيورا لاين" };
 vi.mock("../src/lib/brand-context", () => ({ useBrand: () => brand }));
 vi.mock("@/lib/brand-context", () => ({ useBrand: () => brand }));
@@ -89,7 +88,8 @@ vi.mock("@/lib/profile-context", () => ({
   useProfileOptional: () => ({ hasPermission: () => profile.allowed }),
   useProfile: () => ({ hasPermission: () => profile.allowed }),
 }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+const toasts = vi.hoisted(() => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("sonner", () => toasts);
 vi.mock("@tanstack/react-router", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   Link: ({ children, params }: { children: React.ReactNode; params: { id: string } }) => (
@@ -172,18 +172,26 @@ describe("a card's rules", () => {
     ).toEqual({
       owed: 50,
       mustCoverAll: false,
+      confirms: false,
     });
     expect(
       rules.orderGiftCardOffer({ total: 80, advance_paid: 0, payment_method: "card" }),
     ).toEqual({
       owed: 80,
       mustCoverAll: true,
+      confirms: false,
     });
     expect(
       rules.orderGiftCardOffer({ total: 80, advance_paid: 0, payment_method: "benefit" }),
-    ).toEqual({ owed: 80, mustCoverAll: false });
+    ).toEqual({ owed: 80, mustCoverAll: false, confirms: false });
     expect(rules.orderGiftCardOffer({ total: 80, advance_paid: 80 })).toBeNull();
     expect(rules.orderGiftCardOffer({ total: 80, status: "cancelled" })).toBeNull();
+    // An order typed in the admin is a draft until its first step: taking a card confirms it.
+    expect(rules.orderGiftCardOffer({ total: 37, status: "draft" })).toEqual({
+      owed: 37,
+      mustCoverAll: false,
+      confirms: true,
+    });
   });
 
   it("word the database's refusals", () => {
@@ -249,8 +257,12 @@ describe("the gift cards page", () => {
 describe("paying an order with a card", () => {
   it("takes the card and the order shows what it paid", async () => {
     profile.allowed = true;
-    data.redeemGiftCardOnOrder.mockResolvedValueOnce({ amount: 30, balance: 0, owed: 50 });
-    const setOrder = vi.fn();
+    data.redeemGiftCardOnOrder.mockResolvedValueOnce({
+      amount: 30,
+      balance: 0,
+      owed: 50,
+      confirmed: false,
+    });
     const order = {
       id: "o1",
       brand_id: "b1",
@@ -259,19 +271,52 @@ describe("paying an order with a card", () => {
       payment_method: "cod",
       gift_card_paid: 0,
     };
-    wrap(<OrderGiftCardPayment order={order} setOrder={setOrder} currency="BHD" lang="en" />);
+    wrap(<OrderGiftCardPayment order={order} currency="BHD" lang="en" />);
     fireEvent.click(screen.getByRole("button", { name: "Pay with a gift card" }));
     fireEvent.change(screen.getByLabelText("Card code"), { target: { value: "abcd efgh jkmn" } });
     fireEvent.click(screen.getByRole("button", { name: "Pay with the card" }));
     await waitFor(() =>
       expect(data.redeemGiftCardOnOrder).toHaveBeenCalledWith("o1", "abcd efgh jkmn", null),
     );
-    const patch = setOrder.mock.calls[0][0] as (o: typeof order) => typeof order;
-    expect(patch(order)).toMatchObject({
-      advance_paid: 30,
-      gift_card_paid: 30,
-      payment_status: "partially_paid",
+    // The order is read again from the database, never patched in the editor's copy (which
+    // would read as unsaved changes and keep the saved order from the page).
+    await waitFor(() =>
+      expect(orders.invalidateOrders).toHaveBeenCalledWith(expect.anything(), "b1"),
+    );
+  });
+
+  it("takes a card on an admin draft, saying it confirms the order", async () => {
+    profile.allowed = true;
+    data.redeemGiftCardOnOrder.mockResolvedValueOnce({
+      amount: 37,
+      balance: 13,
+      owed: 0,
+      confirmed: true,
     });
+    const draft = { id: "o9", brand_id: "b1", status: "draft", total: 37, advance_paid: 0 };
+    wrap(<OrderGiftCardPayment order={draft} currency="BHD" lang="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Pay with a gift card" }));
+    expect(screen.getByText(/paying with the card confirms it/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Card code"), { target: { value: "ABCD-EFGH-JKMN" } });
+    fireEvent.click(screen.getByRole("button", { name: "Pay with the card" }));
+    await waitFor(() =>
+      expect(toasts.toast.success).toHaveBeenCalledWith(
+        expect.stringContaining("The order is confirmed."),
+      ),
+    );
+  });
+
+  it("waits until the order is saved: unsaved changes, or a new order", () => {
+    profile.allowed = true;
+    const order = { id: "o4", brand_id: "b1", status: "draft", total: 37, advance_paid: 0 };
+    const view = wrap(<OrderGiftCardPayment order={order} unsaved currency="BHD" lang="en" />);
+    expect(screen.getByRole("button", { name: "Pay with a gift card" })).toBeDisabled();
+    expect(
+      screen.getByText("Save the order first, then pay with the gift card."),
+    ).toBeInTheDocument();
+    view.unmount();
+    wrap(<OrderGiftCardPayment order={{ ...order, id: "" }} currency="BHD" lang="en" />);
+    expect(screen.getByRole("button", { name: "Pay with a gift card" })).toBeDisabled();
   });
 
   it("asks a card order's card to pay everything, and offers nothing to staff without order rights", () => {
@@ -279,7 +324,6 @@ describe("paying an order with a card", () => {
     const view = wrap(
       <OrderGiftCardPayment
         order={{ id: "o2", total: 40, advance_paid: 0, payment_method: "card" }}
-        setOrder={vi.fn()}
         currency="BHD"
         lang="en"
       />,
@@ -292,7 +336,6 @@ describe("paying an order with a card", () => {
     const none = wrap(
       <OrderGiftCardPayment
         order={{ id: "o3", total: 40, advance_paid: 0 }}
-        setOrder={vi.fn()}
         currency="BHD"
         lang="en"
       />,

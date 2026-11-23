@@ -169,6 +169,10 @@ const ERRORS: Record<string, { ar: string; en: string }> = {
   },
   ORDER_NOTHING_OWED: { ar: "لا شيء متبقٍ على هذا الطلب.", en: "Nothing is owed on this order." },
   ORDER_NOT_FOUND: { ar: "لم يُعثر على الطلب.", en: "The order was not found." },
+  INSUFFICIENT_STOCK: {
+    ar: "لا يكفي المخزون لتأكيد الطلب: عدّل الكميات أو المخزون ثم أعد المحاولة.",
+    en: "There is not enough stock to confirm the order: change the quantities or the stock, then try again.",
+  },
   GIFT_CARD_AMOUNTS_INVALID: {
     ar: "حتى 8 قيم أكبر من صفر.",
     en: "Up to 8 amounts above zero.",
@@ -218,20 +222,15 @@ export const MOVE_WORDS: Record<string, { ar: string; en: string }> = {
   voided: { ar: "أُلغيت", en: "Voided" },
 };
 
-const RELEASED = new Set([
-  "draft",
-  "cancelled",
-  "canceled",
-  "refunded",
-  "voided",
-  "failed",
-  "returned",
-]);
+// An order that takes no card. A draft does: taking a card confirms it (migration 20261222100000).
+const RELEASED = new Set(["cancelled", "canceled", "refunded", "voided", "failed", "returned"]);
 
 /**
  * Whether staff can take a gift card on an order, and what it would have to cover: what is still
  * owed, and on a card-payment order all of it (the database's own rule: a shopper's card charge
  * asks for what a gift card leaves only at checkout). Null when the order takes no payment.
+ * `confirms`: the order is a draft (one typed in the admin before its first step), which taking the
+ * card confirms, as `redeem_gift_card_on_order` does.
  */
 export function orderGiftCardOffer(order: {
   status?: string | null;
@@ -239,11 +238,16 @@ export function orderGiftCardOffer(order: {
   payment_method?: string | null;
   total?: number | null;
   advance_paid?: number | null;
-}): { owed: number; mustCoverAll: boolean } | null {
-  if (RELEASED.has(String(order.status ?? "").toLowerCase())) return null;
+}): { owed: number; mustCoverAll: boolean; confirms: boolean } | null {
+  const status = String(order.status ?? "").toLowerCase();
+  if (RELEASED.has(status)) return null;
   if (String(order.payment_status ?? "").toLowerCase() === "refunded") return null;
   const owed = round3(Number(order.total ?? 0) - Number(order.advance_paid ?? 0));
   if (owed <= 0) return null;
   const method = String(order.payment_method ?? "").toLowerCase();
-  return { owed, mustCoverAll: method === "card" || method === "tap" };
+  return {
+    owed,
+    mustCoverAll: method === "card" || method === "tap",
+    confirms: status === "draft",
+  };
 }
