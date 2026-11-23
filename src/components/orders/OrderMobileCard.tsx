@@ -24,6 +24,8 @@ interface OrderMobileCardProps {
   renderPrimaryAction: (order: OrderListRow) => React.ReactNode;
   selected: boolean;
   onSelectedChange: (selected: boolean) => void;
+  /** It came in live since the list was drawn: it slides in. */
+  arrived?: boolean;
 }
 
 export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
@@ -35,6 +37,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   renderPrimaryAction,
   selected,
   onSelectedChange,
+  arrived = false,
 }) => {
   const orderNo = useOrderNumber();
   const isAr = lang === "ar";
@@ -51,7 +54,10 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   const settled = orderIsSettled(order);
 
   return (
-    <div className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5">
+    <div
+      data-arrived={arrived ? "true" : undefined}
+      className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5"
+    >
       {/* Top Row: Invoice # + Amount */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">

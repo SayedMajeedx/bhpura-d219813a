@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Save, Undo2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MorphText } from "@/components/motion/MorphText";
 import { claimBottomBar, releaseBottomBar } from "@/lib/bottom-bar-store";
 
 export interface SettingsStickySaveBarProps {
@@ -110,19 +111,20 @@ export function SettingsStickySaveBar({
             size="sm"
             className="h-8 sm:h-8.5 px-3.5 sm:px-4 text-xs font-medium rounded-full shadow-sm gap-1.5 transition-transform active:scale-95"
           >
+            {/* The label changes in place ("Save" to "Saving…"), its width easing, instead of
+                the button being swapped for another. */}
             {isSaving ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-                <span>{isAr ? "جارٍ الحفظ..." : "Saving..."}</span>
-              </>
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
             ) : (
-              <>
-                <Save className="h-3.5 w-3.5 shrink-0" />
-                <span>{isAr ? "حفظ" : "Save"}</span>
-                <kbd className="hidden sm:inline-flex items-center text-xs font-mono opacity-60 bg-primary-foreground/20 rounded px-1 ms-1">
-                  ⌘S
-                </kbd>
-              </>
+              <Save className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <MorphText
+              text={isSaving ? (isAr ? "جارٍ الحفظ…" : "Saving…") : isAr ? "حفظ" : "Save"}
+            />
+            {!isSaving && (
+              <kbd className="hidden sm:inline-flex items-center text-xs font-mono opacity-60 bg-primary-foreground/20 rounded px-1 ms-1">
+                ⌘S
+              </kbd>
             )}
           </Button>
         </div>

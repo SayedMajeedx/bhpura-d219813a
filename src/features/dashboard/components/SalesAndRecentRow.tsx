@@ -8,6 +8,7 @@ import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivity
 import type { DashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import type { DashboardFigures } from "@/features/dashboard/lib/dashboard-figures";
 import { DailySalesChart } from "@/features/dashboard/components/DailySalesChart";
+import { useArrivedAfterWait } from "@/lib/motion/use-arrived";
 
 /**
  * The period's sales day by day (a catalog store: its most asked-about products) beside the
@@ -45,6 +46,9 @@ export function SalesAndRecentRow({
   recentOrdersQ: DashboardData["recentOrdersQ"];
   slug: string;
 }) {
+  // What waited for its data fades in from its loading shape.
+  const recentArrived = useArrivedAfterWait(recentOrdersQ.isPending);
+  const salesArrived = useArrivedAfterWait(figuresLoading);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
       {isCatalog ? (
@@ -145,7 +149,9 @@ export function SalesAndRecentRow({
             </div>
           </Card>
         ) : (
-          <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
+          <Card
+            className={`min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full${salesArrived ? " t-skel-reveal" : ""}`}
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h3 className="text-base font-bold font-heading flex items-center gap-2">
@@ -208,13 +214,15 @@ export function SalesAndRecentRow({
             <Skeleton className="h-9 w-full" />
           </div>
         ) : (
-          <DashboardActivityQueue
-            lang={isAr ? "ar" : "en"}
-            slug={slug}
-            orders={recentOrdersQ.data ?? []}
-            currency={currency}
-            locale={locale}
-          />
+          <div className={recentArrived ? "t-skel-reveal" : undefined}>
+            <DashboardActivityQueue
+              lang={isAr ? "ar" : "en"}
+              slug={slug}
+              orders={recentOrdersQ.data ?? []}
+              currency={currency}
+              locale={locale}
+            />
+          </div>
         )}
       </Card>
     </div>

@@ -10,6 +10,7 @@ import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
 import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
 import { OrdersWorkQueue } from "@/components/orders/OrdersWorkQueue";
 import { OrderMobileCard } from "@/components/orders/OrderMobileCard";
+import { useArrivals } from "@/lib/motion/use-arrived";
 import { toast } from "sonner";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
@@ -410,6 +411,10 @@ function OrdersList() {
   };
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
+  // An order that comes in live slides into the list instead of jumping it (the whole list's
+  // ids, so a page turned shows nothing as new).
+  const orderIds = useMemo(() => ordersQ.data?.map((o) => o.id), [ordersQ.data]);
+  const arrivedIds = useArrivals(orderIds);
   // Paid and handed-over orders stay on record: only the others of a selection are deleted.
   // Worked out after `orders` exists: read before it, ticking any order took the page down.
   const deletableSelected = new Set(
@@ -674,6 +679,7 @@ function OrdersList() {
                   }
                   fulfillmentBadge={fulfillmentDetails}
                   renderPrimaryAction={(ord: any) => renderContextualButton(ord)}
+                  arrived={arrivedIds.has(o.id)}
                   selected={selectedOrderIds.has(o.id)}
                   onSelectedChange={(selected) =>
                     setSelectedOrderIds((current) => {
@@ -694,6 +700,7 @@ function OrdersList() {
               lang={lang}
               slug={slug}
               orders={paginatedOrders}
+              arrivedIds={arrivedIds}
               isLoading={ordersQ.isLoading}
               isError={ordersQ.isError}
               getPaymentBadge={(o) => {

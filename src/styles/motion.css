@@ -583,6 +583,31 @@
   animation: t-skel-reveal var(--reveal-dur) var(--reveal-ease) backwards;
 }
 
+/* ---------------------------------------------------------------- A row that arrives live */
+/* An order that comes into an open list (`useArrivals`) slides in from a little above and
+   shows the list's hover tint for a moment, instead of the rows jumping down under the reader.
+   `backwards` only: a filter or transform kept after it would change the row's stacking. */
+@keyframes t-row-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(calc(-1 * var(--motion-distance-base)));
+    background-color: color-mix(in oklab, var(--primary) 8%, transparent);
+  }
+}
+[data-arrived="true"] {
+  animation: t-row-arrive var(--motion-slow) var(--motion-ease-smooth) backwards;
+}
+
+/* ---------------------------------------------------------------- Page to page */
+/* A move to another page cross-fades, briefly (the router's `page` view transition, path changes
+   only: a filter or a tab in the address never fades). The admin's and the store's chrome are the
+   same on both pages, so only what changed is seen to move. */
+html:active-view-transition-type(page)::view-transition-old(root),
+html:active-view-transition-type(page)::view-transition-new(root) {
+  animation-duration: var(--motion-quick);
+  animation-timing-function: var(--motion-ease-smooth);
+}
+
 /* ---------------------------------------------------------------- Shimmer text */
 /* The published two layers, drawn in the text's own colour so it works on a primary button
    as on a card: the words at a lower strength, and over them the same words cut out of a
