@@ -167,7 +167,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
                     type="button"
                     onClick={() => handleQuickPreset(st)}
                     className={cn(
-                      "flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-bold transition-all touch-manipulation",
+                      "flex items-center justify-center gap-1.5 rounded-xl border px-2.5 py-2 text-xs font-bold transition touch-manipulation",
                       isActive
                         ? `${PAYMENT_BADGE_CLASSES[st]} ring-2 ring-primary/30 shadow-2xs`
                         : "bg-muted/30 border-border-strong text-muted-foreground hover:text-foreground hover:bg-muted/60",

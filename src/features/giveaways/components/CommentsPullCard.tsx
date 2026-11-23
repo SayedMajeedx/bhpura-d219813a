@@ -80,7 +80,7 @@ export function CommentsPullCard({ detail }: { detail: GiveawayDetail }) {
           className="h-2 w-full overflow-hidden rounded-full bg-muted"
         >
           <div
-            className="h-full rounded-full bg-primary transition-all"
+            className="h-full rounded-full bg-primary transition-[width]"
             style={{ width: `${percent}%` }}
           />
         </div>

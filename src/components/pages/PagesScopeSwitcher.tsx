@@ -52,7 +52,7 @@ export function PagesScopeSwitcher({
             type="button"
             onClick={() => onScopeChange(s.id)}
             className={cn(
-              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition-all duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

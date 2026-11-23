@@ -180,7 +180,7 @@ export function TrustBadgesEditor({
             <div
               key={item.id || index}
               className={cn(
-                "rounded-xl border p-3.5 bg-background/60 transition-all space-y-3",
+                "rounded-xl border p-3.5 bg-background/60 transition space-y-3",
                 item.enabled
                   ? "border-border shadow-2xs"
                   : "border-border-subtle opacity-60 bg-muted/20",
@@ -238,7 +238,7 @@ export function TrustBadgesEditor({
                         onClick={() => handleUpdateItem(index, { color: preset.id })}
                         title={isAr ? preset.label_ar : preset.label_en}
                         className={cn(
-                          "h-5 w-5 rounded-full transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring",
+                          "h-5 w-5 rounded-full transition flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring",
                           item.color === preset.id
                             ? "ring-2 ring-primary ring-offset-1 scale-110"
                             : "opacity-70 hover:opacity-100",

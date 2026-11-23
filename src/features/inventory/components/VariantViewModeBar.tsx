@@ -29,7 +29,7 @@ export function VariantViewModeBar({
         <button
           type="button"
           onClick={() => setViewMode("quick")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
             viewMode === "quick"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -45,7 +45,7 @@ export function VariantViewModeBar({
         <button
           type="button"
           onClick={() => setViewMode("barcodes")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
             viewMode === "barcodes"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
@@ -58,7 +58,7 @@ export function VariantViewModeBar({
         <button
           type="button"
           onClick={() => setViewMode("full")}
-          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
             viewMode === "full"
               ? "bg-primary text-primary-foreground shadow-xs"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"

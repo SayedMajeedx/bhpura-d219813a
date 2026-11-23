@@ -65,7 +65,7 @@ export function DiscountsScopeSwitcher({
             type="button"
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer sm:whitespace-nowrap sm:px-3 sm:py-1.5",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition duration-200 cursor-pointer sm:whitespace-nowrap sm:px-3 sm:py-1.5",
               isActive
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

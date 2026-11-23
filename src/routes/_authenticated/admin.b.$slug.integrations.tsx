@@ -267,7 +267,7 @@ function IntegrationsPage() {
                   return (
                     <Card
                       key={row.id}
-                      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
+                      className="overflow-hidden border border-border-subtle shadow-lg rounded-2xl bg-card p-3 sm:p-6 transition duration-300 hover:border-primary/40 hover:shadow-xl"
                     >
                       <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex items-center gap-3 min-w-0">
@@ -305,7 +305,7 @@ function IntegrationsPage() {
                                 ? `تعديل ${preset?.label ?? row.provider}`
                                 : `Edit ${preset?.label ?? row.provider}`
                             }
-                            className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8 transition-all"
+                            className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8 transition"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -318,7 +318,7 @@ function IntegrationsPage() {
                                 ? `حذف ${preset?.label ?? row.provider}`
                                 : `Delete ${preset?.label ?? row.provider}`
                             }
-                            className="h-11 w-11 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8 transition-all"
+                            className="h-11 w-11 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8 transition"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

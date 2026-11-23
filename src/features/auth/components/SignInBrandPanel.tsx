@@ -141,7 +141,7 @@ export function SignInBrandPanel({
               <li
                 key={en}
                 className={cn(
-                  "flex items-center gap-2 rounded-full border border-current/15 px-3 py-1.5 text-xs transition-opacity duration-500",
+                  "flex items-center gap-2 rounded-full border border-current/15 px-3 py-1.5 text-xs transition-opacity duration-(--motion-very-slow)",
                   i === index ? "opacity-100" : "opacity-55",
                 )}
               >

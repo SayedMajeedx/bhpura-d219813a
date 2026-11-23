@@ -103,7 +103,7 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
             variant="ghost"
             size="sm"
             onClick={() => onChange({ plan_type: "annual" })}
-            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition-all flex items-start gap-3 ${
+            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition flex items-start gap-3 ${
               data.plan_type === "annual"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"
@@ -129,7 +129,7 @@ export function StepAdminPlan({ data, onChange, isAr }: StepAdminPlanProps) {
             variant="ghost"
             size="sm"
             onClick={() => onChange({ plan_type: "trial" })}
-            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition-all flex items-start gap-3 ${
+            className={`h-auto w-full min-w-0 justify-start whitespace-normal rounded-xl border p-3.5 text-start transition flex items-start gap-3 ${
               data.plan_type === "trial"
                 ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                 : "border-border bg-card hover:bg-muted/40"

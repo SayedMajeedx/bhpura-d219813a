@@ -51,7 +51,7 @@ export function VariantAttributesEditor({
   );
 
   return (
-    <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
+    <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-(--motion-quick) relative z-40">
       {sizeAxis.visible && (
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -59,7 +59,7 @@ export function VariantAttributesEditor({
               {sizeAxis.label}
             </span>
             <input
-              className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
               value={draft.size}
               onChange={(e) => onDraftChange({ size: e.target.value })}
               placeholder={sizeAxis.label}
@@ -70,7 +70,7 @@ export function VariantAttributesEditor({
               {isAr ? "الوحدة" : "Unit"}
             </span>
             <select
-              className="h-9 w-full px-2 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              className="h-9 w-full px-2 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
               value={draft.sizeUnit}
               onChange={(e) => onDraftChange({ sizeUnit: e.target.value })}
             >
@@ -91,7 +91,7 @@ export function VariantAttributesEditor({
                 {colorAxis.label}
               </span>
               <input
-                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
                 value={draft.color}
                 onChange={(e) => onDraftChange({ color: e.target.value })}
                 placeholder={colorAxis.label}
@@ -104,7 +104,7 @@ export function VariantAttributesEditor({
                 {fabricAxis.label}
               </span>
               <input
-                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
                 value={draft.fabric}
                 onChange={(e) => onDraftChange({ fabric: e.target.value })}
                 placeholder={fabricAxis.label}
@@ -117,7 +117,7 @@ export function VariantAttributesEditor({
                 {fourAxis.label}
               </span>
               <input
-                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
                 value={draft.optionFour}
                 onChange={(e) => onDraftChange({ optionFour: e.target.value })}
                 placeholder={fourAxis.label}
@@ -130,7 +130,7 @@ export function VariantAttributesEditor({
                 {fiveAxis.label}
               </span>
               <input
-                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
                 value={draft.optionFive}
                 onChange={(e) => onDraftChange({ optionFive: e.target.value })}
                 placeholder={fiveAxis.label}
@@ -154,7 +154,7 @@ export function VariantAttributesEditor({
           </button>
           <button
             type="button"
-            className="h-8 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 text-xs font-bold transition-all shadow-xs"
+            className="h-8 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 text-xs font-bold transition shadow-xs"
             onClick={onSave}
           >
             <Check className="h-3.5 w-3.5" />

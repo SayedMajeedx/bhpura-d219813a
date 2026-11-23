@@ -30,7 +30,7 @@ export function DashboardKpiCards({
         return (
           <Card
             key={k.label}
-            className={`relative overflow-hidden p-3 sm:p-4 transition-all duration-300 hover:shadow-md border border-border rounded-2xl bg-card ${k.border}`}
+            className={`relative overflow-hidden p-3 sm:p-4 transition duration-300 hover:shadow-md border border-border rounded-2xl bg-card ${k.border}`}
           >
             <div className="min-w-0">
               {/* On a phone the label has the card's width and the change sits under it: beside

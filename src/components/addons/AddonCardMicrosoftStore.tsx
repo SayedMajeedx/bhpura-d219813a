@@ -69,7 +69,7 @@ export function AddonCardMicrosoftStore({
     <div
       onClick={() => onSelect(manifest.id)}
       className={cn(
-        "group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 cursor-pointer transition-all duration-200 hover:border-primary/40 hover:shadow-md",
+        "group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 cursor-pointer transition duration-200 hover:border-primary/40 hover:shadow-md",
         isInstalled && !isDisabled && "border-primary/30 bg-card/95",
         isDisabled && "opacity-75 bg-muted/20",
       )}

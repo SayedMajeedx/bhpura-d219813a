@@ -26,7 +26,7 @@ export function OrderMobileSectionNav({
         type="button"
         onClick={() => setMobileTab("items")}
         className={cn(
-          "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+          "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition touch-manipulation min-h-10",
           mobileTab === "items"
             ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
             : "text-muted-foreground hover:text-foreground",
@@ -39,7 +39,7 @@ export function OrderMobileSectionNav({
         type="button"
         onClick={() => setMobileTab("customer")}
         className={cn(
-          "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+          "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition touch-manipulation min-h-10",
           mobileTab === "customer"
             ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
             : "text-muted-foreground hover:text-foreground",
@@ -53,7 +53,7 @@ export function OrderMobileSectionNav({
           type="button"
           onClick={() => setMobileTab("activity")}
           className={cn(
-            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+            "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition touch-manipulation min-h-10",
             mobileTab === "activity"
               ? "bg-card text-foreground shadow-xs border border-border-strong font-bold"
               : "text-muted-foreground hover:text-foreground",

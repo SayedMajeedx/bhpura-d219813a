@@ -186,7 +186,7 @@ export function TrustBadgeIconPicker({
                       setOpen(false);
                     }}
                     className={cn(
-                      "flex items-start gap-2.5 p-2 rounded-xl text-start transition-all border min-h-[56px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+                      "flex items-start gap-2.5 p-2 rounded-xl text-start transition border min-h-[56px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
                       isSelected
                         ? "border-primary bg-primary/10 text-foreground shadow-xs"
                         : "border-border-subtle hover:border-border hover:bg-muted/50 text-foreground",

@@ -30,7 +30,7 @@ export function renderPickupQueueAction(
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
+        className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition dark:bg-violet-700 dark:hover:bg-violet-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();
@@ -201,7 +201,7 @@ export function renderDeliveryQueueAction(
     return (
       <Button
         size="sm"
-        className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
+        className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition dark:bg-violet-700 dark:hover:bg-violet-800"
         disabled={updatingOrderId !== null}
         onClick={(e) => {
           e.stopPropagation();

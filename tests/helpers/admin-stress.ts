@@ -244,15 +244,29 @@ export type StressTweaks = {
   settings?: (settings: Record<string, unknown>) => Record<string, unknown>;
 };
 
+/**
+ * A token shaped like Supabase's for the fake session: the admin checks a sign-in on the device
+ * (`getClaims`), which decodes it; its HS256 header makes supabase-js confirm it with
+ * /auth/v1/user, which these tests answer. Its subject is the session's own user.
+ */
+export function mockAccessToken(sub: string): string {
+  const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  return [
+    part({ alg: "HS256", typ: "JWT" }),
+    part({ sub, role: "authenticated", aud: "authenticated", exp: 4102444800, aal: "aal1" }),
+    "test-signature",
+  ].join(".");
+}
+
 export async function signInWithStressData(
   page: Page,
   lang: "ar" | "en",
   tweaks: StressTweaks = {},
 ) {
   await page.addInitScript(
-    ({ user, lang }) => {
+    ({ user, lang, token }) => {
       const session = {
-        access_token: "mock-access-token",
+        access_token: token,
         token_type: "bearer",
         expires_in: 3600,
         refresh_token: "mock-refresh-token",
@@ -268,7 +282,7 @@ export async function signInWithStressData(
         /* storage is not available */
       }
     },
-    { user, lang },
+    { user, lang, token: mockAccessToken(user.id) },
   );
 
   await page.route("**/auth/v1/user**", (route) =>

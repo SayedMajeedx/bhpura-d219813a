@@ -367,7 +367,7 @@ export function OrderImporterModal({
       {controlledIsOpen === undefined && (
         <Button
           variant="outline"
-          className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-xl border-primary/20 px-4 text-xs font-semibold shadow-sm transition-all hover:border-primary/50 sm:inline-flex"
+          className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-xl border-primary/20 px-4 text-xs font-semibold shadow-sm transition hover:border-primary/50 sm:inline-flex"
           onClick={() => setIsOpen(true)}
         >
           <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
@@ -401,7 +401,7 @@ export function OrderImporterModal({
                   <button
                     key={p.id}
                     onClick={() => setPreset(p.id as any)}
-                    className={`p-4 rounded-xl border text-start transition-all ${
+                    className={`p-4 rounded-xl border text-start transition ${
                       preset === p.id
                         ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary"
                         : "border-border hover:border-border hover:bg-muted/30"
@@ -422,7 +422,7 @@ export function OrderImporterModal({
                   {isAr ? "استخدام مطابقة مخصصة..." : "Use custom column mapper..."}
                 </Button>
 
-                <label className="bg-primary text-primary-foreground text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2">
+                <label className="bg-primary text-primary-foreground text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl transition cursor-pointer flex items-center gap-2">
                   <Upload className="h-4 w-4" />
                   {isAr ? "اختر ملف الـ CSV" : "Select CSV File"}
                   <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />

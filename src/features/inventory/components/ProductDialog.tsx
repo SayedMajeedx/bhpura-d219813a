@@ -180,7 +180,7 @@ export function ProductDialog({
                 setActiveDialogTab("basic");
               }}
               aria-pressed={activeDialogTab === "basic"}
-              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition duration-200 touch-manipulation ${
                 activeDialogTab === "basic"
                   ? "bg-background text-primary shadow-sm scale-[0.98]"
                   : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
@@ -196,7 +196,7 @@ export function ProductDialog({
                 setActiveDialogTab("media");
               }}
               aria-pressed={activeDialogTab === "media"}
-              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition duration-200 touch-manipulation ${
                 activeDialogTab === "media"
                   ? "bg-background text-primary shadow-sm scale-[0.98]"
                   : "text-muted-foreground hover:bg-background/40 hover:text-foreground"
@@ -212,7 +212,7 @@ export function ProductDialog({
                 setActiveDialogTab("customizer");
               }}
               aria-pressed={activeDialogTab === "customizer"}
-              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition-all duration-200 touch-manipulation ${
+              className={`flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-2.5 sm:flex-1 rounded-lg text-xs font-bold transition duration-200 touch-manipulation ${
                 activeDialogTab === "customizer"
                   ? "bg-background text-primary shadow-sm scale-[0.98]"
                   : "text-muted-foreground hover:bg-background/40 hover:text-foreground"

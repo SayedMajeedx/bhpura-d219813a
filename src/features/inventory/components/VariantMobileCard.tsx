@@ -102,14 +102,14 @@ export function VariantMobileCard({
 
   return (
     <div
-      className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
+      className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 border-b border-border-subtle pb-2.5">
         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
-            className="h-4.5 w-4.5 rounded border-input text-primary focus:ring-primary cursor-pointer transition-all"
+            className="h-4.5 w-4.5 rounded border-input text-primary focus:ring-primary cursor-pointer transition"
             checked={isSelected}
             onChange={onToggleSelect}
           />

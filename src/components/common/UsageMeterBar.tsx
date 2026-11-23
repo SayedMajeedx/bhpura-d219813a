@@ -45,7 +45,7 @@ export function UsageMeterBar({
   const barTrackColor = is100 ? "bg-destructive" : is80 ? "bg-amber-500" : "bg-primary";
 
   return (
-    <div className="space-y-2 p-3.5 rounded-2xl border border-border-strong bg-card/60 shadow-sm transition-all hover:border-border">
+    <div className="space-y-2 p-3.5 rounded-2xl border border-border-strong bg-card/60 shadow-sm transition hover:border-border">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           {Icon && (
@@ -90,7 +90,10 @@ export function UsageMeterBar({
         <div className="space-y-1">
           <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
             <div
-              className={cn("h-full transition-all duration-500 rounded-full", barTrackColor)}
+              className={cn(
+                "h-full transition-[width] duration-(--motion-very-slow) rounded-full",
+                barTrackColor,
+              )}
               style={{ width: `${percent}%` }}
             />
           </div>

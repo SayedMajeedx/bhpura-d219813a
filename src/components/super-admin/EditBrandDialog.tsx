@@ -251,7 +251,7 @@ export function EditBrandDialog({
         <Button
           onClick={save}
           disabled={saving}
-          className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
+          className="shadow-sm transition duration-200 hover:scale-[1.01] active:scale-95"
         >
           {t("common.save")}
         </Button>

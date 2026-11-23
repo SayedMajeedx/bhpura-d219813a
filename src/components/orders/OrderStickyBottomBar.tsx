@@ -100,7 +100,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
         <Button
           onClick={onSave}
           disabled={saving}
-          className="relative overflow-hidden min-h-11 flex-1 rounded-2xl font-bold shadow-lg shadow-primary/25 text-sm bg-gradient-to-b from-primary via-primary/95 to-primary/85 text-primary-foreground border border-white/30 hover:opacity-95 active:scale-[0.97] transition-all duration-150 touch-manipulation"
+          className="relative overflow-hidden min-h-11 flex-1 rounded-2xl font-bold shadow-lg shadow-primary/25 text-sm bg-gradient-to-b from-primary via-primary/95 to-primary/85 text-primary-foreground border border-white/30 hover:opacity-95 active:scale-[0.97] transition duration-(--motion-quick) touch-manipulation"
         >
           {/* Specular light highlight */}
           <div
@@ -126,14 +126,14 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
           )}
         </Button>
       ) : primaryAction ? (
-        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-2xl [&>button]:font-bold [&>button]:text-sm [&>button]:shadow-md [&>button]:active:scale-[0.97] [&>button]:transition-all">
+        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-2xl [&>button]:font-bold [&>button]:text-sm [&>button]:shadow-md [&>button]:active:scale-[0.97] [&>button]:transition">
           {primaryAction}
         </div>
       ) : isReadOnly && canUnlockEditing && onUnlock ? (
         <Button
           type="button"
           onClick={onUnlock}
-          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 active:scale-[0.97] transition-all"
+          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 active:scale-[0.97] transition"
         >
           <Unlock className="me-2 h-4 w-4 shrink-0" />
           <span>{isAr ? "تعديل الطلب" : "Edit Order"}</span>
@@ -146,7 +146,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
             const el = document.getElementById("sec-overview");
             if (el) el.scrollIntoView({ behavior: "smooth" });
           }}
-          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-card/85 dark:bg-card/50 text-foreground border-white/50 dark:border-white/15 backdrop-blur-md shadow-xs active:scale-[0.97] transition-all"
+          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-card/85 dark:bg-card/50 text-foreground border-white/50 dark:border-white/15 backdrop-blur-md shadow-xs active:scale-[0.97] transition"
         >
           {isAr ? "نظرة عامة على الطلب" : "Review Order Details"}
         </Button>
@@ -179,7 +179,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
               type="button"
               variant="outline"
               size="icon"
-              className="h-11 w-11 shrink-0 rounded-2xl bg-card/80 dark:bg-card/50 border-white/50 dark:border-white/15 backdrop-blur-md touch-manipulation shadow-xs active:scale-90 transition-all duration-150"
+              className="h-11 w-11 shrink-0 rounded-2xl bg-card/80 dark:bg-card/50 border-white/50 dark:border-white/15 backdrop-blur-md touch-manipulation shadow-xs active:scale-90 transition duration-(--motion-quick)"
               aria-label={isAr ? "المزيد من الخيارات" : "More options"}
             >
               <MoreHorizontal className="h-5 w-5 text-foreground" />

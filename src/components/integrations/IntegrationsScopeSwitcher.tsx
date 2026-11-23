@@ -83,7 +83,7 @@ export function IntegrationsScopeSwitcher({
         aria-pressed={isActive}
         onClick={() => onScopeChange(scope.id)}
         className={cn(
-          "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
           mobile ? "min-w-0 flex-1" : "whitespace-nowrap",
           isActive
             ? "bg-primary text-primary-foreground shadow-sm"
@@ -118,7 +118,7 @@ export function IntegrationsScopeSwitcher({
               type="button"
               aria-label={isAr ? "المزيد من فئات التكامل" : "More integration categories"}
               className={cn(
-                "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 activeSecondary
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

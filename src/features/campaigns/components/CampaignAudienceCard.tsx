@@ -69,7 +69,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setSent({})}
-                  className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                  className="shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                 >
                   {isAr ? "إعادة تعيين" : "Reset"}
                 </Button>
@@ -78,7 +78,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
             <Button
               size="sm"
               variant="outline"
-              className="h-auto min-h-9 whitespace-normal border-dashed font-medium shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-secondary hover:shadow active:scale-95"
+              className="h-auto min-h-9 whitespace-normal border-dashed font-medium shadow-sm transition duration-200 hover:scale-[1.01] hover:bg-secondary hover:shadow active:scale-95"
               onClick={exportBulkCampaignCsv}
               disabled={eligibleSelectedCount === 0}
             >
@@ -87,7 +87,7 @@ export function CampaignAudienceCard({ page }: { page: CampaignsPageState }) {
             </Button>
             <Button
               size="sm"
-              className="h-auto min-h-9 whitespace-normal bg-primary font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-primary/90 hover:shadow active:scale-95"
+              className="h-auto min-h-9 whitespace-normal bg-primary font-medium text-primary-foreground shadow-sm transition duration-200 hover:scale-[1.01] hover:bg-primary/90 hover:shadow active:scale-95"
               onClick={launchBulkCampaign}
               disabled={eligibleSelectedCount === 0}
             >

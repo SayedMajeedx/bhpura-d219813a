@@ -77,7 +77,7 @@ export function StorefrontLivePreview({
             size="sm"
             onClick={() => setDevice("mobile")}
             className={cn(
-              "h-8 px-2.5 text-xs font-semibold gap-1.5 transition-all rounded-lg",
+              "h-8 px-2.5 text-xs font-semibold gap-1.5 transition rounded-lg",
               device === "mobile" ? "shadow-xs" : "text-muted-foreground hover:text-foreground",
             )}
             title={isAr ? "معاينة الجوال" : "Mobile view"}
@@ -92,7 +92,7 @@ export function StorefrontLivePreview({
             size="sm"
             onClick={() => setDevice("desktop")}
             className={cn(
-              "h-8 px-2.5 text-xs font-semibold gap-1.5 transition-all rounded-lg",
+              "h-8 px-2.5 text-xs font-semibold gap-1.5 transition rounded-lg",
               device === "desktop" ? "shadow-xs" : "text-muted-foreground hover:text-foreground",
             )}
             title={isAr ? "معاينة الكمبيوتر" : "Desktop view"}
@@ -134,7 +134,7 @@ export function StorefrontLivePreview({
       {/* 2. Device Mockup Frame */}
       <div
         className={cn(
-          "w-full flex justify-center transition-all duration-300",
+          "w-full flex justify-center transition-[max-width] duration-300",
           device === "mobile" ? "max-w-[360px] sm:max-w-[380px]" : "max-w-full",
         )}
       >

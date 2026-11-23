@@ -673,7 +673,7 @@ export function StoreReadinessChecklist({
 
   return (
     <div
-      className={`rounded-xl border border-border bg-card shadow-xs transition-all ${
+      className={`rounded-xl border border-border bg-card shadow-xs transition ${
         collapsed ? "p-3 sm:p-3.5" : "p-4 sm:p-5"
       }`}
     >
@@ -767,7 +767,7 @@ export function StoreReadinessChecklist({
       {!collapsed && (
         <div className="mt-3.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
           <div
-            className={`h-full transition-all duration-500 ${
+            className={`h-full transition-[width] duration-(--motion-very-slow) ${
               isAllComplete ? "bg-emerald-500" : "bg-primary"
             }`}
             style={{ width: `${progressPercent}%` }}

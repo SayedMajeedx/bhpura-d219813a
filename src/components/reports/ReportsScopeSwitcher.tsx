@@ -114,7 +114,7 @@ export function ReportsScopeSwitcher({ lang, slug }: ReportsScopeSwitcherProps) 
               to={item.path}
               params={{ slug }}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200",
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-xs"
                   : "text-muted-foreground hover:bg-background/80 hover:text-foreground",

@@ -159,7 +159,7 @@ export function AddonStoreHero({
         <div className="relative shrink-0 flex items-center justify-center lg:w-80">
           <div
             onClick={() => onSelectAddon(currentId)}
-            className="group cursor-pointer w-full rounded-2xl border border-border bg-card/90 p-5 shadow-sm transition-all hover:border-primary/40 hover:shadow-md"
+            className="group cursor-pointer w-full rounded-2xl border border-border bg-card/90 p-5 shadow-sm transition hover:border-primary/40 hover:shadow-md"
           >
             <div className="flex items-center justify-between pb-3 border-b border-border">
               <div className="flex items-center gap-2">
@@ -208,7 +208,7 @@ export function AddonStoreHero({
                 key={id}
                 onClick={() => setCurrentIndex(idx)}
                 className={cn(
-                  "h-1.5 rounded-full transition-all",
+                  "h-1.5 rounded-full transition-[width,background-color]",
                   idx === currentIndex
                     ? "w-6 bg-primary"
                     : "w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/60",

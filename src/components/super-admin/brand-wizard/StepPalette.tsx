@@ -147,7 +147,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => handleMoodChange(m)}
-                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md transition-all capitalize font-medium ${
+                className={`h-auto rounded-md text-xs px-2.5 py-1 rounded-md transition capitalize font-medium ${
                   data.mood === m
                     ? "bg-background text-foreground shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground"
@@ -297,7 +297,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange({ fontPreset: preset })}
-                className={`h-auto w-full min-w-0 flex-col items-start justify-start gap-0.5 whitespace-normal rounded-xl border p-2.5 text-start transition-all ${
+                className={`h-auto w-full min-w-0 flex-col items-start justify-start gap-0.5 whitespace-normal rounded-xl border p-2.5 text-start transition ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary shadow-xs"
                     : "border-border bg-card hover:bg-muted/40"
@@ -335,7 +335,7 @@ export function StepPalette({ data, onChange, isAr }: StepPaletteProps) {
                 variant="ghost"
                 size="sm"
                 onClick={() => onChange({ radius: r.id })}
-                className={`h-auto w-full min-w-0 whitespace-normal rounded-xl border p-2 text-center transition-all ${
+                className={`h-auto w-full min-w-0 whitespace-normal rounded-xl border p-2 text-center transition ${
                   isSelected
                     ? "border-primary bg-primary/10 ring-1 ring-primary font-medium"
                     : "border-border bg-card hover:bg-muted/40"
