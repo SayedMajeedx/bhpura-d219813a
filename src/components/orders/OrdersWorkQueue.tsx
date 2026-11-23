@@ -62,6 +62,8 @@ interface OrdersWorkQueueProps {
   selectedOrderIds: ReadonlySet<string>;
   onToggleOrder: (orderId: string, selected: boolean) => void;
   onToggleAll: (selected: boolean) => void;
+  /** Orders that came in live since the list was drawn: they slide in. */
+  arrivedIds?: ReadonlySet<string>;
 }
 
 export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
@@ -84,6 +86,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   selectedOrderIds,
   onToggleOrder,
   onToggleAll,
+  arrivedIds,
 }) => {
   const orderNo = useOrderNumber();
   const isAr = lang === "ar";
@@ -169,6 +172,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
               return (
                 <tr
                   key={order.id}
+                  data-arrived={arrivedIds?.has(order.id) ? "true" : undefined}
                   onClick={(e) => {
                     const target = e.target as HTMLElement;
                     if (

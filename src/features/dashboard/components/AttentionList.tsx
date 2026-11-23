@@ -1,4 +1,5 @@
 import { westernNumeralLocale } from "@/lib/format";
+import { useArrivedAfterWait } from "@/lib/motion/use-arrived";
 import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
@@ -43,6 +44,8 @@ export function AttentionList({
   const Chevron = isAr ? ChevronLeft : ChevronRight;
   const heading = isAr ? "يحتاج انتباهك" : "Needs your attention";
 
+  // Shown after its loading shape, it fades in rather than popping in.
+  const reveal = useArrivedAfterWait(loading) ? " t-skel-reveal" : "";
   if (loading) {
     return (
       <section
@@ -61,7 +64,7 @@ export function AttentionList({
     return (
       <section
         aria-label={heading}
-        className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 shadow-2xs"
+        className={`flex items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 shadow-2xs${reveal}`}
       >
         <CheckCircle2 className="h-4 w-4 shrink-0 text-success" aria-hidden />
         <p className="text-sm font-medium text-foreground">
@@ -76,7 +79,7 @@ export function AttentionList({
   return (
     <section
       aria-label={heading}
-      className="overflow-hidden rounded-2xl border border-border bg-card shadow-2xs"
+      className={`overflow-hidden rounded-2xl border border-border bg-card shadow-2xs${reveal}`}
     >
       <h2 className="border-b border-border-subtle px-4 py-2.5 text-sm font-semibold">{heading}</h2>
       <ul className="divide-y divide-border-subtle">

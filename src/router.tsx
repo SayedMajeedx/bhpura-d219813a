@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { pageViewTransition } from "./lib/motion/page-transition";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -26,6 +27,8 @@ export const getRouter = () => {
     // moment before the page, which reads as a stutter.
     defaultPendingMs: 300,
     defaultPendingMinMs: 250,
+    // A move to another page cross-fades briefly; a filter or tab in the address does not.
+    defaultViewTransition: pageViewTransition(),
   });
 
   return router;
