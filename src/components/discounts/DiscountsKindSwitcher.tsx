@@ -1,8 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, Sparkles, Tag } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
 
 export type DiscountKind = "codes" | "offers";
 
@@ -46,31 +46,25 @@ export function DiscountsKindSwitcher({
       <div
         role="tablist"
         aria-label={isAr ? "نوع الخصم" : "Kind of discount"}
-        className="t-tabs relative grid grid-cols-2 gap-1.5 rounded-xl border border-border-subtle bg-muted/40 p-1 sm:inline-flex"
+        className={cn(SEGMENT_TRACK, "grid w-full grid-cols-2 sm:inline-flex sm:w-auto")}
       >
         <TabsPill />
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const active = kind === tab.id;
           return (
-            <Button
+            <button
               key={tab.id}
               type="button"
               role="tab"
-              variant="ghost"
               aria-selected={active}
               onClick={() => onKindChange(tab.id)}
-              className={cn(
-                "t-tab h-9 gap-1.5 rounded-lg px-3 text-sm font-semibold",
-                active
-                  ? "bg-background text-foreground shadow-xs hover:bg-background"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
+              className={segmentTab(active)}
             >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>{tab.label}</span>
-              <span className="rounded-full bg-muted px-1.5 text-xs">{tab.count}</span>
-            </Button>
+              <span className={segmentCount(active)}>{tab.count}</span>
+            </button>
           );
         })}
       </div>

@@ -1,6 +1,6 @@
 import React from "react";
-import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
 import type { LucideIcon } from "lucide-react";
 
 export interface InventoryScopeTab {
@@ -37,24 +37,11 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
         type="button"
         onClick={() => onTabChange(tab.id)}
         aria-pressed={isActive}
-        className={cn(
-          "t-tab group inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-colors touch-manipulation focus:outline-hidden focus:ring-2 focus:ring-primary/40",
-          "shrink-0",
-          isActive
-            ? "bg-primary text-primary-foreground shadow-2xs"
-            : "border border-border-subtle text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-        )}
+        className={segmentTab(isActive)}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
-        <span className="whitespace-nowrap">{label}</span>
-        <span
-          className={cn(
-            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-extrabold tabular-nums",
-            isActive ? "bg-primary-foreground/20" : "bg-muted",
-          )}
-        >
-          {tab.count}
-        </span>
+        <span>{label}</span>
+        <span className={segmentCount(isActive)}>{tab.count}</span>
       </button>
     );
   };
@@ -65,7 +52,7 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
     <div
       role="group"
       aria-label={isAr ? "حالات المخزون" : "Inventory views"}
-      className="t-tabs relative -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1 no-scrollbar select-none"
+      className={SEGMENT_TRACK}
     >
       {/* The chosen view's fill slides to the next one (transitions.dev's tabs sliding). */}
       <TabsPill />

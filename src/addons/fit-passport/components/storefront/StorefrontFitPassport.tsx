@@ -250,13 +250,13 @@ export function StorefrontFitPassport({
         <div className="space-y-5 p-5 sm:p-6">
           <Tabs value={profile} onValueChange={(v) => setProfile(v as FitProfileType)}>
             <TabsList
-              className="grid h-auto w-full p-1"
+              className="grid w-full"
               style={{
                 gridTemplateColumns: `repeat(${Math.max(1, fitProfiles.length)}, minmax(0, 1fr))`,
               }}
             >
               {fitProfiles.map((p) => (
-                <TabsTrigger key={p.key} value={p.key} className="gap-2 py-2.5">
+                <TabsTrigger key={p.key} value={p.key}>
                   <Ruler className="size-4" />
                   {isAr
                     ? p.label_ar.startsWith("مقاسات")

@@ -3,6 +3,7 @@ import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TAB, SEGMENT_TAB_IDLE, SEGMENT_TRACK } from "@/components/ui/segmented";
 
 const Tabs = TabsPrimitive.Root;
 
@@ -12,10 +13,8 @@ const TabsList = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <TabsPrimitive.List
     ref={ref}
-    className={cn(
-      "t-tabs relative inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground",
-      className,
-    )}
+    // The one tab bar look (segmented.ts); a page adds only its layout.
+    className={cn(SEGMENT_TRACK, className)}
     {...props}
   >
     {/* The active tab's background slides between tabs (transitions.dev's tabs sliding). */}
@@ -32,7 +31,9 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "t-tab inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+      SEGMENT_TAB,
+      SEGMENT_TAB_IDLE,
+      "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs",
       className,
     )}
     {...props}

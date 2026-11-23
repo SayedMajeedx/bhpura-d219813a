@@ -167,32 +167,20 @@ export function ImportCenterPage() {
 
       {/* Main Tabs Workspace */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex w-full items-center gap-1.5 overflow-x-auto no-scrollbar h-auto p-1 bg-muted/60 border border-border rounded-xl overscroll-contain sm:grid sm:grid-cols-4 sm:h-11">
-          <TabsTrigger
-            value="products"
-            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
-          >
+        <TabsList className="w-full sm:grid sm:grid-cols-4">
+          <TabsTrigger value="products" className="sm:min-w-0">
             <Package className="h-4 w-4 shrink-0" />
             <span>{isAr ? "المنتجات" : "Products"}</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="customers"
-            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
-          >
+          <TabsTrigger value="customers" className="sm:min-w-0">
             <Users className="h-4 w-4 shrink-0" />
             <span>{isAr ? "العملاء" : "Customers"}</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="orders"
-            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
-          >
+          <TabsTrigger value="orders" className="sm:min-w-0">
             <ReceiptText className="h-4 w-4 shrink-0" />
             <span>{isAr ? "الطلبات السابقة" : "Past Orders"}</span>
           </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="shrink-0 whitespace-nowrap min-h-[38px] px-3 text-xs font-semibold gap-1.5 sm:shrink sm:min-w-0 sm:flex-1"
-          >
+          <TabsTrigger value="history" className="sm:min-w-0">
             <Clock className="h-4 w-4 shrink-0" />
             <span>{isAr ? "سجل الترحيل" : "Audit History"}</span>
           </TabsTrigger>

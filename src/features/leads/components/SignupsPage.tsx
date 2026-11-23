@@ -167,11 +167,11 @@ export function SignupsPage() {
         />
       ) : (
         <Tabs defaultValue="waiting">
-          <TabsList className="h-auto max-w-full flex-wrap justify-start">
-            <TabsTrigger value="waiting" className="text-xs">
+          <TabsList className="flex-wrap">
+            <TabsTrigger value="waiting">
               {isAr ? `قائمة الانتظار (${waiting})` : `Waiting list (${waiting})`}
             </TabsTrigger>
-            <TabsTrigger value="newsletter" className="text-xs">
+            <TabsTrigger value="newsletter">
               {isAr ? `المشتركون (${subscribers.length})` : `Newsletter (${subscribers.length})`}
             </TabsTrigger>
           </TabsList>

@@ -228,10 +228,11 @@ describe("Store Readiness Checklist Integration", () => {
     const tabs = screen.getAllByRole("tab");
     expect(tabs.length).toBeGreaterThanOrEqual(5);
     for (const tab of tabs) {
-      // 44px touch targets (AGENTS.md rule #2) and full labels, never truncated.
-      expect(tab.className).toContain("min-h-11");
+      // 44px on a touch screen (AGENTS.md rule #2) and full labels, never truncated: the admin's
+      // one tab look (segmented.ts), the label on one line in the tab.
+      expect(tab.className).toContain("pointer-coarse:min-h-11");
+      expect(tab.className).toContain("whitespace-nowrap");
       const label = within(tab).getByText(tab.getAttribute("aria-label") ?? "");
-      expect(label.className).toContain("whitespace-nowrap");
       expect(label.className).not.toContain("truncate");
     }
     expect(screen.getByRole("tab", { name: "Identity" })).toHaveAttribute("aria-selected", "true");

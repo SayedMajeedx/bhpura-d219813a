@@ -242,7 +242,7 @@ export function AccountPage() {
           >
             <TabsList
               className={cn(
-                "grid w-full h-auto rounded-xl p-1 bg-muted/40 border border-border-subtle mb-6 gap-1",
+                "mb-6 grid w-full",
                 "grid-cols-2",
                 tabCount >= 9
                   ? "sm:grid-cols-9"
@@ -256,44 +256,29 @@ export function AccountPage() {
               )}
             >
               {modules.bookings && (
-                <TabsTrigger
-                  value="bookings"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-                >
+                <TabsTrigger value="bookings" className="sm:min-w-0">
                   <CalendarDays className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("حجوزاتي", "My bookings")}</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger
-                value="orders"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-              >
+              <TabsTrigger value="orders" className="sm:min-w-0">
                 <PackageSearch className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("طلباتي", "My orders")}</span>
               </TabsTrigger>
               {loyaltyOn && (
-                <TabsTrigger
-                  value="loyalty"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-                >
+                <TabsTrigger value="loyalty" className="sm:min-w-0">
                   <Coins className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
                 </TabsTrigger>
               )}
               {showGiftCards && (
-                <TabsTrigger
-                  value="gift-cards"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-                >
+                <TabsTrigger value="gift-cards" className="sm:min-w-0">
                   <Gift className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("بطاقات الهدايا", "Gift cards")}</span>
                 </TabsTrigger>
               )}
               {showReturns && (
-                <TabsTrigger
-                  value="returns"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-                >
+                <TabsTrigger value="returns" className="sm:min-w-0">
                   <RotateCcw className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
                   {customerReturns.length > 0 && (
@@ -304,32 +289,20 @@ export function AccountPage() {
                 </TabsTrigger>
               )}
               {modules.fit_passport && (
-                <TabsTrigger
-                  value="fit"
-                  className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-                >
+                <TabsTrigger value="fit" className="sm:min-w-0">
                   <Ruler className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger
-                value="profile"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-              >
+              <TabsTrigger value="profile" className="sm:min-w-0">
                 <UserIcon className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("البيانات", "Profile")}</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="addresses"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-              >
+              <TabsTrigger value="addresses" className="sm:min-w-0">
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("العناوين", "Addresses")}</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="security"
-                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition text-xs"
-              >
+              <TabsTrigger value="security" className="sm:min-w-0">
                 <Fingerprint className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">{t("الأمان", "Security")}</span>
               </TabsTrigger>

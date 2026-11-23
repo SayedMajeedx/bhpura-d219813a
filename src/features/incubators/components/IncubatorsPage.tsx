@@ -98,7 +98,7 @@ export function IncubatorsPage() {
             isAr={isAr}
           />
           <Tabs value={page.tab} onValueChange={page.setTab} dir={isAr ? "rtl" : "ltr"}>
-            <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsList className="w-full">
               <TabsTrigger value="stock">{isAr ? "البضاعة عندهم" : "Stock"}</TabsTrigger>
               <TabsTrigger value="sales">{isAr ? "المبيعات" : "Sales"}</TabsTrigger>
               <TabsTrigger value="payments">{isAr ? "الدفعات" : "Payments"}</TabsTrigger>

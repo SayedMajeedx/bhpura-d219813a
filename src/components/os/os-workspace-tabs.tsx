@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
 import { type AdminNavItemConfig, workspaceTabs } from "@/config/admin-navigation";
 
 export interface OsWorkspaceTabsProps {
@@ -45,7 +46,7 @@ export function OsWorkspaceTabs({
         className,
       )}
     >
-      <div className="max-w-full px-3 py-1.5 pointer-coarse:py-1 sm:px-4 flex items-center justify-between gap-3 overflow-hidden">
+      <div className="max-w-full px-3 py-1.5 pointer-coarse:py-1 sm:px-4 flex items-center justify-start gap-3 overflow-hidden">
         {/* Workspace Title & Badge (Desktop) */}
         <div className="hidden lg:flex items-center gap-2 shrink-0 pe-2.5 border-e border-border-subtle">
           {WorkspaceIcon && (
@@ -62,7 +63,7 @@ export function OsWorkspaceTabs({
         </div>
 
         {/* Scrollable Tab Strip */}
-        <div className="t-tabs relative flex-1 flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-0.5 overscroll-contain">
+        <div className={cn(SEGMENT_TRACK, "min-w-0 scroll-smooth overscroll-contain")}>
           {/* The current page's fill slides to the next one (transitions.dev's tabs sliding). */}
           <TabsPill />
           {items.map((tab) => {
@@ -77,35 +78,12 @@ export function OsWorkspaceTabs({
                 params={tab.params as any}
                 preload="intent"
                 data-active={isActive ? "true" : "false"}
-                className={cn(
-                  "t-tab group relative inline-flex items-center gap-1.5 min-h-[32px] sm:min-h-[30px] pointer-coarse:min-h-11 px-2.5 sm:px-3 rounded-lg text-xs font-semibold whitespace-nowrap transition duration-(--motion-quick) touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-2xs font-bold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80 bg-background/50 border border-border-subtle",
-                )}
+                className={cn(segmentTab(isActive), "min-h-8")}
               >
-                {TabIcon && (
-                  <TabIcon
-                    className={cn(
-                      "h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-105",
-                      isActive
-                        ? "text-primary-foreground"
-                        : "text-muted-foreground group-hover:text-foreground",
-                    )}
-                  />
-                )}
+                {TabIcon && <TabIcon className="h-3.5 w-3.5 shrink-0" />}
                 <span>{label}</span>
                 {tab.badge !== undefined && (
-                  <span
-                    className={cn(
-                      "inline-flex min-w-[18px] h-[18px] items-center justify-center rounded-full px-1 text-xs font-bold tabular-nums",
-                      isActive
-                        ? "bg-primary-foreground/20 text-primary-foreground"
-                        : "bg-muted text-muted-foreground",
-                    )}
-                  >
-                    {tab.badge}
-                  </span>
+                  <span className={segmentCount(isActive)}>{tab.badge}</span>
                 )}
               </Link>
             );

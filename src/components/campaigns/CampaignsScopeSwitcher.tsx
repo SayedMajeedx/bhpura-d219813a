@@ -1,5 +1,6 @@
 import { Users, Crown, AlertTriangle, UserPlus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
 
 export type CampaignSegment = "All" | "VIP" | "Churn Risk" | "New Buyer";
 
@@ -31,7 +32,12 @@ export function CampaignsScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar rounded-2xl border border-border-subtle bg-muted/40 p-1 overscroll-contain sm:flex">
+    <div
+      role="group"
+      aria-label={isAr ? "جمهور الحملة" : "Campaign audience"}
+      className={SEGMENT_TRACK}
+    >
+      <TabsPill />
       {segments.map((s) => {
         const Icon = s.icon;
         const isActive = activeSegment === s.id;
@@ -41,28 +47,13 @@ export function CampaignsScopeSwitcher({
           <button
             key={s.id}
             type="button"
+            aria-pressed={isActive}
             onClick={() => onSegmentChange(s.id)}
-            className={cn(
-              "flex shrink-0 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition duration-200 cursor-pointer whitespace-nowrap min-h-10 sm:justify-start",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
-                : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
-            )}
+            className={segmentTab(isActive)}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="whitespace-nowrap">{isAr ? s.labelAr : s.labelEn}</span>
-            {count !== undefined && (
-              <span
-                className={cn(
-                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
-                  isActive
-                    ? "bg-primary-foreground text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {count}
-              </span>
-            )}
+            <span>{isAr ? s.labelAr : s.labelEn}</span>
+            {count !== undefined && <span className={segmentCount(isActive)}>{count}</span>}
           </button>
         );
       })}

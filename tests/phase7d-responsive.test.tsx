@@ -37,13 +37,14 @@ describe("Phase 7D responsive configuration workspaces", () => {
     // so full labels stay visible on narrow screens instead of being truncated.
     const rail = container.querySelector(".overflow-x-auto") as HTMLElement | null;
     expect(rail).not.toBeNull();
-    expect(rail!.className).toContain("no-scrollbar");
+    expect(rail!.className).toContain("scrollbar-none");
     const tabButtons = container.querySelectorAll('[role="tab"]');
     expect(tabButtons).toHaveLength(5);
     for (const tab of Array.from(tabButtons)) {
-      expect((tab as HTMLElement).className).toContain("min-h-11");
-      // The label itself never truncates (the desktop-only subtitle may).
-      expect(tab.querySelector(".whitespace-nowrap.font-semibold")).not.toBeNull();
+      // The admin's one tab look (segmented.ts): 44px on a touch screen, a label never cut.
+      expect((tab as HTMLElement).className).toContain("pointer-coarse:min-h-11");
+      expect((tab as HTMLElement).className).toContain("whitespace-nowrap");
+      expect(tab.querySelector(".truncate")).toBeNull();
     }
     fireEvent.click(tabButtons[2]);
     expect(onTabChange).toHaveBeenCalledWith("orders");
