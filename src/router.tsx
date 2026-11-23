@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { pageViewTransition } from "./lib/motion/page-transition";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -27,8 +26,10 @@ export const getRouter = () => {
     // moment before the page, which reads as a stutter.
     defaultPendingMs: 300,
     defaultPendingMinMs: 250,
-    // A move to another page cross-fades briefly; a filter or tab in the address does not.
-    defaultViewTransition: pageViewTransition(),
+    // No view transition between pages: the browser snapshots the old page before React may
+    // draw the new one, which held every admin page back about 270ms (orders to inventory went
+    // from 153ms to 420ms, tests/navigation-perf.spec.ts). The page wrapper's own fade
+    // (`.os-page-transition`) moves without waiting.
   });
 
   return router;
