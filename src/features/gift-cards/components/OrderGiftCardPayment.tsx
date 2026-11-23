@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Gift } from "lucide-react";
 import { toast } from "sonner";
@@ -24,16 +24,22 @@ type PayableOrder = {
 
 /**
  * On an order's money card: what gift cards paid, and taking one as payment (staff who handle
- * orders). On a card-payment order a gift card pays all that is owed, as the database asks.
+ * orders). On a card-payment order a gift card pays all that is owed, as the database asks; on a
+ * draft (an order typed in the admin, before its first step) taking it confirms the order.
+ *
+ * It waits while the order is not saved as shown (`unsaved`, or a new order): the database takes
+ * what the saved order owes. Nothing is written into the editor's copy of the order: the orders'
+ * cache is read again, and the page takes the saved order (paid, confirmed) from it.
  */
-export function OrderGiftCardPayment<T extends PayableOrder>({
+export function OrderGiftCardPayment({
   order,
-  setOrder,
+  unsaved = false,
   currency,
   lang,
 }: {
-  order: T;
-  setOrder: Dispatch<SetStateAction<T | null>>;
+  order: PayableOrder;
+  /** The editor holds changes not saved yet. */
+  unsaved?: boolean;
   currency: string;
   lang: "ar" | "en";
 }) {
@@ -45,6 +51,7 @@ export function OrderGiftCardPayment<T extends PayableOrder>({
   const paid = Number(order.gift_card_paid ?? 0);
   const money = (n: number) => formatMoney(n, currency, lang);
   if (paid <= 0 && (!offer || !canTake)) return null;
+  const waiting = unsaved || !order.id;
 
   return (
     <div className="space-y-2 rounded-xl border border-border-subtle p-3">
@@ -59,22 +66,31 @@ export function OrderGiftCardPayment<T extends PayableOrder>({
           </span>
         </p>
       )}
-      {offer && canTake && !open && (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="w-full gap-1.5"
-          onClick={() => setOpen(true)}
-        >
-          <Gift className="size-4" aria-hidden />
-          {isAr ? "الدفع ببطاقة هدية" : "Pay with a gift card"}
-        </Button>
+      {offer && canTake && (!open || waiting) && (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5"
+            disabled={waiting}
+            onClick={() => setOpen(true)}
+          >
+            <Gift className="size-4" aria-hidden />
+            {isAr ? "الدفع ببطاقة هدية" : "Pay with a gift card"}
+          </Button>
+          {waiting && (
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "احفظ الطلب أولاً، ثم ادفع ببطاقة الهدية."
+                : "Save the order first, then pay with the gift card."}
+            </p>
+          )}
+        </>
       )}
-      {offer && canTake && open && (
+      {offer && canTake && open && !waiting && (
         <GiftCardRedeemForm
           order={order}
-          setOrder={setOrder}
           offer={offer}
           currency={currency}
           lang={lang}
@@ -86,17 +102,15 @@ export function OrderGiftCardPayment<T extends PayableOrder>({
 }
 
 /** The card's code (and the amount, when it may pay a part), and taking it: the open form only. */
-function GiftCardRedeemForm<T extends PayableOrder>({
+function GiftCardRedeemForm({
   order,
-  setOrder,
   offer,
   currency,
   lang,
   onDone,
 }: {
-  order: T;
-  setOrder: Dispatch<SetStateAction<T | null>>;
-  offer: { owed: number; mustCoverAll: boolean };
+  order: PayableOrder;
+  offer: { owed: number; mustCoverAll: boolean; confirms: boolean };
   currency: string;
   lang: "ar" | "en";
   onDone: () => void;
@@ -113,20 +127,15 @@ function GiftCardRedeemForm<T extends PayableOrder>({
     try {
       const asked = !offer.mustCoverAll && amount.trim() ? Number(amount) : null;
       const result = await redeemGiftCardOnOrder(order.id, code, asked);
-      setOrder((current) =>
-        current
-          ? {
-              ...current,
-              gift_card_paid: Number(current.gift_card_paid ?? 0) + result.amount,
-              advance_paid: Number(current.advance_paid ?? 0) + result.amount,
-              payment_status: result.owed <= 0 ? "paid" : "partially_paid",
-            }
-          : current,
-      );
+      const confirmed = result.confirmed
+        ? isAr
+          ? " تأكّد الطلب."
+          : " The order is confirmed."
+        : "";
       toast.success(
         isAr
-          ? `دُفع ${money(result.amount)} ببطاقة الهدية. المتبقي في البطاقة ${money(result.balance)}.`
-          : `${money(result.amount)} paid by gift card. ${money(result.balance)} left on the card.`,
+          ? `دُفع ${money(result.amount)} ببطاقة الهدية. المتبقي في البطاقة ${money(result.balance)}.${confirmed}`
+          : `${money(result.amount)} paid by gift card. ${money(result.balance)} left on the card.${confirmed}`,
       );
       onDone();
       setCode("");
@@ -160,6 +169,13 @@ function GiftCardRedeemForm<T extends PayableOrder>({
           placeholder="XXXX-XXXX-XXXX"
         />
       </div>
+      {offer.confirms && (
+        <p className="text-xs text-muted-foreground">
+          {isAr
+            ? "الطلب مسودة: الدفع بالبطاقة يؤكّده ويحجز قطعه من المخزون."
+            : "This order is a draft: paying with the card confirms it and holds its pieces from stock."}
+        </p>
+      )}
       {offer.mustCoverAll ? (
         <p className="text-xs text-muted-foreground">
           {isAr

@@ -112,7 +112,13 @@ export async function resetGiftCardShareLink(cardId: string): Promise<GiftCard> 
   return data as GiftCard;
 }
 
-export type GiftCardRedemption = { amount: number; balance: number; owed: number };
+/** `confirmed`: the order was a draft, and taking the card confirmed it. */
+export type GiftCardRedemption = {
+  amount: number;
+  balance: number;
+  owed: number;
+  confirmed: boolean;
+};
 
 /** A card taken as payment on an order (at most its balance and what is owed, or `amount`). */
 export async function redeemGiftCardOnOrder(
@@ -131,6 +137,7 @@ export async function redeemGiftCardOnOrder(
     amount: Number(reply.amount ?? 0),
     balance: Number(reply.balance ?? 0),
     owed: Number(reply.owed ?? 0),
+    confirmed: reply.confirmed === true,
   };
 }
 

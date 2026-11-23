@@ -789,6 +789,7 @@ function OrderEditor() {
                 promoInput={promoInput}
                 receiptViewQ={receiptViewQ}
                 removeAdminPromo={removeAdminPromo}
+                giftCardWaits={isDirty}
                 setDiscountMode={setDiscountMode}
                 setDiscountPercentInput={setDiscountPercentInput}
                 setIsEditingFees={setIsEditingFees}

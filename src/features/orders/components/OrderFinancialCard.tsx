@@ -51,6 +51,7 @@ export function OrderFinancialCard({
   promoInput,
   receiptViewQ,
   removeAdminPromo,
+  giftCardWaits = false,
   setDiscountMode,
   setDiscountPercentInput,
   setIsEditingFees,
@@ -85,6 +86,8 @@ export function OrderFinancialCard({
   promoInput: string;
   receiptViewQ: OrderDetailData["receiptViewQ"];
   removeAdminPromo: () => void;
+  /** The editor holds unsaved changes: a gift card waits until they are saved. */
+  giftCardWaits?: boolean;
   setDiscountMode: Dispatch<SetStateAction<"fixed" | "percent">>;
   setDiscountPercentInput: Dispatch<SetStateAction<string>>;
   setIsEditingFees: Dispatch<SetStateAction<boolean>>;
@@ -199,7 +202,7 @@ export function OrderFinancialCard({
 
       <OrderGiftCardPayment
         order={order}
-        setOrder={setOrder}
+        unsaved={giftCardWaits}
         currency={currency}
         lang={lang === "ar" ? "ar" : "en"}
       />

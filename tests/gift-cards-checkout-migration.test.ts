@@ -3,11 +3,13 @@ import { PGlite } from "@electric-sql/pglite";
 import paymentState from "../supabase/migrations/20261012130000_payment_state_is_one_fact.sql?raw";
 import stepOne from "../supabase/migrations/20261101100000_gift_cards.sql?raw";
 import stepTwo from "../supabase/migrations/20261102100000_gift_cards_checkout.sql?raw";
+import draftConfirms from "../supabase/migrations/20261222100000_gift_card_confirms_draft_order.sql?raw";
 
 // Gift cards, step two (migration 20261102100000), run in a real Postgres with step one and the
 // live payment state trigger: a shopper's card on the order they have just placed, the checkout's
 // balance preview, staff taking a part on a transfer order, and the transfer approval counting what
-// cards paid instead of writing over it.
+// cards paid instead of writing over it. With migration 20261222100000: staff taking a card on an
+// admin draft confirm it in the same step, and a card that cannot be taken leaves it a draft.
 vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
 
 const BRAND = "00000000-0000-4000-8000-0000000000b1";
@@ -122,6 +124,7 @@ beforeAll(async () => {
   await db.exec(paymentAmounts);
   await db.exec(stepOne);
   await db.exec(stepTwo);
+  await db.exec(draftConfirms);
 });
 
 describe("a card at checkout", () => {
@@ -218,6 +221,67 @@ describe("staff taking a card", () => {
         ])
       ).error,
     ).toMatch(/GIFT_CARD_MUST_COVER_ONLINE/);
+  });
+});
+
+describe("staff taking a card on an order typed in the admin", () => {
+  const take = async (id: string, code: string) => {
+    await staff();
+    return as("authenticated", "SELECT public.redeem_gift_card_on_order($1, $2) AS r", [id, code]);
+  };
+  const statusOf = async (id: string) =>
+    (await db.query<{ status: string }>("SELECT status FROM public.orders WHERE id = $1", [id]))
+      .rows[0].status;
+
+  it("confirms a draft and takes the card in one step", async () => {
+    const card = await issue(50);
+    const draft = await order(37, { channel: "admin", status: "draft", payment_method: "cod" });
+    const reply = await take(draft, card.code);
+    expect(reply.error).toBeNull();
+    expect(reply.rows[0].r).toEqual({ amount: 37, balance: 13, owed: 0, confirmed: true });
+    expect(await statusOf(draft)).toBe("confirmed");
+    expect(await row(draft)).toEqual({
+      advance_paid: 37,
+      gift_card_paid: 37,
+      payment_status: "paid",
+    });
+  });
+
+  it("leaves a draft as it was when the card cannot be taken", async () => {
+    const draft = await order(37, { channel: "admin", status: "draft" });
+    expect((await take(draft, "ZZZZ-ZZZZ-ZZZZ")).error).toMatch(/GIFT_CARD_NOT_FOUND/);
+    expect(await statusOf(draft)).toBe("draft");
+    const card = await issue(10);
+    const empty = await order(0, { channel: "admin", status: "draft" });
+    expect((await take(empty, card.code)).error).toMatch(/ORDER_NOTHING_OWED/);
+    expect(await statusOf(empty)).toBe("draft");
+  });
+
+  it("does not change the status of an order already placed, and says so", async () => {
+    const card = await issue(20);
+    const placed = await order(50, { channel: "admin", status: "packing", payment_method: "cod" });
+    expect((await take(placed, card.code)).rows[0].r).toMatchObject({ confirmed: false });
+    expect(await statusOf(placed)).toBe("packing");
+  });
+
+  it("still refuses a cancelled order, and another store's staff", async () => {
+    const card = await issue(20);
+    const cancelled = await order(50, { channel: "admin", status: "cancelled" });
+    expect((await take(cancelled, card.code)).error).toMatch(/ORDER_NOT_PAYABLE/);
+    const draft = await order(50, { channel: "admin", status: "draft" });
+    await db.exec(`SET test.staff_of = '${OTHER}'`);
+    const reply = await as("authenticated", "SELECT public.redeem_gift_card_on_order($1, $2)", [
+      draft,
+      card.code,
+    ]);
+    expect(reply.error).toMatch(/ORDER_NOT_FOUND/);
+    expect(await statusOf(draft)).toBe("draft");
+  });
+
+  it("is never a shopper's checkout: a card on a fresh draft there is still refused", async () => {
+    const card = await issue(20);
+    const draft = await order(20, { status: "draft" });
+    expect((await atCheckout(draft, card.code)).error).toMatch(/ORDER_NOT_PAYABLE/);
   });
 });
 
