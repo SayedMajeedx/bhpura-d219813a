@@ -120,7 +120,7 @@ export function ProductShareModal({
             type="button"
             variant="outline"
             size="icon"
-            className="shrink-0 rounded-full h-11 w-11 transition-[transform,colors] hover:scale-105"
+            className="shrink-0 rounded-full h-11 w-11 transition-[transform,color,background-color,border-color] hover:scale-105"
             aria-label={isAr ? "مشاركة المنتج" : "Share product"}
           >
             <Share2 className="h-5 w-5" />
