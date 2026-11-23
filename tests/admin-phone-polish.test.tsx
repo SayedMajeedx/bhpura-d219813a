@@ -19,7 +19,11 @@ const auth = vi.hoisted(() => ({
 const supabaseMock = vi.hoisted(() => ({
   supabase: {
     auth: {
-      getUser: async () => ({ data: { user: { id: "u1", email: "owner@pura.test" } } }),
+      getClaims: async () => ({ data: { claims: { sub: "u1" } }, error: null }),
+      getSession: async () => ({
+        data: { session: { user: { id: "u1", email: "owner@pura.test" } } },
+        error: null,
+      }),
       onAuthStateChange: (listener: AuthListener) => {
         auth.listeners.push(listener);
         return { data: { subscription: { unsubscribe: () => {} } } };
@@ -42,8 +46,9 @@ const supabaseMock = vi.hoisted(() => ({
 }));
 vi.mock("@/integrations/supabase/client", () => supabaseMock);
 vi.mock("../src/integrations/supabase/client", () => supabaseMock);
-vi.mock("@/lib/auth/session", () => ({ signOut: vi.fn() }));
-vi.mock("../src/lib/auth/session", () => ({ signOut: vi.fn() }));
+const currentUser = async () => ({ id: "u1", email: "owner@pura.test" });
+vi.mock("@/lib/auth/session", () => ({ signOut: vi.fn(), getCurrentUser: currentUser }));
+vi.mock("../src/lib/auth/session", () => ({ signOut: vi.fn(), getCurrentUser: currentUser }));
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => vi.fn() }));
 
 const { ProfileProvider, useProfile } = await import("../src/lib/profile-context");

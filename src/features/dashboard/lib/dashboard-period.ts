@@ -32,12 +32,18 @@ export function periodWords(days: number, lang: "ar" | "en") {
 }
 
 /**
- * The period's bounds: from midnight `days - 1` days ago to now, the same length before it, and
+ * The period's bounds: from midnight `days - 1` days ago to the end of today, the same length
+ * before it, and
  * how far back the orders read reaches (the period with 15 days more, and never less than the 45
  * days the stock pace looks at).
  */
 export function periodBounds(days: number, now: Date) {
+  // The end of today, not this moment: nothing is sold later today yet, so the figures are the
+  // same, and the period (with every read keyed by it) stays the same all day. Ending at this
+  // moment made every visit to the dashboard a new period, so it read its reports afresh each
+  // time it opened, however recently (the speed review of 2026-11-22).
   const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
   const start = new Date(end);
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
@@ -45,7 +51,7 @@ export function periodBounds(days: number, now: Date) {
   const previousStart = new Date(previousEnd.getTime() - (end.getTime() - start.getTime()));
   const ordersSince = new Date(start);
   ordersSince.setDate(ordersSince.getDate() - 15);
-  const stockFloor = new Date(end);
+  const stockFloor = new Date(now);
   stockFloor.setDate(stockFloor.getDate() - 45);
   stockFloor.setHours(0, 0, 0, 0);
   const since = ordersSince < stockFloor ? ordersSince : stockFloor;

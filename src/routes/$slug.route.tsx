@@ -1,5 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import React from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { StorefrontProvider, type Brand, type PublicSettings } from "@/lib/storefront-context";
 import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
 import { StoreCollectionsProvider } from "@/lib/store-collections";
@@ -12,6 +13,7 @@ import {
   publicSettingsFromPageData,
 } from "@/features/storefront-shell/lib/public-settings";
 import { storefrontHead } from "@/features/storefront-shell/lib/storefront-head";
+import { plantPageSeeds, readPageSeeds } from "@/features/storefront-shell/lib/page-seeds";
 import { StoreShell } from "@/features/storefront-shell/components/StoreShell";
 import { StorefrontError } from "@/features/storefront-shell/components/StorefrontError";
 
@@ -28,9 +30,10 @@ export const Route = createFileRoute("/$slug")({
 
     const initialLang = await resolveInitialLang(params.slug, location?.search);
 
-    const [pageData, customDomain] = await Promise.all([
+    const [pageData, customDomain, seeds] = await Promise.all([
       fetchStorefrontPageData(params.slug).catch(() => null),
       fetchBrandCustomDomain(params.slug).catch(() => null),
+      readPageSeeds(params.slug),
     ]);
     if (!pageData?.brand) throw notFound();
 
@@ -54,6 +57,7 @@ export const Route = createFileRoute("/$slug")({
       settings: safeSettings,
       bootstrapData: pageData,
       initialLang,
+      seeds,
     };
   },
   head: ({ loaderData, matches }) =>
@@ -68,6 +72,9 @@ export const Route = createFileRoute("/$slug")({
 function StorefrontLayout() {
   const loaderData = Route.useLoaderData() as any;
   const { brand, settings, bootstrapData, isSuspended, suspensionReason, initialLang } = loaderData;
+  const queryClient = useQueryClient();
+  // Before the page's queries mount, so they find what the server read with the page.
+  useState(() => plantPageSeeds(queryClient, brand.slug, loaderData.seeds));
 
   // Must run unconditionally, before the early return below — React hooks
   // can't be called conditionally. It safely handles undefined inputs.

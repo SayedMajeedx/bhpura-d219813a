@@ -44,6 +44,12 @@ function getPooledObserver(threshold: number, rootMargin: string): ObserverPoolE
   return poolEntry;
 }
 
+/** Whether an element is on the screen, or within a screen's height below it, as it mounts. */
+export function startsOnScreen(node: Element, viewportHeight = window.innerHeight): boolean {
+  const box = node.getBoundingClientRect();
+  return box.top < viewportHeight && box.bottom > 0;
+}
+
 /**
  * Hook to smoothly reveal elements when scrolled into viewport using a pooled IntersectionObserver.
  * Strictly respects prefers-reduced-motion and optional tenant-level motion_enabled setting.
@@ -85,6 +91,17 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(options: UseRe
       node.setAttribute("data-revealed", "true");
       return;
     }
+
+    // Shown as the page arrived (the server's HTML draws it visible): only what is still below
+    // the screen waits to come in. Cards on the first screen were drawn fully clear and faded in
+    // only once the page's scripts ran, about two seconds into a phone's first visit (the speed
+    // review of 2026-11-22).
+    if (startsOnScreen(node)) {
+      setIsRevealed(true);
+      node.setAttribute("data-revealed", "true");
+      return;
+    }
+    node.setAttribute("data-reveal", "pending");
 
     const poolEntry = getPooledObserver(threshold, rootMargin);
     const onIntersect: RevealListener = () => {

@@ -1,7 +1,9 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { localDayRange } from "@/lib/day-range";
+import { getCurrentUser } from "@/lib/auth/session";
 import { readAll } from "../read-all";
+import { orderPollInterval } from "./poll-interval";
 import { NOT_SOLD_ORDER_FILTER } from "./sold-orders";
 import { ordersKeys } from "./keys";
 import {
@@ -30,20 +32,19 @@ import {
  */
 
 /**
- * Orders change while staff work: poll as a fallback for realtime, faster
- * for couriers whose phones drop the realtime socket.
+ * Orders change while staff work: poll as a fallback for realtime, faster for couriers whose
+ * phones drop the realtime socket. While the live connection is up it brings every change, so
+ * the whole list is read again only every few minutes (it was every 30 seconds whatever the
+ * connection, the speed review of 2026-11-22).
  */
 const pollingFor = (scope: OrderScope) =>
   ({
-    refetchInterval: scope === "assigned-courier" ? 10_000 : 30_000,
+    refetchInterval: () => orderPollInterval(scope, supabase.realtime.isConnected()),
     refetchOnWindowFocus: true,
   }) as const;
 
 async function currentUserId(): Promise<string | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  return (await getCurrentUser())?.id ?? null;
 }
 
 /** The brand's orders, newest first; a courier gets only their assigned deliveries. */
