@@ -84,8 +84,21 @@ const mockOrders = [
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     const session = {
-      access_token:
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXItaWQiLCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImF1ZCI6ImF1dGhlbnRpY2F0ZWQiLCJleHAiOjQxMDI0NDQ4MDAsImFhbCI6ImFhbDEifQ.test-signature",
+      access_token: [
+        { alg: "HS256", typ: "JWT" },
+        {
+          sub: "test-user-id",
+          role: "authenticated",
+          aud: "authenticated",
+          exp: 4102444800,
+          aal: "aal1",
+        },
+      ]
+        .map((part) =>
+          btoa(JSON.stringify(part)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_"),
+        )
+        .concat("test-signature")
+        .join("."),
       token_type: "bearer",
       expires_in: 3600,
       refresh_token: "mock-refresh-token",
