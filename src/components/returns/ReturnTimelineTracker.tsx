@@ -142,7 +142,7 @@ export function ReturnTimelineTracker({ returnReq, lang }: ReturnTimelineTracker
               >
                 <div
                   className={cn(
-                    "h-8 w-8 rounded-full flex items-center justify-center border transition-all text-xs",
+                    "h-8 w-8 rounded-full flex items-center justify-center border transition text-xs",
                     step.completed
                       ? "bg-primary text-primary-foreground border-primary shadow-2xs"
                       : step.active

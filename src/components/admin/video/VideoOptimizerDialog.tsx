@@ -282,7 +282,7 @@ export function VideoOptimizerDialog({
                       disabled={isProcessing || isUploading}
                       onClick={() => handleSelectPreset(key)}
                       className={cn(
-                        "relative flex flex-col justify-between rounded-md border p-3 text-start transition-all cursor-pointer min-h-[92px]",
+                        "relative flex flex-col justify-between rounded-md border p-3 text-start transition cursor-pointer min-h-[92px]",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         isSelected
                           ? "border-primary bg-primary/5 shadow-sm"

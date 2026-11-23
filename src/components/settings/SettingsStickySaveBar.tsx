@@ -61,7 +61,7 @@ export function SettingsStickySaveBar({
         // Phones: centred in the dock's exact position. Larger screens: bottom-end pill.
         "fixed z-50 inset-x-3 mx-auto w-fit bottom-[max(0.85rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
         "sm:inset-x-auto sm:mx-0 sm:bottom-6 sm:end-8",
-        "transition-all duration-300 ease-out motion-reduce:transition-none",
+        "transition duration-300 ease-out motion-reduce:transition-none",
         isVisible
           ? "translate-y-0 opacity-100 pointer-events-auto scale-100"
           : "translate-y-12 opacity-0 pointer-events-none scale-95",

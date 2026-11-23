@@ -80,7 +80,7 @@ export function OsSidebar({
     <>
       <aside
         className={cn(
-          "no-print hidden md:flex flex-col shrink-0 border border-[var(--os-border)] os-glass-strong shadow-xl transition-all duration-300 relative z-20 my-3 ms-3 rounded-[var(--os-radius-panel)] overflow-hidden select-none",
+          "no-print hidden md:flex flex-col shrink-0 border border-[var(--os-border)] os-glass-strong shadow-xl transition-[width,box-shadow] duration-300 relative z-20 my-3 ms-3 rounded-[var(--os-radius-panel)] overflow-hidden select-none",
           collapsed ? "w-20" : "w-64",
           className,
         )}
@@ -148,7 +148,7 @@ export function OsSidebar({
               href={getStorefrontUrl(activeSlug)}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-foreground/90 bg-muted/40 border border-[var(--os-border)] rounded-xl hover:bg-muted/80 transition-all shadow-2xs"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-foreground/90 bg-muted/40 border border-[var(--os-border)] rounded-xl hover:bg-muted/80 transition shadow-2xs"
             >
               <Store className="h-3.5 w-3.5 text-primary" />
               <span>{isAr ? "عرض المتجر" : "View Storefront"}</span>
@@ -219,7 +219,7 @@ export function OsSidebar({
               <button
                 type="button"
                 onClick={() => setAppsHubModalOpen(true)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-muted/40 hover:bg-muted/70 border border-border-subtle text-muted-foreground hover:text-foreground transition-all shadow-2xs"
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl bg-muted/40 hover:bg-muted/70 border border-border-subtle text-muted-foreground hover:text-foreground transition shadow-2xs"
               >
                 <div className="flex items-center gap-2">
                   <Boxes className="h-4 w-4 text-primary" />
@@ -235,7 +235,7 @@ export function OsSidebar({
                   type="button"
                   onClick={() => setAppsHubModalOpen(true)}
                   title={isAr ? "كل الأدوات" : "All tools"}
-                  className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition-all shadow-2xs border border-primary/20"
+                  className="h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center transition shadow-2xs border border-primary/20"
                 >
                   <Boxes className="h-4 w-4" />
                 </button>

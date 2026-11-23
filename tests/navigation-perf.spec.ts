@@ -9,7 +9,21 @@ test.describe("P0 - Strict Navigation Performance & Transition Timings", () => {
     // Mock authentication and brand session
     await page.addInitScript(() => {
       const session = {
-        access_token: "mock-access-token",
+        access_token: [
+          { alg: "HS256", typ: "JWT" },
+          {
+            sub: "test-user-id",
+            role: "authenticated",
+            aud: "authenticated",
+            exp: 4102444800,
+            aal: "aal1",
+          },
+        ]
+          .map((part) =>
+            btoa(JSON.stringify(part)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_"),
+          )
+          .concat("test-signature")
+          .join("."),
         token_type: "bearer",
         expires_in: 3600,
         refresh_token: "mock-refresh-token",
@@ -38,7 +52,21 @@ test.describe("P0 - Strict Navigation Performance & Transition Timings", () => {
         status: 200,
         contentType: "application/json",
         body: JSON.stringify({
-          access_token: "mock-access-token",
+          access_token: [
+            { alg: "HS256", typ: "JWT" },
+            {
+              sub: "test-user-id",
+              role: "authenticated",
+              aud: "authenticated",
+              exp: 4102444800,
+              aal: "aal1",
+            },
+          ]
+            .map((part) =>
+              btoa(JSON.stringify(part)).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_"),
+            )
+            .concat("test-signature")
+            .join("."),
           token_type: "bearer",
           expires_in: 3600,
           refresh_token: "mock-refresh-token",

@@ -185,7 +185,7 @@ export function OrderImportSection({
 
       <CardContent className="space-y-6">
         {step === "upload" && (
-          <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-all bg-muted/20">
+          <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition bg-muted/20">
             <ReceiptText className="h-10 w-10 mx-auto text-primary mb-3" />
             <h3 className="text-sm font-bold text-foreground mb-1">
               {isAr ? "ارفع ملف CSV للطلبات السابقة" : "Upload Orders CSV File"}

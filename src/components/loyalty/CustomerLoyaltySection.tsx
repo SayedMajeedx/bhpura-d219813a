@@ -196,7 +196,7 @@ export function CustomerLoyaltySection({
               return (
                 <div
                   key={t.tier_key}
-                  className={`p-4 rounded-xl border transition-all ${
+                  className={`p-4 rounded-xl border transition ${
                     isCurrent
                       ? "border-primary bg-primary/5 ring-2 ring-primary/20"
                       : "border-border-strong bg-background/50"

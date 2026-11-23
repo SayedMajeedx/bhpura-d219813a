@@ -76,7 +76,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
         aria-pressed={isActive}
         onClick={() => onScopeChange(scope.id)}
         className={cn(
-          "flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition-all cursor-pointer",
+          "flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-xs font-bold transition cursor-pointer",
           "shrink-0",
           isActive
             ? "border border-border-strong bg-card text-foreground shadow-2xs"

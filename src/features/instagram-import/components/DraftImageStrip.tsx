@@ -62,7 +62,7 @@ export function DraftImageStrip({
             <div
               key={image.url}
               className={cn(
-                "group/thumb relative h-16 w-16 shrink-0 select-none overflow-hidden rounded-lg border-2 transition-all",
+                "group/thumb relative h-16 w-16 shrink-0 select-none overflow-hidden rounded-lg border-2 transition",
                 isCover
                   ? "border-primary shadow-xs ring-2 ring-primary/40"
                   : isSelected
@@ -131,7 +131,7 @@ export function DraftImageStrip({
                   onCover(index);
                 }}
                 className={cn(
-                  "absolute end-1 top-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full transition-all",
+                  "absolute end-1 top-1 flex h-4 w-4 cursor-pointer items-center justify-center rounded-full transition",
                   isCover
                     ? "bg-amber-500 text-white shadow-xs"
                     : "bg-black/50 text-white/80 opacity-0 hover:bg-amber-500 hover:text-white group-hover/thumb:opacity-100",

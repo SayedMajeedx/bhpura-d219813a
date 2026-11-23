@@ -93,7 +93,7 @@ export function DiscountMobileCard({
 
   return (
     <Card
-      className="p-3.5 border border-border-subtle shadow-sm rounded-xl bg-card space-y-2.5 transition-all duration-200 hover:border-primary/40 cursor-pointer"
+      className="p-3.5 border border-border-subtle shadow-sm rounded-xl bg-card space-y-2.5 transition duration-200 hover:border-primary/40 cursor-pointer"
       onClick={() => onEdit(p)}
     >
       <div className="flex items-center justify-between gap-2">

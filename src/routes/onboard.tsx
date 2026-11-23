@@ -878,7 +878,7 @@ function OnboardPage() {
                 <button
                   type="button"
                   onClick={() => chooseBillingInterval("monthly")}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-md font-semibold transition ${
                     billingInterval === "monthly"
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -889,7 +889,7 @@ function OnboardPage() {
                 <button
                   type="button"
                   onClick={() => chooseBillingInterval("annual")}
-                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  className={`px-3 py-1 rounded-md font-semibold transition ${
                     billingInterval === "annual"
                       ? "bg-background text-foreground shadow-sm"
                       : "text-muted-foreground hover:text-foreground"
@@ -956,7 +956,7 @@ function OnboardPage() {
                 <div
                   key={plan.id}
                   className={cn(
-                    "p-5 rounded-2xl flex flex-col justify-between space-y-4 transition-all",
+                    "p-5 rounded-2xl flex flex-col justify-between space-y-4 transition",
                     isPopular
                       ? "border border-primary bg-primary/[0.02] ring-1 ring-primary/20 relative"
                       : "border border-border bg-card/60",

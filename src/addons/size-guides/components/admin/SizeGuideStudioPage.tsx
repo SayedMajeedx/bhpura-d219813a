@@ -597,7 +597,7 @@ export function SizeGuidesStudioPage() {
                 <div
                   key={guide.id}
                   onClick={() => selectGuide(guide)}
-                  className={`group relative rounded-xl border p-3.5 cursor-pointer transition-all ${
+                  className={`group relative rounded-xl border p-3.5 cursor-pointer transition ${
                     isSelected
                       ? "border-primary bg-primary/5 ring-1 ring-primary shadow-xs"
                       : "border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/30"
@@ -1377,7 +1377,7 @@ export function SizeGuidesStudioPage() {
                       <div
                         key={p.id}
                         onClick={() => setForm({ ...form, placement: p.id as any })}
-                        className={`rounded-xl border p-3.5 cursor-pointer transition-all ${
+                        className={`rounded-xl border p-3.5 cursor-pointer transition ${
                           active
                             ? "border-primary bg-primary/5 ring-1 ring-primary"
                             : "border-border hover:border-muted-foreground/30 bg-card"
@@ -1567,7 +1567,7 @@ export function SizeGuidesStudioPage() {
               <div
                 key={tmpl.key}
                 onClick={() => createFromTemplate(tmpl)}
-                className="group rounded-xl border border-border p-3.5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-all flex flex-col justify-between"
+                className="group rounded-xl border border-border p-3.5 cursor-pointer hover:border-primary hover:bg-primary/5 transition flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-1">

@@ -533,7 +533,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_item")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition",
                     deductionRule === "per_item"
                       ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",
@@ -554,7 +554,7 @@ export function PackagingMaterialsTab() {
                   type="button"
                   onClick={() => setDeductionRule("per_order")}
                   className={cn(
-                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition-all",
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-end transition",
                     deductionRule === "per_order"
                       ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500"
                       : "border-border bg-background text-muted-foreground hover:bg-muted/50",

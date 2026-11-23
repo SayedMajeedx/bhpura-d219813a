@@ -51,7 +51,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") onSelect(customer.id);
       }}
-      className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
+      className="p-3.5 rounded-xl bg-card border border-border-subtle shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0 flex-1">

@@ -114,7 +114,7 @@ export function ProductMediaPicker({ studio }: { studio: ContentStudio }) {
                   type="button"
                   onClick={() => setSelectedMediaUrl(item.url)}
                   className={cn(
-                    "relative shrink-0 size-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer group",
+                    "relative shrink-0 size-14 rounded-xl overflow-hidden border-2 transition cursor-pointer group",
                     isSelected
                       ? "border-primary ring-2 ring-primary/30 scale-105 shadow-sm"
                       : "border-border hover:border-primary/50 opacity-75 hover:opacity-100",

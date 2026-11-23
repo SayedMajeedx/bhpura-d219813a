@@ -171,7 +171,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
           return (
             <Card
               key={meta.type}
-              className={`border transition-all flex flex-col justify-between ${
+              className={`border transition flex flex-col justify-between ${
                 isConnected ? "border-primary/40 bg-card shadow-sm" : "border-border bg-card"
               }`}
             >

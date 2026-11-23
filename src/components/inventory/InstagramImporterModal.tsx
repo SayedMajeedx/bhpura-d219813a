@@ -346,7 +346,7 @@ export function InstagramImporterModal({
           variant="outline"
           size="sm"
           onClick={handleOpen}
-          className="border-primary/30 text-primary hover:bg-primary/10 transition-all font-semibold gap-2"
+          className="border-primary/30 text-primary hover:bg-primary/10 transition font-semibold gap-2"
         >
           <Instagram className="h-4 w-4 text-primary" />
           {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
@@ -533,7 +533,7 @@ export function InstagramImporterModal({
                   <h3 className="text-base font-bold text-foreground">{statusMessage}</h3>
                   <div className="w-64 h-2 bg-muted rounded-full overflow-hidden mx-auto mt-2">
                     <div
-                      className="h-full bg-primary transition-all duration-500 rounded-full"
+                      className="h-full bg-primary transition-[width] duration-(--motion-very-slow) rounded-full"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -591,7 +591,7 @@ export function InstagramImporterModal({
                         key={draft.id}
                         data-draft-id={draft.id}
                         className={cn(
-                          "flex flex-col rounded-xl border bg-card overflow-hidden shadow-2xs transition-all",
+                          "flex flex-col rounded-xl border bg-card overflow-hidden shadow-2xs transition",
                           ready
                             ? "border-border-strong"
                             : "border-amber-500/40 bg-amber-500/[0.02]",

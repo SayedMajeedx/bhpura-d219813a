@@ -393,7 +393,7 @@ function FirstLoginPage() {
                       </div>
                       <div className="grid grid-cols-4 gap-1.5 h-1.5">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
+                          className={`h-full rounded-full transition duration-300 ${
                             evaluation.score >= 1
                               ? evaluation.strengthKey === "weak"
                                 ? "bg-destructive"
@@ -404,7 +404,7 @@ function FirstLoginPage() {
                           }`}
                         />
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
+                          className={`h-full rounded-full transition duration-300 ${
                             evaluation.score >= 2
                               ? evaluation.strengthKey === "fair"
                                 ? "bg-amber-500"
@@ -413,12 +413,12 @@ function FirstLoginPage() {
                           }`}
                         />
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
+                          className={`h-full rounded-full transition duration-300 ${
                             evaluation.score >= 3 ? "bg-emerald-500" : "bg-muted"
                           }`}
                         />
                         <div
-                          className={`h-full rounded-full transition-all duration-300 ${
+                          className={`h-full rounded-full transition duration-300 ${
                             evaluation.score >= 4 ? "bg-emerald-500" : "bg-muted"
                           }`}
                         />
@@ -506,7 +506,7 @@ function FirstLoginPage() {
                 <Button
                   type="submit"
                   disabled={!evaluation.isValid || submitting}
-                  className="w-full h-11 text-base font-semibold shadow-md transition-all mt-2"
+                  className="w-full h-11 text-base font-semibold shadow-md transition mt-2"
                 >
                   {submitting ? (
                     <>

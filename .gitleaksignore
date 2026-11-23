@@ -12,3 +12,10 @@ dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/test-brand-wizard-e2e.cjs:gener
 dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/test-rls-subscribers-stock.cjs:generic-api-key:4
 dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/verify-clean-settings-save.cjs:generic-api-key:6
 dcddc8c7b875c388d59793e54e7e0623d23e732b:scripts/verify-storefront-v2-visual.cjs:generic-api-key:7
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/admin.spec.ts:jwt:61
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/desktop-audit.spec.ts:jwt:88
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/mobile-ux-audit.spec.ts:jwt:77
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/navigation-perf.spec.ts:jwt:13
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/navigation-perf.spec.ts:jwt:43
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/p0-mobile-orders.spec.ts:jwt:11
+b5fe484a04a136be5c4d3790539b45794058f97d:tests/returns-admin.spec.ts:jwt:88

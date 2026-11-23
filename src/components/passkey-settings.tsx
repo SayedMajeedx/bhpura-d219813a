@@ -109,7 +109,7 @@ export function PasskeySettings() {
             </div>
           </div>
           <Button
-            className="shrink-0 gap-2 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            className="shrink-0 gap-2 shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
             onClick={() => void register()}
             disabled={registering || loading}
           >
@@ -202,7 +202,7 @@ export function PasskeySettings() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 text-destructive transition-all hover:bg-destructive/10"
+                  className="shrink-0 text-destructive transition hover:bg-destructive/10"
                   disabled={deletingId === passkey.id}
                   onClick={() => void remove(passkey.id)}
                   aria-label={isAr ? "حذف مفتاح الدخول" : "Remove passkey"}

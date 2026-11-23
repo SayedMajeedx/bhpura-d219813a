@@ -327,7 +327,7 @@ export function CustomerImporterModal({
         <Button
           variant="outline"
           onClick={handleOpen}
-          className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all text-primary"
+          className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition text-primary"
         >
           <Plus className="h-4 w-4 me-2" />
           {isAr ? "استيراد العملاء وجهات الاتصال" : "Import Customers"}
@@ -391,7 +391,7 @@ export function CustomerImporterModal({
                   <button
                     key={item.id}
                     onClick={() => setPreset(item.id as any)}
-                    className={`flex flex-col items-start p-3.5 rounded-xl border border-border bg-muted/30 text-start transition-all ${item.color} ${
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-border bg-muted/30 text-start transition ${item.color} ${
                       preset === item.id
                         ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5"
                         : ""
@@ -407,7 +407,7 @@ export function CustomerImporterModal({
 
               <div className="pt-4 border-t border-border flex justify-end">
                 <label className="relative cursor-pointer">
-                  <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition">
                     <Upload className="h-4 w-4" />
                     {isAr ? "رفع الملف وبدء الهجرة" : "Upload File & Import"}
                   </span>
@@ -502,7 +502,7 @@ export function CustomerImporterModal({
                     }
                     startImportCSV(parsedRows, mappings);
                   }}
-                  className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl transition-all"
+                  className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl transition"
                 >
                   {isAr ? "تأكيد واستيراد الآن" : "Confirm & Import Database"}
                 </Button>
@@ -530,7 +530,7 @@ export function CustomerImporterModal({
               </div>
               <div className="w-full max-w-xs bg-muted h-1.5 rounded-full overflow-hidden">
                 <div
-                  className="bg-primary h-full transition-all duration-300"
+                  className="bg-primary h-full transition-[width] duration-300"
                   style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
                 />
               </div>
@@ -556,7 +556,7 @@ export function CustomerImporterModal({
               </div>
               <Button
                 onClick={() => setIsOpen(false)}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-xl transition"
               >
                 {isAr ? "عرض قائمة العملاء" : "View Customer Database"}
               </Button>

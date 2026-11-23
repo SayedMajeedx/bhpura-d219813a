@@ -454,7 +454,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
         role="status"
         aria-label={lang === "ar" ? "جارٍ فتح التطبيق" : "Opening application"}
       >
-        <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
+        <div className="h-full bg-primary animate-pulse w-3/4 transition duration-300 shadow-sm" />
       </div>
 
       {adminFontFaces && <style>{adminFontFaces}</style>}
@@ -473,7 +473,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
             variant="destructive"
             size="sm"
             onClick={handleExitImpersonation}
-            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-xs shadow-sm shrink-0 transition-all border-none"
+            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-3 py-1 h-7 rounded text-xs shadow-sm shrink-0 transition border-none"
           >
             {lang === "ar" ? "الخروج من وضع المحاكاة" : "Exit Impersonation Mode"}
           </Button>

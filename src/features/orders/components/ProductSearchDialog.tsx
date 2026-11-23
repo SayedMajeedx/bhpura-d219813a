@@ -101,7 +101,7 @@ export function ProductSearchDialog({
                 return (
                   <div
                     key={v.id}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border-strong hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border-strong hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition"
                     onClick={() => onSelect(v)}
                   >
                     <div className="flex items-center gap-3 min-w-0">

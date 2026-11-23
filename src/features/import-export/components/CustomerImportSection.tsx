@@ -177,7 +177,7 @@ export function CustomerImportSection({
                     key={item.id}
                     type="button"
                     onClick={() => setSelectedPreset(item.id as any)}
-                    className={`p-2.5 rounded-lg border text-center transition-all text-xs font-semibold ${
+                    className={`p-2.5 rounded-lg border text-center transition text-xs font-semibold ${
                       selectedPreset === item.id
                         ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
                         : "border-border hover:border-border-strong text-muted-foreground hover:text-foreground"
@@ -189,7 +189,7 @@ export function CustomerImportSection({
               </div>
             </div>
 
-            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-all bg-muted/20">
+            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition bg-muted/20">
               <Users className="h-10 w-10 mx-auto text-primary mb-3" />
               <h3 className="text-sm font-bold text-foreground mb-1">
                 {isAr ? "ارفع ملف CSV للعملاء" : "Upload Customer CSV File"}

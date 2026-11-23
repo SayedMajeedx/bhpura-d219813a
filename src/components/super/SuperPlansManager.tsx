@@ -679,7 +679,7 @@ export function SuperPlansManager() {
             return (
               <Card
                 key={plan.id}
-                className={`border bg-card shadow-sm rounded-2xl flex flex-col justify-between transition-all hover:border-border-strong ${
+                className={`border bg-card shadow-sm rounded-2xl flex flex-col justify-between transition hover:border-border-strong ${
                   !plan.is_active
                     ? "opacity-75 border-destructive/30 bg-destructive/5"
                     : !plan.is_public

@@ -665,7 +665,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       <div
                         key={plan.id}
                         onClick={() => setInlineSelectedPlanId(plan.id)}
-                        className={`cursor-pointer relative p-4 rounded-2xl border transition-all ${
+                        className={`cursor-pointer relative p-4 rounded-2xl border transition ${
                           isSelected
                             ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
                             : "border-border-strong hover:border-border hover:bg-muted/30 bg-card"
@@ -724,7 +724,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   type="button"
                   variant="outline"
                   onClick={() => setInlinePaymentMethod("paypal")}
-                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "paypal"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                       : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -762,7 +762,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   type="button"
                   variant="outline"
                   onClick={() => setInlinePaymentMethod("benefit")}
-                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                  className={`h-auto whitespace-normal p-4 rounded-2xl text-start transition flex flex-col justify-between items-start gap-3 w-full border ${
                     inlinePaymentMethod === "benefit"
                       ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                       : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -1394,7 +1394,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   <button
                     type="button"
                     onClick={() => setUpgradeBillingInterval("monthly")}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition ${
                       upgradeBillingInterval === "monthly"
                         ? "bg-background text-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -1405,7 +1405,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   <button
                     type="button"
                     onClick={() => setUpgradeBillingInterval("annual")}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all relative ${
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition relative ${
                       upgradeBillingInterval === "annual"
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground"
@@ -1578,7 +1578,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         type="button"
                         variant="outline"
                         onClick={() => setDialogPaymentMethod("paypal")}
-                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "paypal"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                             : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -1609,7 +1609,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         type="button"
                         variant="outline"
                         onClick={() => setDialogPaymentMethod("benefit")}
-                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                        className={`h-auto whitespace-normal p-3.5 rounded-xl text-start transition flex flex-col justify-between items-start gap-2 border ${
                           dialogPaymentMethod === "benefit"
                             ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                             : "border-border-strong hover:border-border hover:bg-muted/30"
@@ -1752,7 +1752,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                           </label>
 
                           {!receiptPreview ? (
-                            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
+                            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition">
                               <UploadCloud className="h-8 w-8 text-primary mb-2" />
                               <span className="text-xs font-semibold text-foreground">
                                 {isAr

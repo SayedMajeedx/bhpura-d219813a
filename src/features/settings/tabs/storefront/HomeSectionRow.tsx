@@ -62,7 +62,7 @@ export function HomeSectionRow({
     <div
       // The section's settings grow open and fold away (transitions.dev's accordion).
       data-open={fold.shown ? "true" : "false"}
-      className={`t-acc rounded-xl border bg-card shadow-2xs transition-colors duration-250 ${
+      className={`t-acc rounded-xl border bg-card shadow-2xs transition-colors duration-(--motion-fast) ${
         open ? "border-primary/40" : "border-border"
       }`}
     >

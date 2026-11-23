@@ -456,7 +456,7 @@ function PagesAndPolicies() {
                 onClick={() =>
                   setSocials((current) => [...current, { name: "Instagram", url: "" }])
                 }
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+                className="shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
               >
                 <Plus className="h-4 w-4" />
                 {isAr ? "إضافة رابط" : "Add social link"}
@@ -588,7 +588,7 @@ function PagesAndPolicies() {
                 type="button"
                 onClick={addPage}
                 size="sm"
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+                className="shadow-sm transition duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
               >
                 <Plus className="h-4 w-4" />
                 {isAr ? "صفحة جديدة" : "New page"}
@@ -655,7 +655,7 @@ function PagesAndPolicies() {
                     if (draggedIndex !== null) movePage(draggedIndex, index);
                     setDraggedIndex(null);
                   }}
-                  className="overflow-hidden rounded-2xl border-border-subtle bg-card px-2 shadow-md transition-all duration-200 hover:shadow-lg sm:px-4"
+                  className="overflow-hidden rounded-2xl border-border-subtle bg-card px-2 shadow-md transition duration-200 hover:shadow-lg sm:px-4"
                 >
                   <div className="flex items-center gap-2">
                     <button
@@ -990,7 +990,7 @@ function PagesAndPolicies() {
           onClick={save}
           disabled={saving || !dirty}
           size="lg"
-          className="w-full px-6 font-semibold shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:w-auto"
+          className="w-full px-6 font-semibold shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:w-auto"
         >
           {saving
             ? isAr

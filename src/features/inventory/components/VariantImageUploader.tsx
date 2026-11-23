@@ -33,7 +33,7 @@ export function VariantImageUploader({
   };
 
   return (
-    <div className="relative group w-11 h-11 rounded-lg border border-dashed border-input flex items-center justify-center bg-muted/40 hover:bg-muted/80 transition-all cursor-pointer overflow-hidden shrink-0">
+    <div className="relative group w-11 h-11 rounded-lg border border-dashed border-input flex items-center justify-center bg-muted/40 hover:bg-muted/80 transition cursor-pointer overflow-hidden shrink-0">
       {uploading ? (
         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : imageUrl ? (

@@ -113,7 +113,7 @@ export function ReturnsScopeSwitcher({
             size="sm"
             onClick={() => onScopeChange(s.id)}
             className={cn(
-              "h-8 px-3 text-xs font-medium rounded-lg shrink-0 gap-1.5 transition-all border",
+              "h-8 px-3 text-xs font-medium rounded-lg shrink-0 gap-1.5 transition border",
               isActive
                 ? "bg-primary/10 text-primary border-primary/20 font-semibold shadow-2xs"
                 : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",

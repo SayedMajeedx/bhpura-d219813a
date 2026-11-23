@@ -166,7 +166,7 @@ export function ReviewStoryDialog({
                       type="button"
                       onClick={() => setLook(item.id)}
                       className={cn(
-                        "relative flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-start transition-all",
+                        "relative flex min-h-20 flex-col items-start justify-between rounded-xl border p-3 text-start transition",
                         look === item.id
                           ? "border-primary bg-primary/5 ring-2 ring-primary/10"
                           : "border-border hover:border-primary/30",
@@ -234,7 +234,7 @@ export function ReviewStoryDialog({
                           type="button"
                           onClick={() => setSelectedMedia(m)}
                           className={cn(
-                            "relative size-14 overflow-hidden rounded-lg border-2 transition-all",
+                            "relative size-14 overflow-hidden rounded-lg border-2 transition",
                             selectedMedia?.url === m.url
                               ? "border-primary ring-2 ring-primary/20"
                               : "border-border opacity-70 hover:opacity-100",

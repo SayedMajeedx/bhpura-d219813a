@@ -66,7 +66,7 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
             <Button
               variant="outline"
               onClick={() => openSave("new")}
-              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
+              className="min-w-0 px-2 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Plus className="h-4 w-4 me-2" />
               {isAr ? "قالب جديد" : "New"}
@@ -75,7 +75,7 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
               variant="outline"
               onClick={() => openSave("update")}
               disabled={!selectedId}
-              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
+              className="min-w-0 px-2 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Save className="h-4 w-4 me-2" />
               {isAr ? "حفظ القالب" : "Save Template"}
@@ -84,7 +84,7 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
               variant="ghost"
               onClick={deleteTemplate}
               disabled={!selectedId}
-              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
+              className="min-w-0 px-2 shadow-sm transition duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Trash2 className="h-4 w-4 me-2 text-destructive" />
               {isAr ? "حذف" : "Delete"}
@@ -103,7 +103,7 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
-            className="text-start mt-1 bg-background/50 focus:bg-background transition-all duration-200"
+            className="text-start mt-1 bg-background/50 focus:bg-background transition duration-200"
             dir={isAr ? "rtl" : "ltr"}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -115,7 +115,7 @@ export function CampaignMessageCard({ page }: { page: CampaignsPageState }) {
                 key={p.token}
                 type="button"
                 onClick={() => insertPlaceholder(p.token)}
-                className="text-xs px-2.5 py-1 rounded-full bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200"
+                className="text-xs px-2.5 py-1 rounded-full bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition duration-200"
               >
                 {p.label} <code className="opacity-70 font-mono text-xs">{p.token}</code>
               </button>

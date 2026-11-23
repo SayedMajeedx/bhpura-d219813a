@@ -220,7 +220,7 @@ export function CopyPanel({ studio }: { studio: ContentStudio }) {
       <Link
         to="/admin/b/$slug/reviews"
         params={{ slug }}
-        className="group flex items-center justify-between rounded-2xl border border-border-strong bg-muted/20 p-4 transition-all hover:bg-muted/40 hover:border-primary/40"
+        className="group flex items-center justify-between rounded-2xl border border-border-strong bg-muted/20 p-4 transition hover:bg-muted/40 hover:border-primary/40"
       >
         <span className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-xl bg-background border border-border-subtle text-primary shadow-2xs">

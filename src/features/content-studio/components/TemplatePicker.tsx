@@ -107,7 +107,7 @@ export function TemplatePicker({ studio }: { studio: ContentStudio }) {
               onFocus={() => setHovered(option.id)}
               onBlur={() => setHovered(null)}
               className={cn(
-                "relative flex w-[132px] shrink-0 snap-start flex-col justify-between rounded-xl border p-2 text-start transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                "relative flex w-[132px] shrink-0 snap-start flex-col justify-between rounded-xl border p-2 text-start transition cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 selected
                   ? "border-primary bg-primary/[0.06] ring-1 ring-primary shadow-2xs"
                   : "border-border hover:border-primary/40 bg-card/60",
