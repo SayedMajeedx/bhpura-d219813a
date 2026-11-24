@@ -1,8 +1,9 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import React from "react";
 import { Star, Users, RefreshCw, UserPlus, UserMinus, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
 
 export type CustomerSegmentScope = "all" | "vip" | "repeat" | "new" | "one_time" | "churn";
 
@@ -72,17 +73,16 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
     const count = counts[scope.id] || 0;
 
     return (
-      <button
+      <SegmentTab
+        active={isActive}
         key={scope.id}
-        type="button"
         aria-pressed={isActive}
         onClick={() => onScopeChange(scope.id)}
-        className={segmentTab(isActive)}
       >
         <Icon className={cn("h-3.5 w-3.5 shrink-0", scope.badgeStyle)} />
         <span>{isAr ? scope.labelAr : scope.labelEn}</span>
         <span className={segmentCount(isActive)}>{count}</span>
-      </button>
+      </SegmentTab>
     );
   };
 

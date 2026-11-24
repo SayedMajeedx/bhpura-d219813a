@@ -16,7 +16,14 @@ import { chooseReadySize } from "@/features/product-page/lib/size-mode";
 
 import { resolveColorHex } from "@/lib/color-names";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { STORE_SEGMENT_TRACK } from "@/components/ui/segmented";
+import { SegmentTab } from "@/components/ui/segment-tab";
+import { cn } from "@/lib/utils";
 import { TailorInsteadNote } from "@/features/product-page/components/TailorInsteadNote";
+
+/** A tab whose long word wraps to two lines on a 320px phone instead of being cut ("تفصيل حسب الطلب"). */
+const WRAPPING_TAB = "min-w-0 whitespace-normal px-2 py-1.5 text-center leading-tight sm:px-4";
+
 /** Option pickers: ready/custom size mode, colour swatches, size, fabric and extra option pills, and a fallback variant list. */
 export function ProductOptionPickers({
   hasReadySizes,
@@ -119,14 +126,14 @@ export function ProductOptionPickers({
           <div
             role="group"
             aria-label={t("طريقة اختيار المقاس", "Sizing method")}
-            className="t-tabs relative grid grid-cols-2 gap-1 rounded-full border border-border p-1"
+            className={cn(STORE_SEGMENT_TRACK, "grid w-full grid-cols-2 items-stretch")}
           >
             {/* The chosen choice's fill slides to the next one (transitions.dev's tabs sliding). */}
             <TabsPill />
-            <Button
-              type="button"
+            <SegmentTab
+              look="store"
+              active={sizeMode === "ready"}
               aria-pressed={sizeMode === "ready"}
-              variant={sizeMode === "ready" ? "default" : "outline"}
               onClick={() =>
                 chooseReadySize({
                   setSizeMode,
@@ -136,28 +143,24 @@ export function ProductOptionPickers({
                   isMeasurement: isMeasurementField,
                 })
               }
-              className={`t-tab h-auto min-h-10 min-w-0 whitespace-normal px-2 py-1.5 leading-tight sm:px-4 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
-                sizeMode === "ready" ? "" : "bg-transparent hover:bg-muted/60"
-              }`}
+              className={WRAPPING_TAB}
             >
-              <Ruler className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <Ruler className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
               <span>{t("مقاس جاهز", "Ready Size")}</span>
-            </Button>
-            <Button
-              type="button"
+            </SegmentTab>
+            <SegmentTab
+              look="store"
+              active={sizeMode === "custom"}
               aria-pressed={sizeMode === "custom"}
-              variant={sizeMode === "custom" ? "default" : "outline"}
               onClick={() => {
                 setSizeMode("custom");
                 setErrorMsg(null);
               }}
-              className={`t-tab h-auto min-h-10 min-w-0 whitespace-normal px-2 py-1.5 leading-tight sm:px-4 rounded-full text-sm font-medium flex items-center justify-center gap-2 border-0 shadow-none ${
-                sizeMode === "custom" ? "" : "bg-transparent hover:bg-muted/60"
-              }`}
+              className={WRAPPING_TAB}
             >
-              <Scissors className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+              <Scissors className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
               <span>{vocabulary.custom_sizing?.[lang] || t("مقاس مخصص", "Custom Size")}</span>
-            </Button>
+            </SegmentTab>
           </div>
           {/* The guide matters most here: this is where the shopper takes the measurements. */}
           {sizeMode === "custom" && (

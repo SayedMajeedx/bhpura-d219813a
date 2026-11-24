@@ -1,11 +1,15 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import React, { useState } from "react";
 import { useStorefront } from "@/lib/storefront-context";
 import { createBackInStockRequest } from "@/lib/storefront-leads.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { STORE_SEGMENT_TRACK } from "@/components/ui/segmented";
 import { Bell, CheckCircle2, MessageCircle, Mail, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export interface NotifyMeFormProps {
   brandId: string;
@@ -170,28 +174,33 @@ export function NotifyMeForm({ brandId, productId, variantId, className }: Notif
           autoComplete="off"
         />
 
-        {/* Channel toggle */}
-        <div className="flex gap-1.5 rounded-lg bg-muted p-1" role="radiogroup">
-          <Button
-            type="button"
-            size="sm"
-            variant={channel === "whatsapp" ? "default" : "ghost"}
+        {/* How to be told: the store's tab bar look (segmented.ts). */}
+        <div
+          role="group"
+          aria-label={isAr ? "طريقة الإشعار" : "How to be told"}
+          className={cn(STORE_SEGMENT_TRACK, "grid w-full grid-cols-2 items-stretch")}
+        >
+          <TabsPill />
+          <SegmentTab
+            look="store"
+            active={channel === "whatsapp"}
+            aria-pressed={channel === "whatsapp"}
             onClick={() => setChannel("whatsapp")}
-            className="flex-1 h-8 text-xs gap-1.5 rounded-md"
+            className="min-w-0"
           >
-            <MessageCircle className="size-3.5" />
+            <MessageCircle className="size-4" aria-hidden />
             <span>{isAr ? "واتساب" : "WhatsApp"}</span>
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={channel === "email" ? "default" : "ghost"}
+          </SegmentTab>
+          <SegmentTab
+            look="store"
+            active={channel === "email"}
+            aria-pressed={channel === "email"}
             onClick={() => setChannel("email")}
-            className="flex-1 h-8 text-xs gap-1.5 rounded-md"
+            className="min-w-0"
           >
-            <Mail className="size-3.5" />
+            <Mail className="size-4" aria-hidden />
             <span>{isAr ? "بريد إلكتروني" : "Email"}</span>
-          </Button>
+          </SegmentTab>
         </div>
 
         {/* Input */}

@@ -1,6 +1,9 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { useState } from "react";
 import { Images } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK } from "@/components/ui/segmented";
+import { cn } from "@/lib/utils";
 import { FaqEditor } from "@/features/store-content/components/FaqEditor";
 import { GalleryEditor } from "@/features/store-content/components/GalleryEditor";
 import { AppDialog, AppDialogBody, AppDialogHeader } from "@/components/ui/app-dialog";
@@ -41,19 +44,22 @@ export function StoreContentDialog({
       />
 
       <AppDialogBody>
-        <div className="flex gap-2" role="tablist" aria-label={isAr ? "القسم" : "Section"}>
+        <div
+          className={cn(SEGMENT_TRACK, "grid w-full grid-cols-2 sm:inline-flex sm:w-auto")}
+          role="tablist"
+          aria-label={isAr ? "القسم" : "Section"}
+        >
+          <TabsPill />
           {(["gallery", "faq"] as const).map((id) => (
-            <Button
+            <SegmentTab
+              active={tab === id}
               key={id}
-              type="button"
               role="tab"
-              size="sm"
               aria-selected={tab === id}
-              variant={tab === id ? "default" : "outline"}
               onClick={() => setTab(id)}
             >
               {id === "gallery" ? (isAr ? "المعرض" : "Gallery") : isAr ? "الأسئلة الشائعة" : "FAQ"}
-            </Button>
+            </SegmentTab>
           ))}
         </div>
         {tab === "gallery" ? (

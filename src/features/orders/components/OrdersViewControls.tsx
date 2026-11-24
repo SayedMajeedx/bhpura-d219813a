@@ -1,10 +1,10 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { useEffect, useState } from "react";
 import { Bell, BellOff, Columns3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { newOrderSoundOn, playNewOrderChime, setNewOrderSound } from "@/lib/new-order-sound";
-import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK } from "@/components/ui/segmented";
 
 export type OrdersView = "list" | "board";
 
@@ -32,18 +32,18 @@ export function OrdersViewControls({
         {(["list", "board"] as const).map((option) => {
           const Icon = option === "list" ? List : Columns3;
           return (
-            <button
+            <SegmentTab
+              active={view === option}
               key={option}
-              type="button"
               aria-pressed={view === option}
-              className={cn(segmentTab(view === option), "min-h-7")}
+              className="min-h-7"
               onClick={() => onView(option)}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />
               <span className="sr-only lg:not-sr-only">
                 {option === "list" ? (isAr ? "قائمة" : "List") : isAr ? "لوحة" : "Board"}
               </span>
-            </button>
+            </SegmentTab>
           );
         })}
       </div>

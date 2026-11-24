@@ -395,11 +395,11 @@ function StorefrontAuth() {
 
           {/* Tabs for Sign In vs Sign Up */}
           <Tabs value={tab} onValueChange={(value) => setTab(value as "signin" | "signup")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger className="text-xs sm:text-sm" value="signin">
+            <TabsList look="store" className="grid w-full grid-cols-2">
+              <TabsTrigger className="min-w-0" value="signin">
                 {t("تسجيل الدخول", "Sign in")}
               </TabsTrigger>
-              <TabsTrigger className="text-xs sm:text-sm" value="signup">
+              <TabsTrigger className="min-w-0" value="signup">
                 {t("إنشاء حساب جديد", "Create account")}
               </TabsTrigger>
             </TabsList>

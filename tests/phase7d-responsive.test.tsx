@@ -55,7 +55,10 @@ describe("Phase 7D responsive configuration workspaces", () => {
       <PagesScopeSwitcher lang="ar" activeScope="pages" onScopeChange={vi.fn()} pageCount={4} />,
     );
 
-    expect(container.querySelector(".overflow-x-auto")).toBeNull();
+    // Both scopes in view on a phone: the tab bar (segmented.ts) is two equal columns there, so
+    // nothing waits off the side of its track.
+    const track = container.firstElementChild as HTMLElement;
+    expect(track.className).toContain("grid-cols-2");
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 
