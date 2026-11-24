@@ -1,3 +1,4 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { Link } from "@tanstack/react-router";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,8 @@ import { ResponsiveImage } from "@/components/responsive-media";
 import { type ProductRow, type StorefrontCategory } from "@/lib/data/storefront";
 import { getDescendantCategories } from "@/features/storefront-home/lib/home-products";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { cn } from "@/lib/utils";
+import { STORE_SEGMENT_TRACK } from "@/components/ui/segmented";
 
 /** The category chips (with sub-categories) that filter the home page product grid. */
 export function Categories({
@@ -159,9 +162,13 @@ export function Categories({
         className={
           navigation
             ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center flex flex-wrap gap-3"
-            : // The chosen category's fill slides to the next one (transitions.dev's tabs
-              // sliding): the other chips are outlines it passes under.
-              "t-tabs relative -mx-4 flex snap-x snap-proximity gap-2 overflow-x-auto px-4 py-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:justify-center sm:gap-3 sm:overflow-visible sm:px-0"
+            : // The store's tab bar (segmented.ts), as wide as its tabs: one row that scrolls
+              // sideways on a phone and wraps, centred, from sm up. The chosen category's fill
+              // slides to the next one.
+              cn(
+                STORE_SEGMENT_TRACK,
+                "flex w-fit snap-x snap-proximity sm:mx-auto sm:flex-wrap sm:justify-center",
+              )
         }
       >
         {!navigation && <TabsPill />}
@@ -238,50 +245,52 @@ export function Categories({
           </details>
         )}
         {!navigation && (
-          <Button
-            type="button"
-            variant={activeCategorySlugs.length === 0 ? "default" : "outline"}
+          <SegmentTab
+            look="store"
+            active={activeCategorySlugs.length === 0}
             aria-pressed={activeCategorySlugs.length === 0}
             onClick={() => setActiveCategorySlugs([])}
-            className={`t-tab inline-flex min-h-[44px] shrink-0 snap-start rounded-full px-4 py-2.5 ${
-              activeCategorySlugs.length === 0
-                ? ""
-                : "bg-transparent shadow-none hover:bg-background/60"
-            }`}
+            className="snap-start"
           >
             {t("الكل", "All")}
-          </Button>
+          </SegmentTab>
         )}
         {chips.map((c) => {
           const active = activeCategorySlugs[0] === c.key;
-          return (
+          const pick = () => setActiveCategorySlugs(active ? [] : [c.key]);
+          const picture = c.image && (
+            <ResponsiveImage
+              src={c.image}
+              preset="thumb"
+              sizes="20px"
+              alt=""
+              className="h-5 w-5 rounded-full object-cover"
+            />
+          );
+          return navigation ? (
             <Button
               key={c.key}
               type="button"
               variant={active ? "default" : "outline"}
               aria-pressed={active}
-              onClick={() => {
-                if (active) {
-                  setActiveCategorySlugs([]);
-                } else {
-                  setActiveCategorySlugs([c.key]);
-                }
-              }}
-              className={`shrink-0 snap-start px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "t-tab inline-flex"} rounded-full gap-2 min-h-[44px] ${
-                !navigation && !active ? "bg-transparent shadow-none hover:bg-background/60" : ""
-              }`}
+              onClick={pick}
+              className="hidden min-h-[44px] shrink-0 gap-2 rounded-full px-4 py-2.5 sm:inline-flex"
             >
-              {c.image && (
-                <ResponsiveImage
-                  src={c.image}
-                  preset="thumb"
-                  sizes="20px"
-                  alt=""
-                  className="h-5 w-5 rounded-full object-cover"
-                />
-              )}
+              {picture}
               {c.label}
             </Button>
+          ) : (
+            <SegmentTab
+              look="store"
+              active={active}
+              key={c.key}
+              aria-pressed={active}
+              onClick={pick}
+              className="snap-start"
+            >
+              {picture}
+              {c.label}
+            </SegmentTab>
           );
         })}
       </div>
@@ -292,18 +301,20 @@ export function Categories({
           key={`row-level-${row.levelIndex}`}
           className="w-full flex justify-center border-t border-border pt-3 animate-in fade-in slide-in-from-top-1 duration-(--motion-fast)"
         >
-          <div className="flex flex-wrap gap-2 justify-center">
-            <Button
-              type="button"
-              variant={row.activeSlug === null ? "default" : "secondary"}
-              size="sm"
+          {/* A sub-level is the same tab bar, one size smaller in its words. */}
+          <div className={cn(STORE_SEGMENT_TRACK, "sm:flex-wrap sm:justify-center")}>
+            <TabsPill />
+            <SegmentTab
+              look="store"
+              active={row.activeSlug === null}
+              aria-pressed={row.activeSlug === null}
               onClick={() => {
                 setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
               }}
-              className="min-h-[34px] px-3.5 py-1.5 rounded-full text-xs shrink-0"
+              className="text-xs"
             >
               {t("الكل", "All")}
-            </Button>
+            </SegmentTab>
             {row.categories.map((sub) => {
               const subSlug = sub.slug || sub.name_en;
               const subLabel =
@@ -312,11 +323,11 @@ export function Categories({
               const hasSubSubs = categories.some((c) => c.parent_id === sub.id);
 
               return (
-                <Button
+                <SegmentTab
+                  look="store"
+                  active={active}
                   key={sub.id}
-                  type="button"
-                  variant={active ? "default" : "secondary"}
-                  size="sm"
+                  aria-pressed={active}
                   onClick={() => {
                     if (active) {
                       setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
@@ -327,7 +338,7 @@ export function Categories({
                       ]);
                     }
                   }}
-                  className="min-h-[34px] px-3.5 py-1.5 rounded-full text-xs shrink-0 flex items-center gap-1.5"
+                  className="gap-1.5 text-xs"
                 >
                   <span>{subLabel}</span>
                   {hasSubSubs && (
@@ -335,7 +346,7 @@ export function Categories({
                       className={`h-3 w-3 transition-transform duration-(--motion-fast) ${active ? "rotate-180" : ""}`}
                     />
                   )}
-                </Button>
+                </SegmentTab>
               );
             })}
           </div>

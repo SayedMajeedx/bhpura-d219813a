@@ -3,7 +3,6 @@ import { SectionSkeleton } from "@/components/ui/section-skeleton";
 import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, formatPrice, useStoreModules } from "@/lib/storefront-context";
-import { cn } from "@/lib/utils";
 import { ownCustomerQueries } from "@/lib/data/customers";
 import { returnsQueries } from "@/lib/data/returns";
 import { loyaltyQueries } from "@/lib/data/loyalty";
@@ -99,13 +98,6 @@ export function AccountPage() {
   const loyaltyTier = shopperLoyaltyTier(loyaltyProgram, loyaltyAccount, loyaltyTiers);
   // A services store takes no returns; its bookings come first.
   const showReturns = modules.returns !== false;
-  const tabCount =
-    4 +
-    (modules.bookings ? 1 : 0) +
-    (showReturns ? 1 : 0) +
-    (loyaltyOn ? 1 : 0) +
-    (showGiftCards ? 1 : 0) +
-    (modules.fit_passport ? 1 : 0);
 
   if (membershipLoading) {
     return <SectionSkeleton rows={3} className="min-h-[45vh]" />;
@@ -240,71 +232,59 @@ export function AccountPage() {
             defaultValue={modules.bookings ? "bookings" : "orders"}
             className="w-full rounded-2xl border bg-card p-4 shadow-xs sm:p-6 border-border-strong"
           >
-            <TabsList
-              className={cn(
-                "mb-6 grid w-full",
-                "grid-cols-2",
-                tabCount >= 9
-                  ? "sm:grid-cols-9"
-                  : tabCount === 8
-                    ? "sm:grid-cols-8"
-                    : tabCount === 7
-                      ? "sm:grid-cols-7"
-                      : tabCount === 6
-                        ? "sm:grid-cols-6"
-                        : "sm:grid-cols-5",
-              )}
-            >
+            {/* One row that scrolls sideways on a phone and wraps from sm up, in the store's
+                look (segmented.ts): up to nine tabs, so a grid of two stacked five rows. */}
+            <TabsList look="store" className="mb-6 flex w-full sm:flex-wrap">
               {modules.bookings && (
-                <TabsTrigger value="bookings" className="sm:min-w-0">
-                  <CalendarDays className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-xs">{t("حجوزاتي", "My bookings")}</span>
+                <TabsTrigger value="bookings">
+                  <CalendarDays className="h-4 w-4" aria-hidden />
+                  <span>{t("حجوزاتي", "My bookings")}</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="orders" className="sm:min-w-0">
-                <PackageSearch className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("طلباتي", "My orders")}</span>
+              <TabsTrigger value="orders">
+                <PackageSearch className="h-4 w-4" aria-hidden />
+                <span>{t("طلباتي", "My orders")}</span>
               </TabsTrigger>
               {loyaltyOn && (
-                <TabsTrigger value="loyalty" className="sm:min-w-0">
-                  <Coins className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
+                <TabsTrigger value="loyalty">
+                  <Coins className="h-4 w-4" aria-hidden />
+                  <span>{t("المكافآت والولاء", "Rewards")}</span>
                 </TabsTrigger>
               )}
               {showGiftCards && (
-                <TabsTrigger value="gift-cards" className="sm:min-w-0">
-                  <Gift className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-xs">{t("بطاقات الهدايا", "Gift cards")}</span>
+                <TabsTrigger value="gift-cards">
+                  <Gift className="h-4 w-4" aria-hidden />
+                  <span>{t("بطاقات الهدايا", "Gift cards")}</span>
                 </TabsTrigger>
               )}
               {showReturns && (
-                <TabsTrigger value="returns" className="sm:min-w-0">
-                  <RotateCcw className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
+                <TabsTrigger value="returns">
+                  <RotateCcw className="h-4 w-4" aria-hidden />
+                  <span>{t("المرتجعات", "Returns")}</span>
                   {customerReturns.length > 0 && (
-                    <span className="text-xs font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
+                    <span className="rounded-full bg-current/15 px-1.5 text-xs font-bold tabular-nums">
                       {customerReturns.length}
                     </span>
                   )}
                 </TabsTrigger>
               )}
               {modules.fit_passport && (
-                <TabsTrigger value="fit" className="sm:min-w-0">
-                  <Ruler className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
+                <TabsTrigger value="fit">
+                  <Ruler className="h-4 w-4" aria-hidden />
+                  <span>{t("مقاساتي", "My fit")}</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="profile" className="sm:min-w-0">
-                <UserIcon className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("البيانات", "Profile")}</span>
+              <TabsTrigger value="profile">
+                <UserIcon className="h-4 w-4" aria-hidden />
+                <span>{t("البيانات", "Profile")}</span>
               </TabsTrigger>
-              <TabsTrigger value="addresses" className="sm:min-w-0">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("العناوين", "Addresses")}</span>
+              <TabsTrigger value="addresses">
+                <MapPin className="h-4 w-4" aria-hidden />
+                <span>{t("العناوين", "Addresses")}</span>
               </TabsTrigger>
-              <TabsTrigger value="security" className="sm:min-w-0">
-                <Fingerprint className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">{t("الأمان", "Security")}</span>
+              <TabsTrigger value="security">
+                <Fingerprint className="h-4 w-4" aria-hidden />
+                <span>{t("الأمان", "Security")}</span>
               </TabsTrigger>
             </TabsList>
 

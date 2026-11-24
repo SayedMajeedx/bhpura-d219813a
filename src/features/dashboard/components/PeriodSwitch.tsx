@@ -1,6 +1,6 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentTab } from "@/components/ui/segmented";
-import { cn } from "@/lib/utils";
+import { SEGMENT_TRACK } from "@/components/ui/segmented";
 import {
   DASHBOARD_PERIODS,
   periodWords,
@@ -31,18 +31,18 @@ export function PeriodSwitch({
       {DASHBOARD_PERIODS.map((option) => {
         const active = option === days;
         return (
-          <button
+          <SegmentTab
+            active={active}
             key={option}
-            type="button"
             role="radio"
             aria-checked={active}
             data-active={active ? "true" : "false"}
             aria-label={periodWords(option, lang).last}
             onClick={() => onChange(option)}
-            className={cn(segmentTab(active), "min-h-8 px-2.5")}
+            className="min-h-8 px-2.5"
           >
             {periodWords(option, lang).span}
-          </button>
+          </SegmentTab>
         );
       })}
     </div>

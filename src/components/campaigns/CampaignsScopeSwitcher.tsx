@@ -1,6 +1,7 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { Users, Crown, AlertTriangle, UserPlus } from "lucide-react";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
 
 export type CampaignSegment = "All" | "VIP" | "Churn Risk" | "New Buyer";
 
@@ -44,17 +45,16 @@ export function CampaignsScopeSwitcher({
         const count = counts?.[s.id];
 
         return (
-          <button
+          <SegmentTab
+            active={isActive}
             key={s.id}
-            type="button"
             aria-pressed={isActive}
             onClick={() => onSegmentChange(s.id)}
-            className={segmentTab(isActive)}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
             <span>{isAr ? s.labelAr : s.labelEn}</span>
             {count !== undefined && <span className={segmentCount(isActive)}>{count}</span>}
-          </button>
+          </SegmentTab>
         );
       })}
     </div>

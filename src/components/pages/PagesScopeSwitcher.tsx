@@ -1,5 +1,8 @@
 import { Layout, Share2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
+import { SegmentTab } from "@/components/ui/segment-tab";
 
 export type PagesScope = "pages" | "socials";
 
@@ -41,38 +44,26 @@ export function PagesScopeSwitcher({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border-subtle bg-muted/40 p-1 sm:flex sm:items-center">
+    // The admin's one tab bar look (segmented.ts): equal halves on a phone, the labels' own
+    // width from sm up.
+    <div className={cn(SEGMENT_TRACK, "grid w-full grid-cols-2 sm:inline-flex sm:w-auto")}>
+      <TabsPill />
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;
 
         return (
-          <button
+          <SegmentTab
             key={s.id}
-            type="button"
+            active={isActive}
+            aria-pressed={isActive}
             onClick={() => onScopeChange(s.id)}
-            className={cn(
-              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
-                : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
-            )}
+            className="min-w-0 whitespace-normal leading-tight sm:whitespace-nowrap"
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{isAr ? s.labelAr : s.labelEn}</span>
-            {s.badge !== undefined && (
-              <span
-                className={cn(
-                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
-                  isActive
-                    ? "bg-primary-foreground text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {s.badge}
-              </span>
-            )}
-          </button>
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span className="min-w-0 break-words">{isAr ? s.labelAr : s.labelEn}</span>
+            {s.badge !== undefined && <span className={segmentCount(isActive)}>{s.badge}</span>}
+          </SegmentTab>
         );
       })}
     </div>

@@ -1,6 +1,7 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import React from "react";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
 import type { LucideIcon } from "lucide-react";
 
 export interface ScopeTab {
@@ -34,17 +35,17 @@ export const OrdersScopeSwitcher: React.FC<OrdersScopeSwitcherProps> = ({
     const TabIcon = tab.icon;
 
     return (
-      <button
+      <SegmentTab
+        active={isActive}
+        urgent={tab.urgent}
         key={tab.id}
-        type="button"
         onClick={() => onTabChange(tab.id)}
         aria-pressed={isActive}
-        className={segmentTab(isActive, tab.urgent)}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
         <span>{label}</span>
         <span className={segmentCount(isActive, tab.urgent)}>{tab.count}</span>
-      </button>
+      </SegmentTab>
     );
   };
 

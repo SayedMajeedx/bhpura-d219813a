@@ -1,6 +1,7 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import React from "react";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
 import type { LucideIcon } from "lucide-react";
 
 export interface InventoryScopeTab {
@@ -32,17 +33,16 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
     const TabIcon = tab.icon;
 
     return (
-      <button
+      <SegmentTab
+        active={isActive}
         key={tab.id}
-        type="button"
         onClick={() => onTabChange(tab.id)}
         aria-pressed={isActive}
-        className={segmentTab(isActive)}
       >
         <TabIcon className="h-3.5 w-3.5 shrink-0" />
         <span>{label}</span>
         <span className={segmentCount(isActive)}>{tab.count}</span>
-      </button>
+      </SegmentTab>
     );
   };
 

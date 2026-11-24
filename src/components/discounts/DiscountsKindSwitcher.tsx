@@ -1,8 +1,9 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { Link } from "@tanstack/react-router";
 import { CalendarClock, Sparkles, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TabsPill } from "@/components/motion/TabsPill";
-import { SEGMENT_TRACK, segmentCount, segmentTab } from "@/components/ui/segmented";
+import { SEGMENT_TRACK, segmentCount } from "@/components/ui/segmented";
 
 export type DiscountKind = "codes" | "offers";
 
@@ -53,18 +54,17 @@ export function DiscountsKindSwitcher({
           const Icon = tab.icon;
           const active = kind === tab.id;
           return (
-            <button
+            <SegmentTab
+              active={active}
               key={tab.id}
-              type="button"
               role="tab"
               aria-selected={active}
               onClick={() => onKindChange(tab.id)}
-              className={segmentTab(active)}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               <span>{tab.label}</span>
               <span className={segmentCount(active)}>{tab.count}</span>
-            </button>
+            </SegmentTab>
           );
         })}
       </div>

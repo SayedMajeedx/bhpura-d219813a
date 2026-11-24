@@ -1,8 +1,9 @@
+import { SegmentTab } from "@/components/ui/segment-tab";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { TabsPill } from "@/components/motion/TabsPill";
+import { STORE_SEGMENT_TRACK } from "@/components/ui/segmented";
 import { formatPrice, pickName, useStorefront } from "@/lib/storefront-context";
 import { ownCustomerQueries } from "@/lib/data/customers";
 import type { ProductRow } from "@/lib/data/storefront";
@@ -109,37 +110,27 @@ export function MenuHome({
           // Under what is shown of the header: it leaves on a scroll down (useAutoHideHeader).
           style={{ top: "var(--sf-header-offset, 0px)" }}
         >
-          {/* The lit section's fill slides along the row as the page scrolls (transitions.dev's
-              tabs sliding): the fill is the row's one pill, the tabs are its words. */}
-          <ul className="t-tabs relative mx-auto flex max-w-3xl snap-x gap-2 overflow-x-auto px-4 py-2.5 scrollbar-none">
-            <TabsPill as="li" />
-            {sections.map((section) => (
-              <li
-                key={section.id}
-                data-active={active === section.id ? "true" : "false"}
-                className={cn(
-                  "t-tab snap-start rounded-full",
-                  active === section.id ? "bg-primary" : "bg-muted/60",
-                )}
-              >
-                <Button
-                  type="button"
-                  variant="ghost"
+          {/* The store's tab bar (segmented.ts). The lit section's fill slides along the row as
+              the page scrolls (transitions.dev's tabs sliding). */}
+          <div className="mx-auto max-w-3xl px-4 py-2">
+            <div className={cn(STORE_SEGMENT_TRACK, "flex snap-x")}>
+              <TabsPill />
+              {sections.map((section) => (
+                <SegmentTab
+                  look="store"
+                  active={active === section.id}
+                  key={section.id}
                   id={`${section.id}-tab`}
+                  data-active={active === section.id ? "true" : "false"}
                   aria-current={active === section.id ? "true" : undefined}
                   onClick={() => goTo(section.id)}
-                  className={cn(
-                    "h-10 rounded-full bg-transparent px-4 text-sm font-medium hover:bg-transparent",
-                    active === section.id
-                      ? "text-primary-foreground hover:text-primary-foreground"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
+                  className="snap-start"
                 >
                   {section.title}
-                </Button>
-              </li>
-            ))}
-          </ul>
+                </SegmentTab>
+              ))}
+            </div>
+          </div>
         </nav>
       )}
 

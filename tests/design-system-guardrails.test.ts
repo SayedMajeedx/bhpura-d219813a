@@ -128,7 +128,7 @@ describe("design system guardrails", () => {
   it("keeps hand-rolled <button> elements within budget", () => {
     // AGENTS.md §2: anything that behaves like a button uses <Button>.
     const count = countMatches(/<button[\s>]/g);
-    expect(count).toBeLessThanOrEqual(212);
+    expect(count).toBeLessThanOrEqual(204);
   });
 
   it("lets card-like buttons wrap their text, within budget", () => {
@@ -486,24 +486,42 @@ describe("design system guardrails", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("draws every admin tab bar in the one look of segmented.ts", () => {
+  it("draws every tab bar in the one look of segmented.ts, the admin's or the store's", () => {
     // Each page drew its own bar (dark pills, outlined chips, a white card), the size guide's sat
     // off-centre in a track fixed at 40px, and the orders' and products' filters cut their focus
     // ring at the top (the owner's reports of 2026-11-23). A bar is `TabsList` / `TabsTrigger` or
-    // takes `SEGMENT_TRACK` / `segmentTab` and writes only its layout. The storefront's own bars
-    // (the product page's choices, the home page's categories and menu) are the store's look.
+    // takes `SEGMENT_TRACK` / `segmentTab` (the admin) or `STORE_SEGMENT_TRACK` /
+    // `storeSegmentTab` (a storefront page, 2026-11-24), and writes only its layout.
     // The look, and the sliding fill that reads it.
     const ownLook = new Set([
       "components/ui/segmented.ts",
       "components/motion/TabsPill.tsx",
       "lib/motion/pill.ts",
+      // A product's option chips (its sizes, colours, fabrics) are a picker, not a tab bar: they
+      // wrap, and only their fill slides.
+      "features/product-page/components/ProductOptionPickers.tsx",
     ]);
-    const storefront = ["features/product-page/", "features/storefront-home/"];
+    const offenders = FILES.filter(
+      ({ rel, source }) => !ownLook.has(rel) && /["'`\s]t-tabs?["'`\s]/.test(source),
+    ).map(({ rel }) => rel);
+    expect(offenders).toEqual([]);
+  });
+
+  it("gives a storefront page's tabs the store's look, never the admin's", () => {
+    // `TabsList` wears the admin's look unless told otherwise; on a shopper's page it is the store's
+    // (its colour, its corners). Storefront pages: the store's routes, its features and the
+    // add-ons' storefront parts.
+    const storefront = (rel: string) =>
+      rel.startsWith("routes/$slug") ||
+      rel.startsWith("components/storefront/") ||
+      /^features\/(storefront-|product-page|checkout|gift-card-shop|services-home|order-receipt)/.test(
+        rel,
+      ) ||
+      /^addons\/[^/]+\/components\/storefront\//.test(rel);
     const offenders = FILES.filter(
       ({ rel, source }) =>
-        !ownLook.has(rel) &&
-        !storefront.some((dir) => rel.startsWith(dir)) &&
-        /["'`\s]t-tabs?["'`\s]/.test(source),
+        storefront(rel) &&
+        (source.match(/<TabsList(?=[\s>])[^>]*>/g) ?? []).some((tag) => !/look="store"/.test(tag)),
     ).map(({ rel }) => rel);
     expect(offenders).toEqual([]);
   });
