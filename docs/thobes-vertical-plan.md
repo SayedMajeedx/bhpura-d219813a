@@ -91,6 +91,17 @@ is tailored is a later phase.
 5. The customer's own fabric as a separate product?
 6. The shemagh sizes they sell.
 
+## The owner's answers (2026-11-26)
+
+1. The name and the categories as written.
+2. A ready thobe's size is a length and a width (two axes). The values they sell are still to
+   come.
+3. Tailoring measurements are taken on a thobe laid flat, like the abaya's drawing. Which are
+   required is still to come.
+4. The cut is a tailoring choice with no price.
+5. The customer's own fabric is a product of its own.
+6. Shemagh sizes: still to come.
+
 ## Status
 
 - Phase 1: this pull request.
