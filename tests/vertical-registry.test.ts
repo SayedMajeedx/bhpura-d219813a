@@ -52,7 +52,7 @@ describe("the vertical registry", () => {
       const between = VERTICAL_DEFINITIONS.slice(parentIndex + 1, index);
       expect(between.every((d) => d.parent === definition.parent)).toBe(true);
     }
-    expect(childVerticals("fashion")).toEqual(["abayas"]);
+    expect(childVerticals("fashion")).toEqual(["abayas", "thobes"]);
     expect(childVerticals("food")).toEqual(["coffee"]);
   });
 

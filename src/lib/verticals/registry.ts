@@ -80,6 +80,19 @@ export const VERTICAL_DEFINITIONS: readonly VerticalDefinition[] = [
     starterPack: { required: [...FASHION_PACK, "abaya-pack"], suggested: [] },
   },
   {
+    id: "thobes",
+    label: { ar: "ثياب رجالية وأقمشة", en: "Men's Thobes & Fabrics" },
+    summary: {
+      ar: "ثياب جاهزة وتفصيل، أقمشة، غتر وأشمغة",
+      en: "Ready-made and tailored thobes, fabrics, ghutras and shemaghs",
+    },
+    icon: "Scissors",
+    parent: "fashion",
+    status: "active",
+    modules: TAILORING,
+    starterPack: { required: FASHION_PACK, suggested: [] },
+  },
+  {
     id: "beauty",
     label: { ar: "تجميل وعناية", en: "Beauty & Care" },
     summary: { ar: "مكياج وعناية بالبشرة والشعر", en: "Makeup, skincare and haircare" },

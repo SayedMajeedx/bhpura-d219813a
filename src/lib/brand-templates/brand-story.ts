@@ -31,6 +31,18 @@ const BRAND_STORY_DEFAULTS: Record<StoreVertical, BrandStoryDefaults> = {
       { ar: "ضمان الجودة والأصالة", en: "Quality & Authenticity Guaranteed" },
     ],
   },
+  thobes: {
+    subtitle: { ar: "قصتنا مع الثوب والقماش", en: "Our Story with the Thobe and Its Cloth" },
+    description: {
+      ar: "نختار أقمشة الثياب بعناية ونفصّلها بدقة، ثوب جاهز أو مفصّل على مقاسك، مع غتر وأشمغة تكمل الإطلالة.",
+      en: "We choose thobe fabrics with care and tailor them precisely, ready-made or cut to your measurements, with ghutras and shemaghs to complete the look.",
+    },
+    values: [
+      { ar: "أقمشة مختارة", en: "Carefully Chosen Fabrics" },
+      { ar: "تفصيل دقيق على المقاس", en: "Precise Tailoring to Measure" },
+      { ar: "جودة في كل غرزة", en: "Quality in Every Stitch" },
+    ],
+  },
   fashion: {
     subtitle: { ar: "قصتنا وشغفنا بالتصميم الراقي", en: "Our Story & Passion for Refined Design" },
     description: {

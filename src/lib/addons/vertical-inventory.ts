@@ -77,6 +77,10 @@ export function getVerticalAiPromptPlaceholder(
       return isAr
         ? "مثال: كود AB10، الألوان أسود وكحلي، مقاسات 52 إلى 58، السعر 35 د.ب، المخزون 3 لكل مقاس"
         : "Example: code AB10, colors Black and Navy, sizes 52 to 58, price 35 BHD, stock 3 per size";
+    case "thobes":
+      return isAr
+        ? "مثال: ثوب صيفي كود TH10، الألوان أبيض وسكري ورمادي، السعر 18 د.ب، المخزون 4 لكل خيار"
+        : "Example: summer thobe code TH10, colors White, Ivory and Grey, price 18 BHD, stock 4 per option";
     default:
       return isAr
         ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، المقاسات من S إلى XL، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل خيار"
@@ -120,6 +124,10 @@ export function getVerticalAxisPlaceholders(
       break;
     case "abayas":
       sizePlaceholder = isAr ? "52, 54, 56, 58, 60" : "52, 54, 56, 58, 60";
+      break;
+    case "thobes":
+      // The ready-thobe size is the owner's to decide (docs/thobes-vertical-plan.md, phase 2).
+      colorPlaceholder = isAr ? "أبيض, سكري, رمادي" : "White, Ivory, Grey";
       break;
   }
 

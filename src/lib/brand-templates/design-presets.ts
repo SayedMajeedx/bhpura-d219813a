@@ -47,6 +47,7 @@ const SQUARE_SHARP = { radius: "0.375rem", productPhoto: "1:1", homeLayout: "sho
 export const VERTICAL_DESIGN_PRESETS: Record<StoreVertical, BrandDesignConfig> = {
   fashion: PORTRAIT,
   abayas: PORTRAIT,
+  thobes: PORTRAIT,
   beauty: SQUARE_SOFT,
   fragrance: SQUARE_SOFT,
   jewelry: SQUARE_SOFT,

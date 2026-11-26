@@ -189,8 +189,13 @@ describe("the store's setting", () => {
   });
 
   it("names every vertical of the fashion family the registry has", () => {
-    // The migration lists them by hand: a new child of fashion must be added there too.
-    expect(["fashion", ...childVerticals("fashion")].sort()).toEqual(["abayas", "fashion"]);
+    // The migration lists them by hand: a new child of fashion must be added there too (thobes
+    // joined in migration 20261224100000, tests/thobes-vertical-migration.test.ts).
+    expect(["fashion", ...childVerticals("fashion")].sort()).toEqual([
+      "abayas",
+      "fashion",
+      "thobes",
+    ]);
   });
 });
 

@@ -94,6 +94,14 @@ export const VERTICAL_PRODUCT_BADGES: Record<string, TrustBadgeItem> = {
     color: "amber",
     enabled: true,
   },
+  thobes: {
+    id: "badge-vertical-thobes",
+    icon: "Scissors",
+    text_ar: "أقمشة مختارة وتفصيل على المقاس",
+    text_en: "Chosen Fabrics, Tailored to Measure",
+    color: "amber",
+    enabled: true,
+  },
   fashion: {
     id: "badge-vertical-fashion",
     icon: "Shirt",

@@ -17,6 +17,16 @@ const BEST_FIRST: Record<StoreVertical, readonly string[]> = {
     "lookbook-carousel",
     "editorial-cover",
   ],
+  thobes: [
+    "atelier-reveal",
+    "made-for-you",
+    "swatch-run",
+    "reel-cut",
+    "detail-zoom",
+    "coming-soon",
+    "lookbook-carousel",
+    "editorial-cover",
+  ],
   fashion: [
     "reel-cut",
     "atelier-reveal",

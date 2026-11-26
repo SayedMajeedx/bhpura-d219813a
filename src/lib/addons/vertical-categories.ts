@@ -100,6 +100,23 @@ export const DEFAULT_VERTICAL_CATEGORIES: Record<StoreVertical, DefaultCategoryS
     },
     { name_ar: "طرح ونقابات", name_en: "Scarves & Veils", slug: "scarves-veils", sort_order: 3 },
   ],
+  thobes: [
+    { name_ar: "ثياب جاهزة", name_en: "Ready Thobes", slug: "ready-thobes", sort_order: 1 },
+    { name_ar: "ثياب تفصيل", name_en: "Tailored Thobes", slug: "tailored-thobes", sort_order: 2 },
+    { name_ar: "أقمشة", name_en: "Fabrics", slug: "fabrics", sort_order: 3 },
+    {
+      name_ar: "غتر وأشمغة",
+      name_en: "Ghutras & Shemaghs",
+      slug: "ghutras-shemaghs",
+      sort_order: 4,
+    },
+    {
+      name_ar: "إكسسوارات",
+      name_en: "Accessories",
+      slug: "mens-accessories",
+      sort_order: 5,
+    },
+  ],
   fashion: [
     { name_ar: "فساتين", name_en: "Dresses", slug: "dresses", sort_order: 1 },
     { name_ar: "بلايز وقمصان", name_en: "Tops & Shirts", slug: "tops-shirts", sort_order: 2 },

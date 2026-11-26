@@ -2,6 +2,7 @@ import { VERTICAL_DEFINITIONS, type VerticalDefinition } from "@/lib/verticals/r
 
 export const STORE_VERTICALS = [
   "abayas",
+  "thobes",
   "fashion",
   "beauty",
   "fragrance",
@@ -169,6 +170,14 @@ export function legacyBusinessTypeToVertical(
   if (/cafe|restaurant|food|مطعم|كافيه/.test(t)) return "food";
   if (/digital|رقمي/.test(t)) return "digital";
   if (/abaya|عباي/.test(t)) return "abayas";
+  // ثياب is also "clothes": a women's shop that says so stays fashion.
+  if (
+    /thobe|thawb|kandura|dishdash|shemagh|ghutra|fabric|ثوب|ثياب|كندورة|دشداش|قماش|أقمشة|اقمشة|شماغ|أشمغة|غترة|غتر/.test(
+      t,
+    ) &&
+    !/women|ladies|نسائ|حريم/.test(t)
+  )
+    return "thobes";
   if (/fashion|boutique|أزياء|بوتيك/.test(t)) return "fashion";
   if (/perfume|fragrance|oud|bakhoor|عطر|عطور|عود|بخور|دخون/.test(t)) return "fragrance";
   if (/beauty|cosmetic|makeup|skincare|تجميل|مكياج|عناية/.test(t)) return "beauty";
@@ -186,6 +195,7 @@ export function verticalToLegacyBusinessType(v: StoreVertical): string {
   if (v === "food") return "Cafe / Restaurant";
   if (v === "digital") return "Digital store";
   if (v === "abayas") return "Abayas & Fashion";
+  if (v === "thobes") return "Men's Thobes & Fabrics";
   if (v === "fashion") return "Fashion";
   return VERTICAL_LABELS[v].en;
 }

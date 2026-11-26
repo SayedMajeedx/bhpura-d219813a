@@ -114,6 +114,11 @@ describe("store-profile pure library", () => {
     expect(legacyBusinessTypeToVertical("Abayas & Fashion")).toBe("abayas");
     expect(legacyBusinessTypeToVertical("عبايات وتفصيل")).toBe("abayas");
     expect(legacyBusinessTypeToVertical("Boutique & Fashion")).toBe("fashion");
+    expect(legacyBusinessTypeToVertical("ثياب رجالية وأقمشة")).toBe("thobes");
+    expect(legacyBusinessTypeToVertical("Thobes & Shemaghs")).toBe("thobes");
+    expect(legacyBusinessTypeToVertical("غتر وأشمغة")).toBe("thobes");
+    expect(legacyBusinessTypeToVertical("ثياب نسائية")).toBe("general");
+    expect(legacyBusinessTypeToVertical("Men's Thobes & Fabrics")).toBe("thobes");
     expect(legacyBusinessTypeToVertical("Unknown")).toBe("general");
     expect(legacyBusinessTypeToVertical(null)).toBe("general");
   });

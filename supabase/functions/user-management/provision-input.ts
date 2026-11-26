@@ -8,6 +8,7 @@
  */
 export const PROVISIONABLE_VERTICALS = [
   "abayas",
+  "thobes",
   "fashion",
   "beauty",
   "fragrance",

@@ -63,6 +63,53 @@ export const RAW_BRAND_TEMPLATES: Record<StoreVertical, BrandTemplate> = {
     categories: DEFAULT_VERTICAL_CATEGORIES.abayas,
   },
 
+  thobes: {
+    vertical: "thobes",
+    label: VERTICAL_LABELS.thobes,
+    fontPresetId: "classic",
+    ...getFontPair("classic"),
+    defaultPalette: {
+      primary: "#1f2a37",
+      secondary: "#b9a27c",
+      background: "#ffffff",
+      text: "#1f2a37",
+    },
+    storefrontMode: "shop",
+    catalogShowPrices: true,
+    fulfillment: {
+      delivery: true,
+      pickup: true,
+      digital: false,
+      deliveryFee: 1.5,
+    },
+    radius: "0.375rem",
+    trustBadges: [
+      {
+        icon: "Scissors",
+        title_ar: "تفصيل على المقاس",
+        title_en: "Tailored to Measure",
+        subtitle_ar: "ثوبك بمقاساتك وقصّتك",
+        subtitle_en: "Your thobe, your measurements",
+      },
+      {
+        icon: "Award",
+        title_ar: "أقمشة مختارة",
+        title_en: "Chosen Fabrics",
+        subtitle_ar: "صيفية وشتوية",
+        subtitle_en: "For summer and winter",
+      },
+      {
+        icon: "Truck",
+        title_ar: "توصيل واستلام",
+        title_en: "Delivery & Pickup",
+        subtitle_ar: "للبيت أو من المحل",
+        subtitle_en: "To your door or from the shop",
+      },
+    ],
+    starterModules: VERTICAL_MODULE_DEFAULTS.thobes,
+    categories: DEFAULT_VERTICAL_CATEGORIES.thobes,
+  },
+
   fashion: {
     vertical: "fashion",
     label: VERTICAL_LABELS.fashion,

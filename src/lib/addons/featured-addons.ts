@@ -5,6 +5,7 @@ import type { StoreVertical } from "@/lib/store-profile";
 const FEATURED_BY_VERTICAL: Partial<Record<StoreVertical, AddonId[]>> = {
   abayas: ["abaya-pack", "made-to-order", "size-guides"],
   fashion: ["fashion-core", "size-guides", "fit-passport"],
+  thobes: ["made-to-order", "size-guides", "fit-passport"],
   beauty: ["beauty-perfume", "gifts", "digital-products"],
   jewelry: ["jewelry", "gifts", "made-to-order"],
   coffee: ["coffee-roastery", "gifts", "made-to-order"],
