@@ -71,8 +71,9 @@
 
 @font-face {
   font-family: "Cormorant Garamond";
+  /* The open Cormorant Garamond (OFL, licences/cormorant-garamond-OFL.txt), variable 300-700, Latin cut. */
   src: url("/fonts/english-font.woff2") format("woff2");
-  font-weight: 400 700;
+  font-weight: 300 700;
   font-style: normal;
   font-display: swap;
 }
