@@ -11,6 +11,7 @@ import {
   isGiftToken,
   rememberGiftCode,
   rememberedGiftCode,
+  giftOpenedLine,
 } from "../src/lib/gift-link";
 
 // A gift card as the person it is for receives it: a link that opens the card in its design, its
@@ -37,7 +38,12 @@ const storefront = {
 };
 vi.mock("../src/lib/storefront-context", () => storefront);
 vi.mock("@/lib/storefront-context", () => storefront);
-const linkFns = { getGift: vi.fn(async () => stubs.view), openGiftCode: stubs.open };
+const markOpened = vi.fn(async () => ({ opened: true }));
+const linkFns = {
+  getGift: vi.fn(async () => stubs.view),
+  openGiftCode: stubs.open,
+  markGiftOpened: markOpened,
+};
 vi.mock("../src/lib/gift-link.functions", () => linkFns);
 vi.mock("@/lib/gift-link.functions", () => linkFns);
 const checkout = {
@@ -151,6 +157,15 @@ describe("the gift link's rules", () => {
   });
 });
 
+describe("when the gift was opened", () => {
+  it("is said for the buyer and the store, or that it is not yet", () => {
+    expect(giftOpenedLine(null, "en")).toBe("Not opened yet");
+    expect(giftOpenedLine(null, "ar")).toBe("لم تُفتح الهدية بعد");
+    expect(giftOpenedLine("2026-11-27T12:40:00Z", "en")).toMatch(/^Opened on 27 Nov at /);
+    expect(giftOpenedLine("2026-11-27T12:40:00Z", "ar")).toMatch(/^فُتحت الهدية يوم 27 /);
+  });
+});
+
 describe("the gift page", () => {
   it("opens as a gift, then shows the card and the giver's words, the code only on a tap", async () => {
     render(<GiftPage token={TOKEN} />, { wrapper });
@@ -160,7 +175,10 @@ describe("the gift page", () => {
     expect(screen.getByText("From Sara · Pura Line")).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Front of the card" })).not.toBeInTheDocument();
 
+    // Shown, the gift is not opened yet: a chat's preview reads the page and taps nothing.
+    expect(markOpened).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Open your gift" }));
+    expect(markOpened).toHaveBeenCalledWith({ data: { slug: "pura", token: TOKEN } });
     expect(screen.getByRole("img", { name: "Front of the card" })).toBeInTheDocument();
     expect(screen.getAllByText("Eid Mubarak, dear").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("BHD 50.000").length).toBeGreaterThanOrEqual(1);

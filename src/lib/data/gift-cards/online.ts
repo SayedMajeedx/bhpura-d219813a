@@ -89,11 +89,13 @@ export type GiftCardPurchase = Omit<Tables<"gift_card_purchases">, "token"> & {
     status?: string | null;
     /** The card’s gift link token (`giftAddress`). */
     share_token?: string | null;
+    /** When the gift link was first opened (null: not yet). */
+    opened_at?: string | null;
   } | null;
 };
 
 export const PURCHASE_SELECT =
-  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, addons, addons_total, total_due, gift_cards(code, expires_on, balance, status, share_token)";
+  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, addons, addons_total, total_due, gift_cards(code, expires_on, balance, status, share_token, opened_at)";
 
 export async function fetchGiftCardSettings(brandId: string): Promise<GiftCardSettings | null> {
   const { data, error } = await supabase

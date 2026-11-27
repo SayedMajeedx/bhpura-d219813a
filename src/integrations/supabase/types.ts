@@ -3986,6 +3986,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          opened_at: string | null;
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
@@ -4007,6 +4008,7 @@ export type Database = {
           issued_at?: string;
           issued_by?: string | null;
           note?: string | null;
+          opened_at?: string | null;
           paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
@@ -4028,6 +4030,7 @@ export type Database = {
           issued_at?: string;
           issued_by?: string | null;
           note?: string | null;
+          opened_at?: string | null;
           paid_with?: string | null;
           purchaser_name?: string | null;
           recipient_name?: string | null;
@@ -11904,6 +11907,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          opened_at: string | null;
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
@@ -12053,6 +12057,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          opened_at: string | null;
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
@@ -12199,6 +12204,10 @@ export type Database = {
         Returns: number;
       };
       loyalty_revoke_referral: { Args: { p_order_id: string }; Returns: number };
+      mark_gift_card_opened: {
+        Args: { p_slug: string; p_token: string };
+        Returns: string;
+      };
       mark_gift_card_purchase_sent: {
         Args: { p_purchase_id: string };
         Returns: Json;
@@ -12764,6 +12773,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          opened_at: string | null;
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;
@@ -13833,6 +13843,7 @@ export type Database = {
           issued_at: string;
           issued_by: string | null;
           note: string | null;
+          opened_at: string | null;
           paid_with: string | null;
           purchaser_name: string | null;
           recipient_name: string | null;

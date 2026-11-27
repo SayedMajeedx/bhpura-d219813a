@@ -14,7 +14,7 @@ export type GiftCard = Tables<"gift_cards">;
 export type GiftCardMove = Tables<"gift_card_movements">;
 
 export const GIFT_CARD_SELECT =
-  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason, paid_with, share_token";
+  "id, brand_id, code, currency, initial_amount, balance, expires_on, status, recipient_name, purchaser_name, note, source_order_id, issued_by, issued_at, voided_by, voided_at, void_reason, paid_with, share_token, opened_at";
 export const GIFT_CARD_MOVE_SELECT =
   "id, gift_card_id, brand_id, kind, amount, order_id, created_by, created_at, note";
 

@@ -4,7 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Check, Copy, Eye, Gift, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
-import { getGift, openGiftCode } from "@/lib/gift-link.functions";
+import { getGift, markGiftOpened, openGiftCode } from "@/lib/gift-link.functions";
 import { isGiftToken, rememberGiftCode, type GiftState } from "@/lib/gift-link";
 import { GiftCardPreview } from "@/features/gift-card-design/components/GiftCardPreview";
 import { CardKeepActions } from "@/features/gift-card-design/components/CardKeepActions";
@@ -124,7 +124,16 @@ export function GiftPage({ token }: { token: string }) {
               : t(`بطاقة هدية من ${storeName}`, `A gift card from ${storeName}`)}
           </p>
         </div>
-        <Button type="button" size="lg" className="min-h-12 px-8" onClick={() => setOpened(true)}>
+        <Button
+          type="button"
+          size="lg"
+          className="min-h-12 px-8"
+          onClick={() => {
+            setOpened(true);
+            // The first opening is the buyer's to see; it never stops the gift opening.
+            void markGiftOpened({ data: link }).catch(() => undefined);
+          }}
+        >
           {t("افتح الهدية", "Open your gift")}
         </Button>
       </div>

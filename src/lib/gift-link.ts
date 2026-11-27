@@ -1,3 +1,4 @@
+import { westernNumeralLocale } from "@/lib/intl-cache";
 import { storeAddress } from "@/lib/platform-host";
 import type { StoredCardDesign } from "@/lib/gift-card-purchase.functions";
 
@@ -183,4 +184,20 @@ export function forgetGiftCode(slug: string) {
   } catch {
     // Nothing was kept.
   }
+}
+
+/**
+ * Whether the gift was opened on its own page (`gift_cards.opened_at`, the first tap that opened
+ * it; a chat's preview never counts): "Opened on 27 Nov at 3:40 pm", or "Not opened yet".
+ */
+export function giftOpenedLine(openedAt: string | null | undefined, lang: "ar" | "en"): string {
+  if (!openedAt) return lang === "ar" ? "لم تُفتح الهدية بعد" : "Not opened yet";
+  const at = new Date(openedAt);
+  const tag = lang === "ar" ? "ar-BH" : "en-GB";
+  const day = at.toLocaleDateString(westernNumeralLocale(tag), { day: "numeric", month: "short" });
+  const time = at.toLocaleTimeString(westernNumeralLocale(tag), {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return lang === "ar" ? `فُتحت الهدية يوم ${day}، الساعة ${time}` : `Opened on ${day} at ${time}`;
 }

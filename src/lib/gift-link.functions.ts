@@ -13,6 +13,8 @@ import type { StoredCardDesign } from "@/lib/gift-card-purchase.functions";
  *   only while the card can still be used, a few times an hour per address.
  * - `resetGiftLink`: the buyer, proved by their purchase's own token, gives the card a new link
  *   when the first went to the wrong person; the old link stops answering.
+ * - `markGiftOpened`: the gift was opened, on a tap of its page (a chat's preview taps nothing);
+ *   the database keeps the first time (`mark_gift_card_opened`), for the buyer and the store.
  */
 
 const LINK = z.object({
@@ -122,4 +124,18 @@ export const resetGiftLink = createServerFn({ method: "POST" })
       .update({ share_token: giftToken })
       .eq("id", purchase.gift_card_id);
     return error ? null : { giftToken };
+  });
+
+export const markGiftOpened = createServerFn({ method: "POST" })
+  .validator((data: unknown) => LINK.parse(data))
+  .handler(async ({ data }): Promise<{ opened: boolean }> => {
+    if (!allowTry(`gift-opened:${clientIp()}`, Date.now(), 30)) return { opened: false };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: at, error } = await (
+      supabaseAdmin.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>
+    )("mark_gift_card_opened", { p_slug: data.slug, p_token: data.token });
+    return { opened: !error && Boolean(at) };
   });
