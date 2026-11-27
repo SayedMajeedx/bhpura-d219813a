@@ -12116,6 +12116,7 @@ export type Database = {
       };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
+      my_referral_code: { Args: { p_brand_id: string }; Returns: Json };
       next_variant_code_number: { Args: { p_brand_id: string }; Returns: Json };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };

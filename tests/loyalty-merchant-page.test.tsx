@@ -156,10 +156,15 @@ describe("the tiers on the page", () => {
 describe("the programme's settings", () => {
   it("offer the bonuses the database gives, not the ones nothing gives yet, and write amounts in the store's currency", () => {
     withQueries(<LoyaltySettingsEditor open onOpenChange={() => undefined} brandId="b1" />);
-    for (const shown of ["First order bonus", "Welcome points", "Review points"]) {
+    for (const shown of [
+      "First order bonus",
+      "Welcome points",
+      "Referral points",
+      "Review points",
+    ]) {
       expect(screen.getByLabelText(shown)).toBeInTheDocument();
     }
-    for (const hidden of [/Referral/, /discounted\/sale items/]) {
+    for (const hidden of [/discounted\/sale items/]) {
       expect(screen.queryByText(hidden)).toBeNull();
     }
     expect(screen.getByText(/100 pts = .*SAR|100 pts = .*ر\.س/)).toBeInTheDocument();

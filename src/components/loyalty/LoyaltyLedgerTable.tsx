@@ -147,6 +147,9 @@ export function LoyaltyLedgerTable({ entries, isLoading, onRefresh }: LoyaltyLed
               </SelectItem>
               <SelectItem value="earn_welcome">{isAr ? "نقاط ترحيب" : "Welcome points"}</SelectItem>
               <SelectItem value="earn_review">{isAr ? "نقاط تقييم" : "Review points"}</SelectItem>
+              <SelectItem value="earn_referral">
+                {isAr ? "نقاط دعوة" : "Referral points"}
+              </SelectItem>
               <SelectItem value="earn_manual">
                 {isAr ? "تعديل يدوي" : "Manual Adjustment"}
               </SelectItem>

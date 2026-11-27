@@ -346,6 +346,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_inventory)"
     },
+    "my_referral_code(p_brand_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in shopper: answers only the caller's own referral code in the store (auth.uid() matched to the store's customer), never another customer's"
+    },
     "next_variant_code_number(p_brand_id uuid)": {
       "anon": false,
       "authenticated": true,

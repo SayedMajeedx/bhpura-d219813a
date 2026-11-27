@@ -23,7 +23,12 @@ export const loyaltyKeys = {
     [...loyaltyKeys.all(brandId), "account", customerId] as const,
   customerLedger: (brandId: string, customerId: string) =>
     [...loyaltyKeys.all(brandId), "customer-ledger", customerId] as const,
+  myReferral: (brandId: string, customerId: string) =>
+    [...loyaltyKeys.all(brandId), "my-referral", customerId] as const,
 };
+
+/** The signed-in member's referral code, with what a referral gives and how many came. */
+export type MyReferral = { code: string; points: number; friends: number; rewarded: number };
 
 export type LoyaltyProgramRow = Tables<"brand_loyalty_programs">;
 export type LoyaltyTierRow = Tables<"brand_loyalty_tiers">;
@@ -31,6 +36,23 @@ export type LoyaltyAccountRow = Tables<"loyalty_accounts">;
 export type LoyaltyLedgerRow = Tables<"loyalty_ledger">;
 
 // ── Reads ───────────────────────────────────────────────────────────────────
+
+/**
+ * The signed-in member's referral code in the store (made the first time), or null while the store
+ * gives no points for a referral (migration 20261228100000, `my_referral_code`).
+ */
+export async function fetchMyReferral(brandId: string): Promise<MyReferral | null> {
+  const { data, error } = await supabase.rpc("my_referral_code", { p_brand_id: brandId });
+  if (error) throw error;
+  const row = data as Partial<MyReferral> | null;
+  if (!row?.code) return null;
+  return {
+    code: String(row.code),
+    points: Number(row.points ?? 0),
+    friends: Number(row.friends ?? 0),
+    rewarded: Number(row.rewarded ?? 0),
+  };
+}
 
 /** The brand's program settings, or null when it has none yet. */
 export async function fetchLoyaltyProgram(brandId: string): Promise<LoyaltyProgramRow | null> {
@@ -182,6 +204,12 @@ export const loyaltyQueries = {
     queryOptions({
       queryKey: loyaltyKeys.customerLedger(brandId, customerId),
       queryFn: () => fetchCustomerLoyaltyLedger(brandId, customerId),
+      enabled: Boolean(brandId && customerId),
+    }),
+  myReferral: (brandId: string, customerId: string) =>
+    queryOptions({
+      queryKey: loyaltyKeys.myReferral(brandId, customerId),
+      queryFn: () => fetchMyReferral(brandId),
       enabled: Boolean(brandId && customerId),
     }),
 };
