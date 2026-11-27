@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Gift, MessageCircle, Star, CheckCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
-import { reviewRequestMessage, rewardOffer } from "@/lib/review-reward";
+import { pointsOffer, reviewRequestMessage, rewardOffer } from "@/lib/review-reward";
 import { reviewAddress } from "@/lib/platform-host";
 import { useReviewReward } from "@/hooks/use-review-reward";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,10 +41,12 @@ export function ReviewRequestQueue({
   const orderNo = useOrderNumber(brandId);
   const numberFormat = useOrderNumberFormat(brandId);
   const queryClient = useQueryClient();
-  // The store's own thank-you discount, promised only while it gives one.
+  // The store's own thank-you (a discount or loyalty points), promised only while it gives one.
   const reward = useReviewReward(brandId);
   const lang = isAr ? "ar" : "en";
-  const offer = rewardOffer(reward.usable, lang, reward.currency);
+  const offer = reward.points
+    ? pointsOffer(reward.points, lang)
+    : rewardOffer(reward.usable, lang, reward.currency);
   const requestQ = useQuery({
     ...reviewsQueries.readyRequests(brandId),
     select: (rows) => rows as ReviewRequest[],
@@ -76,6 +78,7 @@ export function ReviewRequestQueue({
       numberFormat,
       reviewUrl,
       offer,
+      points: reward.points,
     });
     const popup = window.open(
       `https://wa.me/${phone}?text=${encodeURIComponent(message)}`,

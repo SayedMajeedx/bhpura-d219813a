@@ -154,10 +154,12 @@ describe("the tiers on the page", () => {
 });
 
 describe("the programme's settings", () => {
-  it("offer the first-order bonus, not the bonuses nothing gives yet, and write amounts in the store's currency", () => {
+  it("offer the bonuses the database gives, not the ones nothing gives yet, and write amounts in the store's currency", () => {
     withQueries(<LoyaltySettingsEditor open onOpenChange={() => undefined} brandId="b1" />);
-    expect(screen.getByText("First Order Bonus Points")).toBeInTheDocument();
-    for (const hidden of [/Review Bonus/, /Welcome/, /Referral/, /discounted\/sale items/]) {
+    for (const shown of ["First order bonus", "Welcome points", "Review points"]) {
+      expect(screen.getByLabelText(shown)).toBeInTheDocument();
+    }
+    for (const hidden of [/Referral/, /discounted\/sale items/]) {
       expect(screen.queryByText(hidden)).toBeNull();
     }
     expect(screen.getByText(/100 pts = .*SAR|100 pts = .*ر\.س/)).toBeInTheDocument();

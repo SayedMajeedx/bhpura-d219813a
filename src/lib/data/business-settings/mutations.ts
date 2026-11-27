@@ -67,19 +67,20 @@ export async function savePagesSettings(
  * quiet success.
  */
 /**
- * Saves the store's thank-you discount for a review: one of its promo codes, or none. Fails on a
- * write that changed nothing (no settings row, or one the member may not change).
+ * Saves the store's thank-you for a review: one of its promo codes, its loyalty points (`points`,
+ * never with a code), or nothing. Fails on a write that changed nothing (no settings row, or one
+ * the member may not change).
  */
-export async function saveReviewReward(brandId: string, promoId: string | null) {
+export async function saveReviewReward(brandId: string, promoId: string | null, points = false) {
   const { data, error } = await supabase
     .from("business_settings")
-    .update({ review_reward_promo_id: promoId })
+    .update({ review_reward_promo_id: points ? null : promoId, review_reward_points: points })
     .eq("brand_id", brandId)
-    .select("review_reward_promo_id")
+    .select("review_reward_promo_id, review_reward_points")
     .maybeSingle();
   if (error) throw error;
   if (!data) throw new Error("REVIEW_REWARD_NOT_SAVED");
-  return data.review_reward_promo_id;
+  return data;
 }
 
 export async function saveLowStockLevel(brandId: string, level: number) {
