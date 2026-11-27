@@ -10,9 +10,14 @@ import { describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   publicReview: null as unknown,
   submit: vi.fn(async () => null as string | null),
-  settings: { review_reward_promo_id: null as string | null, currency: "SAR" },
+  settings: {
+    review_reward_promo_id: null as string | null,
+    review_reward_points: false,
+    currency: "SAR",
+  },
   promos: [] as Array<Record<string, unknown>>,
-  save: vi.fn(async (_brand: string, _promo: string | null) => null),
+  program: null as Record<string, unknown> | null,
+  save: vi.fn(async (_brand: string, _promo: string | null, _points?: boolean) => null),
 }));
 
 const reviewsData = async (importOriginal: () => Promise<object>) => {
@@ -45,6 +50,14 @@ const promoData = async (importOriginal: () => Promise<object>) => ({
   },
 });
 vi.mock("../src/lib/data/promo-codes", (io) => promoData(io));
+const loyaltyData = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
+  loyaltyQueries: {
+    program: () => ({ queryKey: ["reward-program"], queryFn: async () => state.program }),
+  },
+});
+vi.mock("../src/lib/data/loyalty", (io) => loyaltyData(io));
+vi.mock("@/lib/data/loyalty", (io) => loyaltyData(io));
 vi.mock("@/lib/data/promo-codes", (io) => promoData(io));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@tanstack/react-router", () => ({
@@ -117,6 +130,41 @@ describe("the offer's words", () => {
   });
 });
 
+describe("thanking with loyalty points", () => {
+  it("are the programme's review points while the store chose them and the programme is on", () => {
+    const on = { is_enabled: true, review_bonus_points: 25 };
+    const chose = { review_reward_points: true };
+    expect(rules.reviewRewardPoints(chose, on)).toBe(25);
+    expect(rules.reviewRewardPoints({ review_reward_points: false }, on)).toBeNull();
+    expect(rules.reviewRewardPoints(chose, { ...on, is_enabled: false })).toBeNull();
+    expect(rules.reviewRewardPoints(chose, { ...on, review_bonus_points: 0 })).toBeNull();
+    expect(rules.reviewRewardPoints(chose, null)).toBeNull();
+  });
+
+  it("are worded in the reader's language, counted in Arabic", () => {
+    expect(rules.pointsOffer(25, "en")).toBe("25 loyalty points");
+    expect(rules.pointsOffer(1, "en")).toBe("1 loyalty point");
+    expect(rules.pointsOffer(25, "ar")).toBe("25 نقطة ولاء");
+    expect(rules.pointsOffer(5, "ar")).toBe("5 نقاط ولاء");
+    expect(rules.pointsOffer(2, "ar")).toBe("نقطتان");
+  });
+
+  it("are what the review request promises, never a discount", () => {
+    const base = {
+      customerName: "Sara",
+      brandName: "Pura",
+      invoiceNumber: 1098,
+      reviewUrl: "https://pura.boutq.store/review/t1",
+      points: 25,
+    };
+    const ar = rules.reviewRequestMessage({ ...base, lang: "ar", offer: "25 نقطة ولاء" });
+    expect(ar).toContain("تُضاف 25 نقطة ولاء إلى رصيدك");
+    expect(ar).not.toMatch(/خصم|طلبك القادم/);
+    const en = rules.reviewRequestMessage({ ...base, lang: "en", offer: null });
+    expect(en).toContain("and earn 25 loyalty points");
+  });
+});
+
 describe("the review page", () => {
   const base = {
     brand_name: "Beans",
@@ -156,15 +204,64 @@ describe("the review page", () => {
     withQuery(<Page />);
     expect(await screen.findByText(/30 ثانية فقط • خصم 5.00 ر.س/)).toBeInTheDocument();
   });
+
+  it("promises the store's points, and says they were added once the review is sent", async () => {
+    state.publicReview = {
+      ...base,
+      state: "ready",
+      reward_discount_type: null,
+      reward_discount_value: null,
+      reward_points: 25,
+    };
+    const Page = reviewRoute.options.component;
+    withQuery(<Page />);
+    expect(await screen.findByText(/30 ثانية فقط • 25 نقطة ولاء/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "5 نجوم" }));
+    state.publicReview = { ...(state.publicReview as object), state: "completed" };
+    fireEvent.click(screen.getByRole("button", { name: "إرسال التقييم واستلام النقاط" }));
+    expect(await screen.findByText(/أُضيفت 25 نقطة ولاء إلى رصيدك في Beans/)).toBeInTheDocument();
+    expect(screen.queryByText(/كود الخصم/)).not.toBeInTheDocument();
+  });
 });
 
-describe("the thank-you discount on the Reviews page", () => {
+describe("the thank-you on the Reviews page", () => {
+  it("offers the programme's points and saves them in place of a code", async () => {
+    state.settings = { review_reward_promo_id: null, review_reward_points: false, currency: "BHD" };
+    state.program = { is_enabled: true, review_bonus_points: 25 };
+    state.promos = [promo({ id: "p1" })];
+    state.save.mockClear();
+    withQuery(<ReviewRewardCard brandId="b1" isAr={false} canEdit />);
+    const picker = await screen.findByRole("combobox", { name: "Thank-you for a review" });
+    await waitFor(() => expect(picker).not.toBeDisabled());
+    fireEvent.pointerDown(picker, { button: 0, ctrlKey: false, pointerType: "mouse" });
+    fireEvent.click(
+      await screen.findByRole("option", { name: "Loyalty points · 25 loyalty points" }),
+    );
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("b1", null, true));
+  });
+
+  it("says what a review earns once points are chosen, and when the programme gives none", async () => {
+    state.settings = { review_reward_promo_id: null, review_reward_points: true, currency: "BHD" };
+    state.program = { is_enabled: true, review_bonus_points: 25 };
+    const { unmount } = withQuery(<ReviewRewardCard brandId="b1" isAr={false} canEdit />);
+    expect(
+      await screen.findByText("25 loyalty points added to the customer's balance after a review"),
+    ).toBeInTheDocument();
+    unmount();
+    state.program = { is_enabled: false, review_bonus_points: 25 };
+    withQuery(<ReviewRewardCard brandId="b1" isAr={false} canEdit={false} />);
+    expect(
+      await screen.findByText(/The loyalty programme is off or gives no points/),
+    ).toBeInTheDocument();
+  });
+
   it("offers the store's usable codes and saves the choice", async () => {
-    state.settings = { review_reward_promo_id: null, currency: "SAR" };
+    state.settings = { review_reward_promo_id: null, review_reward_points: false, currency: "SAR" };
+    state.program = null;
     state.promos = [promo({ id: "p1" }), promo({ id: "cart", code: "CART-1", max_redemptions: 1 })];
     withQuery(<ReviewRewardCard brandId="b1" isAr={false} canEdit />);
     expect(await screen.findByText("No discount is given after a review")).toBeInTheDocument();
-    const picker = screen.getByRole("combobox", { name: "Thank-you discount" });
+    const picker = screen.getByRole("combobox", { name: "Thank-you for a review" });
     await waitFor(() => expect(picker).not.toBeDisabled());
     fireEvent.pointerDown(picker, {
       button: 0,
@@ -173,12 +270,21 @@ describe("the thank-you discount on the Reviews page", () => {
     });
     expect(await screen.findByRole("option", { name: "THANKS15 · 15% off" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /CART-1/ })).not.toBeInTheDocument();
+    // Points need the loyalty programme on first.
+    expect(screen.getByRole("option", { name: /Loyalty points \(turn/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     fireEvent.click(screen.getByRole("option", { name: "THANKS15 · 15% off" }));
-    await waitFor(() => expect(state.save).toHaveBeenCalledWith("b1", "p1"));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("b1", "p1", false));
   });
 
   it("says a chosen code that ended gives nothing, and shows no picker to a member who may not change it", async () => {
-    state.settings = { review_reward_promo_id: "old", currency: "BHD" };
+    state.settings = {
+      review_reward_promo_id: "old",
+      review_reward_points: false,
+      currency: "BHD",
+    };
     state.promos = [promo({ id: "old", code: "OLD10", end_date: "2026-01-01T00:00:00Z" })];
     withQuery(<ReviewRewardCard brandId="b1" isAr={false} canEdit={false} />);
     expect(

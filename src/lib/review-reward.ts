@@ -1,3 +1,4 @@
+import { countOf } from "@/lib/arabic-count";
 import { currencyLabel } from "@/lib/currency-label";
 import { moneyFractionDigits } from "@/lib/format";
 import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib/order-number";
@@ -9,6 +10,10 @@ import { orderNumberLabel, orderNumberText, type OrderNumberFormat } from "@/lib
  * that offer a code to choose. Every place that promises the discount (the review page, the
  * WhatsApp message staff send, the Reviews page) words it with `rewardOffer`, so none promises a
  * discount the store does not give. Every store once promised "10%" and the code THANKU10.
+ *
+ * A store may thank with its loyalty points instead (`business_settings.review_reward_points`,
+ * the programme's `review_bonus_points`, never with a code too): `reviewRewardPoints` is the
+ * database's `store_review_points` for the admin screens, and `pointsOffer` words it.
  */
 
 type Lang = "ar" | "en";
@@ -57,6 +62,23 @@ export function rewardOffer(
   return lang === "ar" ? `خصم ${amount}` : `${amount} off`;
 }
 
+/** The points a review earns now, as `store_review_points` reads them (null: none). */
+export function reviewRewardPoints(
+  settings: { review_reward_points?: boolean | null } | null | undefined,
+  program: { is_enabled?: boolean | null; review_bonus_points?: number | null } | null | undefined,
+): number | null {
+  if (!settings?.review_reward_points || program?.is_enabled !== true) return null;
+  const points = Number(program.review_bonus_points);
+  return points > 0 ? points : null;
+}
+
+/** Loyalty points as a reward: "25 نقطة ولاء", "25 loyalty points". */
+export function pointsOffer(points: number, lang: Lang): string {
+  if (lang === "en") return `${points} loyalty ${points === 1 ? "point" : "points"}`;
+  const count = countOf(points, "point", "ar");
+  return points > 2 ? `${count} ولاء` : count;
+}
+
 /**
  * The WhatsApp message a member of staff sends to ask for a review, in the customer's language,
  * promising the store's discount only when it gives one. The Arabic needs no gendered verb.
@@ -69,6 +91,7 @@ export function reviewRequestMessage({
   numberFormat,
   reviewUrl,
   offer,
+  points,
 }: {
   lang: Lang;
   customerName: string;
@@ -78,11 +101,21 @@ export function reviewRequestMessage({
   numberFormat?: OrderNumberFormat | null;
   reviewUrl: string;
   offer: string | null;
+  /** The loyalty points the review earns, when the store thanks with points instead of a code. */
+  points?: number | null;
 }): string {
   if (lang === "ar") {
-    const thanks = offer ? `، وبعد إكماله لك ${offer} على طلبك القادم 🎁` : "";
+    const thanks = points
+      ? `، وبعد إكماله تُضاف ${pointsOffer(points, "ar")} إلى رصيدك 🎁`
+      : offer
+        ? `، وبعد إكماله لك ${offer} على طلبك القادم 🎁`
+        : "";
     return `هلا ${customerName} 🌿\n\nسعدنا بخدمتك في ${brandName}، ونتمنى أن طلبك رقم ${orderNumberText(invoiceNumber, numberFormat)} نال رضاك.\n\nشاركنا رأيك بتقييم سريع لا يستغرق أكثر من 30 ثانية${thanks}\n\n${reviewUrl}\n\nرأيك يفرق معنا ويساعدنا نقدم لك تجربة أجمل دائمًا 🤍`;
   }
-  const thanks = offer ? ` and get ${offer} your next order 🎁` : "";
+  const thanks = points
+    ? ` and earn ${pointsOffer(points, "en")} 🎁`
+    : offer
+      ? ` and get ${offer} your next order 🎁`
+      : "";
   return `Hi ${customerName} 🌿\n\nWe loved serving you at ${brandName}. Share a quick review of order ${orderNumberLabel(invoiceNumber, numberFormat)} in under 30 seconds${thanks}\n\n${reviewUrl}\n\nYour feedback helps us make every experience better 🤍`;
 }

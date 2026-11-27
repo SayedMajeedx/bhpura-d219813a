@@ -15,7 +15,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { normalizePhoneForWhatsApp } from "@/lib/courier-whatsapp";
-import { rewardOffer } from "@/lib/review-reward";
+import { pointsOffer, rewardOffer } from "@/lib/review-reward";
 import { orderNumberLabel } from "@/lib/order-number";
 import { isReviewToken, reviewHead } from "@/lib/review-head";
 import { getReviewLinkHead } from "@/lib/review-link.functions";
@@ -45,6 +45,11 @@ type PublicReview = {
   reward_discount_type: string | null;
   reward_discount_value: number | string | null;
   currency: string | null;
+  /**
+   * The loyalty points the store thanks with instead of a code: offered (before the review) or
+   * given (after it); absent before migration 20261226100000.
+   */
+  reward_points?: number | null;
   /** How the store writes its order numbers (order-number.ts); absent before migration 20261027170000. */
   order_number_prefix?: string | null;
   order_number_digits?: number | null;
@@ -78,16 +83,19 @@ function ReviewPage() {
   const completed = submitted || review?.state === "completed";
   // The store's own discount (none when it gives none): the page promises only what it gives.
   const code = submitted ? rewardCode : (review?.reward_code ?? null);
-  const offer = review
-    ? rewardOffer(
-        {
-          discount_type: review.reward_discount_type,
-          discount_value: review.reward_discount_value,
-        },
-        "ar",
-        review.currency,
-      )
-    : null;
+  const points = Number(review?.reward_points ?? 0) > 0 ? Number(review?.reward_points) : null;
+  const offer = points
+    ? pointsOffer(points, "ar")
+    : review
+      ? rewardOffer(
+          {
+            discount_type: review.reward_discount_type,
+            discount_value: review.reward_discount_value,
+          },
+          "ar",
+          review.currency,
+        )
+      : null;
 
   const submit = async () => {
     if (!rating) return;
@@ -101,6 +109,8 @@ function ReviewPage() {
         comment: comment.trim() || null,
         showOnStore,
       });
+      // The points a review earned are the database's: read them back before thanking.
+      await reviewQ.refetch();
       setRewardCode(reward ? String(reward) : null);
       setSubmitted(true);
     } catch (error) {
@@ -124,6 +134,22 @@ function ReviewPage() {
         <p className="text-center text-muted-foreground">رابط التقييم غير متاح.</p>
       </PageState>
     );
+
+  if (completed && !code && points && review.state === "completed") {
+    return (
+      <PageShell review={review}>
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+            <Check className="size-8" />
+          </div>
+          <h1 className="font-heading text-3xl font-bold">شكرًا لك، أسعدنا رأيك</h1>
+          <p className="text-muted-foreground">
+            {`كهدية منّا، أُضيفت ${offer} إلى رصيدك في ${review.brand_name}، وتظهر في حسابك في المتجر.`}
+          </p>
+        </div>
+      </PageShell>
+    );
+  }
 
   if (completed && !code) {
     return (
@@ -191,7 +217,7 @@ function ReviewPage() {
           <h1 className="font-heading text-3xl font-bold">كيف كانت تجربتك معنا؟</h1>
           <p className="text-sm text-muted-foreground">
             هلا {review.customer_name}، رأيك يساعدنا كثيرًا
-            {offer ? " وينتظرك الخصم بعد الإرسال." : "."}
+            {points ? " وتُضاف نقاطك بعد الإرسال." : offer ? " وينتظرك الخصم بعد الإرسال." : "."}
           </p>
         </div>
         <div className="space-y-3 text-center">
@@ -295,7 +321,11 @@ function ReviewPage() {
           onClick={submit}
         >
           {submitting ? <Loader2 className="size-5 animate-spin" /> : <Gift className="size-5" />}
-          {offer ? "إرسال التقييم واستلام الخصم" : "إرسال التقييم"}
+          {points
+            ? "إرسال التقييم واستلام النقاط"
+            : offer
+              ? "إرسال التقييم واستلام الخصم"
+              : "إرسال التقييم"}
         </Button>
       </div>
     </PageShell>

@@ -27,6 +27,34 @@ interface LoyaltySettingsEditorProps {
   initialSettings?: BrandLoyaltyProgram | null;
 }
 
+/**
+ * The bonuses the database gives (migration 20261226100000 for the welcome and review points);
+ * the referral bonus is not offered until referrals are built.
+ */
+const BONUS_FIELDS = [
+  {
+    key: "first_order_bonus_points",
+    ar: "مكافأة أول طلب",
+    en: "First order bonus",
+    noteAr: "تُضاف مع نقاط أول طلب للعميل يكتمل أو يُدفع.",
+    noteEn: "Added to the points of a customer's first order that is completed or paid.",
+  },
+  {
+    key: "welcome_bonus_points",
+    ar: "نقاط الترحيب",
+    en: "Welcome points",
+    noteAr: "مرة واحدة، حين ينشئ العميل حسابه في المتجر أو يربطه.",
+    noteEn: "Once, when a customer creates or links their account with the store.",
+  },
+  {
+    key: "review_bonus_points",
+    ar: "نقاط التقييم",
+    en: "Review points",
+    noteAr: "تُعطى بعد تقييم الطلب حين تختار النقاط مكافأةً في صفحة التقييمات.",
+    noteEn: "Given after an order is reviewed, when the Reviews page thanks with points.",
+  },
+] as const satisfies ReadonlyArray<{ key: keyof BrandLoyaltyProgram } & Record<string, string>>;
+
 export function LoyaltySettingsEditor({
   open,
   onOpenChange,
@@ -316,37 +344,34 @@ export function LoyaltySettingsEditor({
             </div>
           </Card>
 
-          {/* Bonus Points Triggers */}
+          {/* Bonus points: each given by the database once it happens */}
           <Card className="p-4 space-y-4 border-border">
             <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
               <Gift className="h-4 w-4 text-primary" />
-              {isAr ? "مكافأة أول طلب" : "First Order Bonus"}
+              {isAr ? "نقاط المكافآت" : "Bonus points"}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="first_order_bonus">
-                  {isAr ? "مكافأة أول طلب للعميل" : "First Order Bonus Points"}
-                </Label>
-                <Input
-                  id="first_order_bonus"
-                  type="number"
-                  min="0"
-                  value={form.first_order_bonus_points ?? 50}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      first_order_bonus_points: Number(e.target.value) || 0,
-                    }))
-                  }
-                />
-              </div>
-
-              <p className="text-xs leading-relaxed text-muted-foreground sm:col-span-2">
-                {isAr
-                  ? "تُضاف مع نقاط أول طلب للعميل يكتمل أو يُدفع."
-                  : "Added to the points of a customer's first order that is completed or paid."}
-              </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {BONUS_FIELDS.map((field) => (
+                <div key={field.key} className="space-y-1.5">
+                  <Label htmlFor={`bonus_${field.key}`}>{isAr ? field.ar : field.en}</Label>
+                  <Input
+                    id={`bonus_${field.key}`}
+                    type="number"
+                    min="0"
+                    value={form[field.key] ?? 0}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        [field.key]: Math.max(0, Math.round(Number(e.target.value) || 0)),
+                      }))
+                    }
+                  />
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {isAr ? field.noteAr : field.noteEn}
+                  </p>
+                </div>
+              ))}
             </div>
           </Card>
         </AppDialogBody>

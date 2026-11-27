@@ -2198,6 +2198,7 @@ export type Database = {
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
           review_reward_promo_id: string | null;
+          review_reward_points: boolean;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -2415,6 +2416,7 @@ export type Database = {
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
           review_reward_promo_id?: string | null;
+          review_reward_points?: boolean;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -2632,6 +2634,7 @@ export type Database = {
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
           review_reward_promo_id?: string | null;
+          review_reward_points?: boolean;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -6318,6 +6321,7 @@ export type Database = {
           rating: number;
           request_id: string;
           reward_code: string | null;
+          reward_points: number | null;
           show_on_store: boolean;
         };
         Insert: {
@@ -6332,6 +6336,7 @@ export type Database = {
           rating: number;
           request_id: string;
           reward_code?: string | null;
+          reward_points?: number | null;
           show_on_store?: boolean;
         };
         Update: {
@@ -6346,6 +6351,7 @@ export type Database = {
           rating?: number;
           request_id?: string;
           reward_code?: string | null;
+          reward_points?: number | null;
           show_on_store?: boolean;
         };
         Relationships: [
@@ -11474,6 +11480,7 @@ export type Database = {
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
           review_reward_promo_id: string | null;
+          review_reward_points: boolean;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -11683,6 +11690,7 @@ export type Database = {
           reward_code: string;
           reward_discount_type: string;
           reward_discount_value: number;
+          reward_points: number;
           state: string;
         }[];
       };
