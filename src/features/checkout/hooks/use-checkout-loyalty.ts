@@ -5,24 +5,33 @@ import { calculateOrderLoyaltyPoints } from "@/lib/loyalty.functions";
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 import type { Storefront } from "@/features/checkout/types";
 import { arNoun } from "@/lib/arabic-count";
+import { memberTierDiscount, type TierDiscountOutcome } from "@/lib/loyalty-tier-discount";
 
 /**
  * Loyalty at checkout: the brand's program and the customer's points and tier,
  * redeeming points (within the minimum and the program's cap on the cart),
  * the points discount, and the points this order will earn.
+ *
+ * A member's tier discount is weighed against the code and the store's offers (`tierWeighs`) as
+ * the order builder weighs it (`memberTierDiscount`): the larger is taken, never both. Not for a
+ * booking, whose own offers settle it.
  */
 export function useCheckoutLoyalty({
   brand,
   customerId,
   cartTotal,
   promoDiscount,
+  tierWeighs = null,
   currency,
   lang,
 }: {
   brand: Pick<Storefront["brand"], "id">;
   customerId: string | null;
   cartTotal: number;
+  /** Everything taken off before points: the code, the offers and a booking's offer. */
   promoDiscount: number;
+  /** The code's and the offers' parts of it, which a member's tier discount may replace. */
+  tierWeighs?: { code: number; offers: number } | null;
   currency: string;
   lang: Storefront["lang"];
 }) {
@@ -54,6 +63,30 @@ export function useCheckoutLoyalty({
     })();
   }, [brand.id, customerId]);
 
+  // The member's tier discount, when it saves more than the code and the offers (the database's
+  // rule): it takes their place in what is taken off before points.
+  const tierPercent =
+    loyaltyProgram?.is_enabled && Number(loyaltyTier?.discount_percent) > 0
+      ? Number(loyaltyTier?.discount_percent)
+      : 0;
+  const member: TierDiscountOutcome | null =
+    tierWeighs && tierPercent > 0
+      ? memberTierDiscount({
+          subtotal: cartTotal,
+          percent: tierPercent,
+          code: tierWeighs.code,
+          offers: tierWeighs.offers,
+        })
+      : null;
+  const discountBeforePoints = member
+    ? promoDiscount -
+      tierWeighs!.code -
+      tierWeighs!.offers +
+      member.code +
+      member.offers +
+      member.tier
+    : promoDiscount;
+
   const maxRedemptionPercent =
     loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
   const redemptionRate = Number(loyaltyProgram?.redemption_rate || 0.01);
@@ -82,7 +115,7 @@ export function useCheckoutLoyalty({
     const rawDisc = Number((effectiveRedeemedPoints * redemptionRate).toFixed(3));
     const maxApplicable = Math.max(
       0,
-      Math.min(maxAllowedLoyaltyDiscount, cartTotal - promoDiscount),
+      Math.min(maxAllowedLoyaltyDiscount, cartTotal - discountBeforePoints),
     );
     return Number(Math.min(rawDisc, maxApplicable).toFixed(3));
   }, [
@@ -91,7 +124,7 @@ export function useCheckoutLoyalty({
     redemptionRate,
     maxAllowedLoyaltyDiscount,
     cartTotal,
-    promoDiscount,
+    discountBeforePoints,
   ]);
 
   useEffect(() => {
@@ -121,14 +154,14 @@ export function useCheckoutLoyalty({
     if (!loyaltyProgram?.is_enabled) return 0;
     const res = calculateOrderLoyaltyPoints({
       subtotal: cartTotal,
-      discount: promoDiscount + loyaltyDiscount,
+      discount: discountBeforePoints + loyaltyDiscount,
       tax: 0,
       shipping: 0,
       program: loyaltyProgram,
       tierMultiplier: loyaltyTier?.points_multiplier || 1.0,
     });
     return res.finalPoints;
-  }, [loyaltyProgram, cartTotal, promoDiscount, loyaltyDiscount, loyaltyTier]);
+  }, [loyaltyProgram, cartTotal, discountBeforePoints, loyaltyDiscount, loyaltyTier]);
 
   const handleApplyPoints = () => {
     const pts = parseInt(pointsToRedeemInput, 10);
@@ -186,6 +219,12 @@ export function useCheckoutLoyalty({
     loyaltyProgram,
     /** The signed-in member's tier gives free shipping (the database gives the same). */
     freeShipping: Boolean(loyaltyProgram?.is_enabled && loyaltyTier?.free_shipping),
+    /**
+     * The code, offers and tier parts as the order will take them: the tier's when it saves more
+     * (null: no tier discount is weighed), with the tier and its percentage to name it.
+     */
+    member:
+      member && member.tier > 0 ? { ...member, tierInfo: loyaltyTier, percent: tierPercent } : null,
     pointsToRedeemInput,
     setPointsToRedeemInput,
     redeemedPoints,

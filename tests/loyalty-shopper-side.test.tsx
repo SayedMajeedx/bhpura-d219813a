@@ -91,7 +91,7 @@ describe("the shopper's rewards", () => {
     expect(screen.queryByText(/Discount/)).toBeNull();
   });
 
-  it("name the shopper's tier and the next one by what it takes to spend, never a discount", async () => {
+  it("name the shopper's tier and the next one by what it takes to spend, and each tier's discount", async () => {
     Object.assign(data, {
       program: { is_enabled: true, redemption_rate: 0.01, holding_period_days: 0 },
       tiers: [
@@ -105,6 +105,8 @@ describe("the shopper's rewards", () => {
     expect(await screen.findByText("Current VIP Tier")).toBeInTheDocument();
     expect(screen.getByText(/Next tier: Silver, at .*1,000\.00.* spent/)).toBeInTheDocument();
     expect(screen.getByText("Free Shipping")).toBeInTheDocument();
-    expect(screen.queryByText(/Exclusive Discount|5%/)).toBeNull();
+    // A tier's discount is given by the order builder (migration 20261227100000), so it is named.
+    expect(screen.getByText("5% off every order")).toBeInTheDocument();
+    expect(screen.queryByText(/Exclusive Discount/)).toBeNull();
   });
 });

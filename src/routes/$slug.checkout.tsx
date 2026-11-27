@@ -37,6 +37,7 @@ import { usePickupAndDigital } from "@/features/checkout/hooks/use-pickup-and-di
 import { usePromoCode } from "@/features/checkout/hooks/use-promo-code";
 import { useAbandonedCart } from "@/features/checkout/hooks/use-abandoned-cart";
 import { useCheckoutLoyalty } from "@/features/checkout/hooks/use-checkout-loyalty";
+import { tierDiscountLabel } from "@/lib/loyalty-tier-discount";
 import { useCheckoutOffers } from "@/features/checkout/hooks/use-checkout-offers";
 import { useOrderIntake } from "@/features/storefront-shell/hooks/use-order-intake";
 import { intakeSentence, intakeTakesOrders } from "@/lib/opening-hours";
@@ -297,14 +298,21 @@ function Checkout() {
     handleApplyPoints,
     handleRemovePoints,
     freeShipping,
+    member,
   } = useCheckoutLoyalty({
     brand,
     customerId,
     cartTotal,
     promoDiscount: promoDiscount + offerDiscount + bookingDiscount,
+    // A member's tier discount replaces the code and the offers when it saves more (never a
+    // booking's: its own offers settle it).
+    tierWeighs: appointment ? null : { code: promoDiscount, offers: offerDiscount },
     currency,
     lang,
   });
+  const codeTaken = member ? member.code : promoDiscount;
+  const offersTaken = member ? member.offers : offerDiscount;
+  const tierTaken = member ? member.tier : 0;
   // A member whose loyalty tier has free shipping pays none (so does the order).
   const shipping = freeShipping || offers?.free_delivery ? 0 : deliveryFee;
 
@@ -323,7 +331,7 @@ function Checkout() {
   const totals = orderTotals(
     {
       subtotal: cartTotal + Number(appointment?.optionsTotal ?? 0) + gift.fee,
-      discount: promoDiscount + offerDiscount + bookingDiscount,
+      discount: codeTaken + offersTaken + tierTaken + bookingDiscount,
       shipping,
       loyaltyDiscount,
     },
@@ -766,8 +774,21 @@ function Checkout() {
           marketingConsent={marketingConsent}
           method={method}
           pointsToRedeemInput={pointsToRedeemInput}
-          promoDiscount={promoDiscount}
-          offers={offers}
+          promoDiscount={codeTaken}
+          offers={
+            member && offers
+              ? { ...offers, applied: offers.applied.filter((o) => o.kind === "free_delivery") }
+              : offers
+          }
+          memberDiscount={
+            member
+              ? {
+                  amount: member.tier,
+                  label: tierDiscountLabel(member.tierInfo, member.percent, lang),
+                  replacedCode: Boolean(appliedPromo),
+                }
+              : null
+          }
           bookingDiscount={appointment ? bookingDiscount : null}
           bookingCodeDropped={withBooking.codeDropped}
           promoInput={promoInput}
