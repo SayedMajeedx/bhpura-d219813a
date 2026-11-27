@@ -67,6 +67,48 @@ describe("launch security regressions", () => {
     }
   });
 
+  it("hands the whole platform settings row to a super admin only", async () => {
+    // It holds the impersonation policy; it was a public server function with no sign-in.
+    expect(onboarding.getPlatformSettings.middleware).toHaveLength(1);
+    state.admin = fakeSupabase({ rows: { system_settings: { id: 1 } } }).supabase;
+    const merchant = fakeSupabase({ rpc: { is_super_admin: false } });
+    await expect(
+      onboarding.getPlatformSettings({ context: { ...merchant, userId: "u1" } }),
+    ).rejects.toThrow("UNAUTHORIZED_SUPER_ADMIN_ONLY");
+    const owner = fakeSupabase({ rpc: { is_super_admin: true } });
+    await expect(
+      onboarding.getPlatformSettings({ context: { ...owner, userId: "u2" } }),
+    ).resolves.toBeDefined();
+  });
+
+  it("keeps the impersonation policy out of a visitor's read of the platform settings", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20261224100000_platform_settings_reads_narrowed.sql",
+      "utf8",
+    );
+    const grant = /GRANT SELECT \(([^)]*)\) ON public\.system_settings TO anon, authenticated/.exec(
+      migration,
+    );
+    const columns = (grant?.[1] ?? "").split(",").map((column) => column.trim());
+    // Every column the browser reads (src/lib/data/system-settings) is granted again after the
+    // table-level REVOKE, which takes column grants with it; the impersonation policy is not.
+    for (const column of [
+      "base_price_bhd",
+      "discount_price_bhd",
+      "benefit_pay_qr_url",
+      "merchant_account_name",
+      "subscription_iban",
+      "billing_interval_mode",
+    ]) {
+      expect(columns).toContain(column);
+    }
+    expect(columns).not.toContain("superadmin_impersonation_mutation_allowed");
+    expect(migration.indexOf("REVOKE SELECT ON public.system_settings")).toBeLessThan(
+      migration.indexOf("GRANT SELECT ("),
+    );
+    expect(migration).toContain("REVOKE SELECT ON public.platform_addon_policies FROM anon");
+  });
+
   it("removes public tenant-request reads and unrestricted settings writes", () => {
     const migration = readFileSync(
       "supabase/migrations/20260808213000_lock_platform_settings_and_tenant_requests.sql",

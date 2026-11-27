@@ -8,8 +8,7 @@
  *   - a font the store uploaded (its address), kept in its list to choose again.
  * In a card's kit a choice travels as one string: an upload's address, or `face:<id>`; `face:own`
  * is the cards' own faces chosen on purpose (a gift message card choosing them over its gift
- * cards' font). Every face here has Arabic and Latin letters, but Inter (Latin only); the file
- * served as "Cormorant Garamond" is really a Canela trial font, and is never offered on a card.
+ * cards' font). Every face here has Arabic and Latin letters, but Inter (Latin only).
  */
 import type { CardFontChoice, CardFontChoices } from "@/lib/data/gift-cards/designs";
 

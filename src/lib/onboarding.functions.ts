@@ -312,21 +312,26 @@ export const updateRegistrationPrice = createServerFn({ method: "POST" })
     return { success: true, updatedPrice: data.newPrice };
   });
 
-// 4.1. Get full platform settings (Public)
-export const getPlatformSettings = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin
-    .from("system_settings")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
+// 4.1. Get full platform settings (Superadmin only: it holds the impersonation policy, and only
+// the super admin's settings page reads the whole row; merchants read billing details through
+// the browser's own column grants).
+export const getPlatformSettings = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await requireSuperAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("system_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Failed to query platform system_settings:", error);
-    return null;
-  }
-  return data;
-});
+    if (error) {
+      console.error("Failed to query platform system_settings:", error);
+      return null;
+    }
+    return data;
+  });
 
 // 4.2. Update platform settings (Superadmin only)
 const UpdatePlatformSettingsInput = z.object({
