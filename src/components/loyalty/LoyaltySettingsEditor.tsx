@@ -28,8 +28,8 @@ interface LoyaltySettingsEditorProps {
 }
 
 /**
- * The bonuses the database gives (migration 20261226100000 for the welcome and review points);
- * the referral bonus is not offered until referrals are built.
+ * The bonuses the database gives (migration 20261226100000 for the welcome and review points,
+ * 20261228100000 for referrals).
  */
 const BONUS_FIELDS = [
   {
@@ -45,6 +45,14 @@ const BONUS_FIELDS = [
     en: "Welcome points",
     noteAr: "مرة واحدة، حين ينشئ العميل حسابه في المتجر أو يربطه.",
     noteEn: "Once, when a customer creates or links their account with the store.",
+  },
+  {
+    key: "referral_bonus_points",
+    ar: "نقاط الدعوة",
+    en: "Referral points",
+    noteAr: "لكلٍّ من العميل وصديقه، حين يكمل الصديق أول طلب من رابط الدعوة.",
+    noteEn:
+      "To both the customer and their friend, once the friend's first order through the link is completed.",
   },
   {
     key: "review_bonus_points",
@@ -351,7 +359,7 @@ export function LoyaltySettingsEditor({
               {isAr ? "نقاط المكافآت" : "Bonus points"}
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {BONUS_FIELDS.map((field) => (
                 <div key={field.key} className="space-y-1.5">
                   <Label htmlFor={`bonus_${field.key}`}>{isAr ? field.ar : field.en}</Label>

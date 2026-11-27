@@ -26,6 +26,7 @@ import {
 import { PasskeySettings } from "@/components/passkey-settings";
 import { CustomerReturnRequestModal } from "@/components/storefront/CustomerReturnRequestModal";
 import { CustomerLoyaltySection } from "@/components/loyalty/CustomerLoyaltySection";
+import { ReferralInviteCard } from "@/components/loyalty/ReferralInviteCard";
 import { getCustomerStoreCreditBalance } from "@/lib/returns.functions";
 import { AddonSlot } from "@/components/addons/AddonSlot";
 import { getInitials } from "@/features/storefront-account/lib/account-shared";
@@ -312,7 +313,19 @@ export function AccountPage() {
             )}
 
             {loyaltyOn && (
-              <TabsContent value="loyalty" className="mt-0 focus-visible:outline-none">
+              <TabsContent value="loyalty" className="mt-0 space-y-6 focus-visible:outline-none">
+                {customer?.id && (
+                  <ReferralInviteCard
+                    brandId={brand.id}
+                    customerId={customer.id}
+                    slug={brand.slug}
+                    storeName={
+                      (isAr ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) ??
+                      brand.slug
+                    }
+                    lang={isAr ? "ar" : "en"}
+                  />
+                )}
                 <CustomerLoyaltySection
                   brandId={brand.id}
                   customerId={customer?.id || ""}

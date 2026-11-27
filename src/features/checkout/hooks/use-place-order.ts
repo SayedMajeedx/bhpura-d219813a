@@ -6,6 +6,8 @@ import { recordCheckoutProgress, trackStorefrontEvent } from "@/lib/storefront-a
 import { problemFromFailure } from "@/lib/checkout-progress";
 import { redeemLoyaltyForOrder } from "@/lib/loyalty-checkout.functions";
 import { redeemGiftCardAtCheckout } from "@/lib/gift-card-checkout.functions";
+import { recordReferralAtCheckout } from "@/lib/referral-checkout.functions";
+import { forgetReferral, readReferral } from "@/lib/referral-link";
 import type { GiftOrderPayload } from "@/lib/gift-order";
 import { markCartRecoveredOnOrder } from "@/lib/abandoned-carts.functions";
 import type { ShippingZone } from "@/lib/shipping";
@@ -256,6 +258,25 @@ export function usePlaceOrder({
 
         // The order's points are the database's: it gives them when the order is completed or
         // paid, whoever placed it, and takes them back if it is undone (migration 20261014110000).
+
+        // A friend's referral link this browser came with: recorded on a new customer's first
+        // order (the database refuses the rest). It never stops the order.
+        const referralCode = readReferral(brand.slug, Date.now());
+        if (referralCode && orderId && confirmationToken) {
+          try {
+            const { result } = await recordReferralAtCheckout({
+              data: {
+                orderId: String(orderId),
+                brandId: brand.id,
+                confirmationToken: String(confirmationToken),
+                code: referralCode,
+              },
+            });
+            if (result !== "FAILED") forgetReferral(brand.slug);
+          } catch (referralErr) {
+            console.warn("Referral record error:", referralErr);
+          }
+        }
 
         // 3. Mark cart recovered
         if (orderId) {

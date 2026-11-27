@@ -15,6 +15,7 @@ import { isCheckoutPath } from "@/features/storefront-shell/lib/checkout-path";
 import { CheckoutHeader } from "@/features/storefront-shell/components/CheckoutHeader";
 import { shellTheme } from "@/features/storefront-shell/lib/shell-theme";
 import { isEmbeddedWindow } from "@/features/storefront-shell/lib/embedded";
+import { REFERRAL_PARAM, rememberReferral } from "@/lib/referral-link";
 
 /** The storefront frame: theme variables, typography, the sticky header, the page, the footer, WhatsApp and the analytics consent. */
 export function StoreShell() {
@@ -48,6 +49,15 @@ export function StoreShell() {
   const headerHidden = useAutoHideHeader(headerRef);
   // Every page a shopper opens shows from its top, on a phone too.
   useScrollToTop();
+
+  // A member's referral link (`?ref=`): its code is kept for this store until a first order.
+  useEffect(() => {
+    rememberReferral(
+      brand.slug,
+      new URLSearchParams(window.location.search).get(REFERRAL_PARAM),
+      Date.now(),
+    );
+  }, [brand.slug]);
 
   useEffect(() => {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
