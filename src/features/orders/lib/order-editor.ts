@@ -1,3 +1,4 @@
+import { newLineCost } from "@/features/orders/lib/line-costs";
 import { orderTotals as sharedOrderTotals } from "@/lib/order-tax";
 import { regionLabel } from "@/lib/bahrain-regions";
 import { chargedTaxRate } from "@/lib/vat-registration";
@@ -167,7 +168,7 @@ export function orderLineFromVariant(
     variant_id: variant.id,
     description: lines.join("\n"),
     unit_price: toNumber(variant.selling_price ?? product?.base_price),
-    unit_cost: variant.cost_price == null ? null : toNumber(variant.cost_price),
+    unit_cost: newLineCost(variant.cost_price),
     original_price: variant.original_price == null ? null : toNumber(variant.original_price),
     selected_variant: {
       size: variant.size || null,

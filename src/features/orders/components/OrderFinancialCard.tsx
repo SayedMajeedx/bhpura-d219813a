@@ -28,6 +28,7 @@ import { SummaryRow } from "@/features/orders/components/SummaryRow";
 import { tPayment } from "@/features/orders/lib/payment-labels";
 import { BenefitReceiptReview } from "@/features/orders/components/BenefitReceiptReview";
 import { grossProfitLabel } from "@/lib/order-profit-label";
+import { lineCosts, unknownCostNote } from "@/features/orders/lib/line-costs";
 /** Totals, fees, discount and promo code, tax, payment and BenefitPay receipt review. */
 export function OrderFinancialCard({
   appliedPromo,
@@ -462,11 +463,8 @@ export function OrderFinancialCard({
       {canViewFinancials &&
         (() => {
           const isAr = lang === "ar";
-          const productCogsTotal = items.reduce((sum, it: any) => {
-            const qty = Number(it.quantity || 1);
-            const unitCost = Number(it.unit_cost || 0);
-            return sum + unitCost * qty;
-          }, 0);
+          // A piece with no cost recorded is left out and named, never counted as costing nothing.
+          const { known: productCogsTotal, unknownPieces } = lineCosts(items);
 
           // This card is an estimated order margin, so show the configured BOM
           // before fulfillment as well. Financial reports recognize actual COGS
@@ -527,6 +525,11 @@ export function OrderFinancialCard({
                   {formatMoney(orderNetProfit, currency, lang)}
                 </span>
               </div>
+              {unknownPieces > 0 && (
+                <p className="pt-1.5 border-t border-border-subtle text-warning">
+                  {unknownCostNote(unknownPieces, lang)}
+                </p>
+              )}
             </div>
           );
         })()}
