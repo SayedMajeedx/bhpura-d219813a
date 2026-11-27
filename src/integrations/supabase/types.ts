@@ -6463,6 +6463,7 @@ export type Database = {
           subtotal: number;
           tax_amount: number;
           tax_rate: number;
+          tier_discount: number;
           total: number;
           updated_at: string;
           user_id: string | null;
@@ -6552,6 +6553,7 @@ export type Database = {
           subtotal?: number;
           tax_amount?: number;
           tax_rate?: number;
+          tier_discount?: number;
           total?: number;
           updated_at?: string;
           user_id?: string | null;
@@ -6641,6 +6643,7 @@ export type Database = {
           subtotal?: number;
           tax_amount?: number;
           tax_rate?: number;
+          tier_discount?: number;
           total?: number;
           updated_at?: string;
           user_id?: string | null;
@@ -12101,6 +12104,7 @@ export type Database = {
         Args: { p_item_id: string };
         Returns: Json;
       };
+      member_tier_discount: { Args: { p_order_id: string }; Returns: Json };
       move_stock_between_incubators: {
         Args: {
           p_from_incubator_id: string;

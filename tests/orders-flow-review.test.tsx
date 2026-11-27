@@ -100,13 +100,14 @@ describe("what an order's discount is made of", () => {
   const order = { discount: 20, offer_discount: 8, loyalty_discount: 2 };
 
   it("splits it into the offers, the points and what is left for a code", () => {
-    expect(discountParts(order)).toEqual({ offers: 8, points: 2, code: 10, total: 20 });
+    expect(discountParts(order)).toEqual({ offers: 8, tier: 0, points: 2, code: 10, total: 20 });
     expect(keptDiscount(order)).toBe(10);
   });
 
   it("never reads more offers and points than the order's discount", () => {
     expect(discountParts({ discount: 5, offer_discount: 8, loyalty_discount: 2 })).toEqual({
       offers: 5,
+      tier: 0,
       points: 0,
       code: 0,
       total: 5,

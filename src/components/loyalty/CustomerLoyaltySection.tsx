@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { arNoun, countOf } from "@/lib/arabic-count";
+import { tierDiscountPerk } from "@/lib/loyalty-tier-discount";
 
 interface CustomerLoyaltySectionProps {
   brandId: string;
@@ -152,6 +153,11 @@ export function CustomerLoyaltySection({
                   <span className="text-xs font-bold text-primary">
                     {currentTier.points_multiplier}x {isAr ? "مضاعف نقاط" : "multiplier"}
                   </span>
+                  {tierDiscountPerk(currentTier.discount_percent, locale) && (
+                    <span className="text-xs font-medium text-primary">
+                      {tierDiscountPerk(currentTier.discount_percent, locale)}
+                    </span>
+                  )}
                   {currentTier.free_shipping && (
                     <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
                       <Truck className="h-3 w-3" />
@@ -234,6 +240,12 @@ export function CustomerLoyaltySection({
                         {t.points_multiplier}x {isAr ? "مضاعف نقاط" : "Points Multiplier"}
                       </span>
                     </li>
+                    {tierDiscountPerk(t.discount_percent, locale) && (
+                      <li className="flex items-center gap-1.5 font-medium text-primary">
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                        <span>{tierDiscountPerk(t.discount_percent, locale)}</span>
+                      </li>
+                    )}
                     {t.free_shipping && (
                       <li className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
                         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />

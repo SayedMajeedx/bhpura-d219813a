@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Award, Sparkles, Edit2, Truck, Loader2 } from "lucide-react";
+import { Award, Sparkles, Edit2, Truck, Loader2, Percent } from "lucide-react";
+import { tierDiscountPerk } from "@/lib/loyalty-tier-discount";
 import type { LoyaltyTier } from "@/lib/loyalty.types";
 import { starterLoyaltyTiers } from "@/lib/loyalty-program";
 import { useAdminStoreProfile } from "@/hooks/use-store-profile";
@@ -163,6 +164,12 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
                       {tier.points_multiplier}x
                     </span>
                   </div>
+                  {tierDiscountPerk(tier.discount_percent, isAr ? "ar" : "en") && (
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-primary">
+                      <Percent className="h-3.5 w-3.5" />
+                      <span>{tierDiscountPerk(tier.discount_percent, isAr ? "ar" : "en")}</span>
+                    </p>
+                  )}
                   {tier.free_shipping && (
                     <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
                       <Truck className="h-3.5 w-3.5" />
@@ -263,6 +270,30 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
               </div>
 
               <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="tier-discount-percent">
+                    {isAr ? "خصم دائم على الطلبات (٪)" : "Discount on every order (%)"}
+                  </Label>
+                  <Input
+                    id="tier-discount-percent"
+                    type="number"
+                    min="0"
+                    max="50"
+                    step="1"
+                    value={editingTier.discount_percent ?? 0}
+                    onChange={(e) =>
+                      setEditingTier({
+                        ...editingTier,
+                        discount_percent: Math.min(50, Math.max(0, Number(e.target.value) || 0)),
+                      })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {isAr
+                      ? "يأخذ العضو الأكبر: هذا الخصم أو كود الخصم وعروض المتجر، لا الاثنين."
+                      : "A member gets the larger: this or a promo code with the store's offers, never both."}
+                  </p>
+                </div>
                 <div className="space-y-1.5">
                   <Label>{isAr ? "رمز لون الشارة" : "Badge Color"}</Label>
                   <Input

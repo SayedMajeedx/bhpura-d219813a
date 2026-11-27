@@ -3,6 +3,7 @@ import { dayTitle, formatClockRange } from "@/lib/bookings/format";
 import { minutesOf, timeOf } from "@/lib/bookings/rules";
 import { Link } from "@tanstack/react-router";
 import { formatPrice, pickName } from "@/lib/storefront-context";
+import * as Member from "@/features/checkout/components/MemberDiscount";
 import { postName } from "@/lib/product-name";
 import { taxRateLabel } from "@/lib/order-tax";
 import { displayVariantParts } from "@/lib/variant-sku-utils";
@@ -68,6 +69,7 @@ export function OrderSummaryCard({
   pointsToRedeemInput,
   promoDiscount,
   offers = null,
+  memberDiscount = null,
   bookingDiscount = null,
   bookingCodeDropped = false,
   promoInput,
@@ -124,6 +126,8 @@ export function OrderSummaryCard({
   promoDiscount: number;
   /** What the store's automatic offers give the cart (null: none, or not asked yet). */
   offers?: OffersOutcome | null;
+  /** The member's tier discount, when it saves more than the code and the offers. */
+  memberDiscount?: Member.MemberDiscountView | null;
   /** A booking's discount after a typed code was weighed against it (`bookingWithCode`). */
   bookingDiscount?: number | null;
   /** The booking's store offer saved more than the typed code, which the order will not use. */
@@ -360,6 +364,7 @@ export function OrderSummaryCard({
             </span>
           </div>
         ))}
+        <Member.MemberDiscountLine member={memberDiscount} currency={currency} lang={lang} />
         {loyaltyDiscount > 0 && (
           <div className="flex justify-between font-medium text-amber-700 dark:text-amber-400">
             <span>
@@ -415,7 +420,8 @@ export function OrderSummaryCard({
               {t("تطبيق", "Apply")}
             </Button>
           </div>
-          {appliedPromo && (offers?.code_dropped || bookingCodeDropped) && (
+          {appliedPromo && memberDiscount?.replacedCode && <Member.MemberReplacedCodeNote t={t} />}
+          {appliedPromo && !memberDiscount && (offers?.code_dropped || bookingCodeDropped) && (
             <p className="text-xs text-muted-foreground" role="status">
               {t(
                 "عرض المتجر يوفّر لك أكثر من هذا الرمز، فطُبّق العرض بدلًا منه.",
