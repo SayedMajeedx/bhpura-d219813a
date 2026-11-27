@@ -5505,6 +5505,107 @@ export type Database = {
           },
         ];
       };
+      loyalty_referral_codes: {
+        Row: {
+          brand_id: string;
+          code: string;
+          created_at: string;
+          customer_id: string;
+        };
+        Insert: {
+          brand_id: string;
+          code: string;
+          created_at?: string;
+          customer_id: string;
+        };
+        Update: {
+          brand_id?: string;
+          code?: string;
+          created_at?: string;
+          customer_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_referral_codes_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_referral_codes_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      loyalty_referrals: {
+        Row: {
+          brand_id: string;
+          cancelled_at: string | null;
+          created_at: string;
+          id: string;
+          order_id: string | null;
+          referred_customer_id: string;
+          referrer_customer_id: string;
+          rewarded_at: string | null;
+          status: string;
+        };
+        Insert: {
+          brand_id: string;
+          cancelled_at?: string | null;
+          created_at?: string;
+          id?: string;
+          order_id?: string | null;
+          referred_customer_id: string;
+          referrer_customer_id: string;
+          rewarded_at?: string | null;
+          status?: string;
+        };
+        Update: {
+          brand_id?: string;
+          cancelled_at?: string | null;
+          created_at?: string;
+          id?: string;
+          order_id?: string | null;
+          referred_customer_id?: string;
+          referrer_customer_id?: string;
+          rewarded_at?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "loyalty_referrals_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_referrals_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_referrals_referred_customer_id_fkey";
+            columns: ["referred_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "loyalty_referrals_referrer_customer_id_fkey";
+            columns: ["referrer_customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       made_to_order_movements: {
         Row: {
           actor_id: string | null;
@@ -12065,6 +12166,7 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      loyalty_award_referral: { Args: { p_order_id: string }; Returns: number };
       loyalty_grant_bonus: {
         Args: {
           p_brand_id: string;
@@ -12096,6 +12198,7 @@ export type Database = {
         Args: { p_idempotency_key: string; p_order_id: string };
         Returns: number;
       };
+      loyalty_revoke_referral: { Args: { p_order_id: string }; Returns: number };
       mark_gift_card_purchase_sent: {
         Args: { p_purchase_id: string };
         Returns: Json;
@@ -12114,9 +12217,9 @@ export type Database = {
         };
         Returns: Json;
       };
+      my_referral_code: { Args: { p_brand_id: string }; Returns: Json };
       new_gift_card_code: { Args: never; Returns: string };
       next_booking_reference: { Args: { p_brand_id: string }; Returns: string };
-      my_referral_code: { Args: { p_brand_id: string }; Returns: Json };
       next_variant_code_number: { Args: { p_brand_id: string }; Returns: Json };
       normalize_customer_email: { Args: { p_value: string }; Returns: string };
       normalize_customer_phone: { Args: { p_value: string }; Returns: string };
@@ -12432,6 +12535,10 @@ export type Database = {
           p_success: boolean;
         };
         Returns: undefined;
+      };
+      record_order_referral: {
+        Args: { p_code: string; p_order_id: string };
+        Returns: string;
       };
       record_order_whatsapp_opt_in: {
         Args: { p_confirmation_token: string; p_order_id: string };
