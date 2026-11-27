@@ -2197,8 +2197,8 @@ export type Database = {
           product_title_color: string | null;
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
-          review_reward_promo_id: string | null;
           review_reward_points: boolean;
+          review_reward_promo_id: string | null;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -2415,8 +2415,8 @@ export type Database = {
           product_title_color?: string | null;
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
-          review_reward_promo_id?: string | null;
           review_reward_points?: boolean;
+          review_reward_promo_id?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -2633,8 +2633,8 @@ export type Database = {
           product_title_color?: string | null;
           quick_view_enabled?: boolean;
           recently_viewed_enabled?: boolean;
-          review_reward_promo_id?: string | null;
           review_reward_points?: boolean;
+          review_reward_promo_id?: string | null;
           secondary_banner_parallax_breakpoint?: number;
           secondary_banner_parallax_enabled?: boolean;
           secondary_banner_parallax_mobile_enabled?: boolean;
@@ -11479,8 +11479,8 @@ export type Database = {
           product_title_color: string | null;
           quick_view_enabled: boolean;
           recently_viewed_enabled: boolean;
-          review_reward_promo_id: string | null;
           review_reward_points: boolean;
+          review_reward_promo_id: string | null;
           secondary_banner_parallax_breakpoint: number;
           secondary_banner_parallax_enabled: boolean;
           secondary_banner_parallax_mobile_enabled: boolean;
@@ -12061,6 +12061,21 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      loyalty_grant_bonus: {
+        Args: {
+          p_brand_id: string;
+          p_customer_id: string;
+          p_event: string;
+          p_hold?: boolean;
+          p_idempotency_key: string;
+          p_note_ar: string;
+          p_note_en: string;
+          p_order_id?: string;
+          p_points: number;
+          p_review_id?: string;
+        };
+        Returns: number;
       };
       loyalty_order_earns: {
         Args: {
@@ -13414,6 +13429,7 @@ export type Database = {
         Args: { p_at?: string; p_hours: Json };
         Returns: Json;
       };
+      store_review_points: { Args: { p_brand_id: string }; Returns: number };
       store_review_reward: {
         Args: { p_brand_id: string };
         Returns: {
