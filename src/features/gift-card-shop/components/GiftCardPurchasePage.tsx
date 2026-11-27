@@ -1,11 +1,22 @@
 import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, Clock, Copy, Gift, Link2, Printer, RefreshCw, Send, XCircle } from "lucide-react";
+import {
+  Check,
+  Clock,
+  Copy,
+  Eye,
+  Gift,
+  Link2,
+  Printer,
+  RefreshCw,
+  Send,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { giftAddress, giftLinkMessage } from "@/lib/gift-link";
+import { giftAddress, giftLinkMessage, giftOpenedLine } from "@/lib/gift-link";
 import { resetGiftLink } from "@/lib/gift-link.functions";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
 import { deliveryLine, printLine, purchaseState } from "../lib/gift-card-shop";
@@ -180,6 +191,11 @@ export function GiftCardPurchasePage({
                   : t("نسخ رابط الإهداء", "Copy the gift link")}
               </Button>
             </div>
+            <p className="flex items-center justify-center gap-1.5 text-center text-sm font-medium">
+              <Eye className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+              {/* A new link is a new gift to open. */}
+              {giftOpenedLine(renewed ? null : view.giftOpenedAt, lang)}
+            </p>
             <p className="text-center text-xs text-muted-foreground">
               {t(
                 "رابط الإهداء يفتح البطاقة بتصميمها مع رمزها، ولا يظهر فيه شيء عن الدفع أو بياناتك.",

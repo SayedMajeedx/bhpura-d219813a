@@ -1,3 +1,4 @@
+import { giftOpenedLine } from "@/lib/gift-link";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Check, Copy, ExternalLink, Mail, MessageCircle, Phone } from "lucide-react";
@@ -267,6 +268,9 @@ export function GiftCardOrderSheet({
                       ? "لم يُرسل بعد"
                       : "Not sent yet"}
               </Row>
+            )}
+            {purchase.status === "paid" && card?.share_token && (
+              <Row label={isAr ? "الهدية" : "The gift"}>{giftOpenedLine(card.opened_at, lang)}</Row>
             )}
             {purchase.status === "paid" && !step && (
               <div className="pt-1">

@@ -24,6 +24,7 @@ const fns = (await import("../src/lib/gift-link.functions")) as unknown as {
   getGift: ServerFn;
   openGiftCode: ServerFn;
   resetGiftLink: ServerFn;
+  markGiftOpened: ServerFn;
 };
 
 const TOKEN = "ab".repeat(32);
@@ -170,5 +171,22 @@ describe("a new link", () => {
     const pending = server({ gift_card_purchases: { status: "pending", gift_card_id: null } });
     expect(await fns.resetGiftLink({ data: ask, context: {} })).toBeNull();
     expect(pending.writes).toEqual([]);
+  });
+});
+
+describe("the gift's opening", () => {
+  it("is recorded by the database, with only the link", async () => {
+    const rpc = vi.fn(async () => ({ data: "2026-11-27T12:40:00Z", error: null }));
+    state.admin = { rpc };
+    state.ip = `10.2.9.${++ip}`;
+    expect(await fns.markGiftOpened({ data: link })).toEqual({ opened: true });
+    expect(rpc).toHaveBeenCalledWith("mark_gift_card_opened", { p_slug: "pura", p_token: TOKEN });
+  });
+
+  it("is never asked for a token of the wrong shape", async () => {
+    const rpc = vi.fn();
+    state.admin = { rpc };
+    await expect(fns.markGiftOpened({ data: { slug: "pura", token: "nope" } })).rejects.toThrow();
+    expect(rpc).not.toHaveBeenCalled();
   });
 });

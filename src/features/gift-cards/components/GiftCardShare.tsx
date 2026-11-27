@@ -11,7 +11,7 @@ import {
   type GiftCard,
   type GiftCardPurchase,
 } from "@/lib/data/gift-cards";
-import { giftAddress, giftLinkMessage } from "@/lib/gift-link";
+import { giftAddress, giftLinkMessage, giftOpenedLine } from "@/lib/gift-link";
 import { giftCardError } from "../lib/gift-cards";
 import { PrintCardButton } from "./PrintCardDialog";
 
@@ -102,6 +102,10 @@ export function GiftCardShare({
           {copied === "code" ? (isAr ? "نُسخ" : "Copied") : isAr ? "نسخ" : "Copy"}
         </Button>
       </div>
+      <p className="text-sm font-medium">
+        {/* A link made here is a new gift to open. */}
+        {giftOpenedLine(token === card.share_token ? card.opened_at : null, lang)}
+      </p>
       <p className="text-xs text-muted-foreground">
         {isAr
           ? "رابط الإهداء يفتح البطاقة بتصميمها لمن أُهديت له، والرمز يظهر داخله. الرسالة لا تحمل الرمز."
