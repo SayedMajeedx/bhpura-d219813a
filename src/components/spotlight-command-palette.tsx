@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { searchOrders } from "@/lib/data/orders";
@@ -24,6 +24,8 @@ import {
   Plus,
   Store,
   Languages,
+  Settings2,
+  type LucideIcon,
 } from "lucide-react";
 import { fetchBrandIdBySlug } from "@/lib/data/brands";
 import { searchProducts } from "@/lib/data/catalog";
@@ -31,6 +33,40 @@ import { useStoreCurrency } from "@/hooks/use-store-currency";
 import type { AdminNavItemConfig } from "@/config/admin-navigation";
 import { useOrderNumber, useOrderNumberFormat } from "@/hooks/use-order-number";
 import { orderNumberQuery } from "@/lib/order-number";
+import { businessSettingsQueries } from "@/lib/data/business-settings";
+import { matchesWords } from "@/lib/fold-text";
+import { setStoredSettingsLevel } from "@/features/settings/settings-level";
+
+type SettingsSearch = typeof import("@/features/settings/lib/settings-search");
+
+/**
+ * The settings' search, loaded once someone types: the list of 199 settings stays out of the
+ * script every admin page loads.
+ */
+function useSettingsSearch(wanted: boolean): SettingsSearch | null {
+  const [search, setSearch] = useState<SettingsSearch | null>(null);
+  useEffect(() => {
+    if (!wanted || search) return;
+    let live = true;
+    import("@/features/settings/lib/settings-search")
+      .then((module) => {
+        if (live) setSearch(module);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [wanted, search]);
+  return search;
+}
+
+type PaletteAction = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  iconClass: string;
+  run: () => void;
+};
 
 export function SpotlightCommandPalette({
   open,
@@ -102,21 +138,106 @@ export function SpotlightCommandPalette({
     callback();
   };
 
+  const query = searchQuery.trim();
+  const go = (href: string) => void navigate({ href });
+  const store = (path: string) => `/admin/b/${encodeURIComponent(activeSlug)}/${path}`;
+
   // The pages of the menu this person may open, from its one definition (the palette once
-  // listed its own pages, with no permission or store rule).
-  const navItems = pages.map((page) => ({
-    label: isAr ? page.labelAr : page.labelEn,
-    to: page.to,
-    icon: page.icon,
-  }));
+  // listed its own pages, with no permission or store rule), narrowed to what was typed.
+  const navItems = pages
+    .map((page) => ({
+      label: isAr ? page.labelAr : page.labelEn,
+      href: page.to.replace("$slug", encodeURIComponent(activeSlug)),
+      icon: page.icon,
+    }))
+    .filter((item) => !query || matchesWords(item.label, query));
+
+  // A setting by its name, for a person who may open the settings: "logo", "الضريبة".
+  const mayOpenSettings = Boolean(activeSlug) && pages.some((p) => p.to.endsWith("/settings"));
+  const wantsSettings = open && mayOpenSettings && query.length >= 2;
+  const settingsSearch = useSettingsSearch(wantsSettings);
+  const storeSettings = useQuery({
+    ...businessSettingsQueries.detail(brand?.id ?? ""),
+    enabled: wantsSettings && Boolean(brand?.id),
+  });
+  const settingResults =
+    settingsSearch && wantsSettings
+      ? settingsSearch.searchSettings(query, storeSettings.data, 6)
+      : [];
+
+  const actions: PaletteAction[] = [
+    ...(activeSlug
+      ? [
+          {
+            id: "product",
+            label: services
+              ? isAr
+                ? "إضافة خدمة جديدة"
+                : "Create New Service"
+              : isAr
+                ? "إضافة منتج جديد"
+                : "Create New Product",
+            icon: Plus,
+            iconClass: "text-emerald-500",
+            run: () => go(store("inventory?action=new")),
+          },
+          {
+            id: "order",
+            label: isAr ? "إنشاء طلب يدوي جديد" : "Create Manual Order",
+            icon: ReceiptText,
+            iconClass: "text-blue-500",
+            run: () => go(store("orders?action=new_manual")),
+          },
+          {
+            id: "discount",
+            label: isAr ? "إنشاء كود خصم جديد" : "Create Discount Code",
+            icon: BadgePercent,
+            iconClass: "text-purple-500",
+            run: () => go(store("discounts?action=new")),
+          },
+          {
+            id: "campaign",
+            label: isAr ? "إرسال رسالة واتساب / حملة" : "Send WhatsApp Campaign",
+            icon: Megaphone,
+            iconClass: "text-rose-500",
+            run: () => go(store("campaigns?segment=All")),
+          },
+          {
+            id: "expense",
+            label: isAr ? "تسجيل مصروف جديد" : "Record Expense",
+            icon: Wallet,
+            iconClass: "text-amber-500",
+            run: () => go(store("expenses?action=new")),
+          },
+        ]
+      : []),
+    {
+      id: "language",
+      label: isAr ? "تغيير اللغة إلى الإنجليزية" : "Switch Language to Arabic (العربية)",
+      icon: Languages,
+      iconClass: "text-amber-500",
+      run: () => setLang(lang === "en" ? "ar" : "en"),
+    },
+    ...(activeSlug
+      ? [
+          {
+            id: "storefront",
+            label: isAr ? "فتح المتجر الإلكتروني" : "View Live Storefront",
+            icon: Store,
+            iconClass: "text-sky-500",
+            run: () => void window.open(getStorefrontUrl(activeSlug), "_blank"),
+          },
+        ]
+      : []),
+  ].filter((action) => !query || matchesWords(action.label, query));
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange} commandProps={{ shouldFilter: false }}>
       <CommandInput
         placeholder={
           isAr
-            ? "ابحث عن طلب، منتج، عميل، أو اكتب أمرًا... (Cmd + K)"
-            : "Search order #, product, customer, or type a command... (Cmd + K)"
+            ? "ابحث عن طلب، منتج، إعداد، أو اكتب أمرًا..."
+            : "Search orders, products, settings, or type a command..."
         }
         value={searchQuery}
         onValueChange={setSearchQuery}
@@ -203,140 +324,74 @@ export function SpotlightCommandPalette({
           </CommandGroup>
         )}
 
-        {/* Navigation Routes */}
-        <CommandGroup heading={isAr ? "التنقل السريع" : "Quick Navigation"}>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
+        {/* Settings, by name: opens the Settings page at the setting's tab and group */}
+        {settingsSearch && settingResults.length > 0 && (
+          <CommandGroup heading={isAr ? "الإعدادات" : "Settings"}>
+            {settingResults.map((entry) => (
               <CommandItem
-                key={item.to}
+                key={`${entry.table}.${entry.key}`}
+                value={`setting-${entry.table}-${entry.key}`}
                 onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: item.to as any,
-                      params: { slug: activeSlug } as any,
-                    }),
-                  )
+                  handleSelect(() => {
+                    // A setting kept for the advanced view opens with that view on, or its
+                    // group would not draw it.
+                    if (entry.level === "advanced") setStoredSettingsLevel("advanced");
+                    go(settingsSearch.settingHref(entry, activeSlug));
+                  })
                 }
                 className="flex items-center gap-2 cursor-pointer"
               >
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <span>{item.label}</span>
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-
-        {/* Quick Actions */}
-        <CommandGroup heading={isAr ? "الإجراءات السريعة" : "Quick Actions"}>
-          {activeSlug && (
-            <>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: "/admin/b/$slug/inventory",
-                      params: { slug: activeSlug },
-                      search: { action: "new" } as any,
-                    }),
-                  )
-                }
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="h-4 w-4 text-emerald-500" />
-                <span>
-                  {services
-                    ? isAr
-                      ? "إضافة خدمة جديدة"
-                      : "Create New Service"
-                    : isAr
-                      ? "إضافة منتج جديد"
-                      : "Create New Product"}
+                <Settings2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="min-w-0 flex-1">
+                  <span className="block break-words">{entry.label[lang]}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {settingsSearch.settingPlace(entry, lang)}
+                  </span>
                 </span>
               </CommandItem>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: "/admin/b/$slug/orders",
-                      params: { slug: activeSlug },
-                      search: { action: "new_manual" } as any,
-                    }),
-                  )
-                }
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <ReceiptText className="h-4 w-4 text-blue-500" />
-                <span>{isAr ? "إنشاء طلب يدوي جديد" : "Create Manual Order"}</span>
-              </CommandItem>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: "/admin/b/$slug/discounts",
-                      params: { slug: activeSlug },
-                      search: { action: "new" } as any,
-                    }),
-                  )
-                }
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <BadgePercent className="h-4 w-4 text-purple-500" />
-                <span>{isAr ? "إنشاء كود خصم جديد" : "Create Discount Code"}</span>
-              </CommandItem>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: "/admin/b/$slug/campaigns",
-                      params: { slug: activeSlug },
-                      search: { segment: "All" },
-                    }),
-                  )
-                }
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Megaphone className="h-4 w-4 text-rose-500" />
-                <span>{isAr ? "إرسال رسالة واتساب / حملة" : "Send WhatsApp Campaign"}</span>
-              </CommandItem>
-              <CommandItem
-                onSelect={() =>
-                  handleSelect(() =>
-                    navigate({
-                      to: "/admin/b/$slug/expenses",
-                      params: { slug: activeSlug },
-                      search: { action: "new" } as any,
-                    }),
-                  )
-                }
-                className="flex items-center gap-2 cursor-pointer"
-              >
-                <Wallet className="h-4 w-4 text-amber-500" />
-                <span>{isAr ? "تسجيل مصروف جديد" : "Record Expense"}</span>
-              </CommandItem>
-            </>
-          )}
-          <CommandItem
-            onSelect={() => handleSelect(() => setLang(lang === "en" ? "ar" : "en"))}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Languages className="h-4 w-4 text-amber-500" />
-            <span>
-              {isAr ? "تغيير اللغة إلى الإنجليزية" : "Switch Language to Arabic (العربية)"}
-            </span>
-          </CommandItem>
-          {activeSlug && (
-            <CommandItem
-              onSelect={() =>
-                handleSelect(() => window.open(getStorefrontUrl(activeSlug), "_blank"))
-              }
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <Store className="h-4 w-4 text-sky-500" />
-              <span>{isAr ? "فتح المتجر الإلكتروني" : "View Live Storefront"}</span>
-            </CommandItem>
-          )}
-        </CommandGroup>
+            ))}
+          </CommandGroup>
+        )}
+
+        {/* Navigation Routes */}
+        {navItems.length > 0 && (
+          <CommandGroup heading={isAr ? "التنقل السريع" : "Quick Navigation"}>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <CommandItem
+                  key={item.href}
+                  value={`page-${item.href}`}
+                  onSelect={() => handleSelect(() => go(item.href))}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span>{item.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
+
+        {/* Quick Actions */}
+        {actions.length > 0 && (
+          <CommandGroup heading={isAr ? "الإجراءات السريعة" : "Quick Actions"}>
+            {actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <CommandItem
+                  key={action.id}
+                  value={`action-${action.id}`}
+                  onSelect={() => handleSelect(action.run)}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Icon className={`h-4 w-4 ${action.iconClass}`} />
+                  <span>{action.label}</span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+        )}
       </CommandList>
     </CommandDialog>
   );

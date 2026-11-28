@@ -527,6 +527,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
           isCourier={isCourier}
           onSetLang={setLang}
           onSignOut={signOut}
+          onOpenSpotlight={() => setSpotlightOpen(true)}
           mobileOpen={mobileOpen}
           onOpenChangeMobile={setMobileOpen}
           services={servicesStore}
