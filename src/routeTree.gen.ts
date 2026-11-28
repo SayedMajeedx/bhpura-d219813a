@@ -95,6 +95,7 @@ import { Route as AuthenticatedAdminBSlugReviewsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminBSlugSettingsRouteImport } from './routes/_authenticated/admin.b.$slug.settings'
 import { Route as AuthenticatedAdminBSlugSignupsRouteImport } from './routes/_authenticated/admin.b.$slug.signups'
 import { Route as AuthenticatedAdminBSlugSizeGuidesRouteImport } from './routes/_authenticated/admin.b.$slug.size-guides'
+import { Route as AuthenticatedAdminBSlugStockCountsRouteImport } from './routes/_authenticated/admin.b.$slug.stock-counts'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
 import { Route as AuthenticatedAdminSuperPagesIndexRouteImport } from './routes/_authenticated/admin.super.pages.index'
 import { Route as AuthenticatedAdminSuperPagesIdRouteImport } from './routes/_authenticated/admin.super.pages.$id'
@@ -594,6 +595,12 @@ const AuthenticatedAdminBSlugSizeGuidesRoute =
     path: '/size-guides',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugStockCountsRoute =
+  AuthenticatedAdminBSlugStockCountsRouteImport.update({
+    id: '/stock-counts',
+    path: '/stock-counts',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugTeamRoute =
   AuthenticatedAdminBSlugTeamRouteImport.update({
     id: '/team',
@@ -813,6 +820,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
+  '/admin/b/$slug/stock-counts': typeof AuthenticatedAdminBSlugStockCountsRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
   '/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
@@ -919,6 +927,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
+  '/admin/b/$slug/stock-counts': typeof AuthenticatedAdminBSlugStockCountsRoute
   '/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
   '/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
@@ -1030,6 +1039,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
   '/_authenticated/admin/b/$slug/signups': typeof AuthenticatedAdminBSlugSignupsRoute
   '/_authenticated/admin/b/$slug/size-guides': typeof AuthenticatedAdminBSlugSizeGuidesRoute
+  '/_authenticated/admin/b/$slug/stock-counts': typeof AuthenticatedAdminBSlugStockCountsRoute
   '/_authenticated/admin/b/$slug/team': typeof AuthenticatedAdminBSlugTeamRoute
   '/_authenticated/admin/super/pages/$id': typeof AuthenticatedAdminSuperPagesIdRoute
   '/_authenticated/admin/super/responses/$id': typeof AuthenticatedAdminSuperResponsesIdRoute
@@ -1141,6 +1151,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/settings'
     | '/admin/b/$slug/signups'
     | '/admin/b/$slug/size-guides'
+    | '/admin/b/$slug/stock-counts'
     | '/admin/b/$slug/team'
     | '/admin/super/pages/$id'
     | '/admin/super/responses/$id'
@@ -1247,6 +1258,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/settings'
     | '/admin/b/$slug/signups'
     | '/admin/b/$slug/size-guides'
+    | '/admin/b/$slug/stock-counts'
     | '/admin/b/$slug/team'
     | '/admin/super/pages/$id'
     | '/admin/super/responses/$id'
@@ -1357,6 +1369,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/settings'
     | '/_authenticated/admin/b/$slug/signups'
     | '/_authenticated/admin/b/$slug/size-guides'
+    | '/_authenticated/admin/b/$slug/stock-counts'
     | '/_authenticated/admin/b/$slug/team'
     | '/_authenticated/admin/super/pages/$id'
     | '/_authenticated/admin/super/responses/$id'
@@ -2015,6 +2028,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugSizeGuidesRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/stock-counts': {
+      id: '/_authenticated/admin/b/$slug/stock-counts'
+      path: '/stock-counts'
+      fullPath: '/admin/b/$slug/stock-counts'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugStockCountsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/team': {
       id: '/_authenticated/admin/b/$slug/team'
       path: '/team'
@@ -2316,6 +2336,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugSettingsRoute: typeof AuthenticatedAdminBSlugSettingsRoute
   AuthenticatedAdminBSlugSignupsRoute: typeof AuthenticatedAdminBSlugSignupsRoute
   AuthenticatedAdminBSlugSizeGuidesRoute: typeof AuthenticatedAdminBSlugSizeGuidesRoute
+  AuthenticatedAdminBSlugStockCountsRoute: typeof AuthenticatedAdminBSlugStockCountsRoute
   AuthenticatedAdminBSlugTeamRoute: typeof AuthenticatedAdminBSlugTeamRoute
   AuthenticatedAdminBSlugOrdersIdRoute: typeof AuthenticatedAdminBSlugOrdersIdRoute
   AuthenticatedAdminBSlugReturnsIdRoute: typeof AuthenticatedAdminBSlugReturnsIdRoute
@@ -2368,6 +2389,8 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugSignupsRoute: AuthenticatedAdminBSlugSignupsRoute,
     AuthenticatedAdminBSlugSizeGuidesRoute:
       AuthenticatedAdminBSlugSizeGuidesRoute,
+    AuthenticatedAdminBSlugStockCountsRoute:
+      AuthenticatedAdminBSlugStockCountsRoute,
     AuthenticatedAdminBSlugTeamRoute: AuthenticatedAdminBSlugTeamRoute,
     AuthenticatedAdminBSlugOrdersIdRoute: AuthenticatedAdminBSlugOrdersIdRoute,
     AuthenticatedAdminBSlugReturnsIdRoute:

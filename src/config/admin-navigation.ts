@@ -28,6 +28,7 @@ import {
   Upload,
   Download,
   Scissors,
+  ClipboardCheck,
   Store,
   type LucideIcon,
 } from "lucide-react";
@@ -243,6 +244,19 @@ const ITEMS: ItemDef[] = [
     icon: Scissors,
     permission: "view_financials",
     workspace: "products",
+  },
+  {
+    id: "stock-counts",
+    page: "stock-counts",
+    labelEn: "Stock count",
+    labelAr: "جرد المخزون",
+    descriptionEn:
+      "Count every piece in the store or one category, and apply the differences at once",
+    descriptionAr: "اعدد قطع المتجر كلها أو قسمًا منها، وطبّق الفروقات دفعة واحدة",
+    icon: ClipboardCheck,
+    permission: "manage_inventory",
+    workspace: "products",
+    rare: true,
   },
   {
     id: "incubators",
@@ -542,6 +556,7 @@ export function getAdminNavItems({
     if (item.id === "incubators" && storeModules?.incubators === false) return false;
     // Orders of pieces from a supplier fill the stock: a store that keeps none has no use for it.
     if (item.id === "supplier-orders" && services) return false;
+    if (item.id === "stock-counts" && services) return false;
     if (item.id === "returns" && storeModules?.returns === false) return false;
     if (storefrontMode === "catalog") {
       if (

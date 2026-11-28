@@ -58,6 +58,13 @@ const PURCHASE_UNDO_LABEL = {
   badgeClass: "bg-warning-subtle text-warning border-warning/30",
 };
 
+// A full stock count's difference (`apply_stock_count`): its note names the count.
+const STOCK_COUNT_LABEL = {
+  ar: "جرد المخزون",
+  en: "Stock count",
+  badgeClass: "bg-primary/10 text-primary border-primary/20",
+};
+
 const REASON_LABELS: Record<string, { ar: string; en: string; badgeClass: string }> = {
   order_reservation: {
     ar: "حجز طلب",
@@ -410,7 +417,9 @@ export function InventoryHistorySheet({
                     ? m.delta < 0
                       ? PURCHASE_UNDO_LABEL
                       : PURCHASE_RECEIPT_LABEL
-                    : REASON_LABELS[m.reason]) || {
+                    : m.reference_type === "stock_count"
+                      ? STOCK_COUNT_LABEL
+                      : REASON_LABELS[m.reason]) || {
                     ar: m.reason,
                     en: m.reason,
                     badgeClass: "bg-muted text-muted-foreground border-border",

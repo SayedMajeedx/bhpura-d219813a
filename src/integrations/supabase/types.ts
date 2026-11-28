@@ -8,6 +8,106 @@ export type Database = {
   };
   public: {
     Tables: {
+      stock_count_lines: {
+        Row: {
+          applied_delta: number | null;
+          brand_id: string;
+          count_id: string;
+          counted: number | null;
+          counted_at: string | null;
+          counted_by: string | null;
+          expected: number;
+          moved_during: number | null;
+          product_id: string | null;
+          variant_id: string;
+        };
+        Insert: {
+          applied_delta?: number | null;
+          brand_id: string;
+          count_id: string;
+          counted?: number | null;
+          counted_at?: string | null;
+          counted_by?: string | null;
+          expected: number;
+          moved_during?: number | null;
+          product_id?: string | null;
+          variant_id: string;
+        };
+        Update: {
+          applied_delta?: number | null;
+          brand_id?: string;
+          count_id?: string;
+          counted?: number | null;
+          counted_at?: string | null;
+          counted_by?: string | null;
+          expected?: number;
+          moved_during?: number | null;
+          product_id?: string | null;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_lines_count_id_fkey";
+            columns: ["count_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_counts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_count_lines_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_count_lines_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      stock_counts: {
+        Row: {
+          brand_id: string;
+          category: string | null;
+          finished_at: string | null;
+          finished_by: string | null;
+          id: string;
+          note: string | null;
+          number: number;
+          started_at: string;
+          started_by: string | null;
+          status: string;
+        };
+        Insert: {
+          brand_id: string;
+          category?: string | null;
+          finished_at?: string | null;
+          finished_by?: string | null;
+          id?: string;
+          note?: string | null;
+          number: number;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+        };
+        Update: {
+          brand_id?: string;
+          category?: string | null;
+          finished_at?: string | null;
+          finished_by?: string | null;
+          id?: string;
+          note?: string | null;
+          number?: number;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+        };
+        Relationships: [];
+      };
       abandoned_cart_dispatch_logs: {
         Row: {
           brand_id: string;
@@ -10893,6 +10993,27 @@ export type Database = {
       };
     };
     Functions: {
+      apply_stock_count: { Args: { p_count_id: string }; Returns: Json };
+      cancel_stock_count: { Args: { p_count_id: string }; Returns: undefined };
+      record_stock_count: {
+        Args: { p_count_id: string; p_mode: string; p_value?: number; p_variant_id: string };
+        Returns: Json;
+      };
+      start_stock_count: {
+        Args: { p_brand_id: string; p_category?: string; p_note?: string };
+        Returns: Json;
+      };
+      stock_count_review: {
+        Args: { p_count_id: string };
+        Returns: {
+          counted: number;
+          difference: number;
+          expected: number;
+          moved_during: number;
+          stock_now: number;
+          variant_id: string;
+        }[];
+      };
       activate_storefront_membership: {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string };
         Returns: Json;
