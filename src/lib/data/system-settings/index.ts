@@ -13,6 +13,7 @@ export const systemSettingsKeys = {
   billingDetails: () => [...systemSettingsKeys.all(), "billing-details"] as const,
   billingIntervalMode: () => [...systemSettingsKeys.all(), "billing-interval-mode"] as const,
   mobileAppReleases: () => [...systemSettingsKeys.all(), "mobile-app-releases"] as const,
+  supportNumber: () => [...systemSettingsKeys.all(), "support-number"] as const,
 };
 
 /** The published builds of Boutq's own mobile apps, newest first. */
@@ -50,6 +51,16 @@ export async function fetchBillingIntervalMode() {
   return data;
 }
 
+/** Boutq's WhatsApp number for merchants' questions (set by the super admin), or null. */
+export async function fetchSupportNumber(): Promise<string | null> {
+  const { data } = await supabase
+    .from("system_settings")
+    .select("whatsapp_support_number")
+    .eq("id", 1)
+    .maybeSingle();
+  return data?.whatsapp_support_number?.trim() || null;
+}
+
 export const systemSettingsQueries = {
   mobileAppReleases: () =>
     queryOptions({
@@ -59,6 +70,12 @@ export const systemSettingsQueries = {
     }),
   billingDetails: () =>
     queryOptions({ queryKey: systemSettingsKeys.billingDetails(), queryFn: fetchBillingDetails }),
+  supportNumber: () =>
+    queryOptions({
+      queryKey: systemSettingsKeys.supportNumber(),
+      queryFn: fetchSupportNumber,
+      staleTime: 60 * 60_000,
+    }),
   billingIntervalMode: () =>
     queryOptions({
       queryKey: systemSettingsKeys.billingIntervalMode(),
