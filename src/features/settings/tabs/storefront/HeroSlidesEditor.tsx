@@ -31,6 +31,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { newSlideButton } from "@/lib/hero-link";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export type { HeroSlide };
 
@@ -230,7 +231,7 @@ export function HeroSlidesEditor({
       update(index, slideMediaPatch(language ?? "en", variant, { url, aspect }));
       toast.success(isAr ? "تم رفع الصورة بنجاح" : "Image uploaded successfully");
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "فشل رفع الصورة" : "Image upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الصورة" : "Image upload failed"));
     } finally {
       setInternalUploading(false);
     }
@@ -269,7 +270,7 @@ export function HeroSlidesEditor({
         );
       }
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
     } finally {
       setInternalUploading(false);
       setPendingOptimizeVideo(null);
@@ -300,7 +301,10 @@ export function HeroSlidesEditor({
       setPendingOptimizeVideo({ file, index, language, variant: "main" });
     } catch (e: any) {
       toast.error(
-        e?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
+        getFriendlyErrorMessage(
+          e,
+          isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video",
+        ),
       );
     } finally {
       setOptimizingKey(null);

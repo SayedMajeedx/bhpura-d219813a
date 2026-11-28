@@ -53,6 +53,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type FormState = {
   id?: string;
@@ -316,7 +317,7 @@ export function SizeGuidesStudioPage() {
       setForm((prev) => ({ ...prev, diagram_url: url }));
       toast.success(isAr ? "تم رفع الصورة التوضيحية" : "Diagram uploaded");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل الرفع" : "Upload failed"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل الرفع" : "Upload failed"));
     } finally {
       setUploadingDiagram(false);
     }
@@ -423,7 +424,7 @@ export function SizeGuidesStudioPage() {
       }
       toast.success(isAr ? "تم حفظ دليل المقاسات بنجاح" : "Size guide saved successfully");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل الحفظ" : "Failed to save"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل الحفظ" : "Failed to save"));
     } finally {
       setSaving(false);
     }
@@ -459,7 +460,7 @@ export function SizeGuidesStudioPage() {
       setDeleteConfirmOpen(false);
       toast.success(isAr ? "تم حذف دليل المقاسات" : "Size guide deleted");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل الحذف" : "Failed to delete"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل الحذف" : "Failed to delete"));
     }
   };
 

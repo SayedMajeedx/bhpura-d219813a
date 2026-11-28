@@ -1,4 +1,4 @@
-import { getFriendlyErrorMessage } from "@/lib/utils";
+import { errorText, friendlyError } from "@/lib/friendly-error";
 import { arNoun, arNounOblique, countOf } from "@/lib/arabic-count";
 
 /**
@@ -39,14 +39,14 @@ export function keepOneVariantMessage(isAr: boolean): string {
   return WORDS.keepOne[isAr ? "ar" : "en"];
 }
 
-/** A failed removal in the reader's words: the database's refusals named, anything else as it came. */
+/** A failed removal in the reader's words: the database's refusals named, anything else in plain words. */
 export function variantDeleteError(error: unknown, isAr: boolean): string {
   const lang = isAr ? "ar" : "en";
-  const text = getFriendlyErrorMessage(error);
+  const text = errorText(error);
   if (text.includes("PRODUCT_NEEDS_A_VARIANT")) return WORDS.keepOne[lang];
   if (text.includes("VARIANT_HAS_STOCK")) return WORDS.hasStock[lang];
   if (text.includes("NOT_AUTHORIZED")) return WORDS.notAllowed[lang];
-  return text;
+  return friendlyError(error, { lang });
 }
 
 /** What a removal did: how many sizes went, and how many were archived for their history. */

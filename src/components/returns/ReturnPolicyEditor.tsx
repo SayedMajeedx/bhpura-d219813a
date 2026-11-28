@@ -22,6 +22,7 @@ import { Sliders, Save, Loader2, Clock, Truck, FileText } from "lucide-react";
 import { toast } from "sonner";
 import type { BrandReturnPolicy, CompensationMethod } from "@/lib/returns.types";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ReturnPolicyEditorProps {
   brandId: string;
@@ -107,7 +108,7 @@ export function ReturnPolicyEditor({ brandId, lang }: ReturnPolicyEditorProps) {
       );
       void invalidateReturns(queryClient, brandId);
     } catch (err: any) {
-      toast.error(err.message || "Failed to save policy");
+      toast.error(getFriendlyErrorMessage(err, "Failed to save policy"));
     } finally {
       setSaving(false);
     }

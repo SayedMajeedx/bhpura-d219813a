@@ -295,7 +295,7 @@ export function BulkVariantDialog({
       setColorsText("");
       onChanged();
     } catch (error) {
-      toast.error(getFriendlyErrorMessage(error) || (isAr ? "فشل الحفظ" : "Save failed"));
+      toast.error(getFriendlyErrorMessage(error, isAr ? "فشل الحفظ" : "Save failed"));
     } finally {
       setSaving(false);
     }

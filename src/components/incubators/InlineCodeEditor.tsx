@@ -3,6 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { incubatorsKeys, updateIncubatorItem } from "@/lib/data/incubators";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type IncubatorCodeItem = {
   id: string;
@@ -74,7 +75,7 @@ export function InlineCodeEditor({
           ? isAr
             ? "هذا الكود مستخدم لقطعة أخرى في نفس المحل الشريك"
             : "This code is already used by another item in this incubator"
-          : error?.message || (isAr ? "تعذر حفظ الكود" : "Could not save code"),
+          : getFriendlyErrorMessage(error, isAr ? "تعذر حفظ الكود" : "Could not save code"),
       );
     } finally {
       setSaving(false);

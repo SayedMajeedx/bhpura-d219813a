@@ -30,6 +30,7 @@ import { getStorefrontUrl } from "@/lib/storefront-url";
 import { formatMoney } from "@/lib/format";
 import { countOf } from "@/lib/arabic-count";
 import { displayPhone } from "@/lib/invoice-display";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type CartRow = AbandonedCartWithCustomer;
 
@@ -185,7 +186,7 @@ export function AbandonedCartsList({
       toast.success(isAr ? "تم فتح محادثة الواتساب" : "Opened WhatsApp");
     } catch (err) {
       toast.error(
-        (err as Error).message || (isAr ? "تعذر إنشاء الكود" : "The code could not be made"),
+        getFriendlyErrorMessage(err, isAr ? "تعذر إنشاء الكود" : "The code could not be made"),
       );
     } finally {
       setGeneratingForCartId(null);

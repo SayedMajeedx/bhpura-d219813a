@@ -62,6 +62,7 @@ import type { Order } from "@/features/orders/types";
 import { workshopActionLabels } from "@/lib/store-vocabulary";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { formatMoney } from "@/lib/format";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 /** What an order row's action button depends on, plus the status-update call it makes. */
 export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
   const { brandId, hasMadeToOrder, lang, qc, setUpdatingOrderId, updatingOrderId } = ctx;
@@ -128,7 +129,7 @@ export function queueActionState(ctx: OrderQueueActionContext, o: Order) {
       toast.success(successMsg);
       await invalidateOrders(qc, brandId);
     } catch (err: any) {
-      toast.error(err.message || "Failed to update order status");
+      toast.error(getFriendlyErrorMessage(err, "Failed to update order status"));
     } finally {
       setUpdatingOrderId(null);
     }

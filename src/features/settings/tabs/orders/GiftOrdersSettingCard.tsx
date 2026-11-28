@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useBrand } from "@/lib/brand-context";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
-import { getFriendlyErrorMessage } from "@/lib/utils";
+import { errorText, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   giftOrderQueries,
   invalidateGiftOrderSettings,
@@ -70,8 +70,7 @@ function Fields({
       await invalidateGiftOrderSettings(qc, brandId);
       toast.success(isAr ? "حُفظت إعدادات الهدية" : "Gift settings saved");
     } catch (error) {
-      const message = getFriendlyErrorMessage(error);
-      toast.error(giftRefusal(message, lang) ?? message);
+      toast.error(giftRefusal(errorText(error), lang) ?? getFriendlyErrorMessage(error));
     } finally {
       setSaving(false);
     }

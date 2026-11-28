@@ -59,8 +59,10 @@ export function useOrderPromoCode({
       });
     } catch (error) {
       return toast.error(
-        getFriendlyErrorMessage(error) ||
-          (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."),
+        getFriendlyErrorMessage(
+          error,
+          lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code.",
+        ),
       );
     } finally {
       setCheckingPromo(false);

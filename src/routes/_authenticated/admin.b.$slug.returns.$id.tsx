@@ -48,6 +48,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** The shared return type over the typed row (JSON and status columns narrowed). */
 const asReturnRequest = (row: unknown) => row as ReturnRequest;
@@ -136,7 +137,7 @@ function ReturnDetailPage() {
       refetch();
       if (brandId) void queryClient.invalidateQueries({ queryKey: returnsKeys.list(brandId) });
     } catch (err: any) {
-      toast.error(err.message || "Error updating return status");
+      toast.error(getFriendlyErrorMessage(err, "Error updating return status"));
     } finally {
       setActionLoading(false);
       setRejectDialogOpen(false);

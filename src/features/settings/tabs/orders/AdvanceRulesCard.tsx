@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { catalogQueries } from "@/lib/data/catalog";
@@ -50,7 +50,7 @@ export function AdvanceRulesCard() {
   const categories = useQuery(categoriesQueries.active(brandId)).data ?? [];
   const [editing, setEditing] = useState<{ id: string | null; form: AdvanceRuleForm } | null>(null);
 
-  const onError = (error: Error) => toast.error(error.message);
+  const onError = (error: Error) => toast.error(getFriendlyErrorMessage(error));
   const refresh = () => invalidateAdvanceRules(qc, brandId);
   const save = useMutation({
     mutationFn: ({ id, form: next }: { id: string | null; form: AdvanceRuleForm }) =>

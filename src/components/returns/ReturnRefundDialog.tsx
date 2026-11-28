@@ -20,6 +20,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ReturnRefundDialogProps {
   open: boolean;
@@ -100,7 +101,7 @@ export function ReturnRefundDialog({
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || "Error processing refund");
+      toast.error(getFriendlyErrorMessage(err, "Error processing refund"));
     } finally {
       setSubmitting(false);
     }

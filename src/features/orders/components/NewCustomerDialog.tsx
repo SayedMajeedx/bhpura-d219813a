@@ -123,8 +123,10 @@ export function NewCustomerDialog({
       finish({ id: cust.id, name: cust.name }, addressId);
     } catch (err: unknown) {
       toast.error(
-        getFriendlyErrorMessage(err) ||
-          (lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer"),
+        getFriendlyErrorMessage(
+          err,
+          lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer",
+        ),
       );
     } finally {
       setCreatingCustomer(false);

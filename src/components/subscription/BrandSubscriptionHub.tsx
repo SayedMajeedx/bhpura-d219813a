@@ -212,7 +212,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
       void queryClient.invalidateQueries({ queryKey: ["brands"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to submit upgrade receipt", {
+      toast.error(getFriendlyErrorMessage(err, "Failed to submit upgrade receipt"), {
         id: toastId,
       });
     } finally {
@@ -339,7 +339,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
       void queryClient.invalidateQueries({ queryKey: ["brand_subscription_details", brandId] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to cancel subscription", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to cancel subscription"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }

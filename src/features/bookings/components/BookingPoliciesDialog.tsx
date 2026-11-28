@@ -27,6 +27,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 function PolicyFormFields({
   initial,
@@ -194,7 +195,7 @@ export function BookingPoliciesDialog({
       toast.success(isAr ? "تم حفظ الشروط" : "Terms saved");
       onOpenChange(false);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(getFriendlyErrorMessage(error)),
   });
 
   return (

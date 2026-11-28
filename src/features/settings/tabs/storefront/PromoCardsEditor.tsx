@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface PromoCard {
   title_en: string;
@@ -66,7 +67,7 @@ export function PromoCardsEditor({ isAr }: { isAr: boolean }) {
       setPromoCropIndex(null);
       toast.success(isAr ? "تم حفظ صورة البطاقة الترويجية" : "Promo card image saved");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل حفظ الصورة" : "Failed to save image"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل حفظ الصورة" : "Failed to save image"));
     } finally {
       setUploadingPromo(false);
     }

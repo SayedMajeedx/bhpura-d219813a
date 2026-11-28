@@ -5,7 +5,7 @@ import { saveBusinessSettings } from "@/lib/data/business-settings";
 import { queryKeys } from "@/lib/query-keys";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -179,7 +179,9 @@ export function StoreProfileCard({
           isAr ? "تم تثبيت وتفعيل الإضافة بنجاح" : "Addon installed and enabled successfully",
         );
       } catch (err: any) {
-        toast.error(err.message || (isAr ? "فشل تفعيل الإضافة" : "Failed to enable addon"));
+        toast.error(
+          getFriendlyErrorMessage(err, isAr ? "فشل تفعيل الإضافة" : "Failed to enable addon"),
+        );
       }
     } else {
       // Check dependents before disabling
@@ -203,7 +205,9 @@ export function StoreProfileCard({
         await disableAddon({ addonId });
         toast.success(isAr ? "تم إيقاف الإضافة بنجاح" : "Addon disabled successfully");
       } catch (err: any) {
-        toast.error(err.message || (isAr ? "فشل إيقاف الإضافة" : "Failed to disable addon"));
+        toast.error(
+          getFriendlyErrorMessage(err, isAr ? "فشل إيقاف الإضافة" : "Failed to disable addon"),
+        );
       }
     }
   };
@@ -259,8 +263,10 @@ export function StoreProfileCard({
       );
     } catch (err: any) {
       toast.error(
-        err.message ||
-          (isAr ? "فشل استعادة الوحدات الافتراضية" : "Failed to reset modules to defaults"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "فشل استعادة الوحدات الافتراضية" : "Failed to reset modules to defaults",
+        ),
       );
     } finally {
       setSaving(false);
@@ -294,8 +300,10 @@ export function StoreProfileCard({
       );
     } catch (err: any) {
       toast.error(
-        err.message ||
-          (isAr ? "فشل حفظ إعدادات نشاط المتجر" : "Failed to save store profile settings"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "فشل حفظ إعدادات نشاط المتجر" : "Failed to save store profile settings",
+        ),
       );
     } finally {
       setSaving(false);

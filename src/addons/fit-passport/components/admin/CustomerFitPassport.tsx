@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type Passport = {
   id: string;
@@ -191,7 +192,9 @@ export function CustomerFitPassport({
       qc.invalidateQueries({ queryKey: ["fit-passport", brandId, customerId] });
       qc.invalidateQueries({ queryKey: ["fit-passport-history", brandId, customerId] });
     } catch (error: any) {
-      toast.error(error?.message || (isAr ? "تعذر حفظ المقاسات" : "Failed to save passport"));
+      toast.error(
+        getFriendlyErrorMessage(error, isAr ? "تعذر حفظ المقاسات" : "Failed to save passport"),
+      );
     } finally {
       setSaving(false);
     }

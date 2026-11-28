@@ -107,7 +107,7 @@ export function SuperOverridesManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_audit_logs"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to apply override", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to apply override"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +131,7 @@ export function SuperOverridesManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_audit_logs"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to revoke override", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to revoke override"), { id: toastId });
     }
   };
 

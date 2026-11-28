@@ -25,6 +25,7 @@ import {
 } from "@/features/import-export/lib/export-stock-status";
 import { arNounOblique } from "@/lib/arabic-count";
 import { realSize } from "@/lib/default-variant";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // =============================================================
 // Component 1: Product Export Section
@@ -220,7 +221,9 @@ export function ProductExportSection({
       );
     } catch (err: any) {
       console.error("Product export error:", err);
-      toast.error(err.message || (isAr ? "فشل التصدير" : "Export failed"), { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل التصدير" : "Export failed"), {
+        id: toastId,
+      });
     } finally {
       setIsExporting(false);
     }

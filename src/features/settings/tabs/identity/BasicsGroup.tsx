@@ -10,6 +10,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "../../use-brand-settings-form";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export function BasicsGroup() {
   const { lang } = useI18n();
@@ -39,7 +40,7 @@ export function BasicsGroup() {
             : "Favicon uploaded successfully",
       );
     } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل الرفع" : "Upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل الرفع" : "Upload failed"));
     } finally {
       setUploading(null);
     }

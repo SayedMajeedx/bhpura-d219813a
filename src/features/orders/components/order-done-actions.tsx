@@ -60,8 +60,10 @@ export function renderDoneAction({
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر إتمام الخدمة" : "Unable to complete the service"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر إتمام الخدمة" : "Unable to complete the service",
+              ),
             );
           }
         }}
@@ -98,8 +100,10 @@ export function renderDoneAction({
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تسجيل التسليم" : "Unable to record the delivery"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تسجيل التسليم" : "Unable to record the delivery",
+              ),
             );
           }
         }}

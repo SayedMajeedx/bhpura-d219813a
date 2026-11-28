@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { provisionWhiteLabelApp } from "@/lib/data/super-admin";
 import { adminAddress, storeAddress } from "@/lib/platform-host";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface BrandWizardDialogProps {
   open: boolean;
@@ -212,7 +213,7 @@ export function BrandWizardDialog({
         updatePipelineStep("provision", "success");
       } catch (err: any) {
         updatePipelineStep("provision", "error", err.message || "Failed to provision brand");
-        toast.error(err.message || "Failed to provision brand");
+        toast.error(getFriendlyErrorMessage(err, "Failed to provision brand"));
         return;
       }
     }

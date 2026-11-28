@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 const VALID_TABS: SettingsTabId[] = [
   "identity",
   "storefront",
@@ -163,7 +164,10 @@ function SettingsPageInner() {
             {isAr ? "فشل تحميل إعدادات المتجر" : "Failed to load store settings"}
           </h2>
           <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            {error?.message || (isAr ? "حدث خطأ غير متوقع." : "An unexpected error occurred.")}
+            {getFriendlyErrorMessage(
+              error,
+              isAr ? "حدث خطأ غير متوقع." : "An unexpected error occurred.",
+            )}
           </p>
           <Button
             type="button"

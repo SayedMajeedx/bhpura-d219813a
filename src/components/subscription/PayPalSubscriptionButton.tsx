@@ -8,6 +8,7 @@ import {
   createPayPalSubscriptionOrder,
   capturePayPalSubscriptionOrder,
 } from "@/lib/paypal-subscription.functions";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface PayPalSubscriptionButtonProps {
   brandId: string;
@@ -121,7 +122,7 @@ export function PayPalSubscriptionButton({
               toast.error(
                 isAr
                   ? "حدث خطأ أثناء إتمام الدفع. يرجى التواصل مع الدعم."
-                  : (err.message ?? "Capture failed. Please contact support."),
+                  : getFriendlyErrorMessage(err, "Capture failed. Please contact support."),
                 { id: toastId },
               );
             } finally {
@@ -169,7 +170,7 @@ export function PayPalSubscriptionButton({
           });
       } catch (err: any) {
         if (isMounted) {
-          setLoadError(err?.message || "Failed to initialize PayPal buttons");
+          setLoadError(getFriendlyErrorMessage(err, "Failed to initialize PayPal buttons"));
           setLoadingSdk(false);
         }
       }

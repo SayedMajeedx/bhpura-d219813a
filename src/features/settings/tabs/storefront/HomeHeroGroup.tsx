@@ -27,6 +27,7 @@ import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer"
 import { VideoOptimizerDialog } from "@/components/admin/video/VideoOptimizerDialog";
 import { toast } from "sonner";
 import { ImagePlus, Loader2, Sparkles, Trash2, Video } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface MediaItem {
   type: "image" | "video";
@@ -142,7 +143,7 @@ export function HomeHeroGroup() {
       applyBgUpload(variant, { type: "image", url, aspect });
       toast.success(isAr ? "تم حفظ وتطبيق صورة الخلفية" : "Background image saved");
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "فشل حفظ الصورة" : "Failed to save image"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل حفظ الصورة" : "Failed to save image"));
     } finally {
       setUploadingBg(false);
     }
@@ -180,7 +181,9 @@ export function HomeHeroGroup() {
         );
       }
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل رفع الفيديو" : "Failed to upload video"),
+      );
     } finally {
       setUploadingBg(false);
       setPendingOptimizeBgVideo(null);
@@ -204,7 +207,10 @@ export function HomeHeroGroup() {
       setPendingOptimizeBgVideo({ file, variant: "main" });
     } catch (err: any) {
       toast.error(
-        err?.message || (isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "فشل جلب الفيديو الحالي" : "Failed to fetch current video",
+        ),
       );
     } finally {
       setUploadingBg(false);

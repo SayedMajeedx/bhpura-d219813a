@@ -26,6 +26,7 @@ import { evaluatePasswordStrength } from "@/lib/team-credentials-utils";
 import { fetchFirstLoginProfile, profilesKeys, updateProfile } from "@/lib/data/profiles";
 import { getCurrentUser, signOut } from "@/lib/auth/session";
 import { completeFirstSignInPasswordChange, updatePassword } from "@/lib/auth/sign-in";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/first-login")({
   ssr: false,
@@ -175,10 +176,12 @@ function FirstLoginPage() {
       }, 1400);
     } catch (err: any) {
       toast.error(
-        err?.message ||
-          (isAr
+        getFriendlyErrorMessage(
+          err,
+          isAr
             ? "حدث خطأ أثناء تحديث كلمة المرور. يرجى المحاولة مرة أخرى."
-            : "Failed to update password. Please try again."),
+            : "Failed to update password. Please try again.",
+        ),
       );
     } finally {
       setSubmitting(false);

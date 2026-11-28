@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useBrandSettingsFormContext } from "@/features/settings/use-brand-settings-form";
 import { ColorField } from "@/features/settings/shared/ColorField";
@@ -68,7 +68,7 @@ export function InvoiceLayoutControls({ part }: { part: "content" | "colours" | 
       setBs({ font_url: url, font_family: CUSTOM_FONT });
       toast.success(isAr ? "تم رفع الخط — لا تنسَ الحفظ" : "Font uploaded — remember to save");
     } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل رفع الخط" : "Font upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الخط" : "Font upload failed"));
     } finally {
       setUploadingFont(false);
     }

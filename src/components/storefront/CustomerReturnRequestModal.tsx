@@ -35,6 +35,7 @@ import {
 } from "@/lib/returns.types";
 import { orderNumberLabel } from "@/lib/order-number";
 import { useStorefront } from "@/lib/storefront-context";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface CustomerReturnRequestModalProps {
   open: boolean;
@@ -171,7 +172,7 @@ export function CustomerReturnRequestModal({
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || "Error submitting return request");
+      toast.error(getFriendlyErrorMessage(err, "Error submitting return request"));
     } finally {
       setSubmitting(false);
     }

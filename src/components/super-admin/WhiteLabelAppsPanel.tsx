@@ -21,6 +21,7 @@ import {
   provisionWhiteLabelApp,
   superAdminQueries,
 } from "@/lib/data/super-admin";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type BrandSummary = {
   id: string;
@@ -90,7 +91,7 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
     try {
       data = await provisionWhiteLabelApp(brand.id, rebuild);
     } catch (error) {
-      return toast.error((error as Error).message);
+      return toast.error(getFriendlyErrorMessage(error));
     } finally {
       setWorking(null);
     }
@@ -112,7 +113,7 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
       (err: { message: string }) => err,
     );
     setWorking(null);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     toast.success(isAr ? "تم اعتماد هذا الإصدار للتنزيل" : "Release activated for download");
     void invalidateWhiteLabel(qc, { builds: false });
   };

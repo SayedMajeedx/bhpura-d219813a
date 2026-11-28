@@ -66,7 +66,7 @@ export function useCompositeVariantHealer({
       );
       onChanged();
     } catch (err) {
-      toast.error(getFriendlyErrorMessage(err) || "Failed to auto-heal variants");
+      toast.error(getFriendlyErrorMessage(err, "Failed to auto-heal variants"));
     } finally {
       setIsHealing(false);
     }

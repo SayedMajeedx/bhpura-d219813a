@@ -1,4 +1,4 @@
-import { getFriendlyErrorMessage } from "@/lib/utils";
+import { errorText, friendlyError } from "@/lib/friendly-error";
 import { arNoun, arNounOblique, countOf } from "@/lib/arabic-count";
 
 /**
@@ -27,14 +27,14 @@ const WORDS = {
   },
 };
 
-/** A failed removal in the reader's words: the database's refusals named, anything else as it came. */
+/** A failed removal in the reader's words: the database's refusals named, anything else in plain words. */
 export function productDeleteError(error: unknown, isAr: boolean): string {
   const lang = isAr ? "ar" : "en";
-  const text = getFriendlyErrorMessage(error);
+  const text = errorText(error);
   if (text.includes("PRODUCT_HAS_STOCK")) return WORDS.hasStock[lang];
   if (text.includes("PRODUCT_HAS_HISTORY")) return WORDS.hasHistory[lang];
   if (text.includes("NOT_AUTHORIZED")) return WORDS.notAllowed[lang];
-  return text || WORDS.failed[lang];
+  return friendlyError(error, { lang, fallback: WORDS.failed[lang] });
 }
 
 /** What a removal did: how many products went, and how many were archived for their history. */

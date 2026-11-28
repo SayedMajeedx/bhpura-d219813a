@@ -24,6 +24,7 @@ import { ColorField } from "@/features/settings/shared/ColorField";
 import { useI18n } from "@/lib/i18n";
 import { categoryBannerTextColor } from "@/lib/banner-size";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** Where the trust bar shows, and its badges (the footer's badges on the classic look). */
 export function TrustBarFields({ isAr }: { isAr: boolean }) {
@@ -83,7 +84,7 @@ export function BrandStoryFields({ isAr }: { isAr: boolean }) {
       setBs({ brand_story_image_url: url });
       toast.success(isAr ? "تم رفع الصورة — لا تنسَ الحفظ" : "Image uploaded — remember to save");
     } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل رفع الصورة" : "Upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الصورة" : "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -299,7 +300,7 @@ export function CategoryBannerField({ isAr }: { isAr: boolean }) {
       setBs({ category_banner_background_url: url });
       toast.success(isAr ? "تم رفع صورة البنر" : "Banner image uploaded");
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "فشل رفع البنر" : "Failed to upload banner"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع البنر" : "Failed to upload banner"));
     } finally {
       setUploading(false);
     }

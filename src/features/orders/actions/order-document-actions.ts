@@ -26,6 +26,7 @@ import { getOrderWorkflow } from "@/lib/order-workflow";
 import { detectOrderType } from "@/lib/order-type-detector";
 import { logActivity } from "@/lib/activity-log";
 import type { OrderNumberFormat } from "@/lib/order-number";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /**
  * Share and print actions for a loaded order: copy the public invoice link,
@@ -93,7 +94,7 @@ export function createOrderDocumentActions({
     } catch (err) {
       console.error("PDF download failed", err);
       toast.error(
-        (err as Error)?.message ?? (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
+        getFriendlyErrorMessage(err, lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
       );
     }
   };

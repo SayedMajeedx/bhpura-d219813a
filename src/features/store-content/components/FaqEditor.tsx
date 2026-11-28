@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   deleteFaqItem,
   invalidateStoreContent,
@@ -71,7 +71,7 @@ export function FaqEditor({ brandId, isAr }: { brandId: string; isAr: boolean })
   const items = [...(useQuery(storeContentQueries.faq(brandId)).data ?? [])].sort(bySortOrder);
   const [editing, setEditing] = useState<{ id: string | null; form: FaqForm } | null>(null);
 
-  const onError = (error: Error) => toast.error(error.message);
+  const onError = (error: Error) => toast.error(getFriendlyErrorMessage(error));
   const refresh = () => invalidateStoreContent(qc, brandId);
   const save = useMutation({
     mutationFn: ({ id, form }: { id: string | null; form: FaqForm }) =>

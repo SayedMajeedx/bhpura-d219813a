@@ -53,9 +53,10 @@ describe("what staff read", () => {
     expect(productDeleteError({ message: "NOT_AUTHORIZED" }, false)).toMatch(
       /inventory permission/,
     );
-    // A database error is an object, not an Error: its words were once thrown away.
+    // A database error is an object, not an Error: its words were once thrown away. They are
+    // read, and said in the reader's words, never the database's own sentence.
     expect(productDeleteError({ message: "permission denied for table products" }, false)).toBe(
-      "permission denied for table products",
+      "You do not have permission for this. Ask the store owner.",
     );
     expect(productDeleteError(null, true)).toBe("تعذر حذف المنتجات.");
   });

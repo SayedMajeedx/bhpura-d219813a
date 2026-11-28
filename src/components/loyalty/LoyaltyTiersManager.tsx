@@ -20,6 +20,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface LoyaltyTiersManagerProps {
   brandId: string;
@@ -46,7 +47,9 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
       void invalidateLoyalty(queryClient, brandId);
     },
     onError: (err: any) => {
-      toast.error(err.message || (isAr ? "فشل تهيئة المستويات" : "Failed to initialize tiers"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل تهيئة المستويات" : "Failed to initialize tiers"),
+      );
     },
   });
 
@@ -60,7 +63,9 @@ export function LoyaltyTiersManager({ brandId, tiers }: LoyaltyTiersManagerProps
       setEditingTier(null);
     },
     onError: (err: any) => {
-      toast.error(err.message || (isAr ? "حدث خطأ أثناء التحديث" : "Failed to update tier"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "حدث خطأ أثناء التحديث" : "Failed to update tier"),
+      );
     },
   });
 

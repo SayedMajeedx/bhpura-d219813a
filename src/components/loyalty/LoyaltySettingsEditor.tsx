@@ -19,6 +19,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface LoyaltySettingsEditorProps {
   open: boolean;
@@ -111,7 +112,9 @@ export function LoyaltySettingsEditor({
       onOpenChange(false);
     },
     onError: (err: any) => {
-      toast.error(err.message || (isAr ? "حدث خطأ أثناء الحفظ" : "Failed to save settings"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "حدث خطأ أثناء الحفظ" : "Failed to save settings"),
+      );
     },
   });
 

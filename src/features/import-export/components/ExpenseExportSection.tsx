@@ -12,6 +12,7 @@ import {
 } from "@/lib/universal-exporter";
 import { toExpenseExportLine, type ExpenseExportRow } from "@/lib/data/expenses";
 import { arNounOblique } from "@/lib/arabic-count";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // =============================================================
 // Component 4: Expenses Export Section
@@ -80,7 +81,9 @@ export function ExpenseExportSection({
         { id: toastId },
       );
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل التصدير" : "Export failed"), { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل التصدير" : "Export failed"), {
+        id: toastId,
+      });
     } finally {
       setIsExporting(false);
     }

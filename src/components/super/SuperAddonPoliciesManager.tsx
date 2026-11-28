@@ -29,6 +29,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export function SuperAddonPoliciesManager() {
   const { lang } = useI18n();
@@ -81,7 +82,9 @@ export function SuperAddonPoliciesManager() {
       setEditingPolicy(null);
     },
     onError: (err: any) => {
-      toast.error(err.message || (isAr ? "فشل تحديث السياسة" : "Failed to update policy"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل تحديث السياسة" : "Failed to update policy"),
+      );
     },
   });
 

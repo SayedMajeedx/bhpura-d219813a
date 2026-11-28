@@ -4,6 +4,7 @@ import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { shareImageSetting } from "@/lib/seo/share-image";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /**
  * The picture shown when the store's link is shared (WhatsApp, Instagram, Facebook, X). Without
@@ -40,7 +41,7 @@ export function ShareImageCard({
       write(await uploadPublicMedia(brandId, file, "page"));
       toast.success(isAr ? "تم رفع الصورة — لا تنسَ الحفظ" : "Image uploaded — remember to save");
     } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل رفع الصورة" : "Upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الصورة" : "Upload failed"));
     } finally {
       setUploading(false);
     }

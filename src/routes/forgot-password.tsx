@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { sendPasswordResetEmail } from "@/lib/auth/sign-in";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/forgot-password")({
   ssr: false,
@@ -36,7 +37,7 @@ function ForgotPasswordPage() {
       toast.success(t("auth.resetLinkSent"));
       navigate({ to: "/auth" });
     } catch (err: any) {
-      toast.error(err.message ?? t("auth.failed"));
+      toast.error(getFriendlyErrorMessage(err, t("auth.failed")));
     } finally {
       setLoading(false);
     }

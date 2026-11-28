@@ -313,7 +313,9 @@ function PagesAndPolicies() {
         isAr ? "تم رفع الصورة — تذكّر حفظ التغييرات" : "Image uploaded — remember to save",
       );
     } catch (error: any) {
-      toast.error(error.message ?? (isAr ? "تعذّر رفع الصورة" : "Image upload failed"));
+      toast.error(
+        getFriendlyErrorMessage(error, isAr ? "تعذّر رفع الصورة" : "Image upload failed"),
+      );
     } finally {
       setUploadingIdx(null);
     }
@@ -326,7 +328,9 @@ function PagesAndPolicies() {
       updatePage(index, { menu_icon_url: url });
       toast.success(isAr ? "تم رفع الأيقونة — تذكّر الحفظ" : "Icon uploaded — remember to save");
     } catch (error: any) {
-      toast.error(error.message ?? (isAr ? "تعذّر رفع الأيقونة" : "Icon upload failed"));
+      toast.error(
+        getFriendlyErrorMessage(error, isAr ? "تعذّر رفع الأيقونة" : "Icon upload failed"),
+      );
     } finally {
       setUploadingIconIdx(null);
     }

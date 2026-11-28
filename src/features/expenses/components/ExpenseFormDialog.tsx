@@ -10,7 +10,7 @@ import { FileText, Loader2, Repeat, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
-import { cn } from "@/lib/utils";
+import { cn, errorText } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { syncExpensePackaging } from "@/components/accounting/sync-expense-packaging";
 import { createExpense, updateExpense, type ExpenseRow } from "@/lib/data/expenses";
@@ -152,7 +152,7 @@ export function ExpenseFormDialog({
     } catch (error) {
       if (uploaded) void deletePublicMediaUrl(brand.id, uploaded).catch(() => undefined);
       toast.error(
-        (error as { message?: string })?.message === "NOT_AUTHENTICATED"
+        errorText(error) === "NOT_AUTHENTICATED"
           ? isAr
             ? "سجّل الدخول من جديد"
             : "Sign in again"

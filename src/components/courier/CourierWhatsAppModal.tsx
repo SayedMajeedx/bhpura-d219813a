@@ -18,6 +18,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface CourierWhatsAppModalProps {
   isOpen: boolean;
@@ -125,7 +126,10 @@ export function CourierWhatsAppModal({
       onClose();
     } catch (err: any) {
       toast.error(
-        err.message || (isAr ? "حدث خطأ أثناء معالجة الطلب" : "Error processing request"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "حدث خطأ أثناء معالجة الطلب" : "Error processing request",
+        ),
       );
     } finally {
       setIsSaving(false);

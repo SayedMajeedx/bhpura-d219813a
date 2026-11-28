@@ -133,9 +133,7 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
       toast.success(isAr ? "تم. الطلب الآن في الطريق" : "Done. The order is now on the way");
       await refresh();
     } catch (error) {
-      toast.error(
-        getFriendlyErrorMessage(error) || (isAr ? "تعذر تحديث الطلب" : "Could not update"),
-      );
+      toast.error(getFriendlyErrorMessage(error, isAr ? "تعذر تحديث الطلب" : "Could not update"));
     } finally {
       setWorking(false);
     }
@@ -168,8 +166,10 @@ export function CourierDeliveryPage({ orderId }: { orderId: string }) {
           ? isAr
             ? "تم تسليم هذا الطلب مسبقاً"
             : "This delivery was already completed"
-          : getFriendlyErrorMessage(error) ||
-              (isAr ? "تعذر تسجيل التسليم" : "Could not record the delivery"),
+          : getFriendlyErrorMessage(
+              error,
+              isAr ? "تعذر تسجيل التسليم" : "Could not record the delivery",
+            ),
       );
       if (already) await refresh();
     } finally {

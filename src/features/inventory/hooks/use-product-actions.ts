@@ -99,8 +99,10 @@ export function useProductActions({
         );
       } catch (prodErr) {
         toast.error(
-          getFriendlyErrorMessage(prodErr) ||
-            (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"),
+          getFriendlyErrorMessage(
+            prodErr,
+            isAr ? "فشل تكرار المنتج" : "Failed to duplicate product",
+          ),
         );
         return;
       }
@@ -130,7 +132,9 @@ export function useProductActions({
       );
       onChanged();
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "حدث خطأ أثناء التكرار" : "Error duplicating product"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "حدث خطأ أثناء التكرار" : "Error duplicating product"),
+      );
     }
   };
 
@@ -168,8 +172,7 @@ export function useProductActions({
       fresh = await fetchBarcodeLabelData(brandId);
     } catch (error) {
       toast.error(
-        getFriendlyErrorMessage(error) ||
-          (isAr ? "تعذر تحميل الباركودات" : "Could not load barcodes"),
+        getFriendlyErrorMessage(error, isAr ? "تعذر تحميل الباركودات" : "Could not load barcodes"),
       );
       return;
     }

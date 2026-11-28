@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { useMoneyLabel, useStoreCurrency } from "@/hooks/use-store-currency";
 import { formatMoney } from "@/lib/format";
 import { uploadPublicMedia } from "@/lib/r2-upload";
-import { getFriendlyErrorMessage } from "@/lib/utils";
+import { errorText, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   archiveGiftAddon,
   giftOrderQueries,
@@ -41,8 +41,7 @@ export function GiftAddonsEditor({ brandId, lang }: { brandId: string; lang: "ar
   const [editing, setEditing] = useState<GiftAddonRow | "new" | null>(null);
 
   const failed = (error: unknown) => {
-    const message = getFriendlyErrorMessage(error);
-    toast.error(giftRefusal(message, lang) ?? message);
+    toast.error(giftRefusal(errorText(error), lang) ?? getFriendlyErrorMessage(error));
   };
   const setAvailable = async (addon: GiftAddonRow, isAvailable: boolean) => {
     try {

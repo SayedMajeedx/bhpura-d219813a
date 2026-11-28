@@ -60,6 +60,7 @@ import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { arNounOblique } from "@/lib/arabic-count";
 import { useOrderNumberFormat } from "@/hooks/use-order-number";
 import { AppConfirm } from "@/components/ui/app-confirm";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 type OrdersSearch = {
   tab?: string;
   queue?: string;
@@ -259,7 +260,7 @@ function OrdersList() {
       toast.error(
         String(err?.message ?? "").includes("ORDER_NOT_DELETABLE")
           ? orderKeptMessage(lang === "ar" ? "ar" : "en")
-          : err.message || "Failed to delete order",
+          : getFriendlyErrorMessage(err, "Failed to delete order"),
       );
     } finally {
       setDeleteTarget(null);
@@ -334,7 +335,10 @@ function OrdersList() {
       await invalidateOrders(qc, brandId);
     } catch (error: any) {
       toast.error(
-        error?.message || (lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders"),
+        getFriendlyErrorMessage(
+          error,
+          lang === "ar" ? "فشل تحديث الطلبات" : "Failed to update orders",
+        ),
       );
     } finally {
       setIsBatchUpdating(false);
@@ -368,7 +372,10 @@ function OrdersList() {
       await invalidateOrders(qc, brandId);
     } catch (error: any) {
       toast.error(
-        error?.message || (lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier"),
+        getFriendlyErrorMessage(
+          error,
+          lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier",
+        ),
       );
     } finally {
       setIsBatchUpdating(false);

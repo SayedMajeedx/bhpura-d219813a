@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useI18n } from "@/lib/i18n";
 import { deletePasskey, listPasskeys, registerPasskey } from "@/lib/auth/sign-in";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type Passkey = {
   id: string;
@@ -25,7 +26,7 @@ export function PasskeySettings() {
   const load = async () => {
     setLoading(true);
     const { data, error } = await listPasskeys();
-    if (error) toast.error(error.message);
+    if (error) toast.error(getFriendlyErrorMessage(error));
     else setPasskeys((data ?? []) as Passkey[]);
     setLoading(false);
   };
@@ -52,7 +53,7 @@ export function PasskeySettings() {
           ? isAr
             ? "تم إلغاء تسجيل البصمة."
             : "Passkey registration was cancelled."
-          : (error?.message ?? "Could not register passkey"),
+          : getFriendlyErrorMessage(error, "Could not register passkey"),
       );
     } finally {
       setRegistering(false);
@@ -62,7 +63,7 @@ export function PasskeySettings() {
   const remove = async (passkeyId: string) => {
     setDeletingId(passkeyId);
     const { error } = await deletePasskey(passkeyId);
-    if (error) toast.error(error.message);
+    if (error) toast.error(getFriendlyErrorMessage(error));
     else {
       setPasskeys((current) => current.filter((item) => item.id !== passkeyId));
       toast.success(isAr ? "تم حذف مفتاح الدخول" : "Passkey removed");

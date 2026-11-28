@@ -6,7 +6,7 @@ import { Check, Crop, Loader2, Maximize2, Minus, Plus, RotateCcw } from "lucide-
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { getImageCropPreset, type ImageCropPresetKey } from "@/lib/image-crop-presets";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   AppDialog,
   AppDialogBody,
@@ -371,7 +371,7 @@ export function ImageCropperDialog({
         await onConfirm(blob);
       }
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "تعذر تخطي القص" : "Failed to skip crop"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "تعذر تخطي القص" : "Failed to skip crop"));
     } finally {
       setProcessing(false);
     }

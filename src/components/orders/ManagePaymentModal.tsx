@@ -18,7 +18,7 @@ import {
   type PaymentBadge,
 } from "@/lib/payment-status";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   AppDialog,
   AppDialogBody,
@@ -125,8 +125,10 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
       onOpenChange(false);
     } catch (err: any) {
       toast.error(
-        err?.message ||
-          (isAr ? "حدث خطأ أثناء تحديث حالة الدفع" : "Failed to update payment details"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "حدث خطأ أثناء تحديث حالة الدفع" : "Failed to update payment details",
+        ),
       );
     } finally {
       setSaving(false);

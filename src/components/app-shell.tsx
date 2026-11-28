@@ -19,7 +19,7 @@ import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsWorkspaceTabs } from "@/components/os/os-workspace-tabs";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { ThemeProvider } from "@/lib/theme-context";
 import { useAdminAccent } from "@/hooks/use-admin-accent";
 import { getStorefrontUrl } from "@/lib/storefront-url";
@@ -183,7 +183,7 @@ function AdminWorkspace({ children }: { children: React.ReactNode }) {
       );
       window.location.href = "/admin/brands";
     } catch (err: any) {
-      toast.error(err.message || "Failed to exit impersonation mode.");
+      toast.error(getFriendlyErrorMessage(err, "Failed to exit impersonation mode."));
     }
   };
 

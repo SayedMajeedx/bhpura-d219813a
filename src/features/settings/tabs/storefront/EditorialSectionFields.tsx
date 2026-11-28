@@ -7,6 +7,7 @@ import { useBrandSettingsFormContext } from "@/features/settings/use-brand-setti
 import { ColorField } from "@/features/settings/shared/ColorField";
 import { Button } from "@/components/ui/button";
 import { ImagePlus, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type EditorialKey = keyof HomepageEditorialSections;
 
@@ -69,7 +70,7 @@ export function useEditorialSections() {
       patchSection(key, { [field]: url });
       toast.success(isAr ? "تم رفع الصورة — لا تنسَ الحفظ" : "Image uploaded — remember to save");
     } catch (e: any) {
-      toast.error(e?.message ?? (isAr ? "فشل رفع الصورة" : "Upload failed"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "فشل رفع الصورة" : "Upload failed"));
     } finally {
       setUploading(null);
     }

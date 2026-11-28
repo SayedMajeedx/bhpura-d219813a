@@ -103,7 +103,7 @@ export function StoreOffersSection({ brandId, isAr }: { brandId: string; isAr: b
     null,
   );
   const failed = (error: unknown) =>
-    toast.error(getFriendlyErrorMessage(error) || (isAr ? "تعذر الحفظ." : "Could not save."));
+    toast.error(getFriendlyErrorMessage(error, isAr ? "تعذر الحفظ." : "Could not save."));
 
   const save = useMutation({
     mutationFn: async ({ row, form }: { row: StoreOfferRow | null; form: OfferForm }) => {

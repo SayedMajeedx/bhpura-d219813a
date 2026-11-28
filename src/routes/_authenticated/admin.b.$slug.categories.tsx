@@ -155,7 +155,9 @@ function CategoriesPage() {
 
       await invalidateCategories(qc, brandId);
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل تحديث الأقسام" : "Failed to sync categories"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل تحديث الأقسام" : "Failed to sync categories"),
+      );
     } finally {
       setIsSyncingDefaults(false);
     }
@@ -283,7 +285,7 @@ function CategoryDialog({
       const url = await uploadPublicMedia(brandId, file, "category");
       setForm((f) => ({ ...f, image_url: url }));
     } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
+      toast.error(getFriendlyErrorMessage(e, "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -295,7 +297,7 @@ function CategoryDialog({
       const url = await uploadPublicMedia(brandId, file, "category");
       setForm((current) => ({ ...current, menu_icon_url: url }));
     } catch (error: any) {
-      toast.error(error.message ?? "Icon upload failed");
+      toast.error(getFriendlyErrorMessage(error, "Icon upload failed"));
     } finally {
       setUploadingIcon(false);
     }

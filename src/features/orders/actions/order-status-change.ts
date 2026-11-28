@@ -81,8 +81,10 @@ export function createOrderStatusChange({
       invalidateActivityLogs(qc);
     } catch (err: unknown) {
       toast.error(
-        getFriendlyErrorMessage(err) ||
-          (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
+        getFriendlyErrorMessage(
+          err,
+          lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status",
+        ),
       );
       throw err;
     }

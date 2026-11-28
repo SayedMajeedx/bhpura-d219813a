@@ -15,6 +15,7 @@ import {
   updatePassword,
   verifyEmailToken,
 } from "@/lib/auth/sign-in";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -162,7 +163,7 @@ function ResetPasswordPage() {
         console.error("Recovery link initialization error:", err);
         if (isMounted) {
           setStatus("invalid");
-          setErrorMessage(err?.message ?? t("auth.invalidRecoveryLink"));
+          setErrorMessage(getFriendlyErrorMessage(err, t("auth.invalidRecoveryLink")));
         }
       }
     };
@@ -196,7 +197,7 @@ function ResetPasswordPage() {
         navigate({ to: "/auth" });
       }, 1500);
     } catch (err: any) {
-      toast.error(err.message ?? t("auth.failed"));
+      toast.error(getFriendlyErrorMessage(err, t("auth.failed")));
     } finally {
       setSubmitting(false);
     }

@@ -16,6 +16,7 @@ import {
   updateNotificationRecipient,
 } from "@/lib/data/notification-recipients";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export type NotificationRecipient = {
   id: string;
@@ -104,7 +105,7 @@ export function NotificationRecipientsEditor({
           ? isAr
             ? "هذا البريد مضاف بالفعل لهذه العلامة"
             : "This email is already added for this brand"
-          : error.message,
+          : getFriendlyErrorMessage(error),
       );
     setForm(emptyForm);
     setAdding(false);
@@ -117,7 +118,7 @@ export function NotificationRecipientsEditor({
       () => null,
       databaseError,
     );
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     refresh();
   };
 
@@ -128,7 +129,7 @@ export function NotificationRecipientsEditor({
     });
     if (!ok) return;
     const error = await deleteNotificationRecipient(brandId, id).then(() => null, databaseError);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     refresh();
   };
 

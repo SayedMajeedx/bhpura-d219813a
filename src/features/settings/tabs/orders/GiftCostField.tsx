@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMoneyLabel } from "@/hooks/use-store-currency";
 import { useProfileOptional } from "@/lib/profile-context";
-import { getFriendlyErrorMessage } from "@/lib/utils";
+import { errorText, getFriendlyErrorMessage } from "@/lib/utils";
 import { giftOrderQueries, invalidateGiftCosts, setGiftItemCost } from "@/lib/data/gift-orders";
 import { giftCostFromText } from "@/lib/gift-addons";
 import { giftRefusal } from "@/lib/gift-order";
@@ -70,8 +70,7 @@ function CostInput({
       await invalidateGiftCosts(qc, brandId);
       toast.success(isAr ? "حُفظت التكلفة" : "Cost saved");
     } catch (error) {
-      const message = getFriendlyErrorMessage(error);
-      toast.error(giftRefusal(message, lang) ?? message);
+      toast.error(giftRefusal(errorText(error), lang) ?? getFriendlyErrorMessage(error));
     } finally {
       setSaving(false);
     }

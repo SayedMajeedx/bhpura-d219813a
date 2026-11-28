@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CropUploadButton } from "@/components/crop-upload-button";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import {
   deleteGalleryItem,
@@ -35,7 +35,7 @@ export function GalleryEditor({ brandId, isAr }: { brandId: string; isAr: boolea
   const [editing, setEditing] = useState<{ id: string | null; form: GalleryForm } | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const onError = (error: Error) => toast.error(error.message);
+  const onError = (error: Error) => toast.error(getFriendlyErrorMessage(error));
   const refresh = () => invalidateStoreContent(qc, brandId);
   const save = useMutation({
     mutationFn: ({ id, form }: { id: string | null; form: GalleryForm }) =>
@@ -65,7 +65,7 @@ export function GalleryEditor({ brandId, isAr }: { brandId: string; isAr: boolea
       const url = await uploadPublicMedia(brandId, file, "page");
       setEditing((current) => current && { ...current, form: { ...current.form, image_url: url } });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : isAr ? "تعذّر الرفع" : "Upload failed");
+      toast.error(getFriendlyErrorMessage(error, isAr ? "تعذّر الرفع" : "Upload failed"));
     } finally {
       setUploading(false);
     }

@@ -149,8 +149,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         await afterSend(offerTell);
       } catch (err: unknown) {
         toast.error(
-          getFriendlyErrorMessage(err) ||
-            (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+          getFriendlyErrorMessage(
+            err,
+            lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+          ),
         );
       }
     };
@@ -199,8 +201,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
         await afterReceive();
       } catch (err: unknown) {
         toast.error(
-          getFriendlyErrorMessage(err) ||
-            (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+          getFriendlyErrorMessage(
+            err,
+            lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+          ),
         );
       }
     };
@@ -242,8 +246,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -279,8 +285,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -316,8 +324,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -358,8 +368,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateActivityLogs(qc);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order",
+              ),
             );
           }
         }}
@@ -391,8 +403,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -426,8 +440,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -484,8 +500,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete delivery"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete delivery",
+              ),
             );
           }
         }}
@@ -518,8 +536,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status",
+              ),
             );
           }
         }}
@@ -552,8 +572,10 @@ export function renderOrderPrimaryAction(ctx: OrderPrimaryActionContext) {
             invalidateOrders(qc, brandId);
           } catch (err: unknown) {
             toast.error(
-              getFriendlyErrorMessage(err) ||
-                (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete handover"),
+              getFriendlyErrorMessage(
+                err,
+                lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete handover",
+              ),
             );
           }
         }}

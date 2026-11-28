@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { getTenantAuditLogs, toggleSupportAccess } from "@/lib/impersonation.functions";
 import { queryKeys } from "@/lib/query-keys";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type SupportAccessCardProps = {
   brand: {
@@ -56,7 +57,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
       qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brand.id) });
     },
     onError: (err: any) => {
-      toast.error(err.message || "Failed to update support access.");
+      toast.error(getFriendlyErrorMessage(err, "Failed to update support access."));
       // Rollback local state
       setAccessEnabled(!accessEnabled);
     },

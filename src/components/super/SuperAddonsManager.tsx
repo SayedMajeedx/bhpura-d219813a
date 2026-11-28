@@ -116,7 +116,7 @@ export function SuperAddonsManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_addons"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to save add-on", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to save add-on"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
