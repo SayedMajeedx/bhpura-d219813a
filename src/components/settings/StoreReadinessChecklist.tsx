@@ -1,489 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-  ArrowRight,
-  Store,
-  Package,
-  CreditCard,
-  Truck,
-  FileText,
-  Image,
-  X,
-  MessageCircle,
-} from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, Sparkles, X } from "lucide-react";
 import type { SettingsTabId } from "@/features/settings/registry";
-import { normalizeWhatsAppDigits } from "@/lib/storefront-mode";
-import { useAddons } from "@/components/addons/AddonsProvider";
-import { readinessChecksFrom } from "@/lib/addons/addon-registry";
-import { businessSettingsQueries } from "@/lib/data/business-settings";
-import { brandQueries } from "@/lib/data/brands";
-import { returnsQueries, type ReturnPolicyRow } from "@/lib/data/returns";
-import { catalogInsightQueries } from "@/lib/data/catalog";
-import { useAdminStoreProfile } from "@/hooks/use-store-profile";
-import { isServicesProfile } from "@/lib/store-profile";
 import { readinessFoldKey, readinessFolded } from "@/features/settings/lib/readiness-fold";
-import { arNoun } from "@/lib/arabic-count";
-import {
-  servicesReadinessItems,
-  type ServicesReadinessFacts,
-} from "@/features/settings/lib/services-readiness";
-import { bookingPoliciesQueries } from "@/lib/data/booking-policies";
-import { storeContentQueries } from "@/lib/data/store-content";
+import { useLaunchChecklist } from "@/features/launch/hooks/use-launch-checklist";
+import { LaunchStepRow } from "@/features/launch/components/LaunchStepRow";
 
-/** Whether the policy has written terms in either language (counts as a policy page). */
-const hasPolicyTerms = (policy: ReturnPolicyRow | null) =>
-  Boolean(policy?.policy_terms_ar || policy?.policy_terms_en);
-
-export interface BusinessSettingsData {
-  logo_url?: string | null;
-  cod_enabled?: boolean | null;
-  card_enabled?: boolean | null;
-  benefit_enabled?: boolean | null;
-  delivery_enabled?: boolean | null;
-  pickup_enabled?: boolean | null;
-  delivery_fee?: number | string | null;
-  shipping_zones?: any[] | null;
-  pages?: any;
-  storefront_mode?: string | null;
-  whatsapp_number?: string | null;
-  brand_palette?: any | null;
-  storefront_accent_color?: string | null;
-}
-
-export interface ReadinessEvaluationInput {
-  logoUrl?: string | null;
-  activeProductsCount: number;
-  businessSettings?: BusinessSettingsData | null;
-  brandLogoUrl?: string | null;
-  brandPalette?: any | null;
-  storeVertical?: string | null;
-  lang?: "ar" | "en";
-  hasReturnPolicy?: boolean;
-  /** A services store: it has no shipping to set up and no goods to take back. */
-  services?: boolean;
-  /** What a services store's own steps read (contact, booking terms, questions, photos). */
-  servicesFacts?: ServicesReadinessFacts;
-}
-
-export interface ReadinessItem {
-  id:
-    | "logo"
-    | "palette"
-    | "vertical"
-    | "products"
-    | "payments"
-    | "fulfillment"
-    | "policies"
-    | "whatsapp"
-    | (string & {});
-  icon: React.ElementType;
-  title: string;
-  description: string;
-  isComplete: boolean;
-  actionType: "tab" | "link";
-  tabId?: SettingsTabId;
-  group?: string;
-  href?: string;
-  /** An admin page under the store where the step is done ("bookings", "inventory"). */
-  page?: string;
-  actionLabel: string;
-  editLabel: string;
-}
-
-export function evaluateStoreReadiness(input: ReadinessEvaluationInput) {
-  const isAr = input.lang !== "en";
-  const bData = input.businessSettings;
-
-  // 1. Logo
-  const resolvedLogoUrl =
-    input.logoUrl && input.logoUrl.trim().length > 0
-      ? input.logoUrl.trim()
-      : bData?.logo_url && bData.logo_url.trim().length > 0
-        ? bData.logo_url.trim()
-        : input.brandLogoUrl && input.brandLogoUrl.trim().length > 0
-          ? input.brandLogoUrl.trim()
-          : null;
-  const hasLogo = Boolean(resolvedLogoUrl);
-
-  // 2. Products
-  const activeProducts = input.activeProductsCount ?? 0;
-  const hasProducts = activeProducts > 0;
-
-  // 3. Payments
-  const hasPayments = Boolean(
-    bData && (bData.cod_enabled || bData.card_enabled || bData.benefit_enabled),
-  );
-
-  // 4. Fulfillment
-  const hasFulfillment = Boolean(
-    bData &&
-    (bData.delivery_enabled ||
-      bData.pickup_enabled ||
-      (Array.isArray(bData.shipping_zones) && bData.shipping_zones.length > 0) ||
-      (bData.delivery_fee != null &&
-        Number(bData.delivery_fee) >= 0 &&
-        bData.delivery_enabled !== false)),
-  );
-
-  // 5. CMS / Policy Pages
-  const rawPages = bData?.pages;
-  const pagesList: any[] = Array.isArray(rawPages)
-    ? rawPages
-    : Array.isArray((rawPages as any)?.items)
-      ? (rawPages as any).items
-      : Array.isArray((rawPages as any)?.pages)
-        ? (rawPages as any).pages
-        : [];
-
-  const validPages = pagesList.filter(
-    (p) =>
-      p &&
-      (Boolean(p.slug) ||
-        Boolean(p.title_ar) ||
-        Boolean(p.title_en) ||
-        Boolean(p.content_ar) ||
-        Boolean(p.content_en)),
-  );
-  const hasPolicies = validPages.length > 0 || Boolean(input.hasReturnPolicy);
-
-  // 6. Brand palette set (extracted from the logo or chosen manually).
-  const paletteMeta = input.brandPalette ?? bData?.brand_palette ?? null;
-  const paletteSource: string | null = paletteMeta?.source ?? paletteMeta?.meta?.source ?? null;
-  const hasExtractedPalette = Boolean(
-    paletteSource === "logo" || paletteSource === "manual" || bData?.storefront_accent_color,
-  );
-
-  // 7. Store vertical specified
-  const hasVertical = Boolean(
-    input.storeVertical && input.storeVertical !== "general" && input.storeVertical !== "other",
-  );
-
-  const isCatalog = bData?.storefront_mode === "catalog";
-  const whatsappDigits = normalizeWhatsAppDigits(bData?.whatsapp_number);
-  const hasWhatsApp = whatsappDigits.length > 0;
-
-  const items: ReadinessItem[] = isCatalog
-    ? [
-        {
-          id: "logo",
-          icon: Image,
-          title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
-          description: isAr
-            ? hasLogo
-              ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
-              : "يظهر الشعار في ترويسة المتجر والكتالوج"
-            : hasLogo
-              ? "Official store logo uploaded and configured"
-              : "Appears in storefront header and catalog",
-          isComplete: hasLogo,
-          actionType: "tab",
-          tabId: "identity",
-          group: "basics",
-          actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "palette",
-          icon: Sparkles,
-          title: isAr ? "لون العلامة محدد" : "Brand colour set",
-          description: isAr
-            ? hasExtractedPalette
-              ? "لوحة ألوان المتجر جاهزة"
-              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
-            : hasExtractedPalette
-              ? "Storefront palette is ready"
-              : "Pick the brand colour or extract it from the logo in one click",
-          isComplete: hasExtractedPalette,
-          actionType: "tab",
-          tabId: "identity",
-          group: "palette",
-          actionLabel: isAr ? "استخراج الألوان" : "Extract Colors",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "vertical",
-          icon: Store,
-          title: isAr ? "تحديد نوع النشاط التجاري" : "Store business vertical selected",
-          description: isAr
-            ? hasVertical
-              ? `النشاط التجاري محدد: ${input.storeVertical}`
-              : "حدد نشاط متجرك لتجهيز التصنيفات وقوالب العرض المناسبة"
-            : hasVertical
-              ? `Vertical configured: ${input.storeVertical}`
-              : "Select business vertical for tailored starter packs & taxonomy",
-          isComplete: hasVertical,
-          actionType: "tab",
-          tabId: "identity",
-          group: "vertical",
-          actionLabel: isAr ? "تحديد النشاط" : "Select Vertical",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "products",
-          icon: Package,
-          title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
-          description: isAr
-            ? hasProducts
-              ? `جاهز للعرض في الكتالوج الآن: ${arNoun(activeProducts, "product")}`
-              : "أضف وتفعيل أول منتج للظهور في الكتالوج"
-            : hasProducts
-              ? `${activeProducts} active product(s) ready for showcase`
-              : "Add and activate your first product to showcase",
-          isComplete: hasProducts,
-          actionType: "link",
-          actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
-          editLabel: isAr ? "عرض" : "View",
-        },
-        {
-          id: "whatsapp",
-          icon: MessageCircle,
-          title: isAr ? "ربط وتفعيل رقم الواتساب" : "Configure official WhatsApp number",
-          description: isAr
-            ? hasWhatsApp
-              ? "تم ضبط رقم الواتساب المخصص لاستقبال استفسارات وطلبات الكتالوج"
-              : "أضف رقم الواتساب لتلقي استفسارات وطلبات العملاء مباشرة من الكتالوج"
-            : hasWhatsApp
-              ? "Official WhatsApp number configured for catalog inquiries"
-              : "Configure WhatsApp number to receive customer product inquiries",
-          isComplete: hasWhatsApp,
-          actionType: "tab",
-          tabId: "storefront",
-          group: "mode",
-          actionLabel: isAr ? "إعداد الكتالوج" : "Catalog Settings",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "policies",
-          icon: FileText,
-          title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
-          description: isAr
-            ? hasPolicies
-              ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
-              : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
-            : hasPolicies
-              ? `${validPages.length} published page(s) with store policies`
-              : "Clear refund and delivery terms builds customer trust",
-          isComplete: hasPolicies,
-          actionType: "link",
-          actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
-          editLabel: isAr ? "إدارة" : "Manage",
-        },
-      ]
-    : [
-        {
-          id: "logo",
-          icon: Image,
-          title: isAr ? "رفع شعار المتجر الرسمي" : "Upload official store logo",
-          description: isAr
-            ? hasLogo
-              ? "تم تعيين وتحديث شعار المتجر الرسمي بنجاح"
-              : "يظهر الشعار في ترويسة المتجر والفواتير والإيصالات الحرارية"
-            : hasLogo
-              ? "Official store logo uploaded and configured"
-              : "Appears in storefront header, customer invoices, and receipts",
-          isComplete: hasLogo,
-          actionType: "tab",
-          tabId: "identity",
-          group: "basics",
-          actionLabel: isAr ? "إعداد الشعار" : "Configure Logo",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "palette",
-          icon: Sparkles,
-          title: isAr ? "لون العلامة محدد" : "Brand colour set",
-          description: isAr
-            ? hasExtractedPalette
-              ? "لوحة ألوان المتجر جاهزة"
-              : "اختر لون العلامة أو استخرجه من الشعار بضغطة واحدة"
-            : hasExtractedPalette
-              ? "Storefront palette is ready"
-              : "Pick the brand colour or extract it from the logo in one click",
-          isComplete: hasExtractedPalette,
-          actionType: "tab",
-          tabId: "identity",
-          group: "palette",
-          actionLabel: isAr ? "استخراج الألوان" : "Extract Colors",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "vertical",
-          icon: Store,
-          title: isAr ? "تحديد نوع النشاط التجاري" : "Store business vertical selected",
-          description: isAr
-            ? hasVertical
-              ? `النشاط التجاري محدد: ${input.storeVertical}`
-              : "حدد نشاط متجرك لتجهيز التصنيفات وقوالب العرض المناسبة"
-            : hasVertical
-              ? `Vertical configured: ${input.storeVertical}`
-              : "Select business vertical for tailored starter packs & taxonomy",
-          isComplete: hasVertical,
-          actionType: "tab",
-          tabId: "identity",
-          group: "vertical",
-          actionLabel: isAr ? "تحديد النشاط" : "Select Vertical",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "products",
-          icon: Package,
-          title: isAr ? "إضافة وتفعيل منتج واحد على الأقل" : "Add and activate at least 1 product",
-          description: isAr
-            ? hasProducts
-              ? `جاهز للبيع الآن: ${arNoun(activeProducts, "product")}`
-              : "أضف وتفعيل أول منتج لبدء استقبال الطلبات"
-            : hasProducts
-              ? `${activeProducts} active product(s) ready for purchase`
-              : "Add and activate your first product to start selling",
-          isComplete: hasProducts,
-          actionType: "link",
-          actionLabel: isAr ? "إدارة المنتجات" : "Manage Products",
-          editLabel: isAr ? "عرض" : "View",
-        },
-        {
-          id: "payments",
-          icon: CreditCard,
-          title: isAr ? "تفعيل وسيلة دفع واحدة على الأقل" : "Configure at least 1 payment method",
-          description: isAr
-            ? hasPayments
-              ? bData?.cod_enabled && bData?.card_enabled && bData?.benefit_enabled
-                ? "تم تفعيل الدفع عند الاستلام والبطاقات ومحفظة بنفت"
-                : bData?.cod_enabled && bData?.card_enabled
-                  ? "تم تفعيل الدفع عند الاستلام والبطاقات الائتمانية"
-                  : "تم تفعيل وتجهيز وسائل الدفع بنجاح"
-              : "تفعيل الدفع عند الاستلام (COD)، بطاقة، أو محفظة بنفت"
-            : hasPayments
-              ? "Payment methods configured and active"
-              : "Enable Cash on Delivery (COD), Card, or BenefitPay",
-          isComplete: hasPayments,
-          actionType: "tab",
-          tabId: "orders",
-          group: "payments",
-          actionLabel: isAr ? "إعداد الدفع" : "Setup Payments",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "fulfillment",
-          icon: Truck,
-          title: isAr
-            ? "تحديد مناطق ورسوم الشحن والتوصيل"
-            : "Define shipping zones and delivery fees",
-          description: isAr
-            ? hasFulfillment
-              ? bData?.delivery_enabled && bData?.pickup_enabled
-                ? "تم تفعيل التوصيل والاستلام المحلي ومناطق الشحن"
-                : bData?.delivery_enabled
-                  ? "تم تفعيل التوصيل ورسوم الشحن بنجاح"
-                  : "تم إعداد خيارات التسليم والشحن"
-              : "حدد رسوم التوصيل المحلي أو الاستلام من الفرع"
-            : hasFulfillment
-              ? "Delivery, pickup, and shipping zones active"
-              : "Specify local delivery fees, pickup locations, or zones",
-          isComplete: hasFulfillment,
-          actionType: "tab",
-          tabId: "orders",
-          group: "fulfillment",
-          actionLabel: isAr ? "إعداد الشحن" : "Configure Shipping",
-          editLabel: isAr ? "تعديل" : "Edit",
-        },
-        {
-          id: "policies",
-          icon: FileText,
-          title: isAr ? "نشر صفحة الشروط أو سياسة الإرجاع" : "Publish return policy or terms page",
-          description: isAr
-            ? hasPolicies
-              ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
-              : "توضيح حقوق العميل وسياسة الاستبدال يبني الثقة في المتجر"
-            : hasPolicies
-              ? `${validPages.length} published page(s) with store policies`
-              : "Clear refund and delivery terms builds customer trust",
-          isComplete: hasPolicies,
-          actionType: "link",
-          actionLabel: isAr ? "إدارة الصفحات" : "Manage Pages",
-          editLabel: isAr ? "إدارة" : "Manage",
-        },
-      ];
-
-  const forStore = input.services
-    ? items
-        .filter((it) => it.id !== "fulfillment")
-        .map((it) =>
-          it.id === "policies"
-            ? {
-                ...it,
-                title: isAr
-                  ? "نشر صفحة الشروط وسياسة الإلغاء"
-                  : "Publish your terms and cancellation policy",
-                description: isAr
-                  ? hasPolicies
-                    ? `${arNoun(validPages.length, "page")} منشورة تشمل الشروط والسياسات`
-                    : "توضيح شروط الحجز والإلغاء والدفعة المقدمة يبني الثقة في خدماتك"
-                  : hasPolicies
-                    ? `${validPages.length} published page(s) with your terms`
-                    : "Clear booking, cancellation and deposit terms build trust in your services",
-              }
-            : it,
-        )
-    : items;
-  // A services store's own steps: a way to reach it, booking terms, questions, photos.
-  if (input.services && input.servicesFacts) {
-    for (const step of servicesReadinessItems(input.servicesFacts, isAr)) {
-      forStore.push({
-        id: step.id,
-        icon: step.icon,
-        title: step.title,
-        description: step.description,
-        isComplete: step.isComplete,
-        actionType: step.tab ? "tab" : "link",
-        tabId: step.tab?.tabId,
-        group: step.tab?.group,
-        page: step.page,
-        actionLabel: isAr ? "إكمال" : "Complete",
-        editLabel: isAr ? "تعديل" : "Edit",
-      });
-    }
-  }
-  const visibleItems = forStore;
-  const completedCount = visibleItems.filter((it) => it.isComplete).length;
-  const totalCount = visibleItems.length;
-  const progressPercent = Math.round((completedCount / totalCount) * 100);
-  const isAllComplete = completedCount === totalCount;
-
-  return {
-    hasLogo,
-    hasProducts,
-    activeProducts,
-    hasPayments,
-    hasFulfillment,
-    hasPolicies,
-    hasWhatsApp,
-    isCatalog,
-    pagesCount: validPages.length,
-    items: visibleItems,
-    completedCount,
-    totalCount,
-    progressPercent,
-    isAllComplete,
-  };
-}
+// The setup steps' rules live with the launch checklist; screens and tests read them here too.
+export {
+  evaluateStoreReadiness,
+  type BusinessSettingsData,
+  type ReadinessEvaluationInput,
+  type ReadinessItem,
+} from "@/features/launch/lib/setup-steps";
 
 interface StoreReadinessChecklistProps {
   brandId: string;
   slug: string;
   lang: "ar" | "en";
   logoUrl?: string | null;
-  brandPalette?: any | null;
+  brandPalette?: unknown;
   storeVertical?: string | null;
   onNavigateTab: (tab: SettingsTabId, groupAnchor?: string) => void;
 }
 
+/**
+ * The store's launch checklist above the settings: the same steps and the same count as the
+ * dashboard's (`useLaunchChecklist`), every one listed, folded to one line once half are done.
+ */
 export function StoreReadinessChecklist({
   brandId,
   slug,
@@ -494,112 +38,15 @@ export function StoreReadinessChecklist({
   onNavigateTab,
 }: StoreReadinessChecklistProps) {
   const isAr = lang === "ar";
-
-  // 1. Query active products count (using canonical is_active flag)
-  const productsQ = useQuery(catalogInsightQueries.activeCount(brandId));
-
-  // 2. The settings row (payments, fulfillment, pages, logo), shared with the settings form
-  const businessSettingsQ = useQuery(businessSettingsQueries.detail(brandId));
-
-  // 3. Query return policy terms as an alternative fulfillment for policy requirement
-  const returnPolicyQ = useQuery({
-    ...returnsQueries.policy(brandId),
-    select: hasPolicyTerms,
-  });
-
-  // 4. The brand's profile (logo), shared with the settings form
-  const brandQ = useQuery(brandQueries.profile(brandId));
-
-  const { profile } = useAdminStoreProfile(brandId);
-  const services = isServicesProfile(profile.modules);
-  // A services store's own steps (services-readiness.ts).
-  const bookingPolicyQ = useQuery({ ...bookingPoliciesQueries.policy(brandId), enabled: services });
-  const faqQ = useQuery({ ...storeContentQueries.faq(brandId), enabled: services });
-  const withoutPhotoQ = useQuery({
-    ...catalogInsightQueries.withoutPhoto(brandId),
-    enabled: services,
-  });
-  const { addons } = useAddons();
-  const addonChecks = React.useMemo(() => readinessChecksFrom(addons), [addons]);
-
-  const addonChecksQ = useQuery({
-    queryKey: [
-      "readiness-addon-checks",
-      brandId,
-      addons
-        .map((a) => a.addon_id)
-        .sort()
-        .join(","),
-    ],
-    enabled: Boolean(brandId && addonChecks.length > 0),
-    queryFn: async () => {
-      const results: Record<string, "ok" | "warn" | "missing"> = {};
-      for (const check of addonChecks) {
-        try {
-          const res = await check.evaluate({ brandId, db: supabase });
-          results[check.id] = res;
-        } catch (e) {
-          console.error(`Error running readiness check ${check.id}:`, e);
-          results[check.id] = "warn";
-        }
-      }
-      return results;
-    },
-  });
-
-  const evaluation = evaluateStoreReadiness({
-    logoUrl,
-    activeProductsCount: productsQ.data ?? 0,
-    businessSettings: businessSettingsQ.data as BusinessSettingsData | undefined,
-    brandLogoUrl: brandQ.data?.logo_url,
-    brandPalette: brandPalette ?? businessSettingsQ.data?.brand_palette,
-    storeVertical: storeVertical ?? businessSettingsQ.data?.store_vertical,
+  const checklist = useLaunchChecklist({
+    brandId,
+    slug,
     lang,
-    hasReturnPolicy: Boolean(returnPolicyQ.data),
-    services,
-    servicesFacts: services
-      ? {
-          whatsappNumber: businessSettingsQ.data?.whatsapp_number,
-          phone: businessSettingsQ.data?.phone,
-          policy: bookingPolicyQ.data ?? null,
-          faqCount: faqQ.data?.length ?? 0,
-          withoutPhoto: withoutPhotoQ.data ?? 0,
-        }
-      : undefined,
+    logoUrl,
+    brandPalette,
+    storeVertical,
   });
-
-  const checklistItems = evaluation.items.map((item) => {
-    if (item.id === "products") {
-      return { ...item, href: `/admin/b/${slug}/inventory` };
-    }
-    if (item.id === "policies") {
-      return { ...item, href: `/admin/b/${slug}/pages` };
-    }
-    if (item.page) return { ...item, href: `/admin/b/${slug}/${item.page}` };
-    return item;
-  });
-
-  const addonItems = React.useMemo(() => {
-    return addonChecks.map((check) => {
-      const status = addonChecksQ.data?.[check.id] ?? "warn";
-      const isComplete = status === "ok";
-      return {
-        id: `addon_${check.id}`,
-        icon: Sparkles,
-        title: isAr ? check.label.ar : check.label.en,
-        description: isAr ? check.description.ar : check.description.en,
-        isComplete,
-        actionType: "link" as const,
-        href: check.actionTo ? check.actionTo.replace("$slug", slug) : undefined,
-        actionLabel: isAr ? "إكمال الإعداد" : "Complete Setup",
-        editLabel: isAr ? "تعديل" : "Edit",
-      };
-    });
-  }, [addonChecks, addonChecksQ.data, isAr, slug]);
-
-  const allItems = [...checklistItems, ...addonItems];
-  const completedCount = allItems.filter((i) => i.isComplete).length;
-  const totalCount = allItems.length;
+  const { steps, completed: completedCount, total: totalCount } = checklist;
   const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 100;
   const isAllComplete = completedCount === totalCount;
 
@@ -608,6 +55,8 @@ export function StoreReadinessChecklist({
   const [userCollapsed, setUserCollapsed] = useState<boolean | null>(() => {
     try {
       if (typeof window !== "undefined") {
+        // The dashboard's "All steps" opens the list whatever was chosen before.
+        if (new URLSearchParams(window.location.search).get("checklist") === "open") return false;
         const saved = localStorage.getItem(collapseStorageKey);
         if (saved !== null) return saved === "true";
       }
@@ -632,7 +81,7 @@ export function StoreReadinessChecklist({
     }
   };
 
-  // Option 3: Dismiss capability with localStorage memory
+  // Dismissed once every step is done; it comes back if a step stops being done.
   const storageKey = `store-readiness-dismissed-${brandId}`;
   const [dismissed, setDismissed] = useState<boolean>(() => {
     try {
@@ -645,8 +94,8 @@ export function StoreReadinessChecklist({
     return false;
   });
 
-  // Auto-reappear if any requirement breaks in the future
   useEffect(() => {
+    if (!checklist.ready) return;
     if (!isAllComplete && dismissed) {
       setDismissed(false);
       try {
@@ -655,9 +104,8 @@ export function StoreReadinessChecklist({
         // ignore
       }
     }
-  }, [isAllComplete, dismissed, storageKey]);
+  }, [checklist.ready, isAllComplete, dismissed, storageKey]);
 
-  // If 100% complete and merchant explicitly dismissed it, unmount completely
   if (isAllComplete && dismissed) {
     return null;
   }
@@ -682,7 +130,7 @@ export function StoreReadinessChecklist({
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
               isAllComplete
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 ring-1 ring-emerald-500/20"
+                ? "bg-success/10 text-success ring-1 ring-success/20"
                 : "bg-primary/10 text-primary"
             }`}
           >
@@ -694,33 +142,31 @@ export function StoreReadinessChecklist({
           </div>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <h3 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
-                {isAr ? "جاهزية المتجر للانطلاق المباشر" : "Store Launch Readiness"}
+              <h3 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">
+                {isAr ? "خطوات إطلاق المتجر" : "Launch checklist"}
               </h3>
               <span
-                className={`text-xs font-medium px-2.5 py-0.5 rounded-full transition-colors ${
-                  isAllComplete
-                    ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                    : "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+                className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                  isAllComplete ? "bg-success/15 text-success" : "bg-warning/15 text-foreground"
                 }`}
               >
                 {collapsed
                   ? `${completedCount} / ${totalCount}`
-                  : `${completedCount} / ${totalCount} ${isAr ? "مكتمل" : "completed"} (${progressPercent}%)`}
+                  : `${completedCount} / ${totalCount} ${isAr ? "مكتمل" : "done"} (${progressPercent}%)`}
               </span>
             </div>
             <p
-              className={`text-xs text-muted-foreground font-normal leading-relaxed mt-0.5 ${
+              className={`mt-0.5 text-xs font-normal leading-relaxed text-muted-foreground ${
                 collapsed ? "hidden" : ""
               }`}
             >
               {isAllComplete
                 ? isAr
-                  ? "متجرك مستوفٍ لجميع المتطلبات الأساسية ومستعد لاستقبال العملاء والطلبات!"
-                  : "All essential requirements are met. Your store is ready for customers!"
+                  ? "أنجزت كل خطوات الإطلاق. متجرك جاهز لعملائك."
+                  : "Every launch step is done. Your store is ready for customers."
                 : isAr
-                  ? "أكمل المتطلبات الأساسية لضمان تجربة تسوق وشراء متكاملة بدون عوائق"
-                  : "Complete key essentials to ensure seamless customer ordering and checkout"}
+                  ? "ما يحتاجه متجرك ليفتح لعملائه، ثم أول طلب. هي الخطوات نفسها في لوحة التحكم."
+                  : "What your store needs to open, then its first order. The dashboard shows the same steps."}
             </p>
           </div>
         </div>
@@ -763,121 +209,29 @@ export function StoreReadinessChecklist({
         </div>
       </div>
 
-      {/* Progress Bar (shown when expanded or incomplete) */}
       {!collapsed && (
-        <div className="mt-3.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className={`h-full transition-[width] duration-(--motion-very-slow) ${
-              isAllComplete ? "bg-emerald-500" : "bg-primary"
+              isAllComplete ? "bg-success" : "bg-primary"
             }`}
             style={{ width: `${progressPercent}%` }}
           />
         </div>
       )}
 
-      {/* Checklist items list */}
       {!collapsed && (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2 border-t border-border-subtle">
-          {allItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={item.id}
-                className={`flex items-start justify-between gap-3 p-3 rounded-lg border transition-colors ${
-                  item.isComplete
-                    ? "border-emerald-500/20 bg-emerald-500/[0.03]"
-                    : "border-border-subtle bg-muted/20 hover:border-primary/40"
-                }`}
-              >
-                <div className="flex items-start gap-2.5 min-w-0">
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5 ${
-                      item.isComplete
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                        : "bg-muted text-muted-foreground"
-                    }`}
-                  >
-                    {item.isComplete ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <Icon className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-xs font-medium text-foreground block truncate">
-                      {item.title}
-                    </span>
-                    <span className="text-xs text-muted-foreground font-normal block line-clamp-1 leading-normal">
-                      {item.description}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="shrink-0 self-center">
-                  {item.isComplete ? (
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded bg-emerald-500/10">
-                        {isAr ? "مكتمل" : "Ready"}
-                      </span>
-                      {item.actionType === "tab" && item.tabId ? (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            onNavigateTab(
-                              item.tabId!,
-                              item.group ? `group-${item.group}` : undefined,
-                            )
-                          }
-                          className="h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
-                          title={item.editLabel}
-                        >
-                          <span>{item.editLabel}</span>
-                        </Button>
-                      ) : item.href ? (
-                        <Button
-                          asChild
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-1.5 text-xs font-normal text-muted-foreground hover:text-foreground"
-                          title={item.editLabel}
-                        >
-                          <Link to={item.href}>
-                            <span>{item.editLabel}</span>
-                          </Link>
-                        </Button>
-                      ) : null}
-                    </div>
-                  ) : item.actionType === "tab" && item.tabId ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        onNavigateTab(item.tabId!, item.group ? `group-${item.group}` : undefined)
-                      }
-                      className="h-7 text-xs font-medium px-2.5"
-                    >
-                      {item.actionLabel}
-                    </Button>
-                  ) : item.href ? (
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="h-7 text-xs font-medium px-2.5"
-                    >
-                      <Link to={item.href}>
-                        {item.actionLabel}
-                        <ArrowRight className="h-2.5 w-2.5 ms-1 rtl:rotate-180" />
-                      </Link>
-                    </Button>
-                  ) : null}
-                </div>
-              </div>
-            );
-          })}
+        <div className="mt-4 grid grid-cols-1 gap-2.5 border-t border-border-subtle pt-2 md:grid-cols-2 lg:grid-cols-3">
+          {steps.map((step) => (
+            <LaunchStepRow
+              key={step.id}
+              step={step}
+              lang={lang}
+              slug={slug}
+              milestones={checklist.milestones}
+              onNavigateTab={onNavigateTab}
+            />
+          ))}
         </div>
       )}
     </div>

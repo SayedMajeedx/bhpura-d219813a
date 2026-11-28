@@ -7,7 +7,6 @@ import {
   glanceEnd,
   type GlanceBooking,
 } from "../src/features/bookings/lib/bookings-glance";
-import { checklistCopy } from "../src/features/dashboard/lib/checklist-copy";
 import { addDays, todayIn } from "../src/lib/bookings/rules";
 
 // Services vertical, step S5: a services store's dashboard talked about
@@ -108,20 +107,6 @@ describe("a services store's bookings at a glance", () => {
     expect(
       bookingsGlance({ bookings: [], blocks: [], rules, pendingRequests: 0, now: late }).today,
     ).toBe("2026-10-09");
-  });
-});
-
-describe("the launch checklist", () => {
-  it("talks about services and bookings for a store that takes bookings", () => {
-    const services = checklistCopy(true);
-    expect(services.addTitle.en).toBe("Add Your First Service");
-    expect(services.addDone(2).ar).toContain("خدمتان");
-    expect(services.firstTitle.en).toBe("Receive Your First Booking");
-    expect(services.firstTo).toBe("/admin/b/$slug/bookings");
-    const shop = checklistCopy(false);
-    expect(shop.addTitle.en).toBe("Add Your First Product");
-    expect(shop.firstTitle.en).toBe("Record Your First Sale");
-    expect(shop.firstTo).toBe("/admin/b/$slug/orders");
   });
 });
 

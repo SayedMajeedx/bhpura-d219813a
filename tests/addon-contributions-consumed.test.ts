@@ -87,7 +87,7 @@ const KNOWN_CONTRIBUTION_CONSUMERS: Record<string, ContributionConsumerDefinitio
     description: "Consumed to enrich AI prompt builder with store vertical context and vocabulary",
   },
   readinessChecks: {
-    files: ["src/components/settings/StoreReadinessChecklist.tsx"],
+    files: ["src/features/launch/hooks/use-launch-checklist.ts"],
     expectedIdentifiers: ["readinessChecksFrom"],
     description: "Extracted via readinessChecksFrom to add vertical-specific pre-launch checks",
   },
