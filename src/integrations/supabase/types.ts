@@ -8,106 +8,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      stock_count_lines: {
-        Row: {
-          applied_delta: number | null;
-          brand_id: string;
-          count_id: string;
-          counted: number | null;
-          counted_at: string | null;
-          counted_by: string | null;
-          expected: number;
-          moved_during: number | null;
-          product_id: string | null;
-          variant_id: string;
-        };
-        Insert: {
-          applied_delta?: number | null;
-          brand_id: string;
-          count_id: string;
-          counted?: number | null;
-          counted_at?: string | null;
-          counted_by?: string | null;
-          expected: number;
-          moved_during?: number | null;
-          product_id?: string | null;
-          variant_id: string;
-        };
-        Update: {
-          applied_delta?: number | null;
-          brand_id?: string;
-          count_id?: string;
-          counted?: number | null;
-          counted_at?: string | null;
-          counted_by?: string | null;
-          expected?: number;
-          moved_during?: number | null;
-          product_id?: string | null;
-          variant_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "stock_count_lines_count_id_fkey";
-            columns: ["count_id"];
-            isOneToOne: false;
-            referencedRelation: "stock_counts";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "stock_count_lines_product_id_fkey";
-            columns: ["product_id"];
-            isOneToOne: false;
-            referencedRelation: "products";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "stock_count_lines_variant_id_fkey";
-            columns: ["variant_id"];
-            isOneToOne: false;
-            referencedRelation: "product_variants";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      stock_counts: {
-        Row: {
-          brand_id: string;
-          category: string | null;
-          finished_at: string | null;
-          finished_by: string | null;
-          id: string;
-          note: string | null;
-          number: number;
-          started_at: string;
-          started_by: string | null;
-          status: string;
-        };
-        Insert: {
-          brand_id: string;
-          category?: string | null;
-          finished_at?: string | null;
-          finished_by?: string | null;
-          id?: string;
-          note?: string | null;
-          number: number;
-          started_at?: string;
-          started_by?: string | null;
-          status?: string;
-        };
-        Update: {
-          brand_id?: string;
-          category?: string | null;
-          finished_at?: string | null;
-          finished_by?: string | null;
-          id?: string;
-          note?: string | null;
-          number?: number;
-          started_at?: string;
-          started_by?: string | null;
-          status?: string;
-        };
-        Relationships: [];
-      };
       abandoned_cart_dispatch_logs: {
         Row: {
           brand_id: string;
@@ -9415,6 +9315,121 @@ export type Database = {
           },
         ];
       };
+      stock_count_lines: {
+        Row: {
+          applied_delta: number | null;
+          brand_id: string;
+          count_id: string;
+          counted: number | null;
+          counted_at: string | null;
+          counted_by: string | null;
+          expected: number;
+          moved_during: number | null;
+          product_id: string | null;
+          variant_id: string;
+        };
+        Insert: {
+          applied_delta?: number | null;
+          brand_id: string;
+          count_id: string;
+          counted?: number | null;
+          counted_at?: string | null;
+          counted_by?: string | null;
+          expected: number;
+          moved_during?: number | null;
+          product_id?: string | null;
+          variant_id: string;
+        };
+        Update: {
+          applied_delta?: number | null;
+          brand_id?: string;
+          count_id?: string;
+          counted?: number | null;
+          counted_at?: string | null;
+          counted_by?: string | null;
+          expected?: number;
+          moved_during?: number | null;
+          product_id?: string | null;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_count_lines_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_count_lines_count_id_fkey";
+            columns: ["count_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_counts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_count_lines_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_count_lines_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      stock_counts: {
+        Row: {
+          brand_id: string;
+          category: string | null;
+          finished_at: string | null;
+          finished_by: string | null;
+          id: string;
+          note: string | null;
+          number: number;
+          started_at: string;
+          started_by: string | null;
+          status: string;
+        };
+        Insert: {
+          brand_id: string;
+          category?: string | null;
+          finished_at?: string | null;
+          finished_by?: string | null;
+          id?: string;
+          note?: string | null;
+          number: number;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+        };
+        Update: {
+          brand_id?: string;
+          category?: string | null;
+          finished_at?: string | null;
+          finished_by?: string | null;
+          id?: string;
+          note?: string | null;
+          number?: number;
+          started_at?: string;
+          started_by?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_counts_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       store_credits: {
         Row: {
           amount: number;
@@ -10993,27 +11008,6 @@ export type Database = {
       };
     };
     Functions: {
-      apply_stock_count: { Args: { p_count_id: string }; Returns: Json };
-      cancel_stock_count: { Args: { p_count_id: string }; Returns: undefined };
-      record_stock_count: {
-        Args: { p_count_id: string; p_mode: string; p_value?: number; p_variant_id: string };
-        Returns: Json;
-      };
-      start_stock_count: {
-        Args: { p_brand_id: string; p_category?: string; p_note?: string };
-        Returns: Json;
-      };
-      stock_count_review: {
-        Args: { p_count_id: string };
-        Returns: {
-          counted: number;
-          difference: number;
-          expected: number;
-          moved_during: number;
-          stock_now: number;
-          variant_id: string;
-        }[];
-      };
       activate_storefront_membership: {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string };
         Returns: Json;
@@ -11122,6 +11116,7 @@ export type Database = {
         Args: { p_gift: Json; p_order_id: string };
         Returns: number;
       };
+      apply_stock_count: { Args: { p_count_id: string }; Returns: Json };
       apply_store_offers: {
         Args: { p_country: string; p_fulfillment: string; p_order_id: string };
         Returns: Json;
@@ -11292,6 +11287,7 @@ export type Database = {
         Args: { p_purchase_id: string; p_reason: string };
         Returns: Json;
       };
+      cancel_stock_count: { Args: { p_count_id: string }; Returns: undefined };
       cash_account_type_for_payment: {
         Args: { p_payment_method: string };
         Returns: string;
@@ -12695,6 +12691,15 @@ export type Database = {
         Args: { p_confirmation_token: string; p_order_id: string };
         Returns: boolean;
       };
+      record_stock_count: {
+        Args: {
+          p_count_id: string;
+          p_mode: string;
+          p_value?: number;
+          p_variant_id: string;
+        };
+        Returns: Json;
+      };
       record_storefront_product_engagement: {
         Args: { p_brand_slug: string; p_event?: string; p_product_id: string };
         Returns: undefined;
@@ -13673,6 +13678,26 @@ export type Database = {
       };
       staff_brand_id: { Args: never; Returns: string };
       staff_session_verified: { Args: never; Returns: boolean };
+      start_stock_count: {
+        Args: { p_brand_id: string; p_category?: string; p_note?: string };
+        Returns: Json;
+      };
+      stock_count_moved: {
+        Args: { p_from: string; p_to: string; p_variant_id: string };
+        Returns: number;
+      };
+      stock_count_review: {
+        Args: { p_count_id: string };
+        Returns: {
+          counted: number;
+          difference: number;
+          expected: number;
+          moved_during: number;
+          stock_now: number;
+          variant_id: string;
+        }[];
+      };
+      stock_count_staff: { Args: { p_brand_id: string }; Returns: boolean };
       store_offer_reaches: {
         Args: { p_get?: boolean; p_line: Json; p_offer: Json };
         Returns: boolean;
