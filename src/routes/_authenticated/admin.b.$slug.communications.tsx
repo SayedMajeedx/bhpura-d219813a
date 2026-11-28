@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,6 @@ import {
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { CustomerPushCenter } from "@/components/communications/CustomerPushCenter";
-import { NotificationRecipientsEditor } from "@/features/settings/shared/NotificationRecipientsEditor";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/communications")({
   component: CommunicationsPage,
@@ -36,50 +35,41 @@ import {
 import { notificationRecipientsQueries } from "@/lib/data/notification-recipients";
 import { useOrderNumber } from "@/hooks/use-order-number";
 
+/**
+ * What was sent: the order emails that went out (to customers and to the team) and the customer
+ * app's notifications. What every message says and who gets the store's alerts are set in one
+ * place, Settings → Notifications; this page once listed the alert recipients a second time,
+ * under the same name (the ease-of-use review of 2026-11-28).
+ */
 function CommunicationsPage() {
   useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
-  const [activeScope, setActiveScope] = useState<CommunicationsScope>("recipients");
-  const [addingRecipient, setAddingRecipient] = useState(false);
-
-  // The editor below reads the same list; a failed read counts as none.
-  const recipientsQ = useQuery(notificationRecipientsQueries.list(brandId));
+  const navigate = useNavigate();
+  const [activeScope, setActiveScope] = useState<CommunicationsScope>("logs");
 
   return (
     <div className="space-y-3.5">
-      {/* 1. Command Header */}
       <CommunicationsCommandHeader
         lang={isAr ? "ar" : "en"}
-        recipientCount={recipientsQ.data?.length ?? 0}
-        onAddRecipient={() => {
-          setActiveScope("recipients");
-          setAddingRecipient(true);
-        }}
+        onOpenSettings={() =>
+          void navigate({
+            href: `/admin/b/${encodeURIComponent(brand.slug)}/settings?tab=notifications&group=templates`,
+          })
+        }
       />
 
-      {/* 2. Scope Switcher */}
       <CommunicationsScopeSwitcher
         lang={isAr ? "ar" : "en"}
         activeScope={activeScope}
         onScopeChange={(scope) => setActiveScope(scope)}
-        recipientCount={recipientsQ.data?.length ?? 0}
       />
 
-      {activeScope === "recipients" && (
-        <NotificationRecipientsEditor
-          brandId={brandId}
-          isAr={isAr}
-          externalAdding={addingRecipient}
-          onResetAdding={() => setAddingRecipient(false)}
-        />
-      )}
+      {activeScope === "logs" && <EmailActivityCard brandId={brandId} isAr={isAr} />}
 
       {activeScope === "push" && <CustomerPushCenter brandId={brandId} isAr={isAr} />}
-
-      {activeScope === "logs" && <EmailActivityCard brandId={brandId} isAr={isAr} />}
     </div>
   );
 }

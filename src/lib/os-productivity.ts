@@ -45,7 +45,7 @@ export function resolveRouteTitles(
     return { en: "Discounts & Promos", ar: "الخصومات والكوبونات" };
   if (cleanPath.endsWith("/campaigns"))
     return { en: "Marketing Campaigns", ar: "الحملات والتسويق" };
-  if (cleanPath.endsWith("/communications")) return { en: "Outbound Logs", ar: "سجلات التواصل" };
+  if (cleanPath.endsWith("/communications")) return { en: "Sent messages", ar: "الرسائل المرسلة" };
   if (cleanPath.endsWith("/pages")) return { en: "Storefront Pages", ar: "صفحات المتجر" };
   if (cleanPath.endsWith("/team")) return { en: "Team & Staff", ar: "فريق العمل" };
   if (cleanPath.endsWith("/integrations"))

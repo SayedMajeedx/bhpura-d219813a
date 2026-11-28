@@ -48,20 +48,18 @@ describe("Phase 7C responsive growth and content workspaces", () => {
 
   test("communications and pages expose both scopes without overflow", () => {
     const { container: communications } = render(
-      <CommunicationsScopeSwitcher
-        lang="en"
-        activeScope="recipients"
-        onScopeChange={vi.fn()}
-        recipientCount={3}
-      />,
+      <CommunicationsScopeSwitcher lang="en" activeScope="logs" onScopeChange={vi.fn()} />,
     );
     const { container: pages } = render(
       <PagesScopeSwitcher lang="en" activeScope="pages" onScopeChange={vi.fn()} pageCount={5} />,
     );
 
-    expect((communications.firstElementChild as HTMLElement).className).toContain("grid-cols-3");
+    // The admin's one tab bar: it scrolls sideways with whole labels rather than squeezing them.
+    expect((communications.firstElementChild as HTMLElement).className).toContain(
+      "overflow-x-auto",
+    );
     expect((pages.firstElementChild as HTMLElement).className).toContain("grid-cols-2");
-    expect(screen.getByRole("button", { name: /Outbound Email Logs/ })).toBeDefined();
+    expect(screen.getByRole("button", { name: /Emails sent/ })).toBeDefined();
     expect(screen.getByRole("button", { name: /Social Links & WhatsApp Widget/ })).toBeDefined();
   });
 });
