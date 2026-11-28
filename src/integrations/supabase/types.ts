@@ -3819,7 +3819,12 @@ export type Database = {
           printed_at: string | null;
           printed_by: string | null;
           receipt_key: string | null;
+          recipient_email: string | null;
           recipient_name: string | null;
+          recipient_phone: string | null;
+          recipient_sent_at: string | null;
+          send_at: string | null;
+          send_channel: string | null;
           settled_by: string | null;
           status: string;
           token: string;
@@ -3860,7 +3865,12 @@ export type Database = {
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
+          recipient_email?: string | null;
           recipient_name?: string | null;
+          recipient_phone?: string | null;
+          recipient_sent_at?: string | null;
+          send_at?: string | null;
+          send_channel?: string | null;
           settled_by?: string | null;
           status?: string;
           token?: string;
@@ -3901,7 +3911,12 @@ export type Database = {
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
+          recipient_email?: string | null;
           recipient_name?: string | null;
+          recipient_phone?: string | null;
+          recipient_sent_at?: string | null;
+          send_at?: string | null;
+          send_channel?: string | null;
           settled_by?: string | null;
           status?: string;
           token?: string;
@@ -11403,6 +11418,7 @@ export type Database = {
         Args: { p_event_id: string };
         Returns: undefined;
       };
+      enqueue_due_gift_sends: { Args: never; Returns: number };
       enqueue_order_email_event: {
         Args: { p_brand_id: string; p_event_type: string; p_order_id: string };
         Returns: undefined;
@@ -11662,6 +11678,7 @@ export type Database = {
           p_customer_done?: boolean;
           p_error?: string;
           p_event_id: string;
+          p_gift_sent?: boolean;
           p_store_done?: boolean;
         };
         Returns: undefined;
@@ -12209,6 +12226,10 @@ export type Database = {
         Returns: string;
       };
       mark_gift_card_purchase_sent: {
+        Args: { p_purchase_id: string };
+        Returns: Json;
+      };
+      mark_gift_card_recipient_sent: {
         Args: { p_purchase_id: string };
         Returns: Json;
       };
@@ -13418,6 +13439,17 @@ export type Database = {
       set_gift_card_print_step: {
         Args: { p_purchase_id: string; p_step: string };
         Returns: Json;
+      };
+      set_gift_card_purchase_schedule: {
+        Args: {
+          p_channel: string;
+          p_email?: string;
+          p_phone?: string;
+          p_purchase_id: string;
+          p_send_at: string;
+          p_token: string;
+        };
+        Returns: undefined;
       };
       set_gift_card_settings: {
         Args: {

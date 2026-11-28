@@ -22,6 +22,13 @@ import { occasionsInOrder } from "@/features/gift-card-design/lib/occasions";
 import { useStorefrontCardKit } from "../hooks/use-storefront-card-kit";
 import { Choice } from "./BuyChoice";
 import { PrintSection } from "./PrintSection";
+import { GiftScheduleFields } from "./GiftScheduleFields";
+import {
+  emptyGiftSchedule,
+  schedulePayload,
+  scheduleProblem,
+  type GiftSchedule,
+} from "@/lib/gift-schedule";
 import { GiftAmountPicker } from "./GiftAmountPicker";
 import {
   buyMethods,
@@ -100,7 +107,10 @@ function BuyForm({
   const [receipt, setReceipt] = useState<File | null>(null);
   const [shown, setShown] = useState(false);
   const [busy, setBusy] = useState(false);
+  // When the gift reaches the person it is for: now by the buyer's own link, or on a day.
+  const [schedule, setSchedule] = useState<GiftSchedule>(emptyGiftSchedule);
   const problems = buyProblems({ ...form, hasReceipt: Boolean(receipt) }, offer);
+  const whenProblem = scheduleProblem(schedule, new Date());
   const printing = wantsPrint(form, offer);
   // The store's gift add-ons, offered with a card it prints and delivers.
   const addons = useQuery(giftOrderQueries.addons(brand.slug, offer.print)).data ?? [];
@@ -138,7 +148,15 @@ function BuyForm({
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setShown(true);
-    if (problems.length > 0 || form.amount === null || !form.method || !form.delivery) return;
+    if (
+      problems.length > 0 ||
+      whenProblem ||
+      form.amount === null ||
+      !form.method ||
+      !form.delivery
+    ) {
+      return;
+    }
     setBusy(true);
     void trackStorefrontEvent("begin_checkout", pixelPayload());
     try {
@@ -169,6 +187,7 @@ function BuyForm({
               : {}),
           },
           receiptId,
+          schedule: schedulePayload(schedule),
           // Signed in: the card is kept in the shopper's account too (the server checks it).
           ...(session?.access_token ? { accessToken: session.access_token } : {}),
         },
@@ -312,6 +331,12 @@ function BuyForm({
                 rows={2}
               />
             </div>
+            <GiftScheduleFields
+              schedule={schedule}
+              setSchedule={setSchedule}
+              problem={shown ? whenProblem : null}
+              t={t}
+            />
           </section>
 
           <section className="space-y-3 rounded-2xl border border-border bg-card p-5">

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, MessageCircle, Receipt, Truck } from "lucide-react";
+import { Check, Mail, MessageCircle, Receipt, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -14,14 +14,78 @@ import {
   cancelGiftCardPurchase,
   invalidateGiftCardOnline,
   markGiftCardPurchaseSent,
+  markGiftCardRecipientSent,
   setGiftCardPrintStep,
   type GiftCardPurchase,
 } from "@/lib/data/gift-cards";
 import { getGiftCardPurchaseReceiptUrl } from "@/lib/gift-card-purchase.functions";
 import { giftCardError } from "../lib/gift-cards";
-import { giftAddress, giftLinkForBuyerMessage } from "@/lib/gift-link";
+import { giftAddress, giftLinkForBuyerMessage, giftLinkMessage } from "@/lib/gift-link";
 import { orderTotal, printStep } from "../lib/card-orders";
 import { PrintOrderCardButton } from "./PrintCardDialog";
+
+/**
+ * A scheduled gift whose time came, sent by a person (migration 20261230100000): the gift link to
+ * the person it is for on WhatsApp, or by email from the staff's own mail when the store's mailbox
+ * could not send it; pressing records it sent. The message carries the link, never the code.
+ */
+export function SendGiftButton({
+  purchase,
+  lang,
+}: {
+  purchase: GiftCardPurchase;
+  lang: "ar" | "en";
+}) {
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const brand = useBrand();
+  const card = purchase.gift_cards;
+  if (!card?.share_token) return null;
+  const buyerLang = purchase.lang === "en" ? "en" : "ar";
+  const storeName =
+    (buyerLang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
+  const message = giftLinkMessage(
+    {
+      recipient: purchase.recipient_name,
+      message: purchase.message,
+      storeName,
+      link: giftAddress(brand.slug, card.share_token),
+    },
+    buyerLang,
+  );
+  const byEmail = purchase.send_channel === "email";
+  const href = byEmail
+    ? `mailto:${purchase.recipient_email ?? ""}?subject=${encodeURIComponent(
+        buyerLang === "ar" ? `هدية من ${storeName}` : `A gift from ${storeName}`,
+      )}&body=${encodeURIComponent(message)}`
+    : `${whatsappChatUrl(purchase.recipient_phone) ?? "https://wa.me/"}?text=${encodeURIComponent(message)}`;
+  const record = async () => {
+    try {
+      await markGiftCardRecipientSent(purchase.id);
+      await invalidateGiftCardOnline(qc, brand.id);
+    } catch (error) {
+      toast.error(giftCardError(error, lang));
+    }
+  };
+  return (
+    <Button asChild size="sm" className="gap-1.5">
+      <a href={href} target="_blank" rel="noreferrer" onClick={record}>
+        {byEmail ? (
+          <Mail className="size-4" aria-hidden="true" />
+        ) : (
+          <MessageCircle className="size-4" aria-hidden="true" />
+        )}
+        {byEmail
+          ? isAr
+            ? "إرسال الهدية بالبريد"
+            : "Send the gift by email"
+          : isAr
+            ? "إرسال الهدية على واتساب"
+            : "Send the gift on WhatsApp"}
+      </a>
+    </Button>
+  );
+}
 
 /** A paid order's gift link sent by a person on WhatsApp, in the buyer's language; never the code. */
 export function SendCodeButton({

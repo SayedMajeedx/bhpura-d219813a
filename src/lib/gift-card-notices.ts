@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/format";
 import { adminAddress, storeAddress } from "@/lib/platform-host";
+import { giftAddress } from "@/lib/gift-link";
 
 /**
  * What a gift card purchase's emails say (the owner's review of 2026-10-31): to the buyer when they
@@ -17,7 +18,7 @@ import { adminAddress, storeAddress } from "@/lib/platform-host";
 
 export type NoticeEvent = {
   event_id: string;
-  event: "placed" | "paid" | "cancelled";
+  event: "placed" | "paid" | "cancelled" | "gift_due";
   purchase_id: string;
   brand_id: string;
   slug: string;
@@ -45,6 +46,13 @@ export type NoticeEvent = {
   /** The gift add-ons with a printed card, as sold (absent before migration 20261206100000). */
   addons?: Array<{ name_ar?: string; name_en?: string; quantity?: number }> | null;
   addons_total?: number | null;
+  /** A scheduled gift (migration 20261230100000): where it goes and its link once paid. */
+  send_at?: string | null;
+  send_channel?: "email" | "whatsapp" | null;
+  recipient_email?: string | null;
+  /** The giver, only as the buyer wrote it on the card. */
+  gift_from?: string | null;
+  gift_token?: string | null;
 };
 
 export type Email = { subject: string; html: string; text: string };
@@ -318,4 +326,85 @@ function stripTags(value: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"');
+}
+
+/**
+ * A scheduled gift whose time has come (`gift_due`): the gift link to the person it is for, in the
+ * buyer's language, naming the giver only as written on the card and never the code (the link's
+ * page gives it on a tap); then a word to the buyer that it went, when they gave an email.
+ */
+export function giftDueNotices(e: NoticeEvent): {
+  toRecipient: (Email & { to: string }) | null;
+  toBuyer: (Email & { to: string }) | null;
+} {
+  if (e.event !== "gift_due" || !e.recipient_email || !e.gift_token) {
+    return { toRecipient: null, toBuyer: null };
+  }
+  const ar = e.lang === "ar";
+  const link = giftAddress(e.slug, e.gift_token);
+  const from = e.gift_from?.trim() || null;
+  const hello = e.recipient_name
+    ? ar
+      ? `مرحبًا ${e.recipient_name}،`
+      : `Hello ${e.recipient_name},`
+    : ar
+      ? "مرحبًا،"
+      : "Hello,";
+  const title = ar ? "وصلتك هدية" : "A gift for you";
+  const note = e.message?.trim();
+  const lines = ar
+    ? [
+        esc(hello),
+        esc(
+          from
+            ? `أهداك ${from} بطاقة هدية من ${e.store_name}.`
+            : `وصلتك بطاقة هدية من ${e.store_name}.`,
+        ),
+        ...(note ? [`<em>${esc(note)}</em>`] : []),
+        esc("افتح الهدية لترى البطاقة ورمزها، وتسوّق بها من المتجر."),
+      ]
+    : [
+        esc(hello),
+        esc(
+          from
+            ? `${from} sent you a gift card from ${e.store_name}.`
+            : `You have a gift card from ${e.store_name}.`,
+        ),
+        ...(note ? [`<em>${esc(note)}</em>`] : []),
+        esc("Open your gift to see the card and its code, and shop with it at the store."),
+      ];
+  const toRecipient = {
+    to: e.recipient_email,
+    subject: `A gift for you - ${e.store_name}`,
+    html: page(e.lang, title, lines, { href: link, label: ar ? "افتح الهدية" : "Open your gift" }),
+    text: [title, ...lines.map(stripTags), link].join("\n\n"),
+  };
+
+  const toBuyer = e.buyer_email
+    ? (() => {
+        const sentTitle = ar ? "وصلت هديتك" : "Your gift was delivered";
+        const sentLines = ar
+          ? [
+              esc(`مرحبًا ${e.buyer_name}،`),
+              esc(`أرسلنا رابط الهدية إلى ${e.recipient_email} في الموعد الذي اخترته.`),
+              esc("ستعرف متى فُتحت من صفحة الطلب."),
+            ]
+          : [
+              esc(`Hello ${e.buyer_name},`),
+              esc(`We sent the gift link to ${e.recipient_email} at the time you chose.`),
+              esc("Your order's page will say when it was opened."),
+            ];
+        const url = purchasePageUrl(e);
+        return {
+          to: e.buyer_email!,
+          subject: `Your gift was delivered - ${e.store_name}`,
+          html: page(e.lang, sentTitle, sentLines, {
+            href: url,
+            label: ar ? "صفحة الطلب" : "Your order",
+          }),
+          text: [sentTitle, ...sentLines.map(stripTags), url].join("\n\n"),
+        };
+      })()
+    : null;
+  return { toRecipient, toBuyer };
 }

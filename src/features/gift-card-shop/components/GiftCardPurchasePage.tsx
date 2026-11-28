@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
+  CalendarClock,
   Check,
   Clock,
   Copy,
@@ -16,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { giftScheduleLine } from "@/lib/gift-schedule";
 import { giftAddress, giftLinkMessage, giftOpenedLine } from "@/lib/gift-link";
 import { resetGiftLink } from "@/lib/gift-link.functions";
 import { getGiftCardPurchase } from "@/lib/gift-card-purchase.functions";
@@ -196,6 +198,12 @@ export function GiftCardPurchasePage({
               {/* A new link is a new gift to open. */}
               {giftOpenedLine(renewed ? null : view.giftOpenedAt, lang)}
             </p>
+            {view.schedule && (
+              <p className="flex items-center justify-center gap-1.5 text-center text-sm">
+                <CalendarClock className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span dir="auto">{giftScheduleLine(view.schedule, lang)}</span>
+              </p>
+            )}
             <p className="text-center text-xs text-muted-foreground">
               {t(
                 "رابط الإهداء يفتح البطاقة بتصميمها مع رمزها، ولا يظهر فيه شيء عن الدفع أو بياناتك.",

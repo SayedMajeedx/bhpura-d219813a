@@ -59,6 +59,18 @@ const START = z.object({
       .optional(),
   }),
   receiptId: z.string().uuid().nullable().optional(),
+  /**
+   * When the gift reaches the person it is for, and how (migration 20261230100000): by email the
+   * system sends it then, by WhatsApp a person at the store does. None: the buyer sends it.
+   */
+  schedule: z
+    .object({
+      at: z.string().datetime(),
+      channel: z.enum(["email", "whatsapp"]),
+      email: z.string().trim().max(200).optional(),
+      phone: z.string().trim().max(32).optional(),
+    })
+    .optional(),
   /** The shopper's session when signed in: the purchase is then theirs in their account. */
   accessToken: z.string().max(4000).optional(),
 });
@@ -95,6 +107,20 @@ export const startGiftCardPurchase = createServerFn({ method: "POST" })
     if (error) return { ok: false, reason: error.message };
     const made = (reply ?? {}) as { id?: string; token?: string; brand_id?: string };
     if (!made.id || !made.token || !made.brand_id) return { ok: false, reason: "PURCHASE_FAILED" };
+    if (data.schedule) {
+      const { error: refused } = await (supabaseAdmin.rpc as unknown as Rpc)(
+        "set_gift_card_purchase_schedule",
+        {
+          p_purchase_id: made.id,
+          p_token: made.token,
+          p_send_at: data.schedule.at,
+          p_channel: data.schedule.channel,
+          p_email: data.schedule.email ?? null,
+          p_phone: data.schedule.phone ?? null,
+        },
+      );
+      if (refused) return { ok: false, reason: refused.message };
+    }
     // A transfer is told at once: the buyer that it was received, the store that it waits.
     if (data.method === "benefit") {
       const { sendGiftCardNoticesNow } = await import("@/lib/gift-card-notices.server");
@@ -120,6 +146,14 @@ export type PurchaseView = {
   giftToken: string | null;
   /** When the person it is for first opened the gift link (null: not yet). */
   giftOpenedAt: string | null;
+  /** When and how the gift reaches the person it is for (null: the buyer sends it). */
+  schedule: {
+    send_at: string;
+    send_channel: string | null;
+    recipient_email: string | null;
+    recipient_phone: string | null;
+    recipient_sent_at: string | null;
+  } | null;
   expiresOn: string | null;
   /** The design the buyer chose (null for a purchase made before cards had designs). */
   design: StoredCardDesign | null;
@@ -153,7 +187,7 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
     const { data: row, error } = await supabaseAdmin
       .from("gift_card_purchases")
       .select(
-        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, print_by_store, print_fee, print_address, printed_at, print_delivered_at, gift_cards(code, expires_on, share_token, opened_at)",
+        "status, payment_method, amount, currency, recipient_name, message, brand_id, delivery_channel, buyer_email, buyer_phone, design, print_by_store, print_fee, print_address, printed_at, print_delivered_at, send_at, send_channel, recipient_email, recipient_phone, recipient_sent_at, gift_cards(code, expires_on, share_token, opened_at)",
       )
       .eq("id", data.purchaseId)
       .eq("token", data.token)
@@ -176,6 +210,11 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       print_address: string | null;
       printed_at: string | null;
       print_delivered_at: string | null;
+      send_at: string | null;
+      send_channel: string | null;
+      recipient_email: string | null;
+      recipient_phone: string | null;
+      recipient_sent_at: string | null;
       gift_cards: {
         code: string;
         expires_on: string | null;
@@ -199,6 +238,15 @@ export const getGiftCardPurchase = createServerFn({ method: "POST" })
       code: paid ? (purchase.gift_cards?.code ?? null) : null,
       giftToken: paid ? (purchase.gift_cards?.share_token ?? null) : null,
       giftOpenedAt: paid ? (purchase.gift_cards?.opened_at ?? null) : null,
+      schedule: purchase.send_at
+        ? {
+            send_at: purchase.send_at,
+            send_channel: purchase.send_channel,
+            recipient_email: purchase.recipient_email,
+            recipient_phone: purchase.recipient_phone,
+            recipient_sent_at: purchase.recipient_sent_at,
+          }
+        : null,
       expiresOn: paid ? (purchase.gift_cards?.expires_on ?? null) : null,
       design: purchase.design ?? null,
       printByStore: purchase.print_by_store === true,

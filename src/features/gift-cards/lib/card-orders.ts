@@ -1,5 +1,6 @@
 import type { GiftCard, GiftCardPurchase } from "@/lib/data/gift-cards";
 import { cardState, type CardState } from "./gift-cards";
+import { giftDue } from "@/lib/gift-schedule";
 import { codesToSend, waitingTransfers } from "./online-sales";
 
 /**
@@ -25,7 +26,8 @@ export function orderReference(purchase: Pick<GiftCardPurchase, "id">): string {
 }
 
 /** What the store must do for this order, or null when nothing waits on it. */
-export type OrderStep = "check_transfer" | "send_code" | "print_card" | "deliver_card";
+export type OrderStep =
+  "check_transfer" | "send_code" | "send_gift" | "print_card" | "deliver_card";
 
 /** A paid card the store prints: still to print, then still to deliver (null once delivered). */
 export function printStep(purchase: GiftCardPurchase): "print_card" | "deliver_card" | null {
@@ -35,15 +37,19 @@ export function printStep(purchase: GiftCardPurchase): "print_card" | "deliver_c
   return purchase.printed_at ? "deliver_card" : "print_card";
 }
 
-export function orderStep(purchase: GiftCardPurchase): OrderStep | null {
+export function orderStep(purchase: GiftCardPurchase, now: Date = new Date()): OrderStep | null {
   if (waitingTransfers([purchase]).length > 0) return "check_transfer";
   if (codesToSend([purchase]).length > 0) return "send_code";
+  // A scheduled gift whose time came: on WhatsApp a person sends it; by email only when the
+  // system could not (no mailbox, or its email kept failing).
+  if (giftDue(purchase, now)) return "send_gift";
   return printStep(purchase);
 }
 
 export const ORDER_STEP_WORDS: Record<OrderStep, { ar: string; en: string }> = {
   check_transfer: { ar: "تحقق من التحويل", en: "Check the transfer" },
   send_code: { ar: "أرسل الرمز على واتساب", en: "Send the code on WhatsApp" },
+  send_gift: { ar: "حان موعد الهدية: أرسلها", en: "The gift is due: send it" },
   print_card: { ar: "اطبع البطاقة", en: "Print the card" },
   deliver_card: { ar: "وصّل البطاقة المطبوعة", en: "Deliver the printed card" },
 };

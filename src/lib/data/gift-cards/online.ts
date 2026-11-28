@@ -95,7 +95,7 @@ export type GiftCardPurchase = Omit<Tables<"gift_card_purchases">, "token"> & {
 };
 
 export const PURCHASE_SELECT =
-  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, addons, addons_total, total_due, gift_cards(code, expires_on, balance, status, share_token, opened_at)";
+  "id, brand_id, amount, currency, payment_method, status, buyer_name, buyer_phone, buyer_email, recipient_name, message, receipt_key, gift_card_id, created_at, paid_at, cancelled_at, cancel_reason, delivery_channel, lang, buyer_user_id, code_sent_at, code_sent_by, gateway_reference, design, print_by_store, print_fee, print_address, print_phone, printed_at, print_delivered_at, addons, addons_total, total_due, send_at, send_channel, recipient_email, recipient_phone, recipient_sent_at, gift_cards(code, expires_on, balance, status, share_token, opened_at)";
 
 export async function fetchGiftCardSettings(brandId: string): Promise<GiftCardSettings | null> {
   const { data, error } = await supabase
@@ -143,6 +143,14 @@ export async function fetchMyGiftCards(brandId: string): Promise<MyGiftCard[]> {
   const { data, error } = await supabase.rpc("storefront_my_gift_cards", { p_brand_id: brandId });
   if (error) throw error;
   return (data ?? []) as MyGiftCard[];
+}
+
+/** A scheduled gift a person at the store sent by hand (migration 20261230100000). */
+export async function markGiftCardRecipientSent(purchaseId: string) {
+  const { error } = await supabase.rpc("mark_gift_card_recipient_sent", {
+    p_purchase_id: purchaseId,
+  });
+  if (error) throw error;
 }
 
 export async function markGiftCardPurchaseSent(purchaseId: string) {

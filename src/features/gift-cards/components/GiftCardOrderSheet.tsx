@@ -1,4 +1,5 @@
 import { giftOpenedLine } from "@/lib/gift-link";
+import { giftScheduleLine } from "@/lib/gift-schedule";
 import { useQuery } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { Check, Copy, ExternalLink, Mail, MessageCircle, Phone } from "lucide-react";
@@ -34,6 +35,7 @@ import {
   PrintStepActions,
   ReceiptButton,
   SendCodeButton,
+  SendGiftButton,
   TransferActions,
 } from "./GiftCardOrderActions";
 import { PrintOrderCardButton } from "./PrintCardDialog";
@@ -139,6 +141,8 @@ export function GiftCardOrderSheet({
                 </>
               ) : step === "send_code" ? (
                 <SendCodeButton purchase={purchase} lang={lang} />
+              ) : step === "send_gift" ? (
+                <SendGiftButton purchase={purchase} lang={lang} />
               ) : (
                 <PrintStepActions purchase={purchase} lang={lang} />
               )}
@@ -267,6 +271,11 @@ export function GiftCardOrderSheet({
                     : isAr
                       ? "لم يُرسل بعد"
                       : "Not sent yet"}
+              </Row>
+            )}
+            {purchase.send_at && (
+              <Row label={isAr ? "موعد الهدية" : "Gift arrives"}>
+                <span dir="auto">{giftScheduleLine(purchase, lang)}</span>
               </Row>
             )}
             {purchase.status === "paid" && card?.share_token && (
