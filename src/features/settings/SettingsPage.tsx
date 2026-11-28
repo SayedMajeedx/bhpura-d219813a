@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useBlocker } from "@tanstack/react-router";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useBlocker, useRouterState } from "@tanstack/react-router";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { SettingsLevelProvider } from "@/features/settings/settings-level";
@@ -52,6 +52,34 @@ function SettingsPageInner() {
     }
     return null;
   });
+  // A link to a setting while the page is open (the command palette, a help guide) is a
+  // navigation of the router; the tabs' own changes write the address quietly and are not. The
+  // page read the address only when it opened, so such a link changed the address and nothing else.
+  const navigationKey = useRouterState({
+    select: (state) => state.location.state.__TSR_key ?? state.location.href,
+  });
+  // A link that names a group lands on it: the group sits under the launch checklist, and a
+  // person who searched for a setting should not have to scroll to find it.
+  const groupAsked = useRef(false);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as SettingsTabId;
+    if (!VALID_TABS.includes(tab)) return;
+    setActiveTab(tab);
+    setActiveGroup(params.get("group"));
+    groupAsked.current = Boolean(params.get("group"));
+  }, [navigationKey]);
+  useEffect(() => {
+    if (!groupAsked.current || isLoading) return;
+    const frame = requestAnimationFrame(() => {
+      const top = document.getElementById("settings-group-top");
+      if (!top) return;
+      groupAsked.current = false;
+      top.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [isLoading, navigationKey, activeTab, activeGroup]);
+
   const handleTabChange = useCallback((tab: SettingsTabId, groupAnchor?: string) => {
     setActiveTab(tab);
     const group = groupAnchor ? groupAnchor.replace(/^group-/, "") : null;

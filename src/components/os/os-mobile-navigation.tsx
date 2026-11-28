@@ -17,6 +17,7 @@ import {
   Monitor,
   Crown,
   CircleHelp,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -48,6 +49,8 @@ export interface OsMobileNavigationProps {
   isCourier?: boolean;
   onSetLang: (lang: "en" | "ar") => void;
   onSignOut: () => void;
+  /** Opens the command palette: orders, products, customers, pages and settings by name. */
+  onOpenSpotlight?: () => void;
   mobileOpen: boolean;
   onOpenChangeMobile: (open: boolean) => void;
   /** A services store (see isServicesProfile). */
@@ -65,6 +68,7 @@ export function OsMobileNavigation({
   isCourier = false,
   onSetLang,
   onSignOut,
+  onOpenSpotlight,
   mobileOpen,
   onOpenChangeMobile,
   services = false,
@@ -516,6 +520,19 @@ export function OsMobileNavigation({
 
         {/* Theme, language and signing out live in the menu (the drawer): the bar keeps its room for the store's name. */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* The palette had no way in on a phone: its shortcut needs a keyboard. */}
+          {onOpenSpotlight && !isCourier && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={onOpenSpotlight}
+              aria-label={lang === "ar" ? "بحث" : "Search"}
+              className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-xl text-foreground hover:bg-muted/80"
+            >
+              <Search className="h-5 w-5" aria-hidden />
+            </Button>
+          )}
           <OsQuickActions
             slug={activeSlug}
             lang={lang}

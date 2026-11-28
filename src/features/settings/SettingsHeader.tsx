@@ -4,7 +4,7 @@ import { useBrandSettingsFormContext } from "@/features/settings/use-brand-setti
 import { useSettingsLevel } from "@/features/settings/settings-level";
 import { SETTINGS_REGISTRY, type SettingsTabId } from "@/features/settings/registry";
 import { getStorefrontUrl } from "@/lib/storefront-url";
-import { isSettingApplicable } from "@/lib/storefront-engine";
+import { searchSettings } from "@/features/settings/lib/settings-search";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -29,7 +29,7 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Global Keyboard shortcut: Cmd+K or "/" to focus search; Escape to clear
+  // "/" focuses the search; Escape clears it
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -39,11 +39,8 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
           target.tagName === "TEXTAREA" ||
           target.getAttribute("contenteditable") === "true");
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        setSearchOpen(true);
-      } else if (e.key === "/" && !isInput) {
+      // Cmd+K is the command palette's on every page, and it finds settings too.
+      if (e.key === "/" && !isInput) {
         e.preventDefault();
         searchInputRef.current?.focus();
         setSearchOpen(true);
@@ -60,25 +57,9 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [searchOpen, searchQuery]);
 
-  // Filter searchable registry fields
-  const searchResults = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q || q.length < 2) return [];
-
-    return SETTINGS_REGISTRY.filter((entry) => {
-      if (!entry.tab || entry.owner === "system") return false;
-      // Never surface a setting the active storefront engine cannot read —
-      // it would navigate to a group where the control is hidden.
-      if (!isSettingApplicable(entry.scope, form.bs)) return false;
-      const labelMatch =
-        entry.label.ar.toLowerCase().includes(q) || entry.label.en.toLowerCase().includes(q);
-      const keyMatch = entry.key.toLowerCase().includes(q);
-      const keywordMatch =
-        (entry.keywords?.ar?.some((k) => k.toLowerCase().includes(q)) ?? false) ||
-        (entry.keywords?.en?.some((k) => k.toLowerCase().includes(q)) ?? false);
-      return labelMatch || keyMatch || keywordMatch;
-    }).slice(0, 8);
-  }, [searchQuery, form.bs]);
+  // The same reading as the command palette's (searchSettings): every word, either language,
+  // Arabic as people type it, never a setting the store's footer does not read.
+  const searchResults = useMemo(() => searchSettings(searchQuery, form.bs), [searchQuery, form.bs]);
 
   const handleSelectSearchResult = (entry: (typeof SETTINGS_REGISTRY)[0]) => {
     setSearchQuery("");
@@ -197,7 +178,7 @@ export function SettingsHeader({ onTabChange }: SettingsHeaderProps) {
               </Button>
             )}
             <kbd className="hidden sm:inline-flex items-center text-xs font-mono text-muted-foreground bg-muted/80 border border-border rounded px-1.5 py-0.5 select-none pointer-events-none">
-              ⌘K
+              /
             </kbd>
           </div>
         </div>
