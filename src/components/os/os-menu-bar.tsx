@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsThemeToggle } from "./os-theme-toggle";
+import { OsHelpButton } from "./os-help";
 import { cn } from "@/lib/utils";
 import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
@@ -140,13 +141,24 @@ export function OsMenuBar({
           className="h-8 px-2.5 gap-2 text-xs text-muted-foreground hover:text-foreground bg-background/60 hover:bg-background border border-border rounded-lg flex items-center transition shadow-2xs"
         >
           <Search className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="hidden lg:inline text-xs font-medium">
+          <span className="hidden whitespace-nowrap lg:inline text-xs font-medium">
             {lang === "ar" ? "البحث السريع..." : "Search OS..."}
           </span>
           <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-muted/80 px-1.5 font-mono text-xs font-semibold text-muted-foreground">
             {shortcutLabel}
           </kbd>
         </button>
+
+        {/* Short guides and a chat with Boutq (never a courier's: they ask their store). */}
+        {activeSlug && !isCourier && (
+          <OsHelpButton
+            lang={lang}
+            slug={activeSlug}
+            storeName={brandLabel}
+            pageName={breadcrumbs.at(-1)?.label}
+            services={services}
+          />
+        )}
 
         <span className="h-4 w-px bg-border" />
 

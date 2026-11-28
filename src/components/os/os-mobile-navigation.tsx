@@ -16,6 +16,7 @@ import {
   Moon,
   Monitor,
   Crown,
+  CircleHelp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -31,6 +32,7 @@ import {
   type AdminNavItemConfig,
 } from "@/config/admin-navigation";
 import { OsNavMore } from "./os-nav-more";
+import { OsHelpPanel } from "./os-help";
 import { useTheme } from "@/lib/theme-context";
 import { cn } from "@/lib/utils";
 
@@ -71,6 +73,10 @@ export function OsMobileNavigation({
   const bottomBarClaimed = useBottomBarClaimed();
   const { theme, setTheme } = useTheme();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
+  const [helpOpen, setHelpOpen] = React.useState(false);
+  // Mounted once asked for: the panel reads the person and Boutq's number.
+  const [helpAsked, setHelpAsked] = React.useState(false);
+  const showsHelp = Boolean(activeSlug) && !isCourier;
 
   // Mobile dock remains visible across views for constant accessible navigation
   const isDetailPage = false;
@@ -467,6 +473,23 @@ export function OsMobileNavigation({
                 </div>
               </div>
 
+              {/* Short guides and a chat with Boutq; the menu closes so the panel has the screen. */}
+              {showsHelp && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold rounded-2xl"
+                  onClick={() => {
+                    onOpenChangeMobile(false);
+                    setHelpAsked(true);
+                    setHelpOpen(true);
+                  }}
+                >
+                  <CircleHelp className="h-4 w-4" aria-hidden />
+                  <span>{lang === "ar" ? "مساعدة" : "Help"}</span>
+                </Button>
+              )}
+
               {/* Sign Out Action */}
               <Button
                 variant="outline"
@@ -510,6 +533,18 @@ export function OsMobileNavigation({
           items={primaryTabItems}
           lang={lang}
           isHidden={isDetailPage || bottomBarClaimed}
+        />
+      )}
+
+      {showsHelp && helpAsked && activeSlug && (
+        <OsHelpPanel
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+          lang={lang}
+          slug={activeSlug}
+          storeName={brandLabel}
+          pageName={currentPageLabel}
+          services={services}
         />
       )}
 
