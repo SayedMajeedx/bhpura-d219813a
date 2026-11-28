@@ -82,7 +82,7 @@ describe("the menu's workspaces", () => {
     expect(more).toEqual({
       home: [],
       orders: [],
-      products: [],
+      products: ["stock-counts"],
       customers: ["giveaways"],
       money: [],
       store: ["pages", "communications", "integrations", "addons", "import", "export"],

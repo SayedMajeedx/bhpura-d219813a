@@ -44,6 +44,7 @@ export const PAGE_ACCESS: Record<string, PageRule> = {
   // A supplier's order holds its costs; receiving it also needs manage_inventory (checked by
   // the database, and the button is shown only to those who have it).
   "supplier-orders": { permission: "view_financials" },
+  "stock-counts": { permission: "manage_inventory" },
 
   discounts: { permission: "manage_settings" },
   loyalty: { permission: "manage_settings" },

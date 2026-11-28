@@ -26,6 +26,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand, a permission or the session)"
     },
+    "apply_stock_count(p_count_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (stock_count_staff: can_access_brand and manage_inventory) and moves stock only through the ledger"
+    },
     "approve_benefit_payment(p_order_id uuid)": {
       "anon": false,
       "authenticated": true,
@@ -75,6 +80,11 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
+    "cancel_stock_count(p_count_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (stock_count_staff: can_access_brand and manage_inventory)"
     },
     "check_registered_customer_exists(p_brand_id uuid, p_email text, p_phone text)": {
       "anon": true,
@@ -446,6 +456,11 @@
       "authenticated": true,
       "reason": "Storefront action by design: limited by tokens, ownership or rate limits inside the function"
     },
+    "record_stock_count(p_count_id uuid, p_variant_id uuid, p_mode text, p_value integer)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (stock_count_staff: can_access_brand and manage_inventory) and writes only the count's own line"
+    },
     "record_storefront_product_engagement(p_brand_slug text, p_product_id uuid, p_event text)": {
       "anon": true,
       "authenticated": true,
@@ -470,6 +485,16 @@
       "anon": false,
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
+    },
+    "start_stock_count(p_brand_id uuid, p_category text, p_note text)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (stock_count_staff: can_access_brand and manage_inventory)"
+    },
+    "stock_count_review(p_count_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (stock_count_staff: can_access_brand and manage_inventory)"
     },
     "undo_gift_card_payment(p_order_id uuid, p_card_id uuid)": {
       "anon": false,
