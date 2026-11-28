@@ -1,4 +1,6 @@
-import { checklistView, shareStepDone } from "@/features/dashboard/lib/checklist-view";
+import { launchView } from "@/features/launch/lib/launch-steps";
+import { useLaunchChecklist } from "@/features/launch/hooks/use-launch-checklist";
+import { LaunchChecklistCard } from "@/features/launch/components/LaunchChecklistCard";
 import { OnboardingChecklistLine } from "@/features/dashboard/components/OnboardingChecklistLine";
 import { StoreFunnelCard } from "@/features/dashboard/components/StoreFunnelCard";
 import { StoreStatusCard } from "@/features/dashboard/components/StoreStatusCard";
@@ -19,7 +21,6 @@ import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 import { ReviewInsightsSummary } from "@/components/dashboard/ReviewInsightsSummary";
 import { useDashboardData } from "@/features/dashboard/hooks/use-dashboard-data";
 import { lowStockLevel } from "@/lib/inventory-health";
-import { useOnboardingMilestones } from "@/features/dashboard/hooks/use-onboarding-milestones";
 import {
   inventoryIntelFor,
   ordersNeedingAction,
@@ -37,7 +38,6 @@ import {
 import { attentionLines, todayFigures } from "@/features/dashboard/lib/dashboard-today";
 import { periodSearch, periodWords, readPeriod } from "@/features/dashboard/lib/dashboard-period";
 import { PeriodSwitch } from "@/features/dashboard/components/PeriodSwitch";
-import { OnboardingChecklist } from "@/features/dashboard/components/OnboardingChecklist";
 import { DashboardKpiCards } from "@/features/dashboard/components/DashboardKpiCards";
 import { CardPlaceholder } from "@/features/dashboard/components/CardPlaceholder";
 import { SalesAndRecentRow } from "@/features/dashboard/components/SalesAndRecentRow";
@@ -78,17 +78,14 @@ function Dashboard() {
   const isMounted = typeof window !== "undefined";
   const [checklistOpen, setChecklistOpen] = useState(false);
 
-  const {
-    isPreviewed,
-    isManualSaleCompleted,
-    isOnboardingDismissed,
-    handleCopyStoreLink,
-    handlePreviewStorefront,
-    togglePreviewMilestone,
-    toggleSaleMilestone,
-    handleDismissOnboarding,
-    handleRestoreOnboarding,
-  } = useOnboardingMilestones({ brand, brandId, isAr });
+  // The store's one launch checklist, the same steps and count as Settings' (launch-steps.ts).
+  const launch = useLaunchChecklist({
+    brandId,
+    slug,
+    lang: isAr ? "ar" : "en",
+    dashboard: true,
+  });
+  const { isOnboardingDismissed, handleRestoreOnboarding } = launch.milestones;
 
   const {
     businessSettings,
@@ -227,21 +224,17 @@ function Dashboard() {
   const hasRealSales =
     totalOrdersCount > 0 || counts.transactions > 0 || validRevenueOrders.length > 0;
   const hasSales = hasRealSales;
-  const hasProducts = (productsQ.data?.length ?? 0) > 0;
   const isServices = isServicesProfile(storeProfile.modules);
   const ordersLoading = ordersQ.isPending;
   const catalogLoading = productsQ.isPending || variantsQ.isPending;
 
-  const step1Done = hasProducts;
-  const step2Done = shareStepDone({ marked: isPreviewed, hasRealSales });
-  const step3Done = hasRealSales || isManualSaleCompleted;
-
-  const completedStepsCount = (step1Done ? 1 : 0) + (step2Done ? 1 : 0) + (step3Done ? 1 : 0);
-  const isAllStepsCompleted = completedStepsCount === 3;
   // The checklist waits for what it counts, so it does not open and fold as the reads arrive.
-  const checklistReady = !catalogLoading && !ordersLoading && !orderCountQ.isPending;
-  const checklist = checklistReady
-    ? checklistView({ completed: completedStepsCount, dismissed: isOnboardingDismissed })
+  const checklist = launch.ready
+    ? launchView({
+        completed: launch.completed,
+        total: launch.total,
+        dismissed: isOnboardingDismissed,
+      })
     : "hidden";
 
   const primaryKpis = primaryKpisFor({
@@ -380,33 +373,22 @@ function Dashboard() {
 
       {checklist === "line" && !checklistOpen && (
         <OnboardingChecklistLine
-          completed={completedStepsCount}
+          completed={launch.completed}
+          total={launch.total}
           isAr={isAr}
           onOpen={() => setChecklistOpen(true)}
         />
       )}
       {(checklist === "full" || (checklist === "line" && checklistOpen)) && (
-        <OnboardingChecklist
-          brand={brand}
-          completedStepsCount={completedStepsCount}
-          handleCopyStoreLink={handleCopyStoreLink}
-          handleDismissOnboarding={handleDismissOnboarding}
-          handlePreviewStorefront={handlePreviewStorefront}
-          isAllStepsCompleted={isAllStepsCompleted}
-          isAr={isAr}
-          productsQ={productsQ}
+        <LaunchChecklistCard
+          checklist={launch}
+          lang={isAr ? "ar" : "en"}
           slug={slug}
-          step1Done={step1Done}
-          step2Done={step2Done}
-          step3Done={step3Done}
-          togglePreviewMilestone={togglePreviewMilestone}
-          toggleSaleMilestone={toggleSaleMilestone}
-          totalOrdersCount={totalOrdersCount}
-          takesBookings={storeProfile.modules.bookings}
+          mayOpenSettings={hasPermission("manage_settings")}
         />
       )}
 
-      {checklistReady && isOnboardingDismissed && (
+      {isOnboardingDismissed && (
         <div className="flex items-center justify-end">
           <button
             type="button"
@@ -414,9 +396,7 @@ function Dashboard() {
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-primary"
           >
             <Sparkles className="h-3 w-3 text-primary" />
-            {isAr
-              ? `عرض خطوات إطلاق المتجر (${completedStepsCount} من 3)`
-              : `Show launch checklist (${completedStepsCount} of 3)`}
+            {isAr ? "عرض خطوات إطلاق المتجر" : "Show launch checklist"}
           </button>
         </div>
       )}

@@ -1,18 +1,17 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { getStorefrontUrl } from "@/lib/storefront-url";
-import type { useBrand } from "@/lib/brand-context";
 
 /**
  * The launch checklist's manual steps (store previewed or shared, first sale
- * recorded) and whether it is dismissed, kept per brand in localStorage.
+ * recorded) and whether the dashboard's card is dismissed, kept per brand in
+ * localStorage (the keys are the ones the dashboard's checklist always used).
  */
-export function useOnboardingMilestones({
-  brand,
+export function useLaunchMilestones({
+  storefrontUrl,
   brandId,
   isAr,
 }: {
-  brand: ReturnType<typeof useBrand>;
+  storefrontUrl: string;
   brandId: string;
   isAr: boolean;
 }) {
@@ -45,7 +44,7 @@ export function useOnboardingMilestones({
   });
 
   const handleCopyStoreLink = async () => {
-    const url = getStorefrontUrl(brand);
+    const url = storefrontUrl;
     try {
       await navigator.clipboard.writeText(url);
       if (!isPreviewed) {

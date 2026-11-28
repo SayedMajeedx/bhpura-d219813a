@@ -14,8 +14,7 @@ vi.mock("@/integrations/supabase/client", () => client);
 vi.mock("../src/components/barcode-scanner", () => ({ BarcodeScanner: () => null }));
 vi.mock("@/components/barcode-scanner", () => ({ BarcodeScanner: () => null }));
 
-const { checklistView, productsOnStore, shareStepDone } =
-  await import("../src/features/dashboard/lib/checklist-view");
+const { launchView, shareStepDone } = await import("../src/features/launch/lib/launch-steps");
 const { OnboardingChecklistLine } =
   await import("../src/features/dashboard/components/OnboardingChecklistLine");
 const { normalizePhoneForWhatsApp, whatsappChatUrl } = await import("../src/lib/whatsapp-phone");
@@ -24,13 +23,13 @@ const { OrderItemsCard } = await import("../src/features/orders/components/Order
 const { useBottomBarClaimed } = await import("../src/lib/bottom-bar-store");
 
 describe("the launch checklist on the dashboard", () => {
-  it("is the whole card at first, one line once most of it is done, gone once dismissed", () => {
-    expect(checklistView({ completed: 0, dismissed: false })).toBe("full");
-    expect(checklistView({ completed: 1, dismissed: false })).toBe("full");
-    expect(checklistView({ completed: 2, dismissed: false })).toBe("line");
-    // A store that has done all three is launched: the checklist steps aside.
-    expect(checklistView({ completed: 3, dismissed: false })).toBe("hidden");
-    expect(checklistView({ completed: 1, dismissed: true })).toBe("hidden");
+  it("is the whole card at first, one line once half is done, gone once dismissed", () => {
+    expect(launchView({ completed: 0, total: 9, dismissed: false })).toBe("full");
+    expect(launchView({ completed: 4, total: 9, dismissed: false })).toBe("full");
+    expect(launchView({ completed: 5, total: 9, dismissed: false })).toBe("line");
+    // A store that has done every step is launched: the checklist steps aside.
+    expect(launchView({ completed: 9, total: 9, dismissed: false })).toBe("hidden");
+    expect(launchView({ completed: 1, total: 9, dismissed: true })).toBe("hidden");
   });
 
   it("says how far it is in one line, and opens on a tap", () => {
@@ -193,22 +192,9 @@ describe("an order's lines", () => {
 });
 
 describe("the launch checklist's figures (the admin audit of 2026-11-12)", () => {
-  it("counts the products on the store, never the hidden or archived ones", () => {
-    // Pura's read "24 products ready to sell" with 19 on the store.
-    expect(
-      productsOnStore([
-        { is_active: true },
-        { is_active: true, archived_at: null },
-        { is_active: false },
-        { is_active: true, archived_at: "2026-11-03T00:00:00Z" },
-      ]),
-    ).toBe(2);
-    expect(productsOnStore(undefined)).toBe(0);
-  });
-
-  it("takes the store as shared once it has real sales", () => {
-    expect(shareStepDone({ marked: false, hasRealSales: true })).toBe(true);
-    expect(shareStepDone({ marked: true, hasRealSales: false })).toBe(true);
-    expect(shareStepDone({ marked: false, hasRealSales: false })).toBe(false);
+  it("takes the store as shared once it has orders", () => {
+    expect(shareStepDone({ marked: false, orders: 3 })).toBe(true);
+    expect(shareStepDone({ marked: true, orders: 0 })).toBe(true);
+    expect(shareStepDone({ marked: false, orders: 0 })).toBe(false);
   });
 });
