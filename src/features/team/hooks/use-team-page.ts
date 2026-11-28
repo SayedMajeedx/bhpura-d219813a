@@ -15,6 +15,7 @@ import { callUserManagement } from "@/features/team/lib/team-shared";
 import type { StaffMember } from "@/features/team/lib/team-shared";
 import { adminWarnings, scopeCountsOf, staffInScope } from "@/features/team/lib/team-rules";
 import { arNoun } from "@/lib/arabic-count";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /**
  * Everything the team page holds: the store's staff, the add and edit forms, a member's
@@ -106,7 +107,10 @@ export function useTeamPage() {
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
       toast.error(
-        err.message || (isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "فشل إعادة تعيين كلمة المرور" : "Failed to reset password",
+        ),
       );
     }
   };
@@ -210,7 +214,7 @@ export function useTeamPage() {
       resetForm();
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل إضافة المستخدم" : "Failed to add user"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل إضافة المستخدم" : "Failed to add user"));
     }
   };
 
@@ -248,7 +252,7 @@ export function useTeamPage() {
       setShowEditPassword(false);
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل التحديث" : "Failed to update"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل التحديث" : "Failed to update"));
     }
   };
 
@@ -259,7 +263,7 @@ export function useTeamPage() {
       setDeleteConfirm(null);
       qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل الحذف" : "Failed to delete"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل الحذف" : "Failed to delete"));
     }
   };
 

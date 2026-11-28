@@ -170,7 +170,7 @@ export function CustomerDialog({
           });
         }
       } catch (error) {
-        return toast.error(getFriendlyErrorMessage(error) || "Failed");
+        return toast.error(getFriendlyErrorMessage(error, "Failed"));
       }
     } else {
       try {

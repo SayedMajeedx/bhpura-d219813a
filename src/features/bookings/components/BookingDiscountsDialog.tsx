@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { catalogQueries } from "@/lib/data/catalog";
 import {
   bookingDiscountsQueries,
@@ -397,7 +397,7 @@ export function BookingDiscountsDialog({
     await invalidateBookingDiscounts(qc, brand.id);
     toast.success(message);
   };
-  const onError = (error: Error) => toast.error(error.message);
+  const onError = (error: Error) => toast.error(getFriendlyErrorMessage(error));
   const save = useMutation({
     mutationFn: ({ id, form }: { id: string | null; form: DiscountRuleForm }) =>
       saveDiscountRule(brand.id, id, discountFormColumns(form)),

@@ -31,6 +31,7 @@ import { supplierOrderKeys } from "@/lib/data/supplier-orders";
 import { catalogKeys } from "@/lib/data/catalog";
 import { invalidateActivityLogs } from "@/lib/data/activity-logs";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** Saves the order editor: creates a new order with its lines, or updates the order, replaces changed lines and logs status/payment changes. */
 export function useSaveOrder({
@@ -107,9 +108,7 @@ export function useSaveOrder({
         );
       } catch (createError) {
         setSaving(false);
-        return toast.error(
-          (createError as { message?: string } | null)?.message || "ORDER_CREATE_FAILED",
-        );
+        return toast.error(getFriendlyErrorMessage(createError, "ORDER_CREATE_FAILED"));
       }
       localStorage.removeItem(`boutq_draft_${brandId}_new`);
       toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
@@ -165,7 +164,7 @@ export function useSaveOrder({
               : "A piece with an alteration in progress, or its charge, cannot be removed. Cancel the alteration first.",
           );
         }
-        return toast.error(repErr.message);
+        return toast.error(getFriendlyErrorMessage(repErr));
       }
     }
 

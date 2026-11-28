@@ -15,6 +15,7 @@ import {
   type PixelForm,
 } from "@/lib/ad-events/platform-words";
 import { ServerEventsFields } from "./ServerEventsFields";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /** A failed write's message, as the toasts showed it before. */
 const errorOf = (error: unknown) => ({
@@ -124,7 +125,7 @@ export function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr
       consent_required: form.consent_required,
     }).then(() => null, errorOf);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     toast.success(isAr ? "تم حفظ إعدادات التتبع" : "Tracking settings saved");
   };
 

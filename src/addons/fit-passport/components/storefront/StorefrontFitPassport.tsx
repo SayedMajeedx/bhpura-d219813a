@@ -29,6 +29,7 @@ import {
   type FitProfiles,
   passportTitle,
 } from "../../lib/fit-passport";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type Passport = {
   measurements: unknown;
@@ -209,7 +210,9 @@ export function StorefrontFitPassport({
       toast.success(isAr ? "تم حفظ المقاسات بنجاح" : "Measurements saved successfully");
       qc.invalidateQueries({ queryKey: ["storefront-fit-passport", brandId, customerId] });
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "تعذّر حفظ المقاسات" : "Failed to save measurements"));
+      toast.error(
+        getFriendlyErrorMessage(e, isAr ? "تعذّر حفظ المقاسات" : "Failed to save measurements"),
+      );
     } finally {
       setSaving(false);
     }

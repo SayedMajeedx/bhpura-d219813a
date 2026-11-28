@@ -55,7 +55,7 @@ export function StoreStatusCard({
       );
     },
     onError: (error) =>
-      toast.error(getFriendlyErrorMessage(error) || (isAr ? "تعذر الحفظ." : "Could not save.")),
+      toast.error(getFriendlyErrorMessage(error, isAr ? "تعذر الحفظ." : "Could not save.")),
   });
   if (statusQ.isPending) {
     return (

@@ -27,6 +27,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface AbandonedCartSettingsDialogProps {
   open: boolean;
@@ -82,7 +83,9 @@ export function AbandonedCartSettingsDialog({
       onOpenChange(false);
     },
     onError: (err: Error) => {
-      toast.error(err.message || (isAr ? "حدث خطأ أثناء الحفظ" : "Failed to save settings"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "حدث خطأ أثناء الحفظ" : "Failed to save settings"),
+      );
     },
   });
 

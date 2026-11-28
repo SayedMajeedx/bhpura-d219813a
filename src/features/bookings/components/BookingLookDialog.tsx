@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Gem, Palette, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   bookingPageOptionsKeys,
   bookingPageOptionsQueries,
@@ -89,7 +89,7 @@ export function BookingLookDialog({
       toast.success(isAr ? "تم حفظ الشكل" : "Look saved");
       onOpenChange(false);
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(getFriendlyErrorMessage(error)),
   });
 
   return (

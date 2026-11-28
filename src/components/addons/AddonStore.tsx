@@ -38,6 +38,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface AddonStoreProps {
   brandId: string;
@@ -56,6 +57,9 @@ export function AddonStore({
 }: AddonStoreProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  /** A failed step, in the reader's words (`getFriendlyErrorMessage`), else this screen's. */
+  const failed = (err: unknown, ar: string, en: string) =>
+    toast.error(getFriendlyErrorMessage(err, isAr ? ar : en));
 
   const {
     addons: installedRows,
@@ -185,7 +189,7 @@ export function AddonStore({
         isAr ? `تم تثبيت ${manifest.name.ar} بنجاح` : `${manifest.name.en} installed successfully`,
       );
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل التثبيت" : "Install failed"));
+      failed(err, "فشل التثبيت", "Install failed");
     }
   };
 
@@ -199,7 +203,7 @@ export function AddonStore({
         toast.success(isAr ? "تم تفعيل الإضافة" : "Add-on enabled");
       }
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل تحديث الحالة" : "Failed to update status"));
+      failed(err, "فشل تحديث الحالة", "Failed to update status");
     }
   };
 
@@ -222,7 +226,7 @@ export function AddonStore({
       });
       toast.success(isAr ? "تم إزالة الإضافة بنجاح" : "Add-on removed successfully");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل إزالة الإضافة" : "Failed to remove add-on"));
+      failed(err, "فشل إزالة الإضافة", "Failed to remove add-on");
     }
   };
 
@@ -254,7 +258,7 @@ export function AddonStore({
         handleSelectAddon(null);
       }
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل حذف بيانات الإضافة" : "Failed to purge add-on data"));
+      failed(err, "فشل حذف بيانات الإضافة", "Failed to purge add-on data");
     }
   };
 
@@ -274,7 +278,7 @@ export function AddonStore({
       toast.success(isAr ? "تم حفظ إعدادات الإضافة بنجاح" : "Add-on settings saved");
       setSettingsModalAddon(null);
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل حفظ الإعدادات" : "Failed to save settings"));
+      failed(err, "فشل حفظ الإعدادات", "Failed to save settings");
     }
   };
 
@@ -295,7 +299,7 @@ export function AddonStore({
           : `Upgraded ${res.upgraded.length} add-on(s) successfully`,
       );
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل التحديث" : "Upgrade failed"));
+      failed(err, "فشل التحديث", "Upgrade failed");
     }
   };
 
@@ -316,7 +320,7 @@ export function AddonStore({
           : "Starter pack add-ons installed successfully",
       );
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل تثبيت الحزمة" : "Failed to install starter pack"));
+      failed(err, "فشل تثبيت الحزمة", "Failed to install starter pack");
     }
   };
 

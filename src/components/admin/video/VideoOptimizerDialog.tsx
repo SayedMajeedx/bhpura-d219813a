@@ -16,7 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   getStoredVideoPreset,
   setStoredVideoPreset,
@@ -163,8 +163,10 @@ export function VideoOptimizerDialog({
       return result;
     } catch (err: any) {
       toast.error(
-        err?.message ||
-          (isAr ? "فشل تحسين الفيديو، يُرجى المحاولة مرة أخرى" : "Video optimization failed"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "فشل تحسين الفيديو، يُرجى المحاولة مرة أخرى" : "Video optimization failed",
+        ),
       );
       return null;
     } finally {
@@ -191,7 +193,9 @@ export function VideoOptimizerDialog({
       await onConfirm(resultToCommit);
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "فشل رفع الفيديو" : "Failed to upload video"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل رفع الفيديو" : "Failed to upload video"),
+      );
     } finally {
       setIsUploading(false);
     }

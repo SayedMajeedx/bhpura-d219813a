@@ -110,8 +110,10 @@ export function useProductBulkActions({
       onChanged();
     } catch (error) {
       toast.error(
-        getFriendlyErrorMessage(error) ||
-          (isAr ? "تعذر تحديث قسم المنتجات" : "Could not update products category"),
+        getFriendlyErrorMessage(
+          error,
+          isAr ? "تعذر تحديث قسم المنتجات" : "Could not update products category",
+        ),
       );
     } finally {
       setBulkCategoryApplying(false);
@@ -138,8 +140,10 @@ export function useProductBulkActions({
       onChanged();
     } catch (error) {
       toast.error(
-        getFriendlyErrorMessage(error) ||
-          (isAr ? "تعذر تغيير حالة المنتجات" : "Could not change the products' visibility"),
+        getFriendlyErrorMessage(
+          error,
+          isAr ? "تعذر تغيير حالة المنتجات" : "Could not change the products' visibility",
+        ),
       );
     } finally {
       setBulkVisibilityApplying(false);

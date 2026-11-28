@@ -17,6 +17,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface LoyaltyManualAdjustmentDialogProps {
   open: boolean;
@@ -77,7 +78,9 @@ export function LoyaltyManualAdjustmentDialog({
       setReasonEn("");
     },
     onError: (err: any) => {
-      toast.error(err.message || (isAr ? "حدث خطأ أثناء التعديل" : "Adjustment failed"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "حدث خطأ أثناء التعديل" : "Adjustment failed"),
+      );
     },
   });
 

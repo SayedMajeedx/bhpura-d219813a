@@ -11,6 +11,7 @@ import {
   ruleFormError,
 } from "@/lib/payments/advance-rule-form";
 import { templateForms, templatesFor } from "./advance-templates";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /**
  * Quick starts for the kind of store: each adds a few ordinary rules the merchant can then
@@ -49,7 +50,7 @@ export function AdvanceTemplates({
       await invalidateAdvanceRules(qc, brandId);
       toast.success(isAr ? "أُضيفت القواعد، يمكنك تعديلها" : "Rules added; you can edit them");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => toast.error(getFriendlyErrorMessage(error)),
   });
 
   if (templates.length === 0) return null;

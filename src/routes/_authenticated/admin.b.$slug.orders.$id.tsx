@@ -11,7 +11,7 @@ import { Printer, Receipt, Link as LinkIcon, MoreHorizontal } from "lucide-react
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { resolvePaymentStatus, type PaymentBadge } from "@/lib/payment-status";
 import { ManagePaymentModal } from "@/components/orders/ManagePaymentModal";
 import { useBrand } from "@/lib/brand-context";
@@ -139,7 +139,7 @@ function OrderEditor() {
       () => null,
       (err: { message: string }) => err,
     );
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     toast.success(lang === "ar" ? "تم تحديث مندوب التوصيل" : "Courier assignment updated");
     await orderQ.refetch();
 

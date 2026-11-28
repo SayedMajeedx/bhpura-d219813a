@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
+import { rawErrorToasts } from "./helpers/raw-error-toasts";
 
 /**
  * Design system ratchet.
@@ -341,6 +342,17 @@ describe("design system guardrails", () => {
         if (commas <= 1) offenders.push(`${rel}: ${match[0]}`);
       }
     }
+    expect(offenders).toEqual([]);
+  });
+
+  it("says a failure in the reader's words, never the system's", () => {
+    // `toast.error(err.message || "Failed")` showed the database's own English sentence or a bare
+    // code ("PRODUCT_HAS_STOCK") on an Arabic page, in 76 places (the review of 2026-11-28).
+    // `getFriendlyErrorMessage(err, fallback)` names the refusal in the page's language; a screen
+    // that names its own codes reads them with `errorText` first.
+    const offenders = FILES.flatMap(({ rel, source }) =>
+      rawErrorToasts(source).map((line) => `${rel}:${line}`),
+    );
     expect(offenders).toEqual([]);
   });
 

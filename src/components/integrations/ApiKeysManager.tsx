@@ -34,6 +34,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ApiKeysManagerProps {
   brandId: string;
@@ -95,7 +96,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
       toast.success(isAr ? "تم إنشاء مفتاح الـ API بنجاح" : "API key created successfully");
     },
     onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشل إنشاء المفتاح" : "Failed to create API key"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل إنشاء المفتاح" : "Failed to create API key"),
+      );
     },
   });
 
@@ -109,7 +112,9 @@ export function ApiKeysManager({ brandId }: ApiKeysManagerProps) {
       toast.success(isAr ? "تم تعطيل المفتاح" : "API key revoked");
     },
     onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشل تعطيل المفتاح" : "Failed to revoke key"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل تعطيل المفتاح" : "Failed to revoke key"),
+      );
     },
   });
 

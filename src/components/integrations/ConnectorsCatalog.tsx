@@ -41,6 +41,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ConnectorsCatalogProps {
   brandId: string;
@@ -87,7 +88,9 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
       toast.success(isAr ? "تم حفظ إعدادات الموصل وتفعيله" : "Connector configured & activated");
     },
     onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشل حفظ الموصل" : "Failed to save connector"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل حفظ الموصل" : "Failed to save connector"),
+      );
     },
   });
 
@@ -107,7 +110,7 @@ export function ConnectorsCatalog({ brandId }: ConnectorsCatalogProps) {
       );
     },
     onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشلت المزامنة" : "Sync failed"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشلت المزامنة" : "Sync failed"));
     },
   });
 

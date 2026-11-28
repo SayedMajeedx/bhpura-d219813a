@@ -3,6 +3,7 @@ import { Pencil, Trash2, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { CropUploadButton } from "@/components/crop-upload-button";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export interface VariantImageUploaderProps {
   brandId: string;
@@ -26,7 +27,7 @@ export function VariantImageUploader({
       onChange(url);
       toast.success(isAr ? "تم الرفع بنجاح" : "Uploaded successfully");
     } catch (err: any) {
-      toast.error(err.message || "Upload failed");
+      toast.error(getFriendlyErrorMessage(err, "Upload failed"));
     } finally {
       setUploading(false);
     }

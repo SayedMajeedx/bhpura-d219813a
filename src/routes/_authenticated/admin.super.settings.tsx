@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { fetchCallerProfile } from "@/lib/data/profiles";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/super/settings")({
   beforeLoad: async () => {
@@ -255,7 +256,7 @@ function SuperAdminSettings() {
       toast.error(
         lang === "ar"
           ? "فشل تحديث الإعدادات."
-          : err.message || "Failed to update platform settings.",
+          : getFriendlyErrorMessage(err, "Failed to update platform settings."),
         { id: toastId },
       );
     } finally {

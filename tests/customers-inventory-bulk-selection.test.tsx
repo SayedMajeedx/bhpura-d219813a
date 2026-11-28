@@ -178,7 +178,9 @@ describe("customers and inventory bulk selection", () => {
     });
     act(() => result.current.selectCustomers(["c1"]));
     await act(() => result.current.deleteSelectedCustomers());
-    expect(toast.error).toHaveBeenCalledWith("permission denied");
+    expect(toast.error).toHaveBeenCalledWith(
+      "You do not have permission for this. Ask the store owner.",
+    );
     expect(result.current.selectedCustomerIds.size).toBe(1);
     expect(result.current.bulkDeleting).toBe(false);
   });

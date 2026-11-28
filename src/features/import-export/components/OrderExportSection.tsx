@@ -12,6 +12,7 @@ import {
   ORDER_PRESETS,
   ExportFormat,
 } from "@/lib/universal-exporter";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // =============================================================
 // Component 3: Orders Export Section
@@ -209,7 +210,9 @@ export function OrderExportSection({
         { id: toastId },
       );
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل التصدير" : "Export failed"), { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل التصدير" : "Export failed"), {
+        id: toastId,
+      });
     } finally {
       setIsExporting(false);
     }

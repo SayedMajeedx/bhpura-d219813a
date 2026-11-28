@@ -197,7 +197,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update visibility", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to update visibility"), { id: toastId });
     }
   };
 
@@ -232,7 +232,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update active status", {
+      toast.error(getFriendlyErrorMessage(err, "Failed to update active status"), {
         id: toastId,
       });
     }
@@ -255,7 +255,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update billing mode", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to update billing mode"), { id: toastId });
     }
   };
 
@@ -300,7 +300,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update plan details", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to update plan details"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -389,7 +389,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to create plan", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to create plan"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -413,7 +413,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to delete plan", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to delete plan"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -503,7 +503,7 @@ export function SuperPlansManager() {
       void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
     } catch (err) {
       console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to create version", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err, "Failed to create version"), { id: toastId });
     } finally {
       setIsSubmitting(false);
     }

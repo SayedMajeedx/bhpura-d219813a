@@ -24,6 +24,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ReturnExchangeDialogProps {
   open: boolean;
@@ -146,7 +147,7 @@ export function ReturnExchangeDialog({
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || "Error creating replacement order");
+      toast.error(getFriendlyErrorMessage(err, "Error creating replacement order"));
     } finally {
       setSubmitting(false);
     }

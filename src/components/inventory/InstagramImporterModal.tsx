@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   retryImageRehostFn,
   bulkInsertProducts,
@@ -215,7 +215,9 @@ export function InstagramImporterModal({
         toast.info(isAr ? "تم إلغاء الاستيراد." : "Import cancelled.");
       } else {
         console.error("Instagram import pipeline error:", err);
-        toast.error(err?.message || (isAr ? "فشل استيراد إنستغرام" : "Instagram import failed"));
+        toast.error(
+          getFriendlyErrorMessage(err, isAr ? "فشل استيراد إنستغرام" : "Instagram import failed"),
+        );
       }
       setStep("input");
     } finally {
@@ -253,7 +255,7 @@ export function InstagramImporterModal({
         toast.error(res.error || (isAr ? "فشل إعادة رفع الصورة" : "Image retry failed"));
       }
     } catch (e: any) {
-      toast.error(e?.message || (isAr ? "تعذر الاتصال بـ R2" : "R2 retry error"));
+      toast.error(getFriendlyErrorMessage(e, isAr ? "تعذر الاتصال بـ R2" : "R2 retry error"));
     } finally {
       setRetryingImageId(null);
     }
@@ -293,7 +295,9 @@ export function InstagramImporterModal({
       onComplete();
     } catch (err: any) {
       console.error("Bulk approve error:", err);
-      toast.error(err?.message || (isAr ? "فشل حفظ المسودات" : "Failed to save drafts"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل حفظ المسودات" : "Failed to save drafts"),
+      );
       setStep("review");
     }
   };
@@ -333,7 +337,7 @@ export function InstagramImporterModal({
       setDrafts((prev) => prev.filter((d) => d.id !== draft.id));
       onComplete();
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "فشل حفظ المنتج" : "Failed to save product"));
+      toast.error(getFriendlyErrorMessage(err, isAr ? "فشل حفظ المنتج" : "Failed to save product"));
     }
   };
 

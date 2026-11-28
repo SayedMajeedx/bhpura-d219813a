@@ -84,7 +84,7 @@ export function ManageProductAxesDialog({
       setOpen(false);
       onChanged();
     } catch (err) {
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update axes");
+      toast.error(getFriendlyErrorMessage(err, "Failed to update axes"));
     } finally {
       setSaving(false);
     }

@@ -67,6 +67,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -126,7 +127,7 @@ function IntegrationsPage() {
     });
     if (!ok) return;
     const error = await deleteIntegrationCredential(brandId, id).then(() => null, errorOf);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     toast.success(t("common.delete"));
     invalidateIntegrationCredentials(qc, brandId);
   };
@@ -496,9 +497,7 @@ function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
         toast.success(isAr ? "تم التحقق من الرمز بنجاح" : "OTP verified successfully");
       }
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : isAr ? "تعذر الاتصال" : "Request failed",
-      );
+      toast.error(getFriendlyErrorMessage(error, isAr ? "تعذر الاتصال" : "Request failed"));
     } finally {
       setBusy(null);
     }
@@ -727,7 +726,7 @@ function IntegrationDialog({
       notes: form.notes.trim(),
     }).then(() => null, errorOf);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(getFriendlyErrorMessage(error));
     toast.success(t("common.save"));
     onSaved();
   };
@@ -912,7 +911,9 @@ function RotateKeyDialog({
       onRotated();
       onClose();
     } catch (err: any) {
-      toast.error(err?.message || (isAr ? "تعذر تدوير المفتاح" : "Failed to rotate key"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "تعذر تدوير المفتاح" : "Failed to rotate key"),
+      );
     } finally {
       setSubmitting(false);
     }

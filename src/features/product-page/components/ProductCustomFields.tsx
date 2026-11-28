@@ -8,6 +8,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import type { Dispatch, SetStateAction } from "react";
 
 import type { CustomField } from "@/features/product-page/types";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 /**
  * Customer fields for custom sizing: choices, text and uploads. The notes for the workshop are
  * `TailoringNotesField`, shown with every piece being made (the measurements are the fit
@@ -74,7 +75,7 @@ export function ProductCustomFields({
             set(url);
             toast.success(t("تم رفع الملف بنجاح", "File uploaded successfully"));
           } catch (err: any) {
-            toast.error(err.message ?? t("فشل في رفع الملف", "File upload failed"));
+            toast.error(getFriendlyErrorMessage(err, t("فشل في رفع الملف", "File upload failed")));
           } finally {
             setUploadingField((prev) => ({ ...prev, [f.key]: false }));
           }

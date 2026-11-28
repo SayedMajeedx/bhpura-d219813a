@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   Package,
   Plus,
@@ -99,7 +99,7 @@ export function PackagingMaterialsTab() {
         );
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to update BOM setting");
+      toast.error(getFriendlyErrorMessage(err, "Failed to update BOM setting"));
     } finally {
       setIsTogglingBom(false);
     }
@@ -155,7 +155,7 @@ export function PackagingMaterialsTab() {
         );
       }
     } catch (err: any) {
-      toast.error(err.message || "Sync failed");
+      toast.error(getFriendlyErrorMessage(err, "Sync failed"));
     } finally {
       setIsSyncing(false);
     }
@@ -196,7 +196,7 @@ export function PackagingMaterialsTab() {
       toast.success(isAr ? "تم الحذف" : "Material deleted");
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete");
+      toast.error(getFriendlyErrorMessage(err, "Failed to delete"));
     }
   };
 
@@ -236,7 +236,7 @@ export function PackagingMaterialsTab() {
       qc.invalidateQueries({ queryKey: catalogKeys.packagingMaterials(brandId) });
       setOpenModal(false);
     } catch (err: any) {
-      toast.error(err.message || "Error saving material");
+      toast.error(getFriendlyErrorMessage(err, "Error saving material"));
     } finally {
       setIsSaving(false);
     }

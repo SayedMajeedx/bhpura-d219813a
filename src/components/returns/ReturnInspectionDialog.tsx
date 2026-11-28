@@ -34,6 +34,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface ReturnInspectionDialogProps {
   open: boolean;
@@ -97,7 +98,7 @@ export function ReturnInspectionDialog({
       onSuccess();
       onOpenChange(false);
     } catch (err: any) {
-      toast.error(err.message || "Error processing inspection");
+      toast.error(getFriendlyErrorMessage(err, "Error processing inspection"));
     } finally {
       setSubmitting(false);
     }

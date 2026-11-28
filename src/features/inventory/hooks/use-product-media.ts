@@ -4,6 +4,7 @@ import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { clearVariantPictures } from "@/lib/data/catalog";
 import { VIDEO_PRESETS, type OptimizedVideoResult } from "@/lib/video-optimizer";
 import type { ProductForm } from "@/features/inventory/lib/product-form";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 /**
  * Gallery uploads for the product editor. Files uploaded but never saved are
@@ -45,7 +46,7 @@ export function useProductMedia(
       setForm((f) => ({ ...f, media: [...f.media, { type: kind, url }] }));
       toast.success(isAr ? "تم الرفع" : "Uploaded");
     } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
+      toast.error(getFriendlyErrorMessage(e, "Upload failed"));
     } finally {
       setUploading(false);
     }
@@ -97,7 +98,7 @@ export function useProductMedia(
         );
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Upload failed");
+      toast.error(getFriendlyErrorMessage(e, "Upload failed"));
     } finally {
       setUploading(false);
       setPendingVideo(null);

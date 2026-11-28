@@ -22,6 +22,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // One list for "no lines yet": a new list on every render would look like new data to the effect
 // below, which then set the state again, and again, for as long as the lines were loading (and
@@ -160,7 +161,10 @@ export function ProductBomModal({
     } catch (err: any) {
       console.error("Failed to save BOM packaging", err);
       toast.error(
-        err.message || (isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging",
+        ),
       );
     } finally {
       setIsSaving(false);
@@ -188,7 +192,10 @@ export function ProductBomModal({
     } catch (err: any) {
       console.error("Failed to apply BOM to all products", err);
       toast.error(
-        err.message || (isAr ? "خطأ في تطبيق التغليف على المنتجات" : "Failed to apply BOM to all"),
+        getFriendlyErrorMessage(
+          err,
+          isAr ? "خطأ في تطبيق التغليف على المنتجات" : "Failed to apply BOM to all",
+        ),
       );
     } finally {
       setIsSaving(false);

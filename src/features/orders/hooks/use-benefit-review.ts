@@ -76,8 +76,10 @@ export function useBenefitReview({
       setRejectReason("");
     } catch (error) {
       toast.error(
-        getFriendlyErrorMessage(error) ||
-          (lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt"),
+        getFriendlyErrorMessage(
+          error,
+          lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt",
+        ),
       );
     } finally {
       setRejectingBenefit(false);

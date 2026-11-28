@@ -38,6 +38,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 interface WebhooksManagerProps {
   brandId: string;
@@ -95,7 +96,9 @@ export function WebhooksManager({ brandId }: WebhooksManagerProps) {
       toast.success(isAr ? "تمت إضافة الـ Webhook بنجاح" : "Webhook endpoint added");
     },
     onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشل إضافة الـ Webhook" : "Failed to add endpoint"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل إضافة الـ Webhook" : "Failed to add endpoint"),
+      );
     },
   });
 

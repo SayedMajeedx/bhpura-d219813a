@@ -21,6 +21,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 export function PaymentsGroup() {
   const { lang } = useI18n();
@@ -38,7 +39,9 @@ export function PaymentsGroup() {
       setBs({ benefit_qr_url: url });
       toast.success(isAr ? "تم رفع باركود بنفت باي بنجاح" : "BenefitPay QR code uploaded");
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "فشل رفع الباركود" : "Failed to upload QR code"));
+      toast.error(
+        getFriendlyErrorMessage(err, isAr ? "فشل رفع الباركود" : "Failed to upload QR code"),
+      );
     } finally {
       setUploadingQr(false);
     }

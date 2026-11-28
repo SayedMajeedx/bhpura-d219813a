@@ -87,8 +87,10 @@ export function useCompleteDelivery({
           ? lang === "ar"
             ? "تم تسليم هذا الطلب مسبقاً"
             : "This delivery was already completed"
-          : getFriendlyErrorMessage(err) ||
-              (lang === "ar" ? "تعذر إتمام التسليم" : "Failed to complete delivery"),
+          : getFriendlyErrorMessage(
+              err,
+              lang === "ar" ? "تعذر إتمام التسليم" : "Failed to complete delivery",
+            ),
       );
     } finally {
       setUpdatingOrderId(null);

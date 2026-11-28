@@ -123,8 +123,10 @@ function ReportsExport() {
         id: toastId,
       });
     } catch (error) {
-      const message =
-        getFriendlyErrorMessage(error) || (lang === "ar" ? "فشل التصدير" : "Export failed");
+      const message = getFriendlyErrorMessage(
+        error,
+        lang === "ar" ? "فشل التصدير" : "Export failed",
+      );
       toast.error(message, { id: toastId });
     } finally {
       setIsExporting(false);

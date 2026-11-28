@@ -29,6 +29,7 @@ import {
   AppDialogFooter,
   AppDialogHeader,
 } from "@/components/ui/app-dialog";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 // ============================================================================
 // AI Receipt Review Dialog — professional commercial-receipt layout
@@ -112,7 +113,7 @@ export function ReceiptReviewDialog({
       toast.success(t("common.save"));
       onSaved(form.expense_date);
     } catch (e: any) {
-      toast.error(e?.message ?? "Failed to save");
+      toast.error(getFriendlyErrorMessage(e, "Failed to save"));
     } finally {
       setSaving(false);
     }

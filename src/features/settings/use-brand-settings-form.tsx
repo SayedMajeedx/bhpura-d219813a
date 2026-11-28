@@ -10,6 +10,7 @@ import {
   saveBusinessSettings,
 } from "@/lib/data/business-settings";
 import { brandQueries, invalidateBrand, updateBrand } from "@/lib/data/brands";
+import { getFriendlyErrorMessage } from "@/lib/utils";
 
 type BusinessSettingsRow = Database["public"]["Tables"]["business_settings"]["Row"];
 type BrandRow = Database["public"]["Tables"]["brands"]["Row"];
@@ -154,7 +155,7 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
         const res = await hook();
         if (res === false) return false;
       } catch (err: any) {
-        toast.error(err?.message || "فشل التحقق قبل الحفظ");
+        toast.error(getFriendlyErrorMessage(err, "فشل التحقق قبل الحفظ"));
         return false;
       }
     }
@@ -204,7 +205,7 @@ export function useBrandSettingsForm(brandId: string): BrandSettingsFormState {
       return true;
     } catch (err: any) {
       console.error("Save settings error:", err);
-      toast.error(err?.message || "حدث خطأ أثناء حفظ الإعدادات");
+      toast.error(getFriendlyErrorMessage(err, "حدث خطأ أثناء حفظ الإعدادات"));
       return false;
     } finally {
       setIsSaving(false);

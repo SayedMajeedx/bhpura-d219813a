@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/app-dialog";
 import { PartnerPickupNotice } from "@/features/orders/components/PartnerPickupNotice";
 import { Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import { getOrderCustomerName, getOrderCustomerPhone } from "@/lib/order-customer-snapshot";
 import { invalidateOrders } from "@/lib/data/orders";
 
@@ -376,7 +376,7 @@ export function OrderFulfillmentModal({
                   invalidateOrders(qc, brandId);
                   setIsFulfillModalOpen(false);
                 } catch (err: any) {
-                  toast.error(err.message || "Failed to fulfill order");
+                  toast.error(getFriendlyErrorMessage(err, "Failed to fulfill order"));
                 } finally {
                   setIsFulfilling(false);
                 }
