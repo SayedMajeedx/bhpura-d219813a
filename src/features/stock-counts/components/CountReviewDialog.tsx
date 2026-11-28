@@ -52,7 +52,7 @@ export function CountReviewDialog({
   const isAr = lang === "ar";
   const currency = useStoreCurrency(brand.id);
   const seesCosts = useProfileOptional()?.canViewFinancials ?? false;
-  const lines = useQuery(stockCountQueries.lines(brand.id, count.id)).data ?? [];
+  const linesData = useQuery(stockCountQueries.lines(brand.id, count.id)).data;
   const findings = useQuery({
     ...stockCountQueries.review(brand.id, count.id, open),
     staleTime: 0,
@@ -71,8 +71,8 @@ export function CountReviewDialog({
       ? (variant: string, product: string | null) =>
           (sizeCost.get(variant) ?? 0) || (product ? (productCost.get(product) ?? 0) : 0) || null
       : undefined;
-    return reviewRows(lines, findings.data ?? [], lang, costOf);
-  }, [lines, findings.data, lang, seesCosts, variants.data, products.data]);
+    return reviewRows(linesData ?? [], findings.data ?? [], lang, costOf);
+  }, [linesData, findings.data, lang, seesCosts, variants.data, products.data]);
   const totals = reviewTotals(rows);
   const money = (n: number) => formatMoney(n, currency, lang);
 
