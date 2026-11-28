@@ -1,20 +1,25 @@
-import { ShieldAlert, Mail, BellRing } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Mail, BellRing } from "lucide-react";
+import { SegmentTab } from "@/components/ui/segment-tab";
+import { TabsPill } from "@/components/motion/TabsPill";
+import { SEGMENT_TRACK } from "@/components/ui/segmented";
 
-export type CommunicationsScope = "recipients" | "push" | "logs";
+/**
+ * What the Sent messages page shows: the emails that went out, and the customer app's
+ * notifications. Who gets the store's alerts, and what every message says, are set in one place,
+ * Settings → Notifications (the page once listed the alert recipients a second time).
+ */
+export type CommunicationsScope = "logs" | "push";
 
 interface CommunicationsScopeSwitcherProps {
   lang: "ar" | "en";
   activeScope: CommunicationsScope;
   onScopeChange: (scope: CommunicationsScope) => void;
-  recipientCount: number;
 }
 
 export function CommunicationsScopeSwitcher({
   lang,
   activeScope,
   onScopeChange,
-  recipientCount,
 }: CommunicationsScopeSwitcherProps) {
   const isAr = lang === "ar";
 
@@ -23,62 +28,32 @@ export function CommunicationsScopeSwitcher({
     icon: React.ElementType;
     labelAr: string;
     labelEn: string;
-    badge?: number;
   }[] = [
+    { id: "logs", icon: Mail, labelAr: "سجل الإيميلات المرسلة", labelEn: "Emails sent" },
     {
       id: "push",
       icon: BellRing,
       labelAr: "إشعارات تطبيق العملاء",
-      labelEn: "Customer App Push",
-    },
-    {
-      id: "recipients",
-      icon: ShieldAlert,
-      labelAr: "مستلمو تنبيهات الإدارة",
-      labelEn: "Admin Alert Recipients",
-      badge: recipientCount,
-    },
-    {
-      id: "logs",
-      icon: Mail,
-      labelAr: "سجل رسائل البريد الصادرة",
-      labelEn: "Outbound Email Logs",
+      labelEn: "Customer app notifications",
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border-subtle bg-muted/40 p-1 sm:flex sm:items-center">
+    <div role="group" aria-label={isAr ? "ما أُرسل" : "What was sent"} className={SEGMENT_TRACK}>
+      <TabsPill />
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;
-
         return (
-          <button
+          <SegmentTab
             key={s.id}
-            type="button"
+            active={isActive}
+            aria-pressed={isActive}
             onClick={() => onScopeChange(s.id)}
-            className={cn(
-              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
-                : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
-            )}
           >
-            <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{isAr ? s.labelAr : s.labelEn}</span>
-            {s.badge !== undefined && (
-              <span
-                className={cn(
-                  "ms-1 px-1.5 py-0.2 text-xs font-extrabold rounded-full",
-                  isActive
-                    ? "bg-primary-foreground text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {s.badge}
-              </span>
-            )}
-          </button>
+            <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            <span>{isAr ? s.labelAr : s.labelEn}</span>
+          </SegmentTab>
         );
       })}
     </div>

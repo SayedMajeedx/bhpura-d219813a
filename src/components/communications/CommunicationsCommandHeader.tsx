@@ -1,42 +1,33 @@
-import { Mail, Plus } from "lucide-react";
-import {
-  AdminPageAction,
-  AdminPageCount,
-  AdminPageHeader,
-} from "@/components/admin/AdminPageHeader";
-import { countOf } from "@/lib/arabic-count";
+import { Mail, Settings } from "lucide-react";
+import { AdminPageAction, AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 interface CommunicationsCommandHeaderProps {
   lang: "ar" | "en";
-  recipientCount: number;
-  onAddRecipient: () => void;
+  /** Opens Settings → Notifications, where messages and alert recipients are set. */
+  onOpenSettings: () => void;
 }
 
 export function CommunicationsCommandHeader({
   lang,
-  recipientCount,
-  onAddRecipient,
+  onOpenSettings,
 }: CommunicationsCommandHeaderProps) {
   const isAr = lang === "ar";
 
   return (
     <AdminPageHeader
       icon={Mail}
-      title={isAr ? "سجل المراسلات وتنبيهات الإدارة" : "Outbound Logs & Admin Alerts"}
-      badges={
-        <AdminPageCount>{countOf(recipientCount, "recipient", isAr ? "ar" : "en")}</AdminPageCount>
-      }
+      title={isAr ? "الرسائل المرسلة" : "Sent messages"}
       description={
         isAr
-          ? "إدارة مستلمي تنبيهات الطلبات والمدفوعات، ومتابعة سجل رسائل البريد الإلكتروني الصادرة."
-          : "Manage operational alert recipients and audit outbound transactional email activity logs."
+          ? "ما وصل عملاءك وفريقك من إيميلات، وإشعارات تطبيق العملاء. نصوص الرسائل ومن تصله التنبيهات في الإعدادات ← الإشعارات."
+          : "The emails your customers and team were sent, and your customer app's notifications. What messages say and who gets alerts are in Settings → Notifications."
       }
       actions={
         <AdminPageAction
-          icon={Plus}
-          label={isAr ? "إضافة مستلم تنبيهات" : "Add Alert Recipient"}
-          short={isAr ? "إضافة" : "Add"}
-          onClick={onAddRecipient}
+          icon={Settings}
+          label={isAr ? "إعدادات الإشعارات" : "Notification settings"}
+          short={isAr ? "الإعدادات" : "Settings"}
+          onClick={onOpenSettings}
         />
       }
     />
