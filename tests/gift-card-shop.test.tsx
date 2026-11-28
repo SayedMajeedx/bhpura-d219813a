@@ -344,6 +344,44 @@ describe("the shop page", () => {
     expect(screen.queryByText(/I will print it/)).not.toBeInTheDocument();
   });
 
+  it("sends the gift on a day the buyer picks, by email to the person it is for", async () => {
+    stubs.start.mockResolvedValue({ ok: true, id: "p1", token: "tok", brandId: "b1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ redirectUrl: "https://tap.test/pay" }))),
+    );
+    vi.stubGlobal("location", { href: "" });
+    wrap(<GiftCardShopPage />);
+    fireEvent.change(await screen.findByLabelText("Or type the amount"), {
+      target: { value: "50" },
+    });
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Sara" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Email" }));
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "sara@mail.com" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Card" }));
+    // Now, by the buyer's own link, unless a day is chosen.
+    expect(screen.getByRole("radio", { name: "Now, I'll send it" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "On a day I choose" }));
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    expect(await screen.findByText(/at least a quarter of an hour ahead/)).toBeInTheDocument();
+    expect(stubs.start).not.toHaveBeenCalled();
+
+    const next = new Date(Date.now() + 3 * 86_400_000);
+    const day = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-${String(next.getDate()).padStart(2, "0")}`;
+    fireEvent.change(screen.getByLabelText("Day"), { target: { value: day } });
+    fireEvent.change(screen.getByLabelText("Their email"), { target: { value: "noor@mail.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /Buy the card/ }));
+    await waitFor(() => expect(stubs.start).toHaveBeenCalled());
+    expect(stubs.start.mock.calls[0][0].data.schedule).toEqual({
+      at: new Date(`${day}T09:00:00`).toISOString(),
+      channel: "email",
+      email: "noor@mail.com",
+    });
+  });
+
   it("sends a card payment to the gateway with the purchase it started", async () => {
     stubs.start.mockResolvedValue({ ok: true, id: "p1", token: "tok", brandId: "b1" });
     const fetchMock = vi.fn(

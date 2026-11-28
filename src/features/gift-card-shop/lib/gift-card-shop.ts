@@ -158,6 +158,18 @@ export function validityLine(months: number | null, lang: "ar" | "en"): string |
 }
 
 const FAILURES: Record<string, { ar: string; en: string }> = {
+  GIFT_SCHEDULE_TIME: {
+    ar: "اختر موعدًا بعد ربع ساعة على الأقل، وخلال سنة.",
+    en: "Choose a time at least a quarter of an hour ahead, within a year.",
+  },
+  GIFT_SCHEDULE_EMAIL: {
+    ar: "بريد من ستصله الهدية غير صحيح.",
+    en: "The email of the person the gift is for is not right.",
+  },
+  GIFT_SCHEDULE_PHONE: {
+    ar: "رقم واتساب من ستصله الهدية غير صحيح.",
+    en: "The WhatsApp number of the person the gift is for is not right.",
+  },
   GIFT_CARDS_NOT_SOLD: {
     ar: "لا يبيع المتجر بطاقات الهدايا الآن.",
     en: "The store is not selling gift cards right now.",

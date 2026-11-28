@@ -336,6 +336,11 @@
       "authenticated": true,
       "reason": "Signed-in staff: the function checks the caller (can_access_brand and manage_orders)"
     },
+    "mark_gift_card_recipient_sent(p_purchase_id uuid)": {
+      "anon": false,
+      "authenticated": true,
+      "reason": "Signed-in staff: the function checks the caller (gift_card_staff for the purchase's store) and records only that a scheduled gift was sent"
+    },
     "mark_order_line_supplier_told(p_item_id uuid)": {
       "anon": false,
       "authenticated": true,

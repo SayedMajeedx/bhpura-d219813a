@@ -129,6 +129,49 @@ describe("starting a purchase", () => {
   });
 });
 
+describe("a scheduled gift", () => {
+  const schedule = {
+    at: "2026-12-12T06:00:00.000Z",
+    channel: "email",
+    email: "noor@example.com",
+  };
+
+  it("is set right after the purchase is written, with its own token", async () => {
+    const { rpc } = server({}, { id: PURCHASE, token: TOKEN, brand_id: "b1" });
+    expect(await fns.startGiftCardPurchase({ data: { ...start, schedule } })).toMatchObject({
+      ok: true,
+    });
+    expect(rpc).toHaveBeenLastCalledWith("set_gift_card_purchase_schedule", {
+      p_purchase_id: PURCHASE,
+      p_token: TOKEN,
+      p_send_at: schedule.at,
+      p_channel: "email",
+      p_email: "noor@example.com",
+      p_phone: null,
+    });
+  });
+
+  it("is not asked for when the buyer sends the gift themselves", async () => {
+    const { rpc } = server({}, { id: PURCHASE, token: TOKEN, brand_id: "b1" });
+    await fns.startGiftCardPurchase({ data: start });
+    expect(rpc.mock.calls.map(([name]) => name)).not.toContain("set_gift_card_purchase_schedule");
+  });
+
+  it("passes the database's refusal on", async () => {
+    const reply = { id: PURCHASE, token: TOKEN, brand_id: "b1" };
+    const rpc = vi.fn(async (name: string) =>
+      name === "set_gift_card_purchase_schedule"
+        ? { data: null, error: { message: "GIFT_SCHEDULE_TIME" } }
+        : { data: reply, error: null },
+    );
+    state.admin = { ...fakeSupabase({ rows: {} as never }).supabase, rpc };
+    expect(await fns.startGiftCardPurchase({ data: { ...start, schedule } })).toEqual({
+      ok: false,
+      reason: "GIFT_SCHEDULE_TIME",
+    });
+  });
+});
+
 describe("a purchase's page", () => {
   const row = (status: string) => ({
     status,

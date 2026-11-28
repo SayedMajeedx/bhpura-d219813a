@@ -1,4 +1,10 @@
-import { adminNotice, customerNotice, type Email, type NoticeEvent } from "@/lib/gift-card-notices";
+import {
+  adminNotice,
+  customerNotice,
+  giftDueNotices,
+  type Email,
+  type NoticeEvent,
+} from "@/lib/gift-card-notices";
 
 /**
  * Sends a gift card purchase's emails from the outbox (server only, the service role): every
@@ -177,6 +183,9 @@ async function sendPart(
 export async function processGiftCardNotices(limit = 20): Promise<NoticeRun> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = supabaseAdmin as unknown as Admin;
+  // Scheduled gifts whose time has come join the outbox (migration 20261230100000).
+  const due = await (admin.rpc as Rpc)("enqueue_due_gift_sends", {});
+  if (due.error) console.warn("[gift card notices] due gifts:", due.error.message);
   const { data, error } = await (admin.rpc as Rpc)("claim_gift_card_purchase_events", {
     p_limit: limit,
   });
@@ -185,11 +194,16 @@ export async function processGiftCardNotices(limit = 20): Promise<NoticeRun> {
   const run: NoticeRun = { claimed: events.length, sent: 0, skipped: 0, failed: 0 };
 
   for (const event of events) {
-    const toBuyer = customerNotice(event);
-    const toStore = adminNotice(event);
+    // A due gift's first email goes to the person it is for and its second to the buyer, both
+    // from the store's customer mailbox; every other event's to the buyer and the store.
+    const gift = event.event === "gift_due" ? giftDueNotices(event) : null;
+    const toBuyer = gift ? gift.toRecipient : customerNotice(event);
+    const toStore = gift ? null : adminNotice(event);
     const [buyer, store] = await Promise.all([
       sendPart(event.customer_done, toBuyer, () => sendCustomer(admin, event, toBuyer!)),
-      sendPart(event.store_done, toStore, () => sendStore(admin, event, toStore!)),
+      gift
+        ? sendPart(event.store_done, gift.toBuyer, () => sendCustomer(admin, event, gift.toBuyer!))
+        : sendPart(event.store_done, toStore, () => sendStore(admin, event, toStore!)),
     ]);
     const problems: string[] = [];
     for (const [who, part] of [
@@ -208,6 +222,8 @@ export async function processGiftCardNotices(limit = 20): Promise<NoticeRun> {
       p_error: problems.length ? problems.join("; ") : null,
       p_customer_done: buyer.done,
       p_store_done: store.done,
+      // A due gift is sent only when its email really went (a store with no mailbox skips it).
+      ...(gift ? { p_gift_sent: buyer.outcome === "sent" } : {}),
     });
   }
   return run;

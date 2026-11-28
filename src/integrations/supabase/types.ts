@@ -3819,6 +3819,11 @@ export type Database = {
           printed_at: string | null;
           printed_by: string | null;
           receipt_key: string | null;
+          recipient_email: string | null;
+          recipient_phone: string | null;
+          recipient_sent_at: string | null;
+          send_at: string | null;
+          send_channel: string | null;
           recipient_name: string | null;
           settled_by: string | null;
           status: string;
@@ -3860,6 +3865,11 @@ export type Database = {
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
+          recipient_email?: string | null;
+          recipient_phone?: string | null;
+          recipient_sent_at?: string | null;
+          send_at?: string | null;
+          send_channel?: string | null;
           recipient_name?: string | null;
           settled_by?: string | null;
           status?: string;
@@ -3901,6 +3911,11 @@ export type Database = {
           printed_at?: string | null;
           printed_by?: string | null;
           receipt_key?: string | null;
+          recipient_email?: string | null;
+          recipient_phone?: string | null;
+          recipient_sent_at?: string | null;
+          send_at?: string | null;
+          send_channel?: string | null;
           recipient_name?: string | null;
           settled_by?: string | null;
           status?: string;
@@ -12208,6 +12223,7 @@ export type Database = {
         Args: { p_slug: string; p_token: string };
         Returns: string;
       };
+      mark_gift_card_recipient_sent: { Args: { p_purchase_id: string }; Returns: Json };
       mark_gift_card_purchase_sent: {
         Args: { p_purchase_id: string };
         Returns: Json;
